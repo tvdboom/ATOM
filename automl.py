@@ -2,8 +2,8 @@
 """
 
 Title: AutoML pipeline
-Author: Marco van den Boom
-Date: 21-Jun-2019
+Author: tvdboom
+Date: 07-Jul-2019
 
 Description
 ------------------------
