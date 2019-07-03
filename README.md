@@ -1,22 +1,22 @@
-Title: AutoML pipeline
-Author: Marco van den Boom
-Date: 21-Jun-2019
+Title: AutoML pipeline  
+Author: Marco van den Boom  
+Date: 21-Jun-2019  
 
 Description
 ------------------------
-Compare multiple ML models on the same data. All models are implemented
-using the SKlearn python package. Note that the data needs to be adapted to
-the models you want to use in terms of categorical/missing data.
-The algorithm first starts selecting the optimal hyperparameters per model
-using a Bayesian Optimization (BO) approach implemented with the GPyOpt
-library. The data is fitted to the provided metric. The parameters and
-domains of the algorithms are pre-set. For this, the data is split in a train
-and test set with sizes of 70% and 30% respectively.
-Hereafter it performs a K-fold cross validation on the complete data set
-provided. This is needed to avoid having a bias towards the hyperparamters
-plotted in a boxplot.
-The function returns a dictionary of the model as classes, on which you
-can call any metric or extra plots.
+Compare multiple ML models on the same data. All models are implemented  
+using the SKlearn python package. Note that the data needs to be adapted to  
+the models you want to use in terms of categorical/missing data.  
+The algorithm first starts selecting the optimal hyperparameters per model  
+using a Bayesian Optimization (BO) approach implemented with the GPyOpt  
+library. The data is fitted to the provided metric. The parameters and  
+domains of the algorithms are pre-set. For this, the data is split in a train  
+and test set with sizes of 70% and 30% respectively.  
+Hereafter it performs a K-fold cross validation on the complete data set  
+provided. This is needed to avoid having a bias towards the hyperparamters  
+plotted in a boxplot.  
+The function returns a dictionary of the model as classes, on which you  
+can call any metric or extra plots.  
 
 Usage
 ------------------------
