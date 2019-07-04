@@ -510,9 +510,7 @@ class algorithm(object):
             elif model == 'MLP':
                 self.model = Multilayer_Perceptron(self.goal)
 
-        print(self.X)
         self.X = np.array(self.X)  # Fix for plot_proba for non normalized algs
-        print(self.X)
         self.name, self.shortname = self.model.get_name()
 
     @timing
@@ -614,7 +612,7 @@ class algorithm(object):
         else:
             kfold = KFold(n_splits=n_splits, random_state=1)
 
-        self.results = cross_val_score(self.model.get_model(self.best_params),
+        self.results = cross_val_score(self.best_model,
                                        self.X,
                                        self.Y,
                                        cv=kfold,
@@ -645,10 +643,7 @@ class algorithm(object):
                             'binary classification' else 'macro')
 
     def Accuracy(self):
-        return accuracy_score(self.Y_test,
-                              self.prediction,
-                              average='binary' if self.goal ==
-                              'binary classification' else 'macro')
+        return accuracy_score(self.Y_test, self.prediction)
 
     def F1(self):
         return f1_score(self.Y_test,
