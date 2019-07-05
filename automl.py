@@ -249,7 +249,7 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
     n_splits   --> number of splits for the stratified kfold
     n_jobs     --> number of cores for parallel processing
     save_plot  --> directory to save plot to
-    verbose    --> verbosity level
+    verbose    --> verbosity level (0, 1 or 2)
 
     RETURNS ----------------------------------------
 
@@ -387,7 +387,7 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
     if n_jobs > 1:
         print(f'\nParallel processing with {n_jobs} cores.')
 
-    # Use tqdm to evaluate process if multiprocessing
+    # If multiprocessing, use tqdm to evaluate process
     loop = tqdm(final_models) if n_jobs > 1 else final_models
 
     # Call function in parallel (verbose=0 if multiprocessing)
@@ -587,7 +587,7 @@ class algorithm(object):
             scoring = self.metric.lower()
 
         if self.goal != 'regression':
-            # Folds are made preserving the % of samples for each class.
+            # Folds are made preserving the % of samples for each class
             kfold = StratifiedKFold(n_splits=n_splits, random_state=1)
         else:
             kfold = KFold(n_splits=n_splits, random_state=1)
@@ -622,9 +622,6 @@ class algorithm(object):
                             average='binary' if self.goal ==
                             'binary classification' else 'macro')
 
-    def Accuracy(self):
-        return accuracy_score(self.Y_test, self.prediction)
-
     def F1(self):
         return f1_score(self.Y_test,
                         self.prediction,
@@ -636,6 +633,9 @@ class algorithm(object):
                              self.prediction,
                              average='binary' if self.goal ==
                              'binary classification' else 'macro')
+
+    def Accuracy(self):
+        return accuracy_score(self.Y_test, self.prediction)
 
     def AUC(self):
         return roc_auc_score(self.Y_test, self.prediction)
@@ -734,7 +734,7 @@ class algorithm(object):
         plt.show()
 
     def plot_ROC(self, save_plot=None):
-        ''' Plot ROC '''
+        ''' Plot Receiver Operating Characteristics curve '''
 
         if self.goal != 'binary classification':
             raise ValueError('This method only works for binary ' +
