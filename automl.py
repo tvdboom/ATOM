@@ -7,19 +7,23 @@ Date: 07-Jul-2019
 
 Description
 ------------------------
-Compare multiple ML models on the same data. All models are implemented
-using the SKlearn python package. Note that the data needs to be adapted to
-the models you want to use in terms of categorical/missing data.
+Compare multiple machine learning models on the same data. All models are
+implemented using the SKlearn python package (https://scikit-learn.org/stable/)
+except for the Extreme Gradient Booster which is implemented with XGBoost
+(https://xgboost.readthedocs.io/en/latest/). Note that the data needs to be
+adapted to the models you want to use in terms of categorical/missing data.
+The pipeline does not do the data pre-processing for you!
 The algorithm first starts selecting the optimal hyperparameters per model
 using a Bayesian Optimization (BO) approach implemented with the GPyOpt
-library. The data is fitted to the provided metric. The parameters and
-domains of the algorithms are pre-set. For this, the data is split in a train
-and test set with sizes of 70% and 30% respectively.
-Hereafter it performs a K-fold cross validation on the complete data set
-provided. This is needed to avoid having a bias towards the hyperparamters
-plotted in a boxplot.
+library (https://sheffieldml.github.io/GPyOpt/). The data is fitted to the
+selected metric. The tunable parameters and their respective domains are
+pre-set.
+Hereafter, the pipleine performs a K-fold cross validation on the complete
+data set provided. This is needed to avoid having a bias towards the
+hyperparameters selected by the BO and provides a better statistical overview
+of the final results.
 The function returns a dictionary of the model as classes, on which you
-can call any metric or extra plots.
+can call extra methods and attributes.
 
 Usage
 ------------------------
@@ -33,7 +37,7 @@ models = AutoML(X, Y,
                 ratio=0.25,
                 max_iter=5,
                 batch_size=1,
-                cross_val=True,
+                cv=True,
                 n_splits=5,
                 verbose=1)
 
@@ -73,13 +77,13 @@ metric --> metric on which the BO performs its fit. Possible values are:
                    Jaccard
                    AUC for Area Under Curve
                    LogLoss for binary cross-entropy
-ratio      --> train/test split ratio
-max_iter   --> Maximum number of iterations of the BO algorithm
+percentage --> percentage of the data to use for the BO
+ratio      --> train/test split ratio for BO
+max_iter   --> Maximum number of iterations of the BO
 batch_size --> Size of the batches processed in the BO before fitting
-cross_val  --> Boolean wether to perform K-fold cross validation
+cv         --> Boolean wether to perform K-fold cross validation
 n_splits   --> Number of splits for the K-fold cross validation
 n_jobs     --> Number of cores for parallel processing
-percentage --> percentage of the data to use
 save_plot  --> Directory to save plot to. If None, plot is not saved
 verbose    --> verbosity level of the pipeline. Only works if n_jobs=1.
                Possible values:
@@ -183,14 +187,6 @@ def warn(*args, **kwargs):
 warnings.warn = warn
 
 
-def shuffle(a, b):
-    ''' Shuffle two arrays in unison '''
-
-    assert len(a) == len(b)
-    p = np.random.permutation(len(a))
-    return a[p], b[p]
-
-
 def timing(f):
     ''' Decorator to time a function '''
 
@@ -229,9 +225,9 @@ def make_boxplot(algs, save_plot=False):
     plt.show()
 
 
-def AutoML(X, Y, models=None, metric=None, ratio=0.3,
-           max_iter=5, batch_size=1, cross_val=True, n_splits=5,
-           n_jobs=1, percentage=100, save_plot=None, verbose=1):
+def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
+           max_iter=5, batch_size=1, cv=True, n_splits=5,
+           n_jobs=1, save_plot=None, verbose=1):
 
     '''
     DESCRIPTION -----------------------------------
@@ -245,13 +241,13 @@ def AutoML(X, Y, models=None, metric=None, ratio=0.3,
     X, Y       --> data features and targets (array or dataframe)
     models     --> list of models to use
     metric     --> metric to perform evaluation on
+    percentage --> percentage of data to use for the BO
     ratio      --> train/test split ratio
     max_iter   --> maximum number of iterations of the BO
     batch_size --> batch size for the BO algorithm
-    cross_val  --> perform kfold cross validation
+    cv         --> perform kfold cross validation
     n_splits   --> number of splits for the stratified kfold
     n_jobs     --> number of cores for parallel processing
-    percentage --> percentage of data to use
     save_plot  --> directory to save plot to
     verbose    --> verbosity level
 
@@ -262,19 +258,13 @@ def AutoML(X, Y, models=None, metric=None, ratio=0.3,
     '''
 
     def run_model(data, model, metric, goal,
-                  max_iter, batch_size, cross_val, n_splits, verbose):
+                  max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
-        algs[model] = algorithm(data=data,
-                                model=model,
-                                metric=metric,
-                                goal=goal,
-                                verbose=verbose)
-
-        algs[model].Bayesian_Optimization(max_iter=max_iter,
-                                          batch_size=batch_size)
-        if cross_val:
-            algs[model].cross_val_evaluation(n_splits=n_splits)
+        algs[model] = algorithm(data, model, metric, goal, verbose)
+        algs[model].Bayesian_Optimization(max_iter, batch_size)
+        if cv:
+            algs[model].cross_val_evaluation(n_splits)
 
         return algs
 
@@ -372,57 +362,48 @@ def AutoML(X, Y, models=None, metric=None, ratio=0.3,
 
     # << ============ Core ============ >>
 
-    data = {}  # Dictionary of data (complete, train, test)
-    if percentage < 100:
-        X, Y = shuffle(X, Y)  # Shuffle X and Y
-
-        # Return percentage of data
-        data['X'] = X[0:int(len(X)*percentage/100)]
-        data['Y'] = Y[0:int(len(Y)*percentage/100)]
-    else:
-        data['X'] = X
-        data['Y'] = Y
-
     print('\nData stats ==================>')
-    print(f'Feature shape: {X.shape}\nTarget shape: {Y.shape}')
+    print('Number of features: {}\nTotal number of instances: {}'
+          .format(X.shape[1], X.shape[0]))
 
-    # Split train and test for the BO
+    data = {}  # Dictionary of data (complete, train, test)
+    data['X'] = X
+    data['Y'] = Y
+
+    # Split train and test for the BO on percentage of data
     data['X_train'], data['X_test'], data['Y_train'], data['Y_test'] = \
-        train_test_split(data['X'],
-                         data['Y'],
+        train_test_split(X[0:int(len(X)*percentage/100)],
+                         Y[0:int(len(Y)*percentage/100)],
                          test_size=ratio,
+                         shuffle=True,
                          random_state=1)
 
-    print('Size of training set: {}\nSize of validation set: {}'
+    print('Size of the training set: {}\nSize of the validation set: {}'
           .format(len(data['X_train']), len(data['X_test'])))
 
     # Loop over models to get score
     algs = {}  # Dictionary of algorithms (to be returned by function)
+
     if n_jobs > 1:
         print(f'\nParallel processing with {n_jobs} cores.')
-        algs = Parallel(n_jobs=n_jobs)(delayed(run_model)
-                                       (data,
-                                        model,
-                                        metric,
-                                        goal,
-                                        max_iter,
-                                        batch_size,
-                                        cross_val,
-                                        n_splits,
-                                        0) for model in tqdm(final_models))
 
-        # Parallel returns list of dictionaries --> convert to one dict
-        algs = {k: v for x in algs for k, v in x.items()}
+    # Use tqdm to evaluate process if multiprocessing
+    loop = tqdm(final_models) if n_jobs > 1 else final_models
 
-    else:
-        for model in final_models:
-            algs = run_model(data, model, metric, goal, max_iter, batch_size,
-                             cross_val, n_splits, verbose)
+    # Call function in parallel (verbose=0 if multiprocessing)
+    algs = Parallel(n_jobs=n_jobs)(delayed(run_model)
+                                   (data, model, metric, goal, max_iter,
+                                    batch_size, cv, n_splits,
+                                    0 if n_jobs > 1 else verbose
+                                    ) for model in loop)
 
-    if cross_val:
+    # Parallel returns list of dictionaries --> convert to one dict
+    algs = {k: v for x in algs for k, v in x.items()}
+
+    if cv:
         max_len = max([len(algs[m].name) for m in final_models])
 
-        # Print final results
+        # Print final results (summary of cross-validation)
         print('\n\nFinal stats ================>>')
         print(f'Target metric: {metric}')
         print('------------------------------------')
@@ -510,7 +491,6 @@ class algorithm(object):
             elif model == 'MLP':
                 self.model = Multilayer_Perceptron(self.goal)
 
-        self.X = np.array(self.X)  # Fix for plot_proba for non normalized algs
         self.name, self.shortname = self.model.get_name()
 
     @timing
@@ -697,11 +677,12 @@ class algorithm(object):
             raise ValueError('This method only works for ' +
                              'classification problems.')
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        self.X = np.array(self.X)  # Fix for non normalized algs
 
         # Calculate new probabilities more accurate with cv
         clf = CalibratedClassifierCV(self.best_model, cv=3).fit(self.X, self.Y)
 
+        fig, ax = plt.subplots(figsize=(10, 6))
         classes = list(set(self.Y))
         colors = ['r', 'b', 'g']
         for n in range(len(classes)):
@@ -1256,7 +1237,7 @@ class XGBoost(object):
         return params
 
     def get_model(self, params):
-        ''' Returns the sklearn model with unpacked hyperparameters '''
+        ''' Returns the model with unpacked hyperparameters '''
 
         if self.goal != 'regression':
             return XGBClassifier(**params, verbosity=0)
