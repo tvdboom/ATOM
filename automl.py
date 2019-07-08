@@ -200,6 +200,28 @@ def timing(f):
     return wrapper
 
 
+def set_init(data, metric, goal, verbose, scaled=False):
+    ''' Returns BaseModel's (class) parameters as dictionary '''
+
+    if scaled:
+        params = {'X': data['X_scaled'],
+                  'X_train': data['X_train_scaled'],
+                  'X_test': data['X_test_scaled']}
+    else:
+        params = {'X': data['X'],
+                  'X_train': data['X_train'],
+                  'X_test': data['X_test']}
+
+    params['Y'] = data['Y']
+    params['Y_train'] = data['Y_train']
+    params['Y_test'] = data['Y_test']
+    params['metric'] = metric
+    params['goal'] = goal
+    params['verbose'] = verbose
+
+    return params
+
+
 def make_boxplot(algs, save_plot=False):
     ''' Plot a boxplot of the found metric results '''
 
@@ -261,7 +283,8 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
-        algs[model] = algorithm(data, model, metric, goal, verbose)
+        # Call model class
+        algs[model] = eval(model + '(data, metric, goal, verbose)')
         algs[model].Bayesian_Optimization(max_iter, batch_size)
         if cv:
             algs[model].cross_val_evaluation(n_splits)
@@ -360,9 +383,9 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
               .format(n_jobs))
         n_jobs = 1
 
-    # << ============ Core ============ >>
+    # << ============ Data preparation ============ >>
 
-    print('\nData stats ==================>')
+    print('\nData stats =====================>')
     print('Number of features: {}\nTotal number of instances: {}'
           .format(X.shape[1], X.shape[0]))
 
@@ -380,6 +403,17 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
     print('Size of the training set: {}\nSize of the validation set: {}'
           .format(len(data['X_train']), len(data['X_test'])))
+
+    # Check if features need to be scaled
+    scaling_models = ['LinReg', 'LogReg', 'SVM', 'MLP']
+    if any(model in final_models for model in scaling_models):
+        # Normalize features to mean=0, std=1
+        scaler = StandardScaler().fit(data['X_train'])
+        data['X_train_scaled'] = scaler.transform(data['X_train'])
+        data['X_test_scaled'] = scaler.transform(data['X_test'])
+        data['X_scaled'] = StandardScaler().fit_transform(data['X'])
+
+    # << ============ Core ============ >>
 
     # Loop over models to get score
     algs = {}  # Dictionary of algorithms (to be returned by function)
@@ -421,9 +455,9 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
 # << ============ Classes ============ >>
 
-class algorithm(object):
+class BaseModel(object):
 
-    def __init__(self, data, model, metric, goal, verbose):
+    def __init__(self, **kwargs):
 
         '''
         DESCRIPTION -----------------------------------
@@ -432,8 +466,11 @@ class algorithm(object):
 
         ARGUMENTS -------------------------------------
 
-        data    --> data features and targets
-        model   --> model type
+        X, Y    --> data features and targets
+        X_train --> training features
+        Y_train --> training targets
+        X_test  --> test features
+        Y_test  --> test targets
         metric  --> metric to maximize (or minimize) in the BO
         goal    --> classification or regression
         verbose --> verbosity level (0, 1, 2)
@@ -447,51 +484,9 @@ class algorithm(object):
         # List of tree-based models
         self.tree = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM', 'XGBoost']
 
-        # Define data groups
-        self.X = data['X']
-        self.Y = data['Y']
-        self.X_train = data['X_train']
-        self.Y_train = data['Y_train']
-        self.X_test = data['X_test']
-        self.Y_test = data['Y_test']
-
         # Set class attributes
-        self.metric = metric
-        self.goal = goal
-        self.verbose = verbose
-
-        # Set model
-        if model == 'KNN':
-            self.model = KNearest_Neighbors(self.goal)
-        elif model == 'Tree':
-            self.model = Decision_Tree(self.goal)
-        elif model == 'ET':
-            self.model = ExtraTrees(self.goal)
-        elif model == 'RF':
-            self.model = Random_Forest(self.goal)
-        elif model == 'AdaBoost':
-            self.model = AdaBoost(self.goal)
-        elif model == 'GBM':
-            self.model = GradientBoost(self.goal)
-        elif model == 'XGBoost':
-            self.model = XGBoost(self.goal)
-        else:
-            # Normalize features to mean=0, std=1
-            scaler = StandardScaler().fit(self.X_train)
-            self.X_train = scaler.transform(self.X_train)
-            self.X_test = scaler.transform(self.X_test)
-            self.X = StandardScaler().fit_transform(self.X)
-
-            if model == 'LinReg':
-                self.model = Linear_Regression(self.goal)
-            elif model == 'LogReg':
-                self.model = Logistic_Regression(self.goal)
-            elif model == 'SVM':
-                self.model = Support_Vector_Machine(self.goal)
-            elif model == 'MLP':
-                self.model = Multilayer_Perceptron(self.goal)
-
-        self.name, self.shortname = self.model.get_name()
+        for key, value in kwargs.items():
+            setattr(BaseModel, key, value)
 
     @timing
     def Bayesian_Optimization(self, max_iter=50, batch_size=1):
@@ -511,13 +506,11 @@ class algorithm(object):
         def optimize(x):
             ''' Function to optimize '''
 
-            # Call model object
-            params = self.model.get_params(x)
+            params = self.get_params(x)
             if self.verbose > 1:
                 print(f'Parameters --> {params}')
-            self.algorithm = self.model.get_model(params)
-            self.algorithm.fit(self.X_train, self.Y_train)
-            self.prediction = self.algorithm.predict(self.X_test)
+            alg = self.get_model(params).fit(self.X_train, self.Y_train)
+            self.prediction = alg.predict(self.X_test)
 
             out = getattr(self, self.metric)
 
@@ -536,21 +529,20 @@ class algorithm(object):
         maximize = False if self.metric in self.metric_min else True
 
         opt = BayesianOptimization(f=optimize,
-                                   domain=self.model.get_domain(),
+                                   domain=self.get_domain(),
                                    batch_size=batch_size,
                                    maximize=maximize,
-                                   X=self.model.get_init_values(),
+                                   X=self.get_init_values(),
                                    normalize_Y=False)
 
         opt.run_optimization(max_iter=max_iter,
                              verbosity=True if self.verbose > 1 else False)
 
         # Set to same shape as GPyOpt (2d-array)
-        self.best_params = \
-            self.model.get_params(np.array(np.round([opt.x_opt], 3)))
+        self.best_params = self.get_params(np.array(np.round([opt.x_opt], 3)))
 
         # Save best model (not yet fitted)
-        self.best_model = self.model.get_model(self.best_params)
+        self.best_model = self.get_model(self.best_params)
 
         # Save best predictions
         self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
@@ -862,13 +854,17 @@ class algorithm(object):
             plt.savefig(save_plot)
 
 
-class Linear_Regression(object):
+class LinReg(BaseModel):
+    ''' Linear Regression '''
 
-    def __init__(self, goal):
-        self.goal = goal
+    def __init__(self, data, metric, goal, verbose):
+        ''' Class initializer '''
 
-    def get_name(self):
-        return 'Linear Regression', 'LinReg'
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Linear Regression', 'LinReg'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -904,13 +900,16 @@ class Linear_Regression(object):
         return values
 
 
-class Logistic_Regression(object):
+class LogReg(BaseModel):
+    ''' Logistic Regression '''
 
-    def __init__(self, goal):
-        self.goal = goal
+    def __init__(self, data, metric, goal, verbose):
 
-    def get_name(self):
-        return 'Logistic Regression', 'LogReg'
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Logistic Regression', 'LogReg'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -955,13 +954,17 @@ class Logistic_Regression(object):
         return values
 
 
-class KNearest_Neighbors(object):
+class KNN(BaseModel):
+    ''' K-Nearest Neighbors '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'K-Nearest Neighbors', 'KNN'
         self.goal = goal
-
-    def get_name(self):
-        return 'K-Nearest Neighbors', 'KNN'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -992,13 +995,17 @@ class KNearest_Neighbors(object):
         return values
 
 
-class Decision_Tree(object):
+class Tree(BaseModel):
+    ''' Decision Tree '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Decision Tree', 'Tree'
         self.goal = goal
-
-    def get_name(self):
-        return 'Decision Tree', 'Tree'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1034,13 +1041,17 @@ class Decision_Tree(object):
         return values
 
 
-class ExtraTrees(object):
+class ET(BaseModel):
+    ''' Extremely Randomized Trees '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Extremely Randomized Trees', 'Extra-Trees'
         self.goal = goal
-
-    def get_name(self):
-        return 'Extremely Randomized Trees', 'Extra-Trees'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1080,13 +1091,17 @@ class ExtraTrees(object):
         return values
 
 
-class Random_Forest(object):
+class RF(BaseModel):
+    ''' Random Forest '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Random Forest', 'RF'
         self.goal = goal
-
-    def get_name(self):
-        return 'Random Forest', 'RF'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1126,13 +1141,17 @@ class Random_Forest(object):
         return values
 
 
-class AdaBoost(object):
+class AdaBoost(BaseModel):
+    ''' Adaptive Boosting '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Adaptive Boosting', 'AdaBoost'
         self.goal = goal
-
-    def get_name(self):
-        return 'Adaptive Boosting', 'AdaBoost'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1167,13 +1186,17 @@ class AdaBoost(object):
         return values
 
 
-class GradientBoost(object):
+class GBM(BaseModel):
+    ''' Gradient Boosting Machine '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Gradient Boosting Machine', 'GBM'
         self.goal = goal
-
-    def get_name(self):
-        return 'Gradient Boosting Machine', 'GBM'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1216,13 +1239,17 @@ class GradientBoost(object):
         return values
 
 
-class XGBoost(object):
+class XGBoost(BaseModel):
+    ''' Extreme Gradient Boosting '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Extreme Gradient Boosting', 'XGBoost'
         self.goal = goal
-
-    def get_name(self):
-        return 'Extreme Gradient Boosting', 'XGBoost'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1277,13 +1304,17 @@ class XGBoost(object):
         return values
 
 
-class Support_Vector_Machine(object):
+class SVM(BaseModel):
+    ''' Support Vector Machine '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Support Vector Machine', 'SVM'
         self.goal = goal
-
-    def get_name(self):
-        return 'Support Vector Machine', 'SVM'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1318,13 +1349,17 @@ class Support_Vector_Machine(object):
         return values
 
 
-class Multilayer_Perceptron(object):
+class MLP(BaseModel):
+    ''' Multilayer Perceptron '''
 
-    def __init__(self, goal):
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Multilayer Perceptron', 'MLP'
         self.goal = goal
-
-    def get_name(self):
-        return 'Multilayer Perceptron', 'MLP'
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
