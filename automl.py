@@ -320,7 +320,9 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
         final_models = model_list.copy()
     else:
         # Remove duplicates
-        models = list(set(m.lower() for m in models))
+        # Use and on the None output of set.add to call the function
+        models = [not set().add(x.lower()) and x
+                  for x in models if x.lower() not in set()]
 
         # If only one model, make list for enumeration
         if isinstance(models, str):
@@ -388,16 +390,6 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
         raise ValueError("Invalid metric for {}. Try one of {}."
                          .format(goal, metric_reg))
 
-    # Check number of cores for multiprocessing
-    n_cores = multiprocessing.cpu_count()
-    if n_jobs > n_cores:
-        print('Warning! n_jobs was reduced to the number of cores available.')
-        n_jobs = n_cores
-    elif n_jobs < 1:
-        print("Warning! Value of n_jobs can't be {}. Automatically set to 1."
-              .format(n_jobs))
-        n_jobs = 1
-
     # << ============ Data preparation ============ >>
 
     print('\nData stats =====================>')
@@ -430,11 +422,23 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
     # << ============ Core ============ >>
 
+    # Check number of cores for multiprocessing
+    n_cores = multiprocessing.cpu_count()
+    if n_jobs > n_cores:
+        print('\nWarning! No {} cores available. n_jobs reduced to {}.'
+              .format(n_jobs, n_cores))
+        n_jobs = n_cores
+
+    elif n_jobs < 1:
+        print("Warning! Value of n_jobs can't be {}. Processing with 1 core."
+              .format(n_jobs))
+        n_jobs = 1
+
+    elif n_jobs > 1:
+        print(f'\nParallel processing with {n_jobs} cores.')
+
     # Loop over models to get score
     algs = {}  # Dictionary of algorithms (to be returned by function)
-
-    if n_jobs > 1:
-        print(f'\nParallel processing with {n_jobs} cores.')
 
     # If multiprocessing, use tqdm to evaluate process
     loop = tqdm(final_models) if n_jobs > 1 else final_models
@@ -618,28 +622,20 @@ class BaseModel(object):
 
     # << ============ Evaluation metric functions ============ >>
     def Precision(self):
-        return precision_score(self.Y_test,
-                               self.prediction,
-                               average='binary' if self.goal ==
-                               'binary classification' else 'macro')
+        average = 'binary' if self.goal == 'binary classification' else 'macro'
+        return precision_score(self.Y_test, self.prediction, average=average)
 
     def Recall(self):
-        return recall_score(self.Y_test,
-                            self.prediction,
-                            average='binary' if self.goal ==
-                            'binary classification' else 'macro')
+        average = 'binary' if self.goal == 'binary classification' else 'macro'
+        return recall_score(self.Y_test, self.prediction, average=average)
 
     def F1(self):
-        return f1_score(self.Y_test,
-                        self.prediction,
-                        average='binary' if self.goal ==
-                        'binary classification' else 'macro')
+        average = 'binary' if self.goal == 'binary classification' else 'macro'
+        return f1_score(self.Y_test, self.prediction, average=average)
 
     def Jaccard(self):
-        return jaccard_score(self.Y_test,
-                             self.prediction,
-                             average='binary' if self.goal ==
-                             'binary classification' else 'macro')
+        average = 'binary' if self.goal == 'binary classification' else 'macro'
+        return jaccard_score(self.Y_test, self.prediction, average=average)
 
     def Accuracy(self):
         return accuracy_score(self.Y_test, self.prediction)
@@ -689,7 +685,7 @@ class BaseModel(object):
         Y = np.array(self.Y_train)
 
         # SVM has no predict_proba() method
-        if self.shortname == 'SVM':
+        if self.shortname in ('XGBoost', 'SVM'):
             # Calculate new probabilities more accurate with cv
             mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
         else:
