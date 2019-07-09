@@ -53,6 +53,7 @@ Y      --> array or dataframe of target classes
 models --> list of models to use. Possible values are:
                LinReg for linear regression (with elasticnet regularization)
                LogReg for Logistic Regression
+               LDA for Linear Discriminant Analysis
                KNN for K_Nearest Neighbors
                Tree for a single Decision Tree
                ET for Extra-Trees
@@ -153,6 +154,7 @@ from sklearn.metrics import roc_curve, confusion_matrix
 from sklearn.metrics import max_error, log_loss, mean_absolute_error
 from sklearn.metrics import mean_squared_error, mean_squared_log_error
 from sklearn.linear_model import ElasticNet, LogisticRegression
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -279,6 +281,8 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
     '''
 
+    # << ============ Inner Functions ============ >>
+
     def run_model(data, model, metric, goal,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
@@ -309,15 +313,20 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
         goal = 'regression'
 
     # Check validity models
-    model_list = ['LinReg', 'LogReg', 'KNN', 'Tree', 'ET', 'RF',
+    model_list = ['LinReg', 'LogReg', 'LDA', 'KNN', 'Tree', 'ET', 'RF',
                   'AdaBoost', 'GBM', 'XGBoost', 'SVM', 'MLP']
     final_models = []  # Final list of models to be used
     if models is None:  # Use all possible models (default)
         final_models = model_list.copy()
     else:
+        # Remove duplicates
+        models = list(set(m.lower() for m in models))
+
         # If only one model, make list for enumeration
         if isinstance(models, str):
             models = [models]
+
+        # Set models to right name
         for ix, m in enumerate(models):
             # Compare strings case insensitive
             if m.lower() not in map(str.lower, model_list):
@@ -329,7 +338,7 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                         break
 
     # Check if XGBoost is available
-    while 'XGBoost' in final_models and not xgb_import:
+    if 'XGBoost' in final_models and not xgb_import:
         print("Unable to import XGBoost. Removing model from pipeline.")
         final_models.remove('XGBoost')
 
@@ -345,9 +354,15 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
               " Removing model from pipeline.")
         final_models.remove('LogReg')
 
+    # Linear Discriminant Analysis can't perform regression
+    if 'LDA' in final_models and goal == 'regression':
+        print("Linear Discriminant Analysis can't solve regression problems." +
+              " Removing model from pipeline.")
+        final_models.remove('LDA')
+
     # Check if there are still valid models
     if len(final_models) == 0:
-        raise ValueError(f"No models found. Try {model_list}")
+        raise ValueError(f"No models found in pipeline. Try {model_list}")
 
     print(f'Models in pipeline: {final_models}')
 
@@ -389,7 +404,7 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
     print('Number of features: {}\nTotal number of instances: {}'
           .format(X.shape[1], X.shape[0]))
 
-    data = {}  # Dictionary of data (complete, train, test)
+    data = {}  # Dictionary of data (complete, train, test and scaled)
     data['X'] = X
     data['Y'] = Y
 
@@ -484,9 +499,9 @@ class BaseModel(object):
         # List of tree-based models
         self.tree = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM', 'XGBoost']
 
-        # Set class attributes
+        # Set attributes to child class
         for key, value in kwargs.items():
-            setattr(BaseModel, key, value)
+            setattr(eval(self.__class__.__name__), key, value)
 
     @timing
     def Bayesian_Optimization(self, max_iter=50, batch_size=1):
@@ -669,18 +684,24 @@ class BaseModel(object):
             raise ValueError('This method only works for ' +
                              'classification problems.')
 
-        self.X = np.array(self.X)  # Fix for non normalized algs
+        # From dataframe to array (fix for not scaled models)
+        X = np.array(self.X_train)
+        Y = np.array(self.Y_train)
 
-        # Calculate new probabilities more accurate with cv
-        clf = CalibratedClassifierCV(self.best_model, cv=3).fit(self.X, self.Y)
+        # SVM has no predict_proba() method
+        if self.shortname == 'SVM':
+            # Calculate new probabilities more accurate with cv
+            mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
+        else:
+            mod = self.model_fit
 
         fig, ax = plt.subplots(figsize=(10, 6))
-        classes = list(set(self.Y))
+        classes = list(set(Y))
         colors = ['r', 'b', 'g']
         for n in range(len(classes)):
             # Get features per class
-            cl = self.X[np.where(self.Y == classes[n])]
-            pred = clf.predict_proba(cl)[:, target_class]
+            cl = X[np.where(Y == classes[n])]
+            pred = mod.predict_proba(cl)[:, target_class]
 
             sns.distplot(pred,
                          hist=False,
@@ -710,7 +731,7 @@ class BaseModel(object):
             raise ValueError('This method only works for tree-based ' +
                              f'models. Try one of the following: {self.tree}')
 
-        features = list(self.X_train)
+        features = list(self.X)
         fig, ax = plt.subplots(figsize=(10, 15))
         pd.Series(self.model_fit.feature_importances_,
                   features).sort_values().plot.barh()
@@ -920,7 +941,7 @@ class LogReg(BaseModel):
                   'C': float(np.round(x[0, 1], 1)),
                   'penalty': penalty}
 
-        if penalty == 'elasticnet':  # Add extra parameter l1_ratio
+        if penalty == 'elasticnet':  # Add extra parameter: l1_ratio
             params['l1_ratio'] = float(np.round(x[0, 3], 1))
 
         return params
@@ -951,6 +972,53 @@ class LogReg(BaseModel):
         ''' Returns initial values for the BO trials '''
 
         values = np.array([[250, 1.0, 1, 0.5]])
+        return values
+
+
+class LDA(BaseModel):
+    ''' Linear Discriminant Analysis '''
+
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Linear Discriminant Analysis', 'LDA'
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        solver_types = ['svd', 'lsqr', 'eigen']
+        solver = solver_types[int(x[0, 0])]
+        params = {'solver': solver}
+
+        shrinkage_types = [None, 'auto', 0.2, 0.4, 0.6, 0.8, 1.0]
+        if solver != 'svd':  # Add extra parameter: shrinkage
+            params['shrinkage'] = shrinkage_types[x[0, 1]]
+
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        return LinearDiscriminantAnalysis(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'solver',
+                 'type': 'discrete',
+                 'domain': (0, 1, 2)},
+                {'name': 'shrinkage',
+                 'type': 'discrete',
+                 'domain': (0, 1, 2, 3, 4, 5, 6)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[0, 0]])
         return values
 
 
