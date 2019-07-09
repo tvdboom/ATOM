@@ -3,7 +3,6 @@
 
 Title: AutoML pipeline
 Author: tvdboom
-Date: 07-Jul-2019
 
 Description
 ------------------------
@@ -84,7 +83,10 @@ max_iter   --> Maximum number of iterations of the BO
 batch_size --> Size of the batches processed in the BO before fitting
 cv         --> Boolean wether to perform K-fold cross validation
 n_splits   --> Number of splits for the K-fold cross validation
-n_jobs     --> Number of cores for parallel processing
+n_jobs     --> Number of CPUs for parallel processing
+                  1 to not run the pipeline in parallel
+                  -1 will use as many cores as available
+                  below -1, (n_cpus + 1 + n_jobs) are used
 save_plot  --> Directory to save plot to. If None, plot is not saved
 verbose    --> verbosity level of the pipeline. Only works if n_jobs=1.
                Possible values:
@@ -287,8 +289,10 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
+        model_dict = {'LogReg': LogReg(data, metric, goal, verbose),
+                      'RF': RF(data, metric, goal, verbose)}
         # Call model class
-        algs[model] = eval(model + '(data, metric, goal, verbose)')
+        algs[model] = model_dict[model]
         algs[model].Bayesian_Optimization(max_iter, batch_size)
         if cv:
             algs[model].cross_val_evaluation(n_splits)
@@ -424,18 +428,29 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
     # Check number of cores for multiprocessing
     n_cores = multiprocessing.cpu_count()
+    n_jobs = int(n_jobs)  # Make sure it is an integer
     if n_jobs > n_cores:
         print('\nWarning! No {} cores available. n_jobs reduced to {}.'
               .format(n_jobs, n_cores))
         n_jobs = n_cores
 
-    elif n_jobs < 1:
-        print("Warning! Value of n_jobs can't be {}. Processing with 1 core."
+    elif n_jobs == 0:
+        print("\nWarning! Value of n_jobs can't be {}. Processing with 1 core."
               .format(n_jobs))
         n_jobs = 1
 
-    elif n_jobs > 1:
-        print(f'\nParallel processing with {n_jobs} cores.')
+    else:
+        if n_jobs == -1:
+            n_jobs = n_cores
+        elif n_jobs < -1:
+            n_jobs = n_cores + 1 + n_jobs
+
+        # Final check
+        if n_jobs < 1 or n_jobs > n_cores:
+            raise ValueError('Invalid value for n_jobs!')
+
+        if n_jobs != 1:
+            print(f'\nParallel processing with {n_jobs} cores.')
 
     # Loop over models to get score
     algs = {}  # Dictionary of algorithms (to be returned by function)
