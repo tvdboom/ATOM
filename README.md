@@ -1,4 +1,3 @@
 Title: AutoML pipeline  
-Author: tvdboom  
-Date: 07-Jul-2019  
+Author: tvdboom   
 Description: Automatic machine-learning pipeline
