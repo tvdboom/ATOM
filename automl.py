@@ -289,10 +289,8 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
-        model_dict = {'LogReg': LogReg(data, metric, goal, verbose),
-                      'RF': RF(data, metric, goal, verbose)}
         # Call model class
-        algs[model] = model_dict[model]
+        algs[model] = eval(model + '(data, metric, goal, verbose)')
         algs[model].Bayesian_Optimization(max_iter, batch_size)
         if cv:
             algs[model].cross_val_evaluation(n_splits)
