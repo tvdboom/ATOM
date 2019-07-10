@@ -289,8 +289,13 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
+        model_dict = {'LinReg': LinReg, 'LogReg': LogReg, 'LDA': LDA,
+                      'KNN': KNN, 'Tree': Tree, 'ET': ET, 'RF': RF,
+                      'AdaBoost': AdaBoost, 'GBM': GBM, 'XGBoost': XGBoost,
+                      'SVM': SVM, 'MLP': MLP}
+
         # Call model class
-        algs[model] = eval(model + '(data, metric, goal, verbose)')
+        algs[model] = model_dict[model](data, metric, goal, verbose)
         algs[model].Bayesian_Optimization(max_iter, batch_size)
         if cv:
             algs[model].cross_val_evaluation(n_splits)
@@ -453,8 +458,11 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
     # Loop over models to get score
     algs = {}  # Dictionary of algorithms (to be returned by function)
 
-    # If multiprocessing, use tqdm to evaluate process
-    loop = tqdm(final_models) if n_jobs > 1 else final_models
+    # If multiprocessing or verbose=0, use tqdm to evaluate process
+    if n_jobs > 1 or (n_jobs == 1 and verbose == 0):
+        loop = tqdm(final_models)
+    else:
+        loop = final_models
 
     # Call function in parallel (verbose=0 if multiprocessing)
     algs = Parallel(n_jobs=n_jobs)(delayed(run_model)
@@ -518,7 +526,7 @@ class BaseModel(object):
 
         # Set attributes to child class
         for key, value in kwargs.items():
-            setattr(eval(self.__class__.__name__), key, value)
+            setattr(self.__class__, key, value)
 
     @timing
     def Bayesian_Optimization(self, max_iter=50, batch_size=1):
