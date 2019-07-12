@@ -50,9 +50,13 @@ Parameters
 X      --> array or dataframe of target features
 Y      --> array or dataframe of target classes
 models --> list of models to use. Possible values are:
+               GNB for Gaussian Naïve Bayes
+               MNB for Multinomial Naïve Bayes
+               BNB for Bernoulli Naïve Bayes
                LinReg for linear regression (with elasticnet regularization)
                LogReg for Logistic Regression
                LDA for Linear Discriminant Analysis
+               QDA for Quadratic Discriminant Analysis
                KNN for K_Nearest Neighbors
                Tree for a single Decision Tree
                ET for Extra-Trees
@@ -60,7 +64,10 @@ models --> list of models to use. Possible values are:
                AdaBoost for Adaptive Boosting
                GBM for Gradient Boosting Machine
                XGBoost for Extreme Gradient Boosting (if library is available)
-               SVM for Support Vector Machine
+               lSVM for Linear Support Vector Machine
+               kSVM for Kernel Support Vector Machine
+               PA for Passive Aggressive
+               SGD for Stochastic Gradient Descent
                MLP for Multilayer Perceptron
 metric --> metric on which the BO performs its fit. Possible values are:
                For binary and multiclass classification or regression:
@@ -150,13 +157,19 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 from sklearn.calibration import CalibratedClassifierCV
+
+# Metrics
 from sklearn.metrics import precision_score, recall_score, accuracy_score
 from sklearn.metrics import f1_score, roc_auc_score, r2_score, jaccard_score
 from sklearn.metrics import roc_curve, confusion_matrix
 from sklearn.metrics import max_error, log_loss, mean_absolute_error
 from sklearn.metrics import mean_squared_error, mean_squared_log_error
+
+# Models
+from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.linear_model import ElasticNet, LogisticRegression
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
@@ -165,6 +178,10 @@ from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.svm import LinearSVC, LinearSVR
+from sklearn.linear_model import PassiveAggressiveClassifier
+from sklearn.linear_model import PassiveAggressiveRegressor
+from sklearn.linear_model import SGDClassifier, SGDRegressor
+from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Others
@@ -234,10 +251,9 @@ def make_boxplot(algs, save_plot=False):
         results.append(algs[m].results)
         names.append(algs[m].shortname)
 
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(int(8+len(names)/2), 6))
     plt.boxplot(results)
     ax.set_xticklabels(names)
-
     plt.xlabel('Model', fontsize=16, labelpad=12)
     plt.ylabel(next(iter(algs.values())).metric,
                fontsize=16,
@@ -289,18 +305,44 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                   max_iter, batch_size, cv, n_splits, verbose):
         ''' Run every independent model '''
 
-        model_dict = {'LinReg': LinReg, 'LogReg': LogReg, 'LDA': LDA,
-                      'KNN': KNN, 'Tree': Tree, 'ET': ET, 'RF': RF,
-                      'AdaBoost': AdaBoost, 'GBM': GBM, 'XGBoost': XGBoost,
-                      'SVM': SVM, 'MLP': MLP}
+        model_dict = {'GNB': Gaussian_Naive_Bayes,
+                      'MNB': Multinomial_Naive_Bayes,
+                      'BNB': Bernoulli_Naive_Bayes,
+                      'LinReg': Linear_Regression,
+                      'LogReg': Logistic_Regression,
+                      'LDA': Linear_Discriminant_Analysis,
+                      'QDA': Quadratic_Discriminant_Analysis,
+                      'KNN': K_Nearest_Neighbors,
+                      'Tree': Decision_Tree,
+                      'ET': Extra_Trees,
+                      'RF': Random_Forest,
+                      'AdaBoost': Adaptive_Boosting,
+                      'GBM': Gradient_Boosting_Machine,
+                      'XGBoost': Extreme_Gradient_Boosting,
+                      'lSVM': Linear_Support_Vector_Machine,
+                      'kSVM': Kernel_Support_Vector_Machine,
+                      'PA': Passive_Aggressive,
+                      'SGD': Stochastic_Gradient_Descent,
+                      'MLP': Multilayer_Perceptron}
 
         # Call model class
         algs[model] = model_dict[model](data, metric, goal, verbose)
-        algs[model].Bayesian_Optimization(max_iter, batch_size)
+        if model != 'GNB':  # GNB has no parameters to tune
+            algs[model].Bayesian_Optimization(max_iter, batch_size)
         if cv:
             algs[model].cross_val_evaluation(n_splits)
 
         return algs
+
+    def not_regression(final_models):
+        ''' Remove classification-only models from pipeline '''
+
+        class_models = ['LogReg', 'GNB', 'MNB', 'BNB', 'LDA', 'QDA']
+        for model in class_models:
+            if model in final_models:
+                final_models.remove(model)
+
+        return final_models
 
     # << ============ Parameters tests ============ >>
 
@@ -320,20 +362,22 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
         goal = 'regression'
 
     # Check validity models
-    model_list = ['LinReg', 'LogReg', 'LDA', 'KNN', 'Tree', 'ET', 'RF',
-                  'AdaBoost', 'GBM', 'XGBoost', 'SVM', 'MLP']
+    # BNB not in standard list because it only is good with boolean features
+    model_list = ['GNB', 'MNB', 'LinReg', 'LogReg', 'LDA', 'QDA', 'KNN',
+                  'Tree', 'ET', 'RF', 'AdaBoost', 'GBM', 'XGBoost',
+                  'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
     final_models = []  # Final list of models to be used
     if models is None:  # Use all possible models (default)
         final_models = model_list.copy()
     else:
+        # If only one model, make list for enumeration
+        if isinstance(models, str):
+            models = [models]
+
         # Remove duplicates
         # Use and on the None output of set.add to call the function
         models = [not set().add(x.lower()) and x
                   for x in models if x.lower() not in set()]
-
-        # If only one model, make list for enumeration
-        if isinstance(models, str):
-            models = [models]
 
         # Set models to right name
         for ix, m in enumerate(models):
@@ -353,21 +397,11 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
 
     # Linear regression can't perform classification
     if 'LinReg' in final_models and goal != 'regression':
-        print("Linear Regression can't solve classification problems." +
-              " Removing model from pipeline.")
         final_models.remove('LinReg')
 
-    # Logistic regression can't perform regression
-    if 'LogReg' in final_models and goal == 'regression':
-        print("Logistic Regression can't solve regression problems." +
-              " Removing model from pipeline.")
-        final_models.remove('LogReg')
-
-    # Linear Discriminant Analysis can't perform regression
-    if 'LDA' in final_models and goal == 'regression':
-        print("Linear Discriminant Analysis can't solve regression problems." +
-              " Removing model from pipeline.")
-        final_models.remove('LDA')
+    # Remove classification-only models from pipeline
+    if goal == 'regression':
+        final_models = not_regression(final_models)
 
     # Check if there are still valid models
     if len(final_models) == 0:
@@ -394,8 +428,8 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
                          .format(metric_class if goal ==
                                  'binary classification' else metric_reg))
     elif metric not in metric_reg and goal != 'binary classification':
-        raise ValueError("Invalid metric for {}. Try one of {}."
-                         .format(goal, metric_reg))
+        raise ValueError("{} is an invalid metric for {}. Try one of {}."
+                         .format(metric, goal, metric_reg))
 
     # << ============ Data preparation ============ >>
 
@@ -419,13 +453,14 @@ def AutoML(X, Y, models=None, metric=None, percentage=100, ratio=0.3,
           .format(len(data['X_train']), len(data['X_test'])))
 
     # Check if features need to be scaled
-    scaling_models = ['LinReg', 'LogReg', 'SVM', 'MLP']
+    scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGBoost',
+                      'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
     if any(model in final_models for model in scaling_models):
         # Normalize features to mean=0, std=1
+        data['X_scaled'] = StandardScaler().fit_transform(data['X'])
         scaler = StandardScaler().fit(data['X_train'])
         data['X_train_scaled'] = scaler.transform(data['X_train'])
         data['X_test_scaled'] = scaler.transform(data['X_test'])
-        data['X_scaled'] = StandardScaler().fit_transform(data['X'])
 
     # << ============ Core ============ >>
 
@@ -526,7 +561,7 @@ class BaseModel(object):
 
         # Set attributes to child class
         for key, value in kwargs.items():
-            setattr(self.__class__, key, value)
+            setattr(self, key, value)
 
     @timing
     def Bayesian_Optimization(self, max_iter=50, batch_size=1):
@@ -579,7 +614,7 @@ class BaseModel(object):
                              verbosity=True if self.verbose > 1 else False)
 
         # Set to same shape as GPyOpt (2d-array)
-        self.best_params = self.get_params(np.array(np.round([opt.x_opt], 3)))
+        self.best_params = self.get_params(np.array(np.round([opt.x_opt], 4)))
 
         # Save best model (not yet fitted)
         self.best_model = self.get_model(self.best_params)
@@ -623,6 +658,18 @@ class BaseModel(object):
             kfold = StratifiedKFold(n_splits=n_splits, random_state=1)
         else:
             kfold = KFold(n_splits=n_splits, random_state=1)
+
+        # GNB has no best_model yet cause no BO was performed
+        if self.shortname == 'GNB':
+            self.best_model = self.get_model()
+            self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
+            self.prediction = self.model_fit.predict(self.X_test)
+
+            # Print stats
+            if self.verbose > 1:
+                print('\nFinal Statistics for {}:{:9s}'.format(self.name, ' '))
+            elif self.verbose > 0:
+                print('Final Statistics for {}:{:9s}'.format(self.name, ' '))
 
         self.results = cross_val_score(self.best_model,
                                        self.X,
@@ -706,7 +753,7 @@ class BaseModel(object):
         Y = np.array(self.Y_train)
 
         # SVM has no predict_proba() method
-        if self.shortname in ('XGBoost', 'SVM'):
+        if self.shortname in ('XGBoost', 'lSVM', 'kSVM'):
             # Calculate new probabilities more accurate with cv
             mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
         else:
@@ -892,8 +939,117 @@ class BaseModel(object):
             plt.savefig(save_plot)
 
 
-class LinReg(BaseModel):
-    ''' Linear Regression '''
+class Gaussian_Naive_Bayes(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+        ''' Class initializer '''
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Gaussian Naïve Bayes', 'GNB'
+
+    def get_params(self, x):
+        ''' GNB has no hyperparameters to optimize '''
+
+        return False
+
+    def get_model(self):
+        ''' Returns the sklearn model '''
+
+        return GaussianNB()
+
+    def get_domain(self):
+        return False
+
+    def get_init_values(self):
+        return False
+
+
+class Multinomial_Naive_Bayes(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+        ''' Class initializer '''
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Multinomial Naïve Bayes', 'MNB'
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        prior = [True, False]
+        params = {'alpha': round(x[0, 0], 2),
+                  'fit_prior': prior[int(x[0, 1])]}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        return MultinomialNB(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        return [{'name': 'alpha',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
+                {'name': 'fit_prior',
+                 'type': 'discrete',
+                 'domain': range(2)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[1, 0]])
+        return values
+
+
+class Bernoulli_Naive_Bayes(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+        ''' Class initializer '''
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Bernoulli Naïve Bayes', 'BNB'
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        prior = [True, False]
+        params = {'alpha': round(x[0, 0], 2),
+                  'fit_prior': prior[int(x[0, 1])]}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        return BernoulliNB(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        return [{'name': 'alpha',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
+                {'name': 'fit_prior',
+                 'type': 'discrete',
+                 'domain': range(2)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[1, 0]])
+        return values
+
+
+class Linear_Regression(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
         ''' Class initializer '''
@@ -908,8 +1064,8 @@ class LinReg(BaseModel):
         ''' Returns the hyperparameters as a dictionary '''
 
         params = {'max_iter': int(x[0, 0]),
-                  'alpha': float(np.round(x[0, 1], 2)),
-                  'l1_ratio': float(np.round(x[0, 2], 1))}
+                  'alpha': round(x[0, 1], 2),
+                  'l1_ratio': round(x[0, 2], 1)}
         return params
 
     def get_model(self, params):
@@ -922,14 +1078,14 @@ class LinReg(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'max_iter',
-                 'type': 'continuous',
-                 'domain': (100, 500)},
+                 'type': 'discrete',
+                 'domain': range(100, 501)},
                 {'name': 'alpha',
-                 'type': 'continuous',
-                 'domain': (0.01, 5)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 5, 500)},
                 {'name': 'l1_ratio',
-                 'type': 'continuous',
-                 'domain': (0, 1)}]
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 1, 10)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
@@ -938,8 +1094,7 @@ class LinReg(BaseModel):
         return values
 
 
-class LogReg(BaseModel):
-    ''' Logistic Regression '''
+class Logistic_Regression(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -955,7 +1110,7 @@ class LogReg(BaseModel):
         regularization = ['l1', 'l2', 'elasticnet', 'none']
         penalty = regularization[int(x[0, 2])]
         params = {'max_iter': int(x[0, 0]),
-                  'C': float(np.round(x[0, 1], 1)),
+                  'C': round(x[0, 1], 1),
                   'penalty': penalty}
 
         if penalty == 'elasticnet':  # Add extra parameter: l1_ratio
@@ -973,17 +1128,17 @@ class LogReg(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'max_iter',
-                 'type': 'continuous',
-                 'domain': (100, 500)},
+                 'type': 'discrete',
+                 'domain': range(100, 501)},
                 {'name': 'C',
-                 'type': 'continuous',
-                 'domain': (0.1, 5)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 5, 50)},
                 {'name': 'penalty',
                  'type': 'discrete',
-                 'domain': (0, 1, 2, 3)},
+                 'domain': range(4)},
                 {'name': 'l1_ratio',
                  'type': 'discrete',
-                 'domain': (0.1, 0.3, 0.5, 0.7, 0.9)}]
+                 'domain': np.linspace(0.1, 0.9, 9)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
@@ -992,8 +1147,7 @@ class LogReg(BaseModel):
         return values
 
 
-class LDA(BaseModel):
-    ''' Linear Discriminant Analysis '''
+class Linear_Discriminant_Analysis(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1008,11 +1162,12 @@ class LDA(BaseModel):
 
         solver_types = ['svd', 'lsqr', 'eigen']
         solver = solver_types[int(x[0, 0])]
-        params = {'solver': solver}
+        params = {'solver': solver,
+                  'n_components': int(x[0, 2]),
+                  'tol': round(x[0, 3], 5)}
 
-        shrinkage_types = [None, 'auto', 0.2, 0.4, 0.6, 0.8, 1.0]
         if solver != 'svd':  # Add extra parameter: shrinkage
-            params['shrinkage'] = shrinkage_types[x[0, 1]]
+            params['shrinkage'] = x[0, 1]
 
         return params
 
@@ -1027,25 +1182,66 @@ class LDA(BaseModel):
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'solver',
                  'type': 'discrete',
-                 'domain': (0, 1, 2)},
+                 'domain': range(3)},
                 {'name': 'shrinkage',
                  'type': 'discrete',
-                 'domain': (0, 1, 2, 3, 4, 5, 6)}]
+                 'domain': np.linspace(0, 1, 11)},
+                {'name': 'n_components',
+                 'type': 'discrete',
+                 'domain': range(1, 251)},
+                {'name': 'tol',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0, 0]])
+        values = np.array([[0, 0, 200, 1e-3]])
         return values
 
 
-class KNN(BaseModel):
-    ''' K-Nearest Neighbors '''
+class Quadratic_Discriminant_Analysis(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
         # BaseModel class initializer
         super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Quadratic Discriminant Analysis', 'QDA'
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        params = {'reg_param': round(x[0, 0], 1)}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        return QuadraticDiscriminantAnalysis(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'reg_param',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 1, 10)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[0]])
+        return values
+
+
+class K_Nearest_Neighbors(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
 
         # Class attributes
         self.name, self.shortname = 'K-Nearest Neighbors', 'KNN'
@@ -1054,7 +1250,10 @@ class KNN(BaseModel):
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        params = {'n_neighbors': int(x[0, 0])}
+        weights = ['distance', 'uniform']
+        params = {'n_neighbors': int(x[0, 0]),
+                  'p': int(x[0, 1]),
+                  'weights': weights[int(x[0, 2])]}
         return params
 
     def get_model(self, params):
@@ -1070,18 +1269,23 @@ class KNN(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_neighbors',
-                 'type': 'continuous',
-                 'domain': (2, 50)}]
+                 'type': 'discrete',
+                 'domain': range(1, 101)},
+                {'name': 'p',
+                 'type': 'discrete',
+                 'domain': range(1, 3)},
+                {'name': 'weights',
+                 'type': 'discrete',
+                 'domain': range(2)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[5]])
+        values = np.array([[5, 2, 1]])
         return values
 
 
-class Tree(BaseModel):
-    ''' Decision Tree '''
+class Decision_Tree(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1095,9 +1299,15 @@ class Tree(BaseModel):
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        max_features = ['sqrt', 'log2', None]
-        params = {'max_depth': int(x[0, 0]),
-                  'max_features': max_features[int(x[0, 1])]}
+        if self.goal != 'regression':
+            criterion = ['entropy', 'gini']
+        else:
+            criterion = ['mse', 'mae', 'friedman_mse']
+
+        params = {'criterion': criterion[int(x[0, 0])],
+                  'max_depth': int(x[0, 1]),
+                  'min_samples_split': int(x[0, 2]),
+                  'min_samples_leaf': int(x[0, 3])}
         return params
 
     def get_model(self, params):
@@ -1112,22 +1322,27 @@ class Tree(BaseModel):
         ''' Returns the bounds for the hyperparameters '''
 
         # Dict should be in order of continuous and then discrete types
-        return [{'name': 'max_depth',
-                 'type': 'continuous',
-                 'domain': (2, 12)},
-                {'name': 'max_features',
+        return [{'name': 'criterion',
                  'type': 'discrete',
-                 'domain': (0, 1, 2)}]
+                 'domain': range(2 if self.goal != 'regression' else 3)},
+                {'name': 'max_depth',
+                 'type': 'discrete',
+                 'domain': range(1, 11)},
+                {'name': 'min_samples_split',
+                 'type': 'discrete',
+                 'domain': range(2, 21)},
+                {'name': 'min_samples_leaf',
+                 'type': 'discrete',
+                 'domain': range(1, 21)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[4, 0]])
+        values = np.array([[0, 3, 2, 1]])
         return values
 
 
-class ET(BaseModel):
-    ''' Extremely Randomized Trees '''
+class Extra_Trees(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1141,10 +1356,17 @@ class ET(BaseModel):
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        max_features = ['sqrt', 'log2', None]
+        if self.goal != 'regression':
+            criterion = ['entropy', 'gini']
+        else:
+            criterion = ['mse', 'mae']
+        bootstrap = [True, False]
         params = {'n_estimators': int(x[0, 0]),
-                  'max_depth': int(x[0, 1]),
-                  'max_features': max_features[int(x[0, 2])]}
+                  'max_features': round(x[0, 1], 1),
+                  'criterion': criterion[int(x[0, 2])],
+                  'bootstrap': bootstrap[int(x[0, 3])],
+                  'min_samples_split': int(x[0, 4]),
+                  'min_samples_leaf': int(x[0, 5])}
         return params
 
     def get_model(self, params):
@@ -1160,24 +1382,32 @@ class ET(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
-                 'type': 'continuous',
-                 'domain': (20, 500)},
-                {'name': 'max_depth',
-                 'type': 'continuous',
-                 'domain': (2, 12)},
+                 'type': 'discrete',
+                 'domain': range(20, 501)},
                 {'name': 'max_features',
                  'type': 'discrete',
-                 'domain': (0, 1, 2)}]
+                 'domain': np.linspace(0.1, 1, 10)},
+                {'name': 'criterion',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'bootstrap',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'min_samples_split',
+                 'type': 'discrete',
+                 'domain': range(2, 21)},
+                {'name': 'min_samples_leaf',
+                 'type': 'discrete',
+                 'domain': range(1, 21)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 4, 0]])
+        values = np.array([[50, 1, 1, 0, 2, 1]])
         return values
 
 
-class RF(BaseModel):
-    ''' Random Forest '''
+class Random_Forest(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1191,10 +1421,17 @@ class RF(BaseModel):
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        max_features = ['sqrt', 'log2', None]
+        if self.goal != 'regression':
+            criterion = ['entropy', 'gini']
+        else:
+            criterion = ['mse', 'mae', 'friedman_mse']
+        bootstrap = [True, False]
         params = {'n_estimators': int(x[0, 0]),
-                  'max_depth': int(x[0, 1]),
-                  'max_features': max_features[int(x[0, 2])]}
+                  'max_features': round(x[0, 1], 1),
+                  'criterion': criterion[int(x[0, 2])],
+                  'bootstrap': bootstrap[int(x[0, 3])],
+                  'min_samples_split': int(x[0, 4]),
+                  'min_samples_leaf': int(x[0, 5])}
         return params
 
     def get_model(self, params):
@@ -1210,24 +1447,32 @@ class RF(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
-                 'type': 'continuous',
-                 'domain': (20, 500)},
-                {'name': 'max_depth',
-                 'type': 'continuous',
-                 'domain': (2, 12)},
+                 'type': 'discrete',
+                 'domain': range(2, 101)},
                 {'name': 'max_features',
                  'type': 'discrete',
-                 'domain': (0, 1, 2)}]
+                 'domain': np.linspace(0.1, 1, 10)},
+                {'name': 'criterion',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'bootstrap',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'min_samples_split',
+                 'type': 'discrete',
+                 'domain': range(2, 21)},
+                {'name': 'min_samples_leaf',
+                 'type': 'discrete',
+                 'domain': range(1, 21)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 4, 0]])
+        values = np.array([[10, 1, 1, 0, 2, 1]])
         return values
 
 
-class AdaBoost(BaseModel):
-    ''' Adaptive Boosting '''
+class Adaptive_Boosting(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1242,7 +1487,7 @@ class AdaBoost(BaseModel):
         ''' Returns the hyperparameters as a dictionary '''
 
         params = {'n_estimators': int(x[0, 0]),
-                  'learning_rate': float(np.round(x[0, 1], 3))}
+                  'learning_rate': round(x[0, 1], 2)}
         return params
 
     def get_model(self, params):
@@ -1258,11 +1503,11 @@ class AdaBoost(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
-                 'type': 'continuous',
-                 'domain': (20, 500)},
+                 'type': 'discrete',
+                 'domain': range(50, 501)},
                 {'name': 'learning_rate',
-                 'type': 'continuous',
-                 'domain': (0.01, 1)}]
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
@@ -1271,8 +1516,7 @@ class AdaBoost(BaseModel):
         return values
 
 
-class GBM(BaseModel):
-    ''' Gradient Boosting Machine '''
+class Gradient_Boosting_Machine(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1286,10 +1530,14 @@ class GBM(BaseModel):
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
+        criterion = ['friedman_mse', 'mae', 'mse']
         params = {'n_estimators': int(x[0, 0]),
-                  'learning_rate': float(np.round(x[0, 1], 3)),
-                  'subsample': float(np.round(x[0, 2], 1)),
-                  'max_depth': int(x[0, 3])}
+                  'learning_rate': round(x[0, 1], 2),
+                  'subsample': round(x[0, 2], 1),
+                  'max_depth': int(x[0, 3]),
+                  'criterion': criterion[int(x[0, 4])],
+                  'min_samples_split': int(x[0, 5]),
+                  'min_samples_leaf': int(x[0, 6])}
         return params
 
     def get_model(self, params):
@@ -1305,32 +1553,40 @@ class GBM(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
-                 'type': 'continuous',
-                 'domain': (20, 500)},
+                 'type': 'discrete',
+                 'domain': range(50, 501)},
                 {'name': 'learning_rate',
-                 'type': 'continuous',
+                 'type': 'discrete',
                  'domain': (0.01, 1)},
                 {'name': 'subsample',
                  'type': 'discrete',
-                 'domain': (0.4, 0.6, 0.8, 1.0)},
+                 'domain': np.linspace(0.2, 1.0, 9)},
                 {'name': 'max_depth',
                  'type': 'discrete',
-                 'domain': (2, 3, 4, 6, 8)}]
+                 'domain': range(1, 11)},
+                {'name': 'criterion',
+                 'type': 'discrete',
+                 'domain': range(3)},
+                {'name': 'min_samples_split',
+                 'type': 'discrete',
+                 'domain': range(2, 21)},
+                {'name': 'min_samples_leaf',
+                 'type': 'discrete',
+                 'domain': range(1, 21)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 1, 0.8, 3]])
+        values = np.array([[100, 0.1, 1.0, 3, 0, 2, 1]])
         return values
 
 
-class XGBoost(BaseModel):
-    ''' Extreme Gradient Boosting '''
+class Extreme_Gradient_Boosting(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
         # BaseModel class initializer
-        super().__init__(**set_init(data, metric, goal, verbose, scaled=False))
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
 
         # Class attributes
         self.name, self.shortname = 'Extreme Gradient Boosting', 'XGBoost'
@@ -1340,11 +1596,11 @@ class XGBoost(BaseModel):
         ''' Returns the hyperparameters as a dictionary '''
 
         params = {'n_estimators': int(x[0, 0]),
-                  'learning_rate': float(np.round(x[0, 1], 3)),
+                  'learning_rate': round(x[0, 1], 2),
                   'min_child_weight': int(x[0, 2]),
-                  'reg_alpha': int(x[0, 3]),
-                  'reg_lambda': int(x[0, 4]),
-                  'subsample': float(np.round(x[0, 5], 1)),
+                  'reg_alpha': round(x[0, 3], 1),
+                  'reg_lambda': round(x[0, 4], 1),
+                  'subsample': round(x[0, 5], 1),
                   'max_depth': int(x[0, 6])}
         return params
 
@@ -1361,26 +1617,26 @@ class XGBoost(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
-                 'type': 'continuous',
-                 'domain': (20, 500)},
+                 'type': 'discrete',
+                 'domain': range(20, 501)},
                 {'name': 'learning_rate',
-                 'type': 'continuous',
-                 'domain': (0.01, 1)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
                 {'name': 'min_child_weight',
-                 'type': 'continuous',
-                 'domain': (1, 7)},
+                 'type': 'discrete',
+                 'domain': range(1, 21)},
                 {'name': 'reg_alpha',
-                 'type': 'continuous',
-                 'domain': (0, 50)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 80, 800)},
                 {'name': 'reg_lambda',
-                 'type': 'continuous',
-                 'domain': (0, 50)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 80, 800)},
                 {'name': 'subsample',
                  'type': 'discrete',
-                 'domain': (0.4, 0.6, 0.8, 1.0)},
+                 'domain': np.linspace(0.1, 1.0, 10)},
                 {'name': 'max_depth',
                  'type': 'discrete',
-                 'domain': (2, 3, 4, 6, 8)}]
+                 'domain': range(1, 11)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
@@ -1389,8 +1645,7 @@ class XGBoost(BaseModel):
         return values
 
 
-class SVM(BaseModel):
-    ''' Support Vector Machine '''
+class Linear_Support_Vector_Machine(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1398,14 +1653,33 @@ class SVM(BaseModel):
         super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
 
         # Class attributes
-        self.name, self.shortname = 'Support Vector Machine', 'SVM'
+        self.name, self.shortname = 'Linear Support Vector Machine', 'lSVM'
         self.goal = goal
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        params = {'C': float(np.round(x[0, 0], 1)),
-                  'max_iter': int(x[0, 1])}
+        if self.goal != 'regression':
+            losses = ['hinge', 'squared_hinge']
+        else:
+            losses = ['epsilon_insensitive', 'squared_epsilon_insensitive']
+        loss = losses[int(x[0, 1])]
+        penalties = ['l1', 'l2']
+
+        # l1 regularization can't be combined with hinge
+        penalty = penalties[int(x[0, 2])] if loss == 'squared_hinge' else 'l2'
+
+        # l1 regularization can't be combined with squared_hinge when dual=True
+        dual = True if penalty == 'l2' else False
+
+        params = {'C': round(x[0, 0], 2),
+                  'loss': loss,
+                  'tol': round(x[0, 3], 4),
+                  'dual': dual}
+
+        if self.goal != 'regression':
+            params['penalty'] = penalty
+
         return params
 
     def get_model(self, params):
@@ -1421,21 +1695,249 @@ class SVM(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'C',
-                 'type': 'continuous',
-                 'domain': (0.1, 5)},
-                {'name': 'max_iter',
-                 'type': 'continuous',
-                 'domain': (1e3, 1e4)}]
+                 'type': 'discrete',
+                 'domain': (0.01, 0.1, 1, 10, 100, 1e3, 1e4)},
+                {'name': 'loss',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'penalty',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'tol',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[1.0, 5e3]])
+        values = np.array([[1, 1, 1, 1e-3]])
         return values
 
 
-class MLP(BaseModel):
-    ''' Multilayer Perceptron '''
+class Kernel_Support_Vector_Machine(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Kernel Support Vector Machine', 'kSVM'
+        self.goal = goal
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        kernels = ['poly', 'rbf', 'sigmoid']
+        kernel = kernels[int(x[0, 4])]
+        gamma = ['auto', 'scale']
+        shrinking = [True, False]
+
+        params = {'C': round(x[0, 0], 2),
+                  'degree': int(x[0, 1]),
+                  'gamma': gamma[int(x[0, 2])],
+                  'kernel': kernel,
+                  'shrinking': shrinking[int(x[0, 5])],
+                  'tol': round(x[0, 6], 4)}
+
+        if kernel != 'rbf':
+            params['coef0'] = round(x[0, 3], 2)
+
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        if self.goal != 'regression':
+            return SVC(**params)
+        else:
+            return SVR(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'C',
+                 'type': 'discrete',
+                 'domain': (0.01, 0.1, 1, 10, 100, 1e3, 1e4)},
+                {'name': 'degree',
+                 'type': 'discrete',
+                 'domain': range(2, 6)},
+                {'name': 'gamma',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'coef0',
+                 'type': 'discrete',
+                 'domain': np.linspace(-1, 1, 200)},
+                {'name': 'kernel',
+                 'type': 'discrete',
+                 'domain': range(3)},
+                {'name': 'shrinking',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'tol',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[1, 3, 0, 0, 1, 0, 1e-3]])
+        return values
+
+
+class Passive_Aggressive(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Passive Aggressive', 'PA'
+        self.goal = goal
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        if self.goal != 'regression':
+            loss = ['hinge', 'squared_hinge']
+        else:
+            loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
+        average = [True, False]
+
+        params = {'loss': loss[int(x[0, 0])],
+                  'C': round(x[0, 1], 4),
+                  'tol': round(x[0, 2], 4),
+                  'average': average[int(x[0, 3])]}
+
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        if self.goal != 'regression':
+            return PassiveAggressiveClassifier(**params)
+        else:
+            return PassiveAggressiveRegressor(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'loss',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'C',
+                 'type': 'discrete',
+                 'domain': (1e-4, 1e-3, 0.01, 0.1, 1, 10)},
+                {'name': 'tol',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)},
+                {'name': 'average',
+                 'type': 'discrete',
+                 'domain': range(2)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[0, 1,  1e-3, 1]])
+        return values
+
+
+class Stochastic_Gradient_Descent(BaseModel):
+
+    def __init__(self, data, metric, goal, verbose):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(data, metric, goal, verbose, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Stochastic Gradient Descent', 'SGD'
+        self.goal = goal
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        if self.goal != 'regression':
+            loss = ['hinge', 'log', 'modified_huber', 'squared_hinge',
+                    'perceptron', 'squared_loss', 'huber',
+                    'epsilon_insensitive', 'squared_epsilon_insensitive']
+        else:
+            loss = ['squared_loss', 'huber',
+                    'epsilon_insensitive', 'squared_epsilon_insensitive']
+        penalty = ['none', 'l1', 'l2', 'elasticnet']
+        average = [True, False]
+        lr = ['constant', 'invscaling', 'optimal', 'adaptive']
+
+        params = {'loss': loss[int(x[0, 0])],
+                  'penalty': penalty[int(x[0, 1])],
+                  'alpha': round(x[0, 2], 4),
+                  'average': average[int(x[0, 3])],
+                  'epsilon': round(x[0, 4], 4),
+                  'learning_rate': lr[int(x[0, 6])],
+                  'power_t': round(x[0, 8], 4),
+                  'tol': round(x[0, 9], 4)}
+
+        if penalty == 'elasticnet':
+            params['l1_ratio'] = round(x[0, 7], 2)
+
+        if lr != 'optimal':
+            params['eta0'] = round(x[0, 5], 5)
+
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        if self.goal != 'regression':
+            return SGDClassifier(**params)
+        else:
+            return SGDRegressor(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'loss',
+                 'type': 'discrete',
+                 'domain': range(9 if self.goal != 'regression' else 4)},
+                {'name': 'penalty',
+                 'type': 'discrete',
+                 'domain': range(4)},
+                {'name': 'alpha',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)},
+                {'name': 'average',
+                 'type': 'discrete',
+                 'domain': range(2)},
+                {'name': 'epsilon',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)},
+                {'name': 'eta0',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)},
+                {'name': 'learning_rate',
+                 'type': 'discrete',
+                 'domain': range(4)},
+                {'name': 'l1_ratio',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
+                {'name': 'power_t',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)},
+                {'name': 'tol',
+                 'type': 'discrete',
+                 'domain': np.linspace(1e-4, 0.1, 1e3)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[0, 2, 1e-3, 1, 0.1, 0.01, 2, 0.15, 0.5, 1e-3]])
+        return values
+
+
+class Multilayer_Perceptron(BaseModel):
 
     def __init__(self, data, metric, goal, verbose):
 
@@ -1459,8 +1961,8 @@ class MLP(BaseModel):
             layers = (n1, n2, n3)
 
         params = {'hidden_layer_sizes': layers,
-                  'alpha': float(np.round(x[0, 3], 4)),
-                  'learning_rate_init': float(np.round(x[0, 4], 3)),
+                  'alpha': round(x[0, 3], 4),
+                  'learning_rate_init': round(x[0, 4], 3),
                   'max_iter': int(x[0, 5]),
                   'batch_size': int(x[0, 6])}
         return params
@@ -1478,23 +1980,23 @@ class MLP(BaseModel):
 
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'hidden_layer_1',
-                 'type': 'continuous',
-                 'domain': (10, 100)},
+                 'type': 'discrete',
+                 'domain': range(10, 101)},
                 {'name': 'hidden_layer_2',
-                 'type': 'continuous',
-                 'domain': (0, 100)},
+                 'type': 'discrete',
+                 'domain': range(101)},
                 {'name': 'hidden_layer_3',
-                 'type': 'continuous',
-                 'domain': (0, 100)},
+                 'type': 'discrete',
+                 'domain': range(101)},
                 {'name': 'alpha',
-                 'type': 'continuous',
-                 'domain': (0.0001, 0.1)},
+                 'type': 'discrete',
+                 'domain': (1e-4, 1e-3, 0.01, 0.1)},
                 {'name': 'learning_rate_init',
-                 'type': 'continuous',
-                 'domain': (0.001, 0.1)},
+                 'type': 'discrete',
+                 'domain': np.linspace(0.001, 0.1, 1e2)},
                 {'name': 'max_iter',
-                 'type': 'continuous',
-                 'domain': (100, 500)},
+                 'type': 'discrete',
+                 'domain': range(100, 501)},
                 {'name': 'batch_size',
                  'type': 'discrete',
                  'domain': (1, 8, 32, 64)}]
@@ -1502,5 +2004,5 @@ class MLP(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[20, 0, 0, 0.0001, 0.001, 200, 32]])
+        values = np.array([[20, 0, 0, 1e-4, 1e-3, 200, 32]])
         return values
