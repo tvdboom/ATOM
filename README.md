@@ -1,3 +1,3 @@
 Title: AutoML pipeline  
 Author: tvdboom   
-Description: Automatic machine-learning pipeline
+Description: See the header of automl.py for an extensive description.
