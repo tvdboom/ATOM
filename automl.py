@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 
-Title: AutoML pipeline
+Title: Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 
 Description
 ------------------------
-Compare multiple machine learning models on the same data. All models are
+ATOM compares multiple machine learning models on the same data. All models are
 implemented using the SKlearn python package (https://scikit-learn.org/stable/)
 except for the Extreme Gradient Booster which is implemented with XGBoost
-(https://xgboost.readthedocs.io/en/latest/). Note that the data needs to be
-adapted to the models you want to use in terms of categorical/missing data.
-The pipeline does not do the data pre-processing for you!
+(https://xgboost.readthedocs.io/en/latest/).
+The pipeline applies the imputing of missing values, the encoding of
+categorical features and the selection of best features.
 The algorithm first starts selecting the optimal hyperparameters per model
 using a Bayesian Optimization (BO) approach implemented with the GPyOpt
 library (https://sheffieldml.github.io/GPyOpt/). The data is fitted to the
@@ -28,30 +28,35 @@ methods and attributes.
 Usage
 ------------------------
 Load module in with:
-from automl import AutoML
+from automl import ATOM
 
 Call the pipeline class:
-aml = AutoML(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
-             metric="MAE",
-             ratio=0.25,
-             max_iter=5,
-             batch_size=1,
-             n_splits=5,
-             verbose=1)
+aml = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
+           impute='median',
+           features=0.8,
+           metric="MAE",
+           ratio=0.25,
+           max_iter=10,
+           n_splits=5,
+           verbose=1)
 
 Run the pipeline:
 aml.fit(X, Y)
 
 Make plots and analyse results:
 aml.boxplot('boxplot.png')
+aml.RF.plot_probabilities()
 
+
+<< ======================== AutoML Class ======================== >>
 
 Class Parameters (default)
-------------------------
+-----------------------------
 models --> list of models to use. Possible values are: (all)
                GNB for Gaussian Naïve Bayes
                MNB for Multinomial Naïve Bayes
                BNB for Bernoulli Naïve Bayes
+               GP for Gaussian Process
                LinReg for linear regression (with elasticnet regularization)
                LogReg for Logistic Regression
                LDA for Linear Discriminant Analysis
@@ -83,67 +88,115 @@ metric --> metric on which the BO performs its fit. Possible values are:
                    Jaccard
                    AUC for Area Under Curve
                    LogLoss for binary cross-entropy
-ratio      --> train/test split ratio for BO (0.3)
-max_iter   --> Maximum number of iterations of the BO (15)
-batch_size --> Size of the batches processed in the BO before fitting (1)
-cv         --> Boolean wether to perform K-fold cross validation (True)
-n_splits   --> Number of splits for the K-fold cross validation (5)
-n_jobs     --> Number of CPUs for parallel processing (1)
-                  1 to not run the pipeline in parallel
-                  -1 will use as many cores as available
-                  below -1, (n_cpus + 1 + n_jobs) are used
-log        --> name of the log file, None to not save any log (AutoML_log.txt)
-verbose    --> verbosity level of the pipeline. Only works if n_jobs=1. (1)
-               Possible values:
-                  0 to print only the final stats
-                  1 to print stats per algorithm as it gets fit by the BO
-                  2 to print every step of the BO
+impute      --> imputing strategy (None). Possible values:
+                   None to not perform any imputation
+                   mean to impute with mean of feature
+                   median to impute with median of feature
+                   most_frequent to impute with most frequent value of feature
+                       (default option for categorical features)
+features    --> if >= 1: number of features to select
+                if < 1: fraction of features to select
+ratio       --> train/test split ratio for BO (0.3)
+max_iter    --> Maximum number of iterations of the BO (15)
+batch_size  --> Size of the batches processed in the BO before fitting (1)
+init_points --> initial random tests of the BO (1)
+cv          --> Boolean wether to perform K-fold cross validation (True)
+n_splits    --> Number of splits for the K-fold cross validation (5)
+log         --> name of the log file, None to not save any log (AutoML_log.txt)
+verbose     --> verbosity level of the pipeline (1)
+                Possible values:
+                  0 to print minimum steps
+                  1 to print average steps
+                  2 to print maximum steps
+
 
 Fit parameters
---------------------------
-X          --> array or dataframe of target features
-Y          --> array or dataframe of target classes
-percentage --> percentage of the data to use for the BO
+-----------------------------
+X          --> array or pd dataframe of target features
+Y          --> array or pd series of target classes
+percentage --> percentage of the data to use for the BO (100)
 
+
+Class methods (functions)
+-----------------------------
+encoder(X, max_number_onehot=5):
+    Performs one-hot-encoding on categorical features if the number of unique
+    values is smaller or equal to max_number_onehot, else Label-encoding.
+
+imputer(X, strategy, max_frac, missing):
+    Impute missing values. Non-numeric features are always imputed with
+    the most_frequent strategy.
+
+feature_selection(X, Y, k):
+    Select best features using univariate selection with the f-value strategy.
 
 Class methods (plots)
---------------------------
-plot_proba(target_class, filename):
+-----------------------------
+plot_correlation(X, figsize, filename):
+    Plot the correlation matrix of the features.
+
+boxplot(figsize, filename):
+    Plots results of the cross-validation step in a boxplot.
+
+Class attributes
+-----------------------------
+aml.data is a dictionary to print out the final data used. The keys are:
+    X for all the features after preprocessing (not scaled)
+    Y for the used targets (numerical)
+    X_train for the training features (not scaled)
+    Y_train for the training targets
+    X_test for the test features (not scaled)
+    Y_test for the test targets
+    X_scaled
+    X_train_scaled
+    Y_train_scaled
+
+aml.errors contains a list of the encountered exceptions (if any) while
+fitting the models.
+
+
+<< ======================== Model Class ======================== >>
+
+The model subclasses of the AutoML class can be used to call for
+handy plot functions and attributes.
+
+Class methods (plots)
+-----------------------------
+plot_probabilities(target_class, figsize, filename):
     Plots the probability of every class in the target variable against the
     class selected by target_class (default=2nd class). Works for multi-class.
 
-plot_feature_importance(filename):
+plot_feature_importance(figsize, filename):
     Plots the feature importance scores. Only works with tree based
     algorithms (Tree, ET, RF, AdaBoost, GBM and XGBoost).
 
-plot_ROC(filename):
+plot_ROC(figsize, filename):
     Plots the ROC curve. Works only for binary classification.
 
-plot_confusion_matrix(normalize, filename):
+plot_confusion_matrix(normalize, figsize, filename):
     Plot the confusion matrix for the model. Works only for binary
     classification.
 
-plot_decision_tree(num_trees, rotate, filename):
+plot_decision_tree(num_trees, max_depth, rotate, figsize, filename):
     Plot a single decision tree of a tree-based model. Only works with
     tree-based algorithms.
 
 
 Class methods (metrics)
---------------------------
+-----------------------------
 Call any of the possible metrics as a method. It will return the metric
 (evaluated on the test set) for the best model found by the BO.
 e.g. aml.KNN.AUC()        # Get AUC score for the best trained KNN
      aml.AdaBoost.MSE()   # Get MSE score for the best trained AdaBoost
 
 Class attributes
---------------------------
-The model subclasses of the AutoML class can be used to call for the
-plot functions described above as well as for other handy features.
+-----------------------------
 e.g. aml.MLP.best_params  # Get parameters of the MLP with highest score
-     aml.SVM.best_model   # Get model of the SVM with highest score
+     aml.SVM.best_model   # Get the SVM model with highest score (not fitted)
+     aml.SVM.model_fit    # Get the SVM model with highest score (fitted)
      aml.Tree.prediction  # Get the predictions on the test set
      aml.KNN.BO           # Dictionary for the score and params of steps in BO
-     aml.GBM.errors       # If the model didn't work, this shows the error
+     aml.GBM.error        # If the model didn't work, this shows the error
 
 """
 
@@ -155,40 +208,50 @@ import pandas as pd
 from tqdm import tqdm
 from time import time
 from datetime import datetime
-import multiprocessing
-from joblib import Parallel, delayed
 import warnings
 
 # Sklearn
 import sklearn
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.impute import SimpleImputer
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.feature_selection import (
+    SelectPercentile, SelectKBest, f_classif, f_regression
+    )
+from sklearn.model_selection import (
+    train_test_split, KFold, StratifiedKFold, cross_val_score
+    )
+
 
 # Metrics
-from sklearn.metrics import precision_score, recall_score, accuracy_score
-from sklearn.metrics import f1_score, roc_auc_score, r2_score, jaccard_score
-from sklearn.metrics import roc_curve, confusion_matrix
-from sklearn.metrics import max_error, log_loss, mean_absolute_error
-from sklearn.metrics import mean_squared_error, mean_squared_log_error
+from sklearn.metrics import (
+    precision_score, recall_score, accuracy_score, f1_score, roc_auc_score,
+    r2_score, jaccard_score, roc_curve, confusion_matrix, max_error, log_loss,
+    mean_absolute_error, mean_squared_error, mean_squared_log_error
+    )
 
 # Models
+from sklearn.gaussian_process import (
+    GaussianProcessClassifier, GaussianProcessRegressor
+    )
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.linear_model import ElasticNet, LogisticRegression
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
-from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.discriminant_analysis import (
+    LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+    )
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
-from sklearn.ensemble import ExtraTreesClassifier, ExtraTreesRegressor
-from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier, RandomForestRegressor,
+    ExtraTreesClassifier, ExtraTreesRegressor,
+    AdaBoostClassifier, AdaBoostRegressor,
+    GradientBoostingClassifier, GradientBoostingRegressor
+    )
 from sklearn.svm import LinearSVC, LinearSVR
-from sklearn.linear_model import PassiveAggressiveClassifier
-from sklearn.linear_model import PassiveAggressiveRegressor
-from sklearn.linear_model import SGDClassifier, SGDRegressor
+from sklearn.linear_model import (
+    PassiveAggressiveClassifier, PassiveAggressiveRegressor,
+    SGDClassifier, SGDRegressor
+    )
 from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
@@ -203,13 +266,8 @@ else:
 
 # Plotting
 import matplotlib.pyplot as plt
-try:
-    import seaborn as sns
-    sns.set(style='darkgrid', palette="GnBu_d")
-except ImportError:
-    sns_import = False
-else:
-    sns_import = True
+import seaborn as sns
+sns.set(style='darkgrid', palette="GnBu_d")
 
 
 # << ============ Functions ============ >>
@@ -256,18 +314,16 @@ def prlog(string, cl, level, time=False):
         print(string)
 
     if cl.log is not None:
-        # Datetime object containing current date and time
-        now = datetime.now()
-        date = now.strftime("%d/%m/%Y %H:%M:%S")
-
         # Not using logging because, although this is slower, logging doesn't
         # work when running the code from jupyter notebook or spyder
-        f = open(cl.log, 'a+')
-        if time:
-            f.write(date + '\n' + string + '\n')
-        else:
-            f.write(string + '\n')
-        f.close()
+        with open(cl.log, 'a+') as file:
+            if time:
+                # Datetime object containing current date and time
+                now = datetime.now()
+                date = now.strftime("%d/%m/%Y %H:%M:%S")
+                file.write(date + '\n' + string + '\n')
+            else:
+                file.write(string + '\n')
 
 
 def set_init(data, metric, goal, log, verbose, scaled=False):
@@ -294,10 +350,11 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
 # << ============ Classes ============ >>
 
-class AutoML(object):
+class ATOM(object):
 
-    def __init__(self, models=None, metric=None, ratio=0.3, max_iter=5,
-                 batch_size=1, cv=True, n_splits=5, n_jobs=1,
+    def __init__(self, models=None, metric=None, impute=None,
+                 features=None, ratio=0.3, max_iter=5,
+                 batch_size=1, init_points=1, cv=True, n_splits=5,
                  log='AutoML_log.txt', verbose=1):
 
         '''
@@ -307,57 +364,214 @@ class AutoML(object):
 
         ARGUMENTS -------------------------------------
 
-        models     --> list of models to use
-        metric     --> metric to perform evaluation on
-        ratio      --> train/test split ratio
-        max_iter   --> maximum number of iterations of the BO
-        batch_size --> batch size for the BO algorithm
-        cv         --> perform kfold cross validation
-        n_splits   --> number of splits for the stratified kfold
-        n_jobs     --> number of cores for parallel processing
-        log        --> keep log file
-        verbose    --> verbosity level (0, 1 or 2)
+        models      --> list of models to use
+        metric      --> metric to perform evaluation on
+        impute      --> strategy of the imputer to use (if None, no imputing)
+        features    --> select best K (or fraction) features (None for all)
+        ratio       --> train/test split ratio
+        max_iter    --> maximum number of iterations of the BO
+        batch_size  --> batch size for the BO algorithm
+        init_points --> initial number of random tests of the BO
+        cv          --> perform kfold cross validation
+        n_splits    --> number of splits for the stratified kfold
+        log         --> keep log file
+        verbose     --> verbosity level (0, 1 or 2)
 
         '''
 
         # Set attributes to class (set to default if input is invalid)
         self.models = models
         self.metric = metric
+        self.impute = impute
+        self.features = features
         self.ratio = ratio if 0 < ratio < 1 else 0.3
         self.max_iter = int(max_iter) if max_iter > 0 else 5
         self.batch_size = int(batch_size)
-        self.cv = cv
+        self.init_points = int(init_points)
+        self.cv = bool(cv)
         self.n_splits = int(n_splits) if n_splits > 0 else 5
         self.verbose = verbose if verbose in (0, 1, 2) else 1
 
-        # Initialize log file
+        # Set log file name
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
 
         # Save model erros (if any)
         self.errors = ''
 
-        # Check number of cores for multiprocessing
-        n_cores = multiprocessing.cpu_count()
-        self.n_jobs = int(n_jobs)  # Make sure it is an integer
-        if self.n_jobs > n_cores:
-            prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
-                  .format(self.n_jobs, n_cores), self, -1)
-            self.n_jobs = n_cores
+    def check_features(self, X):
+        ''' Remove non-numeric features with unhashable type '''
 
-        elif self.n_jobs == 0:
-            prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
-                  .format(self.n_jobs), self, -1)
-            self.n_jobs = 1
+        for column in X.columns:
+            dtype = str(X[column].dtype)
+            if dtype in ('datetime64', 'timedelta[ns]', 'category'):
+                prlog(' --> Dropping feature {} due to unhashable type: {}.'
+                      .format(column, dtype), self, 1)
+                X.drop(column, axis=1)
+            elif dtype == 'object':  # Strip str features from blank spaces
+                X[column] = X[column].str.strip()
 
+        return X
+
+    def imputer(self, X, strategy='median', max_frac=0.5, missing=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Impute missing values in feature df. Non-numeric
+        features are always imputed with the most frequent
+        strategy.
+
+        ARGUMENTS -------------------------------------
+
+        X          --> data features: pd dataframe or array
+        strategy   --> impute strategy. Choose from:
+                           mean
+                           median
+                           most_frequent
+        max_frac   --> maximum fraction of NaN values
+        missing    --> list of values to impute besides NaN and None:
+                           None for default: [np.inf, -np.inf, '', '?', 'NA']
+
+        RETURNS ----------------------------------------
+
+        Imputed dataframe.
+
+        '''
+
+        strats = ['mean', 'median', 'most_frequent']
+        if strategy not in strats:
+            raise ValueError(f'Unkwown impute strategy. Try one of {strats}.')
+
+        # Convert array to dataframe (can be called independent of fit method)
+        if not isinstance(X, pd.DataFrame):
+            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
+            X = pd.DataFrame(X, columns=columns)
+
+        X = self.check_features(X)
+
+        prlog('Imputing missing values...', self, 0)
+
+        # Convert values to impute to NaN
+        if missing is None:  # Get default list
+            missing = [np.inf, -np.inf, '', '?', 'NA', None]
+        elif None not in missing:
+            missing.append(None)  # None must always be imputed
+        X = X.replace(missing, np.NaN)  # Replace missing values with NaN
+
+        imp_numeric = SimpleImputer(strategy=strategy)
+        imp_nonnumeric = SimpleImputer(strategy='most_frequent')
+        for i in X.columns:
+            if X[i].isna().any():  # Check if any value is missing in column
+                # Drop columns with too many NaN values
+                nans = X[i].isna().sum()
+                pnans = int(nans/len(X[i])*100)
+                if nans > max_frac * len(X[i]):
+                    prlog(f' --> Feature {i} was removed since it contained ' +
+                          f'{nans} ({pnans}%) missing values.', self, 1)
+                    X.drop([i], axis=1, inplace=True)
+                    continue
+
+                # Check if column is numeric (int, float, unsigned int)
+                imp = X[i].values.reshape(-1, 1)
+                if X[i].dtype.kind in 'ifu':
+                    X[i] = imp_numeric.fit_transform(imp)
+                else:
+                    X[i] = imp_nonnumeric.fit_transform(imp)
+
+        return X
+
+    def encoder(self, X, max_number_onehot=10):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Perform encoding on categorical features. The encoding
+        type depends on the number of unique values in the column.
+        For values smaller or equal to max_number_onehot
+
+        ARGUMENTS -------------------------------------
+
+        X                 --> data features: pd dataframe or array
+        max_number_onehot --> threshold between onehot and label encoding
+
+        RETURNS ----------------------------------------
+
+        Encoded dataframe.
+
+        '''
+
+        # Convert array to dataframe (can be called independent of fit method)
+        if not isinstance(X, pd.DataFrame):
+            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
+            X = pd.DataFrame(X, columns=columns)
+
+        X = self.check_features(X)  # Needed if ran alone
+
+        prlog('Encoding categorical features...', self, 0)
+
+        for i in X.columns:
+            # Check if column is non-numeric (thus categorical)
+            if X[i].dtype.kind not in 'ifu':
+                # Count number of unique values in the column
+                n_unique = len(np.unique(X[i]))
+
+                # Perform encoding type dependent on number of unique values
+                if n_unique <= max_number_onehot:
+                    prlog(' --> One-hot-encoding feature {}. Contains {} '
+                          .format(i, n_unique) + 'unique categories.', self, 1)
+                    X = pd.concat([X, pd.get_dummies(X[i], prefix=i)], axis=1)
+                    X.drop([i], axis=1, inplace=True)
+                else:
+                    prlog(' --> Label-encoding feature {}. Contains {} '
+                          .format(i, n_unique) + 'unique categories.', self, 1)
+                    X[i] = LabelEncoder().fit_transform(X[i])
+
+        return X
+
+    def feature_selection(self, X, Y, k=0.8):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Select the best features of the set.
+
+        ARGUMENTS -------------------------------------
+
+        X --> data features: pd dataframe or array
+        Y --> data targets: pd series or array
+        k --> if < 1: fraction of features to select
+              if >= 1: number of features to select
+
+        '''
+
+        prlog('Performing feature selection...', self, 0)
+
+        func = f_classif if self.goal != 'regression' else f_regression
+        if k < 1:
+            fs = SelectPercentile(func, percentile=k*100)
         else:
-            if self.n_jobs == -1:
-                self.n_jobs = n_cores
-            elif n_jobs < -1:
-                self.n_jobs = n_cores + 1 + self.n_jobs
+            fs = SelectKBest(func, k=k)
 
-            # Final check
-            if self.n_jobs < 1 or self.n_jobs > n_cores:
-                raise ValueError('Invalid value for n_jobs!')
+        # SKlearn function returns numpy array not df (omslachtig maar werkt)
+        columns = X.columns  # Save feature names
+        X = fs.fit_transform(X, Y)
+        idx = fs.get_support(indices=True)  # Indices of selected features
+        X = pd.DataFrame(X, columns=columns[idx])
+
+        # Print extended changes (for verbose=2)
+        prlog(' --> List of selected features: ', self, 1)
+        string = '    '
+        for n, column in enumerate(X.columns):
+            string += f' {n+1}) {column}'
+        prlog(string, self, 1)
+        prlog(' --> List of removed features: ', self, 1)
+        string = '    '
+        for n, column in enumerate(columns):
+            if column not in X.columns:
+                string += f' {n+1}) {column}'
+        prlog(string, self, 1)
+
+        return X
 
     def fit(self, X, Y, percentage=100):
 
@@ -368,63 +582,13 @@ class AutoML(object):
 
         ARGUMENTS -------------------------------------
 
-        X          --> data features: pandas dataframe or array
-        Y          --> data targets: array
+        X          --> data features: pd dataframe or array
+        Y          --> data targets: pd series or array
         percentage --> percentage of data to use
 
         '''
 
         # << ============ Inner Function ============ >>
-
-        def run_model(data, model, metric, goal, max_iter, batch_size,
-                      cv, n_splits, log, verbose):
-            ''' Run every independent model. Needed for parallelization. '''
-
-            dct = {'GNB': Gaussian_Naive_Bayes,
-                   'MNB': Multinomial_Naive_Bayes,
-                   'BNB': Bernoulli_Naive_Bayes,
-                   'LinReg': Linear_Regression,
-                   'LogReg': Logistic_Regression,
-                   'LDA': Linear_Discriminant_Analysis,
-                   'QDA': Quadratic_Discriminant_Analysis,
-                   'KNN': K_Nearest_Neighbors,
-                   'Tree': Decision_Tree,
-                   'ET': Extra_Trees,
-                   'RF': Random_Forest,
-                   'AdaBoost': Adaptive_Boosting,
-                   'GBM': Gradient_Boosting_Machine,
-                   'XGBoost': Extreme_Gradient_Boosting,
-                   'lSVM': Linear_Support_Vector_Machine,
-                   'kSVM': Kernel_Support_Vector_Machine,
-                   'PA': Passive_Aggressive,
-                   'SGD': Stochastic_Gradient_Descent,
-                   'MLP': Multilayer_Perceptron}
-
-            # Set model class
-            setattr(self, model, dct[model](data, metric, goal, log, verbose))
-
-            try:  # If errors occure, just skip the model
-                if model != 'GNB':  # GNB has no parameters to tune
-                    getattr(self, model).BayesianOpt(max_iter, batch_size)
-                if cv:
-                    getattr(self, model).cross_val_evaluation(n_splits)
-
-            except Exception as ex:
-                prlog('Exception encountered while running '
-                      + f'the {model} model. Removing model from pipeline.'
-                      + f'\n{type(ex).__name__}: {ex}', self, 0, True)
-
-                # Save the exception to model attribute
-                exception = type(ex).__name__ + ': ' + str(ex)
-                getattr(self, model).error = exception
-
-                # Append exception to AutoML errors
-                self.errors += (model + ' --> ' + exception + '\n')
-
-                # Replace model with value X for later removal
-                # Can't remove at once to not disturb list order
-                self.final_models = \
-                    ['X' if x == model else x for x in self.final_models]
 
         def not_regression(final_models):
             ''' Remove classification-only models from pipeline '''
@@ -438,26 +602,34 @@ class AutoML(object):
 
             return final_models
 
-        # << ============ Make dataframe from input ============ >>
+        def shuffle(a, b):
+            ''' Shuffles dataframe a and pd series b in unison '''
+
+            assert len(a) == len(b)
+            p = np.random.permutation(len(a))
+            return a.ix[p], b[p]
+
+        # << ============ Initialize ============ >>
+
+        t_init = time()  # To measure the time the whole pipeline takes
+        prlog('\n<================ AutoML ================>\n', self, -1, True)
+
+        # << ============ Handle input ============ >>
 
         # Convert array to dataframe
         if not isinstance(X, pd.DataFrame):
             columns = ['Feature ' + str(i) for i in range(X.shape[1])]
             X = pd.DataFrame(X, columns=columns)
 
-        # Max 1 column for target array
-        if len(Y.shape) != 1:
-            raise ValueError('Target input may only contain 1 column!')
+        # Convert target column to pandas series
+        if not isinstance(Y, pd.Series):
+            Y = pd.Series(Y, name='target')
 
-        # Convert dataframe to array
-        if isinstance(Y, pd.DataFrame):
-            Y = Y.values
+        X, Y = shuffle(X, Y)  # Shuffle before selecting percentage
+        X = X.head(int(len(X)*percentage/100))
+        Y = Y.head(int(len(Y)*percentage/100))
 
         # << ============ Parameters tests ============ >>
-
-        prlog('\n<=================== AutoML ===================>\n', self, -1)
-        if self.n_jobs != 1:
-            prlog(f'Parallel processing with {self.n_jobs} cores.', self, -1)
 
         # Set algorithm goal (regression, binaryclass or multiclass)
         classes = set(Y)
@@ -465,19 +637,19 @@ class AutoML(object):
             raise ValueError(f'Only found one target value: {classes}!')
         elif len(classes) == 2:
             prlog('Algorithm set to binary classification.', self, -1)
-            goal = 'binary classification'
+            self.goal = 'binary classification'
         elif 2 < len(classes) < 0.1*len(Y):
             prlog('Algorithm set to multiclass classification.' +
-                  f' Number of classes: {classes}', self, -1)
-            goal = 'multiclass classification'
+                  f' Number of classes: {len(classes)}', self, -1)
+            self.goal = 'multiclass classification'
         else:
             prlog('Algorithm set to regression.', self, -1)
-            goal = 'regression'
+            self.goal = 'regression'
 
         # Check validity models
         # BNB not in standard list because it only works with boolean features
-        model_list = ['GNB', 'MNB', 'LinReg', 'LogReg', 'LDA', 'QDA', 'KNN',
-                      'Tree', 'ET', 'RF', 'AdaBoost', 'GBM', 'XGBoost',
+        model_list = ['GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA', 'QDA',
+                      'KNN', 'Tree', 'ET', 'RF', 'AdaBoost', 'GBM', 'XGBoost',
                       'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
@@ -514,13 +686,13 @@ class AutoML(object):
             self.final_models.remove('XGBoost')
 
         # Linear regression can't perform classification
-        if 'LinReg' in self.final_models and goal != 'regression':
+        if 'LinReg' in self.final_models and self.goal != 'regression':
             prlog("Linear Regression can't perform classification tasks."
                   + " Removing model from pipeline.", self, 0)
             self.final_models.remove('LinReg')
 
         # Remove classification-only models from pipeline
-        if goal == 'regression':
+        if self.goal == 'regression':
             self.final_models = not_regression(self.final_models)
 
         # Check if there are still valid models
@@ -530,7 +702,7 @@ class AutoML(object):
         prlog(f'Models in pipeline: {self.final_models}', self, -1)
 
         # Set default metric
-        if self.metric is None and goal == 'binary classification':
+        if self.metric is None and self.goal == 'binary classification':
             self.metric = 'F1'
         elif self.metric is None:
             self.metric = 'MSE'
@@ -538,26 +710,39 @@ class AutoML(object):
         # Check validity metric
         metric_class = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC',
                         'LogLoss', 'Jaccard']
-        metric_reg = ['r2', 'max_error', 'MAE', 'MSE', 'MSLE']
-        for m in metric_class + metric_reg:
+        mreg = ['r2', 'max_error', 'MAE', 'MSE', 'MSLE']
+        for m in metric_class + mreg:
             # Compare strings case insensitive
             if self.metric.lower() == m.lower():
                 self.metric = m
 
-        if self.metric not in metric_class + metric_reg:
+        if self.metric not in metric_class + mreg:
             raise ValueError('Unknown metric. Try one of {}.'
-                             .format(metric_class if goal ==
-                                     'binary classification' else metric_reg))
-        elif self.metric not in metric_reg and goal != 'binary classification':
+                             .format(metric_class if self.goal ==
+                                     'binary classification' else mreg))
+        elif self.metric not in mreg and self.goal != 'binary classification':
             raise ValueError("{} is an invalid metric for {}. Try one of {}."
-                             .format(self.metric, goal, metric_reg))
+                             .format(self.metric, self.goal, mreg))
+
+        # << ============ Data preprocessing ============ >>
+
+        prlog('\nData preprocessing =============>', self, 0)
+        prlog('Checking feature types...', self, 0)
+
+        # Impute values
+        if self.impute is not None:
+            X = self.imputer(X, strategy=self.impute)
+
+        X = self.encoder(X)  # Perform encoding on features
+
+        if self.features is not None:  # Perform feature selection
+            X = self.feature_selection(X, Y, k=self.features)
 
         # << ============ Data preparation ============ >>
 
         data = {}  # Dictionary of data (complete, train, test and scaled)
-        idx = np.random.randint(0, len(X), size=int(len(X)*percentage/100))
-        data['X'] = X.ix[idx]
-        data['Y'] = Y.ix[idx]
+        data['X'] = X
+        data['Y'] = Y
 
         # Split train and test for the BO on percentage of data
         data['X_train'], data['X_test'], data['Y_train'], data['Y_test'] = \
@@ -572,13 +757,25 @@ class AutoML(object):
               .format(data['X'].shape[1], data['X'].shape[0]), self, -1)
         prlog('Size of the training set: {}\nSize of the validation set: {}'
               .format(len(data['X_train']), len(data['X_test'])), self, -1)
-        if goal != 'regression':  # Print count of target values
+
+        # Print count of target values
+        if self.goal != 'regression' and self.verbose > 1:
             unique, counts = np.unique(data['Y'], return_counts=True)
-            lenx = max(max([len(str(i)) for i in unique]), 5)
-            prlog('\nNumber of instances per target class:', self, -1)
-            prlog(f'{"Value":{lenx}} --> Count', self, -1)
+            lenx = max(max([len(str(i)) for i in unique]), len(Y.name))
+            prlog('Number of instances per target class:', self, 1)
+            prlog(f'{Y.name:{lenx}} --> Count', self, 1)
             for i in range(len(unique)):
-                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, -1)
+                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 1)
+
+        # << ============ Continue Data preprocessing ============ >>
+
+        # Make sure the target categories are numerical
+        # Not done earlier because of print target names
+        if data['Y'].dtype.kind not in 'ifu':
+            enc = LabelEncoder().fit(data['Y'])
+            data['Y'] = enc.transform(data['Y'])
+            data['Y_train'] = enc.transform(data['Y_train'])
+            data['Y_test'] = enc.transform(data['Y_test'])
 
         # Check if features need to be scaled
         scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGBoost',
@@ -590,40 +787,72 @@ class AutoML(object):
             data['X_train_scaled'] = scaler.transform(data['X_train'])
             data['X_test_scaled'] = scaler.transform(data['X_test'])
 
-        # << ============ Core ============ >>
+        # Save data to class attribute
+        self.data = data.copy()
+
+        # << =================== Core ==================== >>
 
         prlog('\n\nRunning pipeline =====================>', self, -1)
 
-        # If multiprocessing or verbose=0, use tqdm to evaluate process
-        if self.n_jobs > 1 or (self.n_jobs == 1 and self.verbose == 0):
+        # If verbose=0, use tqdm to evaluate process
+        if self.verbose == 0:
             loop = tqdm(self.final_models)
         else:
             loop = self.final_models
 
-        # If parallel, verbose is automatically 0
-        verbose = 0 if self.n_jobs > 1 else self.verbose
+        # Loop over every independent model
+        for model in loop:
+            # Set model class
+            setattr(self, model, eval(model)(data,
+                                             self.metric,
+                                             self.goal,
+                                             self.log,
+                                             self.verbose))
 
-        # Call function in parallel (verbose=0 if multiprocessing)
-        Parallel(n_jobs=self.n_jobs)(delayed(run_model)
-                                            (data, model, self.metric, goal,
-                                             self.max_iter, self.batch_size,
-                                             self.cv, self.n_splits,
-                                             self.log, verbose
-                                             ) for model in loop)
+            try:  # If errors occure, just skip the model
+                if model not in ('GNB', 'GP'):  # No hyperparameters to tune
+                    getattr(self, model).BayesianOpt(self.max_iter,
+                                                     self.batch_size,
+                                                     self.init_points)
+                if self.cv:
+                    getattr(self, model).cross_val_evaluation(self.n_splits)
+
+            except Exception as ex:
+                prlog('Exception encountered while running '
+                      + f'the {model} model. Removing model from pipeline.'
+                      + f'\n{type(ex).__name__}: {ex}', self, 0, True)
+
+                # Save the exception to model attribute
+                exception = type(ex).__name__ + ': ' + str(ex)
+                getattr(self, model).error = exception
+
+                # Append exception to AutoML errors
+                self.errors += (model + ' --> ' + exception + u'\n')
+
+                # Replace model with value X for later removal
+                # Can't remove at once to not disturb list order
+                self.final_models = \
+                    ['X' if x == model else x for x in self.final_models]
 
         # Remove faulty models (replaced with X)
         while 'X' in self.final_models:
             self.final_models.remove('X')
 
         if self.cv:
+            try:  # Check that at least one model worked
+                lenx = max([len(getattr(self, m).name)
+                            for m in self.final_models])
+                max_mean = max([getattr(self, m).results.mean()
+                                for m in self.final_models])
+            except ValueError:
+                raise ValueError('It appears all models failed to run...')
+
             # Print final results (summary of cross-validation)
             prlog('\n\nFinal stats ================>>', self, -1)
+            prlog('Total duration: {} hours'
+                  .format(round((time()-t_init)/3600., 3)), self, -1)
             prlog(f'Target metric: {self.metric}', self, -1)
             prlog('------------------------------------', self, -1)
-
-            lenx = max([len(getattr(self, m).name) for m in self.final_models])
-            max_mean = max([getattr(self, m).results.mean()
-                            for m in self.final_models])
 
             for m in self.final_models:
                 name = getattr(self, m).name
@@ -636,7 +865,9 @@ class AutoML(object):
                     prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
                           .format(name, lenx, mean, std), self, -1)
 
-    def boxplot(self, filename=None):
+        # <====================== End fit function ======================>
+
+    def boxplot(self, figsize=None, filename=None):
         ''' Plot a boxplot of the found metric results '''
 
         results, names = [], []
@@ -647,7 +878,11 @@ class AutoML(object):
         except AttributeError:
             raise Exception('You need to fit the class before plotting!')
 
-        fig, ax = plt.subplots(figsize=(int(8+len(names)/2), 6))
+        if figsize is None:
+            figsize = (int(8+len(names)/2), 6)
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
@@ -658,6 +893,50 @@ class AutoML(object):
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_correlation(self, X=None, figsize=(10, 10), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot the feature's correlation matrix.
+
+        ARGUMENTS -------------------------------------
+
+        X        --> feature's dataframe (None if AutoML is already fitted)
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if X is None:
+            X = self.data['X']
+
+        elif not isinstance(X, pd.DataFrame):
+            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
+            X = pd.DataFrame(X, columns=columns)
+
+        # Compute the correlation matrix
+        corr = X.corr()
+
+        # Generate a mask for the upper triangle
+        mask = np.zeros_like(corr, dtype=np.bool)
+        mask[np.triu_indices_from(mask)] = True
+
+        sns.set_style('white')
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # Draw the heatmap with the mask and correct aspect ratio
+        cmap = sns.diverging_palette(220, 10, as_cmap=True)
+        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
+                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
+        plt.title('Feature correlation matrix', fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
@@ -693,7 +972,7 @@ class BaseModel(object):
         self.__dict__.update(kwargs)
 
     @timing
-    def BayesianOpt(self, max_iter=15, batch_size=1):
+    def BayesianOpt(self, max_iter=15, batch_size=1, init_points=1):
 
         '''
         DESCRIPTION -----------------------------------
@@ -702,8 +981,9 @@ class BaseModel(object):
 
         ARGUMENTS -------------------------------------
 
-        max_iter   --> maximum number of iterations
-        batch_size --> size of BO bacthes
+        max_iter    --> maximum number of iterations
+        batch_size  --> size of BO bacthes
+        init_points --> number of initial random tests of the BO
 
         '''
 
@@ -734,12 +1014,19 @@ class BaseModel(object):
 
         # Minimize or maximize the function depending on the metric
         maximize = False if self.metric in self.metric_min else True
+        # Default SKlearn or multiple random initial points
+        kwargs = {}
+        if init_points > 1:
+            kwargs['initial_design_numdata'] = init_points
+        else:
+            kwargs['X'] = self.get_init_values()
         opt = BayesianOptimization(f=optimize,
                                    domain=self.get_domain(),
-                                   batch_size=batch_size,
+                                   model_update_interval=batch_size,
                                    maximize=maximize,
-                                   X=self.get_init_values(),
-                                   normalize_Y=False)
+                                   initial_design_type='random',
+                                   normalize_Y=False,
+                                   **kwargs)
 
         opt.run_optimization(max_iter=max_iter,
                              verbosity=True if self.verbose > 1 else False)
@@ -759,9 +1046,9 @@ class BaseModel(object):
 
         # Print stats
         prlog('', self, 1)  # Print extra line
-        prlog('Final Statistics for {}:{:9s}'.format(self.name, ' '), self, 0)
+        prlog('Final statistics for {}:{:9s}'.format(self.name, ' '), self, 0)
         prlog('Optimal parameters BO: {}'.format(self.best_params), self, 0)
-        prlog('Optimal {} score: {:.3f}'.format(self.metric, score), self, 0)
+        prlog('Optimal {} score: {:.4f}'.format(self.metric, score), self, 0)
 
     @timing
     def cross_val_evaluation(self, n_splits=5):
@@ -787,16 +1074,17 @@ class BaseModel(object):
         else:
             kfold = KFold(n_splits=n_splits, random_state=1)
 
-        # GNB has no best_model yet cause no BO was performed
-        if self.shortname == 'GNB':
+        # GNB and GP have no best_model yet cause no BO was performed
+        if self.shortname in ('GNB', 'GP'):
+            # Print stats
+            prlog('\n', self, 0)
+            prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 0)
+
             self.best_model = self.get_model()
             self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
             self.prediction = self.model_fit.predict(self.X_test)
 
-            # Print stats
-            prlog('\n', self, 1)
-            prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 0)
-
+        # Run cross-validation
         self.results = cross_val_score(self.best_model,
                                        self.X,
                                        self.Y,
@@ -808,7 +1096,7 @@ class BaseModel(object):
             self.results = -self.results
 
         prlog('--------------------------------------------------', self, 0)
-        prlog('Cross_val {} score --> Mean: {:.3f}   Std: {:.3f}'
+        prlog('Cross_val {} score --> Mean: {:.4f}   Std: {:.4f}'
               .format(self.metric, self.results.mean(), self.results.std()),
               self, 0)
 
@@ -854,7 +1142,8 @@ class BaseModel(object):
         return max_error(self.Y_test, self.prediction)
 
     # << ============ Plot functions ============ >>
-    def plot_proba(self, target_class=1, filename=None):
+    def plot_probabilities(self, target_class=1,
+                           figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -865,6 +1154,8 @@ class BaseModel(object):
         ARGUMENTS -------------------------------------
 
         target_class --> probability of being that class (numeric)
+        figsize      --> figure size: format as (x, y)
+        filename     --> name of the file to save
 
         '''
 
@@ -883,7 +1174,8 @@ class BaseModel(object):
         else:
             mod = self.model_fit
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
         classes = list(set(Y))
         colors = ['r', 'b', 'g']
         for n in range(len(classes)):
@@ -891,19 +1183,12 @@ class BaseModel(object):
             cl = X[np.where(Y == classes[n])]
             pred = mod.predict_proba(cl)[:, target_class]
 
-            if sns_import:
-                sns.distplot(pred,
-                             hist=False,
-                             kde=True,
-                             norm_hist=True,
-                             color=colors[n],
-                             kde_kws={"shade": True},
-                             label='Class=' + str(classes[n]))
-            else:
-                plt.hist(pred,
-                         density=True,
-                         histtype='stepfilled',
+            sns.distplot(pred,
+                         hist=False,
+                         kde=True,
+                         norm_hist=True,
                          color=colors[n],
+                         kde_kws={"shade": True},
                          label='Class=' + str(classes[n]))
 
         plt.title('Predicted probabilities for class=' +
@@ -919,7 +1204,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, filename=None):
+    def plot_feature_importance(self, figsize=(10, 15), filename=None):
         ''' Plot a (Tree based) model's feature importance '''
 
         if self.shortname not in self.tree:
@@ -927,7 +1212,9 @@ class BaseModel(object):
                              f'models. Try one of the following: {self.tree}')
 
         features = list(self.X)
-        fig, ax = plt.subplots(figsize=(10, 15))
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
         pd.Series(self.model_fit.feature_importances_,
                   features).sort_values().plot.barh()
 
@@ -941,7 +1228,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_ROC(self, filename=None):
+    def plot_ROC(self, figsize=(10, 6), filename=None):
         ''' Plot Receiver Operating Characteristics curve '''
 
         if self.goal != 'binary classification':
@@ -955,7 +1242,8 @@ class BaseModel(object):
         # Get False (True) Positive Rate
         fpr, tpr, thresholds = roc_curve(self.Y, pred)
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
         plt.plot(fpr, tpr,
                  lw=2, color='red', label='AUC={:.3f}'.format(self.AUC()))
 
@@ -972,7 +1260,8 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_confusion_matrix(self, normalize=True, filename=None):
+    def plot_confusion_matrix(self, normalize=True,
+                              figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -982,7 +1271,8 @@ class BaseModel(object):
         ARGUMENTS -------------------------------------
 
         normalize --> boolean to normalize the matrix
-        filename --> boolean to save the plot
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of the file to save
 
         '''
 
@@ -1001,7 +1291,8 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        fig, ax = plt.subplots(figsize=(10, 6))
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
         ax.figure.colorbar(im, ax=ax)
         ax.set(xticks=np.arange(cm.shape[1]),
@@ -1029,7 +1320,8 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_decision_tree(self, num_trees=0, rotate=False, filename=None):
+    def plot_decision_tree(self, num_trees=0, max_depth=None,
+                           rotate=False, figsize=(14, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1039,13 +1331,16 @@ class BaseModel(object):
         ARGUMENTS -------------------------------------
 
         num_trees --> number of the tree to plot (for ensembles)
-        rotate    --> when set to True, orient tree left-right, not top-down.
+        max_depth --> maximum depth to plot (None for complete tree)
+        rotate    --> when set to True, orient tree left-right, not top-down
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of file to save
 
         '''
 
         sklearn_trees = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM']
         if self.shortname in sklearn_trees:
-            fig, ax = plt.subplots(figsize=(14, 10))
+            fig, ax = plt.subplots(figsize=figsize)
 
             # A single decision tree has only one estimator
             if self.shortname != 'Tree':
@@ -1054,7 +1349,9 @@ class BaseModel(object):
                 estimator = self.model_fit
 
             sklearn.tree.plot_tree(estimator,
+                                   max_depth=max_depth,
                                    rotate=rotate,
+                                   rounded=True,
                                    filled=True,
                                    fontsize=14)
 
@@ -1070,7 +1367,38 @@ class BaseModel(object):
             plt.savefig(filename)
 
 
-class Gaussian_Naive_Bayes(BaseModel):
+class GP(BaseModel):
+
+    def __init__(self, *args):
+        ''' Class initializer '''
+
+        # BaseModel class initializer
+        super().__init__(**set_init(*args, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Gaussian Process', 'GP'
+
+    def get_params(self, x):
+        ''' Gp has no hyperparameters to optimize '''
+
+        return False
+
+    def get_model(self):
+        ''' Returns the sklearn model '''
+
+        if self.goal != 'regression':
+            return GaussianProcessClassifier()
+        else:
+            return GaussianProcessRegressor()
+
+    def get_domain(self):
+        return False
+
+    def get_init_values(self):
+        return False
+
+
+class GNB(BaseModel):
 
     def __init__(self, *args):
         ''' Class initializer '''
@@ -1098,7 +1426,7 @@ class Gaussian_Naive_Bayes(BaseModel):
         return False
 
 
-class Multinomial_Naive_Bayes(BaseModel):
+class MNB(BaseModel):
 
     def __init__(self, *args):
         ''' Class initializer '''
@@ -1139,7 +1467,7 @@ class Multinomial_Naive_Bayes(BaseModel):
         return values
 
 
-class Bernoulli_Naive_Bayes(BaseModel):
+class BNB(BaseModel):
 
     def __init__(self, *args):
         ''' Class initializer '''
@@ -1180,7 +1508,7 @@ class Bernoulli_Naive_Bayes(BaseModel):
         return values
 
 
-class Linear_Regression(BaseModel):
+class LinReg(BaseModel):
 
     def __init__(self, *args):
         ''' Class initializer '''
@@ -1225,7 +1553,7 @@ class Linear_Regression(BaseModel):
         return values
 
 
-class Logistic_Regression(BaseModel):
+class LogReg(BaseModel):
 
     def __init__(self, *args):
 
@@ -1278,7 +1606,7 @@ class Logistic_Regression(BaseModel):
         return values
 
 
-class Linear_Discriminant_Analysis(BaseModel):
+class LDA(BaseModel):
 
     def __init__(self, *args):
 
@@ -1331,7 +1659,7 @@ class Linear_Discriminant_Analysis(BaseModel):
         return values
 
 
-class Quadratic_Discriminant_Analysis(BaseModel):
+class QDA(BaseModel):
 
     def __init__(self, *args):
 
@@ -1367,7 +1695,7 @@ class Quadratic_Discriminant_Analysis(BaseModel):
         return values
 
 
-class K_Nearest_Neighbors(BaseModel):
+class KNN(BaseModel):
 
     def __init__(self, *args):
 
@@ -1416,7 +1744,7 @@ class K_Nearest_Neighbors(BaseModel):
         return values
 
 
-class Decision_Tree(BaseModel):
+class Tree(BaseModel):
 
     def __init__(self, *args):
 
@@ -1473,7 +1801,7 @@ class Decision_Tree(BaseModel):
         return values
 
 
-class Extra_Trees(BaseModel):
+class ET(BaseModel):
 
     def __init__(self, *args):
 
@@ -1538,7 +1866,7 @@ class Extra_Trees(BaseModel):
         return values
 
 
-class Random_Forest(BaseModel):
+class RF(BaseModel):
 
     def __init__(self, *args):
 
@@ -1603,7 +1931,7 @@ class Random_Forest(BaseModel):
         return values
 
 
-class Adaptive_Boosting(BaseModel):
+class AdaBoost(BaseModel):
 
     def __init__(self, *args):
 
@@ -1647,7 +1975,7 @@ class Adaptive_Boosting(BaseModel):
         return values
 
 
-class Gradient_Boosting_Machine(BaseModel):
+class GBM(BaseModel):
 
     def __init__(self, *args):
 
@@ -1712,7 +2040,7 @@ class Gradient_Boosting_Machine(BaseModel):
         return values
 
 
-class Extreme_Gradient_Boosting(BaseModel):
+class XGBoost(BaseModel):
 
     def __init__(self, *args):
 
@@ -1776,7 +2104,7 @@ class Extreme_Gradient_Boosting(BaseModel):
         return values
 
 
-class Linear_Support_Vector_Machine(BaseModel):
+class lSVM(BaseModel):
 
     def __init__(self, *args):
 
@@ -1845,7 +2173,7 @@ class Linear_Support_Vector_Machine(BaseModel):
         return values
 
 
-class Kernel_Support_Vector_Machine(BaseModel):
+class kSVM(BaseModel):
 
     def __init__(self, *args):
 
@@ -1917,7 +2245,7 @@ class Kernel_Support_Vector_Machine(BaseModel):
         return values
 
 
-class Passive_Aggressive(BaseModel):
+class PA(BaseModel):
 
     def __init__(self, *args):
 
@@ -1976,7 +2304,7 @@ class Passive_Aggressive(BaseModel):
         return values
 
 
-class Stochastic_Gradient_Descent(BaseModel):
+class SGD(BaseModel):
 
     def __init__(self, *args):
 
@@ -2068,7 +2396,7 @@ class Stochastic_Gradient_Descent(BaseModel):
         return values
 
 
-class Multilayer_Perceptron(BaseModel):
+class MLP(BaseModel):
 
     def __init__(self, *args):
 
