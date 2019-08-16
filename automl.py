@@ -97,12 +97,15 @@ impute      --> imputing strategy (None). Possible values:
 features    --> if >= 1: number of features to select
                 if < 1: fraction of features to select
 ratio       --> train/test split ratio for BO (0.3)
-max_iter    --> Maximum number of iterations of the BO (15)
-batch_size  --> Size of the batches processed in the BO before fitting (1)
-init_points --> initial random tests of the BO (1)
-cv          --> Boolean wether to perform K-fold cross validation (True)
-n_splits    --> Number of splits for the K-fold cross validation (5)
+max_iter    --> maximum number of iterations of the BO (15)
+max_time    --> maximum time for the BO in seconds (inf)
+eps         --> minimum distance between two consecutive x's (1e-08)
+batch_size  --> size of the batch in which the objective is evaluated (1)
+init_points --> initial number of random tests of the BO (5)
+cv          --> boolean wether to perform K-fold cross validation (True)
+n_splits    --> number of splits for the K-fold cross validation (5)
 log         --> name of the log file, None to not save any log (AutoML_log.txt)
+n_jobs      --> number of cores to use for parallel processing (1)
 verbose     --> verbosity level of the pipeline (1)
                 Possible values:
                   0 to print minimum steps
@@ -209,6 +212,7 @@ from tqdm import tqdm
 from time import time
 from datetime import datetime
 import warnings
+import multiprocessing
 
 # Sklearn
 import sklearn
@@ -353,9 +357,9 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 class ATOM(object):
 
     def __init__(self, models=None, metric=None, impute=None,
-                 features=None, ratio=0.3, max_iter=5,
-                 batch_size=1, init_points=1, cv=True, n_splits=5,
-                 log='AutoML_log.txt', verbose=1):
+                 features=None, ratio=0.3, max_iter=15, max_time=np.inf,
+                 eps=1e-08, batch_size=1, init_points=5, cv=True, n_splits=5,
+                 log='AutoML_log.txt', n_jobs=1, verbose=1):
 
         '''
         DESCRIPTION -----------------------------------
@@ -370,11 +374,14 @@ class ATOM(object):
         features    --> select best K (or fraction) features (None for all)
         ratio       --> train/test split ratio
         max_iter    --> maximum number of iterations of the BO
-        batch_size  --> batch size for the BO algorithm
+        max_time    --> maximum time for the BO (in seconds)
+        eps         --> minimum distance between two consecutive x's
+        batch_size  --> size of the batch in which the objective is evaluated
         init_points --> initial number of random tests of the BO
         cv          --> perform kfold cross validation
         n_splits    --> number of splits for the stratified kfold
         log         --> keep log file
+        n_jobs      --> number of cores to use for parallel processing
         verbose     --> verbosity level (0, 1 or 2)
 
         '''
@@ -386,6 +393,8 @@ class ATOM(object):
         self.features = features
         self.ratio = ratio if 0 < ratio < 1 else 0.3
         self.max_iter = int(max_iter) if max_iter > 0 else 5
+        self.max_time = max_time
+        self.eps = eps
         self.batch_size = int(batch_size)
         self.init_points = int(init_points)
         self.cv = bool(cv)
@@ -397,6 +406,31 @@ class ATOM(object):
 
         # Save model erros (if any)
         self.errors = ''
+
+        # << ============ Parameter check ============ >>
+
+        # Check number of cores for multiprocessing
+        n_cores = multiprocessing.cpu_count()
+        self.n_jobs = int(n_jobs)
+        if self.n_jobs > n_cores:
+            prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
+                  .format(self.n_jobs, n_cores), self, -1)
+            self.n_jobs = n_cores
+
+        elif self.n_jobs == 0:
+            prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
+                  .format(self.n_jobs), self, -1)
+            self.n_jobs = 1
+
+        else:
+            if self.n_jobs == -1:
+                self.n_jobs = n_cores
+            elif n_jobs < -1:
+                self.n_jobs = n_cores + 1 + self.n_jobs
+
+            # Final check
+            if self.n_jobs < 1 or self.n_jobs > n_cores:
+                raise ValueError('Invalid value for n_jobs!')
 
     def check_features(self, X):
         ''' Remove non-numeric features with unhashable type '''
@@ -613,6 +647,8 @@ class ATOM(object):
 
         t_init = time()  # To measure the time the whole pipeline takes
         prlog('\n<================ AutoML ================>\n', self, -1, True)
+        if self.n_jobs != 1:
+            prlog(f'Parallel processing with {self.n_jobs} cores.', self, -1)
 
         # << ============ Handle input ============ >>
 
@@ -812,10 +848,14 @@ class ATOM(object):
             try:  # If errors occure, just skip the model
                 if model not in ('GNB', 'GP'):  # No hyperparameters to tune
                     getattr(self, model).BayesianOpt(self.max_iter,
+                                                     self.max_time,
+                                                     self.eps,
                                                      self.batch_size,
-                                                     self.init_points)
+                                                     self.init_points,
+                                                     self.n_jobs)
                 if self.cv:
-                    getattr(self, model).cross_val_evaluation(self.n_splits)
+                    getattr(self, model).cross_val_evaluation(self.n_splits,
+                                                              self.n_jobs)
 
             except Exception as ex:
                 prlog('Exception encountered while running '
@@ -972,7 +1012,8 @@ class BaseModel(object):
         self.__dict__.update(kwargs)
 
     @timing
-    def BayesianOpt(self, max_iter=15, batch_size=1, init_points=1):
+    def BayesianOpt(self, max_iter=15, max_time=np.inf, eps=1e-08,
+                    batch_size=1, init_points=5, n_jobs=1):
 
         '''
         DESCRIPTION -----------------------------------
@@ -982,8 +1023,11 @@ class BaseModel(object):
         ARGUMENTS -------------------------------------
 
         max_iter    --> maximum number of iterations
-        batch_size  --> size of BO bacthes
+        max_time    --> maximum time for the BO (in seconds)
+        eps         --> minimum distance between two consecutive x's
+        batch_size  --> size of the batch in which the objective is evaluated
         init_points --> number of initial random tests of the BO
+        n_jobs      --> number of cores to use for parallel processing
 
         '''
 
@@ -1026,9 +1070,12 @@ class BaseModel(object):
                                    maximize=maximize,
                                    initial_design_type='random',
                                    normalize_Y=False,
+                                   num_cores=n_jobs,
                                    **kwargs)
 
         opt.run_optimization(max_iter=max_iter,
+                             max_time=max_time,  # No time restriction
+                             eps=eps,
                              verbosity=True if self.verbose > 1 else False)
 
         # Set to same shape as GPyOpt (2d-array)
@@ -1051,8 +1098,19 @@ class BaseModel(object):
         prlog('Optimal {} score: {:.4f}'.format(self.metric, score), self, 0)
 
     @timing
-    def cross_val_evaluation(self, n_splits=5):
-        ''' Run the kfold cross validation '''
+    def cross_val_evaluation(self, n_splits=5, n_jobs=1):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Run kfold cross-validation.
+
+        ARGUMENTS -------------------------------------
+
+        n_splits    --> number of splits for the cross-validation
+        n_jobs      --> number of cores for parallel processing
+
+        '''
 
         # Set scoring metric for those that are different
         if self.metric == 'MAE':
@@ -1089,7 +1147,8 @@ class BaseModel(object):
                                        self.X,
                                        self.Y,
                                        cv=kfold,
-                                       scoring=scoring)
+                                       scoring=scoring,
+                                       n_jobs=n_jobs)
 
         # cross_val_score returns negative loss for minimizing metrics
         if self.metric in self.metric_min:
@@ -1167,7 +1226,7 @@ class BaseModel(object):
         X = np.array(self.X_train)
         Y = np.array(self.Y_train)
 
-        # SVM has no predict_proba() method
+        # Models without predict_proba() method
         if self.shortname in ('XGBoost', 'lSVM', 'kSVM'):
             # Calculate new probabilities more accurate with cv
             mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
