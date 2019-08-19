@@ -48,7 +48,7 @@ aml.boxplot('boxplot.png')
 aml.RF.plot_probabilities()
 
 
-<< ======================== AutoML Class ======================== >>
+<< ======================== ATOM Class ======================== >>
 
 Class Parameters (default)
 -----------------------------
@@ -76,7 +76,7 @@ models --> list of models to use. Possible values are: (all)
 metric --> metric on which the BO performs its fit. Possible values are:
                For binary and multiclass classification or regression:
                    max_error
-                   r2
+                   R2
                    MAE for Mean Absolute Error
                    MSE for Mean Squared Error (regression or multiclass)
                    MSLE for Mean Squared Log Error
@@ -102,9 +102,10 @@ max_time    --> maximum time for the BO in seconds (inf)
 eps         --> minimum distance between two consecutive x's (1e-08)
 batch_size  --> size of the batch in which the objective is evaluated (1)
 init_points --> initial number of random tests of the BO (5)
+plot_bo     --> boolean to plot the BO's progress (False)
 cv          --> boolean wether to perform K-fold cross validation (True)
 n_splits    --> number of splits for the K-fold cross validation (5)
-log         --> name of the log file, None to not save any log (AutoML_log.txt)
+log         --> name of the log file, None to not save any log (ATOM_log.txt)
 n_jobs      --> number of cores to use for parallel processing (1)
 verbose     --> verbosity level of the pipeline (1)
                 Possible values:
@@ -143,16 +144,8 @@ boxplot(figsize, filename):
 
 Class attributes
 -----------------------------
-aml.data is a dictionary to print out the final data used. The keys are:
-    X for all the features after preprocessing (not scaled)
-    Y for the used targets (numerical)
-    X_train for the training features (not scaled)
-    Y_train for the training targets
-    X_test for the test features (not scaled)
-    Y_test for the test targets
-    X_scaled
-    X_train_scaled
-    Y_train_scaled
+aml.dataset contains a dataframe of the features and target after
+pre-processing (not yet scaled)
 
 aml.errors contains a list of the encountered exceptions (if any) while
 fitting the models.
@@ -160,7 +153,7 @@ fitting the models.
 
 << ======================== Model Class ======================== >>
 
-The model subclasses of the AutoML class can be used to call for
+The model subclasses of the ATOM class can be used to call for
 handy plot functions and attributes.
 
 Class methods (plots)
@@ -210,6 +203,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from time import time
+from collections import deque
+import math
 from datetime import datetime
 import warnings
 import multiprocessing
@@ -298,7 +293,7 @@ def timing(f):
     return wrapper
 
 
-def prlog(string, cl, level, time=False):
+def prlog(string, cl, level=-1, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -318,8 +313,6 @@ def prlog(string, cl, level, time=False):
         print(string)
 
     if cl.log is not None:
-        # Not using logging because, although this is slower, logging doesn't
-        # work when running the code from jupyter notebook or spyder
         with open(cl.log, 'a+') as file:
             if time:
                 # Datetime object containing current date and time
@@ -356,15 +349,15 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
 class ATOM(object):
 
-    def __init__(self, models=None, metric=None, impute=None,
-                 features=None, ratio=0.3, max_iter=15, max_time=np.inf,
-                 eps=1e-08, batch_size=1, init_points=5, cv=True, n_splits=5,
-                 log='AutoML_log.txt', n_jobs=1, verbose=1):
+    def __init__(self, models=None, metric=None, impute=None, features=None,
+                 ratio=0.3, max_iter=15, max_time=np.inf, eps=1e-08,
+                 batch_size=1, init_points=5, plot_bo=False, cv=True,
+                 n_splits=5, log='ATOM_log.txt', n_jobs=1, verbose=1):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Initialize AutoML class.
+        Initialize class.
 
         ARGUMENTS -------------------------------------
 
@@ -378,6 +371,7 @@ class ATOM(object):
         eps         --> minimum distance between two consecutive x's
         batch_size  --> size of the batch in which the objective is evaluated
         init_points --> initial number of random tests of the BO
+        plot_bo     --> boolean to plot the BO's progress
         cv          --> perform kfold cross validation
         n_splits    --> number of splits for the stratified kfold
         log         --> keep log file
@@ -397,6 +391,7 @@ class ATOM(object):
         self.eps = eps
         self.batch_size = int(batch_size)
         self.init_points = int(init_points)
+        self.plot_bo = bool(plot_bo)
         self.cv = bool(cv)
         self.n_splits = int(n_splits) if n_splits > 0 else 5
         self.verbose = verbose if verbose in (0, 1, 2) else 1
@@ -414,12 +409,12 @@ class ATOM(object):
         self.n_jobs = int(n_jobs)
         if self.n_jobs > n_cores:
             prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
-                  .format(self.n_jobs, n_cores), self, -1)
+                  .format(self.n_jobs, n_cores), self)
             self.n_jobs = n_cores
 
         elif self.n_jobs == 0:
             prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
-                  .format(self.n_jobs), self, -1)
+                  .format(self.n_jobs), self)
             self.n_jobs = 1
 
         else:
@@ -646,9 +641,9 @@ class ATOM(object):
         # << ============ Initialize ============ >>
 
         t_init = time()  # To measure the time the whole pipeline takes
-        prlog('\n<================ AutoML ================>\n', self, -1, True)
+        prlog('\n<================ ATOM ================>\n', self, -1, True)
         if self.n_jobs != 1:
-            prlog(f'Parallel processing with {self.n_jobs} cores.', self, -1)
+            prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
         # << ============ Handle input ============ >>
 
@@ -672,14 +667,14 @@ class ATOM(object):
         if len(classes) < 2:
             raise ValueError(f'Only found one target value: {classes}!')
         elif len(classes) == 2:
-            prlog('Algorithm set to binary classification.', self, -1)
+            prlog('Algorithm set to binary classification.', self)
             self.goal = 'binary classification'
         elif 2 < len(classes) < 0.1*len(Y):
             prlog('Algorithm set to multiclass classification.' +
-                  f' Number of classes: {len(classes)}', self, -1)
+                  f' Number of classes: {len(classes)}', self)
             self.goal = 'multiclass classification'
         else:
-            prlog('Algorithm set to regression.', self, -1)
+            prlog('Algorithm set to regression.', self)
             self.goal = 'regression'
 
         # Check validity models
@@ -707,8 +702,7 @@ class ATOM(object):
             for m in self.models:
                 # Compare strings case insensitive
                 if m.lower() not in map(str.lower, model_list):
-                    prlog(f"Unknown model {m}. Removed from pipeline.",
-                          self, -1)
+                    prlog(f"Unknown model {m}. Removed from pipeline.", self)
                 else:
                     for n in model_list:
                         if m.lower() == n.lower():
@@ -718,7 +712,7 @@ class ATOM(object):
         # Check if XGBoost is available
         if 'XGBoost' in self.final_models and not xgb_import:
             prlog("Unable to import XGBoost. Model removed from pipeline.",
-                  self, -1)
+                  self)
             self.final_models.remove('XGBoost')
 
         # Linear regression can't perform classification
@@ -735,7 +729,7 @@ class ATOM(object):
         if len(self.final_models) == 0:
             raise ValueError(f"No models found in pipeline. Try {model_list}")
 
-        prlog(f'Models in pipeline: {self.final_models}', self, -1)
+        prlog(f'Models in pipeline: {self.final_models}', self)
 
         # Set default metric
         if self.metric is None and self.goal == 'binary classification':
@@ -746,7 +740,7 @@ class ATOM(object):
         # Check validity metric
         metric_class = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC',
                         'LogLoss', 'Jaccard']
-        mreg = ['r2', 'max_error', 'MAE', 'MSE', 'MSLE']
+        mreg = ['R2', 'max_error', 'MAE', 'MSE', 'MSLE']
         for m in metric_class + mreg:
             # Compare strings case insensitive
             if self.metric.lower() == m.lower():
@@ -774,6 +768,16 @@ class ATOM(object):
         if self.features is not None:  # Perform feature selection
             X = self.feature_selection(X, Y, k=self.features)
 
+        # Count target values before encoding to numerical (for later print)
+        unique, counts = np.unique(Y, return_counts=True)
+
+        # Make sure the target categories are numerical
+        if Y.dtype.kind not in 'ifu':
+            Y = pd.Series(LabelEncoder().fit_transform(Y), name=Y.name)
+
+        # Save dataset to class attribute for the user
+        self.dataset = X.merge(Y.to_frame(), left_index=True, right_index=True)
+
         # << ============ Data preparation ============ >>
 
         data = {}  # Dictionary of data (complete, train, test and scaled)
@@ -782,53 +786,43 @@ class ATOM(object):
 
         # Split train and test for the BO on percentage of data
         data['X_train'], data['X_test'], data['Y_train'], data['Y_test'] = \
-            train_test_split(data['X'],
-                             data['Y'],
-                             test_size=self.ratio,
-                             shuffle=True,
-                             random_state=1)
-
-        prlog('\nData stats =====================>', self, -1)
-        prlog('Number of features: {}\nNumber of instances: {}'
-              .format(data['X'].shape[1], data['X'].shape[0]), self, -1)
-        prlog('Size of the training set: {}\nSize of the validation set: {}'
-              .format(len(data['X_train']), len(data['X_test'])), self, -1)
-
-        # Print count of target values
-        if self.goal != 'regression' and self.verbose > 1:
-            unique, counts = np.unique(data['Y'], return_counts=True)
-            lenx = max(max([len(str(i)) for i in unique]), len(Y.name))
-            prlog('Number of instances per target class:', self, 1)
-            prlog(f'{Y.name:{lenx}} --> Count', self, 1)
-            for i in range(len(unique)):
-                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 1)
-
-        # << ============ Continue Data preprocessing ============ >>
-
-        # Make sure the target categories are numerical
-        # Not done earlier because of print target names
-        if data['Y'].dtype.kind not in 'ifu':
-            enc = LabelEncoder().fit(data['Y'])
-            data['Y'] = enc.transform(data['Y'])
-            data['Y_train'] = enc.transform(data['Y_train'])
-            data['Y_test'] = enc.transform(data['Y_test'])
+            train_test_split(X, Y, test_size=self.ratio, random_state=1)
 
         # Check if features need to be scaled
         scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGBoost',
                           'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+
         if any(model in self.final_models for model in scaling_models):
+            prlog('Scaling data...', self, 0)
+
             # Normalize features to mean=0, std=1
             data['X_scaled'] = StandardScaler().fit_transform(data['X'])
             scaler = StandardScaler().fit(data['X_train'])
             data['X_train_scaled'] = scaler.transform(data['X_train'])
             data['X_test_scaled'] = scaler.transform(data['X_test'])
 
-        # Save data to class attribute
-        self.data = data.copy()
+        # Save data to class attribute for later use
+        self.data = data
+
+        # << ============ Print data stats ============ >>
+
+        prlog('\nData stats =====================>', self)
+        prlog('Number of features: {}\nNumber of instances: {}'
+              .format(data['X'].shape[1], data['X'].shape[0]), self)
+        prlog('Size of the training set: {}\nSize of the validation set: {}'
+              .format(len(data['X_train']), len(data['X_test'])), self)
+
+        # Print count of target values
+        if self.goal != 'regression' and self.verbose > 1:
+            lenx = max(max([len(str(i)) for i in unique]), len(Y.name))
+            prlog('Number of instances per target class:', self, 1)
+            prlog(f'{Y.name:{lenx}} --> Count', self, 1)
+            for i in range(len(unique)):
+                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 1)
 
         # << =================== Core ==================== >>
 
-        prlog('\n\nRunning pipeline =====================>', self, -1)
+        prlog('\n\nRunning pipeline =====================>', self)
 
         # If verbose=0, use tqdm to evaluate process
         if self.verbose == 0:
@@ -852,6 +846,7 @@ class ATOM(object):
                                                      self.eps,
                                                      self.batch_size,
                                                      self.init_points,
+                                                     self.plot_bo,
                                                      self.n_jobs)
                 if self.cv:
                     getattr(self, model).cross_val_evaluation(self.n_splits,
@@ -866,7 +861,7 @@ class ATOM(object):
                 exception = type(ex).__name__ + ': ' + str(ex)
                 getattr(self, model).error = exception
 
-                # Append exception to AutoML errors
+                # Append exception to ATOM errors
                 self.errors += (model + ' --> ' + exception + u'\n')
 
                 # Replace model with value X for later removal
@@ -888,22 +883,27 @@ class ATOM(object):
                 raise ValueError('It appears all models failed to run...')
 
             # Print final results (summary of cross-validation)
-            prlog('\n\nFinal stats ================>>', self, -1)
-            prlog('Total duration: {} hours'
-                  .format(round((time()-t_init)/3600., 3)), self, -1)
-            prlog(f'Target metric: {self.metric}', self, -1)
-            prlog('------------------------------------', self, -1)
+            t = time() - t_init  # Total time in seconds
+            h = int(t/3600.)
+            m = int(t/60.) - h*60
+            s = int(t - h*3600 - m*60)
+            prlog('\n\nFinal stats ================>>', self)
+            prlog(f'Total duration: {h:02}h:{m:02}m:{s:02}s', self)
+            prlog(f'Target metric: {self.metric}', self)
+            prlog('------------------------------------', self)
 
             for m in self.final_models:
                 name = getattr(self, m).name
                 mean = getattr(self, m).results.mean()
                 std = getattr(self, m).results.std()
-                if mean == max_mean:  # Highlight best score
+
+                # Highlight best score (if more than one)
+                if mean == max_mean and len(self.final_models) > 1:
                     prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                          .format(name, lenx, mean, std), self, -1)
+                          .format(name, lenx, mean, std), self)
                 else:
                     prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                          .format(name, lenx, mean, std), self, -1)
+                          .format(name, lenx, mean, std), self)
 
         # <====================== End fit function ======================>
 
@@ -937,7 +937,8 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_correlation(self, X=None, figsize=(10, 10), filename=None):
+    def plot_correlation(self, X=None, Y=None,
+                         figsize=(10, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -946,21 +947,30 @@ class ATOM(object):
 
         ARGUMENTS -------------------------------------
 
-        X        --> feature's dataframe (None if AutoML is already fitted)
+        X        --> feature's dataframe (None if ATOM is already fitted)
+        Y        --> target (None if ATOM is already fitted)
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
         '''
 
-        if X is None:
-            X = self.data['X']
-
+        if X is None and Y is None:
+            df = self.dataset
+        elif X is None:
+            df = self.data['X']
         elif not isinstance(X, pd.DataFrame):
             columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            X = pd.DataFrame(X, columns=columns)
+            df = pd.DataFrame(X, columns=columns)
+        else:
+            df = X
+
+        if Y is not None:
+            if not isinstance(Y, pd.Series):
+                Y = pd.Series(Y, name='target')
+            df = X.merge(Y.to_frame(), left_index=True, right_index=True)
 
         # Compute the correlation matrix
-        corr = X.corr()
+        corr = df.corr()
 
         # Generate a mask for the upper triangle
         mask = np.zeros_like(corr, dtype=np.bool)
@@ -1013,7 +1023,7 @@ class BaseModel(object):
 
     @timing
     def BayesianOpt(self, max_iter=15, max_time=np.inf, eps=1e-08,
-                    batch_size=1, init_points=5, n_jobs=1):
+                    batch_size=1, init_points=5, plot_bo=False, n_jobs=1):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1027,9 +1037,81 @@ class BaseModel(object):
         eps         --> minimum distance between two consecutive x's
         batch_size  --> size of the batch in which the objective is evaluated
         init_points --> number of initial random tests of the BO
+        plot_bo     --> boolean to plot the BO's progress
         n_jobs      --> number of cores to use for parallel processing
 
         '''
+
+        def animate_plot(x, y1, y2, line1, line2):
+
+            '''
+            DESCRIPTION -----------------------------------
+
+            Plot the BO's progress.
+
+            ARGUMENTS -------------------------------------
+
+            x    --> x values of the plot
+            y    --> y values of the plot
+            line --> line element of the plot
+
+            '''
+
+            if line1 == []:  # At the start of the plot...
+                # This is the call to matplotlib that allows dynamic plotting
+                plt.ion()
+
+                # Initialize plot
+                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
+                fig.subplots_adjust(hspace=0)
+
+                # Create a variable for the line so we can later update it
+                line1, = ax1.plot(x, y1, '-o', alpha=0.8)
+
+                ax1.set_title('Bayesian Optimization for {}'
+                              .format(self.name), fontsize=16)
+                ax1.set_ylabel(self.metric, fontsize=16, labelpad=12)
+                #ax1.set_xticks(self.x, fontsize=12)
+                ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+
+                line2, = ax2.plot(x, y2, '-o', alpha=0.8)
+                ax2.set_title('Distance between last consecutive steps'
+                              .format(self.name), fontsize=16)
+                ax2.set_xlabel('Step', fontsize=16, labelpad=12)
+                ax2.set_ylabel('Distance', fontsize=16, labelpad=12)
+                ax2.set_xticks(self.x)
+                ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+
+                plt.xticks(fontsize=12)
+                plt.yticks(fontsize=12)
+                fig.tight_layout()
+                plt.show()
+
+            # Update plot
+            line1.set_xdata(x)  # Update x-data
+            line1.set_ydata(y1)  # Update y-data
+            line2.set_xdata(x)  # Update x-data
+            line2.set_ydata(y2)  # Update y-data
+            ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
+            ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
+            ax1.set_xticks(self.x, fontsize=12)  # Update x-ticks
+            ax2.set_xticks(self.x)  # Update x-ticks
+
+            # Adjust y limits if new data goes beyond bounds
+            lim = line1.axes.get_ylim()
+            #if np.nanmin(y1) <= lim[0] or np.nanmax(y1) >= lim[1]:
+                #ax1.set_ylim([np.nanmin(y1) - np.nanstd(y1),
+                              #np.nanmax(y1) + np.nanstd(y1)])
+            lim = line2.axes.get_ylim()
+            #if np.nanmin(y2) <= lim[0] or np.nanmax(y2) >= lim[1]:
+                #ax2.set_ylim([np.nanmin(y2) - np.nanstd(y2),
+                              #np.nanmax(y2) + np.nanstd(y2)])
+
+            # Pause the data so the figure/axis can catch up
+            plt.pause(0.01)
+
+            # Return line so we can update it again in the next iteration
+            yield line1, line2
 
         def optimize(x):
             ''' Function to optimize '''
@@ -1046,6 +1128,26 @@ class BaseModel(object):
             self.BO['score'].append(out())
             prlog(f'Evaluation --> {self.metric}: {out():.4f}', self, 1)
 
+            if plot_bo:
+                # Start to fill NaNs with encountered metric values
+                if np.isnan(self.y1).any():
+                    for i, value in enumerate(self.y1):
+                        if math.isnan(value):
+                            self.y1[i] = out()
+                            if i > 0:  # The first value must remain empty
+                                self.y2[i] = self.y1[i] - self.y1[i-1]
+                            break
+                else:  # If no NaNs anymore, continue deque
+                    self.x.append(max(self.x)+1)
+                    self.y1.append(out())
+                    self.y2.append(self.y1[-1] - self.y1[-2])
+
+                self.line1, self.line2 = animate_plot(self.x,
+                                                      self.y1,
+                                                      self.y2,
+                                                      self.line1,
+                                                      self.line2)
+
             return out()
 
         # << ============ Running optimization ============ >>
@@ -1055,6 +1157,12 @@ class BaseModel(object):
         self.BO = {}
         self.BO['params'] = []
         self.BO['score'] = []
+
+        maxlen = 15  # Steps to show in the BO progress plot
+        self.x = deque(list(range(maxlen)), maxlen=maxlen)
+        self.y1 = deque([np.NaN for i in self.x], maxlen=maxlen)
+        self.y2 = deque([np.NaN for i in self.x], maxlen=maxlen)
+        self.line1, self.line2 = [], []
 
         # Minimize or maximize the function depending on the metric
         maximize = False if self.metric in self.metric_min else True
@@ -1077,6 +1185,9 @@ class BaseModel(object):
                              max_time=max_time,  # No time restriction
                              eps=eps,
                              verbosity=True if self.verbose > 1 else False)
+
+        if plot_bo:
+            plt.close()
 
         # Set to same shape as GPyOpt (2d-array)
         self.best_params = self.get_params(np.array(np.round([opt.x_opt], 4)))
@@ -1194,7 +1305,7 @@ class BaseModel(object):
     def MSLE(self):
         return mean_squared_log_error(self.Y_test, self.prediction)
 
-    def r2(self):
+    def R2(self):
         return r2_score(self.Y_test, self.prediction)
 
     def max_error(self):
