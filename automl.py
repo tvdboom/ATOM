@@ -265,6 +265,7 @@ else:
 
 # Plotting
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 import seaborn as sns
 sns.set(style='darkgrid', palette="GnBu_d")
 
@@ -1042,7 +1043,7 @@ class BaseModel(object):
 
         '''
 
-        def animate_plot(x, y1, y2, line1, line2):
+        def animate_plot(x, y1, y2, line1, line2, ax1, ax2):
 
             '''
             DESCRIPTION -----------------------------------
@@ -1062,56 +1063,60 @@ class BaseModel(object):
                 plt.ion()
 
                 # Initialize plot
-                fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10))
-                fig.subplots_adjust(hspace=0)
+                fig = plt.figure(figsize=(10, 6))
+                gs = GridSpec(2, 1, height_ratios=[2, 1])
 
+                # First subplot (without xtick labels)
+                ax1 = plt.subplot(gs[0])
                 # Create a variable for the line so we can later update it
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
-
                 ax1.set_title('Bayesian Optimization for {}'
                               .format(self.name), fontsize=16)
                 ax1.set_ylabel(self.metric, fontsize=16, labelpad=12)
-                #ax1.set_xticks(self.x, fontsize=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
+                # Second subplot
+                ax2 = plt.subplot(gs[1], sharex=ax1)
                 line2, = ax2.plot(x, y2, '-o', alpha=0.8)
-                ax2.set_title('Distance between last consecutive steps'
+                ax2.set_title('Metric distance between last consecutive steps'
                               .format(self.name), fontsize=16)
                 ax2.set_xlabel('Step', fontsize=16, labelpad=12)
-                ax2.set_ylabel('Distance', fontsize=16, labelpad=12)
+                ax2.set_ylabel('d', fontsize=16, labelpad=12)
                 ax2.set_xticks(self.x)
                 ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+                ax2.set_ylim([-0.05, 0.1])
 
+                plt.setp(ax1.get_xticklabels(), visible=False)
+                plt.subplots_adjust(hspace=.0)
                 plt.xticks(fontsize=12)
                 plt.yticks(fontsize=12)
                 fig.tight_layout()
                 plt.show()
 
             # Update plot
-            line1.set_xdata(x)  # Update x-data
+            line1.set_xdata(x)   # Update x-data
             line1.set_ydata(y1)  # Update y-data
-            line2.set_xdata(x)  # Update x-data
+            line2.set_xdata(x)   # Update x-data
             line2.set_ydata(y2)  # Update y-data
             ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
             ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
-            ax1.set_xticks(self.x, fontsize=12)  # Update x-ticks
+            ax1.set_xticks(self.x)  # Update x-ticks
             ax2.set_xticks(self.x)  # Update x-ticks
 
             # Adjust y limits if new data goes beyond bounds
             lim = line1.axes.get_ylim()
-            #if np.nanmin(y1) <= lim[0] or np.nanmax(y1) >= lim[1]:
-                #ax1.set_ylim([np.nanmin(y1) - np.nanstd(y1),
-                              #np.nanmax(y1) + np.nanstd(y1)])
+            if np.nanmin(y1) <= lim[0] or np.nanmax(y1) >= lim[1]:
+                ax1.set_ylim([np.nanmin(y1) - np.nanstd(y1),
+                              np.nanmax(y1) + np.nanstd(y1)])
             lim = line2.axes.get_ylim()
-            #if np.nanmin(y2) <= lim[0] or np.nanmax(y2) >= lim[1]:
-                #ax2.set_ylim([np.nanmin(y2) - np.nanstd(y2),
-                              #np.nanmax(y2) + np.nanstd(y2)])
+            if np.nanmax(y2) >= lim[1]:
+                ax2.set_ylim([-0.05, np.nanmax(y2) + np.nanstd(y2)])
 
             # Pause the data so the figure/axis can catch up
             plt.pause(0.01)
 
-            # Return line so we can update it again in the next iteration
-            yield line1, line2
+            # Return line and axes to update the plot again next iteration
+            return line1, line2, ax1, ax2
 
         def optimize(x):
             ''' Function to optimize '''
@@ -1135,18 +1140,16 @@ class BaseModel(object):
                         if math.isnan(value):
                             self.y1[i] = out()
                             if i > 0:  # The first value must remain empty
-                                self.y2[i] = self.y1[i] - self.y1[i-1]
+                                self.y2[i] = abs(self.y1[i] - self.y1[i-1])
                             break
                 else:  # If no NaNs anymore, continue deque
                     self.x.append(max(self.x)+1)
                     self.y1.append(out())
-                    self.y2.append(self.y1[-1] - self.y1[-2])
+                    self.y2.append(abs(self.y1[-1] - self.y1[-2]))
 
-                self.line1, self.line2 = animate_plot(self.x,
-                                                      self.y1,
-                                                      self.y2,
-                                                      self.line1,
-                                                      self.line2)
+                self.line1, self.line2, self.ax1, self.ax2 = \
+                    animate_plot(self.x, self.y1, self.y2,
+                                 self.line1, self.line2, self.ax1, self.ax2)
 
             return out()
 
@@ -1158,11 +1161,13 @@ class BaseModel(object):
         self.BO['params'] = []
         self.BO['score'] = []
 
+        # BO plot variables
         maxlen = 15  # Steps to show in the BO progress plot
         self.x = deque(list(range(maxlen)), maxlen=maxlen)
         self.y1 = deque([np.NaN for i in self.x], maxlen=maxlen)
         self.y2 = deque([np.NaN for i in self.x], maxlen=maxlen)
-        self.line1, self.line2 = [], []
+        self.line1, self.line2 = [], []  # Plot lines
+        self.ax1, self.ax2 = 0, 0  # Plot axes
 
         # Minimize or maximize the function depending on the metric
         maximize = False if self.metric in self.metric_min else True
