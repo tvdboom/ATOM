@@ -3,17 +3,10 @@ Author: tvdboom
   
 Description  
 ------------------------  
-ATOM compares multiple machine learning models on the same data. All models are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which is implemented with [XGBoost]([https://xgboost.readthedocs.io/en/latest/).
+ATOM compares multiple machine learning models on the same data. All models are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which is implemented with [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
 The pipeline, first applies the imputing of missing values, the encoding of  
-categorical features and the selection of best features.  
-After that, it starts selecting the optimal hyperparameters per model  
-using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric.
-
-Hereafter, the pipleine performs a K-fold cross validation on the complete  
-data set. This is needed to avoid having a bias towards the  
-hyperparameters selected by the BO and provides a better statistical overview  
-of the final results.  
-The class contains the models as subclasses, on which you can call extra  
+categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model  
+using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra  
 methods and attributes. 
 
   
@@ -48,8 +41,8 @@ Make plots and analyse results:
 
 Class parameters
 ----------------------------- 
-* models**metric: string, optional (default=‘F1’ or ‘MSE’)**
-List of models on which to apply the pipeline. Possible values are (case insensitive):  
+* models**metric: string, optional (default=‘F1’ or ‘MSE’)**  
+List of models on which to apply the pipeline. Possible values are (case insensitive):    
     + 'GNB' for Gaussian Naïve Bayes  
     + 'MNB' for Multinomial Naïve Bayes  
     + 'BNB' for Bernoulli Naïve Bayes  
@@ -70,7 +63,7 @@ List of models on which to apply the pipeline. Possible values are (case insensi
 	+ 'PA' for Passive Aggressive  
 	+ 'SGD' for Stochastic Gradient Descent  
 	+ 'MLP' for Multilayer Perceptron  
-* **metric: string, optional (default='F1' or 'MSE')**
+* **metric: string, optional (default='F1' or 'MSE')**  
 Metric on which the pipeline fits the models. Possible values are (case insensitive):  
 	+ For binary and multiclass classification or regression:  
 		- 'max_error'  
@@ -86,41 +79,41 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'Jaccard'  
 		- 'AUC' for Area Under Curve  
 		- 'LogLoss' for binary cross-entropy  
-* **impute: string, optional (default=None)**
+* **impute: string, optional (default=None)**  
 Possible values:  
 	+ None to not perform any imputation  
 	+ 'mean' to impute with the mean of feature  
 	+ 'median' to impute with the median of feature  
 	+ 'most_frequent' to impute with the most frequent value (default option for categorical features)  
-* **features: int or float, optional (default=None)**
+* **features: int or float, optional (default=None)**  
 Select best features according to a linear regression univariate test.
 	+ if >= 1: number of features to select
 	+ if < 1: fraction of features to select
-* **ratio: float, optional (default=0.3)**
+* **ratio: float, optional (default=0.3)**  
 Split ratio of the train and test set used for the BO.
-* **max_iter: int, optional (default=15)**
+* **max_iter: int, optional (default=15)**  
 Maximum number of iterations of the BO.
-* **max_time: int, optional (default=inf)**
+* **max_time: int, optional (default=inf)**  
 Maximum time allowed for the BO (in seconds).
-* **eps: float, optional (default=1e-08)**
+* **eps: float, optional (default=1e-08)**  
 Minimum distance in hyperparameters between two consecutive steps in the BO.
-* **batch_size: int, optional (default=1)**
+* **batch_size: int, optional (default=1)**  
 Size of the batch in which the objective is evaluated 
-* **init_points: int, optional (default=5)**
+* **init_points: int, optional (default=5)**  
 Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
-* **plot_bo: bool, optional (default=False)**
+* **plot_bo: bool, optional (default=False)**  
 Wether to plot the BO's progress as it runs.
-* **cv: bool, optional (default=True)**
+* **cv: bool, optional (default=True)**  
 Wether to perform a K-fold cross validation n every model after the BO.
-* **n_splits: int, optional (default=4)**
+* **n_splits: int, optional (default=4)**  
 Number of splits for the K-fold cross validation. Only if cv=True.
-* **log: string, optional (default=None)**
+* **log: string, optional (default=None)**  
 Name of the log file, None to not save any log.
-* **n_jobs: int, optional (default=1)**
+* **n_jobs: int, optional (default=1)**  
 Number of cores to use for parallel processing.
 	+ If -1, use all available cores.
 	+ If <-1, use available_cores - 1 + n_jobs  
-* **verbose: int, optional (default=0)**
+* **verbose: int, optional (default=0)**  
 Verbosity level of the pipeline. Possible values:  
 	+ 0 to not print anything  
 	+ 1 to print minimum information
@@ -129,27 +122,26 @@ Verbosity level of the pipeline. Possible values:
   
 Class methods
 -----------------------------  
-* **fit(X, Y, percentage=100)**
+* **fit(X, Y, percentage=100)**  
 Run the ATOM pipeline.
 	+ X: array or pd.Dataframe, shape = [n_samples, n_features]
 	+ Y: array or pd.Series, shape = [n_samples]
-	+ percentage: int, optional (default=100)
+	+ percentage: int, optional (default=100)  
 	Percentage of data to use in the pipeline.
 * **imputer(X, strategy='median' , max_frac=0.5, missing=[NaN, None, '', '?', 'NA', inf, -inf])**  
-Impute missing values. Non-numeric features are always imputed with  
-the most_frequent strategy.
+Impute missing values. Non-numeric features are always imputed with the most_frequent strategy.
 	+ X: array or pd.Dataframe, optional if class is fitted
-	+ strategy: string, optional (default='median')
+	+ strategy: string, optional (default='median')  
 	See ATOM's class parameters for impute strategies.
-	+ max_frac: float, optional (default=0.5)
+	+ max_frac: float, optional (default=0.5)  
 	Maximum fraction of instances with missing values before removing the feature.
-	+ missing: list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])
+	+ missing: list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])  
 	List of values to impute.
-* **encoder(X, max_number_onehot=10)**
+* **encoder(X, max_number_onehot=10)**  
 Performs one-hot-encoding on categorical features if the number of unique  
 values is smaller or equal to max_number_onehot, else Label-encoding.
 	+ X: array or pd.Dataframe, optional if class is fitted
-	+ max_number_onehot: int, optional (default=10)
+	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **feature_selection(X, Y, k=0.8)**  
 Select best features according to a linear regression univariate test.	
@@ -158,16 +150,16 @@ Select best features according to a linear regression univariate test.
 	+ k: int or float, optional (default=0.8)
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
-* **boxplot(figsize, filename=None)**
+* **boxplot(figsize, filename=None)**  
 Make a boxplot of the results of the cross validation. Only if class is fitted.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None)
+	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
-* **plot_correlation(X, figsize=(10, 6), filename=None)**
+* **plot_correlation(X, figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None)
+	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 
 Class attributes  
@@ -182,43 +174,40 @@ fitting the models.
   
 Subclass methods (plots)  
 -----------------------------  
-* **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**
-Plots the probability of every class in the target variable against the  
-class selected by target_class. Only for classification tasks.
+* **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
+Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ target_class:  int, optional (default=1 -->2nd class)
 	Target class to plot the probabilities against.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
-		Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.
 * **plot_feature_importance(figsize=(10, 6), filename=None)**  
-Plots the feature importance scores. Only works with tree based  
-algorithms (Tree, ET, RF, AdaBoost, GBM and XGBoost).
+Plots the feature importance scores. Only works with tree based algorithms (Tree, ET, RF, AdaBoost, GBM and XGBoost).
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None)    
-		Name of the file when saved. None to not save anything.
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.
 * **plot_ROC(figsize=(10, 6), filename=None)**  
 Plots the ROC curve. Only for binary classification tasks.  
  	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None) 
-		Name of the file when saved. None to not save anything.
-* **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**
-Plot the confusion matrix for the model. Only for binary  
-classification.  
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.
+* **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
+Plot the confusion matrix for the model. Only for binary classification.  
 	+ normalize: bool, otional (default=True)
    	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None) 
-		Name of the file when saved. None to not save anything.
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.
 * **plot_decision_tree(num_trees=0, max_depth=None, rotate=False, figsize=(10, 6), filename=None)**  
 Plot a single decision tree of the model. Only for tree-based algorithms.
-	+ num_trees: int, otional (default=0 --> first tree)
+	+ num_trees: int, otional (default=0 --> first tree)  
 	Number of the tree to plot (if ensemble).
-	+ max_depth: int, optional (default=None)
+	+ max_depth: int, optional (default=None)  
 	Maximum depth of the plotted tree. None for no limit.
-	+ rotate: bool, optional (default=False)
+	+ rotate: bool, optional (default=False)  
 	When True, orientate the tree left-right instead of top-bottom.
    	+ figsize, 2d-tuple, otional (default=dependent on # of models)
-	+ filename: string, optional (default=None) 
-		Name of the file when saved. None to not save anything.  
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.  
   
 Sublass methods (metrics)  
 -----------------------------
