@@ -1,200 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-
-Title: Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
-
-Description
-------------------------
-ATOM compares multiple machine learning models on the same data. All models are
-implemented using the SKlearn python package (https://scikit-learn.org/stable/)
-except for the Extreme Gradient Booster which is implemented with XGBoost
-(https://xgboost.readthedocs.io/en/latest/).
-The pipeline applies the imputing of missing values, the encoding of
-categorical features and the selection of best features.
-The algorithm first starts selecting the optimal hyperparameters per model
-using a Bayesian Optimization (BO) approach implemented with the GPyOpt
-library (https://sheffieldml.github.io/GPyOpt/). The data is fitted to the
-selected metric. The tunable parameters and their respective domains are
-pre-set.
-Hereafter, the pipleine performs a K-fold cross validation on the complete
-data set provided. This is needed to avoid having a bias towards the
-hyperparameters selected by the BO and provides a better statistical overview
-of the final results.
-The class contains the models as subclasses, on which you can call extra
-methods and attributes.
-
-
-Usage
-------------------------
-Load module in with:
-from automl import ATOM
-
-Call the pipeline class:
-aml = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
-           impute='median',
-           features=0.8,
-           metric="MAE",
-           ratio=0.25,
-           max_iter=10,
-           n_splits=5,
-           verbose=1)
-
-Run the pipeline:
-aml.fit(X, Y)
-
-Make plots and analyse results:
-aml.boxplot('boxplot.png')
-aml.RF.plot_probabilities()
-
-
-<< ======================== ATOM Class ======================== >>
-
-Class Parameters (default)
------------------------------
-models --> list of models to use. Possible values are: (all)
-               GNB for Gaussian Naïve Bayes
-               MNB for Multinomial Naïve Bayes
-               BNB for Bernoulli Naïve Bayes
-               GP for Gaussian Process
-               LinReg for linear regression (with elasticnet regularization)
-               LogReg for Logistic Regression
-               LDA for Linear Discriminant Analysis
-               QDA for Quadratic Discriminant Analysis
-               KNN for K_Nearest Neighbors
-               Tree for a single Decision Tree
-               ET for Extra-Trees
-               RF for Random Forest
-               AdaBoost for Adaptive Boosting
-               GBM for Gradient Boosting Machine
-               XGBoost for Extreme Gradient Boosting (if library is available)
-               lSVM for Linear Support Vector Machine
-               kSVM for Kernel Support Vector Machine
-               PA for Passive Aggressive
-               SGD for Stochastic Gradient Descent
-               MLP for Multilayer Perceptron
-metric --> metric on which the BO performs its fit. Possible values are:
-               For binary and multiclass classification or regression:
-                   max_error
-                   R2
-                   MAE for Mean Absolute Error
-                   MSE for Mean Squared Error (regression or multiclass)
-                   MSLE for Mean Squared Log Error
-               Only binary classification:
-                   Precision
-                   Recall
-                   Accuracy
-                   F1 (binary classification)
-                   Jaccard
-                   AUC for Area Under Curve
-                   LogLoss for binary cross-entropy
-impute      --> imputing strategy (None). Possible values:
-                   None to not perform any imputation
-                   mean to impute with mean of feature
-                   median to impute with median of feature
-                   most_frequent to impute with most frequent value of feature
-                       (default option for categorical features)
-features    --> if >= 1: number of features to select
-                if < 1: fraction of features to select
-ratio       --> train/test split ratio for BO (0.3)
-max_iter    --> maximum number of iterations of the BO (15)
-max_time    --> maximum time for the BO in seconds (inf)
-eps         --> minimum distance between two consecutive x's (1e-08)
-batch_size  --> size of the batch in which the objective is evaluated (1)
-init_points --> initial number of random tests of the BO (5)
-plot_bo     --> boolean to plot the BO's progress (False)
-cv          --> boolean wether to perform K-fold cross validation (True)
-n_splits    --> number of splits for the K-fold cross validation (5)
-log         --> name of the log file, None to not save any log (ATOM_log.txt)
-n_jobs      --> number of cores to use for parallel processing (1)
-verbose     --> verbosity level of the pipeline (1)
-                Possible values:
-                  0 to print minimum steps
-                  1 to print average steps
-                  2 to print maximum steps
-
-
-Fit parameters
------------------------------
-X          --> array or pd dataframe of target features
-Y          --> array or pd series of target classes
-percentage --> percentage of the data to use for the BO (100)
-
-
-Class methods (functions)
------------------------------
-encoder(X, max_number_onehot=5):
-    Performs one-hot-encoding on categorical features if the number of unique
-    values is smaller or equal to max_number_onehot, else Label-encoding.
-
-imputer(X, strategy, max_frac, missing):
-    Impute missing values. Non-numeric features are always imputed with
-    the most_frequent strategy.
-
-feature_selection(X, Y, k):
-    Select best features using univariate selection with the f-value strategy.
-
-Class methods (plots)
------------------------------
-plot_correlation(X, figsize, filename):
-    Plot the correlation matrix of the features.
-
-boxplot(figsize, filename):
-    Plots results of the cross-validation step in a boxplot.
-
-Class attributes
------------------------------
-aml.dataset contains a dataframe of the features and target after
-pre-processing (not yet scaled)
-
-aml.errors contains a list of the encountered exceptions (if any) while
-fitting the models.
-
-
-<< ======================== Model Class ======================== >>
-
-The model subclasses of the ATOM class can be used to call for
-handy plot functions and attributes.
-
-Class methods (plots)
------------------------------
-plot_probabilities(target_class, figsize, filename):
-    Plots the probability of every class in the target variable against the
-    class selected by target_class (default=2nd class). Works for multi-class.
-
-plot_feature_importance(figsize, filename):
-    Plots the feature importance scores. Only works with tree based
-    algorithms (Tree, ET, RF, AdaBoost, GBM and XGBoost).
-
-plot_ROC(figsize, filename):
-    Plots the ROC curve. Works only for binary classification.
-
-plot_confusion_matrix(normalize, figsize, filename):
-    Plot the confusion matrix for the model. Works only for binary
-    classification.
-
-plot_decision_tree(num_trees, max_depth, rotate, figsize, filename):
-    Plot a single decision tree of a tree-based model. Only works with
-    tree-based algorithms.
-
-
-Class methods (metrics)
------------------------------
-Call any of the possible metrics as a method. It will return the metric
-(evaluated on the test set) for the best model found by the BO.
-e.g. aml.KNN.AUC()        # Get AUC score for the best trained KNN
-     aml.AdaBoost.MSE()   # Get MSE score for the best trained AdaBoost
-
-Class attributes
------------------------------
-e.g. aml.MLP.best_params  # Get parameters of the MLP with highest score
-     aml.SVM.best_model   # Get the SVM model with highest score (not fitted)
-     aml.SVM.model_fit    # Get the SVM model with highest score (fitted)
-     aml.Tree.prediction  # Get the predictions on the test set
-     aml.KNN.BO           # Dictionary for the score and params of steps in BO
-     aml.GBM.error        # If the model didn't work, this shows the error
-
-"""
 
 # << ============ Import Packages ============ >>
 
@@ -288,13 +92,23 @@ def timing(f):
         end = time()
 
         # args[0]=class instance
-        prlog('Elapsed time: {:.1f} seconds'.format(end-start), args[0], 0)
+        prlog('Elapsed time: {:.1f} seconds'.format(end-start), args[0], 1)
         return result
 
     return wrapper
 
 
-def prlog(string, cl, level=-1, time=False):
+def convert_to_df(X):
+    ''' Convert X to pd.Dataframe '''
+
+    if not isinstance(X, pd.DataFrame):
+        columns = ['Feature ' + str(i) for i in range(X.shape[1])]
+        X = pd.DataFrame(X, columns=columns)
+
+    return X
+
+
+def prlog(string, cl, level=0, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -353,7 +167,7 @@ class ATOM(object):
     def __init__(self, models=None, metric=None, impute=None, features=None,
                  ratio=0.3, max_iter=15, max_time=np.inf, eps=1e-08,
                  batch_size=1, init_points=5, plot_bo=False, cv=True,
-                 n_splits=5, log='ATOM_log.txt', n_jobs=1, verbose=1):
+                 n_splits=4, log=None, n_jobs=1, verbose=0):
 
         '''
         DESCRIPTION -----------------------------------
@@ -387,46 +201,22 @@ class ATOM(object):
         self.impute = impute
         self.features = features
         self.ratio = ratio if 0 < ratio < 1 else 0.3
-        self.max_iter = int(max_iter) if max_iter > 0 else 5
-        self.max_time = max_time
-        self.eps = eps
-        self.batch_size = int(batch_size)
-        self.init_points = int(init_points)
+        self.max_iter = int(max_iter) if max_iter > 0 else 15
+        self.max_time = float(max_time) if max_time > 0 else np.inf
+        self.eps = float(eps) if eps >= 0 else 1e-08
+        self.batch_size = int(batch_size) if batch_size > 0 else 1
+        self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
         self.cv = bool(cv)
-        self.n_splits = int(n_splits) if n_splits > 0 else 5
-        self.verbose = verbose if verbose in (0, 1, 2) else 1
+        self.n_splits = int(n_splits) if n_splits > 0 else 4
+        self.n_jobs = int(n_jobs)  # Gets checked later
+        self.verbose = verbose if verbose in (0, 1, 2, 3) else 0
 
         # Set log file name
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
 
         # Save model erros (if any)
         self.errors = ''
-
-        # << ============ Parameter check ============ >>
-
-        # Check number of cores for multiprocessing
-        n_cores = multiprocessing.cpu_count()
-        self.n_jobs = int(n_jobs)
-        if self.n_jobs > n_cores:
-            prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
-                  .format(self.n_jobs, n_cores), self)
-            self.n_jobs = n_cores
-
-        elif self.n_jobs == 0:
-            prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
-                  .format(self.n_jobs), self)
-            self.n_jobs = 1
-
-        else:
-            if self.n_jobs == -1:
-                self.n_jobs = n_cores
-            elif n_jobs < -1:
-                self.n_jobs = n_cores + 1 + self.n_jobs
-
-            # Final check
-            if self.n_jobs < 1 or self.n_jobs > n_cores:
-                raise ValueError('Invalid value for n_jobs!')
 
     def check_features(self, X):
         ''' Remove non-numeric features with unhashable type '''
@@ -435,7 +225,7 @@ class ATOM(object):
             dtype = str(X[column].dtype)
             if dtype in ('datetime64', 'timedelta[ns]', 'category'):
                 prlog(' --> Dropping feature {} due to unhashable type: {}.'
-                      .format(column, dtype), self, 1)
+                      .format(column, dtype), self, 2)
                 X.drop(column, axis=1)
             elif dtype == 'object':  # Strip str features from blank spaces
                 X[column] = X[column].str.strip()
@@ -453,7 +243,7 @@ class ATOM(object):
 
         ARGUMENTS -------------------------------------
 
-        X          --> data features: pd dataframe or array
+        X          --> data features: pd.Dataframe or array
         strategy   --> impute strategy. Choose from:
                            mean
                            median
@@ -473,13 +263,11 @@ class ATOM(object):
             raise ValueError(f'Unkwown impute strategy. Try one of {strats}.')
 
         # Convert array to dataframe (can be called independent of fit method)
-        if not isinstance(X, pd.DataFrame):
-            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            X = pd.DataFrame(X, columns=columns)
+        X = convert_to_df(X)
 
         X = self.check_features(X)
 
-        prlog('Imputing missing values...', self, 0)
+        prlog('Imputing missing values...', self, 1)
 
         # Convert values to impute to NaN
         if missing is None:  # Get default list
@@ -497,7 +285,7 @@ class ATOM(object):
                 pnans = int(nans/len(X[i])*100)
                 if nans > max_frac * len(X[i]):
                     prlog(f' --> Feature {i} was removed since it contained ' +
-                          f'{nans} ({pnans}%) missing values.', self, 1)
+                          f'{nans} ({pnans}%) missing values.', self, 2)
                     X.drop([i], axis=1, inplace=True)
                     continue
 
@@ -521,7 +309,7 @@ class ATOM(object):
 
         ARGUMENTS -------------------------------------
 
-        X                 --> data features: pd dataframe or array
+        X                 --> data features: pd.Dataframe or array
         max_number_onehot --> threshold between onehot and label encoding
 
         RETURNS ----------------------------------------
@@ -531,13 +319,11 @@ class ATOM(object):
         '''
 
         # Convert array to dataframe (can be called independent of fit method)
-        if not isinstance(X, pd.DataFrame):
-            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            X = pd.DataFrame(X, columns=columns)
+        X = convert_to_df(X)
 
         X = self.check_features(X)  # Needed if ran alone
 
-        prlog('Encoding categorical features...', self, 0)
+        prlog('Encoding categorical features...', self, 1)
 
         for i in X.columns:
             # Check if column is non-numeric (thus categorical)
@@ -548,12 +334,12 @@ class ATOM(object):
                 # Perform encoding type dependent on number of unique values
                 if n_unique <= max_number_onehot:
                     prlog(' --> One-hot-encoding feature {}. Contains {} '
-                          .format(i, n_unique) + 'unique categories.', self, 1)
+                          .format(i, n_unique) + 'unique categories.', self, 2)
                     X = pd.concat([X, pd.get_dummies(X[i], prefix=i)], axis=1)
                     X.drop([i], axis=1, inplace=True)
                 else:
                     prlog(' --> Label-encoding feature {}. Contains {} '
-                          .format(i, n_unique) + 'unique categories.', self, 1)
+                          .format(i, n_unique) + 'unique categories.', self, 2)
                     X[i] = LabelEncoder().fit_transform(X[i])
 
         return X
@@ -567,14 +353,14 @@ class ATOM(object):
 
         ARGUMENTS -------------------------------------
 
-        X --> data features: pd dataframe or array
-        Y --> data targets: pd series or array
+        X --> data features: pd.Dataframe or array
+        Y --> data targets: pd.Series or array
         k --> if < 1: fraction of features to select
               if >= 1: number of features to select
 
         '''
 
-        prlog('Performing feature selection...', self, 0)
+        prlog('Performing feature selection...', self)
 
         func = f_classif if self.goal != 'regression' else f_regression
         if k < 1:
@@ -588,18 +374,18 @@ class ATOM(object):
         idx = fs.get_support(indices=True)  # Indices of selected features
         X = pd.DataFrame(X, columns=columns[idx])
 
-        # Print extended changes (for verbose=2)
-        prlog(' --> List of selected features: ', self, 1)
+        # Print extended changes (for verbose=3)
+        prlog(' --> List of selected features: ', self, 2)
         string = '    '
         for n, column in enumerate(X.columns):
             string += f' {n+1}) {column}'
-        prlog(string, self, 1)
-        prlog(' --> List of removed features: ', self, 1)
+        prlog(string, self, 2)
+        prlog(' --> List of removed features: ', self, 2)
         string = '    '
         for n, column in enumerate(columns):
             if column not in X.columns:
                 string += f' {n+1}) {column}'
-        prlog(string, self, 1)
+        prlog(string, self, 2)
 
         return X
 
@@ -612,8 +398,8 @@ class ATOM(object):
 
         ARGUMENTS -------------------------------------
 
-        X          --> data features: pd dataframe or array
-        Y          --> data targets: pd series or array
+        X          --> data features: pd.Dataframe or array
+        Y          --> data targets: pd.Series or array
         percentage --> percentage of data to use
 
         '''
@@ -623,17 +409,17 @@ class ATOM(object):
         def not_regression(final_models):
             ''' Remove classification-only models from pipeline '''
 
-            class_models = ['LogReg', 'GNB', 'MNB', 'BNB', 'LDA', 'QDA']
+            class_models = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
             for model in class_models:
                 if model in final_models:
                     prlog(f"{model} can't perform regression tasks."
-                          + " Removing model from pipeline.", self, 0)
+                          + " Removing model from pipeline.", self)
                     final_models.remove(model)
 
             return final_models
 
         def shuffle(a, b):
-            ''' Shuffles dataframe a and pd series b in unison '''
+            ''' Shuffles pd.Dataframe a and pd.Series b in unison '''
 
             assert len(a) == len(b)
             p = np.random.permutation(len(a))
@@ -642,16 +428,12 @@ class ATOM(object):
         # << ============ Initialize ============ >>
 
         t_init = time()  # To measure the time the whole pipeline takes
-        prlog('\n<================ ATOM ================>\n', self, -1, True)
-        if self.n_jobs != 1:
-            prlog(f'Parallel processing with {self.n_jobs} cores.', self)
+        prlog('\n<================ ATOM ================>\n', self, 0, True)
 
         # << ============ Handle input ============ >>
 
         # Convert array to dataframe
-        if not isinstance(X, pd.DataFrame):
-            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            X = pd.DataFrame(X, columns=columns)
+        X = convert_to_df(X)
 
         # Convert target column to pandas series
         if not isinstance(Y, pd.Series):
@@ -662,6 +444,29 @@ class ATOM(object):
         Y = Y.head(int(len(Y)*percentage/100))
 
         # << ============ Parameters tests ============ >>
+
+        # Check number of cores for multiprocessing
+        n_cores = multiprocessing.cpu_count()
+
+        if self.n_jobs > n_cores:
+            prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
+                  .format(self.n_jobs, n_cores), self)
+            self.n_jobs = n_cores
+
+        elif self.n_jobs == 0:
+            prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
+                  .format(self.n_jobs), self)
+            self.n_jobs = 1
+
+        else:
+            if self.n_jobs <= -1:
+                self.n_jobs = n_cores + 1 + self.n_jobs
+
+            # Final check
+            if self.n_jobs < 1 or self.n_jobs > n_cores:
+                raise ValueError('Invalid value for n_jobs!')
+            elif self.n_jobs != 1:
+                prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
         # Set algorithm goal (regression, binaryclass or multiclass)
         classes = set(Y)
@@ -679,10 +484,9 @@ class ATOM(object):
             self.goal = 'regression'
 
         # Check validity models
-        # BNB not in standard list because it only works with boolean features
-        model_list = ['GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA', 'QDA',
-                      'KNN', 'Tree', 'ET', 'RF', 'AdaBoost', 'GBM', 'XGBoost',
-                      'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+        model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
+                      'QDA', 'KNN', 'Tree', 'ET', 'RF', 'AdaBoost', 'GBM',
+                      'XGBoost', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
         # Class attribute because needed for boxplot
@@ -719,7 +523,7 @@ class ATOM(object):
         # Linear regression can't perform classification
         if 'LinReg' in self.final_models and self.goal != 'regression':
             prlog("Linear Regression can't perform classification tasks."
-                  + " Removing model from pipeline.", self, 0)
+                  + " Removing model from pipeline.", self)
             self.final_models.remove('LinReg')
 
         # Remove classification-only models from pipeline
@@ -755,10 +559,29 @@ class ATOM(object):
             raise ValueError("{} is an invalid metric for {}. Try one of {}."
                              .format(self.metric, self.goal, mreg))
 
+        # << ============ Save ATOM's parameters to log ============ >>
+
+        parameters = 'Parameters: {metric: ' + str(self.metric) + \
+                     ', impute: ' + str(self.impute) + \
+                     ', features: ' + str(self.features) + \
+                     ', ratio: ' + str(self.ratio) + \
+                     ', max_iter: ' + str(self.max_iter) + \
+                     ', max_time: ' + str(self.max_time) + \
+                     ', eps: ' + str(self.eps) + \
+                     ', batch_size: ' + str(self.batch_size) + \
+                     ', init_points: ' + str(self.init_points) + \
+                     ', plot_bo: ' + str(self.plot_bo) + \
+                     ', cv: ' + str(self.cv) + \
+                     ', n_splits: ' + str(self.n_splits) + \
+                     ', n_jobs: ' + str(self.n_jobs) + \
+                     ', verbose: ' + str(self.verbose) + '}'
+
+        prlog(parameters, self, 5)  # Never print (only write to log)
+
         # << ============ Data preprocessing ============ >>
 
-        prlog('\nData preprocessing =============>', self, 0)
-        prlog('Checking feature types...', self, 0)
+        prlog('\nData preprocessing =============>', self, 1)
+        prlog('Checking feature types...', self, 1)
 
         # Impute values
         if self.impute is not None:
@@ -766,7 +589,8 @@ class ATOM(object):
 
         X = self.encoder(X)  # Perform encoding on features
 
-        if self.features is not None:  # Perform feature selection
+        # Perform feature selection
+        if self.features is not None and self.features != 0:
             X = self.feature_selection(X, Y, k=self.features)
 
         # Count target values before encoding to numerical (for later print)
@@ -794,7 +618,7 @@ class ATOM(object):
                           'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         if any(model in self.final_models for model in scaling_models):
-            prlog('Scaling data...', self, 0)
+            prlog('Scaling data...', self, 1)
 
             # Normalize features to mean=0, std=1
             data['X_scaled'] = StandardScaler().fit_transform(data['X'])
@@ -807,26 +631,26 @@ class ATOM(object):
 
         # << ============ Print data stats ============ >>
 
-        prlog('\nData stats =====================>', self)
+        prlog('\nData stats =====================>', self, 1)
         prlog('Number of features: {}\nNumber of instances: {}'
-              .format(data['X'].shape[1], data['X'].shape[0]), self)
+              .format(data['X'].shape[1], data['X'].shape[0]), self, 1)
         prlog('Size of the training set: {}\nSize of the validation set: {}'
-              .format(len(data['X_train']), len(data['X_test'])), self)
+              .format(len(data['X_train']), len(data['X_test'])), self, 1)
 
         # Print count of target values
-        if self.goal != 'regression' and self.verbose > 1:
+        if self.goal != 'regression':
             lenx = max(max([len(str(i)) for i in unique]), len(Y.name))
-            prlog('Number of instances per target class:', self, 1)
-            prlog(f'{Y.name:{lenx}} --> Count', self, 1)
+            prlog('Number of instances per target class:', self, 2)
+            prlog(f'{Y.name:{lenx}} --> Count', self, 2)
             for i in range(len(unique)):
-                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 1)
+                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 2)
 
         # << =================== Core ==================== >>
 
         prlog('\n\nRunning pipeline =====================>', self)
 
-        # If verbose=0, use tqdm to evaluate process
-        if self.verbose == 0:
+        # If verbose=1, use tqdm to evaluate process
+        if self.verbose == 1:
             loop = tqdm(self.final_models)
         else:
             loop = self.final_models
@@ -856,7 +680,7 @@ class ATOM(object):
             except Exception as ex:
                 prlog('Exception encountered while running '
                       + f'the {model} model. Removing model from pipeline.'
-                      + f'\n{type(ex).__name__}: {ex}', self, 0, True)
+                      + f'\n{type(ex).__name__}: {ex}', self, 1, True)
 
                 # Save the exception to model attribute
                 exception = type(ex).__name__ + ': ' + str(ex)
@@ -956,14 +780,11 @@ class ATOM(object):
         '''
 
         if X is None and Y is None:
-            df = self.dataset
+            X = self.dataset
         elif X is None:
-            df = self.data['X']
-        elif not isinstance(X, pd.DataFrame):
-            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            df = pd.DataFrame(X, columns=columns)
+            X = self.data['X']
         else:
-            df = X
+            X = convert_to_df(X)
 
         if Y is not None:
             if not isinstance(Y, pd.Series):
@@ -1123,7 +944,7 @@ class BaseModel(object):
 
             params = self.get_params(x)
             self.BO['params'].append(params)
-            prlog(f'Parameters --> {params}', self, 1, True)
+            prlog(f'Parameters --> {params}', self, 2, True)
 
             alg = self.get_model(params).fit(self.X_train, self.Y_train)
             self.prediction = alg.predict(self.X_test)
@@ -1131,7 +952,7 @@ class BaseModel(object):
             out = getattr(self, self.metric)
 
             self.BO['score'].append(out())
-            prlog(f'Evaluation --> {self.metric}: {out():.4f}', self, 1)
+            prlog(f'Evaluation --> {self.metric}: {out():.4f}', self, 2)
 
             if plot_bo:
                 # Start to fill NaNs with encountered metric values
@@ -1154,7 +975,7 @@ class BaseModel(object):
             return out()
 
         # << ============ Running optimization ============ >>
-        prlog(f'\n\nRunning BO for {self.name}...', self, 0)
+        prlog(f'\n\nRunning BO for {self.name}...', self, 1)
 
         # Save dictionary of BO steps
         self.BO = {}
@@ -1208,10 +1029,10 @@ class BaseModel(object):
         score = opt.fx_opt if self.metric in self.metric_min else -opt.fx_opt
 
         # Print stats
-        prlog('', self, 1)  # Print extra line
-        prlog('Final statistics for {}:{:9s}'.format(self.name, ' '), self, 0)
-        prlog('Optimal parameters BO: {}'.format(self.best_params), self, 0)
-        prlog('Optimal {} score: {:.4f}'.format(self.metric, score), self, 0)
+        prlog('', self, 2)  # Print extra line
+        prlog('Final statistics for {}:{:9s}'.format(self.name, ' '), self, 1)
+        prlog('Optimal parameters BO: {}'.format(self.best_params), self, 1)
+        prlog('Optimal {} score: {:.4f}'.format(self.metric, score), self, 1)
 
     @timing
     def cross_val_evaluation(self, n_splits=5, n_jobs=1):
@@ -1251,8 +1072,8 @@ class BaseModel(object):
         # GNB and GP have no best_model yet cause no BO was performed
         if self.shortname in ('GNB', 'GP'):
             # Print stats
-            prlog('\n', self, 0)
-            prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 0)
+            prlog('\n', self, 1)
+            prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 1)
 
             self.best_model = self.get_model()
             self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
@@ -1270,10 +1091,10 @@ class BaseModel(object):
         if self.metric in self.metric_min:
             self.results = -self.results
 
-        prlog('--------------------------------------------------', self, 0)
+        prlog('--------------------------------------------------', self, 1)
         prlog('Cross_val {} score --> Mean: {:.4f}   Std: {:.4f}'
               .format(self.metric, self.results.mean(), self.results.std()),
-              self, 0)
+              self, 1)
 
     # << ============ Evaluation metric functions ============ >>
     def Precision(self):
