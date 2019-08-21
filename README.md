@@ -38,7 +38,7 @@ Make plots and analyse results:
 
 Class parameters
 ----------------------------- 
-* models**metric: string, optional (default=‘F1’ or ‘MSE’)**  
+* **models: string or list of strings, optional (default=all)**  
 List of models on which to apply the pipeline. Possible values are (case insensitive):    
     + 'GNB' for Gaussian Naïve Bayes  
     + 'MNB' for Multinomial Naïve Bayes  
