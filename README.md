@@ -4,10 +4,7 @@ Author: tvdboom
 Description  
 ------------------------  
 ATOM compares multiple machine learning models on the same data. All models are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which is implemented with [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
-The pipeline, first applies the imputing of missing values, the encoding of  
-categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model  
-using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra  
-methods and attributes. 
+The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
   
 Usage  
@@ -164,10 +161,8 @@ Make a correlation maxtrix plot of the dataset.
 
 Class attributes  
 -----------------------------  
-* **dataset**: contains a dataframe of the features and target after  
-pre-processing (not yet scaled)
-* **errors**: contains a list of the encountered exceptions (if any) while  
-fitting the models.
+* **dataset**: contains a dataframe of the features and target after pre-processing (not yet scaled)
+* **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
 
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes.
