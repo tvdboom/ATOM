@@ -15,15 +15,7 @@ hyperparameters selected by the BO and provides a better statistical overview
 of the final results.  
 The class contains the models as subclasses, on which you can call extra  
 methods and attributes. 
- 
- ```mermaid
-graph LR
-A(Data) --> B[Data preprocessing]
-B--> C[Feature selection]
-C--> D[Model fitting]
 
-```
-_Chart of the steps taken by ATOM_
   
 Usage  
 ------------------------  
@@ -102,8 +94,8 @@ Possible values:
 	+ 'most_frequent' to impute with the most frequent value (default option for categorical features)  
 * **features: int or float, optional (default=None)**
 Select best features according to a linear regression univariate test.
-	+ if $\ge$ 1: number of features to select
-	+ if $<$ 1: fraction of features to select
+	+ if >= 1: number of features to select
+	+ if < 1: fraction of features to select
 * **ratio: float, optional (default=0.3)**
 Split ratio of the train and test set used for the BO.
 * **max_iter: int, optional (default=15)**
@@ -164,8 +156,8 @@ Select best features according to a linear regression univariate test.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
 	+ k: int or float, optional (default=0.8)
-		- if $\ge$ 1: number of features to select
-		- if $<$ 1: fraction of features to select
+		- if >= 1: number of features to select
+		- if < 1: fraction of features to select
 * **boxplot(figsize, filename=None)**
 Make a boxplot of the results of the cross validation. Only if class is fitted.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
