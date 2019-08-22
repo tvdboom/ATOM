@@ -47,13 +47,13 @@ List of models on which to apply the pipeline. Possible values are (case insensi
 	+ 'LogReg' for Logistic Regression  
 	+ 'LDA' for Linear Discriminant Analysis  
 	+ 'QDA' for Quadratic Discriminant Analysis  
-	+ 'KNN' for K_Nearest Neighbors  
+	+ 'KNN' for K-Nearest Neighbors  
 	+ 'Tree' for a single Decision Tree  
 	+ 'ET' for Extra-Trees  
 	+ 'RF' for Random Forest  
 	+ 'AdaBoost' for Adaptive Boosting  
 	+ 'GBM' for Gradient Boosting Machine  
-	+ 'XGBoost' for Extreme Gradient Boosting (if library is available)  
+	+ 'XGBoost' for Extreme Gradient Boosting (if package is available)  
 	+ 'lSVM' for Linear Support Vector Machine  
 	+ 'kSVM' for Kernel Support Vector Machine  
 	+ 'PA' for Passive Aggressive  
