@@ -76,7 +76,7 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'AUC' for Area Under Curve  
 		- 'LogLoss' for binary cross-entropy  
 * **impute: string, optional (default=None)**  
-Possible values:  
+Strategy for the imputing of missing values. Possible strategies are:
 	+ None to not perform any imputation  
 	+ 'mean' to impute with the mean of feature  
 	+ 'median' to impute with the median of feature  
