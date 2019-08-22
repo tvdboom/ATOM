@@ -12,13 +12,13 @@ Usage
 Call the pipeline class:  
 
     atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
-		metric="MAE",
-		impute='median',
-		features=0.8,
-		ratio=0.25,
-		max_iter=10,
-		n_splits=5,
-		verbose=1)
+			metric="MAE",
+			impute='median',
+			features=0.8,
+			ratio=0.25,
+			max_iter=10,
+			n_splits=5,
+			verbose=1)
 Run the pipeline:  
 
     atom.fit(X, Y)  
