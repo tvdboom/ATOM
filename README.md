@@ -151,7 +151,7 @@ Make a boxplot of the results of the cross validation. Only if class is fitted.
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_correlation(X, figsize=(10, 6), filename=None)**  
-Make a correlation maxtrix plot of the dataset.
+Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
