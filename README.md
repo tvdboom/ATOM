@@ -132,7 +132,7 @@ Impute missing values. Non-numeric features are always imputed with the most_fre
 	+ max_frac_missing: float, optional (default=0.5)  
 	Maximum fraction of instances with missing values before removing the feature.
 	+ missing: string or list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])  
-	List of values to impute.
+	List of values to impute. None and NaN are always imputed.
 * **encoder(X, max_number_onehot=10)**  
 Performs one-hot-encoding on categorical features if the number of unique values is smaller or equal to max_number_onehot, else Label-encoding. Also removes columns with only one unique category.
 	+ X: array or pd.Dataframe, optional if class is fitted
