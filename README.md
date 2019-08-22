@@ -19,7 +19,6 @@ Call the pipeline class:
                 max_iter=10,
                 n_splits=5,
                 verbose=1)
-		verbose=1)
 Run the pipeline:  
 
     atom.fit(X, Y)  
