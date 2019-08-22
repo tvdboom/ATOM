@@ -139,7 +139,7 @@ Performs one-hot-encoding on categorical features if the number of unique values
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **feature_selection(X, Y, k=0.8)**  
-Select best features according to a linear regression univariate test.	
+Select best features according to a linear regression univariate test. Ties between features with equal scores will be broken in an unspecified way.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
 	+ k: int or float, optional (default=0.8)
@@ -214,5 +214,7 @@ Subclass attributes
 * **atom.SVM.best_model**: Get the SVM model with highest score (not fitted).  
 * **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
-* **atom.<span>KNN.BO</span>**: Dictionary for the score and params of steps in BO.
+* **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
+	+ 'params': Parameters used for the model
+	+ 'score': Score of the chosen metric
 * **atom.GBM.error**: If the model encountered an exception, this shows it.
