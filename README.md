@@ -82,7 +82,7 @@ Strategy for the imputing of missing values. Possible strategies are:
 	+ 'median' to impute with the median of feature  
 	+ 'most_frequent' to impute with the most frequent value (default option for categorical features)  
 * **features: int or float, optional (default=None)**  
-Select best features according to a linear regression univariate test.
+Select best features according to a univariate F-test.
 	+ if >= 1: number of features to select
 	+ if < 1: fraction of features to select
 * **ratio: float, optional (default=0.3)**  
@@ -139,7 +139,7 @@ Performs one-hot-encoding on categorical features if the number of unique values
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **feature_selection(X, Y, k=0.8)**  
-Select best features according to a linear regression univariate test. Ties between features with equal scores will be broken in an unspecified way.
+Select best features according to a univariate F-test. Ties between features with equal scores will be broken in an unspecified way.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
 	+ k: int or float, optional (default=0.8)
