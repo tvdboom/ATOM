@@ -30,7 +30,7 @@ Make plots and analyse results:
   Alternatively, the preprocessing methods can be called independently of the fit method to further tune specific parameters.
   
 	atom = ATOM(models='KNN')
-	X = atom.imputer(X, strategy='mean' , missing=[NaN,'missing'])
+	X = atom.imputer(X, strategy='mean', missing=['--', 'missing', ''])
 	X = atom.encoder(X, max_number_onehot=5)
 	atom.fit(X, Y)
 
@@ -124,12 +124,12 @@ Run the ATOM pipeline.
 	+ Y: array or pd.Series, shape = [n_samples]
 	+ percentage: int, optional (default=100)  
 	Percentage of data to use in the pipeline.
-* **imputer(X, strategy='median' , max_frac=0.5, missing=[NaN, None, '', '?', 'NA', inf, -inf])**  
+* **imputer(X, strategy='median' , max_frac_missing=0.5, missing=[NaN, None, '', '?', 'NA', inf, -inf])**  
 Impute missing values. Non-numeric features are always imputed with the most_frequent strategy. Also removes columns with more than max_frac fraction of missing values.
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ strategy: string, optional (default='median')  
 	See ATOM's class parameters for impute strategies.
-	+ max_frac: float, optional (default=0.5)  
+	+ max_frac_missing: float, optional (default=0.5)  
 	Maximum fraction of instances with missing values before removing the feature.
 	+ missing: string or list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])  
 	List of values to impute.
