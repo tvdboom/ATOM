@@ -11,29 +11,28 @@ Usage
 ------------------------  
 Call the pipeline class:  
 
-    aml = ATOM(
-		    models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
-		    metric="MAE",
-		    impute='median',
-		    features=0.8,
-		    ratio=0.25,
-		    max_iter=10,
-		    n_splits=5,
-		    verbose=1)
+    atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
+		metric="MAE",
+		impute='median',
+		features=0.8,
+		ratio=0.25,
+		max_iter=10,
+		n_splits=5,
+		verbose=1)
 Run the pipeline:  
 
-    aml.fit(X, Y)  
+    atom.fit(X, Y)  
 Make plots and analyse results: 
 
-	aml.boxplot('boxplot.png')  
-	aml.RF.plot_probabilities()  
+	atom.boxplot('boxplot.png')  
+	atom.RF.plot_probabilities()  
   
   Alternatively, the preprocessing methods can be called independently of the fit method to further tune specific parameters.
   
-	aml = ATOM(models='KNN')
-	X = aml.imputer(X, strategy='mean' , missing=[NaN,'missing'])
-	X = aml.encoder(X, max_number_onehot=5)
-	aml.fit(X, Y)
+	atom = ATOM(models='KNN')
+	X = atom.imputer(X, strategy='mean' , missing=[NaN,'missing'])
+	X = atom.encoder(X, max_number_onehot=5)
+	atom.fit(X, Y)
 
 
 Class parameters
@@ -207,14 +206,14 @@ Plot a single decision tree of the model. Only for tree-based algorithms.
 Sublass methods (metrics)  
 -----------------------------
 Call any of the metrics as a method. It will return the metric (evaluated on the test set) for the best model found by the BO.
-+ **aml.KNN.AUC()**: Returns the AUC score for the best trained KNN  
-+ **aml.AdaBoost.MSE()**: Returns the MSE score for the best trained AdaBoost  
++ **atom.KNN.AUC()**: Returns the AUC score for the best trained KNN  
++ **atom.AdaBoost.MSE()**: Returns the MSE score for the best trained AdaBoost  
   
 Subclass attributes
 -----------------------------  
-* **aml.MLP.best_params**: Get parameters of the MLP with highest score.
-* **aml.SVM.best_model**: Get the SVM model with highest score (not fitted).  
-* **aml.SVM.model_fit**: Get the SVM model with highest score (fitted).  
-* **aml.Tree.prediction**: Get the predictions on the test set.  
-* **aml.<span>KNN.BO</span>**: Dictionary for the score and params of steps in BO.
-* **aml.GBM.error**: If the model encountered an exception, this shows it.
+* **atom.MLP.best_params**: Get parameters of the MLP with highest score.
+* **atom.SVM.best_model**: Get the SVM model with highest score (not fitted).  
+* **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
+* **atom.Tree.prediction**: Get the predictions on the test set.  
+* **atom.<span>KNN.BO</span>**: Dictionary for the score and params of steps in BO.
+* **atom.GBM.error**: If the model encountered an exception, this shows it.
