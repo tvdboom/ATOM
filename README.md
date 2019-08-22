@@ -125,17 +125,16 @@ Run the ATOM pipeline.
 	+ percentage: int, optional (default=100)  
 	Percentage of data to use in the pipeline.
 * **imputer(X, strategy='median' , max_frac=0.5, missing=[NaN, None, '', '?', 'NA', inf, -inf])**  
-Impute missing values. Non-numeric features are always imputed with the most_frequent strategy.
+Impute missing values. Non-numeric features are always imputed with the most_frequent strategy. Also removes columns with more than max_frac fraction of missing values.
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ strategy: string, optional (default='median')  
 	See ATOM's class parameters for impute strategies.
 	+ max_frac: float, optional (default=0.5)  
 	Maximum fraction of instances with missing values before removing the feature.
-	+ missing: list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])  
+	+ missing: string or list of strings, optional (default=[NaN, None, '', '?', 'NA', inf, -inf])  
 	List of values to impute.
 * **encoder(X, max_number_onehot=10)**  
-Performs one-hot-encoding on categorical features if the number of unique  
-values is smaller or equal to max_number_onehot, else Label-encoding.
+Performs one-hot-encoding on categorical features if the number of unique values is smaller or equal to max_number_onehot, else Label-encoding. Also removes columns with only one unique category.
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
