@@ -3,7 +3,7 @@ Author: tvdboom
   
 Description  
 ------------------------  
-ATOM compares multiple machine learning models on the same data. All models are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which is implemented with [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
+ATOM is a python package for simple exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
 The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
   
@@ -206,8 +206,7 @@ Plot a single decision tree of the model. Only for tree-based algorithms.
   
 Sublass methods (metrics)  
 -----------------------------
-Call any of the metrics as a method. It will return the metric  
-(evaluated on the test set) for the best model found by the BO.
+Call any of the metrics as a method. It will return the metric (evaluated on the test set) for the best model found by the BO.
 + **aml.KNN.AUC()**: Returns the AUC score for the best trained KNN  
 + **aml.AdaBoost.MSE()**: Returns the MSE score for the best trained AdaBoost  
   
