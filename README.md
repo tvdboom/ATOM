@@ -29,9 +29,26 @@ Make plots and analyse results:
   
   Alternatively, the preprocessing methods can be called independently of the fit method to further tune specific parameters.
   
-	atom = ATOM(models='KNN')
-	X = atom.imputer(X, strategy='mean', missing=['--', 'missing', ''])
-	X = atom.encoder(X, max_number_onehot=5)
+  	# Create an optimized Random Forest for feature_selection
+	aml = ATOM('RF', cv=False)
+	aml.fit(X, Y)
+	aml.rf.plot_feature_importance()
+
+	# Run AutoML pipeline
+	atom = ATOM(models=['LogReg'],
+		    metric="f1",
+		    impute='median',
+		    features=0.8,
+		    ratio=0.25,
+		    max_iter=2,
+		    init_points=1,
+		    n_splits=2,
+		    n_jobs=1,
+		    verbose=3)
+
+	X = atom.imputer(X, strategy='mean', max_frac_missing=0.8)
+	X = atom.encoder(X, max_number_onehot=20)
+	X = atom.feature_selection(X, Y, k=10, model=aml.RF.best_model)
 	atom.fit(X, Y)
 
 
@@ -138,13 +155,16 @@ Performs one-hot-encoding on categorical features if the number of unique values
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
-* **feature_selection(X, Y, k=0.8)**  
-Select best features according to a univariate F-test. Ties between features with equal scores will be broken in an unspecified way.
+* **feature_selection(X, Y, k=0.9, model=None, frac_variance=1, max_correlation=0.98)**  
+Select best features according to a univariate F-test or with a recursive feature selector (RFS). Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
-	+ k: int or float, optional (default=0.8)
+	+ k: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
-		- if < 1: fraction of features to select
+		- if < 1: fraction of features to select (for univariate test) or select features until cumulative importance reaches k (for RFS)
+	+ model: model to use for the RFS (not fitted)
+	+ frac_variance: remove features with constant instances in at least this fraction of the total
+	+ max_correlation: minimum value of the Pearson correlation cofficient to identify correlated features
 * **boxplot(figsize, filename=None)**  
 Make a boxplot of the results of the cross validation. Only if class is fitted.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
@@ -160,10 +180,12 @@ Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 Class attributes  
 -----------------------------  
 * **dataset**: contains a dataframe of the features and target after pre-processing (not yet scaled)
+* **X, Y, X_train, Y_train, X_test, Y_test**: dataframes used in the pipeline
 * **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
+* **collinear**: dataframe containing the collinear features (if any) and their correlation value. Only if feature_selection was ran.
 
   
-### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes.
+### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
   
 Subclass methods (plots)  
 -----------------------------  
@@ -205,8 +227,8 @@ Plot a single decision tree of the model. Only for tree-based algorithms.
 Sublass methods (metrics)  
 -----------------------------
 Call any of the metrics as a method. It will return the metric (evaluated on the test set) for the best model found by the BO.
-+ **atom.KNN.AUC()**: Returns the AUC score for the best trained KNN  
-+ **atom.AdaBoost.MSE()**: Returns the MSE score for the best trained AdaBoost  
++ **atom.knn.AUC()**: Returns the AUC score for the best trained KNN  
++ **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost  
   
 Subclass attributes
 -----------------------------  
