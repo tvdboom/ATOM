@@ -162,7 +162,7 @@ Select best features according to a univariate F-test or with a recursive featur
 	+ k: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select (for univariate test) or select features until cumulative importance reaches k (for RFS)
-	+ model: model to use for the RFS (not fitted)
+	+ model: model to use for the RFS (not fitted). None to use the univariate test.
 	+ frac_variance: remove features with constant instances in at least this fraction of the total
 	+ max_correlation: minimum value of the Pearson correlation cofficient to identify correlated features
 * **boxplot(figsize, filename=None)**  
