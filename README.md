@@ -34,7 +34,7 @@ Make plots and analyse results:
 	aml.fit(X, Y)
 	aml.rf.plot_feature_importance()
 
-	# Run AutoML pipeline
+	# Call new ATOM class for ML task exploration
 	atom = ATOM(models=['LogReg'],
 		    metric="f1",
 		    impute='median',
