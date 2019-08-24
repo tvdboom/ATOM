@@ -160,11 +160,11 @@ Select best features according to a univariate F-test or with a recursive featur
 	+ k: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
-	+ model: model class, optional (default=None)
+	+ model: model class, optional (default=None)  
 	Model to use for the RFS (not fitted). None to use the univariate test.
-	+ frac_variance: float, optional (default=1)
+	+ frac_variance: float, optional (default=1)  
 	Remove features with constant instances in at least this fraction of the total.
-	+ max_correlation: float, optional (default=0.98)
+	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
 * **boxplot(figsize, filename=None)**  
 Make a boxplot of the results of the cross validation. Only after the class is fitted.
