@@ -3,7 +3,7 @@ Author: tvdboom
   
 Description  
 ------------------------  
-ATOM is a python package for simple exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
+ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
 The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
   
@@ -31,19 +31,17 @@ Make plots and analyse results:
   
   	# Create an optimized Random Forest for feature_selection
 	aml = ATOM('RF', cv=False)
-	aml.fit(X, Y)
-	aml.rf.plot_feature_importance()
+	aml.fit(X, Y, percentage=10)
+	aml.rf.plot_feature_importance()  # Visualize the feature ranking
 
 	# Call new ATOM class for ML task exploration
-	atom = ATOM(models=['LogReg'],
+	atom = ATOM(models=['LogReg', 'AdaBoost', 'XGBoost'],
 		    metric="f1",
-		    impute='median',
-		    features=0.8,
-		    ratio=0.25,
-		    max_iter=2,
+		    max_iter=20,
 		    init_points=1,
-		    n_splits=2,
-		    n_jobs=1,
+		    n_splits=3,
+		    log='ATOM_log',
+		    n_jobs=2,
 		    verbose=3)
 
 	X = atom.imputer(X, strategy='mean', max_frac_missing=0.8)
@@ -97,7 +95,7 @@ Strategy for the imputing of missing values. Possible strategies are:
 	+ None to not perform any imputation  
 	+ 'mean' to impute with the mean of feature  
 	+ 'median' to impute with the median of feature  
-	+ 'most_frequent' to impute with the most frequent value (default option for categorical features)  
+	+ 'most_frequent' to impute with the most frequent value (only option for categorical features)  
 * **features: int or float, optional (default=None)**  
 Select best features according to a univariate F-test.
 	+ if >= 1: number of features to select
@@ -161,12 +159,15 @@ Select best features according to a univariate F-test or with a recursive featur
 	+ Y: array or pd.Series, optional if class is fitted
 	+ k: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
-		- if < 1: fraction of features to select (for univariate test) or select features until cumulative importance reaches k (for RFS)
-	+ model: model to use for the RFS (not fitted). None to use the univariate test.
-	+ frac_variance: remove features with constant instances in at least this fraction of the total
-	+ max_correlation: minimum value of the Pearson correlation cofficient to identify correlated features
+		- if < 1: fraction of features to select
+	+ model: model class, optional (default=None)
+	Model to use for the RFS (not fitted). None to use the univariate test.
+	+ frac_variance: float, optional (default=1)
+	Remove features with constant instances in at least this fraction of the total.
+	+ max_correlation: float, optional (default=0.98)
+	Minimum value of the Pearson correlation cofficient to identify correlated features.
 * **boxplot(figsize, filename=None)**  
-Make a boxplot of the results of the cross validation. Only if class is fitted.
+Make a boxplot of the results of the cross validation. Only after the class is fitted.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -179,8 +180,10 @@ Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 
 Class attributes  
 -----------------------------  
-* **dataset**: contains a dataframe of the features and target after pre-processing (not yet scaled)
-* **X, Y, X_train, Y_train, X_test, Y_test**: dataframes used in the pipeline
+* **dataset**: dataframe of the features and target after pre-processing (not yet scaled)
+* **X, Y**: data features and target
+* **X_train, Y_train**: training set features and target
+* **X_test, Y_test**: validation set features and target
 * **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
 * **collinear**: dataframe containing the collinear features (if any) and their correlation value. Only if feature_selection was ran.
 
