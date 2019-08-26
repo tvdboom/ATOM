@@ -25,7 +25,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.feature_selection import (
-    SelectPercentile, SelectKBest, f_classif, f_regression
+    SelectPercentile, SelectKBest, f_classif, f_regression,
+    VarianceThreshold, SelectFromModel
     )
 from sklearn.model_selection import (
     train_test_split, KFold, StratifiedKFold, cross_val_score
@@ -121,7 +122,7 @@ def prlog(string, cl, level=0, time=False):
 
     Print and save output to log file.
 
-    ARGUMENTS -------------------------------------
+    PARAMETERS -------------------------------------
 
     cl     --> class of the element
     string --> string to output
@@ -170,7 +171,8 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
 class ATOM(object):
 
-    def __init__(self, models=None, metric=None, impute=None, features=None,
+    def __init__(self, models=None, metric=None,
+                 impute='median', features=None,
                  ratio=0.3, max_iter=15, max_time=np.inf, eps=1e-08,
                  batch_size=1, init_points=5, plot_bo=False, cv=True,
                  n_splits=4, log=None, n_jobs=1, verbose=0):
@@ -180,7 +182,7 @@ class ATOM(object):
 
         Initialize class.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         models      --> list of models to use
         metric      --> metric to perform evaluation on
@@ -224,39 +226,44 @@ class ATOM(object):
         # Save model erros (if any)
         self.errors = ''
 
-    def check_features(self, X):
+    def check_features(self, X, output=False):
         ''' Remove non-numeric features with unhashable type '''
 
+        if output:
+            prlog('Checking feature types...', self, 1)
+
         for column in X.columns:
+            X[column] = X[column].astype(str).str.strip()
             dtype = str(X[column].dtype)
             if dtype in ('datetime64', 'timedelta[ns]', 'category'):
-                prlog(' --> Dropping feature {} due to unhashable type: {}.'
-                      .format(column, dtype), self, 2)
+                if output:
+                    prlog(' --> Dropping feature {}. Unhashable type: {}.'
+                          .format(column, dtype), self, 2)
                 X.drop(column, axis=1)
             elif dtype == 'object':  # Strip str features from blank spaces
-                X[column] = X[column].str.strip()
+                X[column] = X[column].astype(str).str.strip()
 
         return X
 
-    def imputer(self, X, strategy='median', max_frac=0.5, missing=None):
+    def imputer(self, X, strategy='median', max_frac_missing=0.5,
+                missing=[np.inf, -np.inf, '', '?', 'NA', None]):
 
         '''
         DESCRIPTION -----------------------------------
 
         Impute missing values in feature df. Non-numeric
         features are always imputed with the most frequent
-        strategy.
+        strategy. Removes columns with too many missing values.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
-        X          --> data features: pd.Dataframe or array
-        strategy   --> impute strategy. Choose from:
-                           mean
-                           median
-                           most_frequent
-        max_frac   --> maximum fraction of NaN values
-        missing    --> list of values to impute besides NaN and None:
-                           None for default: [np.inf, -np.inf, '', '?', 'NA']
+        X                  --> data features: pd.Dataframe or array
+        strategy           --> impute strategy. Choose from:
+                                   mean
+                                   median
+                                   most_frequent
+        max_frac_missing   --> maximum fraction of NaN values in column
+        missing            --> list of values to impute, besides NaN and None
 
         RETURNS ----------------------------------------
 
@@ -270,16 +277,18 @@ class ATOM(object):
 
         # Convert array to dataframe (can be called independent of fit method)
         X = convert_to_df(X)
-
-        X = self.check_features(X)
+        X = self.check_features(X)  # Needed if ran alone
 
         prlog('Imputing missing values...', self, 1)
 
-        # Convert values to impute to NaN
-        if missing is None:  # Get default list
-            missing = [np.inf, -np.inf, '', '?', 'NA', None]
-        elif None not in missing:
-            missing.append(None)  # None must always be imputed
+        # Make list for enumeration
+        if not isinstance(missing, list):
+            missing = [missing]
+
+        # None must always be imputed
+        if None not in missing:
+            missing.append(None)
+
         X = X.replace(missing, np.NaN)  # Replace missing values with NaN
 
         imp_numeric = SimpleImputer(strategy=strategy)
@@ -289,10 +298,10 @@ class ATOM(object):
                 # Drop columns with too many NaN values
                 nans = X[i].isna().sum()
                 pnans = int(nans/len(X[i])*100)
-                if nans > max_frac * len(X[i]):
+                if nans > max_frac_missing * len(X[i]):
                     prlog(f' --> Feature {i} was removed since it contained ' +
                           f'{nans} ({pnans}%) missing values.', self, 2)
-                    X.drop([i], axis=1, inplace=True)
+                    X.drop(i, axis=1, inplace=True)
                     continue
 
                 # Check if column is numeric (int, float, unsigned int)
@@ -311,9 +320,9 @@ class ATOM(object):
 
         Perform encoding on categorical features. The encoding
         type depends on the number of unique values in the column.
-        For values smaller or equal to max_number_onehot
+        Also removes columns with only one unique category.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         X                 --> data features: pd.Dataframe or array
         max_number_onehot --> threshold between onehot and label encoding
@@ -326,7 +335,6 @@ class ATOM(object):
 
         # Convert array to dataframe (can be called independent of fit method)
         X = convert_to_df(X)
-
         X = self.check_features(X)  # Needed if ran alone
 
         prlog('Encoding categorical features...', self, 1)
@@ -338,11 +346,11 @@ class ATOM(object):
                 n_unique = len(np.unique(X[i]))
 
                 # Perform encoding type dependent on number of unique values
-                if n_unique <= max_number_onehot:
+                if 2 < n_unique <= max_number_onehot:
                     prlog(' --> One-hot-encoding feature {}. Contains {} '
                           .format(i, n_unique) + 'unique categories.', self, 2)
                     X = pd.concat([X, pd.get_dummies(X[i], prefix=i)], axis=1)
-                    X.drop([i], axis=1, inplace=True)
+                    X.drop(i, axis=1, inplace=True)
                 else:
                     prlog(' --> Label-encoding feature {}. Contains {} '
                           .format(i, n_unique) + 'unique categories.', self, 2)
@@ -350,49 +358,179 @@ class ATOM(object):
 
         return X
 
-    def feature_selection(self, X, Y, k=0.8):
+    def feature_selection(self, X, Y,
+                          strategy='univariate',
+                          max_features=0.9,
+                          threshold=-np.inf,
+                          frac_variance=1.,
+                          max_correlation=0.98):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Select the best features of the set.
+        Select the best features of the set. Ties between
+        features with equal scores will be broken in an
+        unspecified way.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
-        X --> data features: pd.Dataframe or array
-        Y --> data targets: pd.Series or array
-        k --> if < 1: fraction of features to select
-              if >= 1: number of features to select
+        X            --> data features: pd.Dataframe or array
+        Y            --> data targets: pd.Series or array
+        strategy     --> strategy for feature selection:
+                             'univariate': perform a univariate F-test
+                             model with coef_ or feature_importances_ attribute
+        max_features --> if < 1: fraction of features to select
+                         if >= 1: number of features to select
+        threshold    --> threshold value to use for selection. Only for model.
+                         Choose from: float, 'mean', 'median'.
+                            float
+        frac_variance   --> minimum value of the Pearson correlation
+                            cofficient to identify correlated features
+        max_correlation --> remove features with constant instances in at
+                            least this fraction of the total
+
+        RETURNS ----------------------------------------
+
+        Dataframe of the selected features.
 
         '''
 
+        def remove_collinear(X, limit):
+
+            '''
+            DESCRIPTION -----------------------------------
+
+            Finds pairs of collinear features based on the Pearson
+            correlation coefficient. For each pair above the specified
+            limit (in terms of absolute value), it removes one of the two.
+            Using code adapted from:
+                https://chrisalbon.com/machine_learning/
+                    feature_selection/drop_highly_correlated_features/
+
+            PARAMETERS -------------------------------------
+
+            X     --> data features: pd.Dataframe or array
+            limit --> minimum value of the Pearson correlation cofficient
+                      to identify correlated features
+
+            RETURNS ----------------------------------------
+
+            Dataframe after removing one of the two correlated features.
+
+            '''
+
+            mtx = X.corr()  # Pearson correlation coefficient matrix
+
+            # Extract the upper triangle of the correlation matrix
+            upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
+
+            # Select the features with correlations above the threshold
+            to_drop = [i for i in upper.columns if any(abs(upper[i]) > limit)]
+
+            # Dataframe to hold correlated pairs
+            columns = ['drop_feature', 'corr_feature', 'corr_value']
+            self.collinear = pd.DataFrame(columns=columns)
+
+            # Iterate to record pairs of correlated features
+            for column in to_drop:
+
+                # Find the correlated features
+                corr_features = list(upper.index[abs(upper[column]) > limit])
+
+                # Find the correlated values
+                corr_values = list(upper[column][abs(upper[column]) > limit])
+                drop_features = [column for _ in corr_features]
+
+                # Record the information in a temp dataframe
+                temp = pd.DataFrame.from_dict({'drop_feature': drop_features,
+                                               'corr_feature': corr_features,
+                                               'corr_value': corr_values})
+
+                # Add to class attribute
+                self.collinear = self.collinear.append(temp, ignore_index=True)
+
+                prlog(f' --> Feature {column} was removed due to ' +
+                      'collinearity with another feature.', self, 2)
+
+            return X.drop(to_drop, axis=1)
+
+        def remove_low_variance(X, frac_variance):
+
+            '''
+            DESCRIPTION -----------------------------------
+
+            Removes featrues with too low variance.
+
+            PARAMETERS -------------------------------------
+
+            X             --> data features: pd.Dataframe or array
+            frac_variance --> remove features with constant instances in at
+                              least this fraction of the total
+
+            RETURNS ----------------------------------------
+
+            Dataframe after removing the low variance features.
+
+            '''
+
+            threshold = frac_variance * (1. - frac_variance)
+            var = VarianceThreshold(threshold=threshold).fit(X)
+            mask = var.get_support()  # Get boolean mask of selected features
+
+            for n, column in enumerate(X.columns):
+                if not mask[n]:
+                    prlog(f' --> Feature {column} was removed due to' +
+                          f' low variance: {var.variances_[n]:.2f}.', self, 2)
+                    X.drop(column, axis=1, inplace=True)
+
+            return X
+
         prlog('Performing feature selection...', self, 1)
 
-        func = f_classif if self.goal != 'regression' else f_regression
-        if k < 1:
-            fs = SelectPercentile(func, percentile=k*100)
+        # First, drop features with too high correlation
+        X = remove_collinear(X, limit=max_correlation)
+        # Then, remove features with too low variance
+        X = remove_low_variance(X, frac_variance=frac_variance)
+
+        # Perform selection from model or univariate
+        if strategy == 'univariate':
+            # Set function dependent on goal
+            f = f_classif if self.goal != 'regression' else f_regression
+            if max_features < 1:
+                # Not using fit_transform because it returns an array
+                fs = SelectPercentile(f, percentile=max_features*100).fit(X, Y)
+            else:
+                fs = SelectKBest(f, k=max_features).fit(X, Y)
+
+            mask = fs.get_support()
+            for n, column in enumerate(X.columns):
+                if not mask[n]:
+                    prlog(f' --> Feature {column} was removed after the ' +
+                          f'univariate F-test (score: {fs.scores_[n]:.2f}  ' +
+                          f'p-value: {fs.pvalues_[n]:.2f}).', self, 2)
+                    X.drop(column, axis=1, inplace=True)
+
         else:
-            fs = SelectKBest(func, k=k)
+            if max_features < 1:  # Set fraction of features
+                max_features = int(max_features * X.shape[1])
 
-        # SKlearn function returns numpy array not df (omslachtig maar werkt)
-        columns = X.columns  # Save feature names
-        X = fs.fit_transform(X, Y)
-        idx = fs.get_support(indices=True)  # Indices of selected features
-        X = pd.DataFrame(X, columns=columns[idx])
-
-        # Print extended changes (for verbose=3)
+            sfm = SelectFromModel(estimator=strategy,
+                                  threshold=threshold,
+                                  max_features=max_features).fit(X, Y)
+            mask = sfm.get_support()
+            for n, column in enumerate(X.columns):
+                if not mask[n]:
+                    prlog(f' --> Feature {column} was removed by the ' +
+                          'recursive feature eliminator.', self, 2)
+                    X.drop(column, axis=1, inplace=True)
+        '''
+        # Print selected features
         prlog(' --> List of selected features: ', self, 2)
-        string = '    '
+        string = '   '
         for n, column in enumerate(X.columns):
-            string += f' {n+1}) {column}'
+            string += f'  {n+1}.{column}'
         prlog(string, self, 2)
-        prlog(' --> List of removed features: ', self, 2)
-        string = '    '
-        for n, column in enumerate(columns):
-            if column not in X.columns:
-                string += f' {n+1}) {column}'
-        prlog(string, self, 2)
-
+        '''
         return X
 
     def fit(self, X, Y, percentage=100):
@@ -402,7 +540,7 @@ class ATOM(object):
 
         Run the pipeline.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         X          --> data features: pd.Dataframe or array
         Y          --> data targets: pd.Series or array
@@ -427,7 +565,8 @@ class ATOM(object):
         def shuffle(a, b):
             ''' Shuffles pd.Dataframe a and pd.Series b in unison '''
 
-            assert len(a) == len(b)
+            if len(a) != len(b):
+                raise ValueError("X and Y don't have the same number of rows!")
             p = np.random.permutation(len(a))
             return a.ix[p], b[p]
 
@@ -444,6 +583,11 @@ class ATOM(object):
         # Convert target column to pandas series
         if not isinstance(Y, pd.Series):
             Y = pd.Series(Y, name='target')
+
+        # Delete rows with NaN in target
+        idx = pd.isnull(Y).any().nonzero()
+        X.drop(X.index[idx], inplace=True)
+        Y.drop(Y.index[idx], inplace=True)
 
         X, Y = shuffle(X, Y)  # Shuffle before selecting percentage
         X = X.head(int(len(X)*percentage/100))
@@ -501,10 +645,10 @@ class ATOM(object):
             self.final_models = model_list.copy()
         else:
             # If only one model, make list for enumeration
-            if isinstance(self.models, str):
+            if not isinstance(self.models, list):
                 self.models = [self.models]
 
-            # Remove duplicates
+            # Remove duplicates keeping same order
             # Use and on the None output of set.add to call the function
             self.models = [not set().add(x.lower()) and x
                            for x in self.models if x.lower() not in set()]
@@ -587,7 +731,8 @@ class ATOM(object):
         # << ============ Data preprocessing ============ >>
 
         prlog('\nData preprocessing =============>', self, 1)
-        prlog('Checking feature types...', self, 1)
+
+        X = self.check_features(X, output=True)
 
         # Impute values
         if self.impute is not None:
@@ -605,9 +750,6 @@ class ATOM(object):
         # Make sure the target categories are numerical
         if Y.dtype.kind not in 'ifu':
             Y = pd.Series(LabelEncoder().fit_transform(Y), name=Y.name)
-
-        # Save dataset to class attribute for the user
-        self.dataset = X.merge(Y.to_frame(), left_index=True, right_index=True)
 
         # << ============ Data preparation ============ >>
 
@@ -632,8 +774,12 @@ class ATOM(object):
             data['X_train_scaled'] = scaler.transform(data['X_train'])
             data['X_test_scaled'] = scaler.transform(data['X_test'])
 
-        # Save data to class attribute for later use
+        # Save data to class attribute for later use or for the user
         self.data = data
+        self.X, self.Y = X, Y
+        self.X_train, self.X_test, self.Y_train, self.Y_test = \
+            data['X_train'], data['X_test'], data['Y_train'], data['Y_test']
+        self.dataset = X.merge(Y.to_frame(), left_index=True, right_index=True)
 
         # << ============ Print data stats ============ >>
 
@@ -699,6 +845,10 @@ class ATOM(object):
                 # Can't remove at once to not disturb list order
                 self.final_models = \
                     ['X' if x == model else x for x in self.final_models]
+
+        # Set model attributes for lowercase as well
+        for model in self.final_models:
+            setattr(self, model.lower(), getattr(self, model))
 
         # Remove faulty models (replaced with X)
         while 'X' in self.final_models:
@@ -774,9 +924,9 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Plot the feature's correlation matrix.
+        Plot the feature's correlation matrix. Ignores non-numeric columns.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         X        --> feature's dataframe (None if ATOM is already fitted)
         Y        --> target (None if ATOM is already fitted)
@@ -832,7 +982,7 @@ class BaseModel(object):
 
         Initialize class.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         data    --> dictionary of the data (train, test and complete set)
         metric  --> metric to maximize (or minimize) in the BO
@@ -861,7 +1011,7 @@ class BaseModel(object):
 
         Run the bayesian optmization algorithm.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         max_iter    --> maximum number of iterations
         max_time    --> maximum time for the BO (in seconds)
@@ -880,7 +1030,7 @@ class BaseModel(object):
 
             Plot the BO's progress.
 
-            ARGUMENTS -------------------------------------
+            PARAMETERS -------------------------------------
 
             x    --> x values of the plot
             y    --> y values of the plot
@@ -1051,7 +1201,7 @@ class BaseModel(object):
 
         Run kfold cross-validation.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         n_splits    --> number of splits for the cross-validation
         n_jobs      --> number of cores for parallel processing
@@ -1156,7 +1306,7 @@ class BaseModel(object):
         Plot a function of the probability of the classes
         of being the target class.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         target_class --> probability of being that class (numeric)
         figsize      --> figure size: format as (x, y)
@@ -1273,7 +1423,7 @@ class BaseModel(object):
 
         Plot the confusion matrix in a heatmap.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         normalize --> boolean to normalize the matrix
         figsize   --> figure size: format as (x, y)
@@ -1333,7 +1483,7 @@ class BaseModel(object):
 
         Visualize a single decision tree.
 
-        ARGUMENTS -------------------------------------
+        PARAMETERS -------------------------------------
 
         num_trees --> number of the tree to plot (for ensembles)
         max_depth --> maximum depth to plot (None for complete tree)
