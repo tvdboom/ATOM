@@ -1,5 +1,6 @@
 ## Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
+Email: m.524687@gmail.com
   
 Description  
 ------------------------  
@@ -160,6 +161,8 @@ Select best features according to a univariate F-test or with a recursive featur
 	+ k: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
+		- 'mean': set the mean of feature_importances as threshold (only for the RFS)
+		- 'median': set the median of feature_importances as threshold (only for the RFS)
 	+ model: model class, optional (default=None)  
 	Model to use for the RFS (not fitted). None to use the univariate test.
 	+ frac_variance: float, optional (default=1)  
