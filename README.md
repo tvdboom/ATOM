@@ -1,5 +1,5 @@
 ## Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: tvdboom  
 Email: m.524687@gmail.com
   
 Description  
