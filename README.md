@@ -154,17 +154,21 @@ Performs one-hot-encoding on categorical features if the number of unique values
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
-* **feature_selection(X, Y, k=0.9, model=None, frac_variance=1, max_correlation=0.98)**  
+* **feature_selection(X, Y, strategy='univariate', max_features=0.9, threshold=-np.inf, frac_variance=1, max_correlation=0.98)**  
 Select best features according to a univariate F-test or with a recursive feature selector (RFS). Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
-	+ k: int or float, optional (default=0.9)
+	+ strategy: string or model class, optional (default='univariate')
+	Strategy for the feature selector. Choose from:
+		- 'univariate' for the univariate F-test
+		- model class (not fitted) for the RFS
+	+ max_features: int or float, optional (default=0.9)
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
-		- 'mean': set the mean of feature_importances as threshold (only for the RFS)
-		- 'median': set the median of feature_importances as threshold (only for the RFS)
-	+ model: model class, optional (default=None)  
-	Model to use for the RFS (not fitted). None to use the univariate test.
+	+ threshold: string or float, optional (default=-np.inf)
+	The threshold value to use. Features whose importance is greater or equal are kept while the others are discarded. Only for RFS.
+		- if 'mean': set the mean of feature_importances as threshold
+		- if 'median': set the median of feature_importances as threshold
 	+ frac_variance: float, optional (default=1)  
 	Remove features with constant instances in at least this fraction of the total.
 	+ max_correlation: float, optional (default=0.98)  
