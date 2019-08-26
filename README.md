@@ -28,7 +28,7 @@ Make plots and analyse results:
 	atom.boxplot('boxplot.png')  
 	atom.RF.plot_probabilities()  
   
-  Alternatively, the preprocessing methods can be called independently of the fit method to further tune specific parameters.
+  Alternatively, the data cleaning methods can be called independently of the fit method to further tune specific parameters.
   
   	# Create an optimized Random Forest for feature_selection
 	aml = ATOM('RF', cv=False)
