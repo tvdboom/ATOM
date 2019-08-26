@@ -47,7 +47,7 @@ Make plots and analyse results:
 
 	X = atom.imputer(X, strategy='mean', max_frac_missing=0.8)
 	X = atom.encoder(X, max_number_onehot=20)
-	X = atom.feature_selection(X, Y, k=10, model=aml.RF.best_model)
+	X = atom.feature_selection(X, Y, strategy=aml.rf.best_model, threshold=0.05)
 	atom.fit(X, Y)
 
 
@@ -162,10 +162,11 @@ Select best features according to a univariate F-test or with a recursive featur
 	Strategy for the feature selector. Choose from:
 		- 'univariate' for the univariate F-test
 		- model class (not fitted) for the RFS
-	+ max_features: int or float, optional (default=0.9)  
+	+ max_features: int, float or None, optional (default=0.9)  
 	Number or fraction of features to select.
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
+		- if None: select all features (only for RFS)
 	+ threshold: string or float, optional (default=-np.inf)  
 	The threshold value to use. Features whose importance is greater or equal are kept while the others are discarded. Only for RFS.
 		- if 'mean': set the mean of feature_importances as threshold
