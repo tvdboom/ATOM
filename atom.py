@@ -743,7 +743,7 @@ class ATOM(object):
 
         # Perform feature selection
         if self.features is not None and self.features != 0:
-            X = self.feature_selection(X, Y, k=self.features)
+            X = self.feature_selection(X, Y, max_features=self.features)
 
         # Count target values before encoding to numerical (for later print)
         unique, counts = np.unique(Y, return_counts=True)
