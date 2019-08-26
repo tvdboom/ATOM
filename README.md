@@ -140,7 +140,7 @@ Run the ATOM pipeline.
 	+ Y: array or pd.Series, shape = [n_samples]
 	+ percentage: int, optional (default=100)  
 	Percentage of data to use in the pipeline.
-* **imputer(X, strategy='median' , max_frac_missing=0.5, missing=[NaN, None, '', '?', 'NA', inf, -inf])**  
+* **imputer(X, strategy='median' , max_frac_missing=0.5, missing=[NaN, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])**  
 Impute missing values. Non-numeric features are always imputed with the most_frequent strategy. Also removes columns with more than max_frac fraction of missing values.
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ strategy: string, optional (default='median')  
