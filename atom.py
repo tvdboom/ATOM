@@ -233,7 +233,6 @@ class ATOM(object):
             prlog('Checking feature types...', self, 1)
 
         for column in X.columns:
-            X[column] = X[column].astype(str).str.strip()
             dtype = str(X[column].dtype)
             if dtype in ('datetime64', 'timedelta[ns]', 'category'):
                 if output:
@@ -246,7 +245,7 @@ class ATOM(object):
         return X
 
     def imputer(self, X, strategy='median', max_frac_missing=0.5,
-                missing=[np.inf, -np.inf, '', '?', 'NA', None]):
+                missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None]):
 
         '''
         DESCRIPTION -----------------------------------
@@ -368,9 +367,10 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Select the best features of the set. Ties between
-        features with equal scores will be broken in an
-        unspecified way.
+        Select best features according to a univariate F-test or with a
+        recursive feature selector (RFS). Ties between features with equal
+        scores will be broken in an unspecified way. Also removes features
+        with too low variance and too high collinearity.
 
         PARAMETERS -------------------------------------
 
@@ -378,9 +378,10 @@ class ATOM(object):
         Y            --> data targets: pd.Series or array
         strategy     --> strategy for feature selection:
                              'univariate': perform a univariate F-test
-                             model with coef_ or feature_importances_ attribute
+                             model class for RFS
         max_features --> if < 1: fraction of features to select
                          if >= 1: number of features to select
+                         None to select all (only for RFS)
         threshold    --> threshold value to use for selection. Only for model.
                          Choose from: float, 'mean', 'median'.
                             float
@@ -511,7 +512,7 @@ class ATOM(object):
                     X.drop(column, axis=1, inplace=True)
 
         else:
-            if max_features < 1:  # Set fraction of features
+            if max_features is not None and max_features < 1:
                 max_features = int(max_features * X.shape[1])
 
             sfm = SelectFromModel(estimator=strategy,
@@ -1373,8 +1374,8 @@ class BaseModel(object):
         pd.Series(self.model_fit.feature_importances_,
                   features).sort_values().plot.barh()
 
-        plt.xlabel('Features', fontsize=16, labelpad=12)
-        plt.ylabel('Score', fontsize=16, labelpad=12)
+        plt.xlabel('Score', fontsize=16, labelpad=12)
+        plt.ylabel('Features', fontsize=16, labelpad=12)
         plt.title('Importance of Features', fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
