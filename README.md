@@ -47,7 +47,7 @@ Make plots and analyse results:
 
 	X = atom.imputer(X, strategy='mean', max_frac_missing=0.8)
 	X = atom.encoder(X, max_number_onehot=20)
-	X = atom.feature_selection(X, Y, strategy=aml.rf.best_model, threshold=0.05)
+	X = atom.feature_selection(X, Y, strategy='RFS', solver=aml.rf.best_model, threshold=0.05)
 	atom.fit(X, Y)
 
 
@@ -97,8 +97,29 @@ Strategy for the imputing of missing values. Possible strategies are:
 	+ 'mean' to impute with the mean of feature  
 	+ 'median' to impute with the median of feature  
 	+ 'most_frequent' to impute with the most frequent value (only option for categorical features)  
-* **features: int or float, optional (default=None)**  
-Select best features according to a univariate F-test.
+* **strategy: string, optional (default=None)**  
+Feature selection strategy to use. Choose from:
+	+ None: do not perform any feature selection
+	+ 'univariate': perform a univariate statistical test
+	+ 'PCA': perform a principal component analysis
+	+ 'RFS': perform recursive feature selection
+* **solver: string, model class or function (default=None)**  
+Solver to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
+	+ for 'univariate', choose from:
+		- f_classif (default for classification tasks)
+		- f_regression (default for regression tasks)
+		- mutual_info_classif
+		- mutual_info_regression
+		- chi2
+	+ for 'PCA', choose from:
+		- 'auto' (default)
+		- 'full'
+		- 'arpack'
+		- 'randomized'
+	+ for 'RFS', choose a model class (not yet fitted). No default.
+* **max_features: int or float, optional (default=0.9)**  
+Number of features to select.
+	+ None or 0: select all features
 	+ if >= 1: number of features to select
 	+ if < 1: fraction of features to select
 * **ratio: float, optional (default=0.3)**  
@@ -154,19 +175,35 @@ Performs one-hot-encoding on categorical features if the number of unique values
 	+ X: array or pd.Dataframe, optional if class is fitted
 	+ max_number_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
-* **feature_selection(X, Y, strategy='univariate', max_features=0.9, threshold=-np.inf, frac_variance=1, max_correlation=0.98)**  
-Select best features according to a univariate F-test or with a recursive feature selector (RFS). Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
+* **feature_selection(X, Y, strategy='univariate', solver=None, max_features=0.9, threshold=-np.inf, frac_variance=1, max_correlation=0.98)**  
+Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ X: array or pd.Dataframe, optional if class is fitted  
 	+ Y: array or pd.Series, optional if class is fitted
-	+ strategy: string or model class, optional (default='univariate')
-	Strategy for the feature selector. Choose from:
-		- 'univariate' for the univariate F-test
-		- model class (not fitted) for the RFS
-	+ max_features: int, float or None, optional (default=0.9)  
-	Number or fraction of features to select.
+	+ strategy: string, optional (default=None)  
+	Feature selection strategy to use. Choose from:
+		- None: do not perform any feature selection
+		- 'univariate': perform a univariate statistical test
+		- 'PCA': perform a principal component analysis
+		- 'RFS': perform recursive feature selection
+	+ solver: string, model class or function (default=None)  
+	Solver to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
+		- for 'univariate', choose one from:
+			- f_classif (default for classification tasks)
+			- f_regression (default for regression tasks)
+			- mutual_info_classif
+			- mutual_info_regression
+			- chi2
+		- for 'PCA', choose one from:
+			- 'auto' (default)
+			- 'full'
+			- 'arpack'
+			- 'randomized'
+		- for 'RFS', choose a model class (not yet fitted). No default.
+	+ max_features: int or float, optional (default=0.9)  
+	Number of features to select.
+		- None: select all features
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
-		- if None: select all features (only for RFS)
 	+ threshold: string or float, optional (default=-np.inf)  
 	The threshold value to use. Features whose importance is greater or equal are kept while the others are discarded. Only for RFS.
 		- if 'mean': set the mean of feature_importances as threshold
@@ -195,6 +232,9 @@ Class attributes
 * **X_test, Y_test**: validation set features and target
 * **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
 * **collinear**: dataframe containing the collinear features (if any) and their correlation value. Only if feature_selection was ran.
+* **univariate**: univariate feature selection class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html]
+* **PCA**: principal component analysis class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html]
+* **RFS**: recursive feature selector class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html]
 
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
