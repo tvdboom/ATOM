@@ -188,16 +188,16 @@ Select best features according to the selected strategy. Ties between features w
 	+ solver: string, model class or function (default=None)  
 	Solver or model to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
 		- for 'univariate', choose one from:
-			^ f_classif (default for classification tasks)
-			^ f_regression (default for regression tasks)
-			^ mutual_info_classif
-			^ mutual_info_regression
-			^ chi2
+			* f_classif (default for classification tasks)
+			* f_regression (default for regression tasks)
+			* mutual_info_classif
+			* mutual_info_regression
+			* chi2
 		- for 'PCA', choose one from:
 			* 'auto' (default)
 			* 'full'
-			- 'arpack'
-			- 'randomized'
+			* 'arpack'
+			* 'randomized'
 		- for 'RFS', choose a model class (not yet fitted). No default.
 	+ max_features: int or float, optional (default=0.9)  
 	Number of features to select.
@@ -231,10 +231,10 @@ Class attributes
 * **X_train, Y_train**: training set features and target
 * **X_test, Y_test**: validation set features and target
 * **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
-* **collinear**: dataframe containing the collinear features (if any) and their correlation value. Only if feature_selection was ran.
-* **univariate**: univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
-* **PCA**: principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
-* **RFS**: recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)
+* **collinear**: dataframe containing the collinear features and their correlation value. Only if feature_selection was ran.
+* **univariate**: univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
+* **PCA**: principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+* **RFS**: recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
@@ -288,7 +288,7 @@ Subclass attributes
 * **atom.SVM.best_model**: Get the SVM model with highest score (not fitted).  
 * **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
+* **atom.GBM.error**: If the model encountered an exception, this shows it.  
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': parameters used for the model
 	+ 'score': score of the chosen metric
-* **atom.GBM.error**: If the model encountered an exception, this shows it.
