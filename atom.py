@@ -24,9 +24,9 @@ import sklearn
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
-    SelectPercentile, SelectKBest, f_classif, f_regression,
-    VarianceThreshold, SelectFromModel
+    SelectKBest, f_classif, f_regression, VarianceThreshold, SelectFromModel
     )
 from sklearn.model_selection import (
     train_test_split, KFold, StratifiedKFold, cross_val_score
@@ -171,8 +171,8 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
 class ATOM(object):
 
-    def __init__(self, models=None, metric=None,
-                 impute='median', features=None,
+    def __init__(self, models=None, metric=None, impute='median',
+                 strategy=None, solver=None, max_features=0.9,
                  ratio=0.3, max_iter=15, max_time=np.inf, eps=1e-08,
                  batch_size=1, init_points=5, plot_bo=False, cv=True,
                  n_splits=4, log=None, n_jobs=1, verbose=0):
@@ -184,22 +184,24 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        models      --> list of models to use
-        metric      --> metric to perform evaluation on
-        impute      --> strategy of the imputer to use (if None, no imputing)
-        features    --> select best K (or fraction) features (None for all)
-        ratio       --> train/test split ratio
-        max_iter    --> maximum number of iterations of the BO
-        max_time    --> maximum time for the BO (in seconds)
-        eps         --> minimum distance between two consecutive x's
-        batch_size  --> size of the batch in which the objective is evaluated
-        init_points --> initial number of random tests of the BO
-        plot_bo     --> boolean to plot the BO's progress
-        cv          --> perform kfold cross validation
-        n_splits    --> number of splits for the stratified kfold
-        log         --> keep log file
-        n_jobs      --> number of cores to use for parallel processing
-        verbose     --> verbosity level (0, 1 or 2)
+        models       --> list of models to use
+        metric       --> metric to perform evaluation on
+        impute       --> strategy of the imputer to use (if None, no imputing)
+        strategy     --> feature selection strategy to use
+        solver       --> solver or model for the feature selection strategy
+        max_features --> number of features to select (None for all)
+        ratio        --> train/test split ratio
+        max_iter     --> maximum number of iterations of the BO
+        max_time     --> maximum time for the BO (in seconds)
+        eps          --> minimum distance between two consecutive x's
+        batch_size   --> size of the batch in which the objective is evaluated
+        init_points  --> initial number of random tests of the BO
+        plot_bo      --> boolean to plot the BO's progress
+        cv           --> perform kfold cross validation
+        n_splits     --> number of splits for the stratified kfold
+        log          --> keep log file
+        n_jobs       --> number of cores to use for parallel processing
+        verbose      --> verbosity level (0, 1 or 2)
 
         '''
 
@@ -207,7 +209,9 @@ class ATOM(object):
         self.models = models
         self.metric = metric
         self.impute = impute
-        self.features = features
+        self.strategy = strategy
+        self.solver = solver
+        self.max_features = max_features
         self.ratio = ratio if 0 < ratio < 1 else 0.3
         self.max_iter = int(max_iter) if max_iter > 0 else 15
         self.max_time = float(max_time) if max_time > 0 else np.inf
@@ -271,7 +275,7 @@ class ATOM(object):
         '''
 
         strats = ['mean', 'median', 'most_frequent']
-        if strategy not in strats:
+        if strategy.lower() not in strats:
             raise ValueError(f'Unkwown impute strategy. Try one of {strats}.')
 
         # Convert array to dataframe (can be called independent of fit method)
@@ -290,7 +294,7 @@ class ATOM(object):
 
         X = X.replace(missing, np.NaN)  # Replace missing values with NaN
 
-        imp_numeric = SimpleImputer(strategy=strategy)
+        imp_numeric = SimpleImputer(strategy=strategy.lower())
         imp_nonnumeric = SimpleImputer(strategy='most_frequent')
         for i in X.columns:
             if X[i].isna().any():  # Check if any value is missing in column
@@ -359,6 +363,7 @@ class ATOM(object):
 
     def feature_selection(self, X, Y,
                           strategy='univariate',
+                          solver=None,
                           max_features=0.9,
                           threshold=-np.inf,
                           frac_variance=1.,
@@ -376,9 +381,11 @@ class ATOM(object):
 
         X            --> data features: pd.Dataframe or array
         Y            --> data targets: pd.Series or array
-        strategy     --> strategy for feature selection:
+        strategy     --> strategy for feature selection. Choose from:
                              'univariate': perform a univariate F-test
-                             model class for RFS
+                             'PCA': perform principal component analysis
+                             'RFS': perform recursive feature selection
+        solver       --> solver or model class for the strategy
         max_features --> if < 1: fraction of features to select
                          if >= 1: number of features to select
                          None to select all (only for RFS)
@@ -493,45 +500,51 @@ class ATOM(object):
         # Then, remove features with too low variance
         X = remove_low_variance(X, frac_variance=frac_variance)
 
-        # Perform selection from model or univariate
-        if strategy == 'univariate':
-            # Set function dependent on goal
-            f = f_classif if self.goal != 'regression' else f_regression
-            if max_features < 1:
-                # Not using fit_transform because it returns an array
-                fs = SelectPercentile(f, percentile=max_features*100).fit(X, Y)
-            else:
-                fs = SelectKBest(f, k=max_features).fit(X, Y)
+        if max_features is not None and max_features < 1:
+            max_features = int(max_features * X.shape[1])
 
-            mask = fs.get_support()
+        # Perform selection from model or univariate
+        if strategy.lower() == 'univariate':
+            if max_features is None:
+                max_features = X.shape[1]
+            if solver is None:   # Set function dependent on goal
+                func = f_classif if self.goal != 'regression' else f_regression
+            else:
+                func = solver
+            self.univariate = SelectKBest(func, k=max_features).fit(X, Y)
+            mask = self.univariate.get_support()
             for n, column in enumerate(X.columns):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed after the ' +
-                          f'univariate F-test (score: {fs.scores_[n]:.2f}  ' +
-                          f'p-value: {fs.pvalues_[n]:.2f}).', self, 2)
+                          'univariate test (score: {:.2f}  p-value: {:.2f}).'
+                          .format(self.univariate.scores_[n],
+                                  self.univariate.pvalues_[n]), self, 2)
                     X.drop(column, axis=1, inplace=True)
 
-        else:
-            if max_features is not None and max_features < 1:
-                max_features = int(max_features * X.shape[1])
+        elif strategy.lower() == 'pca':
+            prlog(f' --> Applying PCA... ', self, 2)
+            solver = 'auto' if solver is None else solver
+            self.PCA = PCA(n_components=max_features, svd_solver=solver)
+            X = self.PCA.fit_transform(X, Y)
+            X = convert_to_df(X)
 
-            sfm = SelectFromModel(estimator=strategy,
-                                  threshold=threshold,
-                                  max_features=max_features).fit(X, Y)
-            mask = sfm.get_support()
+        elif strategy.lower() == 'rfs':
+            if solver is None:
+                raise ValueError('Select a model class for the RFS solver!')
+            self.RFS = SelectFromModel(estimator=solver,
+                                       threshold=threshold,
+                                       max_features=max_features).fit(X, Y)
+            mask = self.RFS.get_support()
             for n, column in enumerate(X.columns):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed by the ' +
                           'recursive feature eliminator.', self, 2)
                     X.drop(column, axis=1, inplace=True)
-        '''
-        # Print selected features
-        prlog(' --> List of selected features: ', self, 2)
-        string = '   '
-        for n, column in enumerate(X.columns):
-            string += f'  {n+1}.{column}'
-        prlog(string, self, 2)
-        '''
+
+        elif strategy is not None:
+            raise ValueError('Invalid feature selection strategy selected.'
+                             "Choose one of: ['univariate', 'PCA', 'RFS']")
+
         return X
 
     def fit(self, X, Y, percentage=100):
@@ -714,7 +727,9 @@ class ATOM(object):
 
         parameters = 'Parameters: {metric: ' + str(self.metric) + \
                      ', impute: ' + str(self.impute) + \
-                     ', features: ' + str(self.features) + \
+                     ', strategy: ' + str(self.strategy) + \
+                     ', solver: ' + str(self.solver) + \
+                     ', max_features: ' + str(self.max_features) + \
                      ', ratio: ' + str(self.ratio) + \
                      ', max_iter: ' + str(self.max_iter) + \
                      ', max_time: ' + str(self.max_time) + \
@@ -742,8 +757,11 @@ class ATOM(object):
         X = self.encoder(X)  # Perform encoding on features
 
         # Perform feature selection
-        if self.features is not None and self.features != 0:
-            X = self.feature_selection(X, Y, max_features=self.features)
+        if self.strategy is not None:
+            X = self.feature_selection(X, Y,
+                                       strategy=self.strategy,
+                                       solver=self.solver,
+                                       max_features=self.max_features)
 
         # Count target values before encoding to numerical (for later print)
         unique, counts = np.unique(Y, return_counts=True)
@@ -800,7 +818,7 @@ class ATOM(object):
 
         # << =================== Core ==================== >>
 
-        prlog('\n\nRunning pipeline =====================>', self)
+        prlog('\n\nRunning pipeline =================>', self)
 
         # If verbose=1, use tqdm to evaluate process
         if self.verbose == 1:
@@ -952,7 +970,7 @@ class ATOM(object):
             df = df.merge(Y.to_frame(), left_index=True, right_index=True)
 
         # Compute the correlation matrix
-        corr = df.corr()
+        corr = X.corr()
 
         # Generate a mask for the upper triangle
         mask = np.zeros_like(corr, dtype=np.bool)
