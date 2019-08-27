@@ -102,9 +102,9 @@ Feature selection strategy to use. Choose from:
 	+ None: do not perform any feature selection
 	+ 'univariate': perform a univariate statistical test
 	+ 'PCA': perform a principal component analysis
-	+ 'RFS': perform recursive feature selection
+	+ 'RFS': perform recursive feature selection using an existing model
 * **solver: string, model class or function (default=None)**  
-Solver to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
+Solver or model to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
 	+ for 'univariate', choose from:
 		- f_classif (default for classification tasks)
 		- f_regression (default for regression tasks)
@@ -184,18 +184,18 @@ Select best features according to the selected strategy. Ties between features w
 		- None: do not perform any feature selection
 		- 'univariate': perform a univariate statistical test
 		- 'PCA': perform a principal component analysis
-		- 'RFS': perform recursive feature selection
+		- 'RFS': perform recursive feature selection using an existing model
 	+ solver: string, model class or function (default=None)  
-	Solver to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
+	Solver or model to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
 		- for 'univariate', choose one from:
-			- f_classif (default for classification tasks)
-			- f_regression (default for regression tasks)
-			- mutual_info_classif
-			- mutual_info_regression
-			- chi2
+			^ f_classif (default for classification tasks)
+			^ f_regression (default for regression tasks)
+			^ mutual_info_classif
+			^ mutual_info_regression
+			^ chi2
 		- for 'PCA', choose one from:
-			- 'auto' (default)
-			- 'full'
+			* 'auto' (default)
+			* 'full'
 			- 'arpack'
 			- 'randomized'
 		- for 'RFS', choose a model class (not yet fitted). No default.
@@ -232,9 +232,9 @@ Class attributes
 * **X_test, Y_test**: validation set features and target
 * **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
 * **collinear**: dataframe containing the collinear features (if any) and their correlation value. Only if feature_selection was ran.
-* **univariate**: univariate feature selection class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html]
-* **PCA**: principal component analysis class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html]
-* **RFS**: recursive feature selector class (if used), from scikit-learn [https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html]
+* **univariate**: univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
+* **PCA**: principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
+* **RFS**: recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)
 
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
