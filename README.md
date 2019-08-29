@@ -4,8 +4,8 @@ Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost]([https://xgboost.readthedocs.io/en/latest/).  
-The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
+ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost](https://xgboost.readthedocs.io/en/latest/).  
+The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross-validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
   
 Usage  
@@ -137,9 +137,9 @@ Initial number of random tests of the BO. If 1, the model is fitted on the defau
 * **plot_bo: bool, optional (default=False)**  
 Wether to plot the BO's progress as it runs.
 * **cv: bool, optional (default=True)**  
-Wether to perform a K-fold cross validation n every model after the BO.
+Wether to perform a K-fold cross-validation n every model after the BO.
 * **n_splits: int, optional (default=4)**  
-Number of splits for the K-fold cross validation. Only if cv=True.
+Number of splits for the K-fold cross-validation. Only if cv=True.
 * **log: string, optional (default=None)**  
 Name of the log file, None to not save any log.
 * **n_jobs: int, optional (default=1)**  
@@ -213,7 +213,7 @@ Select best features according to the selected strategy. Ties between features w
 	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
 * **boxplot(figsize, filename=None)**  
-Make a boxplot of the results of the cross validation. Only after the class is fitted.
+Make a boxplot of the results of the cross-validation. Only after the class is fitted.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -230,12 +230,12 @@ Class attributes
 * **X, Y**: Data features and target.
 * **X_train, Y_train**: Training set features and target.
 * **X_test, Y_test**: validation set features and target.
-* **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **collinear**: Dataframe containing the collinear features and their correlation value. Only if feature_selection was ran.
 * **univariate**: Univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **RFS**: Recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
-
+* **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
+* **results**: Dataframe of the cross-validation's results per model.
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
   
@@ -289,6 +289,7 @@ Subclass attributes
 * **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
+* **atom.PA.results**: Array of the cross-validation's results. 
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': parameters used for the model
 	+ 'score': score of the chosen metric
