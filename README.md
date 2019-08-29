@@ -69,7 +69,7 @@ List of models on which to apply the pipeline. Possible values are (case insensi
 	+ 'RF' for Random Forest
 	+ 'AdaBoost' for Adaptive Boosting  
 	+ 'GBM' for Gradient Boosting Machine  
-	+ 'XGB' for Extreme Gradient Boosting (if package is available)  
+	+ 'XGB' for XGBoost (if package is available)  
 	+ 'lSVM' for Linear Support Vector Machine  
 	+ 'kSVM' for Kernel Support Vector Machine  
 	+ 'PA' for Passive Aggressive  
@@ -288,7 +288,7 @@ Subclass attributes
 * **atom.SVM.best_model**: Get the SVM model with highest score (not fitted).  
 * **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
-* **atom.GBM.error**: If the model encountered an exception, this shows it.  
+* **atom.MNB.error**: If the model encountered an exception, this shows it.  
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': parameters used for the model
 	+ 'score': score of the chosen metric
