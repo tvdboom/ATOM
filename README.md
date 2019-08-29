@@ -36,7 +36,7 @@ Make plots and analyse results:
 	aml.rf.plot_feature_importance()  # Visualize the feature ranking
 
 	# Call new ATOM class for ML task exploration
-	atom = ATOM(models=['LogReg', 'AdaBoost', 'XGBoost'],
+	atom = ATOM(models=['LogReg', 'AdaBoost', 'XGB'],
 		    metric="f1",
 		    max_iter=20,
 		    init_points=1,
@@ -65,11 +65,11 @@ List of models on which to apply the pipeline. Possible values are (case insensi
 	+ 'QDA' for Quadratic Discriminant Analysis  
 	+ 'KNN' for K-Nearest Neighbors  
 	+ 'Tree' for a single Decision Tree  
-	+ 'ET' for Extra-Trees  
-	+ 'RF' for Random Forest  
+	+ 'ET' for Extra-Trees 
+	+ 'RF' for Random Forest
 	+ 'AdaBoost' for Adaptive Boosting  
 	+ 'GBM' for Gradient Boosting Machine  
-	+ 'XGBoost' for Extreme Gradient Boosting (if package is available)  
+	+ 'XGB' for Extreme Gradient Boosting (if package is available)  
 	+ 'lSVM' for Linear Support Vector Machine  
 	+ 'kSVM' for Kernel Support Vector Machine  
 	+ 'PA' for Passive Aggressive  
@@ -226,15 +226,15 @@ Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 
 Class attributes  
 -----------------------------  
-* **dataset**: dataframe of the features and target after pre-processing (not yet scaled)
-* **X, Y**: data features and target
-* **X_train, Y_train**: training set features and target
-* **X_test, Y_test**: validation set features and target
-* **errors**: contains a list of the encountered exceptions (if any) while fitting the models.
-* **collinear**: dataframe containing the collinear features and their correlation value. Only if feature_selection was ran.
-* **univariate**: univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
-* **PCA**: principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
-* **RFS**: recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
+* **dataset**: Dataframe of the features and target after pre-processing (not yet scaled).
+* **X, Y**: Data features and target.
+* **X_train, Y_train**: Training set features and target.
+* **X_test, Y_test**: validation set features and target.
+* **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
+* **collinear**: Dataframe containing the collinear features and their correlation value. Only if feature_selection was ran.
+* **univariate**: Univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
+* **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+* **RFS**: Recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 
   
 ### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
@@ -249,7 +249,7 @@ Plots the probability of every class in the target variable against the class se
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_feature_importance(figsize=(10, 6), filename=None)**  
-Plots the feature importance scores. Only works with tree based algorithms (Tree, ET, RF, AdaBoost, GBM and XGBoost).
+Plots the feature importance scores. Only works with tree based algorithms (Tree, ET, RF, AdaBoost, GBM and XGB).
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
