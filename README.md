@@ -284,12 +284,12 @@ Call any of the metrics as a method. It will return the metric (evaluated on the
   
 Subclass attributes
 -----------------------------  
-* **atom.MLP.best_params**: Get parameters of the MLP with highest score.
-* **atom.SVM.best_model**: Get the SVM model with highest score (not fitted).  
-* **atom.SVM.model_fit**: Get the SVM model with highest score (fitted).  
+* **atom.MLP.best_params**: Get parameters of the model with highest score.
+* **atom.SVM.best_model**: Get the model with highest score (not fitted).  
+* **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
 * **atom.PA.results**: Array of the cross-validation's results. 
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
-	+ 'params': parameters used for the model
-	+ 'score': score of the chosen metric
+	+ 'params': Parameters used for the model
+	+ 'score': Score of the chosen metric
