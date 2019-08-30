@@ -91,10 +91,10 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'Jaccard'  
 		- 'AUC' for Area Under Curve  
 		- 'LogLoss' for binary cross-entropy 
-* **successive_halving: boolean, optiuonal (default=False)**  
-Fit the pipeline using a successive_halving approach.
+* **successive_halving: boolean, optional (default=False)**  
+Fit the pipeline using a successive halving approach.
 * **skip_steps: int, optional (default=0)**  
-Skip n last steps of the successive_halving.
+Skip n last steps of the successive halving.
 * **impute: string, optional (default=None)**  
 Strategy for the imputing of missing values. Possible strategies are:
 	+ None to not perform any imputation  
