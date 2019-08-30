@@ -5,7 +5,7 @@ Email: m.524687@gmail.com
 Description  
 ------------------------  
 ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost](https://xgboost.readthedocs.io/en/latest/).  
-The pipeline, first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross-validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. The class contains the models as subclasses, on which you can call extra methods and attributes. 
+The pipeline first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross-validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. ATOM can be implemented using a successive halving approach. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
   
 Usage  
@@ -90,7 +90,11 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'F1'
 		- 'Jaccard'  
 		- 'AUC' for Area Under Curve  
-		- 'LogLoss' for binary cross-entropy  
+		- 'LogLoss' for binary cross-entropy 
+* **successive_halving: boolean, optiuonal (default=False)**  
+Fit the pipeline using a successive_halving approach.
+* **skip_steps: int, optional (default=0)**  
+Skip n last steps of the successive_halving.
 * **impute: string, optional (default=None)**  
 Strategy for the imputing of missing values. Possible strategies are:
 	+ None to not perform any imputation  
@@ -212,8 +216,10 @@ Select best features according to the selected strategy. Ties between features w
 	Remove features with constant instances in at least this fraction of the total.
 	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
-* **boxplot(figsize, filename=None)**  
+* **boxplot(i=-1, figsize, filename=None)**  
 Make a boxplot of the results of the cross-validation. Only after the class is fitted.
+	+ i, int, optional (default=last iteration)  
+	Number of iteration of the successive_halving to plot.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -235,9 +241,9 @@ Class attributes
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **RFS**: Recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
-* **results**: Dataframe of the cross-validation's results per model.
+* **results**: Dataframe (or array of dataframes if successive_halving=True) of the cross-validation's results.
   
-### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive).
+### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive). If successive_halving=True, the model subclass corresponds to the last fitted model.
   
 Subclass methods (plots)  
 -----------------------------  
@@ -289,7 +295,7 @@ Subclass attributes
 * **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
 * **atom.Tree.prediction**: Get the predictions on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
-* **atom.PA.results**: Array of the cross-validation's results. 
+* **atom.PA.results**: Array of the cross-validation's results.
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
