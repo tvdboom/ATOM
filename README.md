@@ -218,8 +218,8 @@ Select best features according to the selected strategy. Ties between features w
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
 * **boxplot(i=-1, figsize, filename=None)**  
 Make a boxplot of the results of the cross-validation. Only after the class is fitted.
-	+ i, int, optional (default=last iteration)  
-	Number of iteration of the successive_halving to plot.
+	+ i, int, optional (default=-1)  
+	Number of iteration of the successive_halving to plot. i=-1 indicates the last step.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
