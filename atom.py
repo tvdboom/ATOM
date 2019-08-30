@@ -32,7 +32,6 @@ from sklearn.model_selection import (
     train_test_split, KFold, StratifiedKFold, cross_val_score
     )
 
-
 # Metrics
 from sklearn.metrics import (
     precision_score, recall_score, accuracy_score, f1_score, roc_auc_score,
@@ -171,11 +170,13 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
 class ATOM(object):
 
-    def __init__(self, models=None, metric=None, impute='median',
-                 strategy=None, solver=None, max_features=0.9,
+    def __init__(self, models=None, metric=None,
+                 successive_halving=False, skip_steps=0,
+                 impute='median', strategy=None, solver=None, max_features=0.9,
                  ratio=0.3, max_iter=15, max_time=np.inf, eps=1e-08,
-                 batch_size=1, init_points=5, plot_bo=False, cv=True,
-                 n_splits=4, log=None, n_jobs=1, verbose=0):
+                 batch_size=1, init_points=5, plot_bo=False,
+                 cross_validation=True, n_splits=4,
+                 log=None, n_jobs=1, verbose=0):
 
         '''
         DESCRIPTION -----------------------------------
@@ -184,30 +185,34 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        models       --> list of models to use
-        metric       --> metric to perform evaluation on
-        impute       --> strategy of the imputer to use (if None, no imputing)
-        strategy     --> feature selection strategy to use
-        solver       --> solver or model for the feature selection strategy
-        max_features --> number of features to select (None for all)
-        ratio        --> train/test split ratio
-        max_iter     --> maximum number of iterations of the BO
-        max_time     --> maximum time for the BO (in seconds)
-        eps          --> minimum distance between two consecutive x's
-        batch_size   --> size of the batch in which the objective is evaluated
-        init_points  --> initial number of random tests of the BO
-        plot_bo      --> boolean to plot the BO's progress
-        cv           --> perform kfold cross validation
-        n_splits     --> number of splits for the stratified kfold
-        log          --> keep log file
-        n_jobs       --> number of cores to use for parallel processing
-        verbose      --> verbosity level (0, 1 or 2)
+        models             --> list of models to use
+        metric             --> metric to perform evaluation on
+        successive_halving --> wether to perform successive halving
+        skip_steps         --> skip last n steps of successive halving
+        impute             --> imputation strategy (if None, no imputing)
+        strategy           --> feature selection strategy to use
+        solver             --> solver or model for feature selection
+        max_features       --> number of features to select (None for all)
+        ratio              --> train/test split ratio
+        max_iter           --> maximum number of iterations of the BO
+        max_time           --> maximum time for the BO (in seconds)
+        eps                --> minimum distance between two consecutive x's
+        batch_size         --> batch size in which the objective is evaluated
+        init_points        --> initial number of random tests of the BO
+        plot_bo            --> boolean to plot the BO's progress
+        cross_validation   --> perform kfold cross-validation
+        n_splits           --> number of splits for the stratified kfold
+        log                --> keep log file
+        n_jobs             --> number of cores to use for parallel processing
+        verbose            --> verbosity level (0, 1 or 2)
 
         '''
 
         # Set attributes to class (set to default if input is invalid)
         self.models = models
         self.metric = metric
+        self.successive_halving = bool(successive_halving)
+        self.skip_steps = int(skip_steps) if skip_steps > 0 else 0
         self.impute = impute
         self.strategy = strategy
         self.solver = solver
@@ -219,7 +224,7 @@ class ATOM(object):
         self.batch_size = int(batch_size) if batch_size > 0 else 1
         self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
-        self.cv = bool(cv)
+        self.cross_validation = bool(cross_validation)
         self.n_splits = int(n_splits) if n_splits > 0 else 4
         self.n_jobs = int(n_jobs)  # Gets checked later
         self.verbose = verbose if verbose in (0, 1, 2, 3) else 0
@@ -227,8 +232,12 @@ class ATOM(object):
         # Set log file name
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
 
-        # Save model erros (if any)
-        self.errors = ''
+        # Save model erros (if any) in dictionary
+        self.errors = {}
+
+        # Save the cross-validation's results in array of dataframes
+        # Only for successive halving
+        self.results = []
 
     def check_features(self, X, output=False):
         ''' Remove non-numeric features with unhashable type '''
@@ -449,13 +458,12 @@ class ATOM(object):
                 corr_values = list(upper[column][abs(upper[column]) > limit])
                 drop_features = [column for _ in corr_features]
 
-                # Record the information in a temp dataframe
-                temp = pd.DataFrame.from_dict({'drop_feature': drop_features,
-                                               'corr_feature': corr_features,
-                                               'corr_value': corr_values})
-
                 # Add to class attribute
-                self.collinear = self.collinear.append(temp, ignore_index=True)
+                self.collinear = \
+                    self.collinear.append({'drop_feature': drop_features,
+                                           'corr_feature': corr_features,
+                                           'corr_value': corr_values},
+                                          ignore_index=True)
 
                 prlog(f' --> Feature {column} was removed due to ' +
                       'collinearity with another feature.', self, 2)
@@ -503,7 +511,7 @@ class ATOM(object):
         if max_features is not None and max_features < 1:
             max_features = int(max_features * X.shape[1])
 
-        # Perform selection from model or univariate
+        # Perform selection based on strategy
         if strategy.lower() == 'univariate':
             if max_features is None:
                 max_features = X.shape[1]
@@ -522,7 +530,8 @@ class ATOM(object):
                     X.drop(column, axis=1, inplace=True)
 
         elif strategy.lower() == 'pca':
-            prlog(f' --> Applying PCA... ', self, 2)
+            prlog(f' --> Applying Principal Component Analysis... ', self, 2)
+            X = StandardScaler().fit_transform(X)  # Scale features first
             solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
             X = self.PCA.fit_transform(X, Y)
@@ -564,6 +573,153 @@ class ATOM(object):
 
         # << ============ Inner Function ============ >>
 
+        def run_iteration(self):
+            ''' Core iterations, multiple needed for successive halving '''
+
+            # In case there is no cross-validation
+            results = 'No cross-validation performed'
+            # If verbose=1, use tqdm to evaluate process
+            if self.verbose == 1:
+                loop = tqdm(self.final_models)
+            else:
+                loop = self.final_models
+
+            # Loop over every independent model
+            for model in loop:
+                # Set model class
+                setattr(self, model, eval(model)(self.data,
+                                                 self.metric,
+                                                 self.goal,
+                                                 self.log,
+                                                 self.verbose))
+
+                try:  # If errors occure, just skip the model
+                    # GNB and GP have no hyperparameters to tune
+                    if model not in ('GNB', 'GP'):
+                        getattr(self, model).BayesianOpt(self.max_iter,
+                                                         self.max_time,
+                                                         self.eps,
+                                                         self.batch_size,
+                                                         self.init_points,
+                                                         self.plot_bo,
+                                                         self.n_jobs)
+                    if self.cross_validation:
+                        getattr(self, model).cross_val_evaluation(
+                                                    self.n_splits, self.n_jobs)
+
+                except Exception as ex:
+                    prlog('Exception encountered while running '
+                          + f'the {model} model. Removing model from pipeline.'
+                          + f'\n{type(ex).__name__}: {ex}', self, 1, True)
+
+                    # Save the exception to model attribute
+                    exception = type(ex).__name__ + ': ' + str(ex)
+                    getattr(self, model).error = exception
+
+                    # Append exception to ATOM errors dictionary
+                    self.errors[model] = exception
+
+                    # Replace model with value X for later removal
+                    # Can't remove at once to not disturb list order
+                    self.final_models[self.final_models.index(model)] = 'X'
+
+                # Set model attributes for lowercase as well
+                setattr(self, model.lower(), getattr(self, model))
+
+            # Remove faulty models (replaced with X)
+            while 'X' in self.final_models:
+                self.final_models.remove('X')
+
+            if self.cross_validation:
+                try:  # Check that at least one model worked
+                    lenx = max([len(getattr(self, m).name)
+                                for m in self.final_models])
+                    max_mean = max([getattr(self, m).results.mean()
+                                    for m in self.final_models])
+                except ValueError:
+                    raise ValueError('It appears all models failed to run...')
+
+                # Print final results (summary of cross-validation)
+                t = time() - t_init  # Total time in seconds
+                h = int(t/3600.)
+                m = int(t/60.) - h*60
+                s = int(t - h*3600 - m*60)
+                prlog('\n\nFinal stats ================>>', self)
+                prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
+                prlog(f'Target metric: {self.metric}', self)
+                prlog('--------------------------------', self)
+
+                # Create dataframe with final results
+                results = pd.DataFrame(columns=['model', 'mean', 'std'])
+
+                for m in self.final_models:
+                    name = getattr(self, m).name
+                    shortname = getattr(self, m).shortname
+                    mean = getattr(self, m).results.mean()
+                    std = getattr(self, m).results.std()
+                    results = results.append({'model': shortname,
+                                              'mean': mean,
+                                              'std': std}, ignore_index=True)
+
+                    # Highlight best score (if more than one)
+                    if mean == max_mean and len(self.final_models) > 1:
+                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
+                              .format(name, lenx, mean, std), self)
+                    else:
+                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
+                              .format(name, lenx, mean, std), self)
+
+            return results
+
+        def data_preparation(self, X, Y, percentage=100):
+            ''' Make a dct of data (complete, train, test and scaled) '''
+
+            data = {}
+            data['X'] = X.head(int(len(X)*percentage/100))
+            data['Y'] = Y.head(int(len(X)*percentage/100))
+
+            # Split train and test for the BO on percentage of data
+            data['X_train'], data['X_test'], data['Y_train'], data['Y_test'] \
+                = train_test_split(data['X'],
+                                   data['Y'],
+                                   test_size=self.ratio,
+                                   random_state=1)
+
+            # List of models that need scaling
+            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB',
+                              'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+            # Check if any scaling models in final_models
+            scale = any(model in self.final_models for model in scaling_models)
+            # If PCA was performed, features are already scaled
+            # Made string in case it is None
+            if scale and str(self.strategy).lower() != 'pca':
+                # Normalize features to mean=0, std=1
+                data['X_scaled'] = StandardScaler().fit_transform(data['X'])
+                scaler = StandardScaler().fit(data['X_train'])
+                data['X_train_scaled'] = scaler.transform(data['X_train'])
+                data['X_test_scaled'] = scaler.transform(data['X_test'])
+
+            return data
+
+        def print_data_stats(self):
+            prlog('\nData stats =====================>', self, 1)
+            prlog('Number of features: {}\nNumber of instances: {}'
+                  .format(self.data['X'].shape[1],
+                          self.data['X'].shape[0]), self, 1)
+            prlog('Size of training set: {}\nSize of validation set: {}'
+                  .format(len(self.data['X_train']),
+                          len(self.data['X_test'])), self, 1)
+
+            # Print count of target values
+            if self.goal != 'regression':
+                _, counts = np.unique(self.data['Y'], return_counts=True)
+                lenx = max(max([len(str(i)) for i in self.unique]),
+                           len(self.data['Y'].name))
+                prlog('Number of instances per target class:', self, 2)
+                prlog(f"{self.data['Y'].name:{lenx}} --> Count", self, 2)
+                for i in range(len(self.unique)):
+                    prlog(f'{self.unique[i]:<{lenx}} --> {counts[i]}', self, 2)
+
         def not_regression(final_models):
             ''' Remove classification-only models from pipeline '''
 
@@ -576,13 +732,13 @@ class ATOM(object):
 
             return final_models
 
-        def shuffle(a, b):
-            ''' Shuffles pd.Dataframe a and pd.Series b in unison '''
+        def shuffle(X, Y):
+            ''' Shuffles pd.Dataframe X and pd.Series Y in unison '''
 
-            if len(a) != len(b):
+            if len(X) != len(Y):
                 raise ValueError("X and Y don't have the same number of rows!")
-            p = np.random.permutation(len(a))
-            return a.ix[p], b[p]
+            p = np.random.permutation(len(X))
+            return X.ix[p], Y[p]  # Difference in calling because of data type
 
         # << ============ Initialize ============ >>
 
@@ -603,6 +759,7 @@ class ATOM(object):
         X.drop(X.index[idx], inplace=True)
         Y.drop(Y.index[idx], inplace=True)
 
+        # Get percentage of data
         X, Y = shuffle(X, Y)  # Shuffle before selecting percentage
         X = X.head(int(len(X)*percentage/100))
         Y = Y.head(int(len(Y)*percentage/100))
@@ -650,7 +807,7 @@ class ATOM(object):
         # Check validity models
         model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
                       'QDA', 'KNN', 'Tree', 'ET', 'RF', 'AdaBoost', 'GBM',
-                      'XGBoost', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+                      'XGB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
         # Class attribute because needed for boxplot
@@ -679,10 +836,10 @@ class ATOM(object):
                             break
 
         # Check if XGBoost is available
-        if 'XGBoost' in self.final_models and not xgb_import:
+        if 'XGB' in self.final_models and not xgb_import:
             prlog("Unable to import XGBoost. Model removed from pipeline.",
                   self)
-            self.final_models.remove('XGBoost')
+            self.final_models.remove('XGB')
 
         # Linear regression can't perform classification
         if 'LinReg' in self.final_models and self.goal != 'regression':
@@ -725,24 +882,26 @@ class ATOM(object):
 
         # << ============ Save ATOM's parameters to log ============ >>
 
-        parameters = 'Parameters: {metric: ' + str(self.metric) + \
-                     ', impute: ' + str(self.impute) + \
-                     ', strategy: ' + str(self.strategy) + \
-                     ', solver: ' + str(self.solver) + \
-                     ', max_features: ' + str(self.max_features) + \
-                     ', ratio: ' + str(self.ratio) + \
-                     ', max_iter: ' + str(self.max_iter) + \
-                     ', max_time: ' + str(self.max_time) + \
-                     ', eps: ' + str(self.eps) + \
-                     ', batch_size: ' + str(self.batch_size) + \
-                     ', init_points: ' + str(self.init_points) + \
-                     ', plot_bo: ' + str(self.plot_bo) + \
-                     ', cv: ' + str(self.cv) + \
-                     ', n_splits: ' + str(self.n_splits) + \
-                     ', n_jobs: ' + str(self.n_jobs) + \
-                     ', verbose: ' + str(self.verbose) + '}'
+        params = 'Parameters: {metric: ' + str(self.metric) + \
+                 ', successive_halving: ' + str(self.successive_halving) + \
+                 ', skip_steps: ' + str(self.skip_steps) + \
+                 ', impute: ' + str(self.impute) + \
+                 ', strategy: ' + str(self.strategy) + \
+                 ', solver: ' + str(self.solver) + \
+                 ', max_features: ' + str(self.max_features) + \
+                 ', ratio: ' + str(self.ratio) + \
+                 ', max_iter: ' + str(self.max_iter) + \
+                 ', max_time: ' + str(self.max_time) + \
+                 ', eps: ' + str(self.eps) + \
+                 ', batch_size: ' + str(self.batch_size) + \
+                 ', init_points: ' + str(self.init_points) + \
+                 ', plot_bo: ' + str(self.plot_bo) + \
+                 ', cross_validation: ' + str(self.cross_validation) + \
+                 ', n_splits: ' + str(self.n_splits) + \
+                 ', n_jobs: ' + str(self.n_jobs) + \
+                 ', verbose: ' + str(self.verbose) + '}'
 
-        prlog(parameters, self, 5)  # Never print (only write to log)
+        prlog(params, self, 5)  # Never print (only write to log)
 
         # << ============ Data preprocessing ============ >>
 
@@ -763,159 +922,79 @@ class ATOM(object):
                                        solver=self.solver,
                                        max_features=self.max_features)
 
-        # Count target values before encoding to numerical (for later print)
-        unique, counts = np.unique(Y, return_counts=True)
+        # Get unqiue target values before encoding (for later print)
+        self.unique = np.unique(Y)
 
         # Make sure the target categories are numerical
         if Y.dtype.kind not in 'ifu':
             Y = pd.Series(LabelEncoder().fit_transform(Y), name=Y.name)
 
-        # << ============ Data preparation ============ >>
-
-        data = {}  # Dictionary of data (complete, train, test and scaled)
-        data['X'] = X
-        data['Y'] = Y
-
-        # Split train and test for the BO on percentage of data
-        data['X_train'], data['X_test'], data['Y_train'], data['Y_test'] = \
-            train_test_split(X, Y, test_size=self.ratio, random_state=1)
-
-        # Check if features need to be scaled
-        scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGBoost',
-                          'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
-
-        if any(model in self.final_models for model in scaling_models):
-            prlog('Scaling data...', self, 1)
-
-            # Normalize features to mean=0, std=1
-            data['X_scaled'] = StandardScaler().fit_transform(data['X'])
-            scaler = StandardScaler().fit(data['X_train'])
-            data['X_train_scaled'] = scaler.transform(data['X_train'])
-            data['X_test_scaled'] = scaler.transform(data['X_test'])
+        self.data = data_preparation(self, X, Y)  # Creates dct of data
 
         # Save data to class attribute for later use or for the user
-        self.data = data
         self.X, self.Y = X, Y
-        self.X_train, self.X_test, self.Y_train, self.Y_test = \
-            data['X_train'], data['X_test'], data['Y_train'], data['Y_test']
+        self.X_train, self.Y_train = self.data['X_train'], self.data['Y_train']
+        self.X_test, self.Y_test = self.data['X_test'], self.data['Y_test']
         self.dataset = X.merge(Y.to_frame(), left_index=True, right_index=True)
-
-        # << ============ Print data stats ============ >>
-
-        prlog('\nData stats =====================>', self, 1)
-        prlog('Number of features: {}\nNumber of instances: {}'
-              .format(data['X'].shape[1], data['X'].shape[0]), self, 1)
-        prlog('Size of the training set: {}\nSize of the validation set: {}'
-              .format(len(data['X_train']), len(data['X_test'])), self, 1)
-
-        # Print count of target values
-        if self.goal != 'regression':
-            lenx = max(max([len(str(i)) for i in unique]), len(Y.name))
-            prlog('Number of instances per target class:', self, 2)
-            prlog(f'{Y.name:{lenx}} --> Count', self, 2)
-            for i in range(len(unique)):
-                prlog(f'{unique[i]:<{lenx}} --> {counts[i]}', self, 2)
 
         # << =================== Core ==================== >>
 
-        prlog('\n\nRunning pipeline =================>', self)
+        if self.successive_halving:
+            prlog('\n\nRunning successive halving =================>>', self)
+            iteration = 0
+            while len(self.final_models) > 2**self.skip_steps - 1:
+                # Select percentage of data to use for this iteration
+                pct = 100./len(self.final_models)  # Use 1/N of the data
+                self.data = data_preparation(self, X, Y, pct)
+                prlog('\n\n<<================ Iteration {} ================>>'
+                      .format(iteration), self)
+                prlog(f'Models in pipeline: {self.final_models}', self)
+                print_data_stats(self)
 
-        # If verbose=1, use tqdm to evaluate process
-        if self.verbose == 1:
-            loop = tqdm(self.final_models)
+                # Run iteration
+                results = run_iteration(self)
+                self.results.append(results)
+
+                # Select best models for halving
+                lx = results.nlargest(n=int(len(self.final_models)/2),
+                                      columns='mean',
+                                      keep='all')
+
+                # Keep the models in the same order
+                n = []  # List of new models
+                [n.append(m) for m in self.final_models if m in list(lx.model)]
+                self.final_models = n.copy()
+                iteration += 1
+
         else:
-            loop = self.final_models
-
-        # Loop over every independent model
-        for model in loop:
-            # Set model class
-            setattr(self, model, eval(model)(data,
-                                             self.metric,
-                                             self.goal,
-                                             self.log,
-                                             self.verbose))
-
-            try:  # If errors occure, just skip the model
-                if model not in ('GNB', 'GP'):  # No hyperparameters to tune
-                    getattr(self, model).BayesianOpt(self.max_iter,
-                                                     self.max_time,
-                                                     self.eps,
-                                                     self.batch_size,
-                                                     self.init_points,
-                                                     self.plot_bo,
-                                                     self.n_jobs)
-                if self.cv:
-                    getattr(self, model).cross_val_evaluation(self.n_splits,
-                                                              self.n_jobs)
-
-            except Exception as ex:
-                prlog('Exception encountered while running '
-                      + f'the {model} model. Removing model from pipeline.'
-                      + f'\n{type(ex).__name__}: {ex}', self, 1, True)
-
-                # Save the exception to model attribute
-                exception = type(ex).__name__ + ': ' + str(ex)
-                getattr(self, model).error = exception
-
-                # Append exception to ATOM errors
-                self.errors += (model + ' --> ' + exception + u'\n')
-
-                # Replace model with value X for later removal
-                # Can't remove at once to not disturb list order
-                self.final_models = \
-                    ['X' if x == model else x for x in self.final_models]
-
-        # Set model attributes for lowercase as well
-        for model in self.final_models:
-            setattr(self, model.lower(), getattr(self, model))
-
-        # Remove faulty models (replaced with X)
-        while 'X' in self.final_models:
-            self.final_models.remove('X')
-
-        if self.cv:
-            try:  # Check that at least one model worked
-                lenx = max([len(getattr(self, m).name)
-                            for m in self.final_models])
-                max_mean = max([getattr(self, m).results.mean()
-                                for m in self.final_models])
-            except ValueError:
-                raise ValueError('It appears all models failed to run...')
-
-            # Print final results (summary of cross-validation)
-            t = time() - t_init  # Total time in seconds
-            h = int(t/3600.)
-            m = int(t/60.) - h*60
-            s = int(t - h*3600 - m*60)
-            prlog('\n\nFinal stats ================>>', self)
-            prlog(f'Total duration: {h:02}h:{m:02}m:{s:02}s', self)
-            prlog(f'Target metric: {self.metric}', self)
-            prlog('------------------------------------', self)
-
-            for m in self.final_models:
-                name = getattr(self, m).name
-                mean = getattr(self, m).results.mean()
-                std = getattr(self, m).results.std()
-
-                # Highlight best score (if more than one)
-                if mean == max_mean and len(self.final_models) > 1:
-                    prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                          .format(name, lenx, mean, std), self)
-                else:
-                    prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                          .format(name, lenx, mean, std), self)
+            print_data_stats(self)
+            prlog('\n\nRunning pipeline =================>', self)
+            self.results = run_iteration(self)
 
         # <====================== End fit function ======================>
 
-    def boxplot(self, figsize=None, filename=None):
-        ''' Plot a boxplot of the found metric results '''
+    def boxplot(self, i=-1, figsize=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a boxplot of the found metric results.
+
+        PARAMETERS -------------------------------------
+
+        i        --> iteration of the successive halving to plot (default last)
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         results, names = [], []
         try:  # Can't make plot before running fit!
-            for m in self.final_models:
+            df = self.results[i] if self.successive_halving else self.results
+            for m in df.model:
                 results.append(getattr(self, m).results)
                 names.append(getattr(self, m).shortname)
-        except AttributeError:
+        except (IndexError, AttributeError):
             raise Exception('You need to fit the class before plotting!')
 
         if figsize is None:
@@ -926,9 +1005,7 @@ class ATOM(object):
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(getattr(self, self.final_models[0]).metric,
-                   fontsize=16,
-                   labelpad=12)
+        plt.ylabel(getattr(self, df.model[0]).metric, fontsize=16, labelpad=12)
         plt.title('Model comparison', fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
@@ -1016,7 +1093,7 @@ class BaseModel(object):
         self.metric_min = ['max_error', 'MAE', 'MSE', 'MSLE']
 
         # List of tree-based models
-        self.tree = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM', 'XGBoost']
+        self.tree = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM', 'XGB']
 
         # Set attributes to child class
         self.__dict__.update(kwargs)
@@ -1200,8 +1277,8 @@ class BaseModel(object):
         self.best_model = self.get_model(self.best_params)
 
         # Save best predictions
-        self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
-        self.prediction = self.model_fit.predict(self.X_test)
+        self.best_model_fit = self.best_model.fit(self.X_train, self.Y_train)
+        self.prediction = self.best_model_fit.predict(self.X_test)
 
         # Optimal score of the BO
         score = opt.fx_opt if self.metric in self.metric_min else -opt.fx_opt
@@ -1254,8 +1331,9 @@ class BaseModel(object):
             prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 1)
 
             self.best_model = self.get_model()
-            self.model_fit = self.best_model.fit(self.X_train, self.Y_train)
-            self.prediction = self.model_fit.predict(self.X_test)
+            self.best_model_fit = self.best_model.fit(self.X_train,
+                                                      self.Y_train)
+            self.prediction = self.best_model_fit.predict(self.X_test)
 
         # Run cross-validation
         self.results = cross_val_score(self.best_model,
@@ -1342,11 +1420,11 @@ class BaseModel(object):
         Y = np.array(self.Y_train)
 
         # Models without predict_proba() method
-        if self.shortname in ('XGBoost', 'lSVM', 'kSVM'):
+        if self.shortname in ('XGB', 'lSVM', 'kSVM'):
             # Calculate new probabilities more accurate with cv
             mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
         else:
-            mod = self.model_fit
+            mod = self.best_model_fit
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -1389,7 +1467,7 @@ class BaseModel(object):
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        pd.Series(self.model_fit.feature_importances_,
+        pd.Series(self.best_model_fit.feature_importances_,
                   features).sort_values().plot.barh()
 
         plt.xlabel('Score', fontsize=16, labelpad=12)
@@ -1518,9 +1596,9 @@ class BaseModel(object):
 
             # A single decision tree has only one estimator
             if self.shortname != 'Tree':
-                estimator = self.model_fit.estimators_[num_trees]
+                estimator = self.best_model_fit.estimators_[num_trees]
             else:
-                estimator = self.model_fit
+                estimator = self.best_model_fit
 
             sklearn.tree.plot_tree(estimator,
                                    max_depth=max_depth,
@@ -1529,8 +1607,8 @@ class BaseModel(object):
                                    filled=True,
                                    fontsize=14)
 
-        elif self.shortname == 'XGBoost':
-            plot_tree(self.model_fit,
+        elif self.shortname == 'XGB':
+            plot_tree(self.best_model_fit,
                       num_trees=num_trees,
                       rankdir='LR' if rotate else 'UT')
         else:
@@ -1976,6 +2054,7 @@ class Tree(BaseModel):
 
 
 class ET(BaseModel):
+    'Extremely Randomized Trees class'
 
     def __init__(self, *args):
 
@@ -1983,7 +2062,7 @@ class ET(BaseModel):
         super().__init__(**set_init(*args, scaled=False))
 
         # Class attributes
-        self.name, self.shortname = 'Extremely Randomized Trees', 'Extra-Trees'
+        self.name, self.shortname = 'Extra-Trees', 'ET'
         self.goal = args[2]
 
     def get_params(self, x):
@@ -2214,7 +2293,8 @@ class GBM(BaseModel):
         return values
 
 
-class XGBoost(BaseModel):
+class XGB(BaseModel):
+    'Extreme Gradient Boosting class'
 
     def __init__(self, *args):
 
@@ -2222,7 +2302,7 @@ class XGBoost(BaseModel):
         super().__init__(**set_init(*args, scaled=True))
 
         # Class attributes
-        self.name, self.shortname = 'Extreme Gradient Boosting', 'XGBoost'
+        self.name, self.shortname = 'XGBoost', 'XGB'
         self.goal = args[2]
 
     def get_params(self, x):
