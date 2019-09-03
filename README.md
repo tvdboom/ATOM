@@ -12,6 +12,7 @@ Usage
 ------------------------  
 Call the pipeline class:  
 
+    from atom import ATOM
     atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
                 metric="MAE",
                 impute='median',
@@ -226,6 +227,11 @@ Make a boxplot of the results of the cross-validation. Only after the class is f
 * **plot_correlation(X, figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 	+ X: array or pd.Dataframe, optional if class is fitted  
+	+ figsize, 2d-tuple, otional (default=dependent on # of models)
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.
+* **plot_successive_halving(figsize=(10, 6), filename=None)**  
+Make a plot of the models' scores per iteration of the successive halving.
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
