@@ -650,24 +650,25 @@ class ATOM(object):
                 prlog('--------------------------------', self)
 
                 # Create dataframe with final results
-                results = pd.DataFrame(columns=['model', 'mean', 'std'])
+                results = pd.DataFrame(columns=['model', 'cv_mean', 'cv_std'])
 
                 for m in self.final_models:
                     name = getattr(self, m).name
                     shortname = getattr(self, m).shortname
-                    mean = getattr(self, m).results.mean()
-                    std = getattr(self, m).results.std()
+                    cv_mean = getattr(self, m).results.mean()
+                    cv_std = getattr(self, m).results.std()
                     results = results.append({'model': shortname,
-                                              'mean': mean,
-                                              'std': std}, ignore_index=True)
+                                              'cv_mean': cv_mean,
+                                              'cv_std': cv_std},
+                                             ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if mean == max_mean and len(self.final_models) > 1:
+                    if cv_mean == max_mean and len(self.final_models) > 1:
                         prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                              .format(name, lenx, mean, std), self)
+                              .format(name, lenx, cv_mean, cv_std), self)
                     else:
                         prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                              .format(name, lenx, mean, std), self)
+                              .format(name, lenx, cv_mean, cv_std), self)
 
             return results
 
@@ -855,7 +856,8 @@ class ATOM(object):
         if len(self.final_models) == 0:
             raise ValueError(f"No models found in pipeline. Try {model_list}")
 
-        prlog(f'Models in pipeline: {self.final_models}', self)
+        if not self.successive_halving:
+            prlog(f'Models in pipeline: {self.final_models}', self)
 
         # Set default metric
         if self.metric is None and self.goal == 'binary classification':
@@ -957,7 +959,7 @@ class ATOM(object):
 
                 # Select best models for halving
                 lx = results.nlargest(n=int(len(self.final_models)/2),
-                                      columns='mean',
+                                      columns='cv_mean',
                                       keep='all')
 
                 # Keep the models in the same order
@@ -1005,8 +1007,54 @@ class ATOM(object):
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(getattr(self, df.model[0]).metric, fontsize=16, labelpad=12)
+        plt.ylabel(self.metric, fontsize=16, labelpad=12)
         plt.title('Model comparison', fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_successive_halving(self, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a boxplot of the found metric results.
+
+        PARAMETERS -------------------------------------
+
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if not self.successive_halving:
+            raise ValueError('This plot is only available if the class was ' +
+                             'fitted using a successive halving approach!')
+
+        models = self.results[0].model  # List of models in first iteration
+        linx = [[] for m in models]
+        liny = [[] for m in models]
+        try:  # Can't make plot before running fit!
+            for m, df in enumerate(self.results):
+                for n, model in enumerate(models):
+                    if model in df.model.values:  # If model in iteration
+                        linx[n].append(m)
+                        liny[n].append(df.cv_mean[df.model == model].values[0])
+        except (IndexError, AttributeError):
+            raise Exception('You need to fit the class before plotting!')
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
+        for x, y, label in zip(linx, liny, models):
+            plt.plot(x, y, lw=2, marker='o', label=label)
+        plt.xlim(-0.2, len(self.results)-0.8)
+        plt.xlabel('Iteration', fontsize=16, labelpad=12)
+        plt.ylabel(self.metric, fontsize=16, labelpad=12)
+        plt.title('Successive halving scores', fontsize=16)
+        plt.legend(frameon=False, fontsize=14)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()
