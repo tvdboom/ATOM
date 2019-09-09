@@ -305,3 +305,14 @@ Subclass attributes
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
+
+Dependencies
+-----------------------------
+* **NumPy** (>=1.17.2)
+* **Pandas** (>=0.25.1)
+* **tqdm** (>=4.35.0)
+* **scikit-learn** (>=0.21.3)
+* **xgboost**, optional (>=0.90)
+* **GpyOpt** (>=1.2.5)
+* **Matplotlib** (>=3.1.1)
+* **Seaborn** (>=0.9.0)
