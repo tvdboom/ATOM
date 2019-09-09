@@ -2,18 +2,26 @@
 	<img src="/images/logo.png" alt="ATOM" title="ATOM" width="500" height="140" />
 </p>
 
-## Automated Tool for Optimized Modelling
+# Automated Tool for Optimized Modelling
 Author: tvdboom  
 Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. All ML algorithms are  implemented using the [scikit-learn](https://scikit-learn.org/stable/) python package except for the Extreme Gradient Booster, which uses [XGBoost](https://xgboost.readthedocs.io/en/latest/).  
-The pipeline first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross-validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. ATOM can be implemented using a successive halving approach. The class contains the models as subclasses, on which you can call extra methods and attributes. 
+ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. The pipeline takes the following steps:  
+1. Data Cleaning
+	* Delete rows with missing values in target column
+	* Check validity of column types
+	* Impute missing values in feature columns
+	* Encode categorical columns
+	* Normalize data (if necessary)
+2. Perform feature selection
+3. Loop over models (direct or via a successive halving approach)
+	* Select hyperparameters using a Bayesian Optimization approach
+	* Perform a K-fold cross-validation of the model
 
 <p align="center">
 	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
-	<figcaption>Steps taken by the ATOM pipeline.</figcaption>
 </p>
 
 Usage  
