@@ -1,4 +1,4 @@
-<img src="/images/logo.png" alt="ATOM" title="ATOM" width="500" height="300" />
+<img src="/images/logo.png" alt="ATOM" title="ATOM" width="1000" height="300" />
 
 ## Automated Tool for Optimized Modelling
 Author: tvdboom  
