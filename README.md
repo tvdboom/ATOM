@@ -12,7 +12,7 @@ ATOM is a python package for exploration of ML problems. With just a few lines o
 The pipeline first applies the imputing of missing values, the encoding of categorical features and the selection of best features. After that, it starts selecting the optimal hyperparameters per model using a Bayesian Optimization (BO) approach implemented with the [GPyOpt](https://sheffieldml.github.io/GPyOpt/) library. The data is fitted to the  selected metric. Hereafter, the pipleine performs a K-fold cross-validation on the complete data set. This is needed to avoid having a bias towards the hyperparameters selected by the BO and provides a better statistical overview of the final results. ATOM can be implemented using a successive halving approach. The class contains the models as subclasses, on which you can call extra methods and attributes. 
 
 <p align="center">
-	<img src="/images/diagram.png" alt="diagram" title="diagram" width="600" height="100" />
+	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
 </p>
 
 Usage  
