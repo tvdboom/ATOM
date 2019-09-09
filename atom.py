@@ -271,9 +271,10 @@ class ATOM(object):
 
         X                  --> data features: pd.Dataframe or array
         strategy           --> impute strategy. Choose from:
-                                   mean
-                                   median
-                                   most_frequent
+                                   remove: remove column if any missing value
+                                   mean: fill with mean of column
+                                   median: fill with median of column
+                                   most_frequent: fill with most frequent value
         max_frac_missing   --> maximum fraction of NaN values in column
         missing            --> list of values to impute, besides NaN and None
 
@@ -283,7 +284,7 @@ class ATOM(object):
 
         '''
 
-        strats = ['mean', 'median', 'most_frequent']
+        strats = ['remove', 'mean', 'median', 'most_frequent']
         if strategy.lower() not in strats:
             raise ValueError(f'Unkwown impute strategy. Try one of {strats}.')
 
@@ -307,6 +308,12 @@ class ATOM(object):
         imp_nonnumeric = SimpleImputer(strategy='most_frequent')
         for i in X.columns:
             if X[i].isna().any():  # Check if any value is missing in column
+                if strategy.lower() == 'remove':
+                    prlog(f' --> Feature {i} was removed since it contained ' +
+                          'missing values.', self, 2)
+                    X.drop(i, axis=1, inplace=True)
+                    continue
+
                 # Drop columns with too many NaN values
                 nans = X[i].isna().sum()
                 pnans = int(nans/len(X[i])*100)
