@@ -1,4 +1,4 @@
-![ATOM](/images/logo.png)
+<img src="/images/logo.png" alt="ATOM" title="ATOM" width="150" height="100" />
 ## Automated Tool for Optimized Modelling
 Author: tvdboom  
 Email: m.524687@gmail.com
