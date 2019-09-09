@@ -11,12 +11,16 @@ Description
 ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. The pipeline takes the following steps:  
 1. Data Cleaning
 	* Delete rows with missing values in target column
-	* Check validity of column types
+	* Check validity of feature types
+	* Remove columns with too many missing values
 	* Impute missing values in feature columns
-	* Encode categorical columns
+	* Encode categorical features
 	* Normalize data (if necessary)
 2. Perform feature selection
-3. Loop over models
+	* Remove features with too high collinearity
+	* Remove features with too low variance
+	* Select best features according to the chosen strategy
+3. Loop over models (either direct or via successive halving)
 	* Select hyperparameters using a Bayesian Optimization approach
 	* Perform a K-fold cross-validation of the model
 
@@ -117,6 +121,7 @@ Skip n last steps of the successive halving.
 * **impute: string, optional (default=None)**  
 Strategy for the imputing of missing values. Possible strategies are:
 	+ None to not perform any imputation  
+	+ 'remove' to remove columns with any missing value
 	+ 'mean' to impute with the mean of feature  
 	+ 'median' to impute with the median of feature  
 	+ 'most_frequent' to impute with the most frequent value (only option for categorical features)  
