@@ -335,7 +335,7 @@ Dependencies
 * **Pandas** (>=0.25.1)
 * **tqdm** (>=4.35.0)
 * **scikit-learn** (>=0.21.3)
-* **xgboost**, optional (>=0.90)
+* **XGBoost**, optional (>=0.90)
 * **GpyOpt** (>=1.2.5)
 * **Matplotlib** (>=3.1.1)
 * **Seaborn** (>=0.9.0)
