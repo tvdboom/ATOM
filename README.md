@@ -1,4 +1,5 @@
-## Automated Tool for Optimized Modelling (ATOM)
+![ATOM](/images/logo.png)
+## Automated Tool for Optimized Modelling
 Author: tvdboom  
 Email: m.524687@gmail.com
   
