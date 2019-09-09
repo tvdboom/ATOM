@@ -16,9 +16,11 @@ ATOM is a python package for exploration of ML problems. With just a few lines o
 	* Encode categorical columns
 	* Normalize data (if necessary)
 2. Perform feature selection
-3. Loop over models (direct or via a successive halving approach)
+3. Loop over models
 	* Select hyperparameters using a Bayesian Optimization approach
 	* Perform a K-fold cross-validation of the model
+
+
 
 <p align="center">
 	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
