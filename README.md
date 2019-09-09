@@ -13,6 +13,7 @@ The pipeline first applies the imputing of missing values, the encoding of categ
 
 <p align="center">
 	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
+	Steps taken by the ATOM pipeline.
 </p>
 
 Usage  
