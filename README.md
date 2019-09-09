@@ -38,7 +38,7 @@ Call the pipeline class:
     atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
                 metric="MAE",
                 impute='median',
-                features=0.8,
+                max_features=0.8,
                 ratio=0.25,
                 max_iter=10,
                 n_splits=5,
@@ -48,7 +48,7 @@ Run the pipeline:
     atom.fit(X, Y)  
 Make plots and analyse results: 
 
-	atom.boxplot('boxplot.png')  
+	atom.boxplot(filename='boxplot.png')  
 	atom.RF.plot_probabilities()  
   
   Alternatively, the data preprocessing methods can be called independently of the fit method to further tune specific parameters.
