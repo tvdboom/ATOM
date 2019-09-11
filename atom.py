@@ -1057,11 +1057,12 @@ class ATOM(object):
         fig, ax = plt.subplots(figsize=figsize)
         for x, y, label in zip(linx, liny, models):
             plt.plot(x, y, lw=2, marker='o', label=label)
-        plt.xlim(-0.2, len(self.results)-0.8)
+        plt.xlim(-0.1, len(self.results)-0.9)
         plt.xlabel('Iteration', fontsize=16, labelpad=12)
         plt.ylabel(self.metric, fontsize=16, labelpad=12)
         plt.title('Successive halving scores', fontsize=16)
         plt.legend(frameon=False, fontsize=14)
+        ax.set_xticks(range(len(self.results)))
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()
