@@ -331,11 +331,11 @@ Subclass attributes
 
 Dependencies
 -----------------------------
-* **NumPy** (>=1.17.2)
-* **Pandas** (>=0.25.1)
-* **tqdm** (>=4.35.0)
-* **scikit-learn** (>=0.21.3)
-* **XGBoost**, optional (>=0.90)
-* **GpyOpt** (>=1.2.5)
-* **Matplotlib** (>=3.1.1)
-* **Seaborn** (>=0.9.0)
+* **[NumPy](https://numpy.org/)** (>=1.17.2)
+* **[Pandas](https://pandas.pydata.org/)** (>=0.25.1)
+* **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.21.3)
+* **[XGBoost](https://xgboost.readthedocs.io/en/latest/)**, optional (>=0.90)
+* **[GpyOpt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)
+* **[Matplotlib](https://matplotlib.org/)** (>=3.1.1)
+* **[Seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
