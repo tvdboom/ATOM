@@ -30,6 +30,13 @@ ATOM is a python package for exploration of ML problems. With just a few lines o
 	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
 </p>
 
+
+Installation
+------------------------  
+Intall ATOM easily using `pip`
+	
+	pip install atom-ml
+
 Usage  
 ------------------------  
 Call the pipeline class:  
