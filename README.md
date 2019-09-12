@@ -41,7 +41,7 @@ Usage
 ------------------------  
 Call the pipeline class:  
 
-    from atom import ATOM
+    from atom-ml import ATOM
     atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
                 metric="MAE",
                 impute='median',
