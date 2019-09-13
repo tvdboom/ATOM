@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="/images/logo.png" alt="ATOM" title="ATOM" width="500" height="140" />
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="500" height="140" />
 </p>
 
 # Automated Tool for Optimized Modelling
@@ -27,7 +27,7 @@ ATOM is a python package for exploration of ML problems. With just a few lines o
 
 
 <p align="center">
-	<img src="/images/diagram.png" alt="diagram" title="diagram" width="700" height="250" />
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="700" height="250" />
 </p>
 
 
