@@ -14,7 +14,7 @@ import pandas as pd
 from tqdm import tqdm
 from time import time
 import multiprocessing
-from basemodel import prlog
+from .basemodel import prlog
 
 # Sklearn
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -26,7 +26,7 @@ from sklearn.feature_selection import (
 from sklearn.model_selection import train_test_split
 
 # Models
-from models import (
+from .models import (
         BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, ET, RF,
         AdaBoost, GBM, XGB, lSVM, kSVM, PA, SGD, MLP
         )
