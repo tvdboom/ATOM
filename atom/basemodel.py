@@ -28,17 +28,18 @@ from sklearn.metrics import (
     mean_absolute_error, mean_squared_error, mean_squared_log_error
     )
 
-# Plots
-import matplotlib as plt
-from matplotlib.gridspec import GridSpec
-import seaborn as sns
-
 # Others
 from GPyOpt.methods import BayesianOptimization
 try:
     from xgboost import plot_tree
 except ImportError:
     pass
+
+# Plots
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+import seaborn as sns
+sns.set(style='darkgrid', palette="GnBu_d")
 
 
 # << ============ Functions ============ >>
