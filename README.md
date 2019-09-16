@@ -61,7 +61,7 @@ Make plots and analyse results:
   Alternatively, the data preprocessing methods can be called independently of the fit method to further tune specific parameters.
   
   	# Create an optimized Random Forest for feature_selection
-	aml = ATOM('RF', cv=False)
+	aml = ATOM('RF', cross_validation=False)
 	aml.fit(X, Y, percentage=10)
 	aml.rf.plot_feature_importance()  # Visualize the feature ranking
 
@@ -171,7 +171,7 @@ Size of the batch in which the objective is evaluated
 Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
 * **plot_bo: bool, optional (default=False)**  
 Wether to plot the BO's progress as it runs.
-* **cv: bool, optional (default=True)**  
+* **cross_validation: bool, optional (default=True)**  
 Wether to perform a K-fold cross-validation n every model after the BO.
 * **n_splits: int, optional (default=4)**  
 Number of splits for the K-fold cross-validation. Only if cv=True.
