@@ -8,7 +8,7 @@ Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. The pipeline takes the following steps:  
+ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. The pipeline takes the following steps (many are optional):  
 1. Data Cleaning
 	* Delete rows with missing values in target column
 	* Check validity of feature types
