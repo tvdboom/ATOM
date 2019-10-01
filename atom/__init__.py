@@ -6,5 +6,4 @@ Author: tvdboom
 
 '''
 
-from ._version import __version__
 from .atom import ATOM

@@ -814,7 +814,7 @@ class lSVM(BaseModel):
         super().__init__(**set_init(*args, scaled=True))
 
         # Class attributes
-        self.name, self.shortname = 'Linear Support Vector Machine', 'lSVM'
+        self.name, self.shortname = 'Linear SVM', 'lSVM'
         self.goal = args[2]
 
     def get_params(self, x):
@@ -883,7 +883,7 @@ class kSVM(BaseModel):
         super().__init__(**set_init(*args, scaled=True))
 
         # Class attributes
-        self.name, self.shortname = 'Kernel Support Vector Machine', 'kSVM'
+        self.name, self.shortname = 'Non-linear SVM', 'kSVM'
         self.goal = args[2]
 
     def get_params(self, x):
