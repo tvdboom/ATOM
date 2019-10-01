@@ -1,4 +1,4 @@
-<p align="center">
+﻿<p align="center">
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="500" height="140" />
 </p>
 
@@ -41,7 +41,7 @@ Usage
 ------------------------  
 Call the pipeline class:  
 
-    import atom
+    from atom import ATOM
     atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
                 metric="MAE",
                 impute='median',
@@ -85,10 +85,10 @@ Class parameters
 ----------------------------- 
 * **models: string or list of strings, optional (default=all)**  
 List of models on which to apply the pipeline. Possible values are (case insensitive):    
-	+ 'GNB' for Gaussian Naïve Bayes  
-	+ 'MNB' for Multinomial Naïve Bayes  
-	+ 'BNB' for Bernoulli Naïve Bayes  
-	+ 'GP' for Gaussian Process  
+        + 'GNB' for Gaussian Naïve Bayes  
+        + 'MNB' for Multinomial Naïve Bayes  
+        + 'BNB' for Bernoulli Naïve Bayes  
+        + 'GP' for Gaussian Process  
 	+ 'LinReg' for linear regression (with elasticnet regularization)  
 	+ 'LogReg' for Logistic Regression  
 	+ 'LDA' for Linear Discriminant Analysis  
