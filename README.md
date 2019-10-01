@@ -85,10 +85,10 @@ Class parameters
 ----------------------------- 
 * **models: string or list of strings, optional (default=all)**  
 List of models on which to apply the pipeline. Possible values are (case insensitive):    
-        + 'GNB' for Gaussian Naïve Bayes  
-        + 'MNB' for Multinomial Naïve Bayes  
-        + 'BNB' for Bernoulli Naïve Bayes  
-        + 'GP' for Gaussian Process  
+	+ 'GNB' for Gaussian Naïve Bayes  
+	+ 'MNB' for Multinomial Naïve Bayes  
+	+ 'BNB' for Bernoulli Naïve Bayes  
+	+ 'GP' for Gaussian Process  
 	+ 'LinReg' for linear regression (with elasticnet regularization)  
 	+ 'LogReg' for Logistic Regression  
 	+ 'LDA' for Linear Discriminant Analysis  
