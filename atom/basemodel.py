@@ -6,6 +6,16 @@ Author: tvdboom
 
 '''
 
+
+# Remove annoying (forced) warnings from sklearn
+def warn(*args, **kwargs):
+    pass
+
+
+import warnings
+warnings.warn = warn
+
+
 # << ============ Import Packages ============ >>
 
 # Standard
@@ -32,7 +42,7 @@ from sklearn.metrics import (
 from GPyOpt.methods import BayesianOptimization
 try:
     from xgboost import plot_tree
-except ImportError:
+except ModuleNotFoundError:
     pass
 
 # Plots
@@ -103,10 +113,11 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
 
     for p in ('Y', 'Y_train', 'Y_test'):
         params[p] = data[p]
-        params['metric'] = metric
-        params['goal'] = goal
-        params['log'] = log
-        params['verbose'] = verbose
+
+    params['metric'] = metric
+    params['goal'] = goal
+    params['log'] = log
+    params['verbose'] = verbose
 
     return params
 
@@ -397,6 +408,7 @@ class BaseModel(object):
               self, 1)
 
     # << ============ Evaluation metric functions ============ >>
+
     def Precision(self):
         average = 'binary' if self.goal == 'binary classification' else 'macro'
         return precision_score(self.Y_test, self.prediction, average=average)
@@ -438,6 +450,7 @@ class BaseModel(object):
         return max_error(self.Y_test, self.prediction)
 
     # << ============ Plot functions ============ >>
+
     def plot_probabilities(self, target_class=1,
                            figsize=(10, 6), filename=None):
 
@@ -500,19 +513,23 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, figsize=(10, 15), filename=None):
+    def plot_feature_importance(self, show=20,
+                                figsize=(10, 15), filename=None):
         ''' Plot a (Tree based) model's feature importance '''
 
         if self.shortname not in self.tree:
             raise ValueError('This method only works for tree-based ' +
                              f'models. Try one of the following: {self.tree}')
 
-        features = list(self.X)
+        if isinstance(self.X, pd.DataFrame):
+            features = self.X.columns
+        else:
+            features = ['Feature ' + str(i) for i in range(self.X.shape[1])]
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         pd.Series(self.best_model_fit.feature_importances_,
-                  features).sort_values().plot.barh()
+                  index=features).nlargest(show).sort_values().plot.barh()
 
         plt.xlabel('Score', fontsize=16, labelpad=12)
         plt.ylabel('Features', fontsize=16, labelpad=12)
@@ -616,8 +633,8 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_decision_tree(self, num_trees=0, max_depth=None,
-                           rotate=False, figsize=(14, 10), filename=None):
+    def plot_tree(self, num_trees=0, max_depth=None,
+                  rotate=False, figsize=(14, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------

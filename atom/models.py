@@ -9,7 +9,7 @@ Author: tvdboom
 # << ============ Import Packages ============ >>
 
 import numpy as np
-from .basemodel import BaseModel
+from basemodel import BaseModel
 
 # Models
 from sklearn.gaussian_process import (
@@ -37,7 +37,11 @@ from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 try:
     from xgboost import XGBClassifier, XGBRegressor
-except ImportError:
+except ModuleNotFoundError:
+    pass
+try:
+    from lightgbm import LGBMClassifier, LGBMRegressor
+except ModuleNotFoundError:
     pass
 
 
@@ -677,6 +681,7 @@ class AdaBoost(BaseModel):
 
 
 class GBM(BaseModel):
+    'Gradient Boosting Machine'
 
     def __init__(self, *args):
 
@@ -742,7 +747,7 @@ class GBM(BaseModel):
 
 
 class XGB(BaseModel):
-    'Extreme Gradient Boosting class'
+    'Extreme Gradient Boosting'
 
     def __init__(self, *args):
 
@@ -762,7 +767,8 @@ class XGB(BaseModel):
                   'reg_alpha': round(x[0, 3], 1),
                   'reg_lambda': round(x[0, 4], 1),
                   'subsample': round(x[0, 5], 1),
-                  'max_depth': int(x[0, 6])}
+                  'max_depth': int(x[0, 6]),
+                  'colsample_bytree': round(x[0, 7], 1)}
         return params
 
     def get_model(self, params):
@@ -797,12 +803,88 @@ class XGB(BaseModel):
                  'domain': np.linspace(0.1, 1.0, 10)},
                 {'name': 'max_depth',
                  'type': 'discrete',
-                 'domain': range(1, 11)}]
+                 'domain': range(1, 11)},
+                {'name': 'colsample_bytree',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 1.0, 10)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[100, 0.1, 1, 0, 1, 1.0, 3]])
+        values = np.array([[100, 0.1, 1, 0, 1, 1.0, 3, 1]])
+        return values
+
+
+class LGBM(BaseModel):
+    'Light Gradient Boosting Machine'
+
+    def __init__(self, *args):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(*args, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Light GBM', 'LGBM'
+        self.goal = args[2]
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        params = {'n_estimators': int(x[0, 0]),
+                  'learning_rate': round(x[0, 1], 2),
+                  'min_child_samples': int(x[0, 2]),
+                  'reg_alpha': round(x[0, 3], 1),
+                  'reg_lambda': round(x[0, 4], 1),
+                  'subsample': round(x[0, 5], 1),
+                  'max_depth': int(x[0, 6]),
+                  'colsample_bytree': round(x[0, 7], 1),
+                  'num_leaves': int(x[0, 8])}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the model with unpacked hyperparameters '''
+
+        if self.goal != 'regression':
+            return LGBMClassifier(**params)
+        else:
+            return LGBMRegressor(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'n_estimators',
+                 'type': 'discrete',
+                 'domain': range(20, 501)},
+                {'name': 'learning_rate',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
+                {'name': 'min_child_samples',
+                 'type': 'discrete',
+                 'domain': range(10, 41)},
+                {'name': 'reg_alpha',
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 80, 800)},
+                {'name': 'reg_lambda',
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 80, 800)},
+                {'name': 'subsample',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 1.0, 10)},
+                {'name': 'max_depth',
+                 'type': 'discrete',
+                 'domain': range(1, 11)},
+                {'name': 'colsample_bytree',
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 1.0, 800)},
+                {'name': 'num_leaves',
+                 'type': 'discrete',
+                 'domain': range(20, 41)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[100, 0.1, 20, 0, 1, 1.0, 3, 1, 31]])
         return values
 
 
