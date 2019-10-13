@@ -11,10 +11,11 @@ Author: tvdboom
 # Standard packages
 import numpy as np
 import pandas as pd
+from scipy.stats import zscore
 from tqdm import tqdm
 from time import time
 import multiprocessing
-from basemodel import prlog
+from .basemodel import prlog
 
 # Sklearn
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -26,7 +27,7 @@ from sklearn.feature_selection import (
 from sklearn.model_selection import train_test_split
 
 # Models
-from models import (
+from .models import (
         BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, ET, RF,
         AdaBoost, GBM, XGB, LGBM, lSVM, kSVM, PA, SGD, MLP
         )
@@ -48,28 +49,37 @@ sns.set(style='darkgrid', palette="GnBu_d")
 
 # << ============ Functions ============ >>
 
-def convert_to_pd(X, Y=None, columns=None):
-    ''' Convert X to pd.Dataframe and Y to pd.Series '''
+def params_to_log(f):
+    ''' Decorator to time a function '''
 
-    if not isinstance(X, pd.DataFrame):
+    def wrapper(*args, **kwargs):
+        # args[0]=class instance
+        prlog('Function "' + str(f.__name__) + f'" parameters: {kwargs}',
+              args[0], 5)
+        result = f(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+def convert_to_pd(data, columns=None):
+    ''' Convert data to pd.Dataframe or pd.Series '''
+
+    dim = data.ndim  # Get number of dimensions
+    if dim > 1 and not isinstance(data, pd.DataFrame):
         if columns is None:
-            columns = ['Feature ' + str(i) for i in range(X.shape[1])]
-            if Y is None:  # Add target name to the last column of the df
-                columns = columns[:-1] + 'target'
-        X = pd.DataFrame(X, columns=columns)
+            columns = ['Feature ' + str(i) for i in range(data.shape[1])]
+        data = pd.DataFrame(data, columns=columns)
 
-    if Y is not None:
-        if not isinstance(Y, pd.Series):
-            Y = pd.Series(Y, name='target')
+    elif dim == 1 and not isinstance(data, pd.Series):
+        name = columns if columns is not None else 'target'
+        data = pd.Series(data, name=name)
 
-        return X, Y
-    else:
-        return X
+    return data
 
 
 def merge(X, Y):
     ''' Merge pd.DataFrame and pd.Series into one df '''
-
     return X.merge(Y.to_frame(), left_index=True, right_index=True)
 
 
@@ -107,14 +117,13 @@ class ATOM(object):
             if len(X) != len(Y):
                 raise ValueError("X and Y don't have the same number of rows" +
                                  f': {len(X)}, {len(Y)}.')
-            X, Y = convert_to_pd(X, Y)
-            self.target = Y.name
+            X = convert_to_pd(X)
+            Y = convert_to_pd(Y)
             self.dataset = merge(X, Y)
 
         elif target is not None:  # If target is filled, X has to be a df
             if target not in X.columns.values:
                 raise ValueError('Target column not found in the dataset!')
-            self.target = target
             self.dataset = X
 
         else:
@@ -123,7 +132,7 @@ class ATOM(object):
         # << ============ Parameters tests ============ >>
 
         # Set parameters to default if input is invalid
-        self.target = X.columns[-1]
+        self.target = self.dataset.columns[-1]
         self.percentage = percentage if 0 < percentage < 100 else 100
         self.test_size = test_size if 0 < test_size < 1 else 0.3
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
@@ -241,9 +250,9 @@ class ATOM(object):
         '''
 
         if truth == 'dataset':  # Split again (no shuffling to keep same data)
-            self.train, self.test = train_test_split(self.dataset,
-                                                     test_size=self.test_size,
-                                                     shuffle=False)
+            # Possible because the length of self.train doesn't change
+            self.train = self.dataset[:len(self.train)]
+            self.test = self.dataset[len(self.train):]
 
         elif truth == 'train_test':  # Join train and test on rows
             self.dataset = pd.concat([self.train, self.test], join='outer',
@@ -272,16 +281,24 @@ class ATOM(object):
         # Print count of target values
         if self.goal != 'regression':
             _, counts = np.unique(self.Y, return_counts=True)
-            lenx = max(max([3 + len(str(i)) for i in self.unique]),
-                       len(self.Y.name))
-            prlog('Number of instances per target class:', self, 2)
-            prlog(f"{self.Y.name:{lenx}} --> Count", self, 2)
+            lx = max(max([len(str(i)) for i in self.unique]), len(self.Y.name))
+
+            prlog('Instances per target class:', self, 2)
+            prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
+
+            # Check if there was LabelEncoding for the target varaible or not
             for i in range(len(self.unique)):
-                prlog('{0}: {1:{2}} --> {3}'
-                      .format(self.target_mapping[self.unique[i]],
-                              self.unique[i], lenx - 3, counts[i]), self, 2)
+                if hasattr(self, 'target_mapping'):
+                    prlog('{0}: {1:<{2}} --> {3}'
+                          .format(self.target_mapping[self.unique[i]],
+                                  self.unique[i], lx - 3, counts[i]), self, 2)
+                else:
+                    prlog('{0:<{1}} --> {2}'
+                          .format(self.unique[i], lx, counts[i]), self, 2)
+
             prlog('', self, 2)  # Insert an empty row
 
+    @params_to_log
     def imputer(self, strat_num='remove', strat_cat='remove', max_frac=0.5,
                 missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None]):
 
@@ -356,6 +373,10 @@ class ATOM(object):
                 # Column is numerical and contains missing values
 
                 if strat_num not in strats:
+                    try:
+                        strat_num = float(strat_num)
+                    except ValueError:
+                        raise ValueError('Invalid value for strat_num!')
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_num)
                     fit_imputer(imp)
@@ -374,6 +395,8 @@ class ATOM(object):
                 # Column is categorical and contains missing values
 
                 if strat_cat not in ['remove', 'most_frequent']:
+                    if not isinstance(strat_cat, str):
+                        raise ValueError('Invalid value for strat_cat!')
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_cat)
                     fit_imputer(imp)
@@ -391,6 +414,7 @@ class ATOM(object):
 
         self.reset_attributes('train_test')  # Redefine new attributes
 
+    @params_to_log
     def encoder(self, max_number_onehot=10):
 
         '''
@@ -420,6 +444,8 @@ class ATOM(object):
                     dummies = pd.get_dummies(self.dataset[col], prefix=col)
                     self.dataset = pd.concat([self.dataset, dummies], axis=1)
                     self.dataset.drop(col, axis=1, inplace=True)
+
+                    # Place target column last
                     self.dataset = self.dataset[
                             [col for col in self.dataset if col != self.target]
                             + [self.target]]
@@ -432,7 +458,8 @@ class ATOM(object):
 
         self.reset_attributes('dataset')  # Redefine new attributes
 
-    def feature_selection(self, X, Y,
+    @params_to_log
+    def feature_selection(self,
                           strategy='univariate',
                           solver=None,
                           max_features=0.9,
@@ -467,13 +494,9 @@ class ATOM(object):
         max_correlation --> remove features with constant instances in at
                             least this fraction of the total
 
-        RETURNS ----------------------------------------
-
-        Dataframe of the selected features.
-
         '''
 
-        def remove_collinear(X, limit):
+        def remove_collinear(limit):
 
             '''
             DESCRIPTION -----------------------------------
@@ -487,17 +510,12 @@ class ATOM(object):
 
             PARAMETERS -------------------------------------
 
-            X     --> data features: pd.Dataframe or array
             limit --> minimum value of the Pearson correlation cofficient
                       to identify correlated features
 
-            RETURNS ----------------------------------------
-
-            Dataframe after removing one of the two correlated features.
-
             '''
 
-            mtx = X.corr()  # Pearson correlation coefficient matrix
+            mtx = self.X_train.corr()  # Pearson correlation coefficient matrix
 
             # Extract the upper triangle of the correlation matrix
             upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
@@ -511,7 +529,6 @@ class ATOM(object):
 
             # Iterate to record pairs of correlated features
             for column in to_drop:
-
                 # Find the correlated features
                 corr_features = list(upper.index[abs(upper[column]) > limit])
 
@@ -529,9 +546,9 @@ class ATOM(object):
                 prlog(f' --> Feature {column} was removed due to ' +
                       'collinearity with another feature.', self, 2)
 
-            return X.drop(to_drop, axis=1)
+            self.dataset.drop(to_drop, axis=1)
 
-        def remove_low_variance(X, frac_variance):
+        def remove_low_variance(frac_variance):
 
             '''
             DESCRIPTION -----------------------------------
@@ -540,88 +557,90 @@ class ATOM(object):
 
             PARAMETERS -------------------------------------
 
-            X             --> data features: pd.Dataframe or array
             frac_variance --> remove features with constant instances in at
                               least this fraction of the total
-
-            RETURNS ----------------------------------------
-
-            Dataframe after removing the low variance features.
 
             '''
 
             threshold = frac_variance * (1. - frac_variance)
-            var = VarianceThreshold(threshold=threshold).fit(X)
+            var = VarianceThreshold(threshold=threshold).fit(self.X)
             mask = var.get_support()  # Get boolean mask of selected features
 
-            for n, column in enumerate(X):
+            for n, column in enumerate(self.X):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed due to' +
                           f' low variance: {var.variances_[n]:.2f}.', self, 2)
-                    X.drop(column, axis=1, inplace=True)
-
-            return X
+                    self.dataset.drop(column, axis=1, inplace=True)
 
         prlog('Performing feature selection...', self, 1)
 
         # First, drop features with too high correlation
-        X = remove_collinear(X, limit=max_correlation)
+        remove_collinear(limit=max_correlation)
         # Then, remove features with too low variance
-        X = remove_low_variance(X, frac_variance=frac_variance)
+        remove_low_variance(frac_variance=frac_variance)
+        # Dataset is possibly changed so need to reset attributes
+        self.reset_attributes('dataset')
 
+        # Set max_features as fraction of total
         if max_features is not None and max_features < 1:
-            max_features = int(max_features * X.shape[1])
-
-        # Return if no strategy is selected
-        if strategy is None:
-            return X
+            max_features = int(max_features * self.dataset.shape[1])
 
         # Perform selection based on strategy
         if strategy.lower() == 'univariate':
             if max_features is None:
-                max_features = X.shape[1]
+                max_features = self.dataset.shape[1]
             if solver is None:   # Set function dependent on goal
                 func = f_classif if self.goal != 'regression' else f_regression
             else:
                 func = solver
-            self.univariate = SelectKBest(func, k=max_features).fit(X, Y)
+            self.univariate = SelectKBest(func, k=max_features)
+            self.univariate.fit(self.X, self.Y)
             mask = self.univariate.get_support()
-            for n, column in enumerate(X):
+            for n, column in enumerate(self.X):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed after the ' +
                           'univariate test (score: {:.2f}  p-value: {:.2f}).'
                           .format(self.univariate.scores_[n],
                                   self.univariate.pvalues_[n]), self, 2)
-                    X.drop(column, axis=1, inplace=True)
+                    self.dataset.drop(column, axis=1, inplace=True)
+            self.reset_attributes('dataset')
 
         elif strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
-            X = StandardScaler().fit_transform(X)  # Scale features first
+
+            # Scale features first
+            self.dataset = StandardScaler().fit_transform(self.X_train)
             solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
-            X = self.PCA.fit_transform(X, Y)
-            X = convert_to_df(X)
+            self.X_train = convert_to_pd(self.PCA.fit_transform(self.X_train))
+            self.X_test = convert_to_pd(self.PCA.transform(self.X_test))
+            self.train = merge(self.X_train, self.Y_train)
+            self.test = merge(self.X_test, self.Y_test)
+            self.reset_attributes('train_test')
 
-        elif strategy.lower() == 'rfs':
+        elif strategy.lower() == 'sfm':
             if solver is None:
-                raise ValueError('Select a model class for the RFS solver!')
-            self.RFS = SelectFromModel(estimator=solver,
+                raise ValueError('Select a model for the solver!')
+
+            self.SFM = SelectFromModel(estimator=solver,
                                        threshold=threshold,
-                                       max_features=max_features).fit(X, Y)
-            mask = self.RFS.get_support()
-            for n, column in enumerate(X):
+                                       max_features=max_features)
+            self.SFM.fit(self.X, self.Y)
+            mask = self.SFM.get_support()
+
+            for n, column in enumerate(self.X):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed by the ' +
                           'recursive feature eliminator.', self, 2)
-                    X.drop(column, axis=1, inplace=True)
+                    self.dataset.drop(column, axis=1, inplace=True)
+            self.reset_attributes('dataset')
 
-        else:
+        elif strategy is not None:
             raise ValueError('Invalid feature selection strategy selected.'
-                             "Choose one of: ['univariate', 'PCA', 'RFS']")
+                             "Choose from: 'univariate', 'PCA' or 'RFS'")
 
-        return X
-
-    def balance_data(self, X, Y, oversample=0, undersample=1, neighbors=5):
+    @params_to_log
+    def balance_data(self, oversample=0, undersample=1, neighbors=5):
 
         '''
         DESCRIPTION -----------------------------------
@@ -630,8 +649,6 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        X           --> data features: pd.Dataframe or array
-        Y           --> data targets: pd.Series or array
         oversample  --> oversampling strategy. Choose from:
                             float: fraction minority/majority (only for binary)
                             'minority': resample only the minority class
@@ -652,41 +669,88 @@ class ATOM(object):
         if not imblearn_import:
             prlog("Unable to import imblearn. Skipping balancing the data...",
                   self)
-            return X, Y
 
-        columns = X.columns  # Save name columns for later
+        columns_x = self.X_train.columns  # Save name columns for later
+        length = len(self.X_train)
 
         # Oversample the minority class with SMOTE
         if oversample > 0:
             prlog('Performing oversampling...', self, 1)
-
-            X, Y = SMOTE(sampling_strategy=oversample,
-                         k_neighbors=neighbors,
-                         n_jobs=self.n_jobs).fit_resample(X, Y)
-            X, Y = convert_to_df(X, Y, columns=columns)
+            smote = SMOTE(sampling_strategy=oversample,
+                          k_neighbors=neighbors,
+                          n_jobs=self.n_jobs)
+            self.X_train, self.Y_train = smote.fit_resample(self.X_train,
+                                                            self.Y_train)
+            diff = len(self.X_train) - length  # Difference in length
+            prlog(f' --> Adding {diff} rows to minority class.', self, 1)
 
         # Apply undersampling of majority class
         if undersample < 1:
             prlog('Performing undersampling...', self, 1)
+            RUS = RandomUnderSampler(sampling_strategy=undersample)
+            self.X_train, self.Y_train = RUS.fit_resample(self.X_train,
+                                                          self.Y_train)
+            diff = length - len(self.X_train)  # Difference in length
+            prlog(f' --> Removing {diff} rows from majority class.', self, 1)
 
-            under = RandomUnderSampler(sampling_strategy=undersample)
-            X, Y = under.fit_resample(X, Y)
-            X, Y = convert_to_df(X, Y, columns=columns)
+        self.X_train = convert_to_pd(self.X_train, columns=columns_x)
+        self.Y_train = convert_to_pd(self.Y_train, columns=self.target)
+        self.train = merge(self.X_train, self.Y_train)
+        self.reset_attributes('train_test')
 
-        return X, Y
-
-    def fit(self, X, Y, percentage=100):
+    @params_to_log
+    def outliers(self, max_sigma=3, include_target=False):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Run the pipeline.
+        Remove outliers from the dataset.
 
         PARAMETERS -------------------------------------
 
-        X          --> data features: pd.Dataframe or array
-        Y          --> data targets: pd.Series or array
-        percentage --> percentage of data to use
+        max_sigma      --> maximum sigma accepted
+        include_target --> include target column when deleting outliers
+
+        '''
+
+        prlog('Handling outliers...', self, 1)
+
+        # Get z-score outliers index
+        objective = self.train if include_target else self.X_train
+        idx = (np.abs(zscore(objective)) < max_sigma).all(axis=1)
+
+        delete = len(idx) - idx.sum()  # Number of False values in idx
+        prlog(f' --> Dropping {delete} rows due to outliers.', self, 1)
+
+        # Remove rows based on index and reset attributes
+        self.train = self.train[idx]
+        self.reset_attributes('train_test')
+
+    @params_to_log
+    def fit(self, models=None, metric=None, successive_halving=False,
+            skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08,
+            batch_size=1, init_points=5, plot_bo=False,
+            cross_validation=True, n_splits=4):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Initialize class.
+
+        PARAMETERS -------------------------------------
+
+        models             --> list of models to use
+        metric             --> metric to perform evaluation on
+        successive_halving --> wether to perform successive halving
+        skip_steps         --> skip last n steps of successive halving
+        max_iter           --> maximum number of iterations of the BO
+        max_time           --> maximum time for the BO (in seconds)
+        eps                --> minimum distance between two consecutive x's
+        batch_size         --> batch size in which the objective is evaluated
+        init_points        --> initial number of random tests of the BO
+        plot_bo            --> boolean to plot the BO's progress
+        cross_validation   --> perform kfold cross-validation
+        n_splits           --> number of splits for the stratified kfold
 
         '''
 

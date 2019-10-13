@@ -22,6 +22,7 @@ warnings.warn = warn
 import numpy as np
 import pandas as pd
 import math
+import pickle
 from time import time
 from datetime import datetime
 from collections import deque
@@ -678,3 +679,10 @@ class BaseModel(object):
 
         if filename is not None:
             plt.savefig(filename)
+
+    def save(self, filename=None):
+        ''' Save model to pickle file '''
+
+        if filename is None:
+            filename = 'ATOM_' + self.name
+        pickle.dump(self.best_model_fit, open(filename, 'wb'))

@@ -9,7 +9,7 @@ Author: tvdboom
 # << ============ Import Packages ============ >>
 
 import numpy as np
-from basemodel import BaseModel
+from .basemodel import BaseModel
 
 # Models
 from sklearn.gaussian_process import (
