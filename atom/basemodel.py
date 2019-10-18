@@ -19,6 +19,7 @@ from collections import deque
 
 # Sklearn
 import sklearn
+from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import (
      KFold, StratifiedKFold, cross_val_score
@@ -146,8 +147,8 @@ class BaseModel(object):
         self.__dict__.update(kwargs)
 
     @timing
-    def BayesianOpt(self, max_iter=15, max_time=np.inf, eps=1e-08,
-                    batch_size=1, init_points=5, plot_bo=False, n_jobs=1):
+    def BayesianOpt(self, test_size, max_iter, max_time, eps,
+                    batch_size, init_points, cv, plot_bo, n_jobs):
 
         '''
         DESCRIPTION -----------------------------------
@@ -161,6 +162,7 @@ class BaseModel(object):
         eps         --> minimum distance between two consecutive x's
         batch_size  --> size of the batch in which the objective is evaluated
         init_points --> number of initial random tests of the BO
+        cv          --> splits for the cross validation
         plot_bo     --> boolean to plot the BO's progress
         n_jobs      --> number of cores to use for parallel processing
 
@@ -248,35 +250,82 @@ class BaseModel(object):
             self.BO['params'].append(params)
             prlog(f'Parameters --> {params}', self, 2, True)
 
-            alg = self.get_model(params).fit(self.X_train, self.Y_train)
-            self.predict = alg.predict(self.X_test)
+            algorithm = self.get_model(params)
 
-            out = getattr(self, self.metric)
+            if cv == 1:
+                # Split each iteration in different train and validation set
+                X_subtrain, X_val, Y_subtrain, Y_val = \
+                    train_test_split(self.X_train,
+                                     self.Y_train,
+                                     test_size=test_size,
+                                     shuffle=True)
 
-            self.BO['score'].append(out())
-            prlog(f'Evaluation --> {self.metric}: {out():.4f}', self, 2)
+                algorithm.fit(X_subtrain, Y_subtrain)
+                self.predict = algorithm.predict(X_val)
+
+                # Calculate metric on the validation set
+                output = getattr(self, self.metric)(Y_val)
+
+            else:  # Use cross validation to get the output of BO
+                # Set scoring metric for those that are different
+                if self.metric == 'MAE':
+                    scoring = 'neg_mean_absolute_error'
+                elif self.metric == 'MSE':
+                    scoring = 'neg_mean_squared_error'
+                elif self.metric == 'MSLE':
+                    scoring = 'neg_mean_squared_log_error'
+                elif self.metric == 'LogLoss':
+                    scoring = 'neg_log_loss'
+                elif self.metric == 'AUC':
+                    scoring = 'roc_auc'
+                else:
+                    scoring = self.metric.lower()
+
+                if self.goal != 'regression':
+                    # Folds are made preserving the % of samples for each class
+                    # Use same splits for every model
+                    kfold = StratifiedKFold(n_splits=cv, random_state=1)
+                else:
+                    kfold = KFold(n_splits=cv, random_state=1)
+
+                # Run cross-validation (get mean of results)
+                output = cross_val_score(algorithm,
+                                         self.X_train,
+                                         self.Y_train,
+                                         cv=kfold,
+                                         scoring=scoring,
+                                         n_jobs=n_jobs).mean()
+
+                # cross_val_score returns negative loss for minimizing metrics
+                if self.metric in self.metric_min:
+                    output = -output
+
+            # Save output of the BO and plot progress
+            self.BO['score'].append(output)
+            prlog(f'Evaluation --> {self.metric}: {output:.4f}', self, 2)
 
             if plot_bo:
                 # Start to fill NaNs with encountered metric values
                 if np.isnan(self.y1).any():
                     for i, value in enumerate(self.y1):
                         if math.isnan(value):
-                            self.y1[i] = out()
+                            self.y1[i] = output
                             if i > 0:  # The first value must remain empty
                                 self.y2[i] = abs(self.y1[i] - self.y1[i-1])
                             break
                 else:  # If no NaNs anymore, continue deque
                     self.x.append(max(self.x)+1)
-                    self.y1.append(out())
+                    self.y1.append(output)
                     self.y2.append(abs(self.y1[-1] - self.y1[-2]))
 
                 self.line1, self.line2, self.ax1, self.ax2 = \
                     animate_plot(self.x, self.y1, self.y2,
                                  self.line1, self.line2, self.ax1, self.ax2)
 
-            return out()
+            return output
 
         # << ============ Running optimization ============ >>
+
         prlog(f'\n\nRunning BO for {self.name}...', self, 1)
 
         # Save dictionary of BO steps
@@ -348,7 +397,7 @@ class BaseModel(object):
         prlog('Optimal {} score: {:.4f}'.format(self.metric, score), self, 1)
 
     @timing
-    def cross_val_evaluation(self, n_splits=5, n_jobs=1):
+    def bootsrap(self, n_splits=5, n_jobs=1):
 
         '''
         DESCRIPTION -----------------------------------
@@ -412,42 +461,53 @@ class BaseModel(object):
 
     # << ============ Evaluation metric functions ============ >>
 
-    def Precision(self):
+    def Precision(self, Y_true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
-        return precision_score(self.Y_test, self.predict, average=avg)
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return precision_score(Y_true, self.predict, average=avg)
 
-    def Recall(self):
+    def Recall(self, Y_true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
-        return recall_score(self.Y_test, self.predict, average=avg)
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return recall_score(Y_true, self.predict, average=avg)
 
-    def F1(self):
+    def F1(self, Y_true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
-        return f1_score(self.Y_test, self.predict, average=avg)
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return f1_score(Y_true, self.predict, average=avg)
 
-    def Jaccard(self):
+    def Jaccard(self, Y_true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
-        return jaccard_score(self.Y_test, self.predict, average=avg)
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return jaccard_score(Y_true, self.predict, average=avg)
 
-    def Accuracy(self):
-        return accuracy_score(self.Y_test, self.predict)
+    def Accuracy(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return accuracy_score(Y_true, self.predict)
 
-    def AUC(self):
-        return roc_auc_score(self.Y_test, self.predict)
+    def AUC(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return roc_auc_score(Y_true, self.predict)
 
-    def MAE(self):
-        return mean_absolute_error(self.Y_test, self.predict)
+    def MAE(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return mean_absolute_error(Y_true, self.predict)
 
-    def MSE(self):
-        return mean_squared_error(self.Y_test, self.predict)
+    def MSE(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return mean_squared_error(Y_true, self.predict)
 
-    def MSLE(self):
-        return mean_squared_log_error(self.Y_test, self.predict)
+    def MSLE(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return mean_squared_log_error(Y_true, self.predict)
 
-    def R2(self):
-        return r2_score(self.Y_test, self.predict)
+    def R2(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return r2_score(Y_true, self.predict)
 
-    def max_error(self):
-        return max_error(self.Y_test, self.predict)
+    def max_error(self, Y_true=None):
+        Y_true = self.Y_test if Y_true is None else Y_true
+        return max_error(Y_true, self.predict)
 
     # << ============ Plot functions ============ >>
 

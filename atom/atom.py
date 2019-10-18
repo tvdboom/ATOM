@@ -773,8 +773,7 @@ class ATOM(object):
     @params_to_log
     def fit(self, models=None, metric=None, successive_halving=False,
             skip_steps=0, max_iter=15, max_time=3600, eps=1e-08,
-            batch_size=1, init_points=5, plot_bo=False,
-            cross_validation=True, n_splits=4):
+            batch_size=1, init_points=5, plot_bo=False, cv=3):
 
         '''
         DESCRIPTION -----------------------------------
@@ -793,8 +792,7 @@ class ATOM(object):
         batch_size         --> batch size in which the objective is evaluated
         init_points        --> initial number of random tests of the BO
         plot_bo            --> boolean to plot the BO's progress
-        cross_validation   --> perform kfold cross-validation
-        n_splits           --> number of splits for the stratified kfold
+        cv                 --> splits for the cross validation
 
         '''
 
@@ -824,16 +822,17 @@ class ATOM(object):
                             warnings.simplefilter("ignore")
                         # GNB and GP have no hyperparameters to tune
                         if model not in ('GNB', 'GP'):
-                            getattr(self, model).BayesianOpt(self.max_iter,
+                            getattr(self, model).BayesianOpt(self.test_size,
+                                                             self.max_iter,
                                                              self.max_time,
                                                              self.eps,
                                                              self.batch_size,
                                                              self.init_points,
+                                                             self.cv,
                                                              self.plot_bo,
                                                              self.n_jobs)
-                        if self.cross_validation:
-                            getattr(self, model).cross_val_evaluation(
-                                                    self.n_splits, self.n_jobs)
+
+                        # if bootstrap: ....
 
                 except Exception as ex:
                     prlog('Exception encountered while running the '
@@ -858,7 +857,7 @@ class ATOM(object):
             while 'X' in self.models:
                 self.models.remove('X')
 
-            if self.cross_validation:
+            if self.cv > 0:
                 try:  # Check that at least one model worked
                     lenx = max([len(getattr(self, m).name)
                                 for m in self.models])
@@ -949,8 +948,7 @@ class ATOM(object):
         self.batch_size = int(batch_size) if batch_size > 0 else 1
         self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
-        self.cross_validation = bool(cross_validation)
-        self.n_splits = int(n_splits) if n_splits > 0 else 3
+        self.cv = int(cv) if cv > 0 else 3
 
         # Save model erros (if any) in dictionary
         self.errors = {}
