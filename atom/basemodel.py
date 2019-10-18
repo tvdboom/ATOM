@@ -6,16 +6,6 @@ Author: tvdboom
 
 '''
 
-
-# Remove annoying (forced) warnings from sklearn
-def warn(*args, **kwargs):
-    pass
-
-
-import warnings
-warnings.warn = warn
-
-
 # << ============ Import Packages ============ >>
 
 # Standard
@@ -35,15 +25,16 @@ from sklearn.model_selection import (
     )
 from sklearn.metrics import (
     precision_score, recall_score, accuracy_score, f1_score, roc_auc_score,
-    r2_score, jaccard_score, roc_curve, confusion_matrix, max_error, log_loss,
+    r2_score, jaccard_score, roc_curve, confusion_matrix, max_error,
     mean_absolute_error, mean_squared_error, mean_squared_log_error
     )
 
 # Others
 from GPyOpt.methods import BayesianOptimization
 try:
-    from xgboost import plot_tree
-except ModuleNotFoundError:
+    import xgboost
+    import lightgbm
+except ImportError:
     pass
 
 # Plots
@@ -70,7 +61,7 @@ def timing(f):
     return wrapper
 
 
-def prlog(string, cl, level=0, time=False):
+def prlog(string, class_, level=0, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -79,18 +70,18 @@ def prlog(string, cl, level=0, time=False):
 
     PARAMETERS -------------------------------------
 
-    cl     --> class of the element
+    class_ --> class of the element
     string --> string to output
     level  --> minimum verbosity level to print
     time   --> Wether to add the timestamp to the log
 
     '''
 
-    if cl.verbose > level:
+    if class_.verbose > level:
         print(string)
 
-    if cl.log is not None:
-        with open(cl.log, 'a+') as file:
+    if class_.log is not None:
+        with open(class_.log, 'a+') as file:
             if time:
                 # Datetime object containing current date and time
                 now = datetime.now()
@@ -144,12 +135,12 @@ class BaseModel(object):
 
         '''
 
-        # List of metrics where the goal is to minimize
-        # (Largely same as the regression metrics)
+        # List of metrics where the goal is to minimize it
         self.metric_min = ['max_error', 'MAE', 'MSE', 'MSLE']
 
         # List of tree-based models
-        self.tree = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM', 'XGB']
+        self.tree = ['Tree', 'Extra-Trees', 'RF',
+                     'AdaBoost', 'GBM', 'XGB', 'LGBM']
 
         # Set attributes to child class
         self.__dict__.update(kwargs)
@@ -258,7 +249,7 @@ class BaseModel(object):
             prlog(f'Parameters --> {params}', self, 2, True)
 
             alg = self.get_model(params).fit(self.X_train, self.Y_train)
-            self.prediction = alg.predict(self.X_test)
+            self.predict = alg.predict(self.X_test)
 
             out = getattr(self, self.metric)
 
@@ -332,9 +323,20 @@ class BaseModel(object):
         # Save best model (not yet fitted)
         self.best_model = self.get_model(self.best_params)
 
-        # Save best predictions
+        # Fit the selected model on the complete training set
         self.best_model_fit = self.best_model.fit(self.X_train, self.Y_train)
-        self.prediction = self.best_model_fit.predict(self.X_test)
+
+        # Save best predictions and probabilities on the test set
+        self.predict = self.best_model_fit.predict(self.X_test)
+
+        not_proba = ['LinReg', 'XGB', 'lSVM', 'kSVM']
+        if self.shortname in not_proba and self.goal != 'regression':
+            # Models without predict_proba() method need probs with ccv
+            self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
+            self.ccv.fit(self.X_test, self.Y_test)
+            self.predict_proba = self.ccv.predict_proba(self.X_test)
+        elif self.goal != 'regression':
+            self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
         # Optimal score of the BO
         score = opt.fx_opt if self.metric in self.metric_min else -opt.fx_opt
@@ -376,20 +378,20 @@ class BaseModel(object):
 
         if self.goal != 'regression':
             # Folds are made preserving the % of samples for each class
+            # random_state set to make same splits for all model
             kfold = StratifiedKFold(n_splits=n_splits, random_state=1)
         else:
             kfold = KFold(n_splits=n_splits, random_state=1)
 
         # GNB and GP have no best_model yet cause no BO was performed
         if self.shortname in ('GNB', 'GP'):
-            # Print stats
-            prlog('\n', self, 1)
-            prlog(f"Final Statistics for {self.name}:{' ':9s}", self, 1)
+            prlog(f"\nFinal Statistics for {self.name}:{' ':9s}", self, 1)
 
             self.best_model = self.get_model()
             self.best_model_fit = self.best_model.fit(self.X_train,
                                                       self.Y_train)
-            self.prediction = self.best_model_fit.predict(self.X_test)
+            self.predict = self.best_model_fit.predict(self.X_test)
+            self.predit_proba = self.best_model_fit.predict_proba(self.X_test)
 
         # Run cross-validation
         self.results = cross_val_score(self.best_model,
@@ -411,44 +413,41 @@ class BaseModel(object):
     # << ============ Evaluation metric functions ============ >>
 
     def Precision(self):
-        average = 'binary' if self.goal == 'binary classification' else 'macro'
-        return precision_score(self.Y_test, self.prediction, average=average)
+        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        return precision_score(self.Y_test, self.predict, average=avg)
 
     def Recall(self):
-        average = 'binary' if self.goal == 'binary classification' else 'macro'
-        return recall_score(self.Y_test, self.prediction, average=average)
+        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        return recall_score(self.Y_test, self.predict, average=avg)
 
     def F1(self):
-        average = 'binary' if self.goal == 'binary classification' else 'macro'
-        return f1_score(self.Y_test, self.prediction, average=average)
+        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        return f1_score(self.Y_test, self.predict, average=avg)
 
     def Jaccard(self):
-        average = 'binary' if self.goal == 'binary classification' else 'macro'
-        return jaccard_score(self.Y_test, self.prediction, average=average)
+        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        return jaccard_score(self.Y_test, self.predict, average=avg)
 
     def Accuracy(self):
-        return accuracy_score(self.Y_test, self.prediction)
+        return accuracy_score(self.Y_test, self.predict)
 
     def AUC(self):
-        return roc_auc_score(self.Y_test, self.prediction)
-
-    def LogLoss(self):
-        return log_loss(self.Y_test, self.prediction)
+        return roc_auc_score(self.Y_test, self.predict)
 
     def MAE(self):
-        return mean_absolute_error(self.Y_test, self.prediction)
+        return mean_absolute_error(self.Y_test, self.predict)
 
     def MSE(self):
-        return mean_squared_error(self.Y_test, self.prediction)
+        return mean_squared_error(self.Y_test, self.predict)
 
     def MSLE(self):
-        return mean_squared_log_error(self.Y_test, self.prediction)
+        return mean_squared_log_error(self.Y_test, self.predict)
 
     def R2(self):
-        return r2_score(self.Y_test, self.prediction)
+        return r2_score(self.Y_test, self.predict)
 
     def max_error(self):
-        return max_error(self.Y_test, self.prediction)
+        return max_error(self.Y_test, self.predict)
 
     # << ============ Plot functions ============ >>
 
@@ -470,30 +469,21 @@ class BaseModel(object):
         '''
 
         if self.goal == 'regression':
-            raise ValueError('This method only works for ' +
-                             'classification problems.')
+            raise ValueError('This method is only available for ' +
+                             'classification tasks.')
 
-        # From dataframe to array (fix for not scaled models)
-        X = np.array(self.X_train)
-        Y = np.array(self.Y_train)
-
-        # Models without predict_proba() method
-        if self.shortname in ('XGB', 'lSVM', 'kSVM'):
-            # Calculate new probabilities more accurate with cv
-            mod = CalibratedClassifierCV(self.best_model, cv=3).fit(X, Y)
-        else:
-            mod = self.best_model_fit
+        no_prob = ['XGB', 'lSVM', 'kSVM']  # Models without predict_proba
+        mod = self.ccv if self.shortname in no_prob else self.best_model_fit
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        classes = list(set(Y))
+        classes = list(set(self.Y))
         colors = ['r', 'b', 'g']
         for n in range(len(classes)):
             # Get features per class
-            cl = X[np.where(Y == classes[n])]
-            pred = mod.predict_proba(cl)[:, target_class]
-
-            sns.distplot(pred,
+            class_ = self.X[np.where(self.Y == classes[n])]
+            predicted_proba = mod.predict_proba(class_)[:, target_class]
+            sns.distplot(predicted_proba,
                          hist=False,
                          kde=True,
                          norm_hist=True,
@@ -522,10 +512,7 @@ class BaseModel(object):
             raise ValueError('This method only works for tree-based ' +
                              f'models. Try one of the following: {self.tree}')
 
-        if isinstance(self.X, pd.DataFrame):
-            features = self.X.columns
-        else:
-            features = ['Feature ' + str(i) for i in range(self.X.shape[1])]
+        features = self.X.columns  # Get column names
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -549,12 +536,8 @@ class BaseModel(object):
             raise ValueError('This method only works for binary ' +
                              'classification problems.')
 
-        # Calculate new probabilities more accurate with cv
-        clf = CalibratedClassifierCV(self.best_model, cv=3).fit(self.X, self.Y)
-        pred = clf.predict_proba(self.X)[:, 1]
-
         # Get False (True) Positive Rate
-        fpr, tpr, thresholds = roc_curve(self.Y, pred)
+        fpr, tpr, thresholds = roc_curve(self.Y_test, self.predict_proba[:, 1])
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -600,7 +583,7 @@ class BaseModel(object):
             title = 'Confusion matrix, without normalization'
 
         # Compute confusion matrix
-        cm = confusion_matrix(self.Y_test, self.prediction)
+        cm = confusion_matrix(self.Y_test, self.predict)
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -670,9 +653,15 @@ class BaseModel(object):
                                    fontsize=14)
 
         elif self.shortname == 'XGB':
-            plot_tree(self.best_model_fit,
-                      num_trees=num_trees,
-                      rankdir='LR' if rotate else 'UT')
+            xgboost.plot_tree(self.best_model_fit,
+                              num_trees=num_trees,
+                              rankdir='LR' if rotate else 'UT')
+
+        elif self.shortname == 'LGBM':
+            lightgbm.plot_tree(self.best_model_fit,
+                               ax=ax,
+                               tree_index=num_trees)
+
         else:
             raise ValueError('This method only works for tree-based models.' +
                              f' Try on of the following: {self.tree}')
@@ -684,5 +673,7 @@ class BaseModel(object):
         ''' Save model to pickle file '''
 
         if filename is None:
-            filename = 'ATOM_' + self.name
+            filename = 'ATOM_' + self.shortname
+        filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         pickle.dump(self.best_model_fit, open(filename, 'wb'))
+        prlog('File saved successfully!', self, 1)

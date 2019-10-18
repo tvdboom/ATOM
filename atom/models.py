@@ -273,11 +273,12 @@ class LogReg(BaseModel):
         regularization = ['l1', 'l2', 'elasticnet', 'none']
         penalty = regularization[int(x[0, 2])]
         params = {'max_iter': int(x[0, 0]),
-                  'C': round(x[0, 1], 1),
                   'penalty': penalty}
 
+        if penalty != 'none':
+            params['C'] = float(round(x[0, 1], 1))
         if penalty == 'elasticnet':  # Add extra parameter: l1_ratio
-            params['l1_ratio'] = float(np.round(x[0, 3], 1))
+            params['l1_ratio'] = float(round(x[0, 3], 1))
 
         return params
 
