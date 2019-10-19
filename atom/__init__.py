@@ -7,3 +7,4 @@ Author: tvdboom
 '''
 
 from .atom import ATOM
+__version__ = '2.0.1'
