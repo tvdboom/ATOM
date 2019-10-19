@@ -24,8 +24,8 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
-    SelectKBest, f_classif, f_regression, mutual_info_classif,
-    mutual_info_regression, chi2, VarianceThreshold, SelectFromModel
+     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
+     chi2, SelectKBest, VarianceThreshold, SelectFromModel
     )
 from sklearn.model_selection import train_test_split
 
@@ -339,7 +339,7 @@ class ATOM(object):
 
         # Check parameters
         max_frac = float(max_frac) if 0 < max_frac <= 1 else 0.5
-        missing = list(missing)  # Has to be an iterable for loop
+        missing = [missing]  # Has to be an iterable for loop
         if None not in missing:
             missing.append(None)  # None must always be imputed
 
@@ -716,10 +716,12 @@ class ATOM(object):
             # Set the solver
             solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
                        'mutual_info_regression', 'chi2']
-            if self.solver is None:   # Set function dependent on goal
-                func = f_classif if self.goal != 'regression' else f_regression
+            if self.solver is None and self.goal == 'regression':
+                func = f_regression
+            elif self.solver is None:
+                func = f_classif
             elif self.solver in solvers:
-                func = self.solver
+                func = eval(self.solver)
             else:
                 raise ValueError('Unknown value for the univariate solver.' +
                                  f'Try one of : {solvers}')
@@ -773,7 +775,7 @@ class ATOM(object):
     @params_to_log
     def fit(self, models=None, metric=None, successive_halving=False,
             skip_steps=0, max_iter=15, max_time=3600, eps=1e-08,
-            batch_size=1, init_points=5, plot_bo=False, cv=3):
+            batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=3):
 
         '''
         DESCRIPTION -----------------------------------
@@ -793,6 +795,7 @@ class ATOM(object):
         init_points        --> initial number of random tests of the BO
         plot_bo            --> boolean to plot the BO's progress
         cv                 --> splits for the cross validation
+        bootstrap          --> number of splits for bootstrapping (0 for None)
 
         '''
 
@@ -820,19 +823,19 @@ class ATOM(object):
                     with warnings.catch_warnings():
                         if not self.warnings:
                             warnings.simplefilter("ignore")
-                        # GNB and GP have no hyperparameters to tune
-                        if model not in ('GNB', 'GP'):
-                            getattr(self, model).BayesianOpt(self.test_size,
-                                                             self.max_iter,
-                                                             self.max_time,
-                                                             self.eps,
-                                                             self.batch_size,
-                                                             self.init_points,
-                                                             self.cv,
-                                                             self.plot_bo,
-                                                             self.n_jobs)
 
-                        # if bootstrap: ....
+                        getattr(self, model).BayesianOpt(self.test_size,
+                                                         self.max_iter,
+                                                         self.max_time,
+                                                         self.eps,
+                                                         self.batch_size,
+                                                         self.init_points,
+                                                         self.cv,
+                                                         self.plot_bo,
+                                                         self.n_jobs)
+
+                        if self.bootstrap is not None:
+                            getattr(self, model).bootstrap(self.bootstrap)
 
                 except Exception as ex:
                     prlog('Exception encountered while running the '
@@ -857,7 +860,7 @@ class ATOM(object):
             while 'X' in self.models:
                 self.models.remove('X')
 
-            if self.cv > 0:
+            if self.bootstrap is not None:
                 try:  # Check that at least one model worked
                     lenx = max([len(getattr(self, m).name)
                                 for m in self.models])
@@ -868,7 +871,7 @@ class ATOM(object):
                         max_mean = max([getattr(self, m).results.mean()
                                         for m in self.models])
 
-                except ValueError:
+                except (ValueError, AttributeError):
                     raise ValueError('It appears all models failed to run...')
 
                 # Print final results (summary of cross-validation)
@@ -937,8 +940,11 @@ class ATOM(object):
 
         prlog('\nRunning pipeline =================>', self)
 
-        # Set args to class attributes
-        self.models = list(models) if models is not None else None
+        # Set args to class attributes and correct inputs
+        if not isinstance(models, list) and models is not None:
+            self.models = list(models)
+        else:
+            self.models = models
         self.metric = str(metric) if metric is not None else None
         self.successive_halving = bool(successive_halving)
         self.skip_steps = int(skip_steps)
@@ -949,6 +955,10 @@ class ATOM(object):
         self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
         self.cv = int(cv) if cv > 0 else 3
+        if bootstrap is None or bootstrap == 0:
+            self.bootstrap = None
+        else:
+            self.bootstrap = int(bootstrap)
 
         # Save model erros (if any) in dictionary
         self.errors = {}
