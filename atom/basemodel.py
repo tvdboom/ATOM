@@ -141,7 +141,7 @@ class BaseModel(object):
         self.metric_min = ['max_error', 'MAE', 'MSE', 'MSLE']
 
         # List of tree-based models
-        self.tree = ['Tree', 'Extra-Trees', 'RF',
+        self.tree = ['Tree', 'Bag', 'ET', 'RF',
                      'AdaBoost', 'GBM', 'XGB', 'LGBM']
 
         # List of models that don't use the Bayesian Optimization
@@ -434,7 +434,7 @@ class BaseModel(object):
         for _ in range(n_splits):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.Y_train)
-            print(len(np.unique(sample_x)), np.unique(sample_x))
+
             # Fit on bootstrapped set and predict on the independent test set
             algorithm = self.best_model.fit(sample_x, sample_y)
             pred = algorithm.predict(self.X_test)
@@ -695,7 +695,7 @@ class BaseModel(object):
 
         '''
 
-        sklearn_trees = ['Tree', 'Extra-Trees', 'RF', 'AdaBoost', 'GBM']
+        sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaBoost', 'GBM']
         if self.shortname in sklearn_trees:
             fig, ax = plt.subplots(figsize=figsize)
 

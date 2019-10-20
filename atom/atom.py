@@ -31,7 +31,7 @@ from sklearn.model_selection import train_test_split
 
 # Models
 from .models import (
-        BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, ET, RF,
+        BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, Bag, ET, RF,
         AdaBoost, GBM, XGB, LGBM, lSVM, kSVM, PA, SGD, MLP
         )
 
@@ -212,11 +212,11 @@ class ATOM(object):
             )
             self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
 
-        self._split_dataset(percentage)  # Split into train and test set
+        self._split_dataset(self.dataset, percentage)  # Make train/test split
         self._reset_attributes()  # Define data subsets class attributes
         self.stats()  # Print out data stats
 
-    def _split_dataset(self, percentage=100):
+    def _split_dataset(self, dataset, percentage=100):
 
         '''
         DESCRIPTION -----------------------------------
@@ -225,12 +225,13 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
+        dataset    --> dataset to use for splitting
         percentage --> percentage of the data to use
 
         '''
 
         # Get percentage of data (for successive halving)
-        self.dataset = self.dataset.sample(frac=1)  # Shuffle first
+        self.dataset = dataset.sample(frac=1)  # Shuffle first
         self.dataset = self.dataset.head(int(len(self.dataset)*percentage/100))
         self.dataset.reset_index(drop=True, inplace=True)
 
@@ -774,7 +775,7 @@ class ATOM(object):
 
     @params_to_log
     def fit(self, models=None, metric=None, successive_halving=False,
-            skip_steps=0, max_iter=15, max_time=3600, eps=1e-08,
+            skip_iter=0, max_iter=15, max_time=3600, eps=1e-08,
             batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=3):
 
         '''
@@ -787,7 +788,7 @@ class ATOM(object):
         models             --> list of models to use
         metric             --> metric to perform evaluation on
         successive_halving --> wether to perform successive halving
-        skip_steps         --> skip last n steps of successive halving
+        skip_iter          --> skip last n steps of successive halving
         max_iter           --> maximum number of iterations of the BO
         max_time           --> maximum time for the BO (in seconds)
         eps                --> minimum distance between two consecutive x's
@@ -860,50 +861,74 @@ class ATOM(object):
             while 'X' in self.models:
                 self.models.remove('X')
 
-            if self.bootstrap is not None:
-                try:  # Check that at least one model worked
-                    lenx = max([len(getattr(self, m).name)
-                                for m in self.models])
-                    if self.metric in ['max_error', 'MAE', 'MSE', 'MSLE']:
-                        max_mean = min([getattr(self, m).results.mean()
-                                        for m in self.models])
-                    else:
-                        max_mean = max([getattr(self, m).results.mean()
-                                        for m in self.models])
+            try:  # Fails if all models encountered errors
+                # Get max length of the models' names
+                lenx = max([len(getattr(self, m).name) for m in self.models])
 
-                except (ValueError, AttributeError):
-                    raise ValueError('It appears all models failed to run...')
+                # Get best score (min or max dependent on metric)
+                metric_to_min = ['max_error', 'MAE', 'MSE', 'MSLE']
+                if self.bootstrap is None:
+                    x = [getattr(self, m).score for m in self.models]
+                else:
+                    x = [getattr(self, m).results.mean() for m in self.models]
+                max_ = min(x) if self.metric in metric_to_min else max(x)
 
-                # Print final results (summary of cross-validation)
-                t = time() - t_init  # Total time in seconds
-                h = int(t/3600.)
-                m = int(t/60.) - h*60
-                s = int(t - h*3600 - m*60)
-                prlog('\n\nFinal stats ================>>', self)
-                prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
-                prlog(f'Target metric: {self.metric}', self)
-                prlog('--------------------------------', self)
+            except (ValueError, AttributeError):
+                raise ValueError('It appears all models failed to run...')
 
-                # Create dataframe with final results
-                results = pd.DataFrame(columns=['model', 'cv_mean', 'cv_std'])
+            # Print final results
+            t = time() - t_init  # Total time in seconds
+            h = int(t/3600.)
+            m = int(t/60.) - h*60
+            s = int(t - h*3600 - m*60)
+            prlog('\n\nFinal stats ================>>', self)
+            prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
+            prlog(f'Target metric: {self.metric}', self)
+            prlog('--------------------------------', self)
 
-                for m in self.models:
-                    name = getattr(self, m).name
-                    shortname = getattr(self, m).shortname
-                    cv_mean = getattr(self, m).results.mean()
-                    cv_std = getattr(self, m).results.std()
+            # Create dataframe with final results
+            if self.bootstrap is None:
+                results = pd.DataFrame(columns=['model', 'score'])
+            else:
+                results = pd.DataFrame(columns=['model',
+                                                'score',
+                                                'bootstrap_mean',
+                                                'bootstrap_std'])
+
+            for m in self.models:
+                name = getattr(self, m).name
+                shortname = getattr(self, m).shortname
+                score = getattr(self, m).score
+
+                if self.bootstrap is None:
                     results = results.append({'model': shortname,
-                                              'cv_mean': cv_mean,
-                                              'cv_std': cv_std},
+                                              'score': score},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if cv_mean == max_mean and len(self.models) > 1:
+                    if score == max_ and len(self.models) > 1:
+                        prlog(u'{0:{1}s} --> {2:.3f} !!'
+                              .format(name, lenx, score), self)
+                    else:
+                        prlog(u'{0:{1}s} --> {2:.3f}'
+                              .format(name, lenx, score), self)
+
+                else:
+                    bs_mean = getattr(self, m).results.mean()
+                    bs_std = getattr(self, m).results.std()
+                    results = results.append({'model': shortname,
+                                              'score': score,
+                                              'bootstrap_mean': bs_mean,
+                                              'bootstrap_std': bs_std},
+                                             ignore_index=True)
+
+                    # Highlight best score (if more than one)
+                    if bs_mean == max_ and len(self.models) > 1:
                         prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                              .format(name, lenx, cv_mean, cv_std), self)
+                              .format(name, lenx, bs_mean, bs_std), self)
                     else:
                         prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                              .format(name, lenx, cv_mean, cv_std), self)
+                              .format(name, lenx, bs_mean, bs_std), self)
 
             return results
 
@@ -947,7 +972,7 @@ class ATOM(object):
             self.models = models
         self.metric = str(metric) if metric is not None else None
         self.successive_halving = bool(successive_halving)
-        self.skip_steps = int(skip_steps)
+        self.skip_iter = int(skip_iter)
         self.max_iter = int(max_iter) if max_iter > 0 else 15
         self.max_time = int(max_time) if max_time > 0 else np.inf
         self.eps = float(eps)
@@ -970,8 +995,8 @@ class ATOM(object):
         # << ============ Check validity models ============ >>
 
         model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
-                      'QDA', 'KNN', 'Tree', 'ET', 'RF', 'AdaBoost', 'GBM',
-                      'XGB', 'LGBM', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+                      'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaBoost',
+                      'GBM', 'XGB', 'LGBM', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
         final_models = []
@@ -1057,10 +1082,10 @@ class ATOM(object):
 
         if self.successive_halving:
             iteration = 0
-            while len(self.models) > 2**self.skip_steps - 1:
-                # Select percentage of data to use for this iteration
-                percentage = 100./len(self.models)  # Use 1/N of the data
-                self._split_dataset(percentage)
+            original_data = self.dataset.copy()
+            while len(self.models) > 2**self.skip_iter - 1:
+                # Select 1/N of data to use for this iteration
+                self._split_dataset(original_data, 100./len(self.models))
                 self._reset_attributes()
                 self.data = data_preparation()
                 prlog('\n\n<<================ Iteration {} ================>>'
@@ -1073,8 +1098,9 @@ class ATOM(object):
                 self.results.append(results)
 
                 # Select best models for halving
+                col = 'score' if self.bootstrap is None else 'bootstrap_mean'
                 lx = results.nlargest(n=int(len(self.models)/2),
-                                      columns='cv_mean',
+                                      columns=col,
                                       keep='all')
 
                 # Keep the models in the same order
@@ -1111,7 +1137,7 @@ class ATOM(object):
                 results.append(getattr(self, m).results)
                 names.append(getattr(self, m).shortname)
         except (IndexError, AttributeError):
-            raise Exception('You need to fit the class before plotting!')
+            raise Exception('You need to fit ATOM using bootstrap first!')
 
         if figsize is None:
             figsize = (int(8+len(names)/2), 6)

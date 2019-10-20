@@ -23,8 +23,9 @@ from sklearn.discriminant_analysis import (
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.ensemble import (
-    RandomForestClassifier, RandomForestRegressor,
+    BaggingClassifier, BaggingRegressor,
     ExtraTreesClassifier, ExtraTreesRegressor,
+    RandomForestClassifier, RandomForestRegressor,
     AdaBoostClassifier, AdaBoostRegressor,
     GradientBoostingClassifier, GradientBoostingRegressor
     )
@@ -503,6 +504,60 @@ class Tree(BaseModel):
         ''' Returns initial values for the BO trials '''
 
         values = np.array([[0, 3, 2, 1]])
+        return values
+
+
+class Bag(BaseModel):
+    'Bagging class'
+
+    def __init__(self, *args):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(*args, scaled=False))
+
+        # Class attributes
+        self.name, self.shortname = 'Bagging', 'Bag'
+        self.goal = args[2]
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        bootstrap = [True, False]
+        params = {'n_estimators': int(x[0, 0]),
+                  'max_samples': round(x[0, 1], 1),
+                  'max_features': round(x[0, 2], 1),
+                  'bootstrap': bootstrap[int(x[0, 3])]}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+
+        if self.goal != 'regression':
+            return BaggingClassifier(**params)
+        else:
+            return BaggingRegressor(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'n_estimators',
+                 'type': 'discrete',
+                 'domain': range(20, 501)},
+                {'name': 'max_samples',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 1, 10)},
+                {'name': 'max_features',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.1, 1, 10)},
+                {'name': 'bootstrap',
+                 'type': 'discrete',
+                 'domain': range(2)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        values = np.array([[50, 1, 1, 1]])
         return values
 
 
