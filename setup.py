@@ -13,10 +13,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
       name='atom-ml',
-      version='v1.1.4',
+      version='v2.0.1',
       license='MIT',
       description='AutoML package for model comparison tasks',
-      #download_url='https://github.com/tvdboom/ATOM/archive/v1.1.3.tar.gz',
+      #download_url='https://github.com/tvdboom/ATOM/archive/v2.0.1.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',
@@ -35,8 +35,10 @@ setuptools.setup(
           'scikit-learn>=0.21.3',
           'tqdm>=4.35.0',
           'GpyOpt>=1.2.5',
-          'matplotlib>=3.1.1',
+          'matplotlib>=3.1.0',
           'seaborn>=0.9.0',
-          'xgboost>=0.90'
+          'xgboost>=0.90',
+          'lightgbm>=2.3.0',
+          'imblearn>=0.5.0'          
       ],
       python_requires='>=3.6')
