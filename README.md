@@ -8,23 +8,31 @@ Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-ATOM is a python package for exploration of ML problems. With just a few lines of code, you can compare the performance of multiple machine learning models on a given dataset, providing a quick insight on which algorithms performs best for the task at hand. Furthermore, ATOM contains a variety of plotting functions to help you analyze the models' performances. The pipeline takes the following steps (many are optional):  
+Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of ML solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution.
+
+| NOTE: It is important to realize that a data scientist with knowledge of the data will outperform ATOM if he applies usecase-specific feature engineering or advanced data cleaning methods. Use ATOM only for fast and early explorations of the problem! |
+| --- |
+
+| TIP: Use Pandas Profiling to examine the data and help you choose the parameters for the data cleaning methods |
+| --- |
+
+Possible steps taken by the ATOM pipeline:
 1. Data Cleaning
 	* Delete rows with missing values in target column
 	* Check validity of feature types
-	* Remove columns with too many missing values
-	* Impute missing values in feature columns
+	* Handle missing values
 	* Encode categorical features
+	* Remove outliers
+	* Balance the dataset
 	* Normalize data (if necessary)
 2. Perform feature selection
 	* Remove features with too high collinearity
 	* Remove features with too low variance
-	* Select best features according to the chosen strategy
+	* Select best features according to a chosen strategy
 3. Loop over models (either direct or via successive halving)
 	* Select hyperparameters using a Bayesian Optimization approach
-	* Perform a K-fold cross-validation of the model
-
-
+	* Perform bootstrapping to assess the performance of the model
+4. Analyze the results using the provided plotting functions!
 
 <p align="center">
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="700" height="250" />
@@ -39,72 +47,188 @@ Intall ATOM easily using `pip`
 
 Usage  
 ------------------------  
-Call the pipeline class:  
+Call the main (`ATOM`) class and provide the data you want to use:  
 
-    from atom import ATOM
-    atom = ATOM(models=['LinReg', 'KNN', 'RF', 'GBM', MLP'],
-                metric="MAE",
-                impute='median',
-                max_features=0.8,
-                ratio=0.25,
-                max_iter=10,
-                n_splits=5,
-                verbose=1)
-Run the pipeline:  
+    from atom import ATOM  
+    atom = ATOM(X, Y, log='atom_log', n_jobs=2, verbose=1)
 
-    atom.fit(X, Y)  
-Make plots and analyse results: 
+ATOM has multiple data cleaning methods to help you prepare the data for modelling:
+
+    atom.impute(strat_num='mean', strat_cat='most_frequent',  max_frac=0.1)  
+    atom.encode(max_onehot=10)  
+    atom.outliers(max_sigma=4)  
+    atom.balance(oversample=0.8, neighbors=15)  
+    atom.feature_selection(strategy='univariate', max_features=0.9)
+
+Fit the data to different models:
+
+    atom.fit(models=['logreg', 'LDA', 'XGB', 'lSVM'],
+    	     metric='Accuracy',
+    	     successive_halving=True,
+    	     max_iter=10,
+    	     max_time=1000,
+    	     init_points=3,
+    	     cross_validation=5)  
+
+Make plots and analyze results: 
 
 	atom.boxplot(filename='boxplot.png')  
-	atom.RF.plot_probabilities()  
+	atom.lSVM.plot_probabilities()  
+	atom.lda.plot_confusion_matrix()  
   
-  Alternatively, the data preprocessing methods can be called independently of the fit method to further tune specific parameters.
-  
-  	# Create an optimized Random Forest for feature_selection
-	aml = ATOM('RF', cross_validation=False)
-	aml.fit(X, Y, percentage=10)
-	aml.rf.plot_feature_importance()  # Visualize the feature ranking
 
-	# Call new ATOM class for ML task exploration
-	atom = ATOM(models=['LogReg', 'AdaBoost', 'XGB'],
-		    metric="f1",
-		    max_iter=20,
-		    init_points=1,
-		    n_splits=3,
-		    log='ATOM_log',
-		    n_jobs=2,
-		    verbose=3)
-
-	X = atom.imputer(X, strategy='mean', max_frac_missing=0.8)
-	X = atom.encoder(X, max_number_onehot=20)
-	X = atom.feature_selection(X, Y, strategy='RFS', solver=aml.rf.best_model, threshold=0.05)
-	atom.fit(X, Y)
-
-
-Class parameters
+ATOM parameters
 ----------------------------- 
-* **models: string or list of strings, optional (default=all)**  
-List of models on which to apply the pipeline. Possible values are (case insensitive):    
-	+ 'GNB' for Gaussian Naïve Bayes  
-	+ 'MNB' for Multinomial Naïve Bayes  
-	+ 'BNB' for Bernoulli Naïve Bayes  
-	+ 'GP' for Gaussian Process  
-	+ 'LinReg' for linear regression (with elasticnet regularization)  
-	+ 'LogReg' for Logistic Regression  
-	+ 'LDA' for Linear Discriminant Analysis  
-	+ 'QDA' for Quadratic Discriminant Analysis  
-	+ 'KNN' for K-Nearest Neighbors  
-	+ 'Tree' for a single Decision Tree  
-	+ 'ET' for Extra-Trees 
-	+ 'RF' for Random Forest
-	+ 'AdaBoost' for Adaptive Boosting  
-	+ 'GBM' for Gradient Boosting Machine  
-	+ 'XGB' for XGBoost (if package is available)  
-	+ 'lSVM' for Linear Support Vector Machine  
-	+ 'kSVM' for Non-linear Support Vector Machine  
-	+ 'PA' for Passive Aggressive  
-	+ 'SGD' for Stochastic Gradient Descent  
-	+ 'MLP' for Multilayer Perceptron  
+* **X: np.array or pd.DataFrame**  
+Data features with shape = [n_samples, n_features]. If Y and target are None, the last column of X is selected as target column. 
+* **Y: np.array or pd.Series, optional (default=None)**  
+Data target column with shape = [n_samples].
+* **target: string, optional (default=None)**  
+Name of the target column in X (X needs to be a pd.DataFrame).
+* **percentage: int, optional (default=100)**  
+Percentage of data to use.
+* **test_size: float, optional (default=0.3)**  
+Split ratio of the train and test set.
+* **log: string, optional (default=None)**  
+Name of the log file, None to not save any log.
+* **n_jobs: int, optional (default=1)**  
+Number of cores to use for parallel processing.
+	+ If -1, use all available cores.
+	+ If <-1, use available_cores - 1 + n_jobs  
+* **warnings: bool, optional (default=False)**
+Wether to show warnings when running the pipeline.  
+* **verbose: int, optional (default=0)**  
+Verbosity level of the class. Possible values are:  
+	+ 0 to not print anything  
+	+ 1 to print minimum information
+	+ 2 to print medium information
+	+ 3 to print maximum information
+* **random_state: int, optional (default=None)**  
+Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.
+
+
+
+ATOM methods (data cleaning)
+----------------------------- 
+* **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None])**  
+Handle missing values according to the selected strategy. Also removes columns with too many missing values.
+	+ strat_num: int, float or string, optional (default='remove')  
+	Imputing strategy for numerical columns. Possible values are:
+        	- 'remove': remove row if any missing value
+                - 'mean': impute with mean of column
+                - 'median': impute with median of column
+                - 'most_frequent': impute with most frequent value
+                - int or float: fill with provided numerical value
+	+ strat_cat: string, optional (default='remove')  
+	Imputing strategy for categorical columns. Possible values are:
+        	- 'remove': remove row if any missing value
+                - 'most_frequent': impute with most frequent value
+                - string: impute with provided string
+	+ max_frac: float, optional (default=0.5)  
+	Maximum fraction of rows with any missing values to remove the column.
+	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])  
+	List of values to consider as missing. None and np.nan are always added to the list.
+* **encode(max_onehot=10)**  
+Perform encoding of categorical features. The encoding type depends on the number of unique values in the column:
+<center>
+| n_unique | encoding type |
+|:--------:|:-------------:|
+| 2 | label-encoding |
+| 2 - max_onehot | one-hot-encoding |
+| > max_onehot | label-encoding |
+</center>
+	+ max_onehot: int, optional (default=10)  
+	Maximum number of unique values in a feature to perform one-hot-encoding.
+* **outliers(max_sigma=3, include_target=False)**  
+Remove outliers from the dataset.
+	+ max_sigma: int or float, optional (default=3)  
+	Remove rows containing any value with a maximum standard deviation (on the respective column) above max_sigma.
+	+ include_target: bool, optional (default=False)
+	Wether to include the target column when searching for outliers.
+* **balance(oversample=None, undersample=None, neighbors=5)**  
+Balance the number of instances per target class. Only for classification tasks.
+	+ oversample: float or string, optional (default=None)
+	Oversampling strategy using [SMOTE](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTE.html). Choose from:
+        	- None: do not perform oversampling
+		- float: fraction minority/majority (only for binary classification)
+                - 'minority': resample only the minority class
+                - 'not minority': resample all but minority class
+                - 'not majority': resample all but majority class
+                - 'all': resample all classes
+        + neighbors: int, optional (default=5)
+	Number of nearest neighbors used for SMOTE.
+	+ undersample: float or string, optional (default=None)
+	Undersampling strategy using [RandomUnderSampler](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.RandomUnderSampler.html#imblearn.under_sampling.RandomUnderSampler). Choose from:
+        	- None: do not perform undersampling
+		- float: fraction majority/minority (only for binary classification)
+                - 'minority': resample only the minority class
+                - 'not minority': resample all but minority class
+                - 'not majority': resample all but majority class
+                - 'all': resample all classes
+* **feature_selection(strategy='univariate', solver=None, max_features=None, threshold=-np.inf, frac_variance=1., max_correlation=0.98)**  
+Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
+	+ strategy: string, optional (default='univariate')  
+	Feature selection strategy to use. Choose from:
+		- None: do not perform any feature selection algorithm (it does still look for multicollinearity and variance)
+		- 'univariate': perform a univariate statistical test
+		- 'PCA': perform a principal component analysis
+		- 'SFM': select best features from an existing model
+	+ solver: string or model class (default=depend on strategy)  
+	Solver or model to use for the feature selection strategy. See the scikit-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
+		- for 'univariate', choose from:
+			* 'f_classif' (default for classification tasks)
+			* 'f_regression' (default for regression tasks)
+			* 'mutual_info_classif'
+			* 'mutual_info_regression'
+			* 'chi2'
+		- for 'PCA', choose one from:
+			* 'auto' (default)
+			* 'full'
+			* 'arpack'
+			* 'randomized'
+		- for 'SFM', choose a model class (not yet fitted). No default.
+	+ max_features: int or float, optional (default=None)  
+	Number of features to select.
+		- None: select all features
+		- if >= 1: number of features to select
+		- if < 1: fraction of features to select
+	+ threshold: string or float, optional (default=-np.inf)  
+	Threshold value to attain when selecting the best features (works only when strategy='SFM'). Features whose importance is greater or equal are kept while the others are discarded.
+		- if 'mean': set the mean of feature_importances as threshold
+		- if 'median': set the median of feature_importances as threshold
+	+ frac_variance: float, optional (default=1)  
+	Remove features with the same value in at least this fraction of the total.
+	+ max_correlation: float, optional (default=0.98)  
+	Minimum value of the Pearson correlation cofficient to identify correlated features.
+
+ATOM methods (fit)
+----------------------------- 
+* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cross_validation=True, n_splits=4)**  
+Fit class.
+	+ models: string or list of strings, optional (default=None)  
+ 	List of models to fit on the data. If None, all models are chosen. Possible values are (case insensitive):    
+		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
+		- 'MNB' for Multinomial Naïve Bayes  
+		- 'BNB' for Bernoulli Naïve Bayes  
+		- 'GP' for Gaussian Process (no hyperparameter tuning)
+		- 'LinReg' for Linear Regression (with elasticnet regularization)  
+		- 'LogReg' for Logistic Regression  
+		- 'LDA' for Linear Discriminant Analysis  
+		- 'QDA' for Quadratic Discriminant Analysis  
+		- 'KNN' for K-Nearest Neighbors  
+		- 'Tree' for a single Decision Tree  
+		- 'Bag' for Bagging
+		- 'ET' for Extra-Trees 
+		- 'RF' for Random Forest
+		- 'AdaBoost' for Adaptive Boosting  
+		- 'GBM' for Gradient Boosting Machine  
+		- 'XGB' for XGBoost (if package is available)  
+		- 'LGBM' for light GBM (if package is available)
+		- 'lSVM' for Linear Support Vector Machine  
+		- 'kSVM' for Non-linear Support Vector Machine  
+		- 'PA' for Passive Aggressive  
+		- 'SGD' for Stochastic Gradient Descent  
+		- 'MLP' for Multilayer Perceptron  
 * **metric: string, optional (default='F1' or 'MSE')**  
 Metric on which the pipeline fits the models. Possible values are (case insensitive):  
 	+ For binary and multiclass classification or regression:  
@@ -121,132 +245,33 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'Jaccard'  
 		- 'AUC' for Area Under Curve  
 		- 'LogLoss' for binary cross-entropy 
-* **successive_halving: boolean, optional (default=False)**  
+* **successive_halving: bool, optional (default=False)**  
 Fit the pipeline using a successive halving approach.
-* **skip_steps: int, optional (default=0)**  
-Skip n last steps of the successive halving.
-* **impute: string, optional (default=None)**  
-Strategy for the imputing of missing values. Possible strategies are:
-	+ None to not perform any imputation  
-	+ 'remove' to remove columns with any missing value
-	+ 'mean' to impute with the mean of feature  
-	+ 'median' to impute with the median of feature  
-	+ 'most_frequent' to impute with the most frequent value (only option for categorical features)  
-* **strategy: string, optional (default=None)**  
-Feature selection strategy to use. Choose from:
-	+ None: do not perform any feature selection
-	+ 'univariate': perform a univariate statistical test
-	+ 'PCA': perform a principal component analysis
-	+ 'RFS': perform recursive feature selection using an existing model
-* **solver: string, model class or function (default=None)**  
-Solver or model to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
-	+ for 'univariate', choose from:
-		- f_classif (default for classification tasks)
-		- f_regression (default for regression tasks)
-		- mutual_info_classif
-		- mutual_info_regression
-		- chi2
-	+ for 'PCA', choose from:
-		- 'auto' (default)
-		- 'full'
-		- 'arpack'
-		- 'randomized'
-	+ for 'RFS', choose a model class (not yet fitted). No default.
-* **max_features: int or float, optional (default=0.9)**  
-Number of features to select.
-	+ None or 0: select all features
-	+ if >= 1: number of features to select
-	+ if < 1: fraction of features to select
-* **ratio: float, optional (default=0.3)**  
-Split ratio of the train and test set used for the BO.
+* **skip_iter: int, optional (default=0)**  
+Skip n last iterations of the successive halving.
 * **max_iter: int, optional (default=15)**  
 Maximum number of iterations of the BO.
 * **max_time: int, optional (default=inf)**  
 Maximum time allowed for the BO (in seconds).
 * **eps: float, optional (default=1e-08)**  
-Minimum distance in hyperparameters between two consecutive steps in the BO.
+Minimum hyperparameter distance between two consecutive steps in the BO.
 * **batch_size: int, optional (default=1)**  
 Size of the batch in which the objective is evaluated 
 * **init_points: int, optional (default=5)**  
 Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
 * **plot_bo: bool, optional (default=False)**  
 Wether to plot the BO's progress as it runs.
-* **cross_validation: bool, optional (default=True)**  
-Wether to perform a K-fold cross-validation n every model after the BO.
-* **n_splits: int, optional (default=4)**  
-Number of splits for the K-fold cross-validation. Only if cv=True.
-* **log: string, optional (default=None)**  
-Name of the log file, None to not save any log.
-* **n_jobs: int, optional (default=1)**  
-Number of cores to use for parallel processing.
-	+ If -1, use all available cores.
-	+ If <-1, use available_cores - 1 + n_jobs  
-* **verbose: int, optional (default=0)**  
-Verbosity level of the pipeline. Possible values:  
-	+ 0 to not print anything  
-	+ 1 to print minimum information
-	+ 2 to print medium information
-	+ 3 to print maximum information
-  
-Class methods
------------------------------  
-* **fit(X, Y, percentage=100)**  
-Run the ATOM pipeline.
-	+ X: array or pd.Dataframe, shape = [n_samples, n_features]
-	+ Y: array or pd.Series, shape = [n_samples]
-	+ percentage: int, optional (default=100)  
-	Percentage of data to use in the pipeline.
-* **imputer(X, strategy='median' , max_frac_missing=0.5, missing=[NaN, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])**  
-Impute missing values. Non-numeric features are always imputed with the most_frequent strategy. Also removes columns with more than max_frac fraction of missing values.
-	+ X: array or pd.Dataframe, optional if class is fitted
-	+ strategy: string, optional (default='median')  
-	See ATOM's class parameters for impute strategies.
-	+ max_frac_missing: float, optional (default=0.5)  
-	Maximum fraction of instances with missing values before removing the feature.
-	+ missing: string or list of strings, optional (default=[NaN, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])  
-	List of values to impute. None and NaN are always imputed.
-* **encoder(X, max_number_onehot=10)**  
-Performs one-hot-encoding on categorical features if the number of unique values is smaller or equal to max_number_onehot, else Label-encoding. Also removes columns with only one unique category.
-	+ X: array or pd.Dataframe, optional if class is fitted
-	+ max_number_onehot: int, optional (default=10)  
-	Maximum number of unique values in a feature to perform one-hot-encoding.
-* **feature_selection(X, Y, strategy='univariate', solver=None, max_features=0.9, threshold=-np.inf, frac_variance=1, max_correlation=0.98)**  
-Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
-	+ X: array or pd.Dataframe, optional if class is fitted  
-	+ Y: array or pd.Series, optional if class is fitted
-	+ strategy: string, optional (default=None)  
-	Feature selection strategy to use. Choose from:
-		- None: do not perform any feature selection
-		- 'univariate': perform a univariate statistical test
-		- 'PCA': perform a principal component analysis
-		- 'RFS': perform recursive feature selection using an existing model
-	+ solver: string, model class or function (default=None)  
-	Solver or model to use for the feature selection strategy. See the sciki-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for the RFS).
-		- for 'univariate', choose one from:
-			* f_classif (default for classification tasks)
-			* f_regression (default for regression tasks)
-			* mutual_info_classif
-			* mutual_info_regression
-			* chi2
-		- for 'PCA', choose one from:
-			* 'auto' (default)
-			* 'full'
-			* 'arpack'
-			* 'randomized'
-		- for 'RFS', choose a model class (not yet fitted). No default.
-	+ max_features: int or float, optional (default=0.9)  
-	Number of features to select.
-		- None: select all features
-		- if >= 1: number of features to select
-		- if < 1: fraction of features to select
-	+ threshold: string or float, optional (default=-np.inf)  
-	The threshold value to use. Features whose importance is greater or equal are kept while the others are discarded. Only for RFS.
-		- if 'mean': set the mean of feature_importances as threshold
-		- if 'median': set the median of feature_importances as threshold
-	+ frac_variance: float, optional (default=1)  
-	Remove features with constant instances in at least this fraction of the total.
-	+ max_correlation: float, optional (default=0.98)  
-	Minimum value of the Pearson correlation cofficient to identify correlated features.
+* **cv: bool, optional (default=3)**
+    + if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
+    + if >1, perform a k-fold cross validation on the training set and score the BO as the output
+* **bootstrap: int, optional (default=None)**  
+Assess the robustness of the model using a boootstrapping method on the training set and scoring them on the test set. If None, no bootstrapping is performed.
+
+
+ATOM methods (utilities)
+----------------------------- 
+* **stats()**
+Print out a list of basic statistics on the dataset.
 * **boxplot(i=-1, figsize, filename=None)**  
 Make a boxplot of the results of the cross-validation. Only after the class is fitted.
 	+ i, int, optional (default=-1)  
@@ -268,20 +293,23 @@ Make a plot of the models' scores per iteration of the successive halving.
 
 Class attributes  
 -----------------------------  
-* **dataset**: Dataframe of the features and target after pre-processing (not yet scaled).
+* **dataset**: Dataframe of the complete dataset.
 * **X, Y**: Data features and target.
+* **train, test**: Train and test set.
 * **X_train, Y_train**: Training set features and target.
 * **X_test, Y_test**: validation set features and target.
-* **collinear**: Dataframe containing the collinear features and their correlation value. Only if feature_selection was ran.
+* **target_mapping**: dictionary of the target values mapped to their encoded integer (only for classification tasks).
+* **collinear**: Dataframe containing the collinear features and their correlation value. Only after calling the feature_selection method.
 * **univariate**: Univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
-* **RFS**: Recursive feature selector class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
+* **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
-* **results**: Dataframe (or array of dataframes if successive_halving=True) of the cross-validation's results.
+* **score**: Metric score of the BO's selected model on the test set.
+* **results**: Dataframe (or array of dataframes if successive_halving=True) of the bootstrap results.
   
-### The models chosen become subclasses of the ATOM class after calling the fit method. They can be called upon for  handy plot functions and attributes (case unsensitive). If successive_halving=True, the model subclass corresponds to the last fitted model.
+### After fitting, the models become subclasses of the ATOM class (case unsensitive). They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
   
-Subclass methods (plots)  
+Subclass methods (utilities)  
 -----------------------------  
 * **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
 Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
@@ -317,19 +345,26 @@ Plot a single decision tree of the model. Only for tree-based algorithms.
    	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.  
-  
+* **save(filename=None)**  
+Save the best found model as a pickle file.
+	 + filename: string, optional (default=None)  
+	Name of the file when saved. If None, it will be saved as ATOM_[model_type].
+
+
 Sublass methods (metrics)  
 -----------------------------
-Call any of the metrics as a method. It will return the metric (evaluated on the test set) for the best model found by the BO.
+Call any of the metrics as a method. It will return the metric (evaluated on the cross-validation) for the best model found by the BO.
 + **atom.knn.AUC()**: Returns the AUC score for the best trained KNN  
-+ **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost  
++ **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost 
++ **atom.xgb.LogLoss()**: Returns the cross-entropy score for the best trained XGBoost model
   
 Subclass attributes
 -----------------------------  
 * **atom.MLP.best_params**: Get parameters of the model with highest score.
 * **atom.SVM.best_model**: Get the model with highest score (not fitted).  
 * **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
-* **atom.Tree.prediction**: Get the predictions on the test set.  
+* **atom.Tree.predict**: Get the predictions on the test set.  
+* **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
 * **atom.PA.results**: Array of the cross-validation's results.
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
@@ -340,9 +375,11 @@ Dependencies
 -----------------------------
 * **[NumPy](https://numpy.org/)** (>=1.17.2)
 * **[Pandas](https://pandas.pydata.org/)** (>=0.25.1)
-* **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.21.3)
-* **[XGBoost](https://xgboost.readthedocs.io/en/latest/)**, optional (>=0.90)
+* **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[GpyOpt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)
-* **[Matplotlib](https://matplotlib.org/)** (>=3.1.1)
+* **[Matplotlib](https://matplotlib.org/)** (>=3.1.0)
 * **[Seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
+* **[XGBoost](https://xgboost.readthedocs.io/en/latest/)**, optional (>=0.90)
+* **[LightGBM](https://lightgbm.readthedocs.io/en/latest/)**, optional (>=2.3.0)
+* **[imblearn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)**, optional (>=0.5.0)

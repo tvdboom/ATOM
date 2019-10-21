@@ -13,10 +13,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
       name='atom-ml',
-      version='v1.1.3',
+      version='v1.1.4',
       license='MIT',
       description='AutoML package for model comparison tasks',
-      download_url='https://github.com/tvdboom/ATOM/archive/v1.1.3.tar.gz',
+      #download_url='https://github.com/tvdboom/ATOM/archive/v1.1.3.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',
