@@ -416,7 +416,7 @@ class BaseModel(object):
               self, 1)
 
     @timing
-    def bootstrap(self, n_splits=3):
+    def bootstrap(self, n_samples=3):
 
         '''
         DESCRIPTION -----------------------------------
@@ -426,12 +426,12 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        n_splits --> number of bootstrap samples to take
+        n_samples --> number of bootstrap samples to take
 
         '''
 
         self.results = []
-        for _ in range(n_splits):
+        for _ in range(n_samples):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.Y_train)
 
@@ -460,54 +460,54 @@ class BaseModel(object):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return recall_score(true, self.predict, average=avg)
+        return recall_score(true, pred, average=avg)
 
     def F1(self, pred=None, true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return f1_score(true, self.predict, average=avg)
+        return f1_score(true, pred, average=avg)
 
     def Jaccard(self, pred=None, true=None):
         avg = 'binary' if self.goal == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return jaccard_score(true, self.predict, average=avg)
+        return jaccard_score(true, pred, average=avg)
 
     def Accuracy(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return accuracy_score(true, self.predict)
+        return accuracy_score(true, pred)
 
     def AUC(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return roc_auc_score(true, self.predict)
+        return roc_auc_score(true, pred)
 
     def MAE(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return mean_absolute_error(true, self.predict)
+        return mean_absolute_error(true, pred)
 
     def MSE(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return mean_squared_error(true, self.predict)
+        return mean_squared_error(true, pred)
 
     def MSLE(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return mean_squared_log_error(true, self.predict)
+        return mean_squared_log_error(true, pred)
 
     def R2(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return r2_score(true, self.predict)
+        return r2_score(true, pred)
 
     def max_error(self, pred=None, true=None):
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
-        return max_error(true, self.predict)
+        return max_error(true, pred)
 
     # << ============ Plot functions ============ >>
 

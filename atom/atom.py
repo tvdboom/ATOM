@@ -776,7 +776,7 @@ class ATOM(object):
     @params_to_log
     def fit(self, models=None, metric=None, successive_halving=False,
             skip_iter=0, max_iter=15, max_time=3600, eps=1e-08,
-            batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=3):
+            batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1175,6 +1175,7 @@ class ATOM(object):
                              'fitted using a successive halving approach!')
 
         models = self.results[0].model  # List of models in first iteration
+        col = 'score' if self.bootstrap is None else 'bootstrap_mean'
         linx = [[] for m in models]
         liny = [[] for m in models]
         try:  # Can't make plot before running fit!
@@ -1182,7 +1183,8 @@ class ATOM(object):
                 for n, model in enumerate(models):
                     if model in df.model.values:  # If model in iteration
                         linx[n].append(m)
-                        liny[n].append(df.cv_mean[df.model == model].values[0])
+                        liny[n].append(
+                                df[col][df.model == model].values[0])
         except (IndexError, AttributeError):
             raise Exception('You need to fit the class before plotting!')
 
