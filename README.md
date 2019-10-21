@@ -31,7 +31,7 @@ Possible steps taken by the ATOM pipeline:
 	* Select best features according to a chosen strategy
 3. Loop over models (either direct or via successive halving)
 	* Select hyperparameters using a Bayesian Optimization approach
-	* Perform bootstrapping to assess the performance of the model
+	* Perform bagging to assess the performance of the model
 4. Analyze the results using the provided plotting functions!
 
 <br/><br/>
@@ -199,8 +199,8 @@ Select best features according to the selected strategy. Ties between features w
 
 ATOM methods (fit)
 ----------------------------- 
-* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cross_validation=True, n_splits=4)**  
-Fit class.
+* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=None)**  
+Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings, optional (default=None)  
  	List of models to fit on the data. If None, all models are chosen. Possible values are (case insensitive):    
 		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
@@ -242,7 +242,7 @@ Metric on which the pipeline fits the models. Possible values are (case insensit
 		- 'AUC' for Area Under Curve  
 		- 'LogLoss' for binary cross-entropy 
 * **successive_halving: bool, optional (default=False)**  
-Fit the pipeline using a successive halving approach.
+Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left.
 * **skip_iter: int, optional (default=0)**  
 Skip n last iterations of the successive halving.
 * **max_iter: int, optional (default=15)**  
@@ -261,7 +261,7 @@ Wether to plot the BO's progress as it runs.
     + if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
     + if >1, perform a k-fold cross validation on the training set and score the BO as the output
 * **bootstrap: int, optional (default=None)**  
-Assess the robustness of the model using a boootstrapping method on the training set and scoring them on the test set. If None, no bootstrapping is performed.
+Number of bootstrapped samples to use for bagging. If None, no bagging is performed.
 
 
 ATOM methods (utilities)
@@ -300,9 +300,9 @@ Class attributes
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
-* **results**: Dataframe (or array of dataframes if successive_halving=True) of the bootstrap results.
+* **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
   
-### After fitting, the models become subclasses of the ATOM class (case unsensitive). They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
+### After fitting, the models become subclasses of the ATOM class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
   
 Subclass methods (utilities)  
 -----------------------------  
@@ -351,7 +351,7 @@ Sublass methods (metrics)
 Call any of the metrics as a method. It will return the metric (evaluated on the cross-validation) for the best model found by the BO.
 + **atom.knn.AUC()**: Returns the AUC score for the best trained KNN  
 + **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost 
-+ **atom.xgb.LogLoss()**: Returns the cross-entropy score for the best trained XGBoost model
++ **atom.xgb.Accuracy()**: Returns the accuracy score for the best trained XGBoost model
   
 Subclass attributes
 -----------------------------  
@@ -359,6 +359,7 @@ Subclass attributes
 * **atom.SVM.best_model**: Get the model with highest score (not fitted).  
 * **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
 * **score**: Metric score of the BO's selected model on the test set.
+* **results**: Array of the bootstrap results.
 * **atom.Tree.predict**: Get the predictions on the test set.  
 * **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
