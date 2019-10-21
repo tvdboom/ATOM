@@ -10,7 +10,7 @@ Description
 ------------------------  
 Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of ML solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution.
 
-| NOTE: It is important to realize that a data scientist with knowledge of the data will outperform ATOM if he applies usecase-specific feature engineering or advanced data cleaning methods. Use ATOM only for fast and early explorations of the problem! |
+| NOTE: It is important to realize that a data scientist with knowledge of the data will outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for fast explorations of the problem! |
 | --- |
 
 | TIP: Use Pandas Profiling to examine the data and help you choose the parameters for the data cleaning methods |
@@ -33,6 +33,8 @@ Possible steps taken by the ATOM pipeline:
 	* Select hyperparameters using a Bayesian Optimization approach
 	* Perform bootstrapping to assess the performance of the model
 4. Analyze the results using the provided plotting functions!
+
+<br/><br/>
 
 <p align="center">
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="700" height="250" />
@@ -63,12 +65,13 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 Fit the data to different models:
 
     atom.fit(models=['logreg', 'LDA', 'XGB', 'lSVM'],
-    	     metric='Accuracy',
-    	     successive_halving=True,
-    	     max_iter=10,
-    	     max_time=1000,
-    	     init_points=3,
-    	     cross_validation=5)  
+	         metric='Accuracy',
+	         successive_halving=True,
+	         max_iter=10,
+	         max_time=1000,
+	         init_points=3,
+	         cv=4,
+	         bootstrap=5)  
 
 Make plots and analyze results: 
 
@@ -129,14 +132,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])  
 	List of values to consider as missing. None and np.nan are always added to the list.
 * **encode(max_onehot=10)**  
-Perform encoding of categorical features. The encoding type depends on the number of unique values in the column:
-<center>
-| n_unique | encoding type |
-|:--------:|:-------------:|
-| 2 | label-encoding |
-| 2 - max_onehot | one-hot-encoding |
-| > max_onehot | label-encoding |
-</center>
+Perform encoding of categorical features. The encoding type depends on the number of unique values in the column.
 	+ max_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **outliers(max_sigma=3, include_target=False)**  
@@ -304,7 +300,6 @@ Class attributes
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
-* **score**: Metric score of the BO's selected model on the test set.
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the bootstrap results.
   
 ### After fitting, the models become subclasses of the ATOM class (case unsensitive). They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
@@ -363,6 +358,7 @@ Subclass attributes
 * **atom.MLP.best_params**: Get parameters of the model with highest score.
 * **atom.SVM.best_model**: Get the model with highest score (not fitted).  
 * **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
+* **score**: Metric score of the BO's selected model on the test set.
 * **atom.Tree.predict**: Get the predictions on the test set.  
 * **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
