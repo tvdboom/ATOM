@@ -10,7 +10,7 @@ Description
 ------------------------  
 Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of ML solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution.
 
-| NOTE: It is important to realize that a data scientist with knowledge of the data will outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for fast explorations of the problem! |
+| NOTE: A data scientist with knowledge of the data will quickly outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for a fast exploration of the problem! |
 | --- |
 
 Possible steps taken by the ATOM pipeline:
