@@ -105,7 +105,7 @@ Seed used by the random number generator. If None, the random number generator i
 
 
 
-ATOM methods (data cleaning)
+ATOM methods
 ----------------------------- 
 ATOM contains multiple methods for standard data cleaning and feature selection processes. Calling on one of them will automatically apply the method on the dataset in the class and update the class' attributes accordingly.
 
@@ -195,10 +195,7 @@ Select best features according to the selected strategy. Ties between features w
 	Remove features with the same value in at least this fraction of the total.
 	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
-
-ATOM methods (fit)
------------------------------ 
-* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=None)**  
+* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings, optional (default=None)  
  	List of models to fit on the data. If None, all models are chosen. Possible values are (case insensitive):    
@@ -206,13 +203,13 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'MNB' for Multinomial Naïve Bayes  
 		- 'BNB' for Bernoulli Naïve Bayes  
 		- 'GP' for Gaussian Process (no hyperparameter tuning)
-		- 'LinReg' for Linear Regression (with elasticnet regularization)  
+		- 'LinReg' for Linear Regression (ridge, lasso and elasticnet regularization)  
 		- 'LogReg' for Logistic Regression  
 		- 'LDA' for Linear Discriminant Analysis  
 		- 'QDA' for Quadratic Discriminant Analysis  
 		- 'KNN' for K-Nearest Neighbors  
 		- 'Tree' for a single Decision Tree  
-		- 'Bag' for Bagging
+		- 'Bag' for Bagging (with decision tree as base estimator)
 		- 'ET' for Extra-Trees 
 		- 'RF' for Random Forest
 		- 'AdaBoost' for Adaptive Boosting  
@@ -224,43 +221,42 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'PA' for Passive Aggressive  
 		- 'SGD' for Stochastic Gradient Descent  
 		- 'MLP' for Multilayer Perceptron  
-* **metric: string, optional (default='F1' or 'MSE')**  
-Metric on which the pipeline fits the models. Possible values are (case insensitive):  
-	+ For binary and multiclass classification or regression:  
-		- 'max_error'  
-		- 'R2'  
-		- 'MAE' for Mean Absolute Error  
-		- 'MSE' for Mean Squared Error
-		- 'MSLE' for Mean Squared Log Error  
-	+ Only binary classification:  
-		- 'Precision'  
-		- 'Recall'  
-		- 'Accuracy'
-		- 'F1'
-		- 'Jaccard'  
-		- 'AUC' for Area Under Curve  
-		- 'LogLoss' for binary cross-entropy 
-* **successive_halving: bool, optional (default=False)**  
-Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left.
-* **skip_iter: int, optional (default=0)**  
-Skip n last iterations of the successive halving.
-* **max_iter: int, optional (default=15)**  
-Maximum number of iterations of the BO.
-* **max_time: int, optional (default=inf)**  
-Maximum time allowed for the BO (in seconds).
-* **eps: float, optional (default=1e-08)**  
-Minimum hyperparameter distance between two consecutive steps in the BO.
-* **batch_size: int, optional (default=1)**  
-Size of the batch in which the objective is evaluated 
-* **init_points: int, optional (default=5)**  
-Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
-* **plot_bo: bool, optional (default=False)**  
-Wether to plot the BO's progress as it runs.
-* **cv: bool, optional (default=3)**
-    + if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
-    + if >1, perform a k-fold cross validation on the training set and score the BO as the output
-* **bagging: int, optional (default=None)**  
-Number of bootstrapped samples to use for bagging. If None, no bagging is performed.
+	+ metric: string, optional (default=None)  
+	Metric on which the pipeline fits the models. If None, the default option is selected depending on the task's type. Possible values are (case insensitive):  
+		+ For binary and multiclass classification or regression:  
+			- 'max_error'  
+			- 'R2'  
+			- 'MAE' for Mean Absolute Error  
+			- 'MSE' for Mean Squared Error (default)
+			- 'MSLE' for Mean Squared Log Error  
+		+ Only binary classification:  
+			- 'Precision'  
+			- 'Recall'  
+			- 'Accuracy'
+			- 'F1' (default)
+			- 'Jaccard'  
+			- 'AUC' for Area Under Curve  
+	+ successive_halving: bool, optional (default=False) 
+	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left.
+	+ skip_iter: int, optional (default=0)  
+	Skip n last iterations of the successive halving.
+	+ max_iter: int, optional (default=15)  
+	Maximum number of iterations of the BO.
+	+ max_time: int, optional (default=inf)  
+	Maximum time allowed for the BO (in seconds).
+	+ eps: float, optional (default=1e-08)  
+	Minimum hyperparameter distance between two consecutive steps in the BO.
+	+ batch_size: int, optional (default=1)  
+	Size of the batch in which the objective is evaluated.
+	+ init_points: int, optional (default=5)  
+	Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
+	+ plot_bo: bool, optional (default=False)  
+	Wether to plot the BO's progress as it runs.
+	+ cv: bool, optional (default=3)  
+		- if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
+		- if >1, perform a k-fold cross validation on the training set and score the BO as the output
+	+ bagging: int, optional (default=None)  
+	Number of bootstrapped samples to use for bagging. If None, no bagging is performed.
 
 
 ATOM methods (utilities)
@@ -313,7 +309,7 @@ Plots the probability of every class in the target variable against the class se
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_feature_importance(figsize=(10, 6), filename=None)**  
-Plots the feature importance scores. Only works with tree based algorithms (Tree, ET, RF, AdaBoost, GBM and XGB).
+Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB and LGBM).
 	+ figsize, 2d-tuple, otional (default=dependent on # of models)
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -357,12 +353,11 @@ Subclass attributes
 * **atom.MLP.best_params**: Get parameters of the model with highest score.
 * **atom.SVM.best_model**: Get the model with highest score (not fitted).  
 * **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
-* **score**: Metric score of the BO's selected model on the test set.
-* **results**: Array of the bootstrap results.
+* **atom.lgbm.score**: Metric score of the BO's selected model on the test set.
 * **atom.Tree.predict**: Get the predictions on the test set.  
 * **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
-* **atom.PA.results**: Array of the cross-validation's results.
+* **atom.PA.results**: Array of the bagging's results.
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
