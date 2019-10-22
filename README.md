@@ -90,7 +90,7 @@ Split ratio of the train and test set.
 Name of the log file, None to not save any log.
 * **n_jobs: int, optional (default=1)**  
 Number of cores to use for parallel processing.
-	+ If -1, use all available cores.
+	+ If -1, use all available cores
 	+ If <-1, use available_cores - 1 + n_jobs  
 * **warnings: bool, optional (default=False)**
 Wether to show warnings when running the pipeline.  
@@ -116,16 +116,16 @@ ATOM contains multiple methods for standard data cleaning and feature selection 
 Handle missing values according to the selected strategy. Also removes columns with too many missing values.
 	+ strat_num: int, float or string, optional (default='remove')  
 	Imputing strategy for numerical columns. Possible values are:
-        	- 'remove': remove row if any missing value
-                - 'mean': impute with mean of column
-                - 'median': impute with median of column
-                - 'most_frequent': impute with most frequent value
-                - int or float: fill with provided numerical value
+		- 'remove': remove row if any missing value
+		- 'mean': impute with mean of column
+		- 'median': impute with median of column
+		- 'most_frequent': impute with most frequent value
+		- int or float: fill with provided numerical value
 	+ strat_cat: string, optional (default='remove')  
 	Imputing strategy for categorical columns. Possible values are:
-        	- 'remove': remove row if any missing value
-                - 'most_frequent': impute with most frequent value
-                - string: impute with provided string
+		- 'remove': remove row if any missing value
+		- 'most_frequent': impute with most frequent value
+		- string: impute with provided string
 	+ max_frac: float, optional (default=0.5)  
 	Maximum fraction of rows with any missing values to remove the column.
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])  
@@ -142,24 +142,24 @@ Remove outliers from the dataset.
 	Wether to include the target column when searching for outliers.
 * **balance(oversample=None, undersample=None, neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks.
-	+ oversample: float or string, optional (default=None)
+	+ oversample: float or string, optional (default=None)  
 	Oversampling strategy using [SMOTE](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTE.html). Choose from:
-        	- None: do not perform oversampling
+		- None: do not perform oversampling
 		- float: fraction minority/majority (only for binary classification)
-                - 'minority': resample only the minority class
-                - 'not minority': resample all but minority class
-                - 'not majority': resample all but majority class
-                - 'all': resample all classes
-        + neighbors: int, optional (default=5)
+		- 'minority': resample only the minority class
+		- 'not minority': resample all but minority class
+		- 'not majority': resample all but majority class
+		- 'all': resample all classes
+	+ neighbors: int, optional (default=5)  
 	Number of nearest neighbors used for SMOTE.
-	+ undersample: float or string, optional (default=None)
+	+ undersample: float or string, optional (default=None)  
 	Undersampling strategy using [RandomUnderSampler](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.RandomUnderSampler.html#imblearn.under_sampling.RandomUnderSampler). Choose from:
-        	- None: do not perform undersampling
+		- None: do not perform undersampling
 		- float: fraction majority/minority (only for binary classification)
-                - 'minority': resample only the minority class
-                - 'not minority': resample all but minority class
-                - 'not majority': resample all but majority class
-                - 'all': resample all classes
+		- 'minority': resample only the minority class
+		- 'not minority': resample all but minority class
+		- 'not majority': resample all but majority class
+		- 'all': resample all classes
 * **feature_selection(strategy='univariate', solver=None, max_features=None, threshold=-np.inf, frac_variance=1., max_correlation=0.98)**  
 Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ strategy: string, optional (default='univariate')  
@@ -256,7 +256,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
 		- if >1, perform a k-fold cross validation on the training set and score the BO as the output
 	+ bagging: int, optional (default=None)  
-	Number of bootstrapped samples to use for bagging. If None, no bagging is performed.
+	Number of bootstrapped samples used for bagging. If None, no bagging is performed.
 
 
 ATOM methods (utilities)
