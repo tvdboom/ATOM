@@ -13,25 +13,19 @@ Automated Tool for Optimized Modelling (ATOM) is a python package designed for f
 | NOTE: It is important to realize that a data scientist with knowledge of the data will outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for fast explorations of the problem! |
 | --- |
 
-| TIP: Use Pandas Profiling to examine the data and help you choose the parameters for the data cleaning methods |
-| --- |
-
 Possible steps taken by the ATOM pipeline:
 1. Data Cleaning
-	* Delete rows with missing values in target column
-	* Check validity of feature types
 	* Handle missing values
 	* Encode categorical features
 	* Remove outliers
 	* Balance the dataset
-	* Normalize data (if necessary)
 2. Perform feature selection
 	* Remove features with too high collinearity
 	* Remove features with too low variance
 	* Select best features according to a chosen strategy
-3. Loop over models (either direct or via successive halving)
+3. Fit all selected models (either direct or via successive halving)
 	* Select hyperparameters using a Bayesian Optimization approach
-	* Perform bagging to assess the performance of the model
+	* Perform bagging to assess the robustness of the model
 4. Analyze the results using the provided plotting functions!
 
 <br/><br/>
@@ -71,7 +65,7 @@ Fit the data to different models:
 	         max_time=1000,
 	         init_points=3,
 	         cv=4,
-	         bootstrap=5)  
+	         bagging=5)  
 
 Make plots and analyze results: 
 
@@ -113,6 +107,11 @@ Seed used by the random number generator. If None, the random number generator i
 
 ATOM methods (data cleaning)
 ----------------------------- 
+ATOM contains multiple methods for standard data cleaning and feature selection processes. Calling on one of them will automatically apply the method on the dataset in the class and update the class' attributes accordingly.
+
+| TIP: Use Pandas Profiling to examine the data first and help you determine suitable parameters for the data cleaning methods |
+| --- |
+
 * **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None])**  
 Handle missing values according to the selected strategy. Also removes columns with too many missing values.
 	+ strat_num: int, float or string, optional (default='remove')  
@@ -260,7 +259,7 @@ Wether to plot the BO's progress as it runs.
 * **cv: bool, optional (default=3)**
     + if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
     + if >1, perform a k-fold cross validation on the training set and score the BO as the output
-* **bootstrap: int, optional (default=None)**  
+* **bagging: int, optional (default=None)**  
 Number of bootstrapped samples to use for bagging. If None, no bagging is performed.
 
 
