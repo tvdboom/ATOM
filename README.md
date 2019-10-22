@@ -92,8 +92,8 @@ Name of the log file, None to not save any log.
 Number of cores to use for parallel processing.
 	+ If -1, use all available cores
 	+ If <-1, use available_cores - 1 + n_jobs  
-* **warnings: bool, optional (default=False)**
-Wether to show warnings when running the pipeline.  
+* **warnings: bool, optional (default=False)**  
+Wether to show warnings when running the pipeline.
 * **verbose: int, optional (default=0)**  
 Verbosity level of the class. Possible values are:  
 	+ 0 to not print anything  
@@ -112,7 +112,7 @@ ATOM contains multiple methods for standard data cleaning and feature selection 
 | TIP: Use Pandas Profiling to examine the data first and help you determine suitable parameters for the data cleaning methods |
 | --- |
 
-* **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None])**  
+* **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
 Handle missing values according to the selected strategy. Also removes columns with too many missing values.
 	+ strat_num: int, float or string, optional (default='remove')  
 	Imputing strategy for numerical columns. Possible values are:
@@ -128,7 +128,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 		- string: impute with provided string
 	+ max_frac: float, optional (default=0.5)  
 	Maximum fraction of rows with any missing values to remove the column.
-	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', inf, -inf])  
+	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])  
 	List of values to consider as missing. None and np.nan are always added to the list.
 * **encode(max_onehot=10)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column.
@@ -195,7 +195,7 @@ Select best features according to the selected strategy. Ties between features w
 	Remove features with the same value in at least this fraction of the total.
 	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
-* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=3600, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
+* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings, optional (default=None)  
  	List of models to fit on the data. If None, all models are chosen. Possible values are (case insensitive):    
@@ -236,13 +236,13 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 			- 'F1' (default)
 			- 'Jaccard'  
 			- 'AUC' for Area Under Curve  
-	+ successive_halving: bool, optional (default=False) 
+	+ successive_halving: bool, optional (default=False)  
 	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left.
 	+ skip_iter: int, optional (default=0)  
 	Skip n last iterations of the successive halving.
 	+ max_iter: int, optional (default=15)  
 	Maximum number of iterations of the BO.
-	+ max_time: int, optional (default=inf)  
+	+ max_time: int, optional (default=np.inf)  
 	Maximum time allowed for the BO (in seconds).
 	+ eps: float, optional (default=1e-08)  
 	Minimum hyperparameter distance between two consecutive steps in the BO.
@@ -261,7 +261,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 
 ATOM methods (utilities)
 ----------------------------- 
-* **stats()**
+* **stats()**  
 Print out a list of basic statistics on the dataset.
 * **boxplot(i=-1, figsize, filename=None)**  
 Make a boxplot of the results of the cross-validation. Only after the class is fitted.
@@ -288,9 +288,9 @@ Class attributes
 * **X, Y**: Data features and target.
 * **train, test**: Train and test set.
 * **X_train, Y_train**: Training set features and target.
-* **X_test, Y_test**: validation set features and target.
-* **target_mapping**: dictionary of the target values mapped to their encoded integer (only for classification tasks).
-* **collinear**: Dataframe containing the collinear features and their correlation value. Only after calling the feature_selection method.
+* **X_test, Y_test**: Test set features and target.
+* **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
+* **collinear**: Dataframe of the collinear features and their correlation values (only if feature_selection was used).
 * **univariate**: Univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
 * **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
