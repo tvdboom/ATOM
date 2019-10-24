@@ -124,19 +124,21 @@ class ATOM(object):
             X = convert_to_pd(X)
             Y = convert_to_pd(Y)
             self.dataset = merge(X, Y)
+            self.target = Y.name
 
         elif target is not None:  # If target is filled, X has to be a df
-            if target not in X.columns.values:
+            if target not in X.columns:
                 raise ValueError('Target column not found in the dataset!')
             self.dataset = X
+            self.target = target
 
         else:
             self.dataset = convert_to_pd(X)
+            self.target = self.dataset.columns[-1]
 
         # << ============ Parameters tests ============ >>
 
         # Set parameters to default if input is invalid
-        self.target = self.dataset.columns[-1]
         self.percentage = percentage if 0 < percentage < 100 else 100
         self.test_size = test_size if 0 < test_size < 1 else 0.3
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
@@ -175,18 +177,18 @@ class ATOM(object):
 
         # << ============ Set algorithm goal ============ >>
 
-        classes = set(self.dataset.iloc[:, -1])
+        classes = set(self.dataset[self.target])
         if len(classes) < 2:
             raise ValueError(f'Only found one target value: {classes}!')
         elif len(classes) == 2:
-            prlog('Algorithm set to binary classification.', self)
+            prlog('Algorithm task: binary classification.', self)
             self.goal = 'binary classification'
-        elif 2 < len(classes) < 0.1*len(Y):
-            prlog('Algorithm set to multiclass classification.' +
+        elif 2 < len(classes) < 0.1*len(self.dataset[self.target]):
+            prlog('Algorithm task: multiclass classification.' +
                   f' Number of classes: {len(classes)}', self)
             self.goal = 'multiclass classification'
         else:
-            prlog('Algorithm set to regression.', self)
+            prlog('Algorithm task: regression.', self)
             self.goal = 'regression'
 
         # << ============ Data cleaning ============ >>
@@ -288,6 +290,8 @@ class ATOM(object):
         if self.goal != 'regression':
             _, counts = np.unique(self.Y, return_counts=True)
             lx = max(max([len(str(i)) for i in self.unique]), len(self.Y.name))
+            if hasattr(self, 'target_mapping'):
+                lx = lx + 3  # Correct length for the added label
 
             prlog('Instances per target class:', self, 2)
             prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
@@ -302,7 +306,7 @@ class ATOM(object):
                     prlog('{0:<{1}} --> {2}'
                           .format(self.unique[i], lx, counts[i]), self, 2)
 
-        prlog('', self, 2)  # Insert an empty row
+        prlog('', self, 1)  # Insert an empty row
 
     @params_to_log
     def impute(self, strat_num='remove', strat_cat='remove', max_frac=0.5,
@@ -527,6 +531,7 @@ class ATOM(object):
         neighbors   --> number of nearest neighbors for SMOTE
         undersample --> undersampling strategy using RandomUndersampler.
                         Choose from:
+                            None: don't undersample
                             float: fraction majority/minority (only for binary)
                             'minority': resample only the minority class
                             'not minority': resample all but minority class
@@ -536,9 +541,7 @@ class ATOM(object):
         '''
 
         # Check parameters
-        oversample = float(oversample) if oversample > 0 else 0
-        undersample = float(undersample) if undersample > 0 else 1
-        neighbors = int(neighbors) if neighbors > 0 else 5
+        self.neighbors = int(neighbors) if neighbors > 0 else 5
 
         if not imblearn_import:
             prlog("Unable to import imblearn. Skipping balancing the data...",
@@ -551,10 +554,10 @@ class ATOM(object):
         if oversample is not None:
             prlog('Performing oversampling...', self, 1)
             smote = SMOTE(sampling_strategy=oversample,
-                          k_neighbors=neighbors,
+                          k_neighbors=self.neighbors,
                           n_jobs=self.n_jobs)
-            self.X_train, self.Y_train = smote.fit_resample(self.X_train,
-                                                            self.Y_train)
+            self.X_train, self.Y_train = \
+                smote.fit_resample(self.X_train, self.Y_train)
             diff = len(self.X_train) - length  # Difference in length
             prlog(f' --> Adding {diff} rows to minority class.', self, 2)
 
@@ -703,6 +706,9 @@ class ATOM(object):
         # Dataset is possibly changed so need to reset attributes
         self._reset_attributes('dataset')
 
+        if self.strategy is None:
+            return None  # Exit feature_selection
+
         # Set max_features as all or fraction of total
         if self.max_features is None:
             self.max_features = self.X_train.shape[1]
@@ -769,14 +775,14 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
             self._reset_attributes('dataset')
 
-        elif self.strategy is not None:
+        else:
             raise ValueError('Invalid feature selection strategy selected.'
                              "Choose from: 'univariate', 'PCA' or 'SFM'")
 
     @params_to_log
     def fit(self, models=None, metric=None, successive_halving=False,
-            skip_iter=0, max_iter=15, max_time=3600, eps=1e-08,
-            batch_size=1, init_points=5, plot_bo=False, cv=3, bootstrap=None):
+            skip_iter=0, max_iter=15, max_time=np.inf, eps=1e-08,
+            batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -796,7 +802,7 @@ class ATOM(object):
         init_points        --> initial number of random tests of the BO
         plot_bo            --> boolean to plot the BO's progress
         cv                 --> splits for the cross validation
-        bootstrap          --> number of splits for bootstrapping (0 for None)
+        bagging            --> number of splits for bagging (0 for None)
 
         '''
 
@@ -835,8 +841,8 @@ class ATOM(object):
                                                          self.plot_bo,
                                                          self.n_jobs)
 
-                        if self.bootstrap is not None:
-                            getattr(self, model).bootstrap(self.bootstrap)
+                        if self.bagging is not None:
+                            getattr(self, model).bagging(self.bagging)
 
                 except Exception as ex:
                     prlog('Exception encountered while running the '
@@ -867,7 +873,7 @@ class ATOM(object):
 
                 # Get best score (min or max dependent on metric)
                 metric_to_min = ['max_error', 'MAE', 'MSE', 'MSLE']
-                if self.bootstrap is None:
+                if self.bagging is None:
                     x = [getattr(self, m).score for m in self.models]
                 else:
                     x = [getattr(self, m).results.mean() for m in self.models]
@@ -887,20 +893,20 @@ class ATOM(object):
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
-            if self.bootstrap is None:
+            if self.bagging is None:
                 results = pd.DataFrame(columns=['model', 'score'])
             else:
                 results = pd.DataFrame(columns=['model',
                                                 'score',
-                                                'bootstrap_mean',
-                                                'bootstrap_std'])
+                                                'bagging_mean',
+                                                'bagging_std'])
 
             for m in self.models:
                 name = getattr(self, m).name
                 shortname = getattr(self, m).shortname
                 score = getattr(self, m).score
 
-                if self.bootstrap is None:
+                if self.bagging is None:
                     results = results.append({'model': shortname,
                                               'score': score},
                                              ignore_index=True)
@@ -918,8 +924,8 @@ class ATOM(object):
                     bs_std = getattr(self, m).results.std()
                     results = results.append({'model': shortname,
                                               'score': score,
-                                              'bootstrap_mean': bs_mean,
-                                              'bootstrap_std': bs_std},
+                                              'bagging_mean': bs_mean,
+                                              'bagging_std': bs_std},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
@@ -951,11 +957,17 @@ class ATOM(object):
             else:
                 pca = False
             if scale and not pca:
+                features = self.X.columns  # Save feature names
+
                 # Normalize features to mean=0, std=1
                 data['X_scaled'] = StandardScaler().fit_transform(data['X'])
                 scaler = StandardScaler().fit(data['X_train'])
                 data['X_train_scaled'] = scaler.transform(data['X_train'])
                 data['X_test_scaled'] = scaler.transform(data['X_test'])
+
+                # Convert np.array to pd.DataFrame for all scaled features
+                for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
+                    data[set_] = convert_to_pd(data[set_], columns=features)
 
             return data
 
@@ -974,16 +986,16 @@ class ATOM(object):
         self.successive_halving = bool(successive_halving)
         self.skip_iter = int(skip_iter)
         self.max_iter = int(max_iter) if max_iter > 0 else 15
-        self.max_time = int(max_time) if max_time > 0 else np.inf
+        self.max_time = float(max_time) if max_time > 0 else np.inf
         self.eps = float(eps)
         self.batch_size = int(batch_size) if batch_size > 0 else 1
         self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
         self.cv = int(cv) if cv > 0 else 3
-        if bootstrap is None or bootstrap == 0:
-            self.bootstrap = None
+        if bagging is None or bagging == 0:
+            self.bagging = None
         else:
-            self.bootstrap = int(bootstrap)
+            self.bagging = int(bagging)
 
         # Save model erros (if any) in dictionary
         self.errors = {}
@@ -1098,7 +1110,7 @@ class ATOM(object):
                 self.results.append(results)
 
                 # Select best models for halving
-                col = 'score' if self.bootstrap is None else 'bootstrap_mean'
+                col = 'score' if self.bagging is None else 'bagging_mean'
                 lx = results.nlargest(n=int(len(self.models)/2),
                                       columns=col,
                                       keep='all')
@@ -1115,31 +1127,34 @@ class ATOM(object):
 
         # <====================== End fit function ======================>
 
-    def boxplot(self, i=-1, figsize=None, filename=None):
+    def boxplot(self, iteration=-1, figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Plot a boxplot of the found metric results.
+        Plot a boxplot of the bagging's results.
 
         PARAMETERS -------------------------------------
 
-        i        --> iteration of the successive halving to plot (default last)
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
+        iteration --> iteration of the successive halving to plot
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of the file to save
 
         '''
 
         results, names = [], []
         try:  # Can't make plot before running fit!
-            df = self.results[i] if self.successive_halving else self.results
+            if self.successive_halving:
+                df = self.results[iteration]
+            else:
+                df = self.results
             for m in df.model:
                 results.append(getattr(self, m).results)
                 names.append(getattr(self, m).shortname)
         except (IndexError, AttributeError):
-            raise Exception('You need to fit ATOM using bootstrap first!')
+            raise Exception('You need to fit ATOM using bagging!')
 
-        if figsize is None:
+        if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8+len(names)/2), 6)
 
         sns.set_style('darkgrid')
@@ -1175,7 +1190,7 @@ class ATOM(object):
                              'fitted using a successive halving approach!')
 
         models = self.results[0].model  # List of models in first iteration
-        col = 'score' if self.bootstrap is None else 'bootstrap_mean'
+        col = 'score' if self.bagging is None else 'bagging_mean'
         linx = [[] for m in models]
         liny = [[] for m in models]
         try:  # Can't make plot before running fit!

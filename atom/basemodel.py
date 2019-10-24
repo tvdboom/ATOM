@@ -26,9 +26,9 @@ from sklearn.model_selection import (
      KFold, StratifiedKFold, cross_val_score
     )
 from sklearn.metrics import (
-    precision_score, recall_score, accuracy_score, f1_score, roc_auc_score,
-    r2_score, jaccard_score, roc_curve, confusion_matrix, max_error,
-    mean_absolute_error, mean_squared_error, mean_squared_log_error
+    make_scorer, precision_score, recall_score, accuracy_score, f1_score,
+    roc_auc_score, r2_score, jaccard_score, roc_curve, confusion_matrix,
+    max_error, mean_absolute_error, mean_squared_error, mean_squared_log_error
     )
 
 # Others
@@ -91,29 +91,6 @@ def prlog(string, class_, level=0, time=False):
                 file.write(date + '\n' + string + '\n')
             else:
                 file.write(string + '\n')
-
-
-def set_init(data, metric, goal, log, verbose, scaled=False):
-    ''' Returns BaseModel's (class) parameters as dictionary '''
-
-    if scaled:
-        params = {'X': data['X_scaled'],
-                  'X_train': data['X_train_scaled'],
-                  'X_test': data['X_test_scaled']}
-    else:
-        params = {'X': data['X'],
-                  'X_train': data['X_train'],
-                  'X_test': data['X_test']}
-
-    for p in ('Y', 'Y_train', 'Y_test'):
-        params[p] = data[p]
-
-    params['metric'] = metric
-    params['goal'] = goal
-    params['log'] = log
-    params['verbose'] = verbose
-
-    return params
 
 
 # << ============ Classes ============ >>
@@ -274,19 +251,11 @@ class BaseModel(object):
                 output = getattr(self, self.metric)(true=Y_val)
 
             else:  # Use cross validation to get the output of BO
-                # Set scoring metric for those that are different
-                if self.metric == 'MAE':
-                    scoring = 'neg_mean_absolute_error'
-                elif self.metric == 'MSE':
-                    scoring = 'neg_mean_squared_error'
-                elif self.metric == 'MSLE':
-                    scoring = 'neg_mean_squared_log_error'
-                elif self.metric == 'LogLoss':
-                    scoring = 'neg_log_loss'
-                elif self.metric == 'AUC':
-                    scoring = 'roc_auc'
-                else:
-                    scoring = self.metric.lower()
+
+                # Make scoring function for the cross_validator
+                gib = True if self.metric not in self.metric_min else False
+                scoring = make_scorer(getattr(self, self.metric),
+                                      greater_is_better=gib)
 
                 if self.goal != 'regression':
                     # Folds are made preserving the % of samples for each class
@@ -303,9 +272,9 @@ class BaseModel(object):
                                          scoring=scoring,
                                          n_jobs=n_jobs).mean()
 
-            # cross_val_score returns negative loss for minimizing metrics
-            if self.metric in self.metric_min:
-                output = -output
+                # cross_val_score returns negative loss for minimizing metrics
+                if self.metric in self.metric_min:
+                    output = -output
 
             # Save output of the BO and plot progress
             self.BO['score'].append(output)
@@ -397,7 +366,7 @@ class BaseModel(object):
         # Get metric score on test set
         self.score = getattr(self, self.metric)()
 
-        not_proba = ['LinReg', 'XGB', 'lSVM', 'kSVM']
+        not_proba = ['LinReg', 'lSVM', 'kSVM']
         if self.shortname in not_proba and self.goal != 'regression':
             # Models without predict_proba() method need probs with ccv
             self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
@@ -412,17 +381,17 @@ class BaseModel(object):
         if self.shortname not in self.not_bo:
             prlog('Best hyperparameters: {}'.format(self.best_params), self, 1)
             prlog('Best {} on the BO: {:.4f}'.format(self.metric, bo), self, 1)
-        prlog('Best {} on test set: {:.4f}'.format(self.metric, self.score),
+        prlog('{} on the test set: {:.4f}'.format(self.metric, self.score),
               self, 1)
 
     @timing
-    def bootstrap(self, n_samples=3):
+    def bagging(self, n_samples=3):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Bootstrap the training set and test on the test set to get a
-        distribution of the model´s results..
+        Take bootstrap samples from the training set and test them on the test
+        set to get a distribution of the model's results.
 
         PARAMETERS -------------------------------------
 
@@ -444,7 +413,7 @@ class BaseModel(object):
 
         self.results = np.array(self.results)  # Numpy array for mean and std
         prlog('--------------------------------------------------', self, 1)
-        prlog('Bootstrap {} score --> Mean: {:.4f}   Std: {:.4f}'
+        prlog('Bagging {} score --> Mean: {:.4f}   Std: {:.4f}'
               .format(self.metric, self.results.mean(), self.results.std()),
               self, 1)
 
@@ -572,13 +541,12 @@ class BaseModel(object):
             raise ValueError('This method only works for tree-based ' +
                              f'models. Try one of the following: {self.tree}')
 
-        features = self.X.columns  # Get column names
+        scores = pd.Series(self.best_model_fit.feature_importances_,
+                           index=self.X.columns).nlargest(show).sort_values()
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        pd.Series(self.best_model_fit.feature_importances_,
-                  index=features).nlargest(show).sort_values().plot.barh()
-
+        scores.plot.barh()
         plt.xlabel('Score', fontsize=16, labelpad=12)
         plt.ylabel('Features', fontsize=16, labelpad=12)
         plt.title('Importance of Features', fontsize=16)
