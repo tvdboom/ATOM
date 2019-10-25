@@ -237,7 +237,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 			- 'Jaccard'  
 			- 'AUC' for Area Under Curve  
 	+ successive_halving: bool, optional (default=False)  
-	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left.
+	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
 	+ skip_iter: int, optional (default=0)  
 	Skip n last iterations of the successive halving.
 	+ max_iter: int, optional (default=15)  
