@@ -175,21 +175,21 @@ class ATOM(object):
             elif self.n_jobs != 1:
                 prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
-        # << ============ Set algorithm goal ============ >>
+        # << ============ Set algorithm task ============ >>
 
         classes = set(self.dataset[self.target])
         if len(classes) < 2:
             raise ValueError(f'Only found one target value: {classes}!')
         elif len(classes) == 2:
             prlog('Algorithm task: binary classification.', self)
-            self.goal = 'binary classification'
+            self.task = 'binary classification'
         elif 2 < len(classes) < 0.1*len(self.dataset[self.target]):
             prlog('Algorithm task: multiclass classification.' +
                   f' Number of classes: {len(classes)}', self)
-            self.goal = 'multiclass classification'
+            self.task = 'multiclass classification'
         else:
             prlog('Algorithm task: regression.', self)
-            self.goal = 'regression'
+            self.task = 'regression'
 
         # << ============ Data cleaning ============ >>
 
@@ -287,7 +287,7 @@ class ATOM(object):
               .format(len(self.train), len(self.test)), self, 1)
 
         # Print count of target values
-        if self.goal != 'regression':
+        if self.task != 'regression':
             _, counts = np.unique(self.Y, return_counts=True)
             lx = max(max([len(str(i)) for i in self.unique]), len(self.Y.name))
             if hasattr(self, 'target_mapping'):
@@ -723,7 +723,7 @@ class ATOM(object):
             # Set the solver
             solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
                        'mutual_info_regression', 'chi2']
-            if self.solver is None and self.goal == 'regression':
+            if self.solver is None and self.task == 'regression':
                 func = f_regression
             elif self.solver is None:
                 func = f_classif
@@ -822,7 +822,7 @@ class ATOM(object):
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
                                                  self.metric,
-                                                 self.goal,
+                                                 self.task,
                                                  self.log,
                                                  self.verbose))
 
@@ -1042,13 +1042,13 @@ class ATOM(object):
                     final_models.remove(model)
 
         # Linear regression can't perform classification
-        if 'LinReg' in final_models and self.goal != 'regression':
+        if 'LinReg' in final_models and self.task != 'regression':
             prlog("Linear Regression can't perform classification tasks."
                   + " Removing model from pipeline.", self)
             final_models.remove('LinReg')
 
         # Remove classification-only models from pipeline
-        if self.goal == 'regression':
+        if self.task == 'regression':
             class_models = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
             for model in class_models:
                 if model in final_models:
@@ -1067,7 +1067,7 @@ class ATOM(object):
             prlog(f'Models in pipeline: {self.models}', self)
 
         # Set default metric
-        if self.metric is None and self.goal == 'binary classification':
+        if self.metric is None and self.task == 'binary classification':
             self.metric = 'F1'
         elif self.metric is None:
             self.metric = 'MSE'
@@ -1082,13 +1082,13 @@ class ATOM(object):
                 self.metric = m
 
         if self.metric not in metric_class + mreg:
-            temp = mreg if self.goal == 'regression' else metric_class
+            temp = mreg if self.task == 'regression' else metric_class
             raise ValueError(f'Unknown metric. Try one of {temp}.')
-        elif self.metric == 'AUC' and self.goal != 'binary classification':
+        elif self.metric == 'AUC' and self.task != 'binary classification':
             raise ValueError('AUC only works for binary classification tasks.')
-        elif self.metric not in mreg and self.goal == 'regression':
+        elif self.metric not in mreg and self.task == 'regression':
             raise ValueError("{} is an invalid metric for {}. Try one of {}."
-                             .format(self.metric, self.goal, mreg))
+                             .format(self.metric, self.task, mreg))
 
         # << =================== Core ==================== >>
 

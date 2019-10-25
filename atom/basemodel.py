@@ -108,7 +108,7 @@ class BaseModel(object):
 
         data    --> dictionary of the data (train, test and complete set)
         metric  --> metric to maximize (or minimize) in the BO
-        goal    --> classification or regression
+        task    --> classification or regression
         log     --> name of the log file
         verbose --> verbosity level (0, 1, 2)
 
@@ -257,7 +257,7 @@ class BaseModel(object):
                 scoring = make_scorer(getattr(self, self.metric),
                                       greater_is_better=gib)
 
-                if self.goal != 'regression':
+                if self.task != 'regression':
                     # Folds are made preserving the % of samples for each class
                     # Use same splits for every model
                     kfold = StratifiedKFold(n_splits=cv, random_state=1)
@@ -367,12 +367,12 @@ class BaseModel(object):
         self.score = getattr(self, self.metric)()
 
         not_proba = ['LinReg', 'lSVM', 'kSVM']
-        if self.shortname in not_proba and self.goal != 'regression':
+        if self.shortname in not_proba and self.task != 'regression':
             # Models without predict_proba() method need probs with ccv
             self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
             self.ccv.fit(self.X_test, self.Y_test)
             self.predict_proba = self.ccv.predict_proba(self.X_test)
-        elif self.goal != 'regression':
+        elif self.task != 'regression':
             self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
         # Print stats
@@ -420,25 +420,25 @@ class BaseModel(object):
     # << ============ Evaluation metric functions ============ >>
 
     def Precision(self, pred=None, true=None):
-        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        avg = 'binary' if self.task == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
         return precision_score(true, pred, average=avg)
 
     def Recall(self, pred=None, true=None):
-        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        avg = 'binary' if self.task == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
         return recall_score(true, pred, average=avg)
 
     def F1(self, pred=None, true=None):
-        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        avg = 'binary' if self.task == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
         return f1_score(true, pred, average=avg)
 
     def Jaccard(self, pred=None, true=None):
-        avg = 'binary' if self.goal == 'binary classification' else 'weighted'
+        avg = 'binary' if self.task == 'binary classification' else 'weighted'
         pred = self.predict if pred is None else pred
         true = self.Y_test if true is None else true
         return jaccard_score(true, pred, average=avg)
@@ -497,28 +497,23 @@ class BaseModel(object):
 
         '''
 
-        if self.goal == 'regression':
+        if self.task == 'regression':
             raise ValueError('This method is only available for ' +
                              'classification tasks.')
-
-        no_prob = ['XGB', 'lSVM', 'kSVM']  # Models without predict_proba
-        mod = self.ccv if self.shortname in no_prob else self.best_model_fit
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         classes = list(set(self.Y))
         colors = ['r', 'b', 'g']
-        for n in range(len(classes)):
-            # Get features per class
-            class_ = self.X[np.where(self.Y == classes[n])]
-            predicted_proba = mod.predict_proba(class_)[:, target_class]
-            sns.distplot(predicted_proba,
+        for n, class_ in enumerate(classes):
+            idx = np.where(self.Y_test == class_)  # Get indices per class
+            sns.distplot(self.predict_proba[idx, target_class],
                          hist=False,
                          kde=True,
                          norm_hist=True,
                          color=colors[n],
                          kde_kws={"shade": True},
-                         label='Class=' + str(classes[n]))
+                         label='Class=' + str(class_))
 
         plt.title('Predicted probabilities for class=' +
                   str(classes[target_class]), fontsize=16)
@@ -560,7 +555,7 @@ class BaseModel(object):
     def plot_ROC(self, figsize=(10, 6), filename=None):
         ''' Plot Receiver Operating Characteristics curve '''
 
-        if self.goal != 'binary classification':
+        if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
                              'classification problems.')
 
@@ -601,7 +596,7 @@ class BaseModel(object):
 
         '''
 
-        if self.goal != 'binary classification':
+        if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
                              'classification problems.')
 

@@ -48,7 +48,7 @@ except ModuleNotFoundError:
 
 # << ============ Functions ============ >>
 
-def set_init(data, metric, goal, log, verbose, scaled=False):
+def set_init(data, metric, task, log, verbose, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
     if scaled:
@@ -63,7 +63,7 @@ def set_init(data, metric, goal, log, verbose, scaled=False):
     for p in ('Y', 'Y_train', 'Y_test'):
         params[p] = data[p]
         params['metric'] = metric
-        params['goal'] = goal
+        params['task'] = task
         params['log'] = log
         params['verbose'] = verbose
 
@@ -91,7 +91,7 @@ class GP(BaseModel):
     def get_model(self):
         ''' Returns the sklearn model '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return GaussianProcessClassifier()
         else:
             return GaussianProcessRegressor()
@@ -410,7 +410,7 @@ class KNN(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'K-Nearest Neighbors', 'KNN'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -424,7 +424,7 @@ class KNN(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return KNeighborsClassifier(**params)
         else:
             return KNeighborsRegressor(**params)
@@ -459,12 +459,12 @@ class Tree(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Decision Tree', 'Tree'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             criterion = ['entropy', 'gini']
         else:
             criterion = ['mse', 'mae', 'friedman_mse']
@@ -478,7 +478,7 @@ class Tree(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return DecisionTreeClassifier(**params)
         else:
             return DecisionTreeRegressor(**params)
@@ -489,7 +489,7 @@ class Tree(BaseModel):
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'criterion',
                  'type': 'discrete',
-                 'domain': range(2 if self.goal != 'regression' else 3)},
+                 'domain': range(2 if self.task != 'regression' else 3)},
                 {'name': 'max_depth',
                  'type': 'discrete',
                  'domain': range(1, 11)},
@@ -517,7 +517,7 @@ class Bag(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Bagging', 'Bag'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -532,7 +532,7 @@ class Bag(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return BaggingClassifier(**params)
         else:
             return BaggingRegressor(**params)
@@ -571,12 +571,12 @@ class ET(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Extra-Trees', 'ET'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             criterion = ['entropy', 'gini']
         else:
             criterion = ['mse', 'mae']
@@ -592,7 +592,7 @@ class ET(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return ExtraTreesClassifier(**params)
         else:
             return ExtraTreesRegressor(**params)
@@ -636,12 +636,12 @@ class RF(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Random Forest', 'RF'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             criterion = ['entropy', 'gini']
         else:
             criterion = ['mse', 'mae', 'friedman_mse']
@@ -657,7 +657,7 @@ class RF(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return RandomForestClassifier(**params)
         else:
             return RandomForestRegressor(**params)
@@ -701,7 +701,7 @@ class AdaBoost(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Adaptive Boosting', 'AdaBoost'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -713,7 +713,7 @@ class AdaBoost(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return AdaBoostClassifier(**params)
         else:
             return AdaBoostRegressor(**params)
@@ -746,7 +746,7 @@ class GBM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Gradient Boosting Machine', 'GBM'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -764,7 +764,7 @@ class GBM(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return GradientBoostingClassifier(**params)
         else:
             return GradientBoostingRegressor(**params)
@@ -812,7 +812,7 @@ class XGB(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'XGBoost', 'XGB'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -830,7 +830,7 @@ class XGB(BaseModel):
     def get_model(self, params):
         ''' Returns the model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return XGBClassifier(**params, verbosity=0)
         else:
             return XGBRegressor(**params, verbosity=0)
@@ -881,7 +881,7 @@ class LGBM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Light GBM', 'LGBM'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -900,7 +900,7 @@ class LGBM(BaseModel):
     def get_model(self, params):
         ''' Returns the model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return LGBMClassifier(**params)
         else:
             return LGBMRegressor(**params)
@@ -953,12 +953,12 @@ class lSVM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Linear SVM', 'lSVM'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             losses = ['hinge', 'squared_hinge']
         else:
             losses = ['epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -976,7 +976,7 @@ class lSVM(BaseModel):
                   'tol': round(x[0, 3], 4),
                   'dual': dual}
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             params['penalty'] = penalty
 
         return params
@@ -984,7 +984,7 @@ class lSVM(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return LinearSVC(**params)
         else:
             return LinearSVR(**params)
@@ -1022,7 +1022,7 @@ class kSVM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Non-linear SVM', 'kSVM'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1047,7 +1047,7 @@ class kSVM(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return SVC(**params)
         else:
             return SVR(**params)
@@ -1094,12 +1094,12 @@ class PA(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Passive Aggressive', 'PA'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             loss = ['hinge', 'squared_hinge']
         else:
             loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -1115,7 +1115,7 @@ class PA(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return PassiveAggressiveClassifier(**params)
         else:
             return PassiveAggressiveRegressor(**params)
@@ -1153,12 +1153,12 @@ class SGD(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Stochastic Gradient Descent', 'SGD'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             loss = ['hinge', 'log', 'modified_huber', 'squared_hinge',
                     'perceptron', 'squared_loss', 'huber',
                     'epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -1189,7 +1189,7 @@ class SGD(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return SGDClassifier(**params)
         else:
             return SGDRegressor(**params)
@@ -1200,7 +1200,7 @@ class SGD(BaseModel):
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'loss',
                  'type': 'discrete',
-                 'domain': range(9 if self.goal != 'regression' else 4)},
+                 'domain': range(9 if self.task != 'regression' else 4)},
                 {'name': 'penalty',
                  'type': 'discrete',
                  'domain': range(4)},
@@ -1245,7 +1245,7 @@ class MLP(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Multilayer Perceptron', 'MLP'
-        self.goal = args[2]
+        self.task = args[2]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1269,7 +1269,7 @@ class MLP(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        if self.goal != 'regression':
+        if self.task != 'regression':
             return MLPClassifier(**params)
         else:
             return MLPRegressor(**params)
