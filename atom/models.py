@@ -525,8 +525,7 @@ class Bag(BaseModel):
         bootstrap = [True, False]
         params = {'n_estimators': int(x[0, 0]),
                   'max_samples': round(x[0, 1], 1),
-                  'max_features': round(x[0, 2], 1),
-                  'bootstrap': bootstrap[int(x[0, 3])]}
+                  'bootstrap': bootstrap[int(x[0, 2])]}
         return params
 
     def get_model(self, params):
@@ -547,9 +546,6 @@ class Bag(BaseModel):
                 {'name': 'max_samples',
                  'type': 'discrete',
                  'domain': np.linspace(0.3, 1, 8)},
-                {'name': 'max_features',
-                 'type': 'discrete',
-                 'domain': np.linspace(0.3, 1, 8)},
                 {'name': 'bootstrap',
                  'type': 'discrete',
                  'domain': range(2)}]
@@ -557,7 +553,7 @@ class Bag(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 1, 1, 1]])
+        values = np.array([[50, 1, 1]])
         return values
 
 
@@ -867,7 +863,7 @@ class XGB(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[100, 0.1, 1, 0, 1, 1.0, 3, 1]])
+        values = np.array([[100, 0.1, 1, 0, 1, 1.0, 3, 1.0]])
         return values
 
 

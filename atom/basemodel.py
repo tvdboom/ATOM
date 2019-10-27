@@ -536,7 +536,15 @@ class BaseModel(object):
             raise ValueError('This method only works for tree-based ' +
                              f'models. Try one of the following: {self.tree}')
 
-        scores = pd.Series(self.best_model_fit.feature_importances_,
+        # Bagging has no direct feature importance implementation
+        if self.shortname == 'Bag':
+            feature_importances = np.mean([
+                est.feature_importances_ for est in self.best_model.estimators_
+            ], axis=0)
+        else:
+            feature_importances = self.best_model_fit.feature_importances_
+
+        scores = pd.Series(feature_importances,
                            index=self.X.columns).nlargest(show).sort_values()
 
         sns.set_style('darkgrid')

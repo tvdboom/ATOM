@@ -289,9 +289,10 @@ class ATOM(object):
         # Print count of target values
         if self.task != 'regression':
             _, counts = np.unique(self.Y, return_counts=True)
-            lx = max(max([len(str(i)) for i in self.unique]), len(self.Y.name))
+            len_classes = max([len(str(i)) for i in self.unique])
             if hasattr(self, 'target_mapping'):
-                lx = lx + 3  # Correct length for the added label
+                len_classes += 3
+            lx = max(len_classes, len(self.Y.name))
 
             prlog('Instances per target class:', self, 2)
             prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
