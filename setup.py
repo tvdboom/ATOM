@@ -39,6 +39,6 @@ setuptools.setup(
           'seaborn>=0.9.0',
           'xgboost>=0.90',
           'lightgbm>=2.3.0',
-          'imblearn>=0.5.0'          
+          'imbalanced-learn>=0.5.0'          
       ],
       python_requires='>=3.6')
