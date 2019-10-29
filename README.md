@@ -215,7 +215,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'AdaBoost' for Adaptive Boosting  
 		- 'GBM' for Gradient Boosting Machine  
 		- 'XGB' for XGBoost (if package is available)  
-		- 'LGBM' for light GBM (if package is available)
+		- 'LGB' for LightGBM (if package is available)
 		- 'lSVM' for Linear Support Vector Machine  
 		- 'kSVM' for Non-linear Support Vector Machine  
 		- 'PA' for Passive Aggressive  
@@ -304,10 +304,20 @@ Class attributes
   
 Subclass methods (utilities)  
 -----------------------------  
+* **plot_threshold(self, metric=None, steps=100, figsize=(10, 6), filename=None)**  
+Plot performance metrics against multiple threshold values. Only for binary classification tasks.  
+	+ metric: string or list of strings, optional (default=None)  
+	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
+    + steps: int, optional (default=100)  
+    Number of thresholds to try between 0 and 1.
+   	+ figsize, 2d-tuple, optional (default=(10, 6))  
+	Figure size: format as (x, y).
+	+ filename: string, optional (default=None)  
+	Name of the file when saved. None to not save anything.
 * **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
 Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
-	+ target_class:  int, optional (default=1 -->2nd class)
-	Target class to plot the probabilities against.
+	+ target_class: int, optional (default=1)
+	Target class to plot the probabilities against. A value of 0 corresponds to the first class, 1 to the second class, etc...
 	+ figsize, 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
@@ -325,7 +335,7 @@ Plots the ROC curve. Only for binary classification tasks.
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
-Plot the confusion matrix for the model. Only for binary classification.  
+Plot the confusion matrix for the model. Only for binary classification tasks.  
 	+ normalize: bool, optional (default=True)
 	Wether to normalize the confusion matrix.
    	+ figsize, 2d-tuple, optional (default=(10, 6))  
