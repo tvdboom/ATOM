@@ -1,5 +1,5 @@
-﻿<p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="500" height="140" />
+<p align="center">
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="500" height="140"/>
 </p>
 
 # Automated Tool for Optimized Modelling
@@ -304,7 +304,7 @@ Class attributes
   
 Subclass methods (utilities)  
 -----------------------------  
-* **plot_threshold(self, metric=None, steps=100, figsize=(10, 6), filename=None)**  
+* **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
 Plot performance metrics against multiple threshold values. Only for binary classification tasks.  
 	+ metric: string or list of strings, optional (default=None)  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
