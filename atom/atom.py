@@ -32,7 +32,7 @@ from sklearn.model_selection import train_test_split
 # Models
 from .models import (
         BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, Bag, ET, RF,
-        AdaBoost, GBM, XGB, LGBM, lSVM, kSVM, PA, SGD, MLP
+        AdaBoost, GBM, XGB, LGB, lSVM, kSVM, PA, SGD, MLP
         )
 
 # Others
@@ -947,7 +947,7 @@ class ATOM(object):
                 data[i] = eval('self.' + i)
 
             # List of models that need scaling
-            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGBM',
+            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB',
                               'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
@@ -1009,7 +1009,7 @@ class ATOM(object):
 
         model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
                       'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaBoost',
-                      'GBM', 'XGB', 'LGBM', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+                      'GBM', 'XGB', 'LGB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
         final_models = []
@@ -1033,7 +1033,7 @@ class ATOM(object):
                             break
 
         # Check if XGBoost and lightgbm are available
-        for model, package in zip(['XGB', 'LGBM'], ['xgboost', 'lightgbm']):
+        for model, package in zip(['XGB', 'LGB'], ['xgboost', 'lightgbm']):
             if model in final_models:
                 try:
                     importlib.import_module(package)

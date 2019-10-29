@@ -41,7 +41,7 @@ try:
 except ModuleNotFoundError:
     pass
 try:
-    from lightgbm import LGBMClassifier, LGBMRegressor
+    from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 except ModuleNotFoundError:
     pass
 
@@ -84,7 +84,7 @@ class GP(BaseModel):
         self.name, self.shortname = 'Gaussian Process', 'GP'
 
     def get_params(self, x):
-        ''' Gp has no hyperparameters to optimize '''
+        ''' GP has no hyperparameters to optimize '''
 
         return False
 
@@ -97,10 +97,10 @@ class GP(BaseModel):
             return GaussianProcessRegressor()
 
     def get_domain(self):
-        return False
+        return None
 
     def get_init_values(self):
-        return False
+        return None
 
 
 class GNB(BaseModel):
@@ -125,10 +125,10 @@ class GNB(BaseModel):
         return GaussianNB()
 
     def get_domain(self):
-        return False
+        return None
 
     def get_init_values(self):
-        return False
+        return None
 
 
 class MNB(BaseModel):
@@ -168,8 +168,7 @@ class MNB(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[1, 0]])
-        return values
+        return np.array([[1, 0]])
 
 
 class BNB(BaseModel):
@@ -209,8 +208,7 @@ class BNB(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[1, 0]])
-        return values
+        return np.array([[1, 0]])
 
 
 class LinReg(BaseModel):
@@ -254,8 +252,7 @@ class LinReg(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[250, 1.0, 0.5]])
-        return values
+        return np.array([[250, 1.0, 0.5]])
 
 
 class LogReg(BaseModel):
@@ -308,8 +305,7 @@ class LogReg(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[250, 1.0, 1, 0.5]])
-        return values
+        return np.array([[250, 1.0, 1, 0.5]])
 
 
 class LDA(BaseModel):
@@ -361,8 +357,7 @@ class LDA(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0, 0, 200, 1e-3]])
-        return values
+        return np.array([[0, 0, 200, 1e-3]])
 
 
 class QDA(BaseModel):
@@ -397,8 +392,7 @@ class QDA(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0]])
-        return values
+        return np.array([[0]])
 
 
 class KNN(BaseModel):
@@ -446,8 +440,7 @@ class KNN(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[5, 2, 1]])
-        return values
+        return np.array([[5, 2, 1]])
 
 
 class Tree(BaseModel):
@@ -503,8 +496,7 @@ class Tree(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0, 3, 2, 1]])
-        return values
+        return np.array([[0, 3, 2, 1]])
 
 
 class Bag(BaseModel):
@@ -553,8 +545,7 @@ class Bag(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 1, 1]])
-        return values
+        return np.array([[50, 1, 1]])
 
 
 class ET(BaseModel):
@@ -619,8 +610,7 @@ class ET(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 1, 1, 0, 2, 1]])
-        return values
+        return np.array([[50, 1, 1, 0, 2, 1]])
 
 
 class RF(BaseModel):
@@ -684,8 +674,7 @@ class RF(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[10, 1, 1, 0, 2, 1]])
-        return values
+        return np.array([[10, 1, 1, 0, 2, 1]])
 
 
 class AdaBoost(BaseModel):
@@ -728,8 +717,7 @@ class AdaBoost(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[50, 1]])
-        return values
+        return np.array([[50, 1]])
 
 
 class GBM(BaseModel):
@@ -794,8 +782,7 @@ class GBM(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[100, 0.1, 1.0, 3, 0, 2, 1]])
-        return values
+        return np.array([[100, 0.1, 1.0, 3, 0, 2, 1]])
 
 
 class XGB(BaseModel):
@@ -863,11 +850,10 @@ class XGB(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[100, 0.1, 1, 0, 1, 1.0, 3, 1.0]])
-        return values
+        return np.array([[100, 0.1, 1, 0, 1, 1.0, 3, 1.0]])
 
 
-class LGBM(BaseModel):
+class LGB(BaseModel):
     'Light Gradient Boosting Machine'
 
     def __init__(self, *args):
@@ -876,7 +862,7 @@ class LGBM(BaseModel):
         super().__init__(**set_init(*args, scaled=True))
 
         # Class attributes
-        self.name, self.shortname = 'Light GBM', 'LGBM'
+        self.name, self.shortname = 'LightGBM', 'LGB'
         self.task = args[2]
 
     def get_params(self, x):
@@ -936,8 +922,7 @@ class LGBM(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[100, 0.1, 20, 0, 1, 1.0, 3, 1, 31]])
-        return values
+        return np.array([[100, 0.1, 20, 0, 1, 1.0, 3, 1, 31]])
 
 
 class lSVM(BaseModel):
@@ -1005,8 +990,7 @@ class lSVM(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[1, 1, 1, 1e-3]])
-        return values
+        return np.array([[1, 1, 1, 1e-3]])
 
 
 class kSVM(BaseModel):
@@ -1077,8 +1061,7 @@ class kSVM(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[1, 3, 0, 0, 1, 0, 1e-3]])
-        return values
+        return np.array([[1, 3, 0, 0, 1, 0, 1e-3]])
 
 
 class PA(BaseModel):
@@ -1136,8 +1119,7 @@ class PA(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0, 1,  1e-3, 1]])
-        return values
+        return np.array([[0, 1,  1e-3, 1]])
 
 
 class SGD(BaseModel):
@@ -1228,8 +1210,7 @@ class SGD(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[0, 2, 1e-3, 1, 0.1, 0.01, 2, 0.15, 0.5, 1e-3]])
-        return values
+        return np.array([[0, 2, 1e-3, 1, 0.1, 0.01, 2, 0.15, 0.5, 1e-3]])
 
 
 class MLP(BaseModel):
@@ -1299,5 +1280,4 @@ class MLP(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        values = np.array([[20, 0, 0, 1e-4, 1e-3, 200, 32]])
-        return values
+        return np.array([[20, 0, 0, 1e-4, 1e-3, 200, 32]])

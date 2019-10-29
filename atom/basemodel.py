@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 import math
 import pickle
+import warnings
 from time import time
 from datetime import datetime
 from collections import deque
@@ -35,7 +36,10 @@ from sklearn.metrics import (
 from GPyOpt.methods import BayesianOptimization
 try:
     import xgboost
-    import lightgbm
+except ImportError:
+    pass
+try:
+    from lightgbm.plotting import plot_tree
 except ImportError:
     pass
 
@@ -119,7 +123,7 @@ class BaseModel(object):
 
         # List of tree-based models
         self.tree = ['Tree', 'Bag', 'ET', 'RF',
-                     'AdaBoost', 'GBM', 'XGB', 'LGBM']
+                     'AdaBoost', 'GBM', 'XGB', 'LGB']
 
         # List of models that don't use the Bayesian Optimization
         self.not_bo = ['GNB', 'GP']
@@ -228,7 +232,7 @@ class BaseModel(object):
             return line1, line2, ax1, ax2
 
         def optimize(x):
-            ''' Function to optimize by ht BO '''
+            ''' Function to be optimized by the BO '''
 
             params = self.get_params(x)
             self.BO['params'].append(params)
@@ -480,6 +484,74 @@ class BaseModel(object):
 
     # << ============ Plot functions ============ >>
 
+    def plot_threshold(self, metric=None, steps=100,
+                       figsize=(10, 6), filename=None):
+        
+        '''        
+        DESCRIPTION ------------------------------------
+        
+        Plot performance metrics against threshold value.
+        
+        ARGUMENTS -------------------------------------
+
+        metric   --> list of metrics to plot
+        steps    --> number of steps to plot 
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+        
+        '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method is only available for ' +
+                             'binary classification tasks.')
+
+        # Set metric parameter
+        if metric is None:
+            metric = [self.metric]
+        elif not isinstance(metric, list):
+            metric = [metric]
+
+        # Check validity metric
+        mlist = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC',
+                 'Jaccard', 'R2', 'max_error', 'MAE', 'MSE', 'MSLE']
+        mlist_low = [element.lower() for element in mlist]
+        for i, m in enumerate(metric):
+            if m.lower() not in mlist_low:
+                raise ValueError(f'Unknown metric {m}. Try one of: {mlist}')
+            else:
+                for n in mlist:
+                    if m.lower() == n.lower():
+                        metric[i] = n
+
+        # Get results ignoring annoying warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+
+            results = {}
+            for m in metric:  # Create dict of empty arrays
+                results[m] = []
+            space = np.linspace(0, 1, steps)
+            for step in space:
+                for m in metric:
+                    pred = (self.predict_proba[:, 1] >= step).astype(bool)
+                    results[m].append(getattr(self, m)(pred=pred))
+    
+        fig, ax = plt.subplots(figsize=figsize)
+        for i, m in enumerate(metric):
+            plt.plot(space, results[m], label=metric[i], lw=2)
+    
+        plt.xlabel('Threshold', fontsize=16, labelpad=12)
+        plt.ylabel('Score', fontsize=16, labelpad=12)
+        plt.title('Performance metric{} vs threshold value'
+                  .format('' if len(metric) == 1 else 's'), fontsize=16)
+        plt.legend(frameon=False, fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
     def plot_probabilities(self, target_class=1,
                            figsize=(10, 6), filename=None):
 
@@ -598,7 +670,7 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        normalize --> boolean to normalize the matrix
+        normalize --> wether to normalize the matrix
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
@@ -611,10 +683,11 @@ class BaseModel(object):
         if normalize:
             title = 'Normalized confusion matrix'
         else:
-            title = 'Confusion matrix, without normalization'
+            title = 'Confusion matrix'
 
         # Compute confusion matrix
         cm = confusion_matrix(self.Y_test, self.predict)
+        self.tn, self.fp, self.fn, self.tp = cm.ravel()
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -667,9 +740,9 @@ class BaseModel(object):
         '''
 
         sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaBoost', 'GBM']
+        
+        fig, ax = plt.subplots(figsize=figsize)
         if self.shortname in sklearn_trees:
-            fig, ax = plt.subplots(figsize=figsize)
-
             # A single decision tree has only one estimator
             if self.shortname != 'Tree':
                 estimator = self.best_model_fit.estimators_[num_trees]
@@ -688,10 +761,8 @@ class BaseModel(object):
                               num_trees=num_trees,
                               rankdir='LR' if rotate else 'UT')
 
-        elif self.shortname == 'LGBM':
-            lightgbm.plot_tree(self.best_model_fit,
-                               ax=ax,
-                               tree_index=num_trees)
+        elif self.shortname == 'LGB':
+            plot_tree(self.best_model_fit, ax=ax, tree_index=num_trees)
 
         else:
             raise ValueError('This method only works for tree-based models.' +
