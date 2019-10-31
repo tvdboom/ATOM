@@ -133,7 +133,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])  
 	List of values to consider as missing. None and np.nan are always added to the list.
 * **encode(max_onehot=10)**  
-Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique < max_onehot and target-encoding for n_unique > max_onehot.
+Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot.
 	+ max_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **outliers(max_sigma=3, include_target=False)**  
