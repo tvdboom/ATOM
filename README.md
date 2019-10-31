@@ -76,6 +76,8 @@ Make plots and analyze results:
 
 ATOM parameters
 ----------------------------- 
+When initializing the class, ATOM will automatically transform the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes. Furthermore, the dataset will be cleaned by removing columns with prohibited types, removing categorical columns where the cardinality is maximal (the number of unique values is equal to the number of instances) and removing all duplicate columns.
+
 * **X: np.array or pd.DataFrame**  
 Data features with shape = [n_samples, n_features]. If Y and target are None, the last column of X is selected as target column. 
 * **Y: np.array or pd.Series, optional (default=None)**  
@@ -127,15 +129,15 @@ Handle missing values according to the selected strategy. Also removes columns w
 		- 'most_frequent': impute with most frequent value
 		- string: impute with provided string
 	+ max_frac: float, optional (default=0.5)  
-	Maximum fraction of rows with any missing values to remove the column.
+	Maximum allowed fraction of rows with any missing values. If more, the column is removed.
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])  
 	List of values to consider as missing. None and np.nan are always added to the list.
 * **encode(max_onehot=10)**  
-Perform encoding of categorical features. The encoding type depends on the number of unique values in the column.
+Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique < max_onehot and target-encoding for n_unique > max_onehot.
 	+ max_onehot: int, optional (default=10)  
 	Maximum number of unique values in a feature to perform one-hot-encoding.
 * **outliers(max_sigma=3, include_target=False)**  
-Remove outliers from the dataset.
+Remove outliers from the training set.
 	+ max_sigma: int or float, optional (default=3)  
 	Remove rows containing any value with a maximum standard deviation (on the respective column) above max_sigma.
 	+ include_target: bool, optional (default=False)
