@@ -193,20 +193,38 @@ class ATOM(object):
 
         # << ============ Data cleaning ============ >>
 
-        # Drop features with incorrect column type and trim strings
+        # Drop features with incorrect column type
         for column in self.dataset:
             dtype = str(self.dataset[column].dtype)
             if dtype in ('datetime64', 'timedelta[ns]', 'category'):
                 prlog(' --> Dropping feature {} due to unhashable type: {}.'
-                      .format(column, dtype), self, 2)
+                      .format(column, dtype), self, 1)
                 self.dataset.drop(column, axis=1, inplace=True)
-            elif dtype == 'object':  # Strip str features from blank spaces
+
+            elif dtype == 'object':
+                # Strip categorical features from blank spaces
                 self.dataset[column].astype(str).str.strip()
 
+                # Drop features where all values are unique
+                # Attribute for later print of the unique values of target
+                self._unique = self.dataset[column].unique()
+                if len(self._unique) == len(self.dataset):
+                    prlog(f' --> Dropping feature {column} due to maximum' +
+                          ' cardinality.', self, 1)
+                    self.dataset.drop(column, axis=1, inplace=True)
+
+        # Drop duplicate rows
+        length = len(self.dataset)
+        self.dataset.drop_duplicates(inplace=True)
+        diff = len(self.dataset) - length  # Difference in length
+        if diff > 0:
+            prlog(f' --> Dropping {diff} duplicate rows.', self, 1)
+
         # Get unqiue target values before encoding (for later print)
-        self.unique = np.unique(self.dataset[self.target])
+        self._unique = np.unique(self.dataset[self.target])
 
         # Make sure the target categories are numerical
+        # Not strictly necessary for sklearn models but cleaner
         if self.dataset[self.target].dtype.kind not in 'ifu':
             le = LabelEncoder()
             self.dataset[self.target] = pd.Series(
@@ -289,7 +307,7 @@ class ATOM(object):
         # Print count of target values
         if self.task != 'regression':
             _, counts = np.unique(self.Y, return_counts=True)
-            len_classes = max([len(str(i)) for i in self.unique])
+            len_classes = max([len(str(i)) for i in self._unique])
             if hasattr(self, 'target_mapping'):
                 len_classes += 3
             lx = max(len_classes, len(self.Y.name))
@@ -298,14 +316,14 @@ class ATOM(object):
             prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
 
             # Check if there was LabelEncoding for the target varaible or not
-            for i in range(len(self.unique)):
+            for i in range(len(self._unique)):
                 if hasattr(self, 'target_mapping'):
                     prlog('{0}: {1:<{2}} --> {3}'
-                          .format(self.target_mapping[self.unique[i]],
-                                  self.unique[i], lx - 3, counts[i]), self, 2)
+                          .format(self.target_mapping[self._unique[i]],
+                                  self._unique[i], lx - 3, counts[i]), self, 2)
                 else:
                     prlog('{0:<{1}} --> {2}'
-                          .format(self.unique[i], lx, counts[i]), self, 2)
+                          .format(self._unique[i], lx, counts[i]), self, 2)
 
         prlog('', self, 1)  # Insert an empty row
 
@@ -330,7 +348,7 @@ class ATOM(object):
                            'remove': remove row if any missing value
                            'most_frequent': fill with most frequent value
                            fill in with any other string value
-        max_frac   --> maximum fraction of missing values in column
+        max_frac   --> maximum allowed fraction of missing values in column
         missing    --> list of values to impute
 
         '''
@@ -442,7 +460,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        max_onehot --> threshold between onehot and label encoding
+        max_onehot --> threshold between onehot and target-encoding
 
         '''
 
@@ -451,14 +469,21 @@ class ATOM(object):
         # Check parameter (if 0, 1 or 2: it never uses one_hot)
         max_onehot = int(max_onehot) if max_onehot >= 0 else 10
 
-        for col in self.dataset:
+        # Loop over all but last column (target is already encoded)
+        for col in self.dataset.columns.values[:-1]:
             # Check if column is categorical
             if self.dataset[col].dtype.kind not in 'ifu':
                 # Count number of unique values in the column
-                n_unique = len(np.unique(self.dataset[col]))
+                n_unique = len(self.dataset[col].unique())
 
                 # Perform encoding type dependent on number of unique values
-                if 2 < n_unique <= max_onehot:
+                if n_unique == 2:
+                    prlog(f' --> Label-encoding feature {col}. Contains ' +
+                          f'{n_unique} unique categories.', self, 2)
+                    le = LabelEncoder()
+                    self.dataset[col] = le.fit_transform(self.dataset[col])
+
+                elif 2 < n_unique <= max_onehot:
                     prlog(f' --> One-hot-encoding feature {col}. Contains ' +
                           f'{n_unique} unique categories.', self, 2)
                     dummies = pd.get_dummies(self.dataset[col], prefix=col)
@@ -471,12 +496,27 @@ class ATOM(object):
                             + [self.target]]
 
                 else:
-                    prlog(f' --> Label-encoding feature {col}. Contains ' +
+                    prlog(f' --> Target-encoding feature {col}. Contains ' +
                           f'{n_unique} unique categories.', self, 2)
-                    enc = LabelEncoder()
-                    self.dataset[col] = enc.fit_transform(self.dataset[col])
+
+                    # Get mean of target in trainset for every category
+                    means = self.train.groupby(col)[self.target].mean()
+
+                    # Map the means over the complete dataset
+                    # Test set is tranformed with the mapping of the trainset
+                    self.dataset[col] = self.dataset[col].map(means)
 
         self._reset_attributes('dataset')  # Redefine new attributes
+
+        # Check if mapping didn't fail
+        nans = self.dataset.isna().any()  # pd.Series of columns with nans
+        cols = self.dataset.columns.values[np.nonzero(nans)]
+        if nans.any():
+            prlog('WARNING! It appears the target-encoding was not able to ' +
+                  'map all categories in the test set. As a result, there wi' +
+                  f"ll appear missing values in column(s): {', '.join(cols)}" +
+                  '. To solve this, try increasing the size of the training ' +
+                  'set or remove features with very high cardinality.', self)
 
     @params_to_log
     def outliers(self, max_sigma=3, include_target=False):
@@ -732,7 +772,7 @@ class ATOM(object):
                 func = eval(self.solver)
             else:
                 raise ValueError('Unknown value for the univariate solver.' +
-                                 f'Try one of : {solvers}')
+                                 f"Choose from: {', '.join(solvers)}")
 
             self.univariate = SelectKBest(func, k=self.max_features)
             self.univariate.fit(self.X, self.Y)
@@ -1059,8 +1099,8 @@ class ATOM(object):
 
         # Check if there are still valid models
         if len(final_models) == 0:
-            raise ValueError("No models found in pipeline. Try one of {}"
-                             .format(model_list))
+            raise ValueError("No models found in pipeline. Choose from: {}"
+                             .format({', '.join(model_list)}))
 
         # Update model list attribute with correct values
         self.models = final_models
@@ -1083,13 +1123,13 @@ class ATOM(object):
                 self.metric = m
 
         if self.metric not in metric_class + mreg:
-            temp = mreg if self.task == 'regression' else metric_class
-            raise ValueError(f'Unknown metric. Try one of {temp}.')
+            tmp = mreg if self.task == 'regression' else metric_class
+            raise ValueError(f"Unknown metric. Choose from: {', '.join(tmp)}.")
         elif self.metric == 'AUC' and self.task != 'binary classification':
             raise ValueError('AUC only works for binary classification tasks.')
         elif self.metric not in mreg and self.task == 'regression':
-            raise ValueError("{} is an invalid metric for {}. Try one of {}."
-                             .format(self.metric, self.task, mreg))
+            raise ValueError("{} is an invalid metric for {}. Choose from: {}."
+                             .format(self.metric, self.task, ', '.join(mreg)))
 
         # << =================== Core ==================== >>
 

@@ -128,6 +128,9 @@ class BaseModel(object):
         # List of models that don't use the Bayesian Optimization
         self.not_bo = ['GNB', 'GP']
 
+        # List of models with no (or sometimes no) predict_proba method
+        self.not_proba = ['LinReg', 'lSVM', 'kSVM', 'PA', 'SGD']
+
         # Set attributes to child class
         self.__dict__.update(kwargs)
 
@@ -370,8 +373,7 @@ class BaseModel(object):
         # Get metric score on test set
         self.score = getattr(self, self.metric)()
 
-        not_proba = ['LinReg', 'lSVM', 'kSVM']
-        if self.shortname in not_proba and self.task != 'regression':
+        if self.shortname in self.not_proba and self.task != 'regression':
             # Models without predict_proba() method need probs with ccv
             self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
             self.ccv.fit(self.X_test, self.Y_test)
@@ -486,19 +488,19 @@ class BaseModel(object):
 
     def plot_threshold(self, metric=None, steps=100,
                        figsize=(10, 6), filename=None):
-        
-        '''        
+
+        '''
         DESCRIPTION ------------------------------------
-        
-        Plot performance metrics against threshold value.
-        
+
+        Plot performance metrics against multiple threshold values.
+
         ARGUMENTS -------------------------------------
 
-        metric   --> list of metrics to plot
-        steps    --> number of steps to plot 
+        metric   --> metric(s) to plot
+        steps    --> Number of thresholds to try between 0 and 1
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
-        
+
         '''
 
         if self.task != 'binary classification':
@@ -517,7 +519,8 @@ class BaseModel(object):
         mlist_low = [element.lower() for element in mlist]
         for i, m in enumerate(metric):
             if m.lower() not in mlist_low:
-                raise ValueError(f'Unknown metric {m}. Try one of: {mlist}')
+                raise ValueError("Unknown metric {}. Choose from: {}"
+                                 .format(m, ', '.join(mlist)))
             else:
                 for n in mlist:
                     if m.lower() == n.lower():
@@ -535,11 +538,11 @@ class BaseModel(object):
                 for m in metric:
                     pred = (self.predict_proba[:, 1] >= step).astype(bool)
                     results[m].append(getattr(self, m)(pred=pred))
-    
+
         fig, ax = plt.subplots(figsize=figsize)
         for i, m in enumerate(metric):
             plt.plot(space, results[m], label=metric[i], lw=2)
-    
+
         plt.xlabel('Threshold', fontsize=16, labelpad=12)
         plt.ylabel('Score', fontsize=16, labelpad=12)
         plt.title('Performance metric{} vs threshold value'
@@ -563,7 +566,7 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        target_class --> probability of being that class (numeric)
+        target_class --> probability of being that class (as idx or string)
         figsize      --> figure size: format as (x, y)
         filename     --> name of the file to save
 
@@ -587,7 +590,7 @@ class BaseModel(object):
                          kde_kws={"shade": True},
                          label='Class=' + str(class_))
 
-        plt.title('Predicted probabilities for class=' +
+        plt.title(f'Predicted probabilities for {self.Y.name}=' +
                   str(classes[target_class]), fontsize=16)
         plt.legend(frameon=False, fontsize=16)
         plt.xlabel('Probability', fontsize=16, labelpad=12)
@@ -605,8 +608,7 @@ class BaseModel(object):
         ''' Plot a (Tree based) model's feature importance '''
 
         if self.shortname not in self.tree:
-            raise ValueError('This method only works for tree-based ' +
-                             f'models. Try one of the following: {self.tree}')
+            raise ValueError('This method only works for tree-based models!')
 
         # Bagging has no direct feature importance implementation
         if self.shortname == 'Bag':
@@ -739,8 +741,11 @@ class BaseModel(object):
 
         '''
 
+        if self.shortname not in self.tree:
+            raise ValueError('This method only works for tree-based models!')
+
         sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaBoost', 'GBM']
-        
+
         fig, ax = plt.subplots(figsize=figsize)
         if self.shortname in sklearn_trees:
             # A single decision tree has only one estimator
@@ -763,10 +768,6 @@ class BaseModel(object):
 
         elif self.shortname == 'LGB':
             plot_tree(self.best_model_fit, ax=ax, tree_index=num_trees)
-
-        else:
-            raise ValueError('This method only works for tree-based models.' +
-                             f' Try on of the following: {self.tree}')
 
         if filename is not None:
             plt.savefig(filename)
