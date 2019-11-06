@@ -129,6 +129,9 @@ class ATOM(object):
         elif target is not None:  # If target is filled, X has to be a df
             if target not in X.columns:
                 raise ValueError('Target column not found in the dataset!')
+
+            # Place target column last
+            X = X[[col for col in X if col != target] + [target]]
             self.dataset = X
             self.target = target
 
@@ -175,6 +178,52 @@ class ATOM(object):
             elif self.n_jobs != 1:
                 prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
+        # << ============ Data cleaning ============ >>
+
+        prlog('Initial data cleaning...', self, 1)
+
+        # Drop features with incorrect column type
+        for column in self.dataset:
+            dtype = str(self.dataset[column].dtype)
+            if dtype in ('datetime64', 'timedelta[ns]', 'category'):
+                prlog(' --> Dropping feature {} due to unhashable type: {}.'
+                      .format(column, dtype), self, 2)
+                self.dataset.drop(column, axis=1, inplace=True)
+
+            elif dtype == 'object':
+                # Strip categorical features from blank spaces
+                self.dataset[column].astype(str).str.strip()
+
+                # Drop features where all values are unique
+                # Attribute for later print of the unique values of target
+                self._unique = self.dataset[column].unique()
+                if len(self._unique) == len(self.dataset):
+                    prlog(f' --> Dropping feature {column} due to maximum' +
+                          ' cardinality.', self, 2)
+                    self.dataset.drop(column, axis=1, inplace=True)
+
+        # Drop duplicate rows
+        length = len(self.dataset)
+        self.dataset.drop_duplicates(inplace=True)
+        diff = length - len(self.dataset)  # Difference in length
+        if diff > 0:
+            prlog(f' --> Dropping {diff} duplicate rows.', self, 2)
+
+        # Get unique target values before encoding (for later print)
+        self._unique = np.unique(self.dataset[self.target])
+
+        # Make sure the target categories are numerical
+        # Not strictly necessary for sklearn models but cleaner
+        if self.dataset[self.target].dtype.kind not in 'ifu':
+            le = LabelEncoder()
+            self.dataset[self.target] = pd.Series(
+                le.fit_transform(self.dataset[self.target]), name=self.target
+            )
+            self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
+
+        self._split_dataset(self.dataset, percentage)  # Make train/test split
+        self._reset_attributes()  # Define data subsets class attributes
+
         # << ============ Set algorithm task ============ >>
 
         classes = set(self.dataset[self.target])
@@ -191,49 +240,8 @@ class ATOM(object):
             prlog('Algorithm task: regression.', self)
             self.task = 'regression'
 
-        # << ============ Data cleaning ============ >>
+        # << ============================================ >>
 
-        # Drop features with incorrect column type
-        for column in self.dataset:
-            dtype = str(self.dataset[column].dtype)
-            if dtype in ('datetime64', 'timedelta[ns]', 'category'):
-                prlog(' --> Dropping feature {} due to unhashable type: {}.'
-                      .format(column, dtype), self, 1)
-                self.dataset.drop(column, axis=1, inplace=True)
-
-            elif dtype == 'object':
-                # Strip categorical features from blank spaces
-                self.dataset[column].astype(str).str.strip()
-
-                # Drop features where all values are unique
-                # Attribute for later print of the unique values of target
-                self._unique = self.dataset[column].unique()
-                if len(self._unique) == len(self.dataset):
-                    prlog(f' --> Dropping feature {column} due to maximum' +
-                          ' cardinality.', self, 1)
-                    self.dataset.drop(column, axis=1, inplace=True)
-
-        # Drop duplicate rows
-        length = len(self.dataset)
-        self.dataset.drop_duplicates(inplace=True)
-        diff = len(self.dataset) - length  # Difference in length
-        if diff > 0:
-            prlog(f' --> Dropping {diff} duplicate rows.', self, 1)
-
-        # Get unqiue target values before encoding (for later print)
-        self._unique = np.unique(self.dataset[self.target])
-
-        # Make sure the target categories are numerical
-        # Not strictly necessary for sklearn models but cleaner
-        if self.dataset[self.target].dtype.kind not in 'ifu':
-            le = LabelEncoder()
-            self.dataset[self.target] = pd.Series(
-                le.fit_transform(self.dataset[self.target]), name=self.target
-            )
-            self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
-
-        self._split_dataset(self.dataset, percentage)  # Make train/test split
-        self._reset_attributes()  # Define data subsets class attributes
         self.stats()  # Print out data stats
 
     def _split_dataset(self, dataset, percentage=100):
@@ -1020,7 +1028,7 @@ class ATOM(object):
 
         # Set args to class attributes and correct inputs
         if not isinstance(models, list) and models is not None:
-            self.models = list(models)
+            self.models = [models]
         else:
             self.models = models
         self.metric = str(metric) if metric is not None else None

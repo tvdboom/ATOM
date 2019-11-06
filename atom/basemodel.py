@@ -164,7 +164,9 @@ class BaseModel(object):
             '''
             DESCRIPTION -----------------------------------
 
-            Plot the BO's progress.
+            Plot the BO's progress as it runs. Creates a canvas with two plots.
+            The first plot shows the score of every trial and the second shows
+            the distance between the last consecutive steps.
 
             PARAMETERS -------------------------------------
 
@@ -319,7 +321,7 @@ class BaseModel(object):
             self.BO['score'] = []
 
             # BO plot variables
-            maxlen = 15  # Steps to show in the BO progress plot
+            maxlen = 15  # Maximum steps to show at once in the plot
             self.x = deque(list(range(maxlen)), maxlen=maxlen)
             self.y1 = deque([np.NaN for i in self.x], maxlen=maxlen)
             self.y2 = deque([np.NaN for i in self.x], maxlen=maxlen)
