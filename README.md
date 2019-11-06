@@ -140,7 +140,7 @@ Perform encoding of categorical features. The encoding type depends on the numbe
 Remove outliers from the training set.
 	+ max_sigma: int or float, optional (default=3)  
 	Remove rows containing any value with a maximum standard deviation (on the respective column) above max_sigma.
-	+ include_target: bool, optional (default=False)
+	+ include_target: bool, optional (default=False)  
 	Wether to include the target column when searching for outliers.
 * **balance(oversample=None, undersample=None, neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks.
