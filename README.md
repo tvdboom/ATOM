@@ -253,7 +253,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	+ init_points: int, optional (default=5)  
 	Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
 	+ plot_bo: bool, optional (default=False)  
-	Wether to plot the BO's progress as it runs.
+	Wether to plot the BO's progress as it runs. Creates a canvas with two plots: the first plot shows the score of every trial and the second shows the distance between the last consecutive steps. Don't forget to call `%matplotlib` at the start of the cell if you are using jupyter notebook!
 	+ cv: bool, optional (default=3)  
 		- if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
 		- if >1, perform a k-fold cross validation on the training set and score the BO as the output
