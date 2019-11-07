@@ -76,7 +76,7 @@ Make plots and analyze results:
 
 ATOM parameters
 ----------------------------- 
-When initializing the class, ATOM will automatically transform the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes. Furthermore, the dataset will be cleaned by removing columns with prohibited types, removing categorical columns where the cardinality is maximal (the number of unique values is equal to the number of instances) and removing all duplicate columns.
+When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.
 
 * **X: np.array or pd.DataFrame**  
 Data features with shape = [n_samples, n_features]. If Y and target are None, the last column of X is selected as target column. 
@@ -131,7 +131,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 	+ max_frac: float, optional (default=0.5)  
 	Maximum allowed fraction of rows with any missing values. If more, the column is removed.
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])  
-	List of values to consider as missing. None and np.nan are always added to the list.
+	List of values to consider as missing. None, np.nan, '', np.inf and -np.inf are always added to the list since they are incompatible with sklearn models.
 * **encode(max_onehot=10)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot.
 	+ max_onehot: int, optional (default=10)  
@@ -214,10 +214,11 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'Bag' for Bagging (with decision tree as base estimator)
 		- 'ET' for Extra-Trees 
 		- 'RF' for Random Forest
-		- 'AdaBoost' for Adaptive Boosting  
+		- 'AdaB' for AdaBoost  
 		- 'GBM' for Gradient Boosting Machine  
 		- 'XGB' for XGBoost (if package is available)  
 		- 'LGB' for LightGBM (if package is available)
+		- 'CatB' for CatBoost (if package is available)
 		- 'lSVM' for Linear Support Vector Machine  
 		- 'kSVM' for Non-linear Support Vector Machine  
 		- 'PA' for Passive Aggressive  
@@ -344,8 +345,8 @@ Plot the confusion matrix for the model. Only for binary classification tasks.
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
-* **plot_decision_tree(num_trees=0, max_depth=None, rotate=False, figsize=(10, 6), filename=None)**  
-Plot a single decision tree of the model. Only for tree-based algorithms.
+* **plot_tree(num_trees=0, max_depth=None, rotate=False, figsize=(10, 6), filename=None)**  
+Plot a single decision tree of the model. Only for tree-based algorithms. Dependency: [graphviz](https://graphviz.gitlab.io/download/).
 	+ num_trees: int, otional (default=0 --> first tree)  
 	Number of the tree to plot (if ensemble).
 	+ max_depth: int, optional (default=None)  
