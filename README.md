@@ -5,6 +5,10 @@
 # Automated Tool for Optimized Modelling
 Author: tvdboom  
 Email: m.524687@gmail.com
+
+[![Python 3.6|3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
+[![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
   
 Description  
 ------------------------  
@@ -43,10 +47,10 @@ Intall ATOM easily using `pip`
 
 Usage  
 ------------------------  
-Call the main (`ATOM`) class and provide the data you want to use:  
+Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
-    from atom import ATOM  
-    atom = ATOM(X, Y, log='atom_log', n_jobs=2, verbose=1)
+    from atom import ATOMClassifier  
+    atom = ATOMClassifier(X, Y, log='atom_log', n_jobs=2, verbose=1)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
@@ -74,16 +78,18 @@ Make plots and analyze results:
 	atom.lda.plot_confusion_matrix()  
   
 
-ATOM parameters
+API
 ----------------------------- 
-When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.
+
+**ATOMClassifier(X, Y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.
 
 * **X: np.array or pd.DataFrame**  
 Data features with shape = [n_samples, n_features]. If Y and target are None, the last column of X is selected as target column. 
 * **Y: np.array or pd.Series, optional (default=None)**  
 Data target column with shape = [n_samples].
 * **target: string, optional (default=None)**  
-Name of the target column in X (X needs to be a pd.DataFrame).
+Name of the target column in X (X needs to be a pd.DataFrame). If Y is provided, target will be ignored.
 * **percentage: int, optional (default=100)**  
 Percentage of data to use.
 * **test_size: float, optional (default=0.3)**  
@@ -106,8 +112,11 @@ Verbosity level of the class. Possible values are:
 Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.
 
 
+**ATOMRegressor(X, Y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
-ATOM methods
+
+Class methods
 ----------------------------- 
 ATOM contains multiple methods for standard data cleaning and feature selection processes. Calling on one of them will automatically apply the method on the dataset in the class and update the class' attributes accordingly.
 
@@ -122,7 +131,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 		- 'mean': impute with mean of column
 		- 'median': impute with median of column
 		- 'most_frequent': impute with most frequent value
-		- int or float: fill with provided numerical value
+		- int or float: impute with provided numerical value
 	+ strat_cat: string, optional (default='remove')  
 	Imputing strategy for categorical columns. Possible values are:
 		- 'remove': remove row if any missing value
@@ -205,7 +214,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'MNB' for Multinomial Naïve Bayes  
 		- 'BNB' for Bernoulli Naïve Bayes  
 		- 'GP' for Gaussian Process (no hyperparameter tuning)
-		- 'LinReg' for Linear Regression (ridge, lasso and elasticnet regularization)  
+		- 'LinReg' for Linear Regression (OLS, ridge, lasso and elasticnet)  
 		- 'LogReg' for Logistic Regression  
 		- 'LDA' for Linear Discriminant Analysis  
 		- 'QDA' for Quadratic Discriminant Analysis  
@@ -262,7 +271,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	Number of bootstrapped samples used for bagging. If None, no bagging is performed.
 
 
-ATOM methods (utilities)
+Class methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.
@@ -288,6 +297,7 @@ Make a plot of the models' scores per iteration of the successive halving.
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 
+
 Class attributes  
 -----------------------------  
 * **dataset**: Dataframe of the complete dataset.
@@ -302,9 +312,11 @@ Class attributes
 * **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
-  
-### After fitting, the models become subclasses of the ATOM class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
-  
+
+
+### After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
+
+
 Subclass methods (utilities)  
 -----------------------------  
 * **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
@@ -369,20 +381,22 @@ Call any of the metrics as a method. It will return the metric (evaluated on the
 + **atom.knn.AUC()**: Returns the AUC score for the best trained KNN  
 + **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost 
 + **atom.xgb.Accuracy()**: Returns the accuracy score for the best trained XGBoost model
-  
+
+
 Subclass attributes
 -----------------------------  
 * **atom.MLP.best_params**: Get parameters of the model with highest score.
 * **atom.SVM.best_model**: Get the model with highest score (not fitted).  
-* **atom.SVM.best_model_fit**: Get the fitted model with highest score.  
+* **atom.SVM.best_model_fit**: Get the model with highest score fitted on the training set.  
 * **atom.lgbm.score**: Metric score of the BO's selected model on the test set.
 * **atom.Tree.predict**: Get the predictions on the test set.  
 * **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
 * **atom.MNB.error**: If the model encountered an exception, this shows it.  
-* **atom.PA.results**: Array of the bagging's results.
+* **atom.PA.bagging_scores**: Array of the bagging's results.
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
+
 
 Dependencies
 -----------------------------
