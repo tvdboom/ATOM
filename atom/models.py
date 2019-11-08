@@ -8,10 +8,11 @@ Author: tvdboom
 
 # << ============ Import Packages ============ >>
 
+# Standard packages
 import numpy as np
 from .basemodel import BaseModel
 
-# Models
+# Sklearn models
 from sklearn.gaussian_process import (
     GaussianProcessClassifier, GaussianProcessRegressor
     )
@@ -36,14 +37,6 @@ from sklearn.linear_model import (
     )
 from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
-try:
-    from xgboost import XGBClassifier, XGBRegressor
-except ModuleNotFoundError:
-    pass
-try:
-    from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-except ModuleNotFoundError:
-    pass
 
 
 # << ============ Functions ============ >>
@@ -677,7 +670,7 @@ class RF(BaseModel):
         return np.array([[10, 1, 1, 0, 2, 1]])
 
 
-class AdaBoost(BaseModel):
+class AdaB(BaseModel):
 
     def __init__(self, *args):
 
@@ -685,7 +678,7 @@ class AdaBoost(BaseModel):
         super().__init__(**set_init(*args, scaled=False))
 
         # Class attributes
-        self.name, self.shortname = 'Adaptive Boosting', 'AdaBoost'
+        self.name, self.shortname = 'AdaBoost', 'AdaB'
         self.task = args[2]
 
     def get_params(self, x):
@@ -813,6 +806,7 @@ class XGB(BaseModel):
     def get_model(self, params):
         ''' Returns the model with unpacked hyperparameters '''
 
+        from xgboost import XGBClassifier, XGBRegressor
         if self.task != 'regression':
             return XGBClassifier(**params, verbosity=0)
         else:
@@ -882,6 +876,7 @@ class LGB(BaseModel):
     def get_model(self, params):
         ''' Returns the model with unpacked hyperparameters '''
 
+        from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
         if self.task != 'regression':
             return LGBMClassifier(**params)
         else:
@@ -922,7 +917,72 @@ class LGB(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        return np.array([[100, 0.1, 20, 0, 1, 1.0, 3, 1, 31]])
+        return np.array([[100, 0.1, 20, 0, 1.0, 1.0, 3, 1, 31]])
+
+
+class CatB(BaseModel):
+    'Categorical Boosting Machine'
+
+    def __init__(self, *args):
+
+        # BaseModel class initializer
+        super().__init__(**set_init(*args, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'CatBoost', 'CatB'
+        self.task = args[2]
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        params = {'n_estimators': int(x[0, 0]),
+                  'learning_rate': round(x[0, 1], 2),
+                  'reg_lambda': round(x[0, 2], 1),
+                  'subsample': round(x[0, 3], 1),
+                  'max_depth': int(x[0, 4]),
+                  'colsample_bylevel': round(x[0, 5], 1)}
+        return params
+
+    def get_model(self, params):
+        ''' Returns the model with unpacked hyperparameters '''
+
+        from catboost import CatBoostClassifier, CatBoostRegressor
+        if self.task != 'regression':
+            return CatBoostClassifier(**params,
+                                      allow_writing_files=False,
+                                      verbose=False)
+        else:
+            return CatBoostRegressor(**params,
+                                     allow_writing_files=False,
+                                     verbose=False)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'n_estimators',
+                 'type': 'discrete',
+                 'domain': range(20, 501)},
+                {'name': 'learning_rate',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.01, 1, 100)},
+                {'name': 'reg_lambda',
+                 'type': 'discrete',
+                 'domain': np.linspace(0, 80, 800)},
+                {'name': 'subsample',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.3, 1.0, 8)},
+                {'name': 'max_depth',
+                 'type': 'discrete',
+                 'domain': range(1, 11)},
+                {'name': 'colsample_bylevel',
+                 'type': 'discrete',
+                 'domain': np.linspace(0.3, 1.0, 8)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        return np.array([[100, 0.1, 1.0, 1.0, 3, 1]])
 
 
 class lSVM(BaseModel):

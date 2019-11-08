@@ -32,17 +32,8 @@ from sklearn.model_selection import train_test_split
 # Models
 from .models import (
         BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, Bag, ET, RF,
-        AdaBoost, GBM, XGB, LGB, lSVM, kSVM, PA, SGD, MLP
+        AdaB, GBM, XGB, LGB, CatB, lSVM, kSVM, PA, SGD, MLP
         )
-
-# Others
-try:
-    from imblearn.over_sampling import SMOTE
-    from imblearn.under_sampling import RandomUnderSampler
-except ImportError:
-    imblearn_import = False
-else:
-    imblearn_import = True
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -83,6 +74,7 @@ def convert_to_pd(data, columns=None):
 
 def merge(X, Y):
     ''' Merge pd.DataFrame and pd.Series into one df '''
+
     return X.merge(Y.to_frame(), left_index=True, right_index=True)
 
 
@@ -97,7 +89,8 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Initialize class.
+        Transform the input data into pandas objects and set the data class
+        attributes. Also performs standard data cleaning steps.
 
         PARAMETERS -------------------------------------
 
@@ -196,8 +189,8 @@ class ATOM(object):
 
                 # Drop features where all values are unique
                 # Attribute for later print of the unique values of target
-                self._unique = self.dataset[column].unique()
-                if len(self._unique) == len(self.dataset):
+                unique = self.dataset[column].unique()
+                if len(unique) == len(self.dataset):
                     prlog(f' --> Dropping feature {column} due to maximum' +
                           ' cardinality.', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
@@ -209,8 +202,16 @@ class ATOM(object):
         if diff > 0:
             prlog(f' --> Dropping {diff} duplicate rows.', self, 2)
 
+        # Delete rows with NaN in target
+        length = len(self.dataset)
+        self.dataset.dropna(subset=[self.target], inplace=True)
+        diff = length - len(self.dataset)  # Difference in length
+        if diff > 0:
+            prlog(f' --> Dropping {diff} rows with NaN values ' +
+                  'in target column.', self, 2)
+
         # Get unique target values before encoding (for later print)
-        self._unique = np.unique(self.dataset[self.target])
+        self._unique = self.dataset[self.target].unique()
 
         # Make sure the target categories are numerical
         # Not strictly necessary for sklearn models but cleaner
@@ -226,17 +227,16 @@ class ATOM(object):
 
         # << ============ Set algorithm task ============ >>
 
-        classes = set(self.dataset[self.target])
-        if len(classes) < 2:
-            raise ValueError(f'Only found one target value: {classes}!')
-        elif len(classes) == 2:
+        if len(self._unique) < 2:
+            raise ValueError(f'Only found one target value: {self._unique}!')
+        elif len(self._unique) == 2 and self.goal == 'classification':
             prlog('Algorithm task: binary classification.', self)
             self.task = 'binary classification'
-        elif 2 < len(classes) < 0.1*len(self.dataset[self.target]):
+        elif self.goal == 'classification':
             prlog('Algorithm task: multiclass classification.' +
-                  f' Number of classes: {len(classes)}', self)
+                  f' Number of classes: {len(self._unique)}.', self)
             self.task = 'multiclass classification'
-        else:
+        elif self.goal == 'regression':
             prlog('Algorithm task: regression.', self)
             self.task = 'regression'
 
@@ -371,24 +371,18 @@ class ATOM(object):
 
         # Check parameters
         max_frac = float(max_frac) if 0 < max_frac <= 1 else 0.5
-        missing = [missing]  # Has to be an iterable for loop
-        if None not in missing:
-            missing.append(None)  # None must always be imputed
+        if not isinstance(missing, list):
+            missing = [missing]  # Has to be an iterable for loop
+
+        # Some values must always be imputed (but can be double)
+        missing.extend([None, '', np.inf, -np.inf])
+        missing = set(missing)
 
         prlog('Handling missing values...', self, 1)
 
         # Replace missing values with NaN
         self.train.replace(missing, np.NaN, inplace=True)
         self.test.replace(missing, np.NaN, inplace=True)
-
-        # Delete rows with NaN in target
-        self.train.dropna(subset=[self.target], inplace=True)
-        self.test.dropna(subset=[self.target], inplace=True)
-        new_len = len(self.train) + len(self.test)
-        diff = len(self.dataset) - new_len
-        if diff > 0:
-            prlog(f' --> Removing {diff} rows due to missing values at ' +
-                  'target column.', self, 2)
 
         # Loop pver all columns to apply strategy dependent on type
         strats = ['remove', 'mean', 'median', 'most_frequent']
@@ -592,9 +586,13 @@ class ATOM(object):
         # Check parameters
         self.neighbors = int(neighbors) if neighbors > 0 else 5
 
-        if not imblearn_import:
+        try:
+            from imblearn.over_sampling import SMOTE
+            from imblearn.under_sampling import RandomUnderSampler
+        except ImportError:
             prlog("Unable to import imblearn. Skipping balancing the data...",
                   self)
+            return None
 
         columns_x = self.X_train.columns  # Save name columns for later
         length = len(self.X_train)
@@ -864,7 +862,10 @@ class ATOM(object):
             results = 'No cross-validation performed'
 
             # If verbose=1, use tqdm to evaluate process
-            loop = tqdm(self.models) if self.verbose == 1 else self.models
+            if self.verbose == 1:
+                loop = tqdm(self.models, desc='Processing')
+            else:
+                loop = self.models
 
             # Loop over every independent model
             for model in loop:
@@ -925,7 +926,10 @@ class ATOM(object):
                 if self.bagging is None:
                     x = [getattr(self, m).score for m in self.models]
                 else:
-                    x = [getattr(self, m).results.mean() for m in self.models]
+                    x = []
+                    for m in self.models:
+                        x.append(getattr(self, m).bagging_scores.mean())
+
                 max_ = min(x) if self.metric in metric_to_min else max(x)
 
             except (ValueError, AttributeError):
@@ -936,28 +940,30 @@ class ATOM(object):
             h = int(t/3600.)
             m = int(t/60.) - h*60
             s = int(t - h*3600 - m*60)
-            prlog('\n\nFinal stats ================>>', self)
+            prlog('\n\nFinal results ================>>', self)
             prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
             prlog(f'Target metric: {self.metric}', self)
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
-            if self.bagging is None:
-                results = pd.DataFrame(columns=['model', 'score'])
-            else:
-                results = pd.DataFrame(columns=['model',
-                                                'score',
-                                                'bagging_mean',
-                                                'bagging_std'])
+            results = pd.DataFrame(columns=['model',
+                                            self.metric,
+                                            'time'])
+            if self.bagging is not None:
+                pd.concat([results, pd.DataFrame(columns=['bagging_mean',
+                                                          'bagging_std',
+                                                          'bagging_time'])])
 
             for m in self.models:
                 name = getattr(self, m).name
                 shortname = getattr(self, m).shortname
                 score = getattr(self, m).score
+                time_bo = getattr(self, m).time_bo
 
                 if self.bagging is None:
                     results = results.append({'model': shortname,
-                                              'score': score},
+                                              self.metric: score,
+                                              'time': time_bo},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
@@ -969,12 +975,15 @@ class ATOM(object):
                               .format(name, lenx, score), self)
 
                 else:
-                    bs_mean = getattr(self, m).results.mean()
-                    bs_std = getattr(self, m).results.std()
+                    bs_mean = getattr(self, m).bagging_scores.mean()
+                    bs_std = getattr(self, m).bagging_scores.std()
+                    time_bag = getattr(self, m).time_bag
                     results = results.append({'model': shortname,
-                                              'score': score,
+                                              self.metric: score,
+                                              'time': time_bo,
                                               'bagging_mean': bs_mean,
-                                              'bagging_std': bs_std},
+                                              'bagging_std': bs_std,
+                                              'bagging_time': time_bag},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
@@ -995,7 +1004,7 @@ class ATOM(object):
                 data[i] = eval('self.' + i)
 
             # List of models that need scaling
-            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB',
+            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
                               'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
@@ -1056,8 +1065,8 @@ class ATOM(object):
         # << ============ Check validity models ============ >>
 
         model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
-                      'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaBoost',
-                      'GBM', 'XGB', 'LGB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+                      'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
+                      'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
         # Final list of models to be used
         final_models = []
@@ -1080,8 +1089,9 @@ class ATOM(object):
                             final_models.append(n)
                             break
 
-        # Check if XGBoost and lightgbm are available
-        for model, package in zip(['XGB', 'LGB'], ['xgboost', 'lightgbm']):
+        # Check if XGBoost, lightgbm and CatBoost are available
+        for model, package in zip(['XGB', 'LGB', 'CatB'],
+                                  ['xgboost', 'lightgbm', 'catboost']):
             if model in final_models:
                 try:
                     importlib.import_module(package)
@@ -1113,7 +1123,9 @@ class ATOM(object):
         # Update model list attribute with correct values
         self.models = final_models
         if not self.successive_halving:
-            prlog(f'Models in pipeline: {self.models}', self)
+            prlog('Model{} in pipeline: {}'
+                  .format('s' if len(self.models) > 1 else '',
+                          ', '.join(self.models)), self)
 
         # Set default metric
         if self.metric is None and self.task == 'binary classification':
@@ -1151,7 +1163,9 @@ class ATOM(object):
                 self.data = data_preparation()
                 prlog('\n\n<<================ Iteration {} ================>>'
                       .format(iteration), self)
-                prlog(f'Models in pipeline: {self.models}', self)
+                prlog('Model{} in pipeline: {}'
+                      .format('s' if len(self.models) > 1 else '',
+                              ', '.join(self.models)), self)
                 self.stats()
 
                 # Run iteration
@@ -1305,3 +1319,23 @@ class ATOM(object):
         if filename is not None:
             plt.savefig(filename)
         plt.show()
+
+
+class ATOMClassifier(ATOM):
+    ''' ATOM object for classificatin tasks '''
+
+    def __init__(self, *args, **kwargs):
+        ''' Initialize class '''
+
+        self.goal = 'classification'
+        super().__init__(*args, **kwargs)
+
+
+class ATOMRegressor(ATOM):
+    ''' ATOM object for regression tasks '''
+
+    def __init__(self, *args, **kwargs):
+        ''' Initialize class '''
+
+        self.goal = 'regression'
+        super().__init__(*args, **kwargs)

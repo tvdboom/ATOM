@@ -8,7 +8,7 @@ Author: tvdboom
 
 # << ============ Import Packages ============ >>
 
-# Standard
+# Standard packages
 import numpy as np
 import pandas as pd
 import math
@@ -34,14 +34,6 @@ from sklearn.metrics import (
 
 # Others
 from GPyOpt.methods import BayesianOptimization
-try:
-    import xgboost
-except ImportError:
-    pass
-try:
-    from lightgbm.plotting import plot_tree
-except ImportError:
-    pass
 
 # Plots
 import matplotlib.pyplot as plt
@@ -52,16 +44,23 @@ sns.set(style='darkgrid', palette="GnBu_d")
 
 # << ============ Functions ============ >>
 
-def timing(f):
+def timer(f):
     ''' Decorator to time a function '''
 
     def wrapper(*args, **kwargs):
         start = time()
         result = f(*args, **kwargs)
-        end = time()
 
-        # args[0]=class instance
-        prlog('Elapsed time: {:.1f} seconds'.format(end-start), args[0], 1)
+        # Get duration and print to log (args[0]=class instance)
+        duration = str(round(time() - start, 2)) + 's'
+        prlog(f'Time elapsed: {duration}', args[0], 1)
+
+        # Update class attribute
+        if f.__name__ == 'BayesianOpt':
+            args[0].time_bo = duration
+        elif f.__name__ == 'bagging':
+            args[0].time_bag = duration
+
         return result
 
     return wrapper
@@ -122,8 +121,8 @@ class BaseModel(object):
         self.metric_min = ['max_error', 'MAE', 'MSE', 'MSLE']
 
         # List of tree-based models
-        self.tree = ['Tree', 'Bag', 'ET', 'RF',
-                     'AdaBoost', 'GBM', 'XGB', 'LGB']
+        self.tree = ['Tree', 'Bag', 'ET', 'RF', 'AdaB',
+                     'GBM', 'XGB', 'LGB', 'CatB']
 
         # List of models that don't use the Bayesian Optimization
         self.not_bo = ['GNB', 'GP']
@@ -134,7 +133,7 @@ class BaseModel(object):
         # Set attributes to child class
         self.__dict__.update(kwargs)
 
-    @timing
+    @timer
     def BayesianOpt(self, test_size, max_iter, max_time, eps,
                     batch_size, init_points, cv, plot_bo, n_jobs):
 
@@ -346,7 +345,7 @@ class BaseModel(object):
                                        **kwargs)
 
             opt.run_optimization(max_iter=max_iter,
-                                 max_time=max_time,  # No time restriction
+                                 max_time=max_time,
                                  eps=eps,
                                  verbosity=True if self.verbose > 2 else False)
 
@@ -384,15 +383,18 @@ class BaseModel(object):
             self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
         # Print stats
-        prlog('', self, 2)  # Print extra line
-        prlog('Final statistics for {}:{:9s}'.format(self.name, ' '), self, 1)
+        if self.shortname in self.not_bo:
+            prlog('\n', self, 1)  # Print 2 extra lines
+        else:
+            prlog('', self, 2)  # Print extra line
+        prlog('Final results for {}:{:9s}'.format(self.name, ' '), self, 1)
         if self.shortname not in self.not_bo:
             prlog('Best hyperparameters: {}'.format(self.best_params), self, 1)
             prlog('Best {} on the BO: {:.4f}'.format(self.metric, bo), self, 1)
         prlog('{} on the test set: {:.4f}'.format(self.metric, self.score),
               self, 1)
 
-    @timing
+    @timer
     def bagging(self, n_samples=3):
 
         '''
@@ -407,7 +409,7 @@ class BaseModel(object):
 
         '''
 
-        self.results = []
+        self.bagging_scores = []
         for _ in range(n_samples):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.Y_train)
@@ -417,13 +419,15 @@ class BaseModel(object):
             pred = algorithm.predict(self.X_test)
 
             # Append metric result to list
-            self.results.append(getattr(self, self.metric)(pred=pred))
+            self.bagging_scores.append(getattr(self, self.metric)(pred=pred))
 
-        self.results = np.array(self.results)  # Numpy array for mean and std
+        # Numpy array for mean and std
+        self.bagging_scores = np.array(self.bagging_scores)
         prlog('--------------------------------------------------', self, 1)
         prlog('Bagging {} score --> Mean: {:.4f}   Std: {:.4f}'
-              .format(self.metric, self.results.mean(), self.results.std()),
-              self, 1)
+              .format(self.metric,
+                      self.bagging_scores.mean(),
+                      self.bagging_scores.std()), self, 1)
 
     # << ============ Evaluation metric functions ============ >>
 
@@ -764,12 +768,19 @@ class BaseModel(object):
                                    fontsize=14)
 
         elif self.shortname == 'XGB':
-            xgboost.plot_tree(self.best_model_fit,
-                              num_trees=num_trees,
-                              rankdir='LR' if rotate else 'UT')
+            import xgboost as xgb
+            xgb.plot_tree(self.best_model_fit,
+                          num_trees=num_trees,
+                          rankdir='LR' if rotate else 'UT')
 
         elif self.shortname == 'LGB':
-            plot_tree(self.best_model_fit, ax=ax, tree_index=num_trees)
+            import lightgbm as lgb
+            lgb.plotting.plot_tree(self.best_model_fit,
+                                   ax=ax,
+                                   tree_index=num_trees)
+
+        elif self.shortname == 'CatB':
+            self.best_model_fit.plot_tree(tree_idx=num_trees)
 
         if filename is not None:
             plt.savefig(filename)
