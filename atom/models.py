@@ -949,10 +949,12 @@ class CatB(BaseModel):
         from catboost import CatBoostClassifier, CatBoostRegressor
         if self.task != 'regression':
             return CatBoostClassifier(**params,
+                                      train_dir='',
                                       allow_writing_files=False,
                                       verbose=False)
         else:
             return CatBoostRegressor(**params,
+                                     train_dir='',
                                      allow_writing_files=False,
                                      verbose=False)
 

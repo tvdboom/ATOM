@@ -214,12 +214,11 @@ class ATOM(object):
         self._unique = self.dataset[self.target].unique()
 
         # Make sure the target categories are numerical
-        # Not strictly necessary for sklearn models but cleaner
+        # Not strictly necessary for sklearn models, but cleaner
         if self.dataset[self.target].dtype.kind not in 'ifu':
             le = LabelEncoder()
-            self.dataset[self.target] = pd.Series(
-                le.fit_transform(self.dataset[self.target]), name=self.target
-            )
+            self.dataset[self.target] = le.fit_transform(
+                                                    self.dataset[self.target])
             self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
 
         self._split_dataset(self.dataset, percentage)  # Make train/test split
@@ -688,8 +687,9 @@ class ATOM(object):
             to_drop = [i for i in upper.columns if any(abs(upper[i]) > limit)]
 
             # Dataframe to hold correlated pairs
-            columns = ['drop_feature', 'corr_feature', 'corr_value']
-            self.collinear = pd.DataFrame(columns=columns)
+            self.collinear = pd.DataFrame(columns=['drop_feature',
+                                                   'correlated_feature',
+                                                   'correlation_value'])
 
             # Iterate to record pairs of correlated features
             for column in to_drop:
@@ -697,15 +697,16 @@ class ATOM(object):
                 corr_features = list(upper.index[abs(upper[column]) > limit])
 
                 # Find the correlated values
-                corr_values = list(upper[column][abs(upper[column]) > limit])
-                drop_features = [column for _ in corr_features]
+                corr_values = list(round(
+                                upper[column][abs(upper[column]) > limit], 5))
+                drop_features = set([column for _ in corr_features])
 
                 # Add to class attribute
-                self.collinear = \
-                    self.collinear.append({'drop_feature': drop_features,
-                                           'corr_feature': corr_features,
-                                           'corr_value': corr_values},
-                                          ignore_index=True)
+                self.collinear = self.collinear.append(
+                    {'drop_feature': ', '.join(drop_features),
+                     'correlated_feature': ', '.join(corr_features),
+                     'correlation_value': ', '.join(map(str, corr_values))},
+                    ignore_index=True)
 
                 prlog(f' --> Feature {column} was removed due to ' +
                       'collinearity with another feature.', self, 2)
@@ -1212,7 +1213,7 @@ class ATOM(object):
             else:
                 df = self.results
             for m in df.model:
-                results.append(getattr(self, m).results)
+                results.append(getattr(self, m).bagging_scores)
                 names.append(getattr(self, m).shortname)
         except (IndexError, AttributeError):
             raise Exception('You need to fit ATOM using bagging!')
