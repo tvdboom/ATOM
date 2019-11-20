@@ -275,24 +275,28 @@ Class methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.
+* **reset_attributes(truth='all')**  
+If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update test, etc...
+	+ truth: string, optional (default='all')  
+	Data attribute that has been changed (as string)
 * **boxplot(iteration=-1, figsize=None, filename=None)**  
 Make a boxplot of the bagging's results after fitting the class.
-	+ iteration, int, optional (default=-1)  
+	+ iteration: int, optional (default=-1)  
 	Iteration of the successive_halving to plot. If -1, use the last iteration.
-	+ figsize, 2d-tuple, optional (default=None)  
+	+ figsize: 2d-tuple, optional (default=None)  
 	Figure size: format as (x, y). If None, adjust to number of models.
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_correlation(X, figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 	+ X: array or pd.Dataframe, optional if class is fitted  
-	+ figsize, 2d-tuple, optional (default=(10, 6))  
+	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_successive_halving(figsize=(10, 6), filename=None)**  
 Make a plot of the models' scores per iteration of the successive halving.
-	+ figsize, 2d-tuple, optional (default=(10, 6))  
+	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -325,7 +329,7 @@ Plot performance metrics against multiple threshold values. Only for binary clas
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
     + steps: int, optional (default=100)  
     Number of thresholds to try between 0 and 1.
-   	+ figsize, 2d-tuple, optional (default=(10, 6))  
+   	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -333,19 +337,19 @@ Plot performance metrics against multiple threshold values. Only for binary clas
 Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ target_class: int, optional (default=1)
 	Target class to plot the probabilities against. A value of 0 corresponds to the first class, 1 to the second class, etc...
-	+ figsize, 2d-tuple, optional (default=(10, 6))  
+	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_feature_importance(figsize=(10, 6), filename=None)**  
 Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB and LGBM).
-	+ figsize, 2d-tuple, optional (default=(10, 6))  
+	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_ROC(figsize=(10, 6), filename=None)**  
 Plots the ROC curve. Only for binary classification tasks.  
- 	+ figsize, 2d-tuple, optional (default=(10, 6))  
+ 	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -353,7 +357,7 @@ Plots the ROC curve. Only for binary classification tasks.
 Plot the confusion matrix for the model. Only for binary classification tasks.  
 	+ normalize: bool, optional (default=True)
 	Wether to normalize the confusion matrix.
-   	+ figsize, 2d-tuple, optional (default=(10, 6))  
+   	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
@@ -365,7 +369,7 @@ Plot a single decision tree of the model. Only for tree-based algorithms. Depend
 	Maximum depth of the plotted tree. None for no limit.
 	+ rotate: bool, optional (default=False)  
 	When True, orientate the tree left-right instead of top-bottom.
-   	+ figsize, 2d-tuple, optional (default=(10, 6))  
+   	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.  
