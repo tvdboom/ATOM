@@ -222,7 +222,7 @@ class ATOM(object):
             self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
 
         self._split_dataset(self.dataset, percentage)  # Make train/test split
-        self._reset_attributes()  # Define data subsets class attributes
+        self.reset_attributes()  # Define data subsets class attributes
 
         # << ============ Set algorithm task ============ >>
 
@@ -267,7 +267,7 @@ class ATOM(object):
                                                  test_size=self.test_size,
                                                  shuffle=False)
 
-    def _reset_attributes(self, truth='both'):
+    def reset_attributes(self, truth='all'):
 
         '''
         DESCRIPTION -----------------------------------
@@ -278,7 +278,6 @@ class ATOM(object):
         PARAMETERS -------------------------------------
 
         truth --> variable with the correct values to start from.
-                  Choose from: dataset, train_test or both.
 
         '''
 
@@ -287,9 +286,21 @@ class ATOM(object):
             self.train = self.dataset[:len(self.train)]
             self.test = self.dataset[len(self.train):]
 
-        elif truth == 'train_test':  # Join train and test on rows
+        elif truth in ('train_test', 'train', 'test'):
+            # Join train and test on rows
             self.dataset = pd.concat([self.train, self.test], join='outer',
                                      ignore_index=False, copy=True)
+
+        elif truth in ('X_train', 'Y_train', 'X_test', 'Y_test'):
+            self.train = merge(self.X_train, self.Y_train)
+            self.test = merge(self.X_test, self.Y_test)
+            self.dataset = pd.concat([self.train, self.test], join='outer',
+                                     ignore_index=False, copy=True)
+
+        elif truth in ('X_Y', 'X', 'Y'):
+            self.dataset = merge(self.X, self.Y)
+            self.train = self.dataset[:len(self.train)]
+            self.test = self.dataset[len(self.train):]
 
         # Reset all indices
         for data in ['dataset', 'train', 'test']:
@@ -448,7 +459,7 @@ class ATOM(object):
                     imp = SimpleImputer(strategy=strat_cat.lower())
                     fit_imputer(imp)
 
-        self._reset_attributes('train_test')  # Redefine new attributes
+        self.reset_attributes('train_test')  # Redefine new attributes
 
     @params_to_log
     def encode(self, max_onehot=10):
@@ -507,7 +518,7 @@ class ATOM(object):
                     # Test set is tranformed with the mapping of the trainset
                     self.dataset[col] = self.dataset[col].map(means)
 
-        self._reset_attributes('dataset')  # Redefine new attributes
+        self.reset_attributes('dataset')  # Redefine new attributes
 
         # Check if mapping didn't fail
         nans = self.dataset.isna().any()  # pd.Series of columns with nans
@@ -550,7 +561,7 @@ class ATOM(object):
 
         # Remove rows based on index and reset attributes
         self.train = self.train[idx]
-        self._reset_attributes('train_test')
+        self.reset_attributes('train_test')
 
     @params_to_log
     def balance(self, oversample=None, neighbors=5, undersample=None):
@@ -619,7 +630,7 @@ class ATOM(object):
         self.X_train = convert_to_pd(self.X_train, columns=columns_x)
         self.Y_train = convert_to_pd(self.Y_train, columns=self.target)
         self.train = merge(self.X_train, self.Y_train)
-        self._reset_attributes('train_test')
+        self.reset_attributes('train_test')
 
     @params_to_log
     def feature_selection(self,
@@ -752,7 +763,7 @@ class ATOM(object):
         # Then, remove features with too low variance
         remove_low_variance(frac_variance=self.frac_variance)
         # Dataset is possibly changed so need to reset attributes
-        self._reset_attributes('dataset')
+        self.reset_attributes('dataset')
 
         if self.strategy is None:
             return None  # Exit feature_selection
@@ -791,7 +802,7 @@ class ATOM(object):
                           .format(self.univariate.scores_[n],
                                   self.univariate.pvalues_[n]), self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
-            self._reset_attributes('dataset')
+            self.reset_attributes('dataset')
 
         elif self.strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
@@ -802,9 +813,7 @@ class ATOM(object):
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
             self.X_train = convert_to_pd(self.PCA.fit_transform(self.X_train))
             self.X_test = convert_to_pd(self.PCA.transform(self.X_test))
-            self.train = merge(self.X_train, self.Y_train)
-            self.test = merge(self.X_test, self.Y_test)
-            self._reset_attributes('train_test')
+            self.reset_attributes('X_train')  # Will reset all attributes
 
         elif self.strategy.lower() == 'sfm':
             if self.solver is None:
@@ -821,7 +830,7 @@ class ATOM(object):
                     prlog(f' --> Feature {column} was removed by the ' +
                           'recursive feature eliminator.', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
-            self._reset_attributes('dataset')
+            self.reset_attributes('dataset')
 
         else:
             raise ValueError('Invalid feature selection strategy selected.'
@@ -1160,7 +1169,7 @@ class ATOM(object):
             while len(self.models) > 2**self.skip_iter - 1:
                 # Select 1/N of data to use for this iteration
                 self._split_dataset(original_data, 100./len(self.models))
-                self._reset_attributes()
+                self.reset_attributes()
                 self.data = data_preparation()
                 prlog('\n\n<<================ Iteration {} ================>>'
                       .format(iteration), self)
