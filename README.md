@@ -413,4 +413,5 @@ Dependencies
 * **[Seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
 * **[XGBoost](https://xgboost.readthedocs.io/en/latest/)**, optional (>=0.90)
 * **[LightGBM](https://lightgbm.readthedocs.io/en/latest/)**, optional (>=2.3.0)
+* **[CatBoost](https://catboost.ai/docs/concepts/about.html)**, optional (>=0.19.1)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)**, optional (>=0.5.0)
