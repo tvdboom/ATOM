@@ -135,7 +135,7 @@ class BaseModel(object):
 
     @timer
     def BayesianOpt(self, test_size, max_iter, max_time, eps,
-                    batch_size, init_points, cv, plot_bo, n_jobs):
+                    batch_size, init_points, cv, plot_bo):
 
         '''
         DESCRIPTION -----------------------------------
@@ -154,7 +154,6 @@ class BaseModel(object):
         init_points --> number of initial random tests of the BO
         cv          --> splits for the cross validation
         plot_bo     --> boolean to plot the BO's progress
-        n_jobs      --> number of cores to use for parallel processing
 
         '''
 
@@ -278,7 +277,7 @@ class BaseModel(object):
                                          self.Y_train,
                                          cv=kfold,
                                          scoring=scoring,
-                                         n_jobs=n_jobs).mean()
+                                         n_jobs=self.n_jobs).mean()
 
                 # cross_val_score returns negative loss for minimizing metrics
                 if self.metric in self.metric_min:
@@ -341,7 +340,7 @@ class BaseModel(object):
                                        maximize=maximize,
                                        initial_design_type='random',
                                        normalize_Y=False,
-                                       num_cores=n_jobs,
+                                       num_cores=self.n_jobs,
                                        **kwargs)
 
             opt.run_optimization(max_iter=max_iter,

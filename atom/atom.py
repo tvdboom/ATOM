@@ -884,6 +884,7 @@ class ATOM(object):
                                                  self.metric,
                                                  self.task,
                                                  self.log,
+                                                 self.n_jobs,
                                                  self.verbose))
 
                 try:  # If errors occure, just skip the model
@@ -898,8 +899,7 @@ class ATOM(object):
                                                          self.batch_size,
                                                          self.init_points,
                                                          self.cv,
-                                                         self.plot_bo,
-                                                         self.n_jobs)
+                                                         self.plot_bo)
 
                         if self.bagging is not None:
                             getattr(self, model).bagging(self.bagging)

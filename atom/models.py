@@ -41,7 +41,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # << ============ Functions ============ >>
 
-def set_init(data, metric, task, log, verbose, scaled=False):
+def set_init(data, metric, task, log, n_jobs, verbose, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
     if scaled:
@@ -58,6 +58,7 @@ def set_init(data, metric, task, log, verbose, scaled=False):
         params['metric'] = metric
         params['task'] = task
         params['log'] = log
+        params['n_jobs'] = n_jobs
         params['verbose'] = verbose
 
     return params
@@ -85,7 +86,7 @@ class GP(BaseModel):
         ''' Returns the sklearn model '''
 
         if self.task != 'regression':
-            return GaussianProcessClassifier()
+            return GaussianProcessClassifier(n_jobs=self.n_jobs)
         else:
             return GaussianProcessRegressor()
 
@@ -276,7 +277,10 @@ class LogReg(BaseModel):
     def get_model(self, params):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
-        return LogisticRegression(solver='saga', multi_class='auto', **params)
+        return LogisticRegression(solver='saga',
+                                  multi_class='auto',
+                                  n_jobs=self.n_jobs,
+                                  **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -412,9 +416,9 @@ class KNN(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return KNeighborsClassifier(**params)
+            return KNeighborsClassifier(n_jobs=self.n_jobs, **params)
         else:
-            return KNeighborsRegressor(**params)
+            return KNeighborsRegressor(n_jobs=self.n_jobs, **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -517,9 +521,9 @@ class Bag(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return BaggingClassifier(**params)
+            return BaggingClassifier(n_jobs=self.n_jobs, **params)
         else:
-            return BaggingRegressor(**params)
+            return BaggingRegressor(n_jobs=self.n_jobs, **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -573,9 +577,9 @@ class ET(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return ExtraTreesClassifier(**params)
+            return ExtraTreesClassifier(n_jobs=self.n_jobs, **params)
         else:
-            return ExtraTreesRegressor(**params)
+            return ExtraTreesRegressor(n_jobs=self.n_jobs, **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -637,9 +641,9 @@ class RF(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return RandomForestClassifier(**params)
+            return RandomForestClassifier(n_jobs=self.n_jobs, **params)
         else:
-            return RandomForestRegressor(**params)
+            return RandomForestRegressor(n_jobs=self.n_jobs, **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -808,9 +812,9 @@ class XGB(BaseModel):
 
         from xgboost import XGBClassifier, XGBRegressor
         if self.task != 'regression':
-            return XGBClassifier(**params, verbosity=0)
+            return XGBClassifier(n_jobs=self.n_jobs, **params, verbosity=0)
         else:
-            return XGBRegressor(**params, verbosity=0)
+            return XGBRegressor(n_jobs=self.n_jobs, **params, verbosity=0)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -878,9 +882,9 @@ class LGB(BaseModel):
 
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
         if self.task != 'regression':
-            return LGBMClassifier(**params)
+            return LGBMClassifier(n_jobs=self.n_jobs, **params)
         else:
-            return LGBMRegressor(**params)
+            return LGBMRegressor(n_jobs=self.n_jobs, **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
@@ -1157,7 +1161,7 @@ class PA(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return PassiveAggressiveClassifier(**params)
+            return PassiveAggressiveClassifier(n_jobs=self.n_jobs, **params)
         else:
             return PassiveAggressiveRegressor(**params)
 
@@ -1230,7 +1234,7 @@ class SGD(BaseModel):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
-            return SGDClassifier(**params)
+            return SGDClassifier(n_jobs=self.n_jobs, **params)
         else:
             return SGDRegressor(**params)
 
