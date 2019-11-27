@@ -141,10 +141,12 @@ Handle missing values according to the selected strategy. Also removes columns w
 	Maximum allowed fraction of rows with any missing values. If more, the column is removed.
 	+ missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])  
 	List of values to consider as missing. None, np.nan, '', np.inf and -np.inf are always added to the list since they are incompatible with sklearn models.
-* **encode(max_onehot=10)**  
-Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot.
+* **encode(max_onehot=10, fraction_to_other=0)**  
+Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
 	+ max_onehot: int, optional (default=10)  
-	Maximum number of unique values in a feature to perform one-hot-encoding.
+	Maximum number of unique values in a feature to perform one-hot-encoding.  
+	+ fraction_to_other: float, optional (default=0)  
+	Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.
 * **outliers(max_sigma=3, include_target=False)**  
 Remove outliers from the training set.
 	+ max_sigma: int or float, optional (default=3)  
