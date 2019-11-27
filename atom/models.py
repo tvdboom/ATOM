@@ -30,12 +30,11 @@ from sklearn.ensemble import (
     AdaBoostClassifier, AdaBoostRegressor,
     GradientBoostingClassifier, GradientBoostingRegressor
     )
-from sklearn.svm import LinearSVC, LinearSVR
+from sklearn.svm import LinearSVC, LinearSVR, SVC, SVR
 from sklearn.linear_model import (
     PassiveAggressiveClassifier, PassiveAggressiveRegressor,
     SGDClassifier, SGDRegressor
     )
-from sklearn.svm import SVC, SVR
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 
@@ -408,8 +407,9 @@ class KNN(BaseModel):
 
         weights = ['distance', 'uniform']
         params = {'n_neighbors': int(x[0, 0]),
-                  'p': int(x[0, 1]),
-                  'weights': weights[int(x[0, 2])]}
+                  'leaf_size': int(x[0, 1]),
+                  'p': int(x[0, 2]),
+                  'weights': weights[int(x[0, 3])]}
         return params
 
     def get_model(self, params):
@@ -427,6 +427,9 @@ class KNN(BaseModel):
         return [{'name': 'n_neighbors',
                  'type': 'discrete',
                  'domain': range(1, 101)},
+                {'name': 'leaf_size',
+                 'type': 'discrete',
+                 'domain': range(20, 41)},
                 {'name': 'p',
                  'type': 'discrete',
                  'domain': range(1, 3)},
@@ -437,7 +440,7 @@ class KNN(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        return np.array([[5, 2, 1]])
+        return np.array([[5, 30, 2, 1]])
 
 
 class Tree(BaseModel):
