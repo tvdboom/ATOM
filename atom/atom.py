@@ -462,7 +462,7 @@ class ATOM(object):
         self.reset_attributes('train_test')  # Redefine new attributes
 
     @params_to_log
-    def encode(self, max_onehot=10):
+    def encode(self, max_onehot=10, fraction_to_other=0):
 
         '''
         DESCRIPTION -----------------------------------
@@ -472,7 +472,9 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        max_onehot --> threshold between onehot and target-encoding
+        max_onehot        --> threshold between onehot and target-encoding
+        fraction_to_other --> classes with less instances than rows times
+                              fraction_to_other are replaced with 'other'
 
         '''
 
@@ -480,11 +482,22 @@ class ATOM(object):
 
         # Check parameter (if 0, 1 or 2: it never uses one_hot)
         max_onehot = int(max_onehot) if max_onehot >= 0 else 10
+        # fraction_to_other has to be between 0 and 1
+        if 0 <= fraction_to_other <= 1:
+            fraction_to_other = float(fraction_to_other)
+        else:
+            fraction_to_other = 0
 
         # Loop over all but last column (target is already encoded)
         for col in self.dataset.columns.values[:-1]:
             # Check if column is categorical
             if self.dataset[col].dtype.kind not in 'ifu':
+                # Group uncommon classes into 'other'
+                values = self.dataset[col].value_counts()
+                for idx, count in values.iteritems():
+                    if count < fraction_to_other * len(self.dataset[col]):
+                        self.dataset[col].replace(idx, 'other', inplace=True)
+
                 # Count number of unique values in the column
                 n_unique = len(self.dataset[col].unique())
 
@@ -528,7 +541,8 @@ class ATOM(object):
                   'map all categories in the test set. As a result, there wi' +
                   f"ll appear missing values in column(s): {', '.join(cols)}" +
                   '. To solve this, try increasing the size of the training ' +
-                  'set or remove features with very high cardinality.', self)
+                  'set, increase the fraction_to_other parameter ' +
+                  'or remove features with very high cardinality.', self)
 
     @params_to_log
     def outliers(self, max_sigma=3, include_target=False):
