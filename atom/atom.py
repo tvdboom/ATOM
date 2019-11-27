@@ -498,11 +498,19 @@ class ATOM(object):
                     if count < fraction_to_other * len(self.dataset[col]):
                         self.dataset[col].replace(idx, 'other', inplace=True)
 
+                self.reset_attributes('dataset')
+
                 # Count number of unique values in the column
                 n_unique = len(self.dataset[col].unique())
 
                 # Perform encoding type dependent on number of unique values
-                if n_unique == 2:
+                if n_unique == 1:
+                    prlog(f' --> Removing feature {col}. Contains only 1 ' +
+                          'unique category of class: {}.'
+                          .format(self.dataset[col].unique()[0]), self, 2)
+                    self.dataset.drop(col, axis=1, inplace=True)
+
+                elif n_unique == 2:
                     prlog(f' --> Label-encoding feature {col}. Contains ' +
                           f'{n_unique} unique categories.', self, 2)
                     le = LabelEncoder()
