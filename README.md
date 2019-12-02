@@ -343,8 +343,10 @@ Plots the probability of every class in the target variable against the class se
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
-* **plot_feature_importance(figsize=(10, 6), filename=None)**  
+* **plot_feature_importance(show=20, figsize=(10, 6), filename=None)**  
 Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB and LGBM).
+	+ show: int, optional (default=20)  
+	Number of best features to show in the plot. None for all features.  
 	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
