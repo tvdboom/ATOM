@@ -106,7 +106,7 @@ Wether to show warnings when running the pipeline.
 Verbosity level of the class. Possible values are:  
 	+ 0 to not print anything  
 	+ 1 to print minimum information
-	+ 2 to print medium information
+	+ 2 to print average information
 	+ 3 to print maximum information
 * **random_state: int, optional (default=None)**  
 Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.
@@ -181,20 +181,21 @@ Select best features according to the selected strategy. Ties between features w
 		- 'univariate': perform a univariate statistical test
 		- 'PCA': perform a principal component analysis
 		- 'SFM': select best features from an existing model
-	+ solver: string or model class (default=depend on strategy)  
-	Solver or model to use for the feature selection strategy. See the scikit-learn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
+	+ solver: string or callable (default=depend on strategy)  
+	Solver or model to use for the feature selection strategy. See the sklearn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
 		- for 'univariate', choose from:
 			* 'f_classif' (default for classification tasks)
 			* 'f_regression' (default for regression tasks)
 			* 'mutual_info_classif'
 			* 'mutual_info_regression'
 			* 'chi2'
+			* Any function taking two arrays X and y, and returning a pair of arrays (scores, pvalues)
 		- for 'PCA', choose one from:
 			* 'auto' (default)
 			* 'full'
 			* 'arpack'
 			* 'randomized'
-		- for 'SFM', choose a model class (not yet fitted). No default.
+		- for 'SFM', choose a base estimator from which the transformer is built (not yet fitted). The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
 	+ max_features: int or float, optional (default=None)  
 	Number of features to select.
 		- None: select all features
@@ -210,8 +211,8 @@ Select best features according to the selected strategy. Ties between features w
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
 * **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
-	+ models: string or list of strings, optional (default=None)  
- 	List of models to fit on the data. If None, all models are chosen. Possible values are (case insensitive):    
+	+ models: string or list of strings  
+ 	List of models to fit on the data. If 'all', all available models are used. Possible values are (case insensitive):    
 		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
 		- 'MNB' for Multinomial Naïve Bayes  
 		- 'BNB' for Bernoulli Naïve Bayes  
@@ -235,27 +236,14 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'PA' for Passive Aggressive  
 		- 'SGD' for Stochastic Gradient Descent  
 		- 'MLP' for Multilayer Perceptron  
-	+ metric: string, optional (default=None)  
-	Metric on which the pipeline fits the models. If None, the default option is selected depending on the task's type. Possible values are (case insensitive):  
-		+ For binary and multiclass classification or regression:  
-			- 'max_error'  
-			- 'R2'  
-			- 'MAE' for Mean Absolute Error  
-			- 'MSE' for Mean Squared Error (default)
-			- 'MSLE' for Mean Squared Log Error  
-		+ Only binary classification:  
-			- 'Precision'  
-			- 'Recall'  
-			- 'Accuracy'
-			- 'F1' (default)
-			- 'Jaccard'  
-			- 'AUC' for Area Under Curve  
+	+ metric: function callable  
+	Metric on which the pipeline fits the models. Score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
 	+ successive_halving: bool, optional (default=False)  
 	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
 	+ skip_iter: int, optional (default=0)  
 	Skip n last iterations of the successive halving.
 	+ max_iter: int, optional (default=15)  
-	Maximum number of iterations of the BO.
+	Maximum number of iterations of the BO. 0 to not use the BO and fit the model directly on its default parameters.
 	+ max_time: int, optional (default=np.inf)  
 	Maximum time allowed for the BO (in seconds).
 	+ eps: float, optional (default=1e-08)  
@@ -263,12 +251,13 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	+ batch_size: int, optional (default=1)  
 	Size of the batch in which the objective is evaluated.
 	+ init_points: int, optional (default=5)  
-	Initial number of random tests of the BO. If 1, the model is fitted on the default hyperparameters of the package.
+	Initial number of tests the BO runs before fitting the surrogate function.
 	+ plot_bo: bool, optional (default=False)  
 	Wether to plot the BO's progress as it runs. Creates a canvas with two plots: the first plot shows the score of every trial and the second shows the distance between the last consecutive steps. Don't forget to call `%matplotlib` at the start of the cell if you are using jupyter notebook!
 	+ cv: bool, optional (default=3)  
-		- if 1, randomly split the set to a train and validation set and fit and score the BO's selected model on them
-		- if >1, perform a k-fold cross validation on the training set and score the BO as the output
+	Strategy to fit and score the model selected after every step of the BO.
+		- if 1, randomly split the training data into a train and validation set
+		- if >1, perform a k-fold cross validation on the training set
 	+ bagging: int, optional (default=None)  
 	Number of bootstrapped samples used for bagging. If None, no bagging is performed.
 
@@ -313,9 +302,9 @@ Class attributes
 * **X_test, Y_test**: Test set features and target.
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **collinear**: Dataframe of the collinear features and their correlation values (only if feature_selection was used).
-* **univariate**: Univariate feature selection class (if used), from scikit-learn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
-* **PCA**: Principal component analysis class (if used), from scikit-learn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
-* **SFM**: Select from model class (if used), from scikit-learn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
+* **univariate**: Univariate feature selection class (if used), from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
+* **PCA**: Principal component analysis class (if used), from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+* **SFM**: Select from model class (if used), from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
 
@@ -394,12 +383,12 @@ Call any of the metrics as a method. It will return the metric (evaluated on the
 Subclass attributes
 -----------------------------  
 * **atom.MLP.best_params**: Get parameters of the model with highest score.
-* **atom.SVM.best_model**: Get the model with highest score (not fitted).  
-* **atom.SVM.best_model_fit**: Get the model with highest score fitted on the training set.  
+* **atom.SVM.best_model**: Get the model with highest score (not fitted).
+* **atom.SVM.best_model_fit**: Get the model with highest score fitted on the training set.
 * **atom.lgbm.score**: Metric score of the BO's selected model on the test set.
-* **atom.Tree.predict**: Get the predictions on the test set.  
-* **atom.rf.predict_proba**: Get the predicted probabilities on the test set.  
-* **atom.MNB.error**: If the model encountered an exception, this shows it.  
+* **atom.Tree.predict**: Get the predictions on the test set.
+* **atom.rf.predict_proba**: Get the predicted probabilities on the test set.
+* **atom.MNB.error**: If the model encountered an exception, this shows it.
 * **atom.PA.bagging_scores**: Array of the bagging's results.
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
