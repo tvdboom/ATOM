@@ -615,6 +615,9 @@ class BaseModel(object):
         if self.shortname not in self.tree:
             raise ValueError('This method only works for tree-based models!')
 
+        if show is None:
+            show = len(self.X.columns)
+
         # Bagging has no direct feature importance implementation
         if self.shortname == 'Bag':
             feature_importances = np.mean([
