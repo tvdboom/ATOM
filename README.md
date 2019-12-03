@@ -50,6 +50,8 @@ Usage
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
     from atom import ATOMClassifier  
+    from sklearn.metrics import f1_score
+    
     atom = ATOMClassifier(X, Y, log='atom_log', n_jobs=2, verbose=1)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
@@ -63,7 +65,7 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 Fit the data to different models:
 
     atom.fit(models=['logreg', 'LDA', 'XGB', 'lSVM'],
-	         metric='Accuracy',
+	         metric=f1_score,
 	         successive_halving=True,
 	         max_iter=10,
 	         max_time=1000,
@@ -173,7 +175,7 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes
-* **feature_selection(strategy='univariate', solver=None, max_features=None, threshold=-np.inf, frac_variance=1., max_correlation=0.98)**  
+* **feature_selection(strategy=None, solver=None, max_features=None, threshold=-np.inf, frac_variance=1., max_correlation=0.98)**  
 Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ strategy: string, optional (default='univariate')  
 	Feature selection strategy to use. Choose from:
@@ -189,13 +191,13 @@ Select best features according to the selected strategy. Ties between features w
 			* 'mutual_info_classif'
 			* 'mutual_info_regression'
 			* 'chi2'
-			* Any function taking two arrays X and y, and returning a pair of arrays (scores, pvalues)
-		- for 'PCA', choose one from:
+			* Any function taking two arrays X and y, and returning a pair of arrays (scores, pvalues). See the sklearn [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection).
+		- for 'PCA', choose from:
 			* 'auto' (default)
 			* 'full'
 			* 'arpack'
 			* 'randomized'
-		- for 'SFM', choose a base estimator from which the transformer is built (not yet fitted). The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
+		- for 'SFM': choose a base estimator from which the transformer is built. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
 	+ max_features: int or float, optional (default=None)  
 	Number of features to select.
 		- None: select all features
@@ -209,7 +211,7 @@ Select best features according to the selected strategy. Ties between features w
 	Remove features with the same value in at least this fraction of the total.
 	+ max_correlation: float, optional (default=0.98)  
 	Minimum value of the Pearson correlation cofficient to identify correlated features.
-* **fit(models=None, metric=None, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
+* **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings  
  	List of models to fit on the data. If 'all', all available models are used. Possible values are (case insensitive):    
@@ -238,6 +240,8 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'MLP' for Multilayer Perceptron  
 	+ metric: function callable  
 	Metric on which the pipeline fits the models. Score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
+	+ greater_is_better: bool, otional (default=True)  
+	Wether the metric is a score function or a loss function, i.e. if True, a higher score is better and if False, lower is better.
 	+ successive_halving: bool, optional (default=False)  
 	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
 	+ skip_iter: int, optional (default=0)  
@@ -333,7 +337,7 @@ Plots the probability of every class in the target variable against the class se
 	+ filename: string, optional (default=None)  
 	Name of the file when saved. None to not save anything.
 * **plot_feature_importance(show=20, figsize=(10, 6), filename=None)**  
-Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB and LGBM).
+Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ show: int, optional (default=20)  
 	Number of best features to show in the plot. None for all features.  
 	+ figsize: 2d-tuple, optional (default=(10, 6))  
