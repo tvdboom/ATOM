@@ -214,7 +214,7 @@ Select best features according to the selected strategy. Ties between features w
 * **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings  
- 	List of models to fit on the data. If 'all', all available models are used. Possible values are (case insensitive):    
+ 	List of models to fit on the data. If 'all', all available models are used. Use the predefined acronyms to select the models. Possible values are (case insensitive):    
 		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
 		- 'MNB' for Multinomial Naïve Bayes  
 		- 'BNB' for Bernoulli Naïve Bayes  
@@ -316,7 +316,7 @@ Class attributes
 ### After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
 
 
-Subclass methods (utilities)  
+Subclass methods  
 -----------------------------  
 * **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
 Plot performance metrics against multiple threshold values. Only for binary classification tasks.  
@@ -374,14 +374,6 @@ Plot a single decision tree of the model. Only for tree-based algorithms. Depend
 Save the best found model as a pickle file.
 	 + filename: string, optional (default=None)  
 	Name of the file when saved. If None, it will be saved as ATOM_[model_type].
-
-
-Sublass methods (metrics)  
------------------------------
-Call any of the metrics as a method. It will return the metric (evaluated on the cross-validation) for the best model found by the BO.
-+ **atom.knn.AUC()**: Returns the AUC score for the best trained KNN  
-+ **atom.adaboost.MSE()**: Returns the MSE score for the best trained AdaBoost 
-+ **atom.xgb.Accuracy()**: Returns the accuracy score for the best trained XGBoost model
 
 
 Subclass attributes
