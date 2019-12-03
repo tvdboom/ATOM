@@ -208,9 +208,9 @@ Select best features according to the selected strategy. Ties between features w
 		- if 'mean': set the mean of feature_importances as threshold
 		- if 'median': set the median of feature_importances as threshold
 	+ frac_variance: float, optional (default=1)  
-	Remove features with the same value in at least this fraction of the total.
+	Remove features with the same value in at least this fraction of the total. None to skip this step.
 	+ max_correlation: float, optional (default=0.98)  
-	Minimum value of the Pearson correlation cofficient to identify correlated features.
+	Minimum value of the Pearson correlation cofficient to identify correlated features. None to skip this step.
 * **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
 	+ models: string or list of strings  
