@@ -24,7 +24,9 @@ from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
-from sklearn.metrics import make_scorer, confusion_matrix, roc_curve
+from sklearn.metrics import (
+        make_scorer, confusion_matrix, roc_curve, roc_auc_score
+        )
 
 # Others
 from GPyOpt.methods import BayesianOptimization
@@ -465,7 +467,7 @@ class BaseModel(object):
 
         fig, ax = plt.subplots(figsize=figsize)
         for i, m in enumerate(metric):
-            plt.plot(space, results[m], label=metric[i], lw=2)
+            plt.plot(space, results[m], label=metric[i].__name__, lw=2)
 
         plt.xlabel('Threshold', fontsize=16, labelpad=12)
         plt.ylabel('Score', fontsize=16, labelpad=12)
@@ -574,7 +576,9 @@ class BaseModel(object):
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.plot(fpr, tpr,
-                 lw=2, color='red', label='AUC={:.3f}'.format(self.AUC()))
+                 lw=2, color='red', label='AUC={:.3f}'
+                                          .format(roc_auc_score(self.Y_test,
+                                                                self.predict)))
 
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 

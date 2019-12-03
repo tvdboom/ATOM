@@ -955,15 +955,15 @@ class CatB(BaseModel):
 
         from catboost import CatBoostClassifier, CatBoostRegressor
         if self.task != 'regression':
-            return CatBoostClassifier(**params,
-                                      train_dir='',
+            return CatBoostClassifier(train_dir='',
                                       allow_writing_files=False,
-                                      verbose=False)
+                                      verbose=False,
+                                      **params)
         else:
-            return CatBoostRegressor(**params,
-                                     train_dir='',
+            return CatBoostRegressor(train_dir='',
                                      allow_writing_files=False,
-                                     verbose=False)
+                                     verbose=False,
+                                     **params)
 
     def get_domain(self):
         ''' Returns the bounds for the hyperparameters '''
