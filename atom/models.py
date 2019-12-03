@@ -674,7 +674,7 @@ class RF(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        return np.array([[100, 1, 1, 0, 2, 1]])
+        return np.array([[100, 1.0, 1, 0, 2, 1]])
 
 
 class AdaB(BaseModel):

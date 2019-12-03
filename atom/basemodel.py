@@ -25,7 +25,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 from sklearn.metrics import (
-        make_scorer, confusion_matrix, roc_curve, roc_auc_score
+        make_scorer, confusion_matrix, roc_curve, roc_auc_score, r2_score,
+        accuracy_score, precision_score, hamming_loss, jaccard_score,
+        log_loss, matthews_corrcoef, recall_score, f1_score, max_error,
+        mean_absolute_error, mean_squared_error, mean_squared_log_error
         )
 
 # Others
@@ -378,6 +381,36 @@ class BaseModel(object):
         elif self.task != 'regression':
             self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
+        # Calculate some standard metrics
+        if self.task == 'binary classification':
+            cm = confusion_matrix(self.Y_test, self.predict)
+            self.tn, self.fp, self.fn, self.tp = cm.ravel()
+            self.auc = roc_auc_score(self.Y_test, self.predict)
+            self.mcc = matthews_corrcoef(self.Y_test, self.predict)
+            self.accuracy = accuracy_score(self.Y_test, self.predict)
+            self.logloss = log_loss(self.Y_test, self.predict_proba[:, 1])
+            avg = 'binary'
+        else:
+            avg = 'weighted'
+
+        if self.task != 'regression':
+            self.precision = precision_score(self.Y_test,
+                                             self.predict,
+                                             average=avg)
+            self.jaccard = jaccard_score(self.Y_test,
+                                         self.predict,
+                                         average=avg)
+            self.recall = recall_score(self.Y_test, self.predict, average=avg)
+            self.f1 = f1_score(self.Y_test, self.predict, average=avg)
+
+            self.hamming = hamming_loss(self.Y_test, self.predict)
+
+        self.max_error = max_error(self.Y_test, self.predict)
+        self.mae = mean_absolute_error(self.Y_test, self.predict)
+        self.mse = mean_squared_error(self.Y_test, self.predict)
+        self.msle = mean_squared_log_error(self.Y_test, self.predict)
+        self.r2 = r2_score(self.Y_test, self.predict)
+
         # Print stats
         if self.shortname in no_bayesian_optimization and max_iter > 0:
             prlog('\n', self, 1)  # Print 2 extra lines
@@ -571,14 +604,11 @@ class BaseModel(object):
                              'classification problems.')
 
         # Get False (True) Positive Rate
-        fpr, tpr, thresholds = roc_curve(self.Y_test, self.predict_proba[:, 1])
+        fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba[:, 1])
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(fpr, tpr,
-                 lw=2, color='red', label='AUC={:.3f}'
-                                          .format(roc_auc_score(self.Y_test,
-                                                                self.predict)))
+        plt.plot(fpr, tpr, lw=2, color='red', label=f'AUC={self.auc:.3f}')
 
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
@@ -620,7 +650,6 @@ class BaseModel(object):
 
         # Compute confusion matrix
         cm = confusion_matrix(self.Y_test, self.predict)
-        self.tn, self.fp, self.fn, self.tp = cm.ravel()
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]

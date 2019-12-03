@@ -794,15 +794,20 @@ class ATOM(object):
 
         # Check parameters
         strategy = str(strategy) if strategy is not None else None
-        frac_variance = float(frac_variance)
-        max_correlation = float(max_correlation)
+        if frac_variance is not None:
+            frac_variance = float(frac_variance)
+        if max_correlation is not None:
+            max_correlation = float(max_correlation)
 
         prlog('Performing feature selection...', self, 1)
 
         # First, drop features with too high correlation
-        remove_collinear(limit=max_correlation)
+        if max_correlation is not None:
+            remove_collinear(limit=max_correlation)
         # Then, remove features with too low variance
-        remove_low_variance(frac_variance=frac_variance)
+        if frac_variance is not None:
+            remove_low_variance(frac_variance=frac_variance)
+
         # Dataset is possibly changed so need to reset attributes
         self.reset_attributes('dataset')
 
