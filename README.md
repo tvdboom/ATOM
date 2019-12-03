@@ -391,6 +391,32 @@ Subclass attributes
 	+ 'score': Score of the chosen metric
 
 
+Subclass attributes (metrics)
+-----------------------------  
+Some of the most common metrics are saved as attributes of the model subclass, e.g. `atom.rf.recall`. They are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. Note that for classification tasks, the regression metrics are computed directly from the prediction, not the predicted probability! The available metrics are:  
+* For binary classification tasks only:  
+	+ **tn** for the true negatives  
+	+ **fp** for the false positives  
+	+ **fn** for the false negatives  
+	+ **tp** for the true positives  
+	+ **accuracy**  
+	+ **auc** for the area under the ROC curve  
+	+ **mcc** for the matthews correlation coefficient  
+	+ **logloss** for the binary cross-entropy loss  
+* For classification tasks only:  
+	+ **precision**  
+	+ **recall**  
+	+ **f1**  
+	+ **jaccard** for the Jaccard similarity coefficient score  
+	+ **hamming** for the average Hamming loss  
+* For all tasks:  
+	+ **max_error** for the maximum residual error  
+	+ **mae** for the mean absolute error  
+	+ **mse** for the mean squared error  
+	+ **msle** for the mean squared logarithmic error  
+	+ **r2**
+
+
 Dependencies
 -----------------------------
 * **[NumPy](https://numpy.org/)** (>=1.17.2)
