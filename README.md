@@ -319,11 +319,11 @@ Class attributes
 Subclass methods  
 -----------------------------  
 * **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
-Plot performance metrics against multiple threshold values. Only for binary classification tasks.  
-	+ metric: string or list of strings, optional (default=None)  
+Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
+	+ metric: function callable or list of callables, optional (default=None)  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
-    + steps: int, optional (default=100)  
-    Number of thresholds to try between 0 and 1.
+   	+ steps: int, optional (default=100)  
+    	Number of thresholds to try between 0 and 1.
    	+ figsize: 2d-tuple, optional (default=(10, 6))  
 	Figure size: format as (x, y).
 	+ filename: string, optional (default=None)  
