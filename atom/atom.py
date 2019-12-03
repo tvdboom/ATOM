@@ -30,15 +30,37 @@ from sklearn.feature_selection import (
 from sklearn.model_selection import train_test_split
 
 # Models
-from .models import (
-        BNB, GNB, MNB, GP, LinReg, LogReg, LDA, QDA, KNN, Tree, Bag, ET, RF,
-        AdaB, GBM, XGB, LGB, CatB, lSVM, kSVM, PA, SGD, MLP
-        )
+from .models import *
 
 # Plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='darkgrid', palette="GnBu_d")
+
+
+# << ============ Global variables ============ >>
+
+# List of all the available models
+model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
+              'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
+              'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+
+# Tuple of models that need to import an extra package
+optional_packages = (('XGB', 'xgboost'),
+                     ('LGB', 'lightgbm'),
+                     ('CatB', 'catboost'))
+
+# List of models that need scaling
+scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
+                  'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+
+# List of models that only work for regression/classification tasks
+only_classification = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
+only_regression = ['LinReg']
+
+# Build-in metrics for classification and regression
+class_metrics = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC', 'Jaccard']
+reg_metrics = ['R2', 'max_error', 'MAE', 'MSE', 'MSLE']
 
 
 # << ============ Functions ============ >>
@@ -455,8 +477,8 @@ class ATOM(object):
 
                 else:
                     prlog(f' --> Imputing {nans} values with ' +
-                          strat_cat.lower() + f' in feature {col}', self, 2)
-                    imp = SimpleImputer(strategy=strat_cat.lower())
+                          strat_cat + f' in feature {col}', self, 2)
+                    imp = SimpleImputer(strategy=strat_cat)
                     fit_imputer(imp)
 
         self.reset_attributes('train_test')  # Redefine new attributes
@@ -616,7 +638,7 @@ class ATOM(object):
         '''
 
         # Check parameters
-        self.neighbors = int(neighbors) if neighbors > 0 else 5
+        neighbors = int(neighbors) if neighbors > 0 else 5
 
         try:
             from imblearn.over_sampling import SMOTE
@@ -633,7 +655,7 @@ class ATOM(object):
         if oversample is not None:
             prlog('Performing oversampling...', self, 1)
             smote = SMOTE(sampling_strategy=oversample,
-                          k_neighbors=self.neighbors,
+                          k_neighbors=neighbors,
                           n_jobs=self.n_jobs)
             self.X_train, self.Y_train = \
                 smote.fit_resample(self.X_train, self.Y_train)
@@ -656,7 +678,7 @@ class ATOM(object):
 
     @params_to_log
     def feature_selection(self,
-                          strategy='univariate',
+                          strategy=None,
                           solver=None,
                           max_features=None,
                           threshold=-np.inf,
@@ -771,50 +793,45 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
 
         # Check parameters
-        self.strategy = str(strategy) if strategy is not None else None
-        self.solver = solver
-        self.max_features = max_features
-        self.threshold = threshold
-        self.frac_variance = float(frac_variance)
-        self.max_correlation = float(max_correlation)
+        strategy = str(strategy) if strategy is not None else None
+        frac_variance = float(frac_variance)
+        max_correlation = float(max_correlation)
 
         prlog('Performing feature selection...', self, 1)
 
         # First, drop features with too high correlation
-        remove_collinear(limit=self.max_correlation)
+        remove_collinear(limit=max_correlation)
         # Then, remove features with too low variance
-        remove_low_variance(frac_variance=self.frac_variance)
+        remove_low_variance(frac_variance=frac_variance)
         # Dataset is possibly changed so need to reset attributes
         self.reset_attributes('dataset')
 
-        if self.strategy is None:
+        if strategy is None:
             return None  # Exit feature_selection
 
         # Set max_features as all or fraction of total
-        if self.max_features is None:
-            self.max_features = self.X_train.shape[1]
-        elif self.max_features < 1:
-            self.max_features = int(self.max_features * self.X_train.shape[1])
+        if max_features is None:
+            max_features = self.X_train.shape[1]
+        elif max_features < 1:
+            max_features = int(max_features * self.X_train.shape[1])
 
         # Perform selection based on strategy
-        if self.strategy.lower() == 'univariate':
-            if max_features is None:
-                max_features = self.dataset.shape[1]
+        if strategy.lower() == 'univariate':
 
             # Set the solver
             solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
                        'mutual_info_regression', 'chi2']
-            if self.solver is None and self.task == 'regression':
-                func = f_regression
-            elif self.solver is None:
-                func = f_classif
-            elif self.solver in solvers:
-                func = eval(self.solver)
-            else:
-                raise ValueError('Unknown value for the univariate solver.' +
-                                 f"Choose from: {', '.join(solvers)}")
+            if solver is None and self.task == 'regression':
+                solver = f_regression
+            elif solver is None:
+                solver = f_classif
+            elif solver in solvers:
+                solver = eval(solver)
+            elif isinstance(solver, str):
+                raise ValueError('Unknown solver: Try one {}.'
+                                 .format(', '.join(solvers)))
 
-            self.univariate = SelectKBest(func, k=self.max_features)
+            self.univariate = SelectKBest(solver, k=max_features)
             self.univariate.fit(self.X, self.Y)
             mask = self.univariate.get_support()
             for n, column in enumerate(self.X):
@@ -826,26 +843,34 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
             self.reset_attributes('dataset')
 
-        elif self.strategy.lower() == 'pca':
+        elif strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
             # Scale features first
             self.dataset = StandardScaler().fit_transform(self.X_train)
-            self.solver = 'auto' if self.solver is None else self.solver
+            solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
             self.X_train = convert_to_pd(self.PCA.fit_transform(self.X_train))
             self.X_test = convert_to_pd(self.PCA.transform(self.X_test))
             self.reset_attributes('X_train')  # Will reset all attributes
 
-        elif self.strategy.lower() == 'sfm':
-            if self.solver is None:
+        elif strategy.lower() == 'sfm':
+            if solver is None:
                 raise ValueError('Select a model for the solver!')
 
-            self.SFM = SelectFromModel(estimator=self.solver,
-                                       threshold=self.threshold,
-                                       max_features=self.max_features)
-            self.SFM.fit(self.X, self.Y)
-            mask = self.SFM.get_support()
+            try:  # Model already fitted
+                self.SFM = SelectFromModel(estimator=solver,
+                                           threshold=threshold,
+                                           max_features=max_features,
+                                           prefit=True)
+                mask = self.SFM.get_support()
+
+            except Exception:
+                self.SFM = SelectFromModel(estimator=solver,
+                                           threshold=threshold,
+                                           max_features=max_features)
+                self.SFM.fit(self.X, self.Y)
+                mask = self.SFM.get_support()
 
             for n, column in enumerate(self.X):
                 if not mask[n]:
@@ -859,9 +884,10 @@ class ATOM(object):
                              "Choose from: 'univariate', 'PCA' or 'SFM'")
 
     @params_to_log
-    def fit(self, models=None, metric=None, successive_halving=False,
-            skip_iter=0, max_iter=15, max_time=np.inf, eps=1e-08,
-            batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None):
+    def fit(self, models, metric, greater_is_better=True,
+            successive_halving=False, skip_iter=0,
+            max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1,
+            init_points=5, plot_bo=False, cv=3, bagging=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -872,6 +898,7 @@ class ATOM(object):
 
         models             --> list of models to use
         metric             --> metric to perform evaluation on
+        greater_is_better  --> metric is a score function or a loss function
         successive_halving --> wether to perform successive halving
         skip_iter          --> skip last n steps of successive halving
         max_iter           --> maximum number of iterations of the BO
@@ -915,6 +942,7 @@ class ATOM(object):
                             warnings.simplefilter("ignore")
 
                         getattr(self, model).BayesianOpt(self.test_size,
+                                                         self.gib,
                                                          self.max_iter,
                                                          self.max_time,
                                                          self.eps,
@@ -954,7 +982,6 @@ class ATOM(object):
                 lenx = max([len(getattr(self, m).name) for m in self.models])
 
                 # Get best score (min or max dependent on metric)
-                metric_to_min = ['max_error', 'MAE', 'MSE', 'MSLE']
                 if self.bagging is None:
                     x = [getattr(self, m).score for m in self.models]
                 else:
@@ -962,7 +989,7 @@ class ATOM(object):
                     for m in self.models:
                         x.append(getattr(self, m).bagging_scores.mean())
 
-                max_ = min(x) if self.metric in metric_to_min else max(x)
+                max_ = min(x) if not self.gib else max(x)
 
             except (ValueError, AttributeError):
                 raise ValueError('It appears all models failed to run...')
@@ -974,12 +1001,12 @@ class ATOM(object):
             s = int(t - h*3600 - m*60)
             prlog('\n\nFinal results ================>>', self)
             prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
-            prlog(f'Target metric: {self.metric}', self)
+            prlog(f'Metric: {self.metric.__name__}', self)
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
             results = pd.DataFrame(columns=['model',
-                                            self.metric,
+                                            self.metric.__name__,
                                             'time'])
             if self.bagging is not None:
                 pd.concat([results, pd.DataFrame(columns=['bagging_mean',
@@ -994,7 +1021,7 @@ class ATOM(object):
 
                 if self.bagging is None:
                     results = results.append({'model': shortname,
-                                              self.metric: score,
+                                              self.metric.__name__: score,
                                               'time': time_bo},
                                              ignore_index=True)
 
@@ -1011,7 +1038,7 @@ class ATOM(object):
                     bs_std = getattr(self, m).bagging_scores.std()
                     time_bag = getattr(self, m).time_bag
                     results = results.append({'model': shortname,
-                                              self.metric: score,
+                                              self.metric.__name__: score,
                                               'time': time_bo,
                                               'bagging_mean': bs_mean,
                                               'bagging_std': bs_std,
@@ -1035,9 +1062,6 @@ class ATOM(object):
             for i in ['X', 'Y', 'X_train', 'Y_train', 'X_test', 'Y_test']:
                 data[i] = eval('self.' + i)
 
-            # List of models that need scaling
-            scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
-                              'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
             # If PCA was performed, features are already scaled
@@ -1068,18 +1092,16 @@ class ATOM(object):
         prlog('\nRunning pipeline =================>', self)
 
         # Set args to class attributes and correct inputs
-        if not isinstance(models, list) and models is not None:
-            self.models = [models]
-        else:
-            self.models = models
-        self.metric = str(metric) if metric is not None else None
+        self.models = [models] if not isinstance(models, list) else models
+        self.metric = metric
+        self.gib = bool(greater_is_better)
         self.successive_halving = bool(successive_halving)
         self.skip_iter = int(skip_iter)
-        self.max_iter = int(max_iter) if max_iter > 0 else 15
+        self.max_iter = int(max_iter) if max_iter >= 0 else 15
         self.max_time = float(max_time) if max_time > 0 else np.inf
         self.eps = float(eps)
         self.batch_size = int(batch_size) if batch_size > 0 else 1
-        self.init_points = int(init_points) if init_points > 0 else 5
+        self.init_points = int(init_points) if init_points >= 0 else 5
         self.plot_bo = bool(plot_bo)
         self.cv = int(cv) if cv > 0 else 3
         if bagging is None or bagging == 0:
@@ -1096,13 +1118,9 @@ class ATOM(object):
 
         # << ============ Check validity models ============ >>
 
-        model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
-                      'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
-                      'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
-
         # Final list of models to be used
         final_models = []
-        if self.models is None:  # Use all possible models (default)
+        if self.models == ['all']:  # Use all possible models
             final_models = model_list.copy()
         else:
             # Remove duplicates keeping same order
@@ -1121,9 +1139,8 @@ class ATOM(object):
                             final_models.append(n)
                             break
 
-        # Check if XGBoost, lightgbm and CatBoost are available
-        for model, package in zip(['XGB', 'LGB', 'CatB'],
-                                  ['xgboost', 'lightgbm', 'catboost']):
+        # Check if packages for not-sklearn models are available
+        for model, package in optional_packages:
             if model in final_models:
                 try:
                     importlib.import_module(package)
@@ -1132,16 +1149,15 @@ class ATOM(object):
                           'model from pipeline.', self)
                     final_models.remove(model)
 
-        # Linear regression can't perform classification
-        if 'LinReg' in final_models and self.task != 'regression':
-            prlog("Linear Regression can't perform classification tasks."
-                  + " Removing model from pipeline.", self)
-            final_models.remove('LinReg')
-
-        # Remove classification-only models from pipeline
-        if self.task == 'regression':
-            class_models = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
-            for model in class_models:
+        # Remove regression/classification-only models from pipeline
+        if self.task != 'regression':
+            for model in only_regression:
+                if model in final_models:
+                    prlog(f"{model} can't perform classification tasks."
+                          + " Removing model from pipeline.", self)
+                    final_models.remove(model)
+        else:
+            for model in only_classification:
                 if model in final_models:
                     prlog(f"{model} can't perform regression tasks."
                           + " Removing model from pipeline.", self)
@@ -1158,30 +1174,7 @@ class ATOM(object):
             prlog('Model{} in pipeline: {}'
                   .format('s' if len(self.models) > 1 else '',
                           ', '.join(self.models)), self)
-
-        # Set default metric
-        if self.metric is None and self.task == 'binary classification':
-            self.metric = 'F1'
-        elif self.metric is None:
-            self.metric = 'MSE'
-
-        # Check validity metric
-        metric_class = ['Precision', 'Recall', 'Accuracy',
-                        'F1', 'AUC', 'Jaccard']
-        mreg = ['R2', 'max_error', 'MAE', 'MSE', 'MSLE']
-        for m in metric_class + mreg:
-            # Compare strings case insensitive
-            if self.metric.lower() == m.lower():
-                self.metric = m
-
-        if self.metric not in metric_class + mreg:
-            tmp = mreg if self.task == 'regression' else metric_class
-            raise ValueError(f"Unknown metric. Choose from: {', '.join(tmp)}.")
-        elif self.metric == 'AUC' and self.task != 'binary classification':
-            raise ValueError('AUC only works for binary classification tasks.')
-        elif self.metric not in mreg and self.task == 'regression':
-            raise ValueError("{} is an invalid metric for {}. Choose from: {}."
-                             .format(self.metric, self.task, ', '.join(mreg)))
+        prlog(f'Metric: {self.metric.__name__}', self)
 
         # << =================== Core ==================== >>
 
@@ -1257,7 +1250,7 @@ class ATOM(object):
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric, fontsize=16, labelpad=12)
+        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
         plt.title('Model comparison', fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
@@ -1304,7 +1297,7 @@ class ATOM(object):
             plt.plot(x, y, lw=2, marker='o', label=label)
         plt.xlim(-0.1, len(self.results)-0.9)
         plt.xlabel('Iteration', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric, fontsize=16, labelpad=12)
+        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
         plt.title('Successive halving scores', fontsize=16)
         plt.legend(frameon=False, fontsize=14)
         ax.set_xticks(range(len(self.results)))

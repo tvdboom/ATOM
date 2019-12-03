@@ -23,14 +23,8 @@ import sklearn
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.model_selection import (
-     KFold, StratifiedKFold, cross_val_score
-    )
-from sklearn.metrics import (
-    make_scorer, precision_score, recall_score, accuracy_score, f1_score,
-    roc_auc_score, r2_score, jaccard_score, roc_curve, confusion_matrix,
-    max_error, mean_absolute_error, mean_squared_error, mean_squared_log_error
-    )
+from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
+from sklearn.metrics import make_scorer, confusion_matrix, roc_curve
 
 # Others
 from GPyOpt.methods import BayesianOptimization
@@ -40,6 +34,21 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
 sns.set(style='darkgrid', palette="GnBu_d")
+
+
+# << ============ Global variables ============ >>
+
+# List of tree-based models
+tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
+
+# List of tree-based models from the scikit-learn library
+sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM']
+
+# List of models that don't use the Bayesian Optimization
+no_bayesian_optimization = ['GNB', 'GP']
+
+# List of models with no (or sometimes no) predict_proba method
+not_predict_proba = ['LinReg', 'lSVM', 'kSVM', 'PA', 'SGD']
 
 
 # << ============ Functions ============ >>
@@ -113,28 +122,14 @@ class BaseModel(object):
         metric  --> metric to maximize (or minimize) in the BO
         task    --> classification or regression
         log     --> name of the log file
-        verbose --> verbosity level (0, 1, 2)
+        verbose --> verbosity level (0, 1, 2, 3)
 
         '''
 
-        # List of metrics where the goal is to minimize it
-        self.metric_min = ['max_error', 'MAE', 'MSE', 'MSLE']
-
-        # List of tree-based models
-        self.tree = ['Tree', 'Bag', 'ET', 'RF', 'AdaB',
-                     'GBM', 'XGB', 'LGB', 'CatB']
-
-        # List of models that don't use the Bayesian Optimization
-        self.not_bo = ['GNB', 'GP']
-
-        # List of models with no (or sometimes no) predict_proba method
-        self.not_proba = ['LinReg', 'lSVM', 'kSVM', 'PA', 'SGD']
-
-        # Set attributes to child class
-        self.__dict__.update(kwargs)
+        self.__dict__.update(kwargs)  # Set attributes to child class
 
     @timer
-    def BayesianOpt(self, test_size, max_iter, max_time, eps,
+    def BayesianOpt(self, test_size, gib, max_iter, max_time, eps,
                     batch_size, init_points, cv, plot_bo):
 
         '''
@@ -147,6 +142,8 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
+        test_size   --> fraction test/train size
+        gib         --> metric is a score function or a loss function
         max_iter    --> maximum number of iterations
         max_time    --> maximum time for the BO (in seconds)
         eps         --> minimum distance between two consecutive x's
@@ -188,7 +185,7 @@ class BaseModel(object):
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
                 ax1.set_title('Bayesian Optimization for {}'
                               .format(self.name), fontsize=16)
-                ax1.set_ylabel(self.metric, fontsize=16, labelpad=12)
+                ax1.set_ylabel(self.metric.__name__, fontsize=16, labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
                 # Second subplot
@@ -245,24 +242,22 @@ class BaseModel(object):
 
             if cv == 1:
                 # Split each iteration in different train and validation set
-                X_subtrain, X_val, Y_subtrain, Y_val = \
+                X_subtrain, X_validation, Y_subtrain, Y_validation = \
                     train_test_split(self.X_train,
                                      self.Y_train,
                                      test_size=test_size,
                                      shuffle=True)
 
                 algorithm.fit(X_subtrain, Y_subtrain)
-                self.predict = algorithm.predict(X_val)
+                self.predict = algorithm.predict(X_validation)
 
                 # Calculate metric on the validation set
-                output = getattr(self, self.metric)(true=Y_val)
+                output = self.metric(Y_validation, self.predict)
 
             else:  # Use cross validation to get the output of BO
 
                 # Make scoring function for the cross_validator
-                gib = True if self.metric not in self.metric_min else False
-                scoring = make_scorer(getattr(self, self.metric),
-                                      greater_is_better=gib)
+                scoring = make_scorer(self.metric, greater_is_better=gib)
 
                 if self.task != 'regression':
                     # Folds are made preserving the % of samples for each class
@@ -280,12 +275,12 @@ class BaseModel(object):
                                          n_jobs=self.n_jobs).mean()
 
                 # cross_val_score returns negative loss for minimizing metrics
-                if self.metric in self.metric_min:
-                    output = -output
+                output = output if gib else -output
 
             # Save output of the BO and plot progress
             self.BO['score'].append(output)
-            prlog(f'Evaluation --> {self.metric}: {output:.4f}', self, 2)
+            prlog(f'Evaluation --> {self.metric.__name__}: {output:.4f}',
+                  self, 2)
 
             if plot_bo:
                 # Start to fill NaNs with encountered metric values
@@ -310,7 +305,7 @@ class BaseModel(object):
         # << ============ Running optimization ============ >>
 
         # Skip BO for GNB and GP (no hyperparameter tuning)
-        if self.shortname not in self.not_bo:
+        if self.shortname not in no_bayesian_optimization and max_iter > 0:
             prlog(f'\n\nRunning BO for {self.name}...', self, 1)
 
             # Save dictionary of BO steps
@@ -327,7 +322,7 @@ class BaseModel(object):
             self.ax1, self.ax2 = 0, 0  # Plot axes
 
             # Minimize or maximize the function depending on the metric
-            maximize = False if self.metric in self.metric_min else True
+            maximize = True if gib else False
             # Default SKlearn or multiple random initial points
             kwargs = {}
             if init_points > 1:
@@ -352,7 +347,7 @@ class BaseModel(object):
                 plt.close()
 
             # Optimal score of the BO
-            bo = opt.fx_opt if self.metric in self.metric_min else -opt.fx_opt
+            bo_best_score = -opt.fx_opt if gib else opt.fx_opt
 
             # Set to same shape as GPyOpt (2d-array)
             self.best_params = self.get_params(
@@ -371,9 +366,9 @@ class BaseModel(object):
         self.predict = self.best_model_fit.predict(self.X_test)
 
         # Get metric score on test set
-        self.score = getattr(self, self.metric)()
+        self.score = self.metric(self.Y_test, self.predict)
 
-        if self.shortname in self.not_proba and self.task != 'regression':
+        if self.shortname in not_predict_proba and self.task != 'regression':
             # Models without predict_proba() method need probs with ccv
             self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
             self.ccv.fit(self.X_test, self.Y_test)
@@ -382,16 +377,15 @@ class BaseModel(object):
             self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
         # Print stats
-        if self.shortname in self.not_bo:
+        if self.shortname in no_bayesian_optimization and max_iter > 0:
             prlog('\n', self, 1)  # Print 2 extra lines
         else:
             prlog('', self, 2)  # Print extra line
         prlog('Final results for {}:{:9s}'.format(self.name, ' '), self, 1)
-        if self.shortname not in self.not_bo:
-            prlog('Best hyperparameters: {}'.format(self.best_params), self, 1)
-            prlog('Best {} on the BO: {:.4f}'.format(self.metric, bo), self, 1)
-        prlog('{} on the test set: {:.4f}'.format(self.metric, self.score),
-              self, 1)
+        if self.shortname not in no_bayesian_optimization and max_iter > 0:
+            prlog(f'Best hyperparameters: {self.best_params}', self, 1)
+            prlog(f'Best score on the BO: {bo_best_score:.4f}', self, 1)
+        prlog(f'Score on the test set: {self.score:.4f}', self, 1)
 
     @timer
     def bagging(self, n_samples=3):
@@ -418,76 +412,14 @@ class BaseModel(object):
             pred = algorithm.predict(self.X_test)
 
             # Append metric result to list
-            self.bagging_scores.append(getattr(self, self.metric)(pred=pred))
+            self.bagging_scores.append(self.metric(self.Y_test, pred))
 
         # Numpy array for mean and std
         self.bagging_scores = np.array(self.bagging_scores)
         prlog('--------------------------------------------------', self, 1)
-        prlog('Bagging {} score --> Mean: {:.4f}   Std: {:.4f}'
-              .format(self.metric,
-                      self.bagging_scores.mean(),
-                      self.bagging_scores.std()), self, 1)
-
-    # << ============ Evaluation metric functions ============ >>
-
-    def Precision(self, pred=None, true=None):
-        avg = 'binary' if self.task == 'binary classification' else 'weighted'
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return precision_score(true, pred, average=avg)
-
-    def Recall(self, pred=None, true=None):
-        avg = 'binary' if self.task == 'binary classification' else 'weighted'
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return recall_score(true, pred, average=avg)
-
-    def F1(self, pred=None, true=None):
-        avg = 'binary' if self.task == 'binary classification' else 'weighted'
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return f1_score(true, pred, average=avg)
-
-    def Jaccard(self, pred=None, true=None):
-        avg = 'binary' if self.task == 'binary classification' else 'weighted'
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return jaccard_score(true, pred, average=avg)
-
-    def Accuracy(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return accuracy_score(true, pred)
-
-    def AUC(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return roc_auc_score(true, pred)
-
-    def MAE(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return mean_absolute_error(true, pred)
-
-    def MSE(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return mean_squared_error(true, pred)
-
-    def MSLE(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return mean_squared_log_error(true, pred)
-
-    def R2(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return r2_score(true, pred)
-
-    def max_error(self, pred=None, true=None):
-        pred = self.predict if pred is None else pred
-        true = self.Y_test if true is None else true
-        return max_error(true, pred)
+        prlog('Bagging score --> Mean: {:.4f}   Std: {:.4f}'
+              .format(self.bagging_scores.mean(), self.bagging_scores.std()),
+              self, 1)
 
     # << ============ Plot functions ============ >>
 
@@ -514,22 +446,9 @@ class BaseModel(object):
 
         # Set metric parameter
         if metric is None:
-            metric = [self.metric]
+            metric = self.metric
         elif not isinstance(metric, list):
             metric = [metric]
-
-        # Check validity metric
-        mlist = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC',
-                 'Jaccard', 'R2', 'max_error', 'MAE', 'MSE', 'MSLE']
-        mlist_low = [element.lower() for element in mlist]
-        for i, m in enumerate(metric):
-            if m.lower() not in mlist_low:
-                raise ValueError("Unknown metric {}. Choose from: {}"
-                                 .format(m, ', '.join(mlist)))
-            else:
-                for n in mlist:
-                    if m.lower() == n.lower():
-                        metric[i] = n
 
         # Get results ignoring annoying warnings
         with warnings.catch_warnings():
@@ -542,7 +461,7 @@ class BaseModel(object):
             for step in space:
                 for m in metric:
                     pred = (self.predict_proba[:, 1] >= step).astype(bool)
-                    results[m].append(getattr(self, m)(pred=pred))
+                    results[m].append(m(self.Y_test, pred))
 
         fig, ax = plt.subplots(figsize=figsize)
         for i, m in enumerate(metric):
@@ -612,11 +531,11 @@ class BaseModel(object):
                                 figsize=(10, 15), filename=None):
         ''' Plot a (Tree based) model's feature importance '''
 
-        if self.shortname not in self.tree:
+        if self.shortname not in tree_models:
             raise ValueError('This method only works for tree-based models!')
 
         if show is None:
-            show = len(self.X.columns)
+            show = self.X.shape[1]
 
         # Bagging has no direct feature importance implementation
         if self.shortname == 'Bag':
@@ -749,10 +668,8 @@ class BaseModel(object):
 
         '''
 
-        if self.shortname not in self.tree:
+        if self.shortname not in tree_models:
             raise ValueError('This method only works for tree-based models!')
-
-        sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaBoost', 'GBM']
 
         fig, ax = plt.subplots(figsize=figsize)
         if self.shortname in sklearn_trees:

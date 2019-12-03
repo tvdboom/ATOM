@@ -81,7 +81,7 @@ class GP(BaseModel):
 
         return False
 
-    def get_model(self):
+    def get_model(self, params={}):
         ''' Returns the sklearn model '''
 
         if self.task != 'regression':
@@ -112,7 +112,7 @@ class GNB(BaseModel):
 
         return False
 
-    def get_model(self):
+    def get_model(self, params={}):
         ''' Returns the sklearn model '''
 
         return GaussianNB()
@@ -143,7 +143,7 @@ class MNB(BaseModel):
                   'fit_prior': prior[int(x[0, 1])]}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return MultinomialNB(**params)
@@ -183,7 +183,7 @@ class BNB(BaseModel):
                   'fit_prior': prior[int(x[0, 1])]}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return BernoulliNB(**params)
@@ -223,7 +223,7 @@ class LinReg(BaseModel):
                   'l1_ratio': round(x[0, 2], 1)}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return ElasticNet(**params)
@@ -273,7 +273,7 @@ class LogReg(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return LogisticRegression(solver='saga',
@@ -328,7 +328,7 @@ class LDA(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return LinearDiscriminantAnalysis(**params)
@@ -372,7 +372,7 @@ class QDA(BaseModel):
         params = {'reg_param': round(x[0, 0], 1)}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         return QuadraticDiscriminantAnalysis(**params)
@@ -412,7 +412,7 @@ class KNN(BaseModel):
                   'weights': weights[int(x[0, 3])]}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -468,7 +468,7 @@ class Tree(BaseModel):
                   'min_samples_leaf': int(x[0, 3])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -520,7 +520,7 @@ class Bag(BaseModel):
                   'bootstrap': bootstrap[int(x[0, 2])]}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -576,7 +576,7 @@ class ET(BaseModel):
                   'min_samples_leaf': int(x[0, 5])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -640,7 +640,7 @@ class RF(BaseModel):
                   'min_samples_leaf': int(x[0, 5])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -654,7 +654,7 @@ class RF(BaseModel):
         # Dict should be in order of continuous and then discrete types
         return [{'name': 'n_estimators',
                  'type': 'discrete',
-                 'domain': range(2, 101)},
+                 'domain': range(2, 501)},
                 {'name': 'max_features',
                  'type': 'discrete',
                  'domain': np.linspace(0.3, 1, 8)},
@@ -674,7 +674,7 @@ class RF(BaseModel):
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        return np.array([[10, 1, 1, 0, 2, 1]])
+        return np.array([[100, 1, 1, 0, 2, 1]])
 
 
 class AdaB(BaseModel):
@@ -695,7 +695,7 @@ class AdaB(BaseModel):
                   'learning_rate': round(x[0, 1], 2)}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -745,7 +745,7 @@ class GBM(BaseModel):
                   'min_samples_leaf': int(x[0, 6])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -810,7 +810,7 @@ class XGB(BaseModel):
                   'colsample_bytree': round(x[0, 7], 1)}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the model with unpacked hyperparameters '''
 
         from xgboost import XGBClassifier, XGBRegressor
@@ -880,7 +880,7 @@ class LGB(BaseModel):
                   'num_leaves': int(x[0, 8])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the model with unpacked hyperparameters '''
 
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
@@ -950,7 +950,7 @@ class CatB(BaseModel):
                   'colsample_bylevel': round(x[0, 5], 1)}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the model with unpacked hyperparameters '''
 
         from catboost import CatBoostClassifier, CatBoostRegressor
@@ -1031,7 +1031,7 @@ class lSVM(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -1093,7 +1093,7 @@ class kSVM(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -1160,7 +1160,7 @@ class PA(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -1233,7 +1233,7 @@ class SGD(BaseModel):
 
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
@@ -1312,7 +1312,7 @@ class MLP(BaseModel):
                   'batch_size': int(x[0, 6])}
         return params
 
-    def get_model(self, params):
+    def get_model(self, params={}):
         ''' Returns the sklearn model with unpacked hyperparameters '''
 
         if self.task != 'regression':
