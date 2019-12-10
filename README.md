@@ -109,9 +109,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 		+ 2 to print average information
 		+ 3 to print maximum information
 	+ **random_state: int, optional (default=None)**  
-	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.  
-
-
+	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.<br><br>
 * **ATOMRegressor(X, Y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
@@ -140,25 +138,19 @@ Handle missing values according to the selected strategy. Also removes columns w
 	+ **max_frac: float, optional (default=0.5)**  
 	Maximum allowed fraction of rows with any missing values. If more, the column is removed.
 	+ **missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
-	List of values to consider as missing. None, np.nan, '', np.inf and -np.inf are always added to the list since they are incompatible with sklearn models.
-
-
+	List of values to consider as missing. None, np.nan, '', np.inf and -np.inf are always added to the list since they are incompatible with sklearn models.<br><br>
 * **encode(max_onehot=10, fraction_to_other=0)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
 	+ **max_onehot: int, optional (default=10)**  
 	Maximum number of unique values in a feature to perform one-hot-encoding.  
 	+ **fraction_to_other: float, optional (default=0)**  
-	Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.
-
-
+	Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.<br><br>
 * **outliers(max_sigma=3, include_target=False)**  
 Remove outliers from the training set.
 	+ **max_sigma: int or float, optional (default=3)**  
 	Remove rows containing any value with a maximum standard deviation (on the respective column) above max_sigma.
 	+ **include_target: bool, optional (default=False)**  
-	Wether to include the target column when searching for outliers.
-
-
+	Wether to include the target column when searching for outliers.<br><br>
 * **balance(oversample=None, undersample=None, neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks.
 	+ **oversample: float or string, optional (default=None)**  
@@ -178,9 +170,7 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'minority': resample only the minority class
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
-		- 'all': resample all classes
-
-
+		- 'all': resample all classes<br><br>
 * **feature_insertion(n_features=2, generations=20, population=500)**  
 Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. Implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
 	+ **n_features: int, optional (default=2)**  
@@ -188,9 +178,7 @@ Use a genetic algorithm to create new combinations of existing features and add 
 	+ **generations: int, optional (default=20)**  
 	Number of generations to evolve.
 	+ **population: int, optional (default=500)**  
-	Number of entities in each generation.
-
-
+	Number of entities in each generation.<br><br>
 * **feature_selection(strategy=None, solver=None, max_features=None, threshold=-np.inf, frac_variance=1., max_correlation=0.98)**  
 Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ **strategy: string, optional (default='univariate')**  
@@ -226,14 +214,9 @@ Select best features according to the selected strategy. Ties between features w
 	+ **frac_variance: float, optional (default=1)**  
 	Remove features with the same value in at least this fraction of the total. None to skip this step.
 	+ **max_correlation: float, optional (default=0.98)**  
-	Minimum value of the Pearson correlation cofficient to identify correlated features. None to skip this step.
-
-
+	Minimum value of the Pearson correlation cofficient to identify correlated features. None to skip this step.<br><br>
 * **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
-Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. After this process, you can choose to test the robustness of the model selecting bootstrapped samples of the training set on which to fit and test (again on the test set) the model, providing a distribution of the models' performance.
-
-| NOTE: The best score on the Bayesian Optimization algorithm can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained!  |
-| --- |
+Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to test the robustness of the model applying a bagging algorithm, providing a distribution of the models' performance.
 	+ **models: string or list of strings**  
 	List of models to fit on the data. If 'all', all available models are used. Use the predefined acronyms to select the models. Possible values are (case insensitive):    
 		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
@@ -284,23 +267,23 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- if 1, randomly split the training data into a train and validation set
 		- if >1, perform a k-fold cross validation on the training set
 	+ **bagging: int, optional (default=None)**  
-	Number of bootstrapped samples used for bagging. If None, no bagging is performed.
+	Number of bootstrapped samples used for bagging. If None, no bagging is performed. The algorithm is trained on the complete training set and validated on the test set.
 
 
 Class methods (utilities)
 ----------------------------- 
 * **stats()**  
-Print out a list of basic statistics on the dataset.
+Print out a list of basic statistics on the dataset.<br><br>
 * **profile(df='dataset', filename=None)**  
 Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved (as .html). None to not save anything.
+	Name of the file when saved (as .html). None to not save anything.<br><br>
 * **reset_attributes(truth='all')**  
 If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update test, etc...
 	+ **truth: string, optional (default='all')**  
-	Data attribute that has been changed (as string)
+	Data attribute that has been changed (as string)<br><br>
 * **boxplot(iteration=-1, figsize=None, filename=None)**  
 Make a boxplot of the bagging's results after fitting the class.
 	+ **iteration: int, optional (default=-1)**  
@@ -308,13 +291,13 @@ Make a boxplot of the bagging's results after fitting the class.
 	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjust to number of models.
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_correlation(figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_successive_halving(figsize=(10, 6), filename=None)**  
 Make a plot of the models' scores per iteration of the successive halving.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
@@ -355,7 +338,7 @@ Plot performance metrics against multiple threshold values. If None, the metric 
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
 Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target_class: int, optional (default=1)**
@@ -363,7 +346,7 @@ Plots the probability of every class in the target variable against the class se
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_feature_importance(show=20, figsize=(10, 6), filename=None)**  
 Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
@@ -371,13 +354,13 @@ Plots the feature importance scores. Only works with tree based algorithms (Tree
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(figsize=(10, 6), filename=None)**  
 Plots the ROC curve. Only for binary classification tasks.  
  	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
 Plot the confusion matrix for the model. Only for binary classification tasks.  
 	+ **normalize: bool, optional (default=True)**
@@ -385,7 +368,7 @@ Plot the confusion matrix for the model. Only for binary classification tasks.
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_tree(num_trees=0, max_depth=None, rotate=False, figsize=(10, 6), filename=None)**  
 Plot a single decision tree of the model. Only for tree-based algorithms. Dependency: [graphviz](https://graphviz.gitlab.io/download/).
 	+ **num_trees: int, otional (default=0 --> first tree)**  
@@ -397,7 +380,7 @@ Plot a single decision tree of the model. Only for tree-based algorithms. Depend
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.  
+	Name of the file when saved. None to not save anything.<br><br>
 * **save(filename=None)**  
 Save the best found model as a pickle file.
 	 + **filename: string, optional (default=None)**  
