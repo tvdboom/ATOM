@@ -187,6 +187,7 @@ Select best features according to the selected strategy. Ties between features w
 		- 'univariate': perform a univariate statistical test
 		- 'PCA': perform a principal component analysis
 		- 'SFM': select best features from an existing model
+		- 'RFE': recursive feature eliminator
 	+ **solver: string or callable (default=depend on strategy)**  
 	Solver or model to use for the feature selection strategy. See the sklearn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
 		- for 'univariate', choose from:
@@ -202,6 +203,7 @@ Select best features according to the selected strategy. Ties between features w
 			* 'arpack'
 			* 'randomized'
 		- for 'SFM': choose a base estimator from which the transformer is built. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
+		- for 'RFE': choose a supervised learning estimator. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
 	+ **max_features: int or float, optional (default=None)**  
 	Number of features to select.
 		- None: select all features
@@ -275,9 +277,11 @@ Class methods (utilities)
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
 * **profile(df='dataset', filename=None)**  
-Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
+Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/). The profile report is written in HTML5 and CSS3 and can be accessed via the `report` attribute. Note that this method can be very slow for large datasets.
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
+	+ **rows: int, optional (default=None)**  
+	Number of rows selected randomly from the dataset to perform the analysis on. None to select all rows.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved (as .html). None to not save anything.<br><br>
 * **reset_attributes(truth='all')**  
@@ -313,6 +317,7 @@ Class attributes
 * **train, test**: Train and test set.
 * **X_train, Y_train**: Training set features and target.
 * **X_test, Y_test**: Test set features and target.
+* **report**: Pandas profiling report (if the profile method was used) of the selected dataset.
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **genetic_algorithm**: Genetic algorithm instance (if feature_insertion was used), from gplearn [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
 * **genetic_features**: Dataframe containing the description of the newly generated genetic features and their scores.
@@ -320,6 +325,7 @@ Class attributes
 * **univariate**: Univariate feature selection class (if used), from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
 * **PCA**: Principal component analysis class (if used), from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
 * **SFM**: Select from model class (if used), from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
+* **RFE**: Recursive feature eliminator (if used), from sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
 
