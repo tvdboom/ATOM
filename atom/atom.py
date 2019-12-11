@@ -25,7 +25,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
-     chi2, SelectKBest, VarianceThreshold, SelectFromModel
+     chi2, SelectKBest, VarianceThreshold, SelectFromModel, RFE
     )
 from sklearn.model_selection import train_test_split
 
@@ -263,7 +263,7 @@ class ATOM(object):
 
         # << ============================================ >>
 
-        self.stats()  # Print out data stats
+        self.stats(print_only=False)  # Print out data stats
 
     def _split_dataset(self, dataset, percentage=100):
 
@@ -299,7 +299,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        truth --> variable with the correct values to start from.
+        truth --> variable with the correct values to start from
 
         '''
 
@@ -335,14 +335,24 @@ class ATOM(object):
         self.X_test = self.test.drop(self.target, axis=1)
         self.Y_test = self.test[self.target]
 
-    def stats(self):
-        ''' Print some statistics on the dataset '''
+    def stats(self, print_only=True):
 
-        prlog('\nData stats =====================>', self, 1)
+        '''
+        DESCRIPTION -----------------------------------
+
+        Print some information about the dataset.
+
+        PARAMETERS -------------------------------------
+
+        print_only --> prlog parameter to print only, not save to log
+
+        '''
+
+        prlog('\nData stats =====================>', self, 1, print_only)
         prlog('Number of features: {}\nNumber of instances: {}'
-              .format(self.X.shape[1], self.X.shape[0]), self, 1)
+              .format(self.X.shape[1], self.X.shape[0]), self, 1, print_only)
         prlog('Size of training set: {}\nSize of test set: {}'
-              .format(len(self.train), len(self.test)), self, 1)
+              .format(len(self.train), len(self.test)), self, 1, print_only)
 
         # Print count of target values
         if self.task != 'regression':
@@ -352,20 +362,51 @@ class ATOM(object):
                 len_classes += 3
             lx = max(len_classes, len(self.Y.name))
 
-            prlog('Instances per target class:', self, 2)
-            prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
+            prlog('Instances per target class:', self, 2, print_only)
+            prlog(f"{self.Y.name:{lx}} --> Count", self, 2, print_only)
 
             # Check if there was LabelEncoding for the target varaible or not
             for i in range(len(self._unique)):
                 if hasattr(self, 'target_mapping'):
                     prlog('{0}: {1:<{2}} --> {3}'
                           .format(self.target_mapping[self._unique[i]],
-                                  self._unique[i], lx - 3, counts[i]), self, 2)
+                                  self._unique[i], lx - 3, counts[i]),
+                          self, 2, print_only)
                 else:
                     prlog('{0:<{1}} --> {2}'
-                          .format(self._unique[i], lx, counts[i]), self, 2)
+                          .format(self._unique[i],
+                                  lx, counts[i]), self, 2, print_only)
 
-        prlog('', self, 1)  # Insert an empty row
+        prlog('', self, 1, print_only)  # Insert an empty row
+
+    def profile(self, df='dataset', rows=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Use pandas profiling on one of ATOM's data class attributes.
+
+        PARAMETERS -------------------------------------
+
+        df       --> name of the data class attribute to get the report from
+        rows     --> number of rows to process (randomly picked)
+        filename --> name of saved file
+
+        '''
+
+        try:
+            from pandas_profiling import ProfileReport
+        except ImportError:
+            raise ModuleNotFoundError('Install the pandas-profiling package ' +
+                                      'before using the profiling method.')
+
+        rows = getattr(self, df).shape[0] if rows is None else rows
+        self.report = ProfileReport(getattr(self, df).sample(rows))
+
+        if filename is not None:
+            if not filename.endswith('.html'):
+                filename = filename + '.html'
+            self.report.to_file(filename)
 
     @params_to_log
     def impute(self, strat_num='remove', strat_cat='remove', max_frac=0.5,
@@ -677,6 +718,116 @@ class ATOM(object):
         self.reset_attributes('train_test')
 
     @params_to_log
+    def feature_insertion(self, n_features=2, generations=20, population=500):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Use a genetic algorithm to create new combinations of existing
+        features and add them to the original dataset in order to capture
+        the non-linear relations between the original features. Implemented
+        using the gplearn package (https://gplearn.readthedocs.io/en/stable/
+        reference.html#symbolic-transformer).
+
+        PARAMETERS -------------------------------------
+
+        n_features  --> maximum number of newly generated features
+        generations --> the number of generations to evolve
+        population  --> The number of entities in each generation
+
+        '''
+
+        try:
+            from gplearn.genetic import SymbolicTransformer
+        except ImportError:
+            raise ModuleNotFoundError('Install the gplearn package before ' +
+                                      'using the feature_insertion method.')
+
+        # Check parameters
+        population = int(population) if population > 0 else 500
+        generations = int(generations) if generations > 0 else 20
+        if 0 < n_features < int(0.01 * population):
+            n_features = int(n_features)
+        else:
+            n_features = int(0.01 * population)
+
+        prlog('Running genetic algorithm...', self, 1)
+
+        function_set = ['add', 'sub', 'mul', 'div', 'sqrt', 'log', 'abs',
+                        'neg', 'inv', 'max', 'min', 'sin', 'cos', 'tan']
+
+        self.genetic_algorithm = \
+            SymbolicTransformer(generations=generations,
+                                population_size=population,
+                                hall_of_fame=int(0.1 * population),
+                                n_components=int(0.01 * population),
+                                init_depth=(1, 2),
+                                function_set=function_set,
+                                feature_names=self.X.columns,
+                                max_samples=1.0,
+                                verbose=0 if self.verbose < 3 else 1,
+                                n_jobs=self.n_jobs)
+
+        self.genetic_algorithm.fit(self.X_train, self.Y_train)
+        new_features = self.genetic_algorithm.transform(self.X)
+
+        # ix = indicces of all new features that are not in the original set
+        # descript = list of the operators applied to create the new features
+        # fitness = list of fitness scores of the new features
+        ix, descript, fitness = [], [], []
+        for i, program in enumerate(self.genetic_algorithm):
+            if str(program) not in self.X_train.columns:
+                ix.append(i)
+            descript.append(str(program))
+            fitness.append(program.fitness_)
+
+        # Remove all features that are identical to those in the dataset
+        new_features = new_features[:, ix]
+        descript = [descript[i] for i in range(len(descript)) if i in ix]
+        fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
+
+        # Indices of all non duplicate elements in list
+        ix = [ix for ix, v in enumerate(descript) if v not in descript[:ix]]
+
+        # Remove all duplicate elements
+        new_features = new_features[:, ix]
+        descript = [descript[i] for i in range(len(descript)) if i in ix]
+        fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
+
+        # Check if any new features remain in the loop
+        if len(descript) == 0:
+            prlog("WARNING! The genetic algorithm couldn't find any " +
+                  'improving non-linear features!', self, 1)
+            return None
+
+        # Get indices of the best features
+        if len(descript) > n_features:
+            ix = np.argpartition(fitness, -n_features)[-n_features:]
+        else:
+            ix = range(len(descript))
+
+        # Select best features only
+        new_features = new_features[:, ix]
+        descript = [descript[i] for i in range(len(descript)) if i in ix]
+        fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
+        names = ['Feature ' + str(1 + i + len(self.X_train.columns))
+                 for i in range(new_features.shape[1])]
+
+        # Create dataframe attribute
+        data = {'Name': names, 'Description': descript, 'Fitness': fitness}
+        self.genetic_features = pd.DataFrame(data)
+        prlog('-------------------------------------------------------------' +
+              '-----------------------------', self, 2)
+
+        for i in descript:
+            prlog(' --> New feature ' + i + ' added to the dataset.', self, 1)
+
+        self.X = pd.DataFrame(np.hstack((self.X, new_features)),
+                              columns=self.X.columns.to_list() + names)
+
+        self.reset_attributes('X')
+
+    @params_to_log
     def feature_selection(self,
                           strategy=None,
                           solver=None,
@@ -701,6 +852,7 @@ class ATOM(object):
                              'univariate': perform a univariate F-test
                              'PCA': perform principal component analysis
                              'SFM': select best features from model
+                             'RFE': recursive feature eliminator
         solver       --> solver or model class for the strategy
         max_features --> if < 1: fraction of features to select
                          if >= 1: number of features to select
@@ -880,6 +1032,22 @@ class ATOM(object):
             for n, column in enumerate(self.X):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed by the ' +
+                          'selected model.', self, 2)
+                    self.dataset.drop(column, axis=1, inplace=True)
+            self.reset_attributes('dataset')
+
+        elif strategy.lower() == 'rfe':
+            # Recursive feature eliminator
+            if solver is None:
+                raise ValueError('Select a model for the solver!')
+
+            self.RFE = RFE(estimator=solver, n_features_to_select=max_features)
+            self.RFE.fit(self.X, self.Y)
+            mask = self.RFE.support_
+
+            for n, column in enumerate(self.X):
+                if not mask[n]:
+                    prlog(f' --> Feature {column} was removed by the ' +
                           'recursive feature eliminator.', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
             self.reset_attributes('dataset')
@@ -988,7 +1156,7 @@ class ATOM(object):
 
                 # Get best score (min or max dependent on metric)
                 if self.bagging is None:
-                    x = [getattr(self, m).score for m in self.models]
+                    x = [getattr(self, m).score_test for m in self.models]
                 else:
                     x = []
                     for m in self.models:
@@ -1011,7 +1179,8 @@ class ATOM(object):
 
             # Create dataframe with final results
             results = pd.DataFrame(columns=['model',
-                                            self.metric.__name__,
+                                            'score_train',
+                                            'score_test',
                                             'time'])
             if self.bagging is not None:
                 pd.concat([results, pd.DataFrame(columns=['bagging_mean',
@@ -1021,29 +1190,32 @@ class ATOM(object):
             for m in self.models:
                 name = getattr(self, m).name
                 shortname = getattr(self, m).shortname
-                score = getattr(self, m).score
+                score_train = getattr(self, m).score_train
+                score_test = getattr(self, m).score_test
                 time_bo = getattr(self, m).time_bo
 
                 if self.bagging is None:
                     results = results.append({'model': shortname,
-                                              self.metric.__name__: score,
+                                              'score_train': score_train,
+                                              'score_test': score_test,
                                               'time': time_bo},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if score == max_ and len(self.models) > 1:
+                    if score_test == max_ and len(self.models) > 1:
                         prlog(u'{0:{1}s} --> {2:.3f} !!'
-                              .format(name, lenx, score), self)
+                              .format(name, lenx, score_test), self)
                     else:
                         prlog(u'{0:{1}s} --> {2:.3f}'
-                              .format(name, lenx, score), self)
+                              .format(name, lenx, score_test), self)
 
                 else:
                     bs_mean = getattr(self, m).bagging_scores.mean()
                     bs_std = getattr(self, m).bagging_scores.std()
                     time_bag = getattr(self, m).time_bag
                     results = results.append({'model': shortname,
-                                              self.metric.__name__: score,
+                                              'score_train': score_train,
+                                              'score_test': score_test,
                                               'time': time_bo,
                                               'bagging_mean': bs_mean,
                                               'bagging_std': bs_std,
@@ -1196,14 +1368,14 @@ class ATOM(object):
                 prlog('Model{} in pipeline: {}'
                       .format('s' if len(self.models) > 1 else '',
                               ', '.join(self.models)), self)
-                self.stats()
+                self.stats(print_only=False)
 
                 # Run iteration
                 results = run_iteration(self)
                 self.results.append(results)
 
                 # Select best models for halving
-                col = 'score' if self.bagging is None else 'bagging_mean'
+                col = 'score_test' if self.bagging is None else 'bagging_mean'
                 lx = results.nlargest(n=int(len(self.models)/2),
                                       columns=col,
                                       keep='all')

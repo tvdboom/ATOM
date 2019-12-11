@@ -80,7 +80,7 @@ def timer(f):
     return wrapper
 
 
-def prlog(string, class_, level=0, time=False):
+def prlog(string, class_, level=0, print_only=False, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -89,17 +89,18 @@ def prlog(string, class_, level=0, time=False):
 
     PARAMETERS -------------------------------------
 
-    class_ --> class of the element
-    string --> string to output
-    level  --> minimum verbosity level to print
-    time   --> Wether to add the timestamp to the log
+    string     --> string to output
+    class_     --> class of the element
+    level      --> minimum verbosity level to print
+    print_only --> only print but not save to log (for stats method)
+    time       --> wether to add the timestamp to the log
 
     '''
 
-    if class_.verbose > level:
+    if class_.verbose > level or print_only:
         print(string)
 
-    if class_.log is not None:
+    if class_.log is not None and not print_only:
         with open(class_.log, 'a+') as file:
             if time:
                 # Datetime object containing current date and time
@@ -241,7 +242,7 @@ class BaseModel(object):
 
             params = self.get_params(x)
             self.BO['params'].append(params)
-            prlog(f'Parameters --> {params}', self, 2, True)
+            prlog(f'Parameters --> {params}', self, 2, time=True)
 
             algorithm = self.get_model(params)
 
@@ -254,10 +255,10 @@ class BaseModel(object):
                                      shuffle=True)
 
                 algorithm.fit(X_subtrain, Y_subtrain)
-                self.predict = algorithm.predict(X_validation)
+                self.predict_test = algorithm.predict(X_validation)
 
                 # Calculate metric on the validation set
-                output = self.metric(Y_validation, self.predict)
+                output = self.metric(Y_validation, self.predict_test)
 
             else:  # Use cross validation to get the output of BO
 
@@ -367,11 +368,13 @@ class BaseModel(object):
         # Fit the selected model on the complete training set
         self.best_model_fit = self.best_model.fit(self.X_train, self.Y_train)
 
-        # Save best predictions and probabilities on the test set
-        self.predict = self.best_model_fit.predict(self.X_test)
+        # Save predictions
+        self.predict_train = self.best_model_fit.predict(self.X_train)
+        self.predict_test = self.best_model_fit.predict(self.X_test)
 
-        # Get metric score on test set
-        self.score = self.metric(self.Y_test, self.predict)
+        # Get metric scores
+        self.score_train = self.metric(self.Y_train, self.predict_train)
+        self.score_test = self.metric(self.Y_test, self.predict_test)
 
         if self.shortname in not_predict_proba and self.task != 'regression':
             # Models without predict_proba() method need probs with ccv
@@ -383,33 +386,31 @@ class BaseModel(object):
 
         # Calculate some standard metrics
         if self.task == 'binary classification':
-            cm = confusion_matrix(self.Y_test, self.predict)
+            cm = confusion_matrix(self.Y_test, self.predict_test)
             self.tn, self.fp, self.fn, self.tp = cm.ravel()
-            self.auc = roc_auc_score(self.Y_test, self.predict)
-            self.mcc = matthews_corrcoef(self.Y_test, self.predict)
-            self.accuracy = accuracy_score(self.Y_test, self.predict)
+            self.auc = roc_auc_score(self.Y_test, self.predict_test)
+            self.mcc = matthews_corrcoef(self.Y_test, self.predict_test)
+            self.accuracy = accuracy_score(self.Y_test, self.predict_test)
             self.logloss = log_loss(self.Y_test, self.predict_proba[:, 1])
             avg = 'binary'
         else:
             avg = 'weighted'
 
         if self.task != 'regression':
-            self.precision = precision_score(self.Y_test,
-                                             self.predict,
-                                             average=avg)
-            self.jaccard = jaccard_score(self.Y_test,
-                                         self.predict,
-                                         average=avg)
-            self.recall = recall_score(self.Y_test, self.predict, average=avg)
-            self.f1 = f1_score(self.Y_test, self.predict, average=avg)
+            args = {'y_true': self.Y_test,
+                    'y_pred': self.predict_test,
+                    'average': avg}
+            self.precision = precision_score(**args)
+            self.jaccard = jaccard_score(**args)
+            self.recall = recall_score(**args)
+            self.f1 = f1_score(**args)
+            self.hamming = hamming_loss(self.Y_test, self.predict_test)
 
-            self.hamming = hamming_loss(self.Y_test, self.predict)
-
-        self.max_error = max_error(self.Y_test, self.predict)
-        self.mae = mean_absolute_error(self.Y_test, self.predict)
-        self.mse = mean_squared_error(self.Y_test, self.predict)
-        self.msle = mean_squared_log_error(self.Y_test, self.predict)
-        self.r2 = r2_score(self.Y_test, self.predict)
+        self.max_error = max_error(self.Y_test, self.predict_test)
+        self.mae = mean_absolute_error(self.Y_test, self.predict_test)
+        self.mse = mean_squared_error(self.Y_test, self.predict_test)
+        self.msle = mean_squared_log_error(self.Y_test, self.predict_test)
+        self.r2 = r2_score(self.Y_test, self.predict_test)
 
         # Print stats
         if self.shortname in no_bayesian_optimization and max_iter > 0:
@@ -420,7 +421,8 @@ class BaseModel(object):
         if self.shortname not in no_bayesian_optimization and max_iter > 0:
             prlog(f'Best hyperparameters: {self.best_params}', self, 1)
             prlog(f'Best score on the BO: {bo_best_score:.4f}', self, 1)
-        prlog(f'Score on the test set: {self.score:.4f}', self, 1)
+        prlog(f'Score on the training set: {self.score_train:.4f}', self, 1)
+        prlog(f'Score on the test set: {self.score_test:.4f}', self, 1)
 
     @timer
     def bagging(self, n_samples=3):
@@ -649,7 +651,7 @@ class BaseModel(object):
             title = 'Confusion matrix'
 
         # Compute confusion matrix
-        cm = confusion_matrix(self.Y_test, self.predict)
+        cm = confusion_matrix(self.Y_test, self.predict_test)
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
@@ -744,4 +746,4 @@ class BaseModel(object):
             filename = 'ATOM_' + self.shortname
         filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         pickle.dump(self.best_model_fit, open(filename, 'wb'))
-        prlog('File saved successfully!', self, 1)
+        print('Model saved successfully!')
