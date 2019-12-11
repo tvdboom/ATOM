@@ -118,7 +118,7 @@ Class methods
 ----------------------------- 
 ATOM contains multiple methods for standard data cleaning and feature selection processes. Calling on one of them will automatically apply the method on the dataset in the class and update the class' attributes accordingly.
 
-| TIP: Use the `profile` method to examine the data and help you determine suitable parameters for the methods |
+| TIP: Use the `report` method to examine the data and help you determine suitable parameters for the methods |
 | --- |
 
 * **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
@@ -172,7 +172,7 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes<br><br>
 * **feature_insertion(n_features=2, generations=20, population=500)**  
-Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. Implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
+Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. This method is implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
 	+ **n_features: int, optional (default=2)**  
 	Maximum number of newly generated features (no more than 1% of the population).
 	+ **generations: int, optional (default=20)**  
@@ -216,7 +216,7 @@ Select best features according to the selected strategy. Ties between features w
 	+ **frac_variance: float, optional (default=1)**  
 	Remove features with the same value in at least this fraction of the total. None to skip this step.
 	+ **max_correlation: float, optional (default=0.98)**  
-	Minimum value of the Pearson correlation cofficient to identify correlated features. None to skip this step.<br><br>
+	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
 * **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to test the robustness of the model applying a bagging algorithm, providing a distribution of the models' performance.
 	+ **models: string or list of strings**  
@@ -276,8 +276,8 @@ Class methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
-* **profile(df='dataset', filename=None)**  
-Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/). The profile report is written in HTML5 and CSS3 and can be accessed via the `report` attribute. Note that this method can be very slow for large datasets.
+* **report(df='dataset', filename=None)**  
+Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/). The profile analysis is written in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets.
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
 	+ **rows: int, optional (default=None)**  
@@ -317,8 +317,8 @@ Class attributes
 * **train, test**: Train and test set.
 * **X_train, Y_train**: Training set features and target.
 * **X_test, Y_test**: Test set features and target.
-* **report**: Pandas profiling report (if the profile method was used) of the selected dataset.
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
+* **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_algorithm**: Genetic algorithm instance (if feature_insertion was used), from gplearn [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
 * **genetic_features**: Dataframe containing the description of the newly generated genetic features and their scores.
 * **collinear**: Dataframe of the collinear features and their correlation values (only if feature_selection was used).
