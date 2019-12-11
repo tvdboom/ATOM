@@ -197,8 +197,8 @@ class ATOM(object):
 
         prlog('Initial data cleaning...', self, 1)
 
-        # Drop features with incorrect column type
         for column in self.dataset:
+            # Drop features with incorrect column type
             dtype = str(self.dataset[column].dtype)
             if dtype in ('datetime64', 'timedelta[ns]', 'category'):
                 prlog(' --> Dropping feature {} due to unhashable type: {}.'
@@ -210,7 +210,6 @@ class ATOM(object):
                 self.dataset[column].astype(str).str.strip()
 
                 # Drop features where all values are unique
-                # Attribute for later print of the unique values of target
                 unique = self.dataset[column].unique()
                 if len(unique) == len(self.dataset):
                     prlog(f' --> Dropping feature {column} due to maximum' +
@@ -356,30 +355,35 @@ class ATOM(object):
 
         # Print count of target values
         if self.task != 'regression':
-            _, counts = np.unique(self.Y, return_counts=True)
-            len_classes = max([len(str(i)) for i in self._unique])
-            if hasattr(self, 'target_mapping'):
-                len_classes += 3
-            lx = max(len_classes, len(self.Y.name))
-
-            prlog('Instances per target class:', self, 2, print_only)
-            prlog(f"{self.Y.name:{lx}} --> Count", self, 2, print_only)
-
-            # Check if there was LabelEncoding for the target varaible or not
-            for i in range(len(self._unique)):
+            try:
+                _, counts = np.unique(self.Y, return_counts=True)
+                len_classes = max([len(str(i)) for i in self._unique])
                 if hasattr(self, 'target_mapping'):
-                    prlog('{0}: {1:<{2}} --> {3}'
-                          .format(self.target_mapping[self._unique[i]],
-                                  self._unique[i], lx - 3, counts[i]),
-                          self, 2, print_only)
-                else:
-                    prlog('{0:<{1}} --> {2}'
-                          .format(self._unique[i],
-                                  lx, counts[i]), self, 2, print_only)
+                    len_classes += 3
+                lx = max(len_classes, len(self.Y.name))
+
+                prlog('Instances per target class:', self, 2, print_only)
+                prlog(f"{self.Y.name:{lx}} --> Count", self, 2, print_only)
+
+                # Check wether there is LabelEncoding for the target varaible
+                for i in range(len(self._unique)):
+                    if hasattr(self, 'target_mapping'):
+                        prlog('{0}: {1:<{2}} --> {3}'
+                              .format(self.target_mapping[self._unique[i]],
+                                      self._unique[i], lx - 3, counts[i]),
+                              self, 2, print_only)
+                    else:
+                        prlog('{0:<{1}} --> {2}'
+                              .format(self._unique[i],
+                                      lx, counts[i]), self, 2, print_only)
+
+            except Exception:
+                raise ValueError('Are you sure the data corresponds to a ' +
+                                 'classification task? Try ATOMRegressor...')
 
         prlog('', self, 1, print_only)  # Insert an empty row
 
-    def profile(self, df='dataset', rows=None, filename=None):
+    def report(self, df='dataset', rows=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -400,8 +404,15 @@ class ATOM(object):
             raise ModuleNotFoundError('Install the pandas-profiling package ' +
                                       'before using the profiling method.')
 
+        prlog('Creating profile report...', self, 1)
+
         rows = getattr(self, df).shape[0] if rows is None else rows
         self.report = ProfileReport(getattr(self, df).sample(rows))
+        try:  # Render if possible
+            from IPython.display import display
+            display(self.report)
+        except Exception:
+            pass
 
         if filename is not None:
             if not filename.endswith('.html'):
