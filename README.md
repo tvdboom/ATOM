@@ -21,8 +21,8 @@ Possible steps taken by the ATOM pipeline:
 1. Data Cleaning
 	* Handle missing values
 	* Encode categorical features
-	* Remove outliers
 	* Balance the dataset
+	* Remove outliers
 2. Perform feature selection
 	* Remove features with too high collinearity
 	* Remove features with too low variance
@@ -154,23 +154,23 @@ Remove outliers from the training set.
 * **balance(oversample=None, undersample=None, neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks.
 	+ **oversample: float or string, optional (default=None)**  
-	Oversampling strategy using [SMOTE](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.SMOTE.html). Choose from:
+	Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html#imblearn.over_sampling.ADASYN). Choose from:
 		- None: do not perform oversampling
 		- float: fraction minority/majority (only for binary classification)
 		- 'minority': resample only the minority class
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes
-	+ **neighbors: int, optional (default=5)**  
-	Number of nearest neighbors used for SMOTE.
 	+ **undersample: float or string, optional (default=None)**  
-	Undersampling strategy using [RandomUnderSampler](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.RandomUnderSampler.html#imblearn.under_sampling.RandomUnderSampler). Choose from:
+	Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html) methods. Choose from:
 		- None: do not perform undersampling
 		- float: fraction majority/minority (only for binary classification)
-		- 'minority': resample only the minority class
+		- 'majority': resample only the majority class
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes<br><br>
+	+ **n_neighbors: int, optional (default=5)**  
+	Number of nearest neighbors used for any of the algorithms.
 * **feature_insertion(n_features=2, generations=20, population=500)**  
 Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. This method is implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
 	+ **n_features: int, optional (default=2)**  
