@@ -401,8 +401,9 @@ class ATOM(object):
         try:
             from pandas_profiling import ProfileReport
         except ImportError:
-            raise ModuleNotFoundError('Install the pandas-profiling package ' +
-                                      'before using the profiling method.')
+            raise ModuleNotFoundError('Failed to import the pandas-profiling' +
+                                      ' package. Install it before using the' +
+                                      ' report method.')
 
         prlog('Creating profile report...', self, 1)
 
@@ -660,16 +661,18 @@ class ATOM(object):
         self.reset_attributes('train_test')
 
     @params_to_log
-    def balance(self, oversample=None, neighbors=5, undersample=None):
+    def balance(self, oversample=None, undersample=None, n_neighbors=5):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Balance the number of instances per target class.
+        Balance the number of instances per target class using oversampling
+        (using a Adaptive Synthetic sampling approach) or undersampling
+        (using NearMiss methods).
 
         PARAMETERS -------------------------------------
 
-        oversample  --> oversampling strategy using SMOTE. Choose from:
+        oversample  --> oversampling strategy using ADASYN. Choose from:
                             None: don't oversample
                             float: fraction minority/majority (only for binary)
                             'minority': resample only the minority class
@@ -677,28 +680,27 @@ class ATOM(object):
                             'not majority': resample all but majority class
                             'all': resample all classes
 
-        neighbors   --> number of nearest neighbors for SMOTE
-        undersample --> undersampling strategy using RandomUndersampler.
-                        Choose from:
+        undersample --> undersampling strategy using NearMiss. Choose from:
                             None: don't undersample
                             float: fraction majority/minority (only for binary)
-                            'minority': resample only the minority class
+                            'majority': resample only the majority class
                             'not minority': resample all but minority class
                             'not majority': resample all but majority class
                             'all': resample all classes
+        n_neighbors   --> number of nearest neighbors for both algorithms
 
         '''
 
         # Check parameters
-        neighbors = int(neighbors) if neighbors > 0 else 5
+        n_neighbors = int(n_neighbors) if n_neighbors > 0 else 5
 
         try:
-            from imblearn.over_sampling import SMOTE
-            from imblearn.under_sampling import RandomUnderSampler
+            from imblearn.over_sampling import ADASYN
+            from imblearn.under_sampling import NearMiss
         except ImportError:
-            prlog("Unable to import imblearn. Skipping balancing the data...",
-                  self)
-            return None
+            raise ModuleNotFoundError('Failed to import the imbalanced-learn' +
+                                      ' package. Install it before using the' +
+                                      ' balance method.')
 
         columns_x = self.X_train.columns  # Save name columns for later
         length = len(self.X_train)
@@ -706,20 +708,22 @@ class ATOM(object):
         # Oversample the minority class with SMOTE
         if oversample is not None:
             prlog('Performing oversampling...', self, 1)
-            smote = SMOTE(sampling_strategy=oversample,
-                          k_neighbors=neighbors,
-                          n_jobs=self.n_jobs)
+            adasyn = ADASYN(sampling_strategy=oversample,
+                            n_neighbors=n_neighbors,
+                            n_jobs=self.n_jobs)
             self.X_train, self.Y_train = \
-                smote.fit_resample(self.X_train, self.Y_train)
+                adasyn.fit_resample(self.X_train, self.Y_train)
             diff = len(self.X_train) - length  # Difference in length
             prlog(f' --> Adding {diff} rows to minority class.', self, 2)
 
         # Apply undersampling of majority class
         if undersample is not None:
             prlog('Performing undersampling...', self, 1)
-            RUS = RandomUnderSampler(sampling_strategy=undersample)
-            self.X_train, self.Y_train = RUS.fit_resample(self.X_train,
-                                                          self.Y_train)
+            NM = NearMiss(sampling_strategy=undersample,
+                          n_neighbors=n_neighbors,
+                          n_jobs=self.n_jobs)
+            self.X_train, self.Y_train = NM.fit_resample(self.X_train,
+                                                         self.Y_train)
             diff = length - len(self.X_train)  # Difference in length
             prlog(f' --> Removing {diff} rows from majority class.', self, 2)
 
@@ -751,8 +755,9 @@ class ATOM(object):
         try:
             from gplearn.genetic import SymbolicTransformer
         except ImportError:
-            raise ModuleNotFoundError('Install the gplearn package before ' +
-                                      'using the feature_insertion method.')
+            raise ModuleNotFoundError('Failed to import the gplearn' +
+                                      ' package. Install it before using the' +
+                                      ' feature_insertion method.')
 
         # Check parameters
         population = int(population) if population > 0 else 500
