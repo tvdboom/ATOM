@@ -168,9 +168,9 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'majority': resample only the majority class
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
-		- 'all': resample all classes<br><br>
+		- 'all': resample all classes
 	+ **n_neighbors: int, optional (default=5)**  
-	Number of nearest neighbors used for any of the algorithms.
+	Number of nearest neighbors used for any of the algorithms.<br><br>
 * **feature_insertion(n_features=2, generations=20, population=500)**  
 Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. This method is implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
 	+ **n_features: int, optional (default=2)**  
