@@ -6,7 +6,7 @@
 Author: tvdboom  
 Email: m.524687@gmail.com
 
-[![Python 3.6|3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![Python 3.6|3.7](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue)](https://www.python.org/downloads/release/python-370/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
   
@@ -196,7 +196,7 @@ Select best features according to the selected strategy. Ties between features w
 			* 'mutual_info_classif'
 			* 'mutual_info_regression'
 			* 'chi2'
-			* Any function taking two arrays X and y, and returning a pair of arrays (scores, pvalues). See the sklearn [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection).
+			* Any function taking two arrays (X, y), and returning arrays (scores, pvalues). See the [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection).
 		- for 'PCA', choose from:
 			* 'auto' (default)
 			* 'full'
@@ -414,11 +414,11 @@ Subclass attributes (metrics)
 -----------------------------  
 Some of the most common metrics are saved as attributes of the model subclass, e.g. `atom.rf.recall`. They are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. Note that for classification tasks, the regression metrics are computed directly from the prediction, not the predicted probability! The available metrics are:  
 * For binary classification tasks only:  
-	+ **tn** for the true negatives  
-	+ **fp** for the false positives  
-	+ **fn** for the false negatives  
-	+ **tp** for the true positives  
-	+ **accuracy**  
+	+ **tn** for the number of true negatives  
+	+ **fp** for the number of false positives  
+	+ **fn** for the number of false negatives  
+	+ **tp** for the number of true positives  
+	+ **accuracy**
 	+ **auc** for the area under the ROC curve  
 	+ **mcc** for the matthews correlation coefficient  
 	+ **logloss** for the binary cross-entropy loss  
@@ -440,7 +440,7 @@ Dependencies
 -----------------------------
 * **[numpy](https://numpy.org/)** (>=1.17.2)
 * **[pandas](https://pandas.pydata.org/)** (>=0.25.1)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.21.3)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.22)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[gpyopt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)
 * **[matplotlib](https://matplotlib.org/)** (>=3.1.0)
