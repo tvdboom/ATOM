@@ -53,7 +53,7 @@ sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM']
 no_bayesian_optimization = ['GNB', 'GP']
 
 # List of models with no (or sometimes no) predict_proba method
-not_predict_proba = ['LinReg', 'lSVM', 'kSVM', 'PA', 'SGD']
+not_predict_proba = ['LinReg', 'BayReg', 'lSVM', 'kSVM', 'PA', 'SGD']
 
 
 # << ============ Functions ============ >>
