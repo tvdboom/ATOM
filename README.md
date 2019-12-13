@@ -226,6 +226,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'BNB' for Bernoulli Naïve Bayes  
 		- 'GP' for Gaussian Process (no hyperparameter tuning)
 		- 'LinReg' for Linear Regression (OLS, ridge, lasso and elasticnet)  
+		- 'BayReg' for Bayesian Linear Regression (with ridge regularization)
 		- 'LogReg' for Logistic Regression  
 		- 'LDA' for Linear Discriminant Analysis  
 		- 'QDA' for Quadratic Discriminant Analysis  
