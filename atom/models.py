@@ -262,12 +262,14 @@ class LogReg(BaseModel):
         ''' Returns the hyperparameters as a dictionary '''
 
         regularization = ['l1', 'l2', 'elasticnet', 'none']
+        class_weight = [None, 'balanced']
         penalty = regularization[int(x[0, 2])]
         params = {'max_iter': int(x[0, 0]),
-                  'penalty': penalty}
+                  'penalty': penalty,
+                  'class_weight': class_weight[int(x[0, 4])]}
 
         if penalty != 'none':
-            params['C'] = float(round(x[0, 1], 1))
+            params['C'] = float(round(x[0, 1], 2))
         if penalty == 'elasticnet':  # Add extra parameter: l1_ratio
             params['l1_ratio'] = float(round(x[0, 3], 1))
 
@@ -290,18 +292,21 @@ class LogReg(BaseModel):
                  'domain': range(100, 501)},
                 {'name': 'C',
                  'type': 'discrete',
-                 'domain': np.linspace(0.1, 5, 50)},
+                 'domain': np.linspace(0.01, 1000, 10)},
                 {'name': 'penalty',
                  'type': 'discrete',
                  'domain': range(4)},
                 {'name': 'l1_ratio',
                  'type': 'discrete',
-                 'domain': np.linspace(0.1, 0.9, 9)}]
+                 'domain': np.linspace(0.1, 0.9, 9)},
+                {'name': 'class_weight',
+                 'type': 'discrete',
+                 'domain': range(2)}]
 
     def get_init_values(self):
         ''' Returns initial values for the BO trials '''
 
-        return np.array([[250, 1.0, 1, 0.5]])
+        return np.array([[250, 1.0, 1, 0.5, 0]])
 
 
 class LDA(BaseModel):

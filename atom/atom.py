@@ -21,7 +21,7 @@ from .basemodel import prlog
 
 # Sklearn
 from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.impute import SimpleImputer
+from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -470,7 +470,6 @@ class ATOM(object):
         self.test.replace(missing, np.NaN, inplace=True)
 
         # Loop pver all columns to apply strategy dependent on type
-        strats = ['remove', 'mean', 'median', 'most_frequent']
         for col in self.train:
             series = self.train[col]
 
@@ -486,13 +485,13 @@ class ATOM(object):
 
             # Column is numerical and contains missing values
             if series.dtype.kind in 'ifu' and nans > 0:
-                if strat_num not in strats:
+                if not isinstance(strat_num, str):
                     try:
                         strat_num = float(strat_num)
                     except ValueError:
                         raise ValueError('Invalid value for strat_num!')
 
-                    prlog(f' --> Imputing {nans} values with ' +
+                    prlog(f' --> Imputing {nans} missing values with number ' +
                           str(strat_num) + f' in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_num)
@@ -504,19 +503,25 @@ class ATOM(object):
                     prlog(f' --> Removing {nans} rows due to missing ' +
                           f'values in feature {col}.', self, 2)
 
+                elif strat_num.lower() == 'knn':
+                    prlog(f' --> Imputing {nans} missing values using the ' +
+                          f'KNN imputer in feature {col}.', self, 2)
+                    imp = KNNImputer()
+                    fit_imputer(imp)
+
                 else:
-                    prlog(f' --> Imputing {nans} values with ' +
+                    prlog(f' --> Imputing {nans} missing values with ' +
                           strat_num.lower() + f' in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy=strat_num.lower())
                     fit_imputer(imp)
 
             # Column is categorical and contains missing values
             elif nans > 0:
-                if strat_cat not in ['remove', 'most_frequent']:
+                if strat_cat.lower() not in ['remove', 'most_frequent']:
                     if not isinstance(strat_cat, str):
                         raise ValueError('Invalid value for strat_cat!')
 
-                    prlog(f' --> Imputing {nans} values with ' +
+                    prlog(f' --> Imputing {nans} missing values with ' +
                           strat_cat.lower() + f' in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_cat)
@@ -529,8 +534,8 @@ class ATOM(object):
                           f'values in feature {col}.', self, 2)
 
                 else:
-                    prlog(f' --> Imputing {nans} values with ' +
-                          strat_cat + f' in feature {col}', self, 2)
+                    prlog(f' --> Imputing {nans} missing values with the mo' +
+                          f'st frequent occurrence in feature {col}', self, 2)
                     imp = SimpleImputer(strategy=strat_cat)
                     fit_imputer(imp)
 
