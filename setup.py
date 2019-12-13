@@ -32,7 +32,7 @@ setuptools.setup(
       install_requires=[
           'numpy>=1.17.2',
           'pandas>=0.25.1',
-          'scikit-learn>=0.21.3',
+          'scikit-learn>=0.22',
           'tqdm>=4.35.0',
           'gpyopt>=1.2.5',
           'matplotlib>=3.1.0',
