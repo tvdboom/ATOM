@@ -307,7 +307,8 @@ Make a plot of the models' scores per iteration of the successive halving.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.
+	Name of the file when saved. None to not save anything.<br><br>
+* **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics see the [subclass attributes (metrics)](https://github.com/tvdboom/ATOM#subclass-attributes-metrics).**
 
 
 Class attributes  
@@ -418,22 +419,22 @@ Some of the most common metrics are saved as attributes of the model subclass, e
 	+ **fp** for the number of false positives  
 	+ **fn** for the number of false negatives  
 	+ **tp** for the number of true positives  
-	+ **accuracy**
-	+ **auc** for the area under the ROC curve  
-	+ **mcc** for the matthews correlation coefficient  
-	+ **logloss** for the binary cross-entropy loss  
+	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html#sklearn.metrics.accuracy_score)
+	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html#sklearn.metrics.roc_auc_score)  
+	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html#sklearn.metrics.matthews_corrcoef)  
+	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html#sklearn.metrics.log_loss)  
 * For classification tasks only:  
-	+ **precision**  
-	+ **recall**  
-	+ **f1**  
-	+ **jaccard** for the Jaccard similarity coefficient score  
-	+ **hamming** for the average Hamming loss  
+	+ **precision** for the [precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html#sklearn.metrics.precision_score) 
+	+ **recall** for the [recall_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html#sklearn.metrics.recall_score) 
+	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html#sklearn.metrics.f1_score) 
+	+ **jaccard** for the [jaccard_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard_score.html#sklearn.metrics.jaccard_score)
+	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html#sklearn.metrics.hamming_loss)  
 * For all tasks:  
-	+ **max_error** for the maximum residual error  
-	+ **mae** for the mean absolute error  
-	+ **mse** for the mean squared error  
-	+ **msle** for the mean squared logarithmic error  
-	+ **r2**
+	+ **max_error** for the [max_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.max_error.html#sklearn.metrics.max_error)
+	+ **mae** for the [mean_absolute_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html#sklearn.metrics.mean_absolute_error)  
+	+ **mse** for the [mean_squared_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html#sklearn.metrics.mean_squared_error)  
+	+ **msle** for the [mean_squared_log_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html#sklearn.metrics.mean_squared_log_error)  
+	+ **r2** for the [r2_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html#sklearn.metrics.r2_score)
 
 
 Dependencies
