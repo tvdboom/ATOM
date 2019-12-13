@@ -41,7 +41,7 @@ sns.set(style='darkgrid', palette="GnBu_d")
 # << ============ Global variables ============ >>
 
 # List of all the available models
-model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
+model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'BayReg', 'LogReg', 'LDA',
               'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
               'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
@@ -56,11 +56,7 @@ scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
 
 # List of models that only work for regression/classification tasks
 only_classification = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
-only_regression = ['LinReg']
-
-# Build-in metrics for classification and regression
-class_metrics = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC', 'Jaccard']
-reg_metrics = ['R2', 'max_error', 'MAE', 'MSE', 'MSLE']
+only_regression = ['LinReg', 'BayReg']
 
 
 # << ============ Functions ============ >>
@@ -157,6 +153,7 @@ class ATOM(object):
         # << ============ Parameters tests ============ >>
 
         # Set parameters to default if input is invalid
+        self._isfit = False  # Model has not been fitted yet
         self.percentage = percentage if 0 < percentage < 100 else 100
         self.test_size = test_size if 0 < test_size < 1 else 0.3
         self.log = log if log is None or log.endswith('.txt') else log + '.txt'
@@ -262,7 +259,7 @@ class ATOM(object):
 
         # << ============================================ >>
 
-        self.stats(print_only=False)  # Print out data stats
+        self.stats()  # Print out data stats
 
     def _split_dataset(self, dataset, percentage=100):
 
@@ -334,24 +331,15 @@ class ATOM(object):
         self.X_test = self.test.drop(self.target, axis=1)
         self.Y_test = self.test[self.target]
 
-    def stats(self, print_only=True):
+    def stats(self):
 
-        '''
-        DESCRIPTION -----------------------------------
+        ''' Print some information about the dataset '''
 
-        Print some information about the dataset.
-
-        PARAMETERS -------------------------------------
-
-        print_only --> prlog parameter to print only, not save to log
-
-        '''
-
-        prlog('\nData stats =====================>', self, 1, print_only)
+        prlog('\nData stats =====================>', self, 1)
         prlog('Number of features: {}\nNumber of instances: {}'
-              .format(self.X.shape[1], self.X.shape[0]), self, 1, print_only)
+              .format(self.X.shape[1], self.X.shape[0]), self, 1)
         prlog('Size of training set: {}\nSize of test set: {}'
-              .format(len(self.train), len(self.test)), self, 1, print_only)
+              .format(len(self.train), len(self.test)), self, 1)
 
         # Print count of target values
         if self.task != 'regression':
@@ -362,8 +350,8 @@ class ATOM(object):
                     len_classes += 3
                 lx = max(len_classes, len(self.Y.name))
 
-                prlog('Instances per target class:', self, 2, print_only)
-                prlog(f"{self.Y.name:{lx}} --> Count", self, 2, print_only)
+                prlog('Instances per target class:', self, 2)
+                prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
 
                 # Check wether there is LabelEncoding for the target varaible
                 for i in range(len(self._unique)):
@@ -371,17 +359,17 @@ class ATOM(object):
                         prlog('{0}: {1:<{2}} --> {3}'
                               .format(self.target_mapping[self._unique[i]],
                                       self._unique[i], lx - 3, counts[i]),
-                              self, 2, print_only)
+                              self, 2)
                     else:
                         prlog('{0:<{1}} --> {2}'
                               .format(self._unique[i],
-                                      lx, counts[i]), self, 2, print_only)
+                                      lx, counts[i]), self, 2)
 
             except Exception:
                 raise ValueError('Are you sure the data corresponds to a ' +
                                  'classification task? Try ATOMRegressor...')
 
-        prlog('', self, 1, print_only)  # Insert an empty row
+        prlog('', self, 1)  # Insert an empty row
 
     def report(self, df='dataset', rows=None, filename=None):
 
@@ -509,11 +497,13 @@ class ATOM(object):
                     imp = KNNImputer()
                     fit_imputer(imp)
 
-                else:
+                elif strat_num.lower() in ('mean', 'median', 'most_frequent'):
                     prlog(f' --> Imputing {nans} missing values with ' +
                           strat_num.lower() + f' in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy=strat_num.lower())
                     fit_imputer(imp)
+                else:
+                    raise ValueError('Invalid value for strat_num.')
 
             # Column is categorical and contains missing values
             elif nans > 0:
@@ -533,7 +523,7 @@ class ATOM(object):
                     prlog(f' --> Removing {nans} rows due to missing ' +
                           f'values in feature {col}.', self, 2)
 
-                else:
+                elif strat_cat.lower() == 'most_frequent':
                     prlog(f' --> Imputing {nans} missing values with the mo' +
                           f'st frequent occurrence in feature {col}', self, 2)
                     imp = SimpleImputer(strategy=strat_cat)
@@ -1025,7 +1015,7 @@ class ATOM(object):
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
             # Scale features first
-            self.dataset = StandardScaler().fit_transform(self.X_train)
+            self.X_train = StandardScaler().fit_transform(self.X_train)
             solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
             self.X_train = convert_to_pd(self.PCA.fit_transform(self.X_train))
@@ -1175,7 +1165,7 @@ class ATOM(object):
                 # Get max length of the models' names
                 lenx = max([len(getattr(self, m).name) for m in self.models])
 
-                # Get best score (min or max dependent on metric)
+                # Get list of scores
                 if self.bagging is None:
                     x = [getattr(self, m).score_test for m in self.models]
                 else:
@@ -1183,7 +1173,19 @@ class ATOM(object):
                     for m in self.models:
                         x.append(getattr(self, m).bagging_scores.mean())
 
-                max_ = min(x) if not self.gib else max(x)
+                # Get length of best scores and index of longest
+                len_ = [len(str(round(score, 3))) for score in x]
+                idx = len_.index(max(len_))
+
+                # Decide number of decimals to print
+                decimals = 0 if int(x[idx]) == float(x[idx]) else 3
+
+                # Decide width of numbers to print (account for point of float)
+                extra = decimals + 1 if decimals == 3 else 0
+                width = len(str(int(x[idx]))) + extra
+
+                # Take into account if score or loss function
+                best = min(x) if not self.gib else max(x)
 
             except (ValueError, AttributeError):
                 raise ValueError('It appears all models failed to run...')
@@ -1210,31 +1212,32 @@ class ATOM(object):
 
             for m in self.models:
                 name = getattr(self, m).name
-                shortname = getattr(self, m).shortname
                 score_train = getattr(self, m).score_train
                 score_test = getattr(self, m).score_test
                 time_bo = getattr(self, m).time_bo
 
                 if self.bagging is None:
-                    results = results.append({'model': shortname,
+                    results = results.append({'model': name,
                                               'score_train': score_train,
                                               'score_test': score_test,
                                               'time': time_bo},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if score_test == max_ and len(self.models) > 1:
-                        prlog(u'{0:{1}s} --> {2:.3f} !!'
-                              .format(name, lenx, score_test), self)
+                    if score_test == best and len(self.models) > 1:
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
+                              .format(name, lenx, score_test, width, decimals),
+                              self)
                     else:
-                        prlog(u'{0:{1}s} --> {2:.3f}'
-                              .format(name, lenx, score_test), self)
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
+                              .format(name, lenx, score_test, width, decimals),
+                              self)
 
                 else:
                     bs_mean = getattr(self, m).bagging_scores.mean()
                     bs_std = getattr(self, m).bagging_scores.std()
                     time_bag = getattr(self, m).time_bag
-                    results = results.append({'model': shortname,
+                    results = results.append({'model': name,
                                               'score_train': score_train,
                                               'score_test': score_test,
                                               'time': time_bo,
@@ -1244,12 +1247,14 @@ class ATOM(object):
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if bs_mean == max_ and len(self.models) > 1:
-                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                              .format(name, lenx, bs_mean, bs_std), self)
+                    if bs_mean == best and len(self.models) > 1:
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f} !!'
+                              .format(name, lenx, bs_mean, width,
+                                      decimals, bs_std), self)
                     else:
-                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                              .format(name, lenx, bs_mean, bs_std), self)
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f}'
+                              .format(name, lenx, bs_mean, width,
+                                      decimals, bs_std), self)
 
             return results
 
@@ -1272,10 +1277,11 @@ class ATOM(object):
                 features = self.X.columns  # Save feature names
 
                 # Normalize features to mean=0, std=1
-                data['X_scaled'] = StandardScaler().fit_transform(data['X'])
-                scaler = StandardScaler().fit(data['X_train'])
-                data['X_train_scaled'] = scaler.transform(data['X_train'])
+                scaler = StandardScaler()
+                data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
                 data['X_test_scaled'] = scaler.transform(data['X_test'])
+                data['X_scaled'] = np.concatenate((data['X_train_scaled'],
+                                                   data['X_test_scaled']))
 
                 # Convert np.array to pd.DataFrame for all scaled features
                 for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
@@ -1389,7 +1395,7 @@ class ATOM(object):
                 prlog('Model{} in pipeline: {}'
                       .format('s' if len(self.models) > 1 else '',
                               ', '.join(self.models)), self)
-                self.stats(print_only=False)
+                self.stats()
 
                 # Run iteration
                 results = run_iteration(self)
@@ -1406,12 +1412,14 @@ class ATOM(object):
                 [n.append(m) for m in self.models if m in list(lx.model)]
                 self.models = n.copy()
                 iteration += 1
+            self._isfit = True
 
         else:
             self.data = data_preparation()
             self.results = run_iteration(self)
+            self._isfit = True
 
-        # <====================== End fit function ======================>
+    # <====================== Utility methods ======================>
 
     def boxplot(self, iteration=-1, figsize=None, filename=None):
 
@@ -1428,6 +1436,10 @@ class ATOM(object):
 
         '''
 
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the boxplot method!')
+
         results, names = [], []
         try:  # Can't make plot before running fit!
             if self.successive_halving:
@@ -1438,7 +1450,7 @@ class ATOM(object):
                 results.append(getattr(self, m).bagging_scores)
                 names.append(getattr(self, m).shortname)
         except (IndexError, AttributeError):
-            raise Exception('You need to fit ATOM using bagging!')
+            raise Exception('You need to fit the class using bagging!')
 
         if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8+len(names)/2), 6)
@@ -1470,6 +1482,10 @@ class ATOM(object):
         filename --> name of the file to save
 
         '''
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the plot_successive_halving method!')
 
         if not self.successive_halving:
             raise ValueError('This plot is only available if the class was ' +
@@ -1542,6 +1558,122 @@ class ATOM(object):
         if filename is not None:
             plt.savefig(filename)
         plt.show()
+
+    def _final_results(self, attribute, function=None, gib=True):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Print final results for a specific metric.
+
+        PARAMETERS -------------------------------------
+
+        attribute --> submodel attribute corresponding to the desired metric
+        function  --> name of the function of the desired metric (from sklearn)
+        gib       --> wether score or loss function (greater_is_better)
+
+        '''
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'for a metric method!')
+
+        try:
+            # Get max length of the models' names
+            lenx = max([len(getattr(self, m).name) for m in self.models])
+
+            # Get list of scores
+            x = [getattr(getattr(self, m), attribute) for m in self.models]
+
+            # Get length of best scores and index of longest
+            len_ = [len(str(round(score, 3))) for score in x]
+            idx = len_.index(max(len_))
+
+            # Decide number of decimals to print
+            decimals = 0 if int(x[idx]) == float(x[idx]) else 3
+
+            # Decide width of numbers to print (account for point of float)
+            extra = decimals + 1 if decimals == 3 else 0
+            width = len(str(int(x[idx]))) + extra
+
+            # Take into account if score or loss function
+            best = min(x) if not gib else max(x)
+
+        except Exception:
+            raise AttributeError('Invalid metric for specified task!')
+
+        function = attribute if function is None else function
+        prlog('\nFinal results ================>>', self)
+        prlog(f'Metric: {function}', self)
+        prlog('--------------------------------', self)
+
+        for m in self.models:
+            name = getattr(self, m).name
+            score = getattr(getattr(self, m), attribute)
+
+            # Highlight best score (if more than one)
+            if score == best and len(self.models) > 1:
+                prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
+                      .format(name, lenx, score, width, decimals), self)
+            else:
+                prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
+                      .format(name, lenx, score, width, decimals), self)
+
+    # <====================== Metric methods ======================>
+
+    def tn(self):
+        self._final_results('tn', 'true negatives')
+
+    def fp(self):
+        self._final_results('fp', 'false positives', False)
+
+    def fn(self):
+        self._final_results('fn', 'false negatives', False)
+
+    def tp(self):
+        self._final_results('tp', 'true positives')
+
+    def auc(self):
+        self._final_results('auc', 'roc_auc_score')
+
+    def mcc(self):
+        self._final_results('mcc', 'matthews_corrcoef')
+
+    def accuracy(self):
+        self._final_results('accuracy', 'accuracy_score')
+
+    def logloss(self):
+        self._final_results('logloss', 'log_loss', False)
+
+    def precision(self):
+        self._final_results('precision', 'precision_score')
+
+    def jaccard(self):
+        self._final_results('jaccard', 'jaccard_score')
+
+    def recall(self):
+        self._final_results('recall', 'recall_score')
+
+    def f1(self):
+        self._final_results('f1', 'f1_score')
+
+    def hamming(self):
+        self._final_results('hamming', 'hamming_loss', False)
+
+    def max_error(self):
+        self._final_results('max_error', False)
+
+    def mae(self):
+        self._final_results('mae', 'mean_absolute_error', False)
+
+    def mse(self):
+        self._final_results('mse', 'mean_squared_error', False)
+
+    def msle(self):
+        self._final_results('msle', 'mean_squared_log_error', False)
+
+    def r2(self):
+        self._final_results('r2', 'r2_score')
 
 
 class ATOMClassifier(ATOM):

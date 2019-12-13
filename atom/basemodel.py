@@ -80,7 +80,7 @@ def timer(f):
     return wrapper
 
 
-def prlog(string, class_, level=0, print_only=False, time=False):
+def prlog(string, class_, level=0, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -92,15 +92,14 @@ def prlog(string, class_, level=0, print_only=False, time=False):
     string     --> string to output
     class_     --> class of the element
     level      --> minimum verbosity level to print
-    print_only --> only print but not save to log (for stats method)
     time       --> wether to add the timestamp to the log
 
     '''
 
-    if class_.verbose > level or print_only:
+    if class_.verbose > level:
         print(string)
 
-    if class_.log is not None and not print_only:
+    if class_.log is not None:
         with open(class_.log, 'a+') as file:
             if time:
                 # Datetime object containing current date and time
@@ -384,7 +383,7 @@ class BaseModel(object):
         elif self.task != 'regression':
             self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
 
-        # Calculate some standard metrics
+        # Calculate some standard metrics on the test set
         if self.task == 'binary classification':
             cm = confusion_matrix(self.Y_test, self.predict_test)
             self.tn, self.fp, self.fn, self.tp = cm.ravel()

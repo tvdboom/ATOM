@@ -237,7 +237,7 @@ class LinReg(BaseModel):
                  'domain': range(100, 501)},
                 {'name': 'alpha',
                  'type': 'discrete',
-                 'domain': np.linspace(0.01, 5, 500)},
+                 'domain': np.linspace(0, 5, 500)},
                 {'name': 'l1_ratio',
                  'type': 'discrete',
                  'domain': np.linspace(0, 1, 10)}]
@@ -246,6 +246,42 @@ class LinReg(BaseModel):
         ''' Returns initial values for the BO trials '''
 
         return np.array([[250, 1.0, 0.5]])
+
+
+class BayReg(BaseModel):
+
+    def __init__(self, *args):
+        ''' Class initializer '''
+
+        # BaseModel class initializer
+        super().__init__(**set_init(*args, scaled=True))
+
+        # Class attributes
+        self.name, self.shortname = 'Bayesian Linear Regression', 'BayReg'
+
+    def get_params(self, x):
+        ''' Returns the hyperparameters as a dictionary '''
+
+        params = {'n_iter': int(x[0, 0])}
+        return params
+
+    def get_model(self, params={}):
+        ''' Returns the sklearn model with unpacked hyperparameters '''
+        from sklearn.linear_model import BayesianRidge
+        return BayesianRidge(**params)
+
+    def get_domain(self):
+        ''' Returns the bounds for the hyperparameters '''
+
+        # Dict should be in order of continuous and then discrete types
+        return [{'name': 'n_iter',
+                 'type': 'discrete',
+                 'domain': range(100, 501)}]
+
+    def get_init_values(self):
+        ''' Returns initial values for the BO trials '''
+
+        return np.array([[300]])
 
 
 class LogReg(BaseModel):
