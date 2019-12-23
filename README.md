@@ -12,7 +12,7 @@ Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of ML solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution.
+Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of machine learning solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the machine learning solution.
 
 | NOTE: A data scientist with knowledge of the data will quickly outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for a fast exploration of the problem! |
 | --- |
@@ -277,7 +277,7 @@ Class methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
-* **report(df='dataset', filename=None)**  
+* **report(df='dataset', rows=None, filename=None)**  
 Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/). The profile analysis is written in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets.
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
