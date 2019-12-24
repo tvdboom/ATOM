@@ -361,7 +361,7 @@ Plots the feature importance permutation scores in a boxplot. A dictionary conta
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
@@ -369,7 +369,7 @@ Plots the feature importance permutation scores in a boxplot. A dictionary conta
 Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
