@@ -294,7 +294,7 @@ Make a boxplot of the bagging's results after fitting the class.
 	+ **iteration: int, optional (default=-1)**  
 	Iteration of the successive_halving to plot. If -1, use the last iteration.
 	+ **figsize: 2d-tuple, optional (default=None)**  
-	Figure size: format as (x, y). If None, adjust to number of models.
+	Figure size: format as (x, y). If None, adjusts to the number of models.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_correlation(figsize=(10, 6), filename=None)**  
@@ -355,12 +355,22 @@ Plots the probability of every class in the target variable against the class se
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_feature_importance(show=20, figsize=(10, 6), filename=None)**  
+* **plot_permutation_importance(n_repeats=10, show=20, figsize=None, filename=None)**  
+Plots the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
+	+ **n_repeats: int, optional(default=10)**  
+	Number of times to permute a feature.
+	+ **show: int, optional (default=20)**  
+	Number of best features to show in the plot. None for all features.  
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	Figure size: format as (x, y). If None, adjusts to the number of features shown.
+	+ **filename: string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
+* **plot_feature_importance(show=20, figsize=None, filename=None)**  
 Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
+	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(figsize=(10, 6), filename=None)**  
@@ -407,6 +417,7 @@ Subclass attributes
 * **atom.LGB.score_train**: Metric score of the BO's selected model on the training set.
 * **atom.XGB.score_test**: Metric score of the BO's selected model on the test set.
 * **atom.PA.bagging_scores**: Array of the bagging's results.
+* **atom.LDA.permutations**: Dictionary of the permutation's results (if plot_permutation_importance was used).
 * **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
