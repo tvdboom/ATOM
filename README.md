@@ -357,7 +357,7 @@ Plots the probability of every class in the target variable against the class se
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_permutation_importance(n_repeats=10, show=20, figsize=None, filename=None)**  
 Plots the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
-	+ **n_repeats: int, optional(default=10)**  
+	+ **n_repeats: int, optional (default=10)**  
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
@@ -381,7 +381,7 @@ Plots the ROC curve. Only for binary classification tasks.
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
 Plot the confusion matrix for the model. Only for binary classification tasks.  
-	+ **normalize: bool, optional (default=True)**
+	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
