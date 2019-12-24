@@ -1115,6 +1115,7 @@ class ATOM(object):
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
                                                  self.metric,
+                                                 self.gib,
                                                  self.task,
                                                  self.log,
                                                  self.n_jobs,
@@ -1124,9 +1125,7 @@ class ATOM(object):
                     with warnings.catch_warnings():
                         if not self.warnings:
                             warnings.simplefilter("ignore")
-
                         getattr(self, model).BayesianOpt(self.test_size,
-                                                         self.gib,
                                                          self.max_iter,
                                                          self.max_time,
                                                          self.eps,
@@ -1453,7 +1452,7 @@ class ATOM(object):
             raise Exception('You need to fit the class using bagging!')
 
         if figsize is None:  # Default figsize depends on number of models
-            figsize = (int(8+len(names)/2), 6)
+            figsize = (int(8 + len(names)/2), 6)
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)

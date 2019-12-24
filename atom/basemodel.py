@@ -21,6 +21,7 @@ from collections import deque
 # Sklearn
 import sklearn
 from sklearn.utils import resample
+from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
@@ -125,16 +126,19 @@ class BaseModel(object):
 
         data    --> dictionary of the data (train, test and complete set)
         metric  --> metric to maximize (or minimize) in the BO
+        gib     --> wether the metric is a scoring or loss function
         task    --> classification or regression
         log     --> name of the log file
+        n_jobs  --> number of cores for parallel processing
         verbose --> verbosity level (0, 1, 2, 3)
 
         '''
 
-        self.__dict__.update(kwargs)  # Set attributes to child class
+        # Set attributes from ATOM to the model's parent class
+        self.__dict__.update(kwargs)
 
     @timer
-    def BayesianOpt(self, test_size, gib, max_iter, max_time, eps,
+    def BayesianOpt(self, test_size, max_iter, max_time, eps,
                     batch_size, init_points, cv, plot_bo):
 
         '''
@@ -148,7 +152,6 @@ class BaseModel(object):
         PARAMETERS -------------------------------------
 
         test_size   --> fraction test/train size
-        gib         --> metric is a score function or a loss function
         max_iter    --> maximum number of iterations
         max_time    --> maximum time for the BO (in seconds)
         eps         --> minimum distance between two consecutive x's
@@ -262,7 +265,7 @@ class BaseModel(object):
             else:  # Use cross validation to get the output of BO
 
                 # Make scoring function for the cross_validator
-                scoring = make_scorer(self.metric, greater_is_better=gib)
+                scoring = make_scorer(self.metric, greater_is_better=self.gib)
 
                 if self.task != 'regression':
                     # Folds are made preserving the % of samples for each class
@@ -280,7 +283,7 @@ class BaseModel(object):
                                          n_jobs=self.n_jobs).mean()
 
                 # cross_val_score returns negative loss for minimizing metrics
-                output = output if gib else -output
+                output = output if self.gib else -output
 
             # Save output of the BO and plot progress
             self.BO['score'].append(output)
@@ -327,7 +330,7 @@ class BaseModel(object):
             self.ax1, self.ax2 = 0, 0  # Plot axes
 
             # Minimize or maximize the function depending on the metric
-            maximize = True if gib else False
+            maximize = True if self.gib else False
             # Default SKlearn or multiple random initial points
             kwargs = {}
             if init_points > 1:
@@ -352,7 +355,7 @@ class BaseModel(object):
                 plt.close()
 
             # Optimal score of the BO
-            bo_best_score = -opt.fx_opt if gib else opt.fx_opt
+            bo_best_score = -opt.fx_opt if self.gib else opt.fx_opt
 
             # Set to same shape as GPyOpt (2d-array)
             self.best_params = self.get_params(
@@ -387,18 +390,23 @@ class BaseModel(object):
         if self.task == 'binary classification':
             cm = confusion_matrix(self.Y_test, self.predict_test)
             self.tn, self.fp, self.fn, self.tp = cm.ravel()
-            self.auc = roc_auc_score(self.Y_test, self.predict_test)
             self.mcc = matthews_corrcoef(self.Y_test, self.predict_test)
             self.accuracy = accuracy_score(self.Y_test, self.predict_test)
             self.logloss = log_loss(self.Y_test, self.predict_proba[:, 1])
-            avg = 'binary'
-        else:
-            avg = 'weighted'
+            self.auc = roc_auc_score(self.Y_test, self.predict_proba[:, 1])
+            average = 'binary'
+
+        elif self.task == 'multiclass classification':
+            average = 'weighted'
+            self.auc = roc_auc_score(self.Y_test,
+                                     self.predict_proba,
+                                     average=average,
+                                     multi_class='ovr')
 
         if self.task != 'regression':
             args = {'y_true': self.Y_test,
                     'y_pred': self.predict_test,
-                    'average': avg}
+                    'average': average}
             self.precision = precision_score(**args)
             self.jaccard = jaccard_score(**args)
             self.recall = recall_score(**args)
@@ -563,15 +571,77 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, show=20,
-                                figsize=(10, 15), filename=None):
-        ''' Plot a (Tree based) model's feature importance '''
+    def plot_permutation_importance(self, n_repeats=10, show=20,
+                                    figsize=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a model's feature permutation importance.
+
+        PARAMETERS -------------------------------------
+
+        n_repeats --> number of times to permute a feature
+        show      --> number of best features to show in the plot
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of the file to save
+
+        '''
+
+        # Set parameters
+        show = self.X.shape[1] if show is None else int(show)
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
+
+        # Calculate the permutation importances
+        scoring = make_scorer(self.metric, greater_is_better=self.gib)
+        self.permutations = permutation_importance(self.best_model_fit,
+                                                   self.X_test,
+                                                   self.Y_test,
+                                                   scoring=scoring,
+                                                   n_repeats=n_repeats,
+                                                   n_jobs=self.n_jobs)
+
+        # Get indices of permutations sorted by the mean
+        idx = self.permutations.importances_mean.argsort()[:show]
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
+        plt.boxplot(self.permutations.importances[idx].T,
+                    vert=False,
+                    labels=self.X.columns[idx])
+        plt.xlabel('Score', fontsize=16, labelpad=12)
+        plt.ylabel('Features', fontsize=16, labelpad=12)
+        plt.title('Permutation Importance of Features', fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_feature_importance(self, show=20, figsize=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a (Tree based) model's feature importance.
+
+        PARAMETERS -------------------------------------
+
+        show      --> number of best features to show in the plot
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of the file to save
+
+        '''
 
         if self.shortname not in tree_models:
             raise ValueError('This method only works for tree-based models!')
 
-        if show is None:
-            show = self.X.shape[1]
+        # Set parameters
+        show = self.X.shape[1] if show is None else int(show)
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
 
         # Bagging has no direct feature importance implementation
         if self.shortname == 'Bag':

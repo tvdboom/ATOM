@@ -40,7 +40,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # << ============ Functions ============ >>
 
-def set_init(data, metric, task, log, n_jobs, verbose, scaled=False):
+def set_init(data, metric, gib, task, log, n_jobs, verbose, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
     if scaled:
@@ -54,11 +54,13 @@ def set_init(data, metric, task, log, n_jobs, verbose, scaled=False):
 
     for p in ('Y', 'Y_train', 'Y_test'):
         params[p] = data[p]
-        params['metric'] = metric
-        params['task'] = task
-        params['log'] = log
-        params['n_jobs'] = n_jobs
-        params['verbose'] = verbose
+
+    params['metric'] = metric
+    params['gib'] = gib
+    params['task'] = task
+    params['log'] = log
+    params['n_jobs'] = n_jobs
+    params['verbose'] = verbose
 
     return params
 
@@ -441,7 +443,7 @@ class KNN(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'K-Nearest Neighbors', 'KNN'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -493,7 +495,7 @@ class Tree(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Decision Tree', 'Tree'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -550,7 +552,7 @@ class Bag(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Bagging', 'Bag'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -599,7 +601,7 @@ class ET(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Extra-Trees', 'ET'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -663,7 +665,7 @@ class RF(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Random Forest', 'RF'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -727,7 +729,7 @@ class AdaB(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'AdaBoost', 'AdaB'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -771,7 +773,7 @@ class GBM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Gradient Boosting Machine', 'GBM'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -836,7 +838,7 @@ class XGB(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'XGBoost', 'XGB'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -905,7 +907,7 @@ class LGB(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'LightGBM', 'LGB'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -978,7 +980,7 @@ class CatB(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'CatBoost', 'CatB'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1044,7 +1046,7 @@ class lSVM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Linear SVM', 'lSVM'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1112,7 +1114,7 @@ class kSVM(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Non-linear SVM', 'kSVM'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1183,7 +1185,7 @@ class PA(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Passive Aggressive', 'PA'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1241,7 +1243,7 @@ class SGD(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Stochastic Gradient Descent', 'SGD'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
@@ -1332,7 +1334,7 @@ class MLP(BaseModel):
 
         # Class attributes
         self.name, self.shortname = 'Multilayer Perceptron', 'MLP'
-        self.task = args[2]
+        self.task = args[3]
 
     def get_params(self, x):
         ''' Returns the hyperparameters as a dictionary '''
