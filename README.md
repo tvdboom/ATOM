@@ -241,7 +241,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'LGB' for LightGBM (if package is available)
 		- 'CatB' for CatBoost (if package is available)
 		- 'lSVM' for Linear Support Vector Machine  
-		- 'kSVM' for Non-linear Support Vector Machine  
+		- 'kSVM' for Kernel (non-linear) Support Vector Machine  
 		- 'PA' for Passive Aggressive  
 		- 'SGD' for Stochastic Gradient Descent  
 		- 'MLP' for Multilayer Perceptron  
@@ -309,6 +309,12 @@ Make a plot of the models' scores per iteration of the successive halving.
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
+* **plot_ROC(figsize=(10, 6), filename=None)**  
+Plot the ROC curve of all the models. Only for binary classification tasks.  
+ 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	Figure size: format as (x, y).
+	+ **filename: string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
 * **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics see the [subclass attributes (metrics)](https://github.com/tvdboom/ATOM#subclass-attributes-metrics).**
 
 
@@ -348,15 +354,15 @@ Plot performance metrics against multiple threshold values. If None, the metric 
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
-Plots the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
+Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target_class: int, optional (default=1)**
 	Target class to plot the probabilities against. A value of 0 corresponds to the first class, 1 to the second class, etc...
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_permutation_importance(n_repeats=10, show=20, figsize=None, filename=None)**  
-Plots the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
+* **plot_permutation_importance(show=20, n_repeats=10, figsize=None, filename=None)**  
+Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
 	+ **n_repeats: int, optional (default=10)**  
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
@@ -366,7 +372,7 @@ Plots the feature importance permutation scores in a boxplot. A dictionary conta
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_feature_importance(show=20, figsize=None, filename=None)**  
-Plots the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
+Plot the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
 	+ **figsize: 2d-tuple, optional (default=None)**  
@@ -374,7 +380,7 @@ Plots the feature importance scores. Only works with tree based algorithms (Tree
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(figsize=(10, 6), filename=None)**  
-Plots the ROC curve. Only for binary classification tasks.  
+Plot the ROC curve. Only for binary classification tasks.  
  	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
