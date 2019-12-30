@@ -229,7 +229,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)
 		- 'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)
 		- 'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)
-		- 'BR' for [Bayesian Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)
+		- 'BR' for [Bayesian (linear) Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)
 		- 'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)  
 		- 'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html) 
 		- 'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)
