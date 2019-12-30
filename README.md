@@ -221,30 +221,33 @@ Select best features according to the selected strategy. Ties between features w
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to test the robustness of the model applying a bagging algorithm, providing a distribution of the models' performance.
 	+ **models: string or list of strings**  
 	List of models to fit on the data. If 'all', all available models are used. Use the predefined acronyms to select the models. Possible values are (case insensitive):    
-		- 'GNB' for Gaussian Naïve Bayes (no hyperparameter tuning)
-		- 'MNB' for Multinomial Naïve Bayes  
-		- 'BNB' for Bernoulli Naïve Bayes  
-		- 'GP' for Gaussian Process (no hyperparameter tuning)
-		- 'LinReg' for Linear Regression (OLS, ridge, lasso and elasticnet)  
-		- 'BayReg' for Bayesian Linear Regression (with ridge regularization)
-		- 'LogReg' for Logistic Regression  
-		- 'LDA' for Linear Discriminant Analysis  
-		- 'QDA' for Quadratic Discriminant Analysis  
-		- 'KNN' for K-Nearest Neighbors  
-		- 'Tree' for a single Decision Tree  
-		- 'Bag' for Bagging (with decision tree as base estimator)
-		- 'ET' for Extra-Trees 
-		- 'RF' for Random Forest
-		- 'AdaB' for AdaBoost  
-		- 'GBM' for Gradient Boosting Machine  
-		- 'XGB' for XGBoost (if package is available)  
-		- 'LGB' for LightGBM (if package is available)
-		- 'CatB' for CatBoost (if package is available)
-		- 'lSVM' for Linear Support Vector Machine  
-		- 'kSVM' for Kernel (non-linear) Support Vector Machine  
-		- 'PA' for Passive Aggressive  
-		- 'SGD' for Stochastic Gradient Descent  
-		- 'MLP' for Multilayer Perceptron  
+		- 'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html) (no hyperparameter tuning)
+		- 'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)  
+		- 'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)  
+		- 'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html) (no hyperparameter tuning)
+		- 'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html) (no hyperparameter tuning)
+		- 'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)
+		- 'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)
+		- 'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)
+		- 'BR' for [Bayesian Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)
+		- 'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)  
+		- 'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html) 
+		- 'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)
+		- 'KNN' for K-Nearest Neighbors [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html)
+		- 'Tree' for a single Decision Tree [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html)
+		- 'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html) (with decision tree as base estimator)
+		- 'ET' for Extra-Trees [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)
+		- 'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)
+		- 'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html) (with decision tree as base estimator)
+		- 'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html) 
+		- 'XGB' for XGBoost [classifier/regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn) (if package is available)  
+		- 'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html) (if package is available)
+		- 'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html) (if package is available)
+		- 'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html) 
+		- 'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)
+		- 'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)
+		- 'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)
+		- 'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor) 
 	+ **metric: function callable**  
 	Metric on which the pipeline fits the models. Score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
 	+ **greater_is_better: bool, otional (default=True)**  
@@ -408,7 +411,7 @@ Plot a single decision tree of the model. Only for tree-based algorithms. Depend
 * **save(filename=None)**  
 Save the best found model as a pickle file.
 	 + **filename: string, optional (default=None)**  
-	Name of the file when saved. If None, it will be saved as ATOM_[model_type].
+	Name of the file when saved. If None, it will be saved as 'ATOM_[model_type].pkl'.
 
 
 Subclass attributes
@@ -437,22 +440,22 @@ Some of the most common metrics are saved as attributes of the model subclass, e
 	+ **fp** for the number of false positives  
 	+ **fn** for the number of false negatives  
 	+ **tp** for the number of true positives  
-	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html#sklearn.metrics.accuracy_score)
-	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html#sklearn.metrics.roc_auc_score)  
-	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html#sklearn.metrics.matthews_corrcoef)  
-	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html#sklearn.metrics.log_loss)  
+	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html)
+	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html)  
+	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html)  
+	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html)  
 * For classification tasks only:  
-	+ **precision** for the [precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html#sklearn.metrics.precision_score) 
-	+ **recall** for the [recall_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html#sklearn.metrics.recall_score) 
-	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html#sklearn.metrics.f1_score) 
-	+ **jaccard** for the [jaccard_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard_score.html#sklearn.metrics.jaccard_score)
-	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html#sklearn.metrics.hamming_loss)  
+	+ **precision** for the [precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html) 
+	+ **recall** for the [recall_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html) 
+	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html) 
+	+ **jaccard** for the [jaccard_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard_score.html)
+	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html)  
 * For all tasks:  
-	+ **max_error** for the [max_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.max_error.html#sklearn.metrics.max_error)
-	+ **mae** for the [mean_absolute_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html#sklearn.metrics.mean_absolute_error)  
-	+ **mse** for the [mean_squared_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html#sklearn.metrics.mean_squared_error)  
-	+ **msle** for the [mean_squared_log_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html#sklearn.metrics.mean_squared_log_error)  
-	+ **r2** for the [r2_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html#sklearn.metrics.r2_score)
+	+ **max_error** for the [max_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.max_error.html)
+	+ **mae** for the [mean_absolute_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html)  
+	+ **mse** for the [mean_squared_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)  
+	+ **msle** for the [mean_squared_log_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html)  
+	+ **r2** for the [r2_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html)
 
 
 Dependencies
