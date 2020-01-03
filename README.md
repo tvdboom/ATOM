@@ -50,22 +50,21 @@ Usage
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
     from atom import ATOMClassifier  
-    from sklearn.metrics import f1_score
     
     atom = ATOMClassifier(X, Y, log='atom_log', n_jobs=2, verbose=1)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-    atom.impute(strat_num='mean', strat_cat='most_frequent',  max_frac=0.1)  
+    atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac=0.1)  
     atom.encode(max_onehot=10)  
     atom.outliers(max_sigma=4)  
     atom.balance(oversample=0.8, neighbors=15)  
-    atom.feature_selection(strategy='univariate', max_features=0.9)
+    atom.feature_selection(strategy='univariate', solver='chi2', max_features=0.9)
 
 Fit the data to different models:
 
-    atom.fit(models=['logreg', 'LDA', 'XGB', 'lSVM'],
-	         metric=f1_score,
+    atom.fit(models=['LR', 'LDA', 'XGB', 'lSVM'],
+	         metric='f1',
 	         successive_halving=True,
 	         max_iter=10,
 	         max_time=1000,
@@ -128,6 +127,7 @@ Handle missing values according to the selected strategy. Also removes columns w
 		- 'remove': remove row if any missing value
 		- 'mean': impute with mean of column
 		- 'median': impute with median of column
+		- 'knn': impute using k-Nearest Neighbors
 		- 'most_frequent': impute with most frequent value
 		- int or float: impute with provided numerical value
 	+ **strat_cat: string, optional (default='remove')**  
@@ -172,7 +172,7 @@ Balance the number of instances per target class. Only for classification tasks.
 	+ **n_neighbors: int, optional (default=5)**  
 	Number of nearest neighbors used for any of the algorithms.<br><br>
 * **feature_insertion(n_features=2, generations=20, population=500)**  
-Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. This method is implemented using the [gplearn](https://gplearn.readthedocs.io/en/stable/index.html) package. It is adviced to only use this method when fitting linear models.
+Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. The algorithm is implemented using the [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer) method, which can be accessed through the `genetic_algorithm` attribute. It is adviced to only use this method when fitting linear models.
 	+ **n_features: int, optional (default=2)**  
 	Maximum number of newly generated features (no more than 1% of the population).
 	+ **generations: int, optional (default=20)**  
@@ -217,7 +217,7 @@ Select best features according to the selected strategy. Ties between features w
 	Remove features with the same value in at least this fraction of the total. None to skip this step.
 	+ **max_correlation: float, optional (default=0.98)**  
 	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
-* **fit(models, metric, greater_is_better=True, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
+* **fit(models, metric, greater_is_better=True, needs_proba=False, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to test the robustness of the model applying a bagging algorithm, providing a distribution of the models' performance.
 	+ **models: string or list of strings**  
 	List of models to fit on the data. If 'all', all available models are used. Use the predefined acronyms to select the models. Possible values are (case insensitive):    
@@ -229,7 +229,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)
 		- 'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)
 		- 'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)
-		- 'BR' for [Bayesian (linear) Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)
+		- 'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)
 		- 'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)  
 		- 'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html) 
 		- 'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)
@@ -249,9 +249,11 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)
 		- 'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor) 
 	+ **metric: function callable**  
-	Metric on which the pipeline fits the models. Score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
-	+ **greater_is_better: bool, otional (default=True)**  
+	Metric on which the pipeline fits the models. Choose from any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics) or use a score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
+	+ **greater_is_better: bool, optional (default=True)**  
 	Wether the metric is a score function or a loss function, i.e. if True, a higher score is better and if False, lower is better.
+	+ **needs_proba: bool, optional (default=False)**  
+	Whether the metric function requires predict_proba to get probability estimates out of a classifier.
 	+ **successive_halving: bool, optional (default=False)**  
 	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
 	+ **skip_iter: int, optional (default=0)**  
@@ -318,7 +320,7 @@ Plot the ROC curve of all the models. Only for binary classification tasks.
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics see the [subclass attributes (metrics)](https://github.com/tvdboom/ATOM#subclass-attributes-metrics).**
+* **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics click [here](https://github.com/tvdboom/ATOM#Metrics).**
 
 
 Class attributes  
@@ -330,8 +332,7 @@ Class attributes
 * **X_test, Y_test**: Test set features and target.
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
-* **genetic_algorithm**: Genetic algorithm instance (if feature_insertion was used), from gplearn [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
-* **genetic_features**: Dataframe containing the description of the newly generated genetic features and their scores.
+* **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
 * **collinear**: Dataframe of the collinear features and their correlation values (only if feature_selection was used).
 * **univariate**: Univariate feature selection class (if used), from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
 * **PCA**: Principal component analysis class (if used), from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
@@ -416,43 +417,44 @@ Save the best found model as a pickle file.
 
 Subclass attributes
 -----------------------------  
-* **atom.MNB.error**: If the model encountered an exception, this shows it.
-* **atom.MLP.best_params**: Get parameters of the model with highest score.
-* **atom.SVM.best_model**: Get the model with highest score (not fitted).
-* **atom.SVM.best_model_fit**: Get the model with highest score fitted on the training set.
-* **atom.Tree.predict_train**: Get the predictions on the training set.
-* **atom.Bag.predict_test**: Get the predictions on the test set.
-* **atom.RF.predict_proba**: Get the predicted probabilities on the test set.
-* **atom.LGB.score_train**: Metric score of the BO's selected model on the training set.
-* **atom.XGB.score_test**: Metric score of the BO's selected model on the test set.
-* **atom.PA.bagging_scores**: Array of the bagging's results.
-* **atom.LDA.permutations**: Dictionary of the permutation's results (if plot_permutation_importance was used).
-* **atom.<span>KNN.BO</span>**: Dictionary containing the information of every step taken by the BO.
+* **error**: If the model encountered an exception, this shows it.
+* **best_params**: Get parameters of the model with highest score.
+* **best_model**: Get the model with highest score (not fitted).
+* **best_model_fit**: Get the model with highest score fitted on the training set.
+* **predict_train**: Get the predictions on the training set.
+* **predict_test**: Get the predictions on the test set.
+* **predict_proba_train**: Get the predicted probabilities on the training set.
+* **predict_proba_test**: Get the predicted probabilities on the test set.
+* **score_train**: Metric score of the BO's selected model on the training set.
+* **score_test**: Metric score of the BO's selected model on the test set.
+* **bagging_scores**: Array of the bagging's results.
+* **permutations**: Dictionary of the permutation's results (if plot_permutation_importance was used).
+* **BO**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
 
 
-Subclass attributes (metrics)
+Metrics
 -----------------------------  
-Some of the most common metrics are saved as attributes of the model subclass, e.g. `atom.rf.recall`. They are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. Note that for classification tasks, the regression metrics are computed directly from the prediction, not the predicted probability! The available metrics are:  
+Some of the most common metrics are integrated in the ATOM class. They can be filled in the metric parameter of the fit method, called as method of the main class (e.g. `atom.rf.accuracy()`) and they are saved as attributes of every model subclass (e.g. `atom.rf.recall`). All metrics are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. The available metrics are:  
 * For binary classification tasks only:  
 	+ **tn** for the number of true negatives  
 	+ **fp** for the number of false positives  
 	+ **fn** for the number of false negatives  
 	+ **tp** for the number of true positives  
-	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html)
-	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html)  
-	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html)  
-	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html)  
+	+ **ap** for the [average_precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.average_precision_score.html)	
 * For classification tasks only:  
-	+ **precision** for the [precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html) 
-	+ **recall** for the [recall_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html) 
-	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html) 
+	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html)
+	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html)
+	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html) 	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html)
+	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html)
 	+ **jaccard** for the [jaccard_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard_score.html)
-	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html)  
+	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html)
+	+ **precision** for the [precision_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.precision_score.html)
+	+ **recall** for the [recall_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.recall_score.html) 
 * For all tasks:  
+	+ **mae** for the [mean_absolute_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html)
 	+ **max_error** for the [max_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.max_error.html)
-	+ **mae** for the [mean_absolute_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_absolute_error.html)  
 	+ **mse** for the [mean_squared_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_error.html)  
 	+ **msle** for the [mean_squared_log_error](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.mean_squared_log_error.html)  
 	+ **r2** for the [r2_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.r2_score.html)
