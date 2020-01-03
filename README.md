@@ -446,7 +446,8 @@ Some of the most common metrics are integrated in the ATOM class. They can be fi
 * For classification tasks only:  
 	+ **accuracy** for the [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html)
 	+ **auc** for the [roc_auc_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.roc_auc_score.html)
-	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html) 	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html)
+	+ **mcc** for the [matthews_corrcoef](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.matthews_corrcoef.html)
+	+ **f1** for the [f1_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html)
 	+ **hamming** for the [hamming_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.hamming_loss.html)
 	+ **jaccard** for the [jaccard_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.jaccard_score.html)
 	+ **logloss** for the [log_loss](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.log_loss.html)
