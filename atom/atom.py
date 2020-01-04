@@ -3,6 +3,7 @@
 '''
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
+Description: Module containing the main ATOM class
 
 '''
 
@@ -23,14 +24,16 @@ from .basemodel import prlog
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
+from sklearn.metrics import roc_curve
+from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
      chi2, SelectKBest, VarianceThreshold, SelectFromModel, RFE
     )
-from sklearn.model_selection import train_test_split
 
-# Models
+# Models & metrics
 from .models import *
+from .metrics import BaseMetric
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -41,22 +44,33 @@ sns.set(style='darkgrid', palette="GnBu_d")
 # << ============ Global variables ============ >>
 
 # List of all the available models
-model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'BayReg', 'LogReg', 'LDA',
-              'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
-              'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+model_list = ['BNB', 'GNB', 'MNB', 'GP', 'OLS', 'Ridge', 'Lasso', 'EN',
+              'BR', 'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET',
+              'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM',
+              'PA', 'SGD', 'MLP']
 
 # Tuple of models that need to import an extra package
 optional_packages = (('XGB', 'xgboost'),
                      ('LGB', 'lightgbm'),
                      ('CatB', 'catboost'))
 
-# List of models that need scaling
-scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
-                  'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+# List of models that need feature scaling
+scaling_models = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR', 'LR', 'KNN',
+                  'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
 # List of models that only work for regression/classification tasks
-only_classification = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
-only_regression = ['LinReg', 'BayReg']
+only_classification = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
+only_regression = ['OLS', 'Lasso', 'EN', 'BR']
+
+# List of pre-set binary classification metrics
+mbin = ['tn', 'fp', 'fn', 'tp', 'ap']
+
+# List of pre-set classification metrics
+mclass = ['accuracy', 'auc', 'mcc', 'f1', 'hamming', 'jaccard', 'logloss',
+          'precision', 'recall']
+
+# List of pre-set regression metrics
+mreg = ['mae', 'maxerror', 'mse', 'msle', 'r2']
 
 
 # << ============ Functions ============ >>
@@ -956,7 +970,8 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
 
         # Check parameters
-        strategy = str(strategy) if strategy is not None else None
+        # Strategy is attribte cause needed in data_preparation method
+        self.strategy = str(strategy) if strategy is not None else None
         if frac_variance is not None:
             frac_variance = float(frac_variance)
         if max_correlation is not None:
@@ -974,7 +989,7 @@ class ATOM(object):
         # Dataset is possibly changed so need to reset attributes
         self.reset_attributes('dataset')
 
-        if strategy is None:
+        if self.strategy is None:
             return None  # Exit feature_selection
 
         # Set max_features as all or fraction of total
@@ -984,8 +999,7 @@ class ATOM(object):
             max_features = int(max_features * self.X_train.shape[1])
 
         # Perform selection based on strategy
-        if strategy.lower() == 'univariate':
-
+        if self.strategy.lower() == 'univariate':
             # Set the solver
             solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
                        'mutual_info_regression', 'chi2']
@@ -1011,7 +1025,7 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
             self.reset_attributes('dataset')
 
-        elif strategy.lower() == 'pca':
+        elif self.strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
             # Scale features first
@@ -1022,7 +1036,7 @@ class ATOM(object):
             self.X_test = convert_to_pd(self.PCA.transform(self.X_test))
             self.reset_attributes('X_train')  # Will reset all attributes
 
-        elif strategy.lower() == 'sfm':
+        elif self.strategy.lower() == 'sfm':
             if solver is None:
                 raise ValueError('Select a model for the solver!')
 
@@ -1047,7 +1061,7 @@ class ATOM(object):
                     self.dataset.drop(column, axis=1, inplace=True)
             self.reset_attributes('dataset')
 
-        elif strategy.lower() == 'rfe':
+        elif self.strategy.lower() == 'rfe':
             # Recursive feature eliminator
             if solver is None:
                 raise ValueError('Select a model for the solver!')
@@ -1064,11 +1078,11 @@ class ATOM(object):
             self.reset_attributes('dataset')
 
         else:
-            raise ValueError('Invalid feature selection strategy selected.'
-                             "Choose from: 'univariate', 'PCA' or 'SFM'")
+            raise ValueError('Invalid strategy selected. Choose from: ' +
+                             "'univariate', 'PCA', 'SFM' or 'RFE'.")
 
     @params_to_log
-    def fit(self, models, metric, greater_is_better=True,
+    def fit(self, models, metric, greater_is_better=True, needs_proba=False,
             successive_halving=False, skip_iter=0,
             max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1,
             init_points=5, plot_bo=False, cv=3, bagging=None):
@@ -1076,13 +1090,27 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Initialize class.
+        Fit class to the selected models. The optimal hyperparameters per
+        model are selectred using a Bayesian Optimization (BO) algorithm
+        with gaussian process as kernel. The resulting score of each step
+        of the BO is either computed by cross-validation on the complete
+        training set or by creating a validation set from the training set.
+        This process will create some minimal leakage but ensures a maximal
+        use of the provided data. The test set, however, does not contain any
+        leakage and will be used to determine the final score of every model
+        . Note that the best score on the BO can be consistently lower than
+        the final score on the test set (despite the leakage) due to the
+        considerable fewer instances on which it is trained. At the end of
+        te pipeline, you can choose to test the robustness of the model
+        applying a bagging algorithm, providing a distribution of the
+        models' performance.
 
         PARAMETERS -------------------------------------
 
         models             --> list of models to use
-        metric             --> metric to perform evaluation on
+        metric             --> metric to perform the estimator's evaluation on
         greater_is_better  --> metric is a score function or a loss function
+        needs_proba        --> wether the metric needs a probability or score
         successive_halving --> wether to perform successive halving
         skip_iter          --> skip last n steps of successive halving
         max_iter           --> maximum number of iterations of the BO
@@ -1115,11 +1143,11 @@ class ATOM(object):
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
                                                  self.metric,
-                                                 self.gib,
                                                  self.task,
                                                  self.log,
                                                  self.n_jobs,
-                                                 self.verbose))
+                                                 self.verbose,
+                                                 self.random_state))
 
                 try:  # If errors occure, just skip the model
                     with warnings.catch_warnings():
@@ -1162,7 +1190,8 @@ class ATOM(object):
 
             try:  # Fails if all models encountered errors
                 # Get max length of the models' names
-                lenx = max([len(getattr(self, m).name) for m in self.models])
+                len_ = [len(getattr(self, m).longname) for m in self.models]
+                lenx = max(len_)
 
                 # Get list of scores
                 if self.bagging is None:
@@ -1176,11 +1205,11 @@ class ATOM(object):
                 len_ = [len(str(round(score, 3))) for score in x]
                 idx = len_.index(max(len_))
 
-                # Decide number of decimals to print
-                decimals = 0 if int(x[idx]) == float(x[idx]) else 3
+                # Set number of decimals
+                decimals = self.metric.dec if self.bagging is None else 3
 
                 # Decide width of numbers to print (account for point of float)
-                extra = decimals + 1 if decimals == 3 else 0
+                extra = decimals + 1 if decimals > 0 else 0
                 width = len(str(int(x[idx]))) + extra
 
                 # Take into account if score or loss function
@@ -1196,7 +1225,7 @@ class ATOM(object):
             s = int(t - h*3600 - m*60)
             prlog('\n\nFinal results ================>>', self)
             prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
-            prlog(f'Metric: {self.metric.__name__}', self)
+            prlog(f"Metric: {self.metric.longname}", self)
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
@@ -1210,7 +1239,7 @@ class ATOM(object):
                                                           'bagging_time'])])
 
             for m in self.models:
-                name = getattr(self, m).name
+                name = getattr(self, m).longname
                 score_train = getattr(self, m).score_train
                 score_test = getattr(self, m).score_test
                 time_bo = getattr(self, m).time_bo
@@ -1273,8 +1302,6 @@ class ATOM(object):
             else:
                 pca = False
             if scale and not pca:
-                features = self.X.columns  # Save feature names
-
                 # Normalize features to mean=0, std=1
                 scaler = StandardScaler()
                 data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
@@ -1284,7 +1311,8 @@ class ATOM(object):
 
                 # Convert np.array to pd.DataFrame for all scaled features
                 for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
-                    data[set_] = convert_to_pd(data[set_], columns=features)
+                    data[set_] = convert_to_pd(data[set_],
+                                               columns=self.X.columns)
 
             return data
 
@@ -1298,13 +1326,14 @@ class ATOM(object):
         self.models = [models] if not isinstance(models, list) else models
         self.metric = metric
         self.gib = bool(greater_is_better)
+        self.needs_proba = bool(needs_proba)
         self.successive_halving = bool(successive_halving)
         self.skip_iter = int(skip_iter)
         self.max_iter = int(max_iter) if max_iter >= 0 else 15
         self.max_time = float(max_time) if max_time > 0 else np.inf
         self.eps = float(eps)
         self.batch_size = int(batch_size) if batch_size > 0 else 1
-        self.init_points = int(init_points) if init_points >= 0 else 5
+        self.init_points = int(init_points) if init_points > 0 else 5
         self.plot_bo = bool(plot_bo)
         self.cv = int(cv) if cv > 0 else 3
         if bagging is None or bagging == 0:
@@ -1377,7 +1406,55 @@ class ATOM(object):
             prlog('Model{} in pipeline: {}'
                   .format('s' if len(self.models) > 1 else '',
                           ', '.join(self.models)), self)
-        prlog(f'Metric: {self.metric.__name__}', self)
+
+        # << ============ Check validity metric ============ >>
+
+        # Create dictionary of all the pre-defined metrics
+        metrics = dict(
+                tn=BaseMetric('tn', True, False, self.task),
+                fp=BaseMetric('fp', False, False, self.task),
+                fn=BaseMetric('fn', False, False, self.task),
+                tp=BaseMetric('tp', True, False, self.task),
+                accuracy=BaseMetric('accuracy', True, False, self.task),
+                ap=BaseMetric('ap', True, True, self.task),
+                auc=BaseMetric('auc', True, True, self.task),
+                mae=BaseMetric('mae', False, False, self.task),
+                max_error=BaseMetric('max_error', False, False, self.task),
+                mcc=BaseMetric('mcc', True, False, self.task),
+                mse=BaseMetric('mse', False, False, self.task),
+                msle=BaseMetric('msle', False, False, self.task),
+                f1=BaseMetric('f1', True, False, self.task),
+                hamming=BaseMetric('hamming', False, False, self.task),
+                jaccard=BaseMetric('jaccard', True, False, self.task),
+                logloss=BaseMetric('logloss', False, True, self.task),
+                precision=BaseMetric('precision', True, False, self.task),
+                r2=BaseMetric('r2', True, False, self.task),
+                recall=BaseMetric('recall', True, False, self.task),
+                )
+
+        if isinstance(self.metric, str):
+            self.metric = self.metric.lower()  # Make all lower case
+            t = mreg if self.task == 'regression' else mclass
+            if self.metric not in mbin + mclass + mreg:
+                raise ValueError(f"Unknown metric. Try one of {', '.join(t)}.")
+            elif self.metric in mbin and not self.task.startswith('binary'):
+                raise ValueError(f'Invalid metric for {self.task} tasks. ' +
+                                 f"Try one of: {', '.join(t)}.")
+            elif self.metric not in mreg and self.task == 'regression':
+                raise ValueError(f'{self.metric} is an invalid metric for ' +
+                                 'regression tasks. Try one of: {}.'
+                                 .format(', '.join(t)))
+            else:
+                self.metric = metrics[self.metric]
+        else:
+            self.metric = BaseMetric(self.metric, self.gib,
+                                     self.needs_proba, self.task)
+
+        # Add all metrics as subclasses of the BaseMetric class
+        for key, value in metrics.items():
+            setattr(self.metric, key, value)
+
+        prlog(f"Metric: {self.metric.name}", self)
 
         # << =================== Core ==================== >>
 
@@ -1440,16 +1517,13 @@ class ATOM(object):
                                  'the boxplot method!')
 
         results, names = [], []
-        try:  # Can't make plot before running fit!
-            if self.successive_halving:
-                df = self.results[iteration]
-            else:
-                df = self.results
-            for m in df.model:
-                results.append(getattr(self, m).bagging_scores)
-                names.append(getattr(self, m).shortname)
-        except (IndexError, AttributeError):
-            raise Exception('You need to fit the class using bagging!')
+        if self.successive_halving:
+            df = self.results[iteration]
+        else:
+            df = self.results
+        for m in df.model:
+            results.append(getattr(self, m).bagging_scores)
+            names.append(getattr(self, m).shortname)
 
         if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8 + len(names)/2), 6)
@@ -1459,8 +1533,8 @@ class ATOM(object):
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
-        plt.title('Model comparison', fontsize=16)
+        plt.ylabel(self.metric.name, fontsize=16, labelpad=12)
+        plt.title('Model comparison', fontsize=20)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()
@@ -1494,15 +1568,12 @@ class ATOM(object):
         col = 'score' if self.bagging is None else 'bagging_mean'
         linx = [[] for m in models]
         liny = [[] for m in models]
-        try:  # Can't make plot before running fit!
-            for m, df in enumerate(self.results):
-                for n, model in enumerate(models):
-                    if model in df.model.values:  # If model in iteration
-                        linx[n].append(m)
-                        liny[n].append(
-                                df[col][df.model == model].values[0])
-        except (IndexError, AttributeError):
-            raise Exception('You need to fit the class before plotting!')
+        for m, df in enumerate(self.results):
+            for n, model in enumerate(models):
+                if model in df.model.values:  # If model in iteration
+                    linx[n].append(m)
+                    liny[n].append(
+                            df[col][df.model == model].values[0])
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -1510,8 +1581,8 @@ class ATOM(object):
             plt.plot(x, y, lw=2, marker='o', label=label)
         plt.xlim(-0.1, len(self.results)-0.9)
         plt.xlabel('Iteration', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
-        plt.title('Successive halving scores', fontsize=16)
+        plt.ylabel(self.metric.name, fontsize=16, labelpad=12)
+        plt.title('Successive halving scores', fontsize=20)
         plt.legend(frameon=False, fontsize=14)
         ax.set_xticks(range(len(self.results)))
         plt.xticks(fontsize=12)
@@ -1552,13 +1623,48 @@ class ATOM(object):
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
         sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
-        plt.title('Feature correlation matrix', fontsize=16)
+        plt.title('Feature correlation matrix', fontsize=20)
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def _final_results(self, attribute, function=None, gib=True):
+    def plot_ROC(self, figsize=(10, 6), filename=None):
+        ''' Plot Receiver Operating Characteristics curve '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification problems.')
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the plot_ROC method!')
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
+        for model in self.models:
+            # Get False (True) Positive Rate
+            Y_test = getattr(self, model).Y_test
+            predict_proba = getattr(self, model).predict_proba[:, 1]
+            auc = getattr(self, model).auc
+            fpr, tpr, _ = roc_curve(Y_test, predict_proba)
+            plt.plot(fpr, tpr, lw=2, label=f'{model}:  AUC={auc:.3f}')
+
+        plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
+        plt.xlabel('FPR', fontsize=16, labelpad=12)
+        plt.ylabel('TPR', fontsize=16, labelpad=12)
+        plt.title('ROC curve', fontsize=20)
+        plt.legend(loc='lower right', frameon=False, fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    # <====================== Metric methods ======================>
+
+    def _final_results(self, metric):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1567,9 +1673,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        attribute --> submodel attribute corresponding to the desired metric
-        function  --> name of the function of the desired metric (from sklearn)
-        gib       --> wether score or loss function (greater_is_better)
+        metric --> string of the metric attribute in self.metric
 
         '''
 
@@ -1579,100 +1683,97 @@ class ATOM(object):
 
         try:
             # Get max length of the models' names
-            lenx = max([len(getattr(self, m).name) for m in self.models])
+            lenx = max([len(getattr(self, m).longname) for m in self.models])
 
             # Get list of scores
-            x = [getattr(getattr(self, m), attribute) for m in self.models]
+            x = [getattr(getattr(self, m), metric.name) for m in self.models]
 
             # Get length of best scores and index of longest
             len_ = [len(str(round(score, 3))) for score in x]
             idx = len_.index(max(len_))
 
-            # Decide number of decimals to print
-            decimals = 0 if int(x[idx]) == float(x[idx]) else 3
-
             # Decide width of numbers to print (account for point of float)
-            extra = decimals + 1 if decimals == 3 else 0
+            extra = metric.dec + 1 if metric.dec > 0 else 0
             width = len(str(int(x[idx]))) + extra
 
             # Take into account if score or loss function
-            best = min(x) if not gib else max(x)
+            best = min(x) if not metric.gib else max(x)
 
         except Exception:
-            raise AttributeError('Invalid metric for specified task!')
+            raise AttributeError(f'Invalid metric for {self.task} tasks!')
 
-        function = attribute if function is None else function
         prlog('\nFinal results ================>>', self)
-        prlog(f'Metric: {function}', self)
+        prlog(f'Metric: {metric.longname}', self)
         prlog('--------------------------------', self)
 
         for m in self.models:
-            name = getattr(self, m).name
-            score = getattr(getattr(self, m), attribute)
+            name = getattr(self, m).longname
+            score = getattr(getattr(self, m), metric.name)
 
             # Highlight best score (if more than one)
             if score == best and len(self.models) > 1:
                 prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
-                      .format(name, lenx, score, width, decimals), self)
+                      .format(name, lenx, score, width, metric.dec), self)
             else:
                 prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
-                      .format(name, lenx, score, width, decimals), self)
-
-    # <====================== Metric methods ======================>
+                      .format(name, lenx, score, width, metric.dec), self)
 
     def tn(self):
-        self._final_results('tn', 'true negatives')
+        self._final_results(self.metric.tn)
 
     def fp(self):
-        self._final_results('fp', 'false positives', False)
+        self._final_results(self.metric.fp)
 
     def fn(self):
-        self._final_results('fn', 'false negatives', False)
+        self._final_results(self.metric.fn)
 
     def tp(self):
-        self._final_results('tp', 'true positives')
-
-    def auc(self):
-        self._final_results('auc', 'roc_auc_score')
-
-    def mcc(self):
-        self._final_results('mcc', 'matthews_corrcoef')
+        self._final_results(self.metric.tp)
 
     def accuracy(self):
-        self._final_results('accuracy', 'accuracy_score')
+        self._final_results(self.metric.accuracy)
 
-    def logloss(self):
-        self._final_results('logloss', 'log_loss', False)
+    def ap(self):
+        self._final_results(self.metric.ap)
 
-    def precision(self):
-        self._final_results('precision', 'precision_score')
-
-    def jaccard(self):
-        self._final_results('jaccard', 'jaccard_score')
-
-    def recall(self):
-        self._final_results('recall', 'recall_score')
-
-    def f1(self):
-        self._final_results('f1', 'f1_score')
-
-    def hamming(self):
-        self._final_results('hamming', 'hamming_loss', False)
-
-    def max_error(self):
-        self._final_results('max_error', False)
+    def auc(self):
+        self._final_results(self.metric.auc)
 
     def mae(self):
-        self._final_results('mae', 'mean_absolute_error', False)
+        self._final_results(self.metric.mae)
+
+    def max_error(self):
+        self._final_results(self.metric.max_error)
+
+    def mcc(self):
+        self._final_results(self.metric.mcc)
 
     def mse(self):
-        self._final_results('mse', 'mean_squared_error', False)
+        self._final_results(self.metric.mse)
 
     def msle(self):
-        self._final_results('msle', 'mean_squared_log_error', False)
+        self._final_results(self.metric.msle)
+
+    def f1(self):
+        self._final_results(self.metric.f1)
+
+    def hamming(self):
+        self._final_results(self.metric.hamming)
+
+    def jaccard(self):
+        self._final_results(self.metric.jaccard)
+
+    def logloss(self):
+        self._final_results(self.metric.logloss)
+
+    def precision(self):
+        self._final_results(self.metric.precision)
 
     def r2(self):
-        self._final_results('r2', 'r2_score')
+        self._final_results(self.metric.r2)
+
+    def recall(self):
+        self._final_results(self.metric.recall)
 
 
 class ATOMClassifier(ATOM):
