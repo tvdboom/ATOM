@@ -152,7 +152,7 @@ Remove outliers from the training set.
 	+ **include_target: bool, optional (default=False)**  
 	Wether to include the target column when searching for outliers.<br><br>
 * **balance(oversample=None, undersample=None, neighbors=5)**  
-Balance the number of instances per target class. Only for classification tasks.
+Balance the number of instances per target class. Only for classification tasks. Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html).
 	+ **oversample: float or string, optional (default=None)**  
 	Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html#imblearn.over_sampling.ADASYN). Choose from:
 		- None: do not perform oversampling
@@ -172,7 +172,7 @@ Balance the number of instances per target class. Only for classification tasks.
 	+ **n_neighbors: int, optional (default=5)**  
 	Number of nearest neighbors used for any of the algorithms.<br><br>
 * **feature_insertion(n_features=2, generations=20, population=500)**  
-Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. The algorithm is implemented using the [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer) method, which can be accessed through the `genetic_algorithm` attribute. It is adviced to only use this method when fitting linear models.
+Use a genetic algorithm to create new combinations of existing features and add them to the original dataset in order to capture the non-linear relations between the original features. A dataframe containing the description of the newly generated features and their scores can be accessed through the `genetic_features` attribute. The algorithm is implemented using the [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer) method, which can be accessed through the `genetic_algorithm` attribute. It is adviced to only use this method when fitting linear models. Dependency: [gplearn](https://gplearn.readthedocs.io/en/stable/index.html).
 	+ **n_features: int, optional (default=2)**  
 	Maximum number of newly generated features (no more than 1% of the population).
 	+ **generations: int, optional (default=20)**  
@@ -283,7 +283,7 @@ Class methods (utilities)
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
 * **report(df='dataset', rows=None, filename=None)**  
-Get an extensive report of the data using [Pandas Profiling](https://pandas-profiling.github.io/pandas-profiling/docs/). The profile analysis is written in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets.
+Get an extensive profile analysis of the data. The report is rendered in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets. Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
 	+ **rows: int, optional (default=None)**  
@@ -333,11 +333,7 @@ Class attributes
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
-* **collinear**: Dataframe of the collinear features and their correlation values (only if feature_selection was used).
-* **univariate**: Univariate feature selection class (if used), from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
-* **PCA**: Principal component analysis class (if used), from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
-* **SFM**: Select from model class (if used), from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
-* **RFE**: Recursive feature eliminator (if used), from sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html).
+* **collinear**: Dataframe of the collinear features and their correlation values (if feature_selection was used).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
 
