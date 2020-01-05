@@ -248,12 +248,12 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)
 		- 'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)
 		- 'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor) 
-	+ **metric: function callable**  
-	Metric on which the pipeline fits the models. Choose from any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics) or use a score function (or loss function) with signature `metric(y, y_pred, **kwargs)`.
+	+ **metric: string or callable**  
+	Metric on which the pipeline fits the models. Choose from any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics) or use a score (or loss) function with signature `metric(y, y_pred, **kwargs)`.
 	+ **greater_is_better: bool, optional (default=True)**  
-	Wether the metric is a score function or a loss function, i.e. if True, a higher score is better and if False, lower is better.
+	Wether the metric is a score function or a loss function, i.e. if True, a higher score is better and if False, lower is better. Will be ignored if the metric is one of the pre-defined (string) metrics. 
 	+ **needs_proba: bool, optional (default=False)**  
-	Whether the metric function requires predict_proba to get probability estimates out of a classifier.
+	Whether the metric function requires predict_proba to get probability estimates out of a classifier. Will be ignored if the metric is one of the pre-defined (string) metrics.
 	+ **successive_halving: bool, optional (default=False)**  
 	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
 	+ **skip_iter: int, optional (default=0)**  
@@ -320,6 +320,12 @@ Plot the ROC curve of all the models. Only for binary classification tasks.
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
+* **plot_PRC(figsize=(10, 6), filename=None)**  
+Plot the precision-recall curve of all the models. Only for binary classification tasks.  
+ 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	Figure size: format as (x, y).
+	+ **filename: string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
 * **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics click [here](https://github.com/tvdboom/ATOM#Metrics).**
 
 
@@ -381,6 +387,12 @@ Plot the feature importance scores. Only works with tree based algorithms (Tree,
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(figsize=(10, 6), filename=None)**  
 Plot the ROC curve. Only for binary classification tasks.  
+ 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	Figure size: format as (x, y).
+	+ **filename: string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
+* **plot_PRC(figsize=(10, 6), filename=None)**  
+Plot the precision-recall curve. Only for binary classification tasks.  
  	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
