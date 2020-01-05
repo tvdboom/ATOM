@@ -520,26 +520,34 @@ class BaseModel(object):
 
         # Set metric parameter
         if metric is None:
-            metric = self.metric.func
-        elif not isinstance(metric, list):
+            metric = self.metric.function
+        if not isinstance(metric, list):
             metric = [metric]
+
+        # Convert all strings to functions
+        mlist = []
+        for m in metric:
+            if isinstance(m, str):
+                mlist.append(getattr(self.metric, m).function)
+            else:
+                mlist.append(m)
 
         # Get results ignoring annoying warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
             results = {}
-            for m in metric:  # Create dict of empty arrays
+            for m in mlist:  # Create dict of empty arrays
                 results[m] = []
             space = np.linspace(0, 1, steps)
             for step in space:
-                for m in metric:
-                    pred = (self.predict_proba[:, 1] >= step).astype(bool)
+                for m in mlist:
+                    pred = (self.predict_proba_test[:, 1] >= step).astype(bool)
                     results[m].append(m(self.Y_test, pred))
 
         fig, ax = plt.subplots(figsize=figsize)
-        for i, m in enumerate(metric):
-            plt.plot(space, results[m], label=metric[i].__name__, lw=2)
+        for i, m in enumerate(mlist):
+            plt.plot(space, results[m], label=mlist[i].__name__, lw=2)
 
         plt.xlabel('Threshold', fontsize=16, labelpad=12)
         plt.ylabel('Score', fontsize=16, labelpad=12)
@@ -580,7 +588,7 @@ class BaseModel(object):
         colors = ['r', 'b', 'g']
         for n, class_ in enumerate(classes):
             idx = np.where(self.Y_test == class_)  # Get indices per class
-            sns.distplot(self.predict_proba[idx, target_class],
+            sns.distplot(self.predict_proba_test[idx, target_class],
                          hist=False,
                          kde=True,
                          norm_hist=True,
@@ -706,7 +714,7 @@ class BaseModel(object):
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
-                             'classification problems.')
+                             'classification tasks.')
 
         # Get False (True) Positive Rate
         fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba_test[:, 1])
@@ -732,7 +740,7 @@ class BaseModel(object):
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
-                             'classification problems.')
+                             'classification tasks.')
 
         # Get precision-recall pairs for different probability thresholds
         prec, recall, _ = precision_recall_curve(self.Y_test,
@@ -769,9 +777,9 @@ class BaseModel(object):
 
         '''
 
-        if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification problems.')
+        if self.task == 'regression':
+            raise ValueError('This method only works for ' +
+                             'classification tasks.')
 
         if normalize:
             title = 'Normalized confusion matrix'
@@ -784,14 +792,16 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
+        ticks = [str(i) for i in range(cm.shape[0])]
+
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
         ax.figure.colorbar(im, ax=ax)
         ax.set(xticks=np.arange(cm.shape[1]),
                yticks=np.arange(cm.shape[0]),
-               xticklabels=['0', '1'],
-               yticklabels=['0', '1'])
+               xticklabels=ticks,
+               yticklabels=ticks)
 
         # Loop over data dimensions and create text annotations
         fmt = '.2f' if normalize else 'd'
