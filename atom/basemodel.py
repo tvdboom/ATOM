@@ -26,8 +26,9 @@ from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
-from sklearn.metrics import make_scorer, confusion_matrix, roc_curve
-
+from sklearn.metrics import (
+        make_scorer, confusion_matrix, roc_curve, precision_recall_curve
+        )
 # Others
 from GPyOpt.methods import BayesianOptimization
 
@@ -708,18 +709,43 @@ class BaseModel(object):
                              'classification problems.')
 
         # Get False (True) Positive Rate
-        fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba[:, 1])
+        fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba_test[:, 1])
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.plot(fpr, tpr, lw=2, color='red', label=f'AUC={self.auc:.3f}')
-
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
         plt.xlabel('FPR', fontsize=16, labelpad=12)
         plt.ylabel('TPR', fontsize=16, labelpad=12)
         plt.title('ROC curve', fontsize=20)
         plt.legend(loc='lower right', frameon=False, fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_PRC(self, figsize=(10, 6), filename=None):
+        ''' Plot precision-recall curve '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification problems.')
+
+        # Get precision-recall pairs for different probability thresholds
+        prec, recall, _ = precision_recall_curve(self.Y_test,
+                                                 self.predict_proba_test[:, 1])
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
+        plt.plot(recall, prec, lw=2, label=f'AP={self.ap:.3f}')
+
+        plt.xlabel('Recall', fontsize=16, labelpad=12)
+        plt.ylabel('Precision', fontsize=16, labelpad=12)
+        plt.title('Precision-recall curve', fontsize=20)
+        plt.legend(loc='lower left', frameon=False, fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()

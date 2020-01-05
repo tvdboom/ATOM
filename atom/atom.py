@@ -24,7 +24,7 @@ from .basemodel import prlog
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, precision_recall_curve
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -1645,16 +1645,48 @@ class ATOM(object):
         for model in self.models:
             # Get False (True) Positive Rate
             Y_test = getattr(self, model).Y_test
-            predict_proba = getattr(self, model).predict_proba[:, 1]
+            predict_proba = getattr(self, model).predict_proba_test[:, 1]
             auc = getattr(self, model).auc
             fpr, tpr, _ = roc_curve(Y_test, predict_proba)
-            plt.plot(fpr, tpr, lw=2, label=f'{model}:  AUC={auc:.3f}')
+            plt.plot(fpr, tpr, lw=2, label=f'{model} (AUC={auc:.3f})')
 
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
         plt.xlabel('FPR', fontsize=16, labelpad=12)
         plt.ylabel('TPR', fontsize=16, labelpad=12)
         plt.title('ROC curve', fontsize=20)
         plt.legend(loc='lower right', frameon=False, fontsize=16)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_PRC(self, figsize=(10, 6), filename=None):
+        ''' Plot precision-recall curve '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification problems.')
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the plot_PRC method!')
+
+        sns.set_style('darkgrid')
+        fig, ax = plt.subplots(figsize=figsize)
+        for model in self.models:
+            # Get precision-recall pairs for different probability thresholds
+            Y_test = getattr(self, model).Y_test
+            predict_proba = getattr(self, model).predict_proba_test[:, 1]
+            ap = getattr(self, model).ap
+            prec, recall, _ = precision_recall_curve(Y_test, predict_proba)
+            plt.plot(recall, prec, lw=2, label=f'{model} (AP={ap:.3f})')
+
+        plt.xlabel('Recall', fontsize=16, labelpad=12)
+        plt.ylabel('Precision', fontsize=16, labelpad=12)
+        plt.title('Precision-recall curve', fontsize=20)
+        plt.legend(loc='lower left', frameon=False, fontsize=16)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.tight_layout()
