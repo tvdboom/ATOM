@@ -351,10 +351,10 @@ Subclass methods
 -----------------------------  
 * **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
-	+ **metric: function callable or list of callables, optional (default=None)**  
+	+ **metric: string, callable or list, optional (default=None)**  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
    	+ **steps: int, optional (default=100)**  
-    	Number of thresholds to try between 0 and 1.
+    	Number of thresholds (steps) to plot.
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
@@ -398,7 +398,7 @@ Plot the precision-recall curve. Only for binary classification tasks.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
-Plot the confusion matrix for the model. Only for binary classification tasks.  
+Plot the confusion matrix for the model. Only for classification tasks.
 	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
