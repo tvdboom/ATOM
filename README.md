@@ -12,7 +12,7 @@ Email: m.524687@gmail.com
   
 Description  
 ------------------------  
-Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of machine learning solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple machine learning models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the machine learning solution.
+Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration of supervised machine learning solutions. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the machine learning solution. This package supports binary classification, multiclass classification and regression tasks.
 
 | NOTE: A data scientist with knowledge of the data will quickly outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for a fast exploration of the problem! |
 | --- |
@@ -56,7 +56,7 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
     atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac=0.1)  
-    atom.encode(max_onehot=10)  
+    atom.encode(max_onehot=10, fraction_to_other=0.05)  
     atom.outliers(max_sigma=4)  
     atom.balance(oversample=0.8, neighbors=15)  
     atom.feature_selection(strategy='univariate', solver='chi2', max_features=0.9)
@@ -70,7 +70,7 @@ Fit the data to different models:
 	         max_time=1000,
 	         init_points=3,
 	         cv=4,
-	         bagging=5)  
+	         bagging=10)  
 
 Make plots and analyze results: 
 
@@ -218,7 +218,7 @@ Select best features according to the selected strategy. Ties between features w
 	+ **max_correlation: float, optional (default=0.98)**  
 	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
 * **fit(models, metric, greater_is_better=True, needs_proba=False, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
-Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to test the robustness of the model applying a bagging algorithm, providing a distribution of the models' performance.
+Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to evaluate the robustness of the model's performance on the test set applying a bagging algorithm.
 	+ **models: string or list of strings**  
 	List of models to fit on the data. If 'all', all available models are used. Use the predefined acronyms to select the models. Possible values are (case insensitive):    
 		- 'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html) (no hyperparameter tuning)
@@ -275,7 +275,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- if 1, randomly split the training data into a train and validation set
 		- if >1, perform a k-fold cross validation on the training set
 	+ **bagging: int, optional (default=None)**  
-	Number of bootstrapped samples used for bagging. If None, no bagging is performed. The algorithm is trained on the complete training set and validated on the test set.
+	Number of data sets (bootstrapped from the training set) to use in the bagging algorithm. If None, no bagging is performed.
 
 
 Class methods (utilities)
@@ -359,10 +359,10 @@ Plot performance metrics against multiple threshold values. If None, the metric 
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_probabilities(target_class=1, figsize=(10, 6), filename=None)**  
+* **plot_probabilities(target=1, figsize=(10, 6), filename=None)**  
 Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
-	+ **target_class: int, optional (default=1)**
-	Target class to plot the probabilities against. A value of 0 corresponds to the first class, 1 to the second class, etc...
+	+ **target: int or string, optional (default=1)**  
+	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
@@ -405,14 +405,12 @@ Plot the confusion matrix for the model. Only for classification tasks.
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_tree(num_trees=0, max_depth=None, rotate=False, figsize=(10, 6), filename=None)**  
+* **plot_tree(num_trees=0, max_depth=None, figsize=(10, 6), filename=None)**  
 Plot a single decision tree of the model. Only for tree-based algorithms. Dependency: [graphviz](https://graphviz.gitlab.io/download/).
 	+ **num_trees: int, otional (default=0 --> first tree)**  
 	Number of the tree to plot (if ensemble).
 	+ **max_depth: int, optional (default=None)**  
 	Maximum depth of the plotted tree. None for no limit.
-	+ **rotate: bool, optional (default=False)**  
-	When True, orientate the tree left-right instead of top-bottom.
    	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
@@ -440,7 +438,7 @@ Subclass attributes
 * **BO**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
-
+* **Any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics).**
 
 Metrics
 -----------------------------  
