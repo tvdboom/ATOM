@@ -77,8 +77,8 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # << ============ Functions ============ >>
 
-def set_init(data, metric, task, log, n_jobs,
-             verbose, random_state, scaled=False):
+def set_init(data, target_mapping, metric, task,
+             log, n_jobs, verbose, random_state, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
     if scaled:
@@ -93,6 +93,7 @@ def set_init(data, metric, task, log, n_jobs,
     for p in ('Y', 'Y_train', 'Y_test'):
         params[p] = data[p]
 
+    params['target_mapping'] = target_mapping
     params['metric'] = metric
     params['task'] = task
     params['log'] = log

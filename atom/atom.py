@@ -252,6 +252,8 @@ class ATOM(object):
             self.dataset[self.target] = le.fit_transform(
                                                     self.dataset[self.target])
             self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
+        else:
+            self.target_mapping = 'No mapping since target column is numerical'
 
         self._split_dataset(self.dataset, percentage)  # Make train/test split
         self.reset_attributes()  # Define data subsets class attributes
@@ -360,7 +362,7 @@ class ATOM(object):
             try:
                 _, counts = np.unique(self.Y, return_counts=True)
                 len_classes = max([len(str(i)) for i in self._unique])
-                if hasattr(self, 'target_mapping'):
+                if isinstance(self.target_mapping, dict):
                     len_classes += 3
                 lx = max(len_classes, len(self.Y.name))
 
@@ -369,7 +371,7 @@ class ATOM(object):
 
                 # Check wether there is LabelEncoding for the target varaible
                 for i in range(len(self._unique)):
-                    if hasattr(self, 'target_mapping'):
+                    if isinstance(self.target_mapping, dict):
                         prlog('{0}: {1:<{2}} --> {3}'
                               .format(self.target_mapping[self._unique[i]],
                                       self._unique[i], lx - 3, counts[i]),
@@ -723,7 +725,7 @@ class ATOM(object):
             self.X_train, self.Y_train = \
                 adasyn.fit_resample(self.X_train, self.Y_train)
             diff = len(self.X_train) - length  # Difference in length
-            prlog(f' --> Adding {diff} rows to minority class.', self, 2)
+            prlog(f' --> Adding {diff} rows to the minority class.', self, 2)
 
         # Apply undersampling of majority class
         if undersample is not None:
@@ -734,7 +736,8 @@ class ATOM(object):
             self.X_train, self.Y_train = NM.fit_resample(self.X_train,
                                                          self.Y_train)
             diff = length - len(self.X_train)  # Difference in length
-            prlog(f' --> Removing {diff} rows from majority class.', self, 2)
+            prlog(f' --> Removing {diff} rows from the majority class.',
+                  self, 2)
 
         self.X_train = convert_to_pd(self.X_train, columns=columns_x)
         self.Y_train = convert_to_pd(self.Y_train, columns=self.target)
@@ -1142,6 +1145,7 @@ class ATOM(object):
             for model in loop:
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
+                                                 self.target_mapping,
                                                  self.metric,
                                                  self.task,
                                                  self.log,
@@ -1290,8 +1294,8 @@ class ATOM(object):
             ''' Make a dct of the data (complete, train, test and scaled) '''
 
             data = {}
-            for i in ['X', 'Y', 'X_train', 'Y_train', 'X_test', 'Y_test']:
-                data[i] = eval('self.' + i)
+            for set_ in ['X', 'Y', 'X_train', 'Y_train', 'X_test', 'Y_test']:
+                data[set_] = getattr(self, set_)
 
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
@@ -1454,7 +1458,7 @@ class ATOM(object):
         for key, value in metrics.items():
             setattr(self.metric, key, value)
 
-        prlog(f"Metric: {self.metric.name}", self)
+        prlog(f"Metric: {self.metric.longname}", self)
 
         # << =================== Core ==================== >>
 

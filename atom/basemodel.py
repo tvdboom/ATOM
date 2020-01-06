@@ -122,13 +122,14 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        data         --> dictionary of the data (train, test and complete set)
-        metrics      --> dictionary of metrics
-        task         --> classification or regression
-        log          --> name of the log file
-        n_jobs       --> number of cores for parallel processing
-        verbose      --> verbosity level (0, 1, 2, 3)
-        random_state --> int seed for the RNG
+        data           --> dictionary of the data (train, test and all)
+        target_mapping --> dictionary of the mapping of the target column
+        metrics        --> dictionary of metrics
+        task           --> classification or regression
+        log            --> name of the log file
+        n_jobs         --> number of cores for parallel processing
+        verbose        --> verbosity level (0, 1, 2, 3)
+        random_state   --> int seed for the RNG
 
         '''
 
@@ -277,12 +278,13 @@ class BaseModel(object):
 
                 # Define the estimator dependent on needs_proba
                 if self.name in not_predict_proba and self.metric.needs_proba:
-                    estimator = CalibratedClassifierCV(algorithm, cv=3)
+                    estimator = CalibratedClassifierCV(algorithm, cv=None)
                 else:
                     estimator = algorithm
 
                 # Make scoring function for the cross_validator
-                scoring = make_scorer(self.metric.func,
+                # .function (not .func) since make_scorer handles automatically
+                scoring = make_scorer(self.metric.function,
                                       greater_is_better=self.metric.gib,
                                       needs_proba=self.metric.needs_proba)
 
@@ -561,8 +563,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_probabilities(self, target_class=1,
-                           figsize=(10, 6), filename=None):
+    def plot_probabilities(self, target=1, figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -572,9 +573,9 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        target_class --> probability of being that class (as idx or string)
-        figsize      --> figure size: format as (x, y)
-        filename     --> name of the file to save
+        target   --> probability of being that class (as idx or string)
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
 
         '''
 
@@ -582,22 +583,31 @@ class BaseModel(object):
             raise ValueError('This method is only available for ' +
                              'classification tasks.')
 
+        # Make target mapping
+        inv_map = {str(v): k for k, v in self.target_mapping.items()}
+        try:  # User provides a string
+            target_int = self.target_mapping[target]
+            target_str = target
+        except KeyError:  # User provides an integer
+            try:
+                target_int = target
+                target_str = inv_map[str(target)]
+            except KeyError:
+                raise ValueError('Invalid value for the target parameter!')
+
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        classes = list(set(self.Y))
-        colors = ['r', 'b', 'g']
-        for n, class_ in enumerate(classes):
-            idx = np.where(self.Y_test == class_)  # Get indices per class
-            sns.distplot(self.predict_proba_test[idx, target_class],
+        for key, value in self.target_mapping.items():
+            idx = np.where(self.Y_test == value)  # Get indices per class
+            sns.distplot(self.predict_proba_test[idx, target_int],
                          hist=False,
                          kde=True,
                          norm_hist=True,
-                         color=colors[n],
                          kde_kws={"shade": True},
-                         label='Class=' + str(class_))
+                         label='Class=' + key)
 
-        plt.title(f'Predicted probabilities for {self.Y.name}=' +
-                  str(classes[target_class]), fontsize=20)
+        plt.title(f'Predicted probabilities for {self.Y.name}={target_str}',
+                  fontsize=20)
         plt.legend(frameon=False, fontsize=16)
         plt.xlabel('Probability', fontsize=16, labelpad=12)
         plt.ylabel('Counts', fontsize=16, labelpad=12)
@@ -633,8 +643,9 @@ class BaseModel(object):
 
         # Calculate the permutation importances
         # Force random state on function (won't work with numpy default)
-        scoring = make_scorer(self.metric.func,
-                              greater_is_better=self.metric.gib)
+        scoring = make_scorer(self.metric.function,
+                              greater_is_better=self.metric.gib,
+                              needs_proba=self.metric.needs_proba)
         self.permutations = \
             permutation_importance(self.best_model_fit,
                                    self.X_test,
@@ -721,7 +732,7 @@ class BaseModel(object):
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(fpr, tpr, lw=2, color='red', label=f'AUC={self.auc:.3f}')
+        plt.plot(fpr, tpr, lw=2, label=f'{self.name} (AUC={self.auc:.3f})')
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
         plt.xlabel('FPR', fontsize=16, labelpad=12)
@@ -748,7 +759,7 @@ class BaseModel(object):
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(recall, prec, lw=2, label=f'AP={self.ap:.3f}')
+        plt.plot(recall, prec, lw=2, label=f'{self.name} (AP={self.ap:.3f})')
 
         plt.xlabel('Recall', fontsize=16, labelpad=12)
         plt.ylabel('Precision', fontsize=16, labelpad=12)
@@ -792,7 +803,10 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        ticks = [str(i) for i in range(cm.shape[0])]
+        if isinstance(self.target_mapping, str):
+            ticks = [str(i) for i in range(cm.shape[0])]
+        else:
+            ticks = [v for v in self.target_mapping.keys()]
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -824,7 +838,7 @@ class BaseModel(object):
         plt.show()
 
     def plot_tree(self, num_trees=0, max_depth=None,
-                  rotate=False, figsize=(14, 10), filename=None):
+                  figsize=(14, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -835,7 +849,6 @@ class BaseModel(object):
 
         num_trees --> number of the tree to plot (for ensembles)
         max_depth --> maximum depth to plot (None for complete tree)
-        rotate    --> when set to True, orient tree left-right, not top-down
         figsize   --> figure size: format as (x, y)
         filename  --> name of file to save
 
@@ -854,7 +867,6 @@ class BaseModel(object):
 
             sklearn.tree.plot_tree(estimator,
                                    max_depth=max_depth,
-                                   rotate=rotate,
                                    rounded=True,
                                    filled=True,
                                    fontsize=14)
@@ -863,7 +875,7 @@ class BaseModel(object):
             import xgboost as xgb
             xgb.plot_tree(self.best_model_fit,
                           num_trees=num_trees,
-                          rankdir='LR' if rotate else 'UT')
+                          rankdir='UT')
 
         elif self.name == 'LGB':
             import lightgbm as lgb
