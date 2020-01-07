@@ -253,7 +253,7 @@ class ATOM(object):
                                                     self.dataset[self.target])
             self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
         else:
-            self.target_mapping = 'No mapping since target column is numerical'
+            self.target_mapping = {str(i): i for i in range(len(self._unique))}
 
         self._split_dataset(self.dataset, percentage)  # Make train/test split
         self.reset_attributes()  # Define data subsets class attributes
@@ -362,7 +362,7 @@ class ATOM(object):
             try:
                 _, counts = np.unique(self.Y, return_counts=True)
                 len_classes = max([len(str(i)) for i in self._unique])
-                if isinstance(self.target_mapping, dict):
+                if '0' not in self.target_mapping.keys():
                     len_classes += 3
                 lx = max(len_classes, len(self.Y.name))
 
@@ -371,7 +371,7 @@ class ATOM(object):
 
                 # Check wether there is LabelEncoding for the target varaible
                 for i in range(len(self._unique)):
-                    if isinstance(self.target_mapping, dict):
+                    if '0' not in self.target_mapping.keys():
                         prlog('{0}: {1:<{2}} --> {3}'
                               .format(self.target_mapping[self._unique[i]],
                                       self._unique[i], lx - 3, counts[i]),
@@ -1243,7 +1243,8 @@ class ATOM(object):
                                                           'bagging_time'])])
 
             for m in self.models:
-                name = getattr(self, m).longname
+                name = getattr(self, m).name
+                longname = getattr(self, m).longname
                 score_train = getattr(self, m).score_train
                 score_test = getattr(self, m).score_test
                 time_bo = getattr(self, m).time_bo
@@ -1258,12 +1259,12 @@ class ATOM(object):
                     # Highlight best score (if more than one)
                     if score_test == best and len(self.models) > 1:
                         prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
-                              .format(name, lenx, score_test, width, decimals),
-                              self)
+                              .format(longname, lenx, score_test,
+                                      width, decimals), self)
                     else:
                         prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
-                              .format(name, lenx, score_test, width, decimals),
-                              self)
+                              .format(longname, lenx, score_test,
+                                      width, decimals), self)
 
                 else:
                     bs_mean = getattr(self, m).bagging_scores.mean()
@@ -1281,11 +1282,11 @@ class ATOM(object):
                     # Highlight best score (if more than one)
                     if bs_mean == best and len(self.models) > 1:
                         prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f} !!'
-                              .format(name, lenx, bs_mean, width,
+                              .format(longname, lenx, bs_mean, width,
                                       decimals, bs_std), self)
                     else:
                         prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f}'
-                              .format(name, lenx, bs_mean, width,
+                              .format(longname, lenx, bs_mean, width,
                                       decimals, bs_std), self)
 
             return results
@@ -1516,9 +1517,14 @@ class ATOM(object):
 
         '''
 
+        def raise_exception():
+            raise AttributeError('You need to fit the class using bagging ' +
+                                 'before calling the boxplot method!')
         if not self._isfit:
-            raise AttributeError('You need to fit the class before calling ' +
-                                 'the boxplot method!')
+            raise_exception()
+
+        if self.bagging is None:
+            raise_exception()
 
         results, names = [], []
         if self.successive_halving:
@@ -1527,7 +1533,7 @@ class ATOM(object):
             df = self.results
         for m in df.model:
             results.append(getattr(self, m).bagging_scores)
-            names.append(getattr(self, m).shortname)
+            names.append(getattr(self, m).name)
 
         if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8 + len(names)/2), 6)
@@ -1537,7 +1543,7 @@ class ATOM(object):
         plt.boxplot(results)
         ax.set_xticklabels(names)
         plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.name, fontsize=16, labelpad=12)
+        plt.ylabel(self.metric.longname, fontsize=16, labelpad=12)
         plt.title('Model comparison', fontsize=20)
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
@@ -1560,13 +1566,16 @@ class ATOM(object):
 
         '''
 
+        def raise_exception():
+            raise AttributeError('You need to fit the class using a ' +
+                                 'successive halving approach before ' +
+                                 'calling the plot_successive_halving method!')
+
         if not self._isfit:
-            raise AttributeError('You need to fit the class before calling ' +
-                                 'the plot_successive_halving method!')
+            raise_exception()
 
         if not self.successive_halving:
-            raise ValueError('This plot is only available if the class was ' +
-                             'fitted using a successive halving approach!')
+            raise_exception()
 
         models = self.results[0].model  # List of models in first iteration
         col = 'score' if self.bagging is None else 'bagging_mean'
@@ -1585,7 +1594,7 @@ class ATOM(object):
             plt.plot(x, y, lw=2, marker='o', label=label)
         plt.xlim(-0.1, len(self.results)-0.9)
         plt.xlabel('Iteration', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.name, fontsize=16, labelpad=12)
+        plt.ylabel(self.metric.longname, fontsize=16, labelpad=12)
         plt.title('Successive halving scores', fontsize=20)
         plt.legend(frameon=False, fontsize=14)
         ax.set_xticks(range(len(self.results)))

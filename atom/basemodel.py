@@ -192,7 +192,7 @@ class BaseModel(object):
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
                 ax1.set_title('Bayesian Optimization for {}'
                               .format(self.longname), fontsize=16)
-                ax1.set_ylabel(self.metric.name,
+                ax1.set_ylabel(self.metric.longname,
                                fontsize=16, labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
@@ -585,15 +585,12 @@ class BaseModel(object):
 
         # Make target mapping
         inv_map = {str(v): k for k, v in self.target_mapping.items()}
-        try:  # User provides a string
+        if isinstance(target, str):  # User provides a string
             target_int = self.target_mapping[target]
             target_str = target
-        except KeyError:  # User provides an integer
-            try:
-                target_int = target
-                target_str = inv_map[str(target)]
-            except KeyError:
-                raise ValueError('Invalid value for the target parameter!')
+        else:  # User provides an integer
+            target_int = target
+            target_str = inv_map[str(target)]
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
@@ -803,10 +800,7 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        if isinstance(self.target_mapping, str):
-            ticks = [str(i) for i in range(cm.shape[0])]
-        else:
-            ticks = [v for v in self.target_mapping.keys()]
+        ticks = [v for v in self.target_mapping.keys()]
 
         sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
