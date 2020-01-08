@@ -18,7 +18,6 @@ from time import time
 import multiprocessing
 import warnings
 import importlib
-from .basemodel import prlog
 
 # Sklearn
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -31,14 +30,15 @@ from sklearn.feature_selection import (
      chi2, SelectKBest, VarianceThreshold, SelectFromModel, RFE
     )
 
-# Models & metrics
-from .models import *
+# Own package modules
+from .basemodel import BaseModel, prlog
 from .metrics import BaseMetric
+from .models import *
 
 # Plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set(style='darkgrid', palette="GnBu_d")
+sns.set(style='darkgrid', palette='GnBu_d')
 
 
 # << ============ Global variables ============ >>
@@ -113,6 +113,15 @@ def merge(X, Y):
 # << ============ Classes ============ >>
 
 class ATOM(object):
+
+    # Define class variables for plot settings
+    style = 'darkgrid'
+    palette = 'GnBu_d'
+    title_fs = 20
+    label_fs = 16
+    tick_fs = 12
+
+    # << ================= Methods ================= >>
 
     def __init__(self, X, Y=None, target=None, percentage=100,
                  test_size=0.3, log=None, n_jobs=1,
@@ -242,23 +251,10 @@ class ATOM(object):
             prlog(f' --> Dropping {diff} rows with NaN values ' +
                   'in target column.', self, 2)
 
+        # << ============ Set algorithm task ============ >>
+
         # Get unique target values before encoding (for later print)
         self._unique = self.dataset[self.target].unique()
-
-        # Make sure the target categories are numerical
-        # Not strictly necessary for sklearn models, but cleaner
-        if self.dataset[self.target].dtype.kind not in 'ifu':
-            le = LabelEncoder()
-            self.dataset[self.target] = le.fit_transform(
-                                                    self.dataset[self.target])
-            self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
-        else:
-            self.target_mapping = {str(i): i for i in range(len(self._unique))}
-
-        self._split_dataset(self.dataset, percentage)  # Make train/test split
-        self.reset_attributes()  # Define data subsets class attributes
-
-        # << ============ Set algorithm task ============ >>
 
         if len(self._unique) < 2:
             raise ValueError(f'Only found one target value: {self._unique}!')
@@ -273,8 +269,24 @@ class ATOM(object):
             prlog('Algorithm task: regression.', self)
             self.task = 'regression'
 
-        # << ============================================ >>
+        # << ============ Map target column ============ >>
 
+        # Make sure the target categories are numerical
+        # Not strictly necessary for sklearn models, but cleaner
+        if self.dataset[self.target].dtype.kind not in 'ifu':
+            le = LabelEncoder()
+            self.dataset[self.target] = le.fit_transform(
+                                                    self.dataset[self.target])
+            self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
+        elif self.task != 'regression':
+            self.target_mapping = {str(i): i for i in range(len(self._unique))}
+        else:
+            self.target_mapping = 'No target mapping for regression tasks'
+
+        # << =========================================== >>
+
+        self._split_dataset(self.dataset, percentage)  # Make train/test split
+        self.reset_attributes()  # Define data subsets class attributes
         self.stats()  # Print out data stats
 
     def _split_dataset(self, dataset, percentage=100):
@@ -348,7 +360,6 @@ class ATOM(object):
         self.Y_test = self.test[self.target]
 
     def stats(self):
-
         ''' Print some information about the dataset '''
 
         prlog('\nData stats =====================>', self, 1)
@@ -1004,17 +1015,20 @@ class ATOM(object):
         # Perform selection based on strategy
         if self.strategy.lower() == 'univariate':
             # Set the solver
-            solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
-                       'mutual_info_regression', 'chi2']
+            solvers_dct = dict(f_classif=f_classif,
+                               f_regression=f_regression,
+                               mutual_info_classif=mutual_info_classif,
+                               mutual_info_regression=mutual_info_regression,
+                               chi2=chi2)
             if solver is None and self.task == 'regression':
                 solver = f_regression
             elif solver is None:
                 solver = f_classif
-            elif solver in solvers:
-                solver = eval(solver)
+            elif solver in solvers_dct.keys():
+                solver = solvers_dct[solver]
             elif isinstance(solver, str):
                 raise ValueError('Unknown solver: Try one {}.'
-                                 .format(', '.join(solvers)))
+                                 .format(', '.join(solvers_dct.keys())))
 
             self.univariate = SelectKBest(solver, k=max_features)
             self.univariate.fit(self.X, self.Y)
@@ -1502,7 +1516,8 @@ class ATOM(object):
 
     # <====================== Utility methods ======================>
 
-    def boxplot(self, iteration=-1, figsize=None, filename=None):
+    def plot_bagging(self, iteration=-1,
+                     title=None, figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1512,6 +1527,7 @@ class ATOM(object):
         PARAMETERS -------------------------------------
 
         iteration --> iteration of the successive halving to plot
+        title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
@@ -1538,21 +1554,25 @@ class ATOM(object):
         if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8 + len(names)/2), 6)
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.boxplot(results)
+
+        title = 'Bagging results' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.xlabel('Model', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel(self.metric.longname,
+                   fontsize=ATOM.label_fs,
+                   labelpad=12)
         ax.set_xticklabels(names)
-        plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.longname, fontsize=16, labelpad=12)
-        plt.title('Model comparison', fontsize=20)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_successive_halving(self, figsize=(10, 6), filename=None):
+    def plot_successive_halving(self, title=None,
+                                figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1561,6 +1581,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -1588,24 +1609,27 @@ class ATOM(object):
                     liny[n].append(
                             df[col][df.model == model].values[0])
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         for x, y, label in zip(linx, liny, models):
             plt.plot(x, y, lw=2, marker='o', label=label)
         plt.xlim(-0.1, len(self.results)-0.9)
-        plt.xlabel('Iteration', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.longname, fontsize=16, labelpad=12)
-        plt.title('Successive halving scores', fontsize=20)
-        plt.legend(frameon=False, fontsize=14)
+
+        title = 'Successive halving results' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=ATOM.label_fs)
+        plt.xlabel('Iteration', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel(self.metric.longname,
+                   fontsize=ATOM.label_fs,
+                   labelpad=12)
         ax.set_xticks(range(len(self.results)))
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_correlation(self, figsize=(10, 10), filename=None):
+    def plot_correlation(self, title=None, figsize=(10, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1614,6 +1638,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -1629,21 +1654,36 @@ class ATOM(object):
         mask = np.zeros_like(corr, dtype=np.bool)
         mask[np.triu_indices_from(mask, k=1)] = True
 
-        sns.set_style('white')
+        sns.set_style('white')  # Only for this plot
         fig, ax = plt.subplots(figsize=figsize)
 
         # Draw the heatmap with the mask and correct aspect ratio
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
         sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
-        plt.title('Feature correlation matrix', fontsize=20)
+
+        title = 'Feature correlation matrix' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
         fig.tight_layout()
+        sns.set_style(ATOM.style)  # Set back to originals style
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_ROC(self, figsize=(10, 6), filename=None):
-        ''' Plot Receiver Operating Characteristics curve '''
+    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot Receiver Operating Characteristics curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
@@ -1653,7 +1693,6 @@ class ATOM(object):
             raise AttributeError('You need to fit the class before calling ' +
                                  'the plot_ROC method!')
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         for model in self.models:
             # Get False (True) Positive Rate
@@ -1664,19 +1703,35 @@ class ATOM(object):
             plt.plot(fpr, tpr, lw=2, label=f'{model} (AUC={auc:.3f})')
 
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
-        plt.xlabel('FPR', fontsize=16, labelpad=12)
-        plt.ylabel('TPR', fontsize=16, labelpad=12)
-        plt.title('ROC curve', fontsize=20)
-        plt.legend(loc='lower right', frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+
+        title = 'ROC curve' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower right',
+                   frameon=False,
+                   fontsize=ATOM.label_fs)
+        plt.xlabel('FPR', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('TPR', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_PRC(self, figsize=(10, 6), filename=None):
-        ''' Plot precision-recall curve '''
+    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot precision-recall curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
@@ -1686,7 +1741,6 @@ class ATOM(object):
             raise AttributeError('You need to fit the class before calling ' +
                                  'the plot_PRC method!')
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         for model in self.models:
             # Get precision-recall pairs for different probability thresholds
@@ -1696,12 +1750,15 @@ class ATOM(object):
             prec, recall, _ = precision_recall_curve(Y_test, predict_proba)
             plt.plot(recall, prec, lw=2, label=f'{model} (AP={ap:.3f})')
 
-        plt.xlabel('Recall', fontsize=16, labelpad=12)
-        plt.ylabel('Precision', fontsize=16, labelpad=12)
-        plt.title('Precision-recall curve', fontsize=20)
-        plt.legend(loc='lower left', frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        title = 'Precision-recall curve' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower left',
+                   frameon=False,
+                   fontsize=ATOM.label_fs)
+        plt.xlabel('Recall', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('Precision', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
@@ -1819,6 +1876,45 @@ class ATOM(object):
 
     def recall(self):
         self._final_results(self.metric.recall)
+
+    # <============ Classmethods for plot settings ============>
+
+    @classmethod
+    def set_style(cls, style='darkgrid'):
+        ''' Change the seaborn plotting style '''
+
+        cls.style = style
+        BaseModel.style = style
+        sns.set_style(style)
+
+    @classmethod
+    def set_palette(cls, palette='GnBu_d'):
+        ''' Change the seaborn color palette '''
+
+        cls.palette = palette
+        BaseModel.palette = palette
+        sns.set_palette(palette)
+
+    @classmethod
+    def set_title_fontsize(cls, fontsize=20):
+        ''' Change the fontsize of the plot's title '''
+
+        cls.title_fs = fontsize
+        BaseModel.title_fs = fontsize
+
+    @classmethod
+    def set_label_fontsize(cls, fontsize=16):
+        ''' Change the fontsize of the plot's labels and legends '''
+
+        cls.label_fs = fontsize
+        BaseModel.label_fs = fontsize
+
+    @classmethod
+    def set_tick_fontsize(cls, fontsize=12):
+        ''' Change the fontsize of the plot's ticks '''
+
+        cls.tick_fs = fontsize
+        BaseModel.tick_fs = fontsize
 
 
 class ATOMClassifier(ATOM):

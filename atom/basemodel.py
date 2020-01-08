@@ -20,7 +20,6 @@ from datetime import datetime
 from collections import deque
 
 # Sklearn
-import sklearn
 from sklearn.utils import resample
 from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
@@ -36,16 +35,12 @@ from GPyOpt.methods import BayesianOptimization
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
-sns.set(style='darkgrid', palette="GnBu_d")
 
 
 # << ============ Global variables ============ >>
 
 # List of tree-based models
 tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
-
-# List of tree-based models from the scikit-learn library
-sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM']
 
 # List of models that don't use the Bayesian Optimization
 no_bayesian_optimization = ['GP', 'GNB', 'OLS']
@@ -110,8 +105,14 @@ def prlog(string, class_, level=0, time=False):
 
 
 # << ============ Classes ============ >>
-
 class BaseModel(object):
+
+    # Define class variables for plot settings
+    style = 'darkgrid'
+    palette = 'GnBu_d'
+    title_fs = 20
+    label_fs = 16
+    tick_fs = 12
 
     def __init__(self, **kwargs):
 
@@ -190,27 +191,32 @@ class BaseModel(object):
                 ax1 = plt.subplot(gs[0])
                 # Create a variable for the line so we can later update it
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
-                ax1.set_title('Bayesian Optimization for {}'
-                              .format(self.longname), fontsize=16)
+                ax1.set_title(f'Bayesian Optimization for {self.longname}',
+                              fontsize=BaseModel.title_fontsize)
                 ax1.set_ylabel(self.metric.longname,
-                               fontsize=16, labelpad=12)
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
                 # Second subplot
                 ax2 = plt.subplot(gs[1], sharex=ax1)
                 line2, = ax2.plot(x, y2, '-o', alpha=0.8)
-                ax2.set_title('Metric distance between last consecutive steps'
-                              .format(self.longname), fontsize=16)
-                ax2.set_xlabel('Step', fontsize=16, labelpad=12)
-                ax2.set_ylabel('d', fontsize=16, labelpad=12)
+                ax2.set_title('Metric distance between last consecutive steps',
+                              fontsize=BaseModel.title_fontsize)
+                ax2.set_xlabel('Step',
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
+                ax2.set_ylabel('d',
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
                 ax2.set_xticks(self.x)
                 ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
                 ax2.set_ylim([-0.05, 0.1])
 
                 plt.setp(ax1.get_xticklabels(), visible=False)
                 plt.subplots_adjust(hspace=.0)
-                plt.xticks(fontsize=12)
-                plt.yticks(fontsize=12)
+                plt.xticks(fontsize=BaseModel.tick_fontsize)
+                plt.yticks(fontsize=BaseModel.tick_fontsize)
                 fig.tight_layout()
                 plt.show()
 
@@ -500,7 +506,7 @@ class BaseModel(object):
     # << ============ Plot functions ============ >>
 
     def plot_threshold(self, metric=None, steps=100,
-                       figsize=(10, 6), filename=None):
+                       title=None, figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION ------------------------------------
@@ -511,6 +517,7 @@ class BaseModel(object):
 
         metric   --> metric(s) to plot
         steps    --> Number of thresholds to try between 0 and 1
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -551,19 +558,22 @@ class BaseModel(object):
         for i, m in enumerate(mlist):
             plt.plot(space, results[m], label=mlist[i].__name__, lw=2)
 
-        plt.xlabel('Threshold', fontsize=16, labelpad=12)
-        plt.ylabel('Score', fontsize=16, labelpad=12)
-        plt.title('Performance metric{} vs threshold value'
-                  .format('' if len(metric) == 1 else 's'), fontsize=20)
-        plt.legend(frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None:
+            temp = '' if len(metric) == 1 else 's'
+            title = f'Performance metric{temp} against threshold value'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
+        plt.xlabel('Threshold', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_probabilities(self, target=1, figsize=(10, 6), filename=None):
+    def plot_probabilities(self, target=1, title=None,
+                           figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -574,6 +584,7 @@ class BaseModel(object):
         PARAMETERS -------------------------------------
 
         target   --> probability of being that class (as idx or string)
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -592,7 +603,6 @@ class BaseModel(object):
             target_int = target
             target_str = inv_map[str(target)]
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         for key, value in self.target_mapping.items():
             idx = np.where(self.Y_test == value)  # Get indices per class
@@ -603,21 +613,22 @@ class BaseModel(object):
                          kde_kws={"shade": True},
                          label='Class=' + key)
 
-        plt.title(f'Predicted probabilities for {self.Y.name}={target_str}',
-                  fontsize=20)
-        plt.legend(frameon=False, fontsize=16)
-        plt.xlabel('Probability', fontsize=16, labelpad=12)
-        plt.ylabel('Counts', fontsize=16, labelpad=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None:
+            title = f'Predicted probabilities for {self.Y.name}={target_str}'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
+        plt.xlabel('Probability', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Counts', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xlim(0, 1)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
     def plot_permutation_importance(self, show=20, n_repeats=10,
-                                    figsize=None, filename=None):
+                                    title=None, figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -628,6 +639,7 @@ class BaseModel(object):
 
         n_repeats --> number of times to permute a feature
         show      --> number of best features to show in the plot
+        title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
@@ -655,22 +667,24 @@ class BaseModel(object):
         # Get indices of permutations sorted by the mean
         idx = self.permutations.importances_mean.argsort()[:show]
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.boxplot(self.permutations.importances[idx].T,
                     vert=False,
                     labels=self.X.columns[idx])
-        plt.xlabel('Score', fontsize=16, labelpad=12)
-        plt.ylabel('Features', fontsize=16, labelpad=12)
-        plt.title('Permutation Importance of Features', fontsize=20)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+
+        title = 'Feature permutation importance' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, show=20, figsize=None, filename=None):
+    def plot_feature_importance(self, show=20, title=None,
+                                figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -679,9 +693,10 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        show      --> number of best features to show in the plot
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of the file to save
+        show     --> number of best features to show in the plot
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
 
         '''
 
@@ -704,21 +719,34 @@ class BaseModel(object):
         scores = pd.Series(feature_importances,
                            index=self.X.columns).nlargest(show).sort_values()
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         scores.plot.barh()
-        plt.xlabel('Score', fontsize=16, labelpad=12)
-        plt.ylabel('Features', fontsize=16, labelpad=12)
-        plt.title('Importance of Features', fontsize=20)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+
+        title = 'Feature importance' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_ROC(self, figsize=(10, 6), filename=None):
-        ''' Plot Receiver Operating Characteristics curve '''
+    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot Receiver Operating Characteristics curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
@@ -727,24 +755,38 @@ class BaseModel(object):
         # Get False (True) Positive Rate
         fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba_test[:, 1])
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.plot(fpr, tpr, lw=2, label=f'{self.name} (AUC={self.auc:.3f})')
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
-        plt.xlabel('FPR', fontsize=16, labelpad=12)
-        plt.ylabel('TPR', fontsize=16, labelpad=12)
-        plt.title('ROC curve', fontsize=20)
-        plt.legend(loc='lower right', frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        title = 'ROC curve' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(loc='lower right',
+                   frameon=False,
+                   fontsize=BaseModel.label_fs)
+        plt.xlabel('FPR', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('TPR', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_PRC(self, figsize=(10, 6), filename=None):
-        ''' Plot precision-recall curve '''
+    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot precision-recall curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
@@ -754,23 +796,25 @@ class BaseModel(object):
         prec, recall, _ = precision_recall_curve(self.Y_test,
                                                  self.predict_proba_test[:, 1])
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.plot(recall, prec, lw=2, label=f'{self.name} (AP={self.ap:.3f})')
 
-        plt.xlabel('Recall', fontsize=16, labelpad=12)
-        plt.ylabel('Precision', fontsize=16, labelpad=12)
-        plt.title('Precision-recall curve', fontsize=20)
-        plt.legend(loc='lower left', frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        title = 'Precision-recall curve' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(loc='lower left',
+                   frameon=False,
+                   fontsize=BaseModel.label_fs)
+        plt.xlabel('Recall', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Precision', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
     def plot_confusion_matrix(self, normalize=True,
-                              figsize=(10, 6), filename=None):
+                              title=None, figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -780,6 +824,7 @@ class BaseModel(object):
         PARAMETERS -------------------------------------
 
         normalize --> wether to normalize the matrix
+        title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
@@ -789,11 +834,6 @@ class BaseModel(object):
             raise ValueError('This method only works for ' +
                              'classification tasks.')
 
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix'
-
         # Compute confusion matrix
         cm = confusion_matrix(self.Y_test, self.predict_test)
 
@@ -802,10 +842,9 @@ class BaseModel(object):
 
         ticks = [v for v in self.target_mapping.keys()]
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-        ax.figure.colorbar(im, ax=ax)
+        cbar = ax.figure.colorbar(im, ax=ax)
         ax.set(xticks=np.arange(cm.shape[1]),
                yticks=np.arange(cm.shape[0]),
                xticklabels=ticks,
@@ -818,70 +857,24 @@ class BaseModel(object):
             for j in range(cm.shape[1]):
                 ax.text(j, i, format(cm[i, j], fmt),
                         ha="center", va="center",
+                        fontsize=BaseModel.tick_fs,
                         color="white" if cm[i, j] > thresh else "black")
 
-        plt.title(title, fontsize=20)
-        plt.xlabel('Predicted label', fontsize=16, labelpad=12)
-        plt.ylabel('True label', fontsize=16, labelpad=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None and normalize:
+            title = 'Normalized confusion matrix'
+        elif title is None:
+            title = 'Confusion matrix'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Predicted label', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('True label', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
+        cbar.ax.tick_params(labelsize=BaseModel.tick_fs)  # Colorbar's ticks
         ax.grid(False)
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
-
-    def plot_tree(self, num_trees=0, max_depth=None,
-                  figsize=(14, 10), filename=None):
-
-        '''
-        DESCRIPTION -----------------------------------
-
-        Visualize a single decision tree.
-
-        PARAMETERS -------------------------------------
-
-        num_trees --> number of the tree to plot (for ensembles)
-        max_depth --> maximum depth to plot (None for complete tree)
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of file to save
-
-        '''
-
-        if self.name not in tree_models:
-            raise ValueError('This method only works for tree-based models!')
-
-        fig, ax = plt.subplots(figsize=figsize)
-        if self.name in sklearn_trees:
-            # A single decision tree has only one estimator
-            if self.name != 'Tree':
-                estimator = self.best_model_fit.estimators_[num_trees]
-            else:
-                estimator = self.best_model_fit
-
-            sklearn.tree.plot_tree(estimator,
-                                   max_depth=max_depth,
-                                   rounded=True,
-                                   filled=True,
-                                   fontsize=14)
-
-        elif self.name == 'XGB':
-            import xgboost as xgb
-            xgb.plot_tree(self.best_model_fit,
-                          num_trees=num_trees,
-                          rankdir='UT')
-
-        elif self.name == 'LGB':
-            import lightgbm as lgb
-            lgb.plotting.plot_tree(self.best_model_fit,
-                                   ax=ax,
-                                   tree_index=num_trees)
-
-        elif self.name == 'CatB':
-            self.best_model_fit.plot_tree(tree_idx=num_trees)
-
-        if filename is not None:
-            plt.savefig(filename)
 
     def save(self, filename=None):
         ''' Save model to pickle file '''
