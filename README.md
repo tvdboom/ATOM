@@ -74,7 +74,7 @@ Fit the data to different models:
 
 Make plots and analyze results: 
 
-	atom.boxplot(filename='boxplot.png')  
+	atom.plot_bagging(filename='bagging_results.png')  
 	atom.lSVM.plot_probabilities()  
 	atom.lda.plot_confusion_matrix()  
   
@@ -113,7 +113,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
 
-Class methods
+Methods
 ----------------------------- 
 ATOM contains multiple methods for standard data cleaning and feature selection processes. Calling on one of them will automatically apply the method on the dataset in the class and update the class' attributes accordingly.
 
@@ -278,7 +278,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	Number of data sets (bootstrapped from the training set) to use in the bagging algorithm. If None, no bagging is performed.
 
 
-Class methods (utilities)
+Methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
@@ -294,35 +294,45 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update test, etc...
 	+ **truth: string, optional (default='all')**  
 	Data attribute that has been changed (as string)<br><br>
-* **boxplot(iteration=-1, figsize=None, filename=None)**  
+* **plot_bagging(iteration=-1, title=None, figsize=None, filename=None)**  
 Make a boxplot of the bagging's results after fitting the class.
 	+ **iteration: int, optional (default=-1)**  
 	Iteration of the successive_halving to plot. If -1, use the last iteration.
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of models.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_correlation(figsize=(10, 6), filename=None)**  
+* **plot_correlation(title=None, figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_successive_halving(figsize=(10, 6), filename=None)**  
+* **plot_successive_halving(title=None, figsize=(10, 6), filename=None)**  
 Make a plot of the models' scores per iteration of the successive halving.
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_ROC(figsize=(10, 6), filename=None)**  
+* **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
 Plot the ROC curve of all the models. Only for binary classification tasks.  
- 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_PRC(figsize=(10, 6), filename=None)**  
+* **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
 Plot the precision-recall curve of all the models. Only for binary classification tasks.  
- 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
@@ -344,74 +354,104 @@ Class attributes
 * **results**: Dataframe (or array of dataframes if successive_halving=True) of the results.
 
 
+Class methods
+-----------------------------
+The plotting aesthetics can be changed using the following `@classmethods` (e.g. `ATOMClassifier.set_style('white')`):
+
+* **set_style(style='darkgrid')**  
+Change the seaborn plotting style.
+	+ **style: string, optional (default='darkgrid')**  
+	Name of the style to use. Possible values are: darkgrid, whitegrid, dark, white, and ticks.<br><br>
+* **set_palette(palette='GnBu_d')**  
+Change the seaborn color palette.
+	+ **palette: string, optional (default='GnBu_d')**  
+	Name of the palette to use. Click [here](https://seaborn.pydata.org/tutorial/color_palettes.html) for more information.<br><br>
+* **set_title_fontsize(fontsize=20)**  
+Change the fontsize of the plot's title.
+	+ **fontsize: int, optional (default=20)**  
+	Size of the font.<br><br>	
+* **set_label_fontsize(fontsize=16)**  
+Change the fontsize of the plot's labels and legends.
+	+ **fontsize: int, optional (default=16)**  
+	Size of the font.<br><br>	
+* **set_tick_fontsize(fontsize=12)**  
+Change the fontsize of the plot's ticks.
+	+ **fontsize: int, optional (default=12)**  
+	Size of the font.<br><br>	
+	
+
 ### After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
 
 
 Subclass methods  
 -----------------------------  
-* **plot_threshold(metric=None, steps=100, figsize=(10, 6), filename=None)**  
+* **plot_threshold(metric=None, steps=100, title=None, figsize=(10, 6), filename=None)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
 	+ **metric: string, callable or list, optional (default=None)**  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
    	+ **steps: int, optional (default=100)**  
     	Number of thresholds (steps) to plot.
-   	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_probabilities(target=1, figsize=(10, 6), filename=None)**  
-Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
-	+ **target: int or string, optional (default=1)**  
-	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_permutation_importance(show=20, n_repeats=10, figsize=None, filename=None)**  
+* **plot_probabilities(target=1, title=None, figsize=(10, 6), filename=None)**  
+Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
+	+ **target: int or string, optional (default=1)**  
+	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	Figure size: format as (x, y).
+	+ **filename: string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
+* **plot_permutation_importance(show=20, n_repeats=10, title=None, figsize=None, filename=None)**  
 Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
 	+ **n_repeats: int, optional (default=10)**  
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_feature_importance(show=20, figsize=None, filename=None)**  
+* **plot_feature_importance(show=20, title=None, figsize=None, filename=None)**  
 Plot the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_ROC(figsize=(10, 6), filename=None)**  
+* **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
 Plot the ROC curve. Only for binary classification tasks.  
- 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_PRC(figsize=(10, 6), filename=None)**  
+* **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
 Plot the precision-recall curve. Only for binary classification tasks.  
- 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_confusion_matrix(normalize=True, figsize=(10, 6), filename=None)**  
+* **plot_confusion_matrix(normalize=True, title=None, figsize=(10, 6), filename=None)**  
 Plot the confusion matrix for the model. Only for classification tasks.
 	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.
-   	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_tree(num_trees=0, max_depth=None, figsize=(10, 6), filename=None)**  
-Plot a single decision tree of the model. Only for tree-based algorithms. Dependency: [graphviz](https://graphviz.gitlab.io/download/).
-	+ **num_trees: int, otional (default=0 --> first tree)**  
-	Number of the tree to plot (if ensemble).
-	+ **max_depth: int, optional (default=None)**  
-	Maximum depth of the plotted tree. None for no limit.
-   	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
+ 	+ **title: string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
 	+ **filename: string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
