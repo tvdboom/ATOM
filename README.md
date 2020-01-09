@@ -51,7 +51,7 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 
     from atom import ATOMClassifier  
     
-    atom = ATOMClassifier(X, Y, log='atom_log', n_jobs=2, verbose=1)
+    atom = ATOMClassifier(X, y, log='atom_log', n_jobs=2, verbose=1)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
@@ -81,14 +81,14 @@ Make plots and analyze results:
 
 API
 -----------------------------
-* **ATOMClassifier(X, Y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+* **ATOMClassifier(X, y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.  
-	+ **X: np.array or pd.DataFrame**  
-	Data features with shape = [n_samples, n_features]. If Y and target are None, the last column of X is selected as target column. 
-	+ **Y: np.array or pd.Series, optional (default=None)**  
+	+ **X: list, np.array or pd.DataFrame**  
+	Data features with shape = [n_samples, n_features]. If y and target are None, the last column of X is selected as target column. 
+	+ **y: list, np.array or pd.Series, optional (default=None)**  
 	Data target column with shape = [n_samples].
 	+ **target: string, optional (default=None)**  
-	Name of the target column in X (X needs to be a pd.DataFrame). If Y is provided, target will be ignored.
+	Name of the target column in X (X needs to be a pd.DataFrame). If y is provided, target will be ignored.
 	+ **percentage: int, optional (default=100)**  
 	Percentage of data to use.
 	+ **test_size: float, optional (default=0.3)**  
@@ -109,7 +109,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 		+ 3 to print maximum information
 	+ **random_state: int, optional (default=None)**  
 	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.<br><br>
-* **ATOMRegressor(X, Y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+* **ATOMRegressor(X, y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
 
@@ -342,10 +342,10 @@ Plot the precision-recall curve of all the models. Only for binary classificatio
 Class attributes  
 -----------------------------  
 * **dataset**: Dataframe of the complete dataset.
-* **X, Y**: Data features and target.
+* **X, y**: Data features and target.
 * **train, test**: Train and test set.
-* **X_train, Y_train**: Training set features and target.
-* **X_test, Y_test**: Test set features and target.
+* **X_train, y_train**: Training set features and target.
+* **X_test, y_test**: Test set features and target.
 * **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
