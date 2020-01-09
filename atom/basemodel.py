@@ -258,7 +258,7 @@ class BaseModel(object):
                 # Split each iteration in different train and validation set
                 X_subtrain, X_validation, Y_subtrain, Y_validation = \
                     train_test_split(self.X_train,
-                                     self.Y_train,
+                                     self.y_train,
                                      test_size=test_size,
                                      shuffle=True)
 
@@ -305,7 +305,7 @@ class BaseModel(object):
                 # Run cross-validation (get mean of results)
                 output = cross_val_score(estimator,
                                          self.X_train,
-                                         self.Y_train,
+                                         self.y_train,
                                          cv=kfold,
                                          scoring=scoring,
                                          n_jobs=self.n_jobs).mean()
@@ -397,7 +397,7 @@ class BaseModel(object):
             self.best_model = self.get_model()
 
         # Fit the selected model on the complete training set
-        self.best_model_fit = self.best_model.fit(self.X_train, self.Y_train)
+        self.best_model_fit = self.best_model.fit(self.X_train, self.y_train)
 
         # Save predictions
         self.predict_train = self.best_model_fit.predict(self.X_train)
@@ -406,7 +406,7 @@ class BaseModel(object):
         # Models without the predict_proba() method need probs with ccv
         if self.name in not_predict_proba and self.task != 'regression':
             ccv = CalibratedClassifierCV(self.best_model, cv=None)
-            ccv.fit(self.X_train, self.Y_train)
+            ccv.fit(self.X_train, self.y_train)
             self.predict_proba_train = ccv.predict_proba(self.X_train)
             self.predict_proba_test = ccv.predict_proba(self.X_test)
         elif self.task != 'regression':
@@ -417,14 +417,14 @@ class BaseModel(object):
 
         # Get metric scores
         if self.metric.needs_proba:
-            self.score_train = self.metric.func(self.Y_train,
+            self.score_train = self.metric.func(self.y_train,
                                                 self.predict_proba_train)
-            self.score_test = self.metric.func(self.Y_test,
+            self.score_test = self.metric.func(self.y_test,
                                                self.predict_proba_test)
         else:
-            self.score_train = self.metric.func(self.Y_train,
+            self.score_train = self.metric.func(self.y_train,
                                                 self.predict_train)
-            self.score_test = self.metric.func(self.Y_test, self.predict_test)
+            self.score_test = self.metric.func(self.y_test, self.predict_test)
 
         # Calculate some standard metrics on the test set
         for m in self.metric.__dict__.keys():
@@ -439,7 +439,7 @@ class BaseModel(object):
                     y_pred = self.predict_proba_test
                 else:
                     y_pred = self.predict_test
-                setattr(self, m, metric.func(self.Y_test, y_pred))
+                setattr(self, m, metric.func(self.y_test, y_pred))
             except Exception:
                 msg = f'This metric is unavailable for {self.task} tasks!'
                 setattr(self, m, msg)
@@ -477,7 +477,7 @@ class BaseModel(object):
         self.bagging_scores = []  # List of the scores
         for _ in range(n_samples):
             # Create samples with replacement
-            sample_x, sample_y = resample(self.X_train, self.Y_train)
+            sample_x, sample_y = resample(self.X_train, self.y_train)
 
             # Fit on bootstrapped set and predict on the independent test set
             if self.metric.needs_proba:
@@ -494,7 +494,7 @@ class BaseModel(object):
                 y_pred = algorithm.predict(self.X_test)
 
             # Append metric result to list
-            self.bagging_scores.append(self.metric.func(self.Y_test, y_pred))
+            self.bagging_scores.append(self.metric.func(self.y_test, y_pred))
 
         # Numpy array for mean and std
         self.bagging_scores = np.array(self.bagging_scores)
@@ -552,7 +552,7 @@ class BaseModel(object):
             for step in space:
                 for m in mlist:
                     pred = (self.predict_proba_test[:, 1] >= step).astype(bool)
-                    results[m].append(m(self.Y_test, pred))
+                    results[m].append(m(self.y_test, pred))
 
         fig, ax = plt.subplots(figsize=figsize)
         for i, m in enumerate(mlist):
@@ -605,7 +605,7 @@ class BaseModel(object):
 
         fig, ax = plt.subplots(figsize=figsize)
         for key, value in self.target_mapping.items():
-            idx = np.where(self.Y_test == value)  # Get indices per class
+            idx = np.where(self.y_test == value)  # Get indices per class
             sns.distplot(self.predict_proba_test[idx, target_int],
                          hist=False,
                          kde=True,
@@ -614,7 +614,7 @@ class BaseModel(object):
                          label='Class=' + key)
 
         if title is None:
-            title = f'Predicted probabilities for {self.Y.name}={target_str}'
+            title = f'Predicted probabilities for {self.y.name}={target_str}'
         plt.title(title, fontsize=BaseModel.title_fs, pad=12)
         plt.legend(frameon=False, fontsize=BaseModel.label_fs)
         plt.xlabel('Probability', fontsize=BaseModel.label_fs, labelpad=12)
@@ -658,7 +658,7 @@ class BaseModel(object):
         self.permutations = \
             permutation_importance(self.best_model_fit,
                                    self.X_test,
-                                   self.Y_test,
+                                   self.y_test,
                                    scoring=scoring,
                                    n_repeats=n_repeats,
                                    n_jobs=self.n_jobs,
@@ -753,7 +753,7 @@ class BaseModel(object):
                              'classification tasks.')
 
         # Get False (True) Positive Rate
-        fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba_test[:, 1])
+        fpr, tpr, _ = roc_curve(self.y_test, self.predict_proba_test[:, 1])
 
         fig, ax = plt.subplots(figsize=figsize)
         plt.plot(fpr, tpr, lw=2, label=f'{self.name} (AUC={self.auc:.3f})')
@@ -793,7 +793,7 @@ class BaseModel(object):
                              'classification tasks.')
 
         # Get precision-recall pairs for different probability thresholds
-        prec, recall, _ = precision_recall_curve(self.Y_test,
+        prec, recall, _ = precision_recall_curve(self.y_test,
                                                  self.predict_proba_test[:, 1])
 
         fig, ax = plt.subplots(figsize=figsize)
@@ -835,7 +835,7 @@ class BaseModel(object):
                              'classification tasks.')
 
         # Compute confusion matrix
-        cm = confusion_matrix(self.Y_test, self.predict_test)
+        cm = confusion_matrix(self.y_test, self.predict_test)
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]

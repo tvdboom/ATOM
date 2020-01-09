@@ -90,7 +90,7 @@ def set_init(data, target_mapping, metric, task,
                   'X_train': data['X_train'],
                   'X_test': data['X_test']}
 
-    for p in ('Y', 'Y_train', 'Y_test'):
+    for p in ('y', 'y_train', 'y_test'):
         params[p] = data[p]
 
     params['target_mapping'] = target_mapping

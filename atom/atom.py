@@ -123,7 +123,7 @@ class ATOM(object):
 
     # << ================= Methods ================= >>
 
-    def __init__(self, X, Y=None, target=None, percentage=100,
+    def __init__(self, X, y=None, target=None, percentage=100,
                  test_size=0.3, log=None, n_jobs=1,
                  warnings=False, verbose=0, random_state=None):
 
@@ -135,8 +135,8 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        X            --> dataset as pd.DataFrame or np.array
-        Y            --> target column as pd.Series or np.array
+        X            --> dataset as list, np.array or pd.DataFrame
+        y            --> target column as list, np.array or pd.Series
         target       --> name of target column in X (if Y not provided)
         percentage   --> percentage of data to use
         test_size    --> fraction test/train size
@@ -150,15 +150,32 @@ class ATOM(object):
 
         # << ============ Handle input ============ >>
 
-        # Convert array to dataframe and target column to pandas series
-        if Y is not None:
-            if len(X) != len(Y):
-                raise ValueError("X and Y don't have the same number of rows" +
-                                 f': {len(X)}, {len(Y)}.')
+        # Convert X to pd.DataFrame (first to np.array for dimensions)
+        if not isinstance(X, pd.DataFrame):
+            if not isinstance(X, np.ndarray):
+                X = np.array(X)
             X = convert_to_pd(X)
-            Y = convert_to_pd(Y)
-            self.dataset = merge(X, Y)
-            self.target = Y.name
+
+        # Convert array to dataframe and target column to pandas series
+        if y is not None:
+            if len(X) != len(y):
+                raise ValueError("X and y don't have the same number of rows" +
+                                 f': {len(X)}, {len(y)}.')
+
+            # Convert y to pd.Series
+            if not isinstance(y, pd.Series):
+                if not isinstance(y, np.ndarray):
+                    y = np.array(y)
+
+                # Check that y is one-dimensional
+                if y.ndim != 1:
+                    raise ValueError('y should be a one-dimensional list, ' +
+                                     f'array or pd.Series (y.ndim={y.ndim}).')
+                y = convert_to_pd(y)
+
+            # Merge to one single dataframe with all data
+            self.dataset = merge(X, y)
+            self.target = y.name
 
         elif target is not None:  # If target is filled, X has to be a df
             if target not in X.columns:
@@ -285,7 +302,7 @@ class ATOM(object):
 
         # << =========================================== >>
 
-        self._split_dataset(self.dataset, percentage)  # Make train/test split
+        self._split_dataset(self.dataset, self.percentage)  # Train/test split
         self.reset_attributes()  # Define data subsets class attributes
         self.stats()  # Print out data stats
 
@@ -308,7 +325,7 @@ class ATOM(object):
         self.dataset = self.dataset.head(int(len(self.dataset)*percentage/100))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        # Split train and test for the BO on percentage of data
+        # Split train and test sets on percentage of data
         self.train, self.test = train_test_split(self.dataset,
                                                  test_size=self.test_size,
                                                  shuffle=False)
@@ -338,13 +355,13 @@ class ATOM(object):
                                      ignore_index=False, copy=True)
 
         elif truth in ('X_train', 'Y_train', 'X_test', 'Y_test'):
-            self.train = merge(self.X_train, self.Y_train)
-            self.test = merge(self.X_test, self.Y_test)
+            self.train = merge(self.X_train, self.y_train)
+            self.test = merge(self.X_test, self.y_test)
             self.dataset = pd.concat([self.train, self.test], join='outer',
                                      ignore_index=False, copy=True)
 
         elif truth in ('X_Y', 'X', 'Y'):
-            self.dataset = merge(self.X, self.Y)
+            self.dataset = merge(self.X, self.y)
             self.train = self.dataset[:len(self.train)]
             self.test = self.dataset[len(self.train):]
 
@@ -353,11 +370,11 @@ class ATOM(object):
             getattr(self, data).reset_index(drop=True, inplace=True)
 
         self.X = self.dataset.drop(self.target, axis=1)
-        self.Y = self.dataset[self.target]
+        self.y = self.dataset[self.target]
         self.X_train = self.train.drop(self.target, axis=1)
-        self.Y_train = self.train[self.target]
+        self.y_train = self.train[self.target]
         self.X_test = self.test.drop(self.target, axis=1)
-        self.Y_test = self.test[self.target]
+        self.y_test = self.test[self.target]
 
     def stats(self):
         ''' Print some information about the dataset '''
@@ -371,14 +388,14 @@ class ATOM(object):
         # Print count of target values
         if self.task != 'regression':
             try:
-                _, counts = np.unique(self.Y, return_counts=True)
+                _, counts = np.unique(self.y, return_counts=True)
                 len_classes = max([len(str(i)) for i in self._unique])
                 if '0' not in self.target_mapping.keys():
                     len_classes += 3
-                lx = max(len_classes, len(self.Y.name))
+                lx = max(len_classes, len(self.y.name))
 
                 prlog('Instances per target class:', self, 2)
-                prlog(f"{self.Y.name:{lx}} --> Count", self, 2)
+                prlog(f"{self.y.name:{lx}} --> Count", self, 2)
 
                 # Check wether there is LabelEncoding for the target varaible
                 for i in range(len(self._unique)):
@@ -733,8 +750,8 @@ class ATOM(object):
             adasyn = ADASYN(sampling_strategy=oversample,
                             n_neighbors=n_neighbors,
                             n_jobs=self.n_jobs)
-            self.X_train, self.Y_train = \
-                adasyn.fit_resample(self.X_train, self.Y_train)
+            self.X_train, self.y_train = \
+                adasyn.fit_resample(self.X_train, self.y_train)
             diff = len(self.X_train) - length  # Difference in length
             prlog(f' --> Adding {diff} rows to the minority class.', self, 2)
 
@@ -744,15 +761,15 @@ class ATOM(object):
             NM = NearMiss(sampling_strategy=undersample,
                           n_neighbors=n_neighbors,
                           n_jobs=self.n_jobs)
-            self.X_train, self.Y_train = NM.fit_resample(self.X_train,
-                                                         self.Y_train)
+            self.X_train, self.y_train = NM.fit_resample(self.X_train,
+                                                         self.y_train)
             diff = length - len(self.X_train)  # Difference in length
             prlog(f' --> Removing {diff} rows from the majority class.',
                   self, 2)
 
         self.X_train = convert_to_pd(self.X_train, columns=columns_x)
-        self.Y_train = convert_to_pd(self.Y_train, columns=self.target)
-        self.train = merge(self.X_train, self.Y_train)
+        self.y_train = convert_to_pd(self.y_train, columns=self.target)
+        self.train = merge(self.X_train, self.y_train)
         self.reset_attributes('train_test')
 
     @params_to_log
@@ -807,7 +824,7 @@ class ATOM(object):
                                 verbose=0 if self.verbose < 3 else 1,
                                 n_jobs=self.n_jobs)
 
-        self.genetic_algorithm.fit(self.X_train, self.Y_train)
+        self.genetic_algorithm.fit(self.X_train, self.y_train)
         new_features = self.genetic_algorithm.transform(self.X)
 
         # ix = indicces of all new features that are not in the original set
@@ -1031,7 +1048,7 @@ class ATOM(object):
                                  .format(', '.join(solvers_dct.keys())))
 
             self.univariate = SelectKBest(solver, k=max_features)
-            self.univariate.fit(self.X, self.Y)
+            self.univariate.fit(self.X, self.y)
             mask = self.univariate.get_support()
             for n, column in enumerate(self.X):
                 if not mask[n]:
@@ -1068,7 +1085,7 @@ class ATOM(object):
                 self.SFM = SelectFromModel(estimator=solver,
                                            threshold=threshold,
                                            max_features=max_features)
-                self.SFM.fit(self.X, self.Y)
+                self.SFM.fit(self.X, self.y)
                 mask = self.SFM.get_support()
 
             for n, column in enumerate(self.X):
@@ -1084,7 +1101,7 @@ class ATOM(object):
                 raise ValueError('Select a model for the solver!')
 
             self.RFE = RFE(estimator=solver, n_features_to_select=max_features)
-            self.RFE.fit(self.X, self.Y)
+            self.RFE.fit(self.X, self.y)
             mask = self.RFE.support_
 
             for n, column in enumerate(self.X):
@@ -1309,7 +1326,7 @@ class ATOM(object):
             ''' Make a dct of the data (complete, train, test and scaled) '''
 
             data = {}
-            for set_ in ['X', 'Y', 'X_train', 'Y_train', 'X_test', 'Y_test']:
+            for set_ in ['X', 'y', 'X_train', 'y_train', 'X_test', 'y_test']:
                 data[set_] = getattr(self, set_)
 
             # Check if any scaling models in final_models
@@ -1507,6 +1524,7 @@ class ATOM(object):
                 [n.append(m) for m in self.models if m in list(lx.model)]
                 self.models = n.copy()
                 iteration += 1
+
             self._isfit = True
 
         else:
