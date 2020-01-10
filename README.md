@@ -81,20 +81,20 @@ Make plots and analyze results:
 
 API
 -----------------------------
-* **ATOMClassifier(X, y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+* **ATOMClassifier(X, y=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.  
 	+ **X: list, np.array or pd.DataFrame**  
-	Data features with shape = [n_samples, n_features]. If y and target are None, the last column of X is selected as target column. 
-	+ **y: list, np.array or pd.Series, optional (default=None)**  
-	Data target column with shape = [n_samples].
-	+ **target: string, optional (default=None)**  
-	Name of the target column in X (X needs to be a pd.DataFrame). If y is provided, target will be ignored.
-	+ **percentage: int, optional (default=100)**  
-	Percentage of data to use.
+	Data features with shape=(n_samples, n_features).
+	+ **y: None, string, list, np.array or pd.Series, optional (default=None)**  
+		- If None: the last column of X is selected as target column
+		- If string: name of the target column in X (X has to be a pd.DataFrame)
+		- Else: data target column with shape=(n_samples,)
+	+ **percentage: int or float, optional (default=100)**  
+	Percentage of the data to use.
 	+ **test_size: float, optional (default=0.3)**  
 	Split ratio of the train and test set.
-	+ **log: string, optional (default=None)**  
-	Name of the log file, None to not save any log.
+	+ **log: None or string, optional (default=None)**  
+	Name of the log file. None to not save any log.
 	+ **n_jobs: int, optional (default=1)**  
 	Number of cores to use for parallel processing.
 		+ If -1, use all available cores
@@ -107,7 +107,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 		+ 1 to print minimum information
 		+ 2 to print average information
 		+ 3 to print maximum information
-	+ **random_state: int, optional (default=None)**  
+	+ **random_state: None or int, optional (default=None)**  
 	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.<br><br>
 * **ATOMRegressor(X, y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
@@ -153,7 +153,7 @@ Remove outliers from the training set.
 	Wether to include the target column when searching for outliers.<br><br>
 * **balance(oversample=None, undersample=None, neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks. Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html).
-	+ **oversample: float or string, optional (default=None)**  
+	+ **oversample: None, float or string, optional (default=None)**  
 	Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html#imblearn.over_sampling.ADASYN). Choose from:
 		- None: do not perform oversampling
 		- float: fraction minority/majority (only for binary classification)
@@ -161,7 +161,7 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes
-	+ **undersample: float or string, optional (default=None)**  
+	+ **undersample: None, float or string, optional (default=None)**  
 	Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html) methods. Choose from:
 		- None: do not perform undersampling
 		- float: fraction majority/minority (only for binary classification)
@@ -204,7 +204,7 @@ Select best features according to the selected strategy. Ties between features w
 			* 'randomized'
 		- for 'SFM': choose a base estimator from which the transformer is built. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
 		- for 'RFE': choose a supervised learning estimator. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
-	+ **max_features: int or float, optional (default=None)**  
+	+ **max_features: None, int or float, optional (default=None)**  
 	Number of features to select.
 		- None: select all features
 		- if >= 1: number of features to select
@@ -274,7 +274,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	Strategy to fit and score the model selected after every step of the BO.
 		- if 1, randomly split the training data into a train and validation set
 		- if >1, perform a k-fold cross validation on the training set
-	+ **bagging: int, optional (default=None)**  
+	+ **bagging: None or int, optional (default=None)**  
 	Number of data sets (bootstrapped from the training set) to use in the bagging algorithm. If None, no bagging is performed.
 
 
@@ -286,9 +286,9 @@ Print out a list of basic statistics on the dataset.<br><br>
 Get an extensive profile analysis of the data. The report is rendered in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets. Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
-	+ **rows: int, optional (default=None)**  
+	+ **rows: None or int, optional (default=None)**  
 	Number of rows selected randomly from the dataset to perform the analysis on. None to select all rows.
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved (as .html). None to not save anything.<br><br>
 * **reset_attributes(truth='all')**  
 If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update test, etc...
@@ -298,43 +298,43 @@ If you change any of the class' data attributes (dataset, X, Y, train, test, X_t
 Make a boxplot of the bagging's results after fitting the class.
 	+ **iteration: int, optional (default=-1)**  
 	Iteration of the successive_halving to plot. If -1, use the last iteration.
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=None)**  
+	+ **figsize: None or 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of models.
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_correlation(title=None, figsize=(10, 6), filename=None)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_successive_halving(title=None, figsize=(10, 6), filename=None)**  
 Make a plot of the models' scores per iteration of the successive halving.
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
 Plot the ROC curve of all the models. Only for binary classification tasks.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
 Plot the precision-recall curve of all the models. Only for binary classification tasks.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics click [here](https://github.com/tvdboom/ATOM#Metrics).**
 
@@ -387,25 +387,25 @@ Subclass methods
 -----------------------------  
 * **plot_threshold(metric=None, steps=100, title=None, figsize=(10, 6), filename=None)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
-	+ **metric: string, callable or list, optional (default=None)**  
+	+ **metric: None, string, callable or list, optional (default=None)**  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
    	+ **steps: int, optional (default=100)**  
     	Number of thresholds (steps) to plot.
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_probabilities(target=1, title=None, figsize=(10, 6), filename=None)**  
 Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target: int or string, optional (default=1)**  
 	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_permutation_importance(show=20, n_repeats=10, title=None, figsize=None, filename=None)**  
 Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
@@ -413,51 +413,51 @@ Plot the feature importance permutation scores in a boxplot. A dictionary contai
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=None)**  
+	+ **figsize: None or 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_feature_importance(show=20, title=None, figsize=None, filename=None)**  
 Plot the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
 	+ **show: int, optional (default=20)**  
 	Number of best features to show in the plot. None for all features.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=None)**  
+	+ **figsize: None or 2d-tuple, optional (default=None)**  
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
 Plot the ROC curve. Only for binary classification tasks.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
 Plot the precision-recall curve. Only for binary classification tasks.  
-	+ **title: string, optional (default=None)**  
+	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **plot_confusion_matrix(normalize=True, title=None, figsize=(10, 6), filename=None)**  
 Plot the confusion matrix for the model. Only for classification tasks.
 	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.
- 	+ **title: string, optional (default=None)**  
+ 	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
 	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
 	Figure size: format as (x, y).
-	+ **filename: string, optional (default=None)**  
+	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
 * **save(filename=None)**  
 Save the best found model as a pickle file.
-	 + **filename: string, optional (default=None)**  
+	 + **filename: None or string, optional (default=None)**  
 	Name of the file when saved. If None, it will be saved as 'ATOM_[model_type].pkl'.
 
 
