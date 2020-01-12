@@ -110,6 +110,18 @@ def merge(X, Y):
     return X.merge(Y.to_frame(), left_index=True, right_index=True)
 
 
+def raise_typeerror(param, value):
+    ''' Raise TypeError for wrong parameter type '''
+
+    raise TypeError(f'Invalid type for {param} parameter: {type(value)}')
+
+
+def raise_valueerror(param, value):
+    ''' Raise ValueError for invalid parameter value '''
+
+    raise ValueError(f'Invalid value for {param} parameter: {value}')
+
+
 # << ============ Classes ============ >>
 
 class ATOM(object):
@@ -123,9 +135,8 @@ class ATOM(object):
 
     # << ================= Methods ================= >>
 
-    def __init__(self, X, y=None, target=None, percentage=100,
-                 test_size=0.3, log=None, n_jobs=1,
-                 warnings=False, verbose=0, random_state=None):
+    def __init__(self, X, y=None, percentage=100, test_size=0.3, log=None,
+                 n_jobs=1, warnings=False, verbose=0, random_state=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -136,8 +147,7 @@ class ATOM(object):
         PARAMETERS -------------------------------------
 
         X            --> dataset as list, np.array or pd.DataFrame
-        y            --> target column as list, np.array or pd.Series
-        target       --> name of target column in X (if Y not provided)
+        y            --> target column as string, list, np.array or pd.Series
         percentage   --> percentage of data to use
         test_size    --> fraction test/train size
         log          --> name of log file
@@ -148,16 +158,18 @@ class ATOM(object):
 
         '''
 
-        # << ============ Handle input ============ >>
+        # << ============ Handle input data ============ >>
 
         # Convert X to pd.DataFrame (first to np.array for dimensions)
         if not isinstance(X, pd.DataFrame):
             if not isinstance(X, np.ndarray):
+                if not isinstance(X, list):
+                    raise_typeerror('X', X)
                 X = np.array(X)
             X = convert_to_pd(X)
 
         # Convert array to dataframe and target column to pandas series
-        if y is not None:
+        if isinstance(y, (list, np.ndarray, pd.Series)):
             if len(X) != len(y):
                 raise ValueError("X and y don't have the same number of rows" +
                                  f': {len(X)}, {len(y)}.')
@@ -177,56 +189,84 @@ class ATOM(object):
             self.dataset = merge(X, y)
             self.target = y.name
 
-        elif target is not None:  # If target is filled, X has to be a df
-            if target not in X.columns:
-                raise ValueError('Target column not found in the dataset!')
+        elif isinstance(y, str):
+            if y not in X.columns:
+                raise ValueError('Target column not found in X!')
 
             # Place target column last
-            X = X[[col for col in X if col != target] + [target]]
+            X = X[[col for col in X if col != y] + [y]]
             self.dataset = X
-            self.target = target
+            self.target = y
 
-        else:
+        elif y is None:
             self.dataset = convert_to_pd(X)
             self.target = self.dataset.columns[-1]
 
+        else:  # y is wrong type
+            raise_typeerror('y', y)
+
         # << ============ Parameters tests ============ >>
 
-        # Set parameters to default if input is invalid
         self._isfit = False  # Model has not been fitted yet
-        self.percentage = percentage if 0 < percentage < 100 else 100
-        self.test_size = test_size if 0 < test_size < 1 else 0.3
-        self.log = log if log is None or log.endswith('.txt') else log + '.txt'
-        self.warnings = bool(warnings)
-        self.verbose = verbose if verbose in range(4) else 0
-        if random_state is not None:
-            self.random_state = int(random_state)
+        if not isinstance(percentage, (int, float)):
+            raise_typeerror('percentage', percentage)
+        elif percentage <= 0 or percentage > 100:
+            raise_valueerror('percentage', percentage)
+        else:
+            self.percentage = percentage
+        if not isinstance(test_size, float):
+            raise_typeerror('test_size', test_size)
+        elif test_size <= 0 or test_size >= 1:
+            raise_valueerror('test_size', test_size)
+        else:
+            self.test_size = test_size
+        if not isinstance(log, (type(None), str)):
+            raise_typeerror('log', log)
+        elif log is None or log.endswith('.txt'):
+            self.log = log
+        else:
+            self.log = log + '.txt'
+        if not isinstance(warnings, bool) or warnings not in [0, 1]:
+            raise_typeerror('warnings', warnings)
+        else:
+            self.warnings = bool(warnings)
+        if not isinstance(verbose, int):
+            raise_typeerror('verbose', verbose)
+        elif verbose < 0 or verbose > 3:
+            raise_valueerror('verbose', verbose)
+        else:
+            self.verbose = verbose
+        if not isinstance(random_state, (type(None), int)):
+            raise_typeerror('random_state', random_state)
+        elif random_state is not None:
+            self.random_state = random_state
             np.random.seed(self.random_state)  # Set random seed
         else:
-            self.random_state = None
+            self.random_state = random_state
 
         prlog('<<=============== ATOM ===============>>', self, time=True)
 
         # Check number of cores for multiprocessing
-        self.n_jobs = int(n_jobs)
+        if not isinstance(n_jobs, int):
+            raise_typeerror('n_jobs', n_jobs)
         n_cores = multiprocessing.cpu_count()
         if n_jobs > n_cores:
             prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
                   .format(self.n_jobs, n_cores), self)
             self.n_jobs = n_cores
 
-        elif self.n_jobs == 0:
+        elif n_jobs == 0:
             prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
                   .format(self.n_jobs), self)
             self.n_jobs = 1
 
         else:
-            if self.n_jobs <= -1:
-                self.n_jobs = n_cores + 1 + self.n_jobs
+            if n_jobs <= -1:
+                self.n_jobs = n_cores + 1 + n_jobs
 
-            # Final check
+            # Final check for negative input
             if self.n_jobs < 1 or self.n_jobs > n_cores:
-                raise ValueError('Invalid value for n_jobs!')
+                raise_valueerror('n_jobs', n_jobs)
             elif self.n_jobs != 1:
                 prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
@@ -1468,23 +1508,24 @@ class ATOM(object):
                 recall=BaseMetric('recall', True, False, self.task),
                 )
 
-        if isinstance(self.metric, str):
-            self.metric = self.metric.lower()  # Make all lower case
+        if isinstance(metric, str):
             t = mreg if self.task == 'regression' else mclass
-            if self.metric not in mbin + mclass + mreg:
+            if metric.lower() not in mbin + mclass + mreg:
                 raise ValueError(f"Unknown metric. Try one of {', '.join(t)}.")
-            elif self.metric in mbin and not self.task.startswith('binary'):
+            elif metric.lower() in mbin and not self.task.startswith('binary'):
                 raise ValueError(f'Invalid metric for {self.task} tasks. ' +
                                  f"Try one of: {', '.join(t)}.")
-            elif self.metric not in mreg and self.task == 'regression':
-                raise ValueError(f'{self.metric} is an invalid metric for ' +
-                                 'regression tasks. Try one of: {}.'
-                                 .format(', '.join(t)))
+            elif metric.lower() not in mreg and self.task == 'regression':
+                raise ValueError(f'{metric} is an invalid metric for regre' +
+                                 f"ssion tasks. Try one of: {', '.join(t)}.")
             else:
-                self.metric = metrics[self.metric]
-        else:
-            self.metric = BaseMetric(self.metric, self.gib,
+                self.metric = metrics[metric.lower()]
+
+        elif callable(metric):
+            self.metric = BaseMetric(metric, self.gib,
                                      self.needs_proba, self.task)
+        else:
+            raise_typeerror('metric', type(metric))
 
         # Add all metrics as subclasses of the BaseMetric class
         for key, value in metrics.items():
