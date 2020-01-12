@@ -46,6 +46,11 @@ class init(unittest.TestCase):
 
     # << ================== Test handling input data ================== >>
 
+    def test_X_type(self):
+        ''' Test if error when X is wrong type '''
+
+        self.assertRaises(TypeError, ATOMClassifier, X=23.2)
+
     def test_X_y_equal_length(self):
         ''' Test if error is raised when X and y don't have equal length '''
 
@@ -59,27 +64,6 @@ class init(unittest.TestCase):
         X, _ = load_breast_cancer(return_X_y=True)
         y = [[0, 0], [1, 1], [0, 1]]
         self.assertRaises(ValueError, ATOMClassifier, X, y)
-
-    def test_isPandas(self):
-        ''' Test if certain data attributes are pd.DataFrames or pd.Series '''
-
-        def test(atom):
-            for attr in ['dataset', 'train', 'test', 'X', 'X_train', 'X_test']:
-                self.assertIsInstance(getattr(atom, attr), pd.DataFrame)
-
-            for attr in ['y', 'y_train', 'y_test']:
-                self.assertIsInstance(getattr(atom, attr), pd.Series)
-
-        # Test with lists
-        X = [[0, 1], [2, 2], [0, 1]]
-        y = [0, 1, 0]
-        atom = ATOMClassifier(X, y)
-        test(atom)
-
-        # Test with np.arrays
-        X, y = load_breast_cancer(return_X_y=True)
-        atom = ATOMClassifier(X, y)
-        test(atom)
 
     def test_merger_X_y(self):
         ''' Test that merger between X and y was successfull '''
@@ -96,16 +80,26 @@ class init(unittest.TestCase):
         atom = ATOMClassifier(X, y)
         self.assertEqual(atom.dataset.columns[-1], atom.target)
 
+        # When y is None...
+        atom = ATOMClassifier(X)
+        self.assertEqual(atom.dataset.columns[-1], atom.target)
+
         # When it's not last, if it is moved to the last position correctly
         X, y = load_australian_dataset()
-        atom = ATOMClassifier(X, target='MaxTemp')
+        atom = ATOMClassifier(X, y='MaxTemp')
         self.assertEqual(atom.dataset.columns[-1], atom.target)
 
     def test_target_in_data(self):
-        ''' Test if the target column is in the X dataframe '''
+        ''' Test if the target column given by y is in X '''
 
         X, y = load_australian_dataset()
-        self.assertRaises(ValueError, ATOMClassifier, X, target='not_there')
+        self.assertRaises(ValueError, ATOMClassifier, X, y='test')
+
+    def test_y_type(self):
+        ''' Test if error when y is wrong type '''
+
+        X, _ = load_australian_dataset()
+        self.assertRaises(TypeError, ATOMClassifier, X, y=23.2)
 
     # << ====================== Test parameters ====================== >>
 
@@ -123,11 +117,14 @@ class init(unittest.TestCase):
     def test_percentage_parameter(self):
         ''' Test if the percentage parameter is set correctly '''
 
-        # Test if it changes for forbidden values
+        # Test if error raises for forbidden types
         X, y = load_breast_cancer(return_X_y=True)
-        for percentage in [0, -1, 120]:
-            atom = ATOMClassifier(X, y, percentage=percentage)
-            self.assertEqual(atom.percentage, 100)
+        self.assertRaises(TypeError, ATOMClassifier, X, y, percentage='test')
+
+        # Test if error raises for forbidden values
+        X, y = load_breast_cancer(return_X_y=True)
+        for p in [0, -1, 120]:
+            self.assertRaises(ValueError, ATOMClassifier, X, y, percentage=p)
 
         # Test if it works correctly
         X, y = load_breast_cancer(return_X_y=True)
@@ -152,8 +149,29 @@ class init(unittest.TestCase):
 
 class reset_attributes(unittest.TestCase):
 
+    def test_isPandas(self):
+        ''' Test if data attributes are pd.DataFrames or pd.Series '''
+
+        def test(atom):
+            for attr in ['dataset', 'train', 'test', 'X', 'X_train', 'X_test']:
+                self.assertIsInstance(getattr(atom, attr), pd.DataFrame)
+
+            for attr in ['y', 'y_train', 'y_test']:
+                self.assertIsInstance(getattr(atom, attr), pd.Series)
+
+        # Test with lists
+        X = [[0, 1], [2, 2], [0, 1]]
+        y = [0, 1, 0]
+        atom = ATOMClassifier(X, y)
+        test(atom)
+
+        # Test with np.arrays
+        X, y = load_breast_cancer(return_X_y=True)
+        atom = ATOMClassifier(X, y)
+        test(atom)
+
     def test_attributes_equal_length(self):
-        ''' Test if certain data attributes have the same number of rows '''
+        ''' Test if data attributes have the same number of rows '''
 
         X, y = load_breast_cancer(return_X_y=True)
         atom = ATOMClassifier(X, y)
