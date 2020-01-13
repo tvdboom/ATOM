@@ -291,7 +291,7 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved (as .html). None to not save anything.<br><br>
 * **reset_attributes(truth='dataset')**  
-If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update the test set, etc...
+If you change any of the class' data attributes (dataset, X, y, train, test, X_train, X_test, y_train, y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, y_train and y_test, or truth='train' will also update the test set, etc...
 	+ **truth: string, optional (default='dataset')**  
 	Data attribute that has been changed (as string)<br><br>
 * **plot_bagging(iteration=-1, title=None, figsize=None, filename=None)**  
