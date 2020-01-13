@@ -290,9 +290,9 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 	Number of rows selected randomly from the dataset to perform the analysis on. None to select all rows.
 	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved (as .html). None to not save anything.<br><br>
-* **reset_attributes(truth='all')**  
-If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update test, etc...
-	+ **truth: string, optional (default='all')**  
+* **reset_attributes(truth='dataset')**  
+If you change any of the class' data attributes (dataset, X, Y, train, test, X_train, X_test, Y_train, Y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, Y_train and Y_test, or truth='train' will also update the test set, etc...
+	+ **truth: string, optional (default='dataset')**  
 	Data attribute that has been changed (as string)<br><br>
 * **plot_bagging(iteration=-1, title=None, figsize=None, filename=None)**  
 Make a boxplot of the bagging's results after fitting the class.
