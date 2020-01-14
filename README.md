@@ -120,11 +120,11 @@ ATOM contains multiple methods for standard data cleaning and feature selection 
 | TIP: Use the `report` method to examine the data and help you determine suitable parameters for the methods |
 | --- |
 
-* **impute(strat_num='remove', strat_cat='remove', max_frac=0.5, missing=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
-Handle missing values according to the selected strategy. Also removes columns with too many missing values.
+* **impute(strat_num='remove', strat_cat='remove', max_frac_rows=0.5, max_frac_cols=0.5, missing=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
+Handle missing values according to the selected strategy. Also removes rows and columns with too many missing values.
 	+ **strat_num: int, float or string, optional (default='remove')**  
 	Imputing strategy for numerical columns. Possible values are:
-		- 'remove': remove row if any missing value
+		- 'remove': remove row
 		- 'mean': impute with mean of column
 		- 'median': impute with median of column
 		- 'knn': impute using k-Nearest Neighbors
@@ -132,13 +132,15 @@ Handle missing values according to the selected strategy. Also removes columns w
 		- int or float: impute with provided numerical value
 	+ **strat_cat: string, optional (default='remove')**  
 	Imputing strategy for categorical columns. Possible values are:
-		- 'remove': remove row if any missing value
+		- 'remove': remove row
 		- 'most_frequent': impute with most frequent value
 		- string: impute with provided string
-	+ **max_frac: float, optional (default=0.5)**  
-	Maximum allowed fraction of rows with any missing values. If more, the column is removed.
+	+ **max_frac_rows: float, optional (default=0.5)**  
+	Minimum fraction of non missing values in row. If less, the row is removed.
+	+ **max_frac_cols: float, optional (default=0.5)**  
+	Minimum fraction of non missing values in column. If less, the column is removed.
 	+ **missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
-	List of values to consider as missing. None, np.nan, '', np.inf and -np.inf are always added to the list since they are incompatible with sklearn models.<br><br>
+	List of values to consider as missing. None, np.nan, np.inf, -np.inf and empty strings are always added to the list since they are incompatible with the models.<br><br>
 * **encode(max_onehot=10, fraction_to_other=0)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
 	+ **max_onehot: int, optional (default=10)**  
