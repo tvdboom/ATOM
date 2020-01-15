@@ -6,7 +6,7 @@
 Author: tvdboom  
 Email: m.524687@gmail.com
 
-[![Python 3.6|3.7](https://img.shields.io/badge/python-3.6%20%7C%203.7-blue)](https://www.python.org/downloads/release/python-370/)
+[![Python 3.6|3.7](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
   
@@ -55,8 +55,8 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-    atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac=0.1)  
-    atom.encode(max_onehot=10, fraction_to_other=0.05)  
+    atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac_rows=0.1)  
+    atom.encode(max_onehot=10, frac_to_other=0.05)  
     atom.outliers(max_sigma=4)  
     atom.balance(oversample=0.8, neighbors=15)  
     atom.feature_selection(strategy='univariate', solver='chi2', max_features=0.9)
@@ -82,7 +82,7 @@ Make plots and analyze results:
 API
 -----------------------------
 * **ATOMClassifier(X, y=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
-ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances, usually the case for IDs, names, etc...), and removing duplicate rows and rows with missing values in the target column.  
+ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances. Usually the case for IDs, names, etc...), remove features with all the same value, removing duplicate rows and remove rows with missing values in the target column.  
 	+ **X: list, np.array or pd.DataFrame**  
 	Data features with shape=(n_samples, n_features).
 	+ **y: None, string, list, np.array or pd.Series, optional (default=None)**  
@@ -120,7 +120,7 @@ ATOM contains multiple methods for standard data cleaning and feature selection 
 | TIP: Use the `report` method to examine the data and help you determine suitable parameters for the methods |
 | --- |
 
-* **impute(strat_num='remove', strat_cat='remove', max_frac_rows=0.5, max_frac_cols=0.5, missing=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
+* **impute(strat_num='remove', strat_cat='remove', max_frac_rows=0.5, max_frac_cols=0.5, missing=[None, np.nan, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'])**  
 Handle missing values according to the selected strategy. Also removes rows and columns with too many missing values.
 	+ **strat_num: int, float or string, optional (default='remove')**  
 	Imputing strategy for numerical columns. Possible values are:
@@ -139,14 +139,14 @@ Handle missing values according to the selected strategy. Also removes rows and 
 	Minimum fraction of non missing values in row. If less, the row is removed.
 	+ **max_frac_cols: float, optional (default=0.5)**  
 	Minimum fraction of non missing values in column. If less, the column is removed.
-	+ **missing: value or list of values, optional (default=[np.nan, None, '', '?', 'NA', 'nan', 'NaN', np.inf, -np.inf])**  
-	List of values to consider as missing. None, np.nan, np.inf, -np.inf and empty strings are always added to the list since they are incompatible with the models.<br><br>
-* **encode(max_onehot=10, fraction_to_other=0)**  
+	+ **missing: value or list of values, optional (default=[None, np.nan, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'])**  
+	List of values to consider as missing. None, np.nan, np.inf and -np.inf are always imputed since they are incompatible with the models.<br><br>
+* **encode(max_onehot=10, frac_to_other=0)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
-	+ **max_onehot: int, optional (default=10)**  
-	Maximum number of unique values in a feature to perform one-hot-encoding.  
-	+ **fraction_to_other: float, optional (default=0)**  
-	Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.<br><br>
+	+ **max_onehot: None or int, optional (default=10)**  
+	Maximum number of unique values in a feature to perform one-hot-encoding. If None, it will never perform one-hot-encoding.  
+	+ **frac_to_other: float, optional (default=0)**  
+	Classes with less instances than n_rows * frac_to_other are replaced with 'other'.<br><br>
 * **outliers(max_sigma=3, include_target=False)**  
 Remove outliers from the training set.
 	+ **max_sigma: int or float, optional (default=3)**  
