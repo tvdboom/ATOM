@@ -58,14 +58,13 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
     atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac_rows=0.1)  
     atom.encode(max_onehot=10, frac_to_other=0.05)  
     atom.outliers(max_sigma=4)  
-    atom.balance(oversample=0.8, neighbors=15)  
+    atom.balance(oversample=0.8, n_neighbors=15)  
     atom.feature_selection(strategy='univariate', solver='chi2', max_features=0.9)
 
 Fit the data to different models:
 
     atom.fit(models=['LR', 'LDA', 'XGB', 'lSVM'],
 	         metric='f1',
-	         successive_halving=True,
 	         max_iter=10,
 	         max_time=1000,
 	         init_points=3,
@@ -153,7 +152,7 @@ Remove outliers from the training set.
 	Remove rows containing any value with a maximum standard deviation (on the respective column) above max_sigma.
 	+ **include_target: bool, optional (default=False)**  
 	Wether to include the target column when searching for outliers.<br><br>
-* **balance(oversample=None, undersample=None, neighbors=5)**  
+* **balance(oversample=None, undersample=None, n_neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks. Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html).
 	+ **oversample: None, float or string, optional (default=None)**  
 	Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html#imblearn.over_sampling.ADASYN). Choose from:
@@ -166,7 +165,7 @@ Balance the number of instances per target class. Only for classification tasks.
 	+ **undersample: None, float or string, optional (default=None)**  
 	Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html) methods. Choose from:
 		- None: do not perform undersampling
-		- float: fraction majority/minority (only for binary classification)
+		- float: fraction minority/majority (only for binary classification)
 		- 'majority': resample only the majority class
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
