@@ -313,6 +313,16 @@ Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 	Figure size: format as (x, y).
 	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
+* **plot_PCA(show=None, title=None, figsize=None, filename=None)**  
+Plot the explained variance ratio of the components. Only if PCA was applied on the dataset through the feature_selection method.
+	+ **show: int, optional (default=20)**  
+	Number of best components to show in the plot. None for all components.  
+	+ **title: None or string, optional (default=None)**  
+	Plot's title. None for default title.
+	+ **figsize: 2d-tuple, optional (default=None)**  
+	Figure size: format as (x, y). If None, adjust to the number of components shown.
+	+ **filename: None or string, optional (default=None)**  
+	Name of the file when saved. None to not save anything.<br><br>
 * **plot_successive_halving(title=None, figsize=(10, 6), filename=None)**  
 Make a plot of the models' scores per iteration of the successive halving.
 	+ **title: None or string, optional (default=None)**  
@@ -347,7 +357,7 @@ Class attributes
 * **train, test**: Train and test set.
 * **X_train, y_train**: Training set features and target.
 * **X_test, y_test**: Test set features and target.
-* **target_mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
+* **target_map**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
 * **collinear**: Dataframe of the collinear features and their correlation values (if feature_selection was used).
@@ -420,9 +430,9 @@ Plot the feature importance permutation scores in a boxplot. A dictionary contai
 	Figure size: format as (x, y). If None, adjusts to the number of features shown.
 	+ **filename: None or string, optional (default=None)**  
 	Name of the file when saved. None to not save anything.<br><br>
-* **plot_feature_importance(show=20, title=None, figsize=None, filename=None)**  
-Plot the feature importance scores. Only works with tree based algorithms (Tree, Bag, ET, RF, AdaBoost, GBM, XGB, LGB and CatB).
-	+ **show: int, optional (default=20)**  
+* **plot_feature_importance(show=None, title=None, figsize=None, filename=None)**  
+Plot the normalized feature importance scores. Only works with tree based algorithms.
+	+ **show: int, optional (default=None)**  
 	Number of best features to show in the plot. None for all features.  
 	+ **title: None or string, optional (default=None)**  
 	Plot's title. None for default title.
