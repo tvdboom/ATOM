@@ -357,7 +357,7 @@ Class attributes
 * **train, test**: Train and test set.
 * **X_train, y_train**: Training set features and target.
 * **X_test, y_test**: Test set features and target.
-* **target_map**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
+* **mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
 * **collinear**: Dataframe of the collinear features and their correlation values (if feature_selection was used).
