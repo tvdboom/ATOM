@@ -15,7 +15,7 @@ setuptools.setup(
       name='atom-ml',
       version='v2.4.0',
       license='MIT',
-      description='AutoML package for model comparison tasks',
+      description='Package for fast exploration and experimentation of ML tasks',
       download_url='https://github.com/tvdboom/ATOM/archive/v2.4.0.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
