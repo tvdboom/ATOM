@@ -83,10 +83,10 @@ def prlog(string, class_, level=0, time=False):
 
     PARAMETERS -------------------------------------
 
-    string     --> string to output
-    class_     --> class of the element
-    level      --> minimum verbosity level to print
-    time       --> wether to add the timestamp to the log
+    string --> string to output
+    class_ --> class of the element
+    level  --> minimum verbosity level to print
+    time   --> wether to add the timestamp to the log
 
     '''
 
@@ -123,14 +123,14 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        data           --> dictionary of the data (train, test and all)
-        target_mapping --> dictionary of the mapping of the target column
-        metrics        --> dictionary of metrics
-        task           --> classification or regression
-        log            --> name of the log file
-        n_jobs         --> number of cores for parallel processing
-        verbose        --> verbosity level (0, 1, 2, 3)
-        random_state   --> int seed for the RNG
+        data         --> dictionary of the data (train, test and all)
+        mapping      --> dictionary of the mapping of the target column
+        metrics      --> dictionary of metrics
+        task         --> classification or regression
+        log          --> name of the log file
+        n_jobs       --> number of cores for parallel processing
+        verbose      --> verbosity level (0, 1, 2, 3)
+        random_state --> int seed for the RNG
 
         '''
 
@@ -445,10 +445,13 @@ class BaseModel(object):
                 setattr(self, m, msg)
 
         # Print stats
+        if max_iter == 0:
+            prlog('\n', self, 1)  # Print extra line
         if self.name in no_bayesian_optimization and max_iter > 0:
             prlog('\n', self, 1)  # Print 2 extra lines
-        else:
+        elif max_iter > 0:
             prlog('', self, 2)  # Print extra line
+
         prlog('Final results for {}:{:9s}'.format(self.longname, ' '), self, 1)
         if self.name not in no_bayesian_optimization and max_iter > 0:
             prlog(f'Best hyperparameters: {self.best_params}', self, 1)
@@ -595,16 +598,16 @@ class BaseModel(object):
                              'classification tasks.')
 
         # Make target mapping
-        inv_map = {str(v): k for k, v in self.target_mapping.items()}
+        inv_map = {str(v): k for k, v in self.mapping.items()}
         if isinstance(target, str):  # User provides a string
-            target_int = self.target_mapping[target]
+            target_int = self.mapping[target]
             target_str = target
         else:  # User provides an integer
             target_int = target
             target_str = inv_map[str(target)]
 
         fig, ax = plt.subplots(figsize=figsize)
-        for key, value in self.target_mapping.items():
+        for key, value in self.mapping.items():
             idx = np.where(self.y_test == value)  # Get indices per class
             sns.distplot(self.predict_proba_test[idx, target_int],
                          hist=False,
@@ -683,17 +686,17 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, show=20, title=None,
+    def plot_feature_importance(self, show=None, title=None,
                                 figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
 
-        Plot a (Tree based) model's feature importance.
+        Plot a (Tree based) model's normalized feature importance.
 
         PARAMETERS -------------------------------------
 
-        show     --> number of best features to show in the plot
+        show     --> number of best features to show in the plot. None for all
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
@@ -704,7 +707,8 @@ class BaseModel(object):
             raise ValueError('This method only works for tree-based models!')
 
         # Set parameters
-        show = self.X.shape[1] if show is None else int(show)
+        if show is None or show > self.X.shape[1]:
+            show = self.X.shape[1]
         if figsize is None:  # Default figsize depends on features shown
             figsize = (10, int(4 + show/2))
 
@@ -716,13 +720,17 @@ class BaseModel(object):
         else:
             feature_importances = self.best_model_fit.feature_importances_
 
+        # Normalize for plotting values adjacent to bar
+        feature_importances = feature_importances/max(feature_importances)
         scores = pd.Series(feature_importances,
                            index=self.X.columns).nlargest(show).sort_values()
 
         fig, ax = plt.subplots(figsize=figsize)
         scores.plot.barh()
+        for i, v in enumerate(scores):
+            ax.text(v + 0.01, i - 0.08, f'{v:.2f}', fontsize=BaseModel.tick_fs)
 
-        title = 'Feature importance' if title is None else title
+        title = 'Normalized feature importance' if title is None else title
         plt.title(title, fontsize=BaseModel.title_fs, pad=12)
         plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
         plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
@@ -840,7 +848,7 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        ticks = [v for v in self.target_mapping.keys()]
+        ticks = [v for v in self.mapping.keys()]
 
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
