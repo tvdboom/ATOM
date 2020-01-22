@@ -7,12 +7,14 @@ before_install:
   - python --version
   - pip install -U pip
   - pip install -U pytest
+  - pip install -U coverage
   - pip install codecov
 # Command to install dependencies
 install:
   - pip install -r requirements.txt
 # Command to run tests
-script: pytest
+# travis_wait because some tests take longer than 10min
+script: travis_wait 50 mvn coverage run -m pytest
 # Submit coverage
 after_success:
   - codecov
