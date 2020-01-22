@@ -3,6 +3,7 @@
 '''
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
+Description: Module containing the parent class for all model subclasses
 
 '''
 
@@ -19,18 +20,14 @@ from datetime import datetime
 from collections import deque
 
 # Sklearn
-import sklearn
 from sklearn.utils import resample
+from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 from sklearn.metrics import (
-        make_scorer, confusion_matrix, roc_curve, roc_auc_score, r2_score,
-        accuracy_score, precision_score, hamming_loss, jaccard_score,
-        log_loss, matthews_corrcoef, recall_score, f1_score, max_error,
-        mean_absolute_error, mean_squared_error, mean_squared_log_error
+        make_scorer, confusion_matrix, roc_curve, precision_recall_curve
         )
-
 # Others
 from GPyOpt.methods import BayesianOptimization
 
@@ -38,7 +35,6 @@ from GPyOpt.methods import BayesianOptimization
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
-sns.set(style='darkgrid', palette="GnBu_d")
 
 
 # << ============ Global variables ============ >>
@@ -46,14 +42,12 @@ sns.set(style='darkgrid', palette="GnBu_d")
 # List of tree-based models
 tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 
-# List of tree-based models from the scikit-learn library
-sklearn_trees = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM']
-
 # List of models that don't use the Bayesian Optimization
-no_bayesian_optimization = ['GNB', 'GP']
+no_BO = ['GP', 'GNB', 'OLS']
 
 # List of models with no (or sometimes no) predict_proba method
-not_predict_proba = ['LinReg', 'lSVM', 'kSVM', 'PA', 'SGD']
+not_predict_proba = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR',
+                     'lSVM', 'kSVM', 'PA', 'SGD']
 
 
 # << ============ Functions ============ >>
@@ -80,7 +74,7 @@ def timer(f):
     return wrapper
 
 
-def prlog(string, class_, level=0, print_only=False, time=False):
+def prlog(string, class_, level=0, time=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -89,18 +83,17 @@ def prlog(string, class_, level=0, print_only=False, time=False):
 
     PARAMETERS -------------------------------------
 
-    string     --> string to output
-    class_     --> class of the element
-    level      --> minimum verbosity level to print
-    print_only --> only print but not save to log (for stats method)
-    time       --> wether to add the timestamp to the log
+    string --> string to output
+    class_ --> class of the element
+    level  --> minimum verbosity level to print
+    time   --> wether to add the timestamp to the log
 
     '''
 
-    if class_.verbose > level or print_only:
+    if class_.verbose > level:
         print(string)
 
-    if class_.log is not None and not print_only:
+    if class_.log is not None:
         with open(class_.log, 'a+') as file:
             if time:
                 # Datetime object containing current date and time
@@ -112,8 +105,14 @@ def prlog(string, class_, level=0, print_only=False, time=False):
 
 
 # << ============ Classes ============ >>
-
 class BaseModel(object):
+
+    # Define class variables for plot settings
+    style = 'darkgrid'
+    palette = 'GnBu_d'
+    title_fs = 20
+    label_fs = 16
+    tick_fs = 12
 
     def __init__(self, **kwargs):
 
@@ -124,18 +123,22 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        data    --> dictionary of the data (train, test and complete set)
-        metric  --> metric to maximize (or minimize) in the BO
-        task    --> classification or regression
-        log     --> name of the log file
-        verbose --> verbosity level (0, 1, 2, 3)
+        data         --> dictionary of the data (train, test and all)
+        mapping      --> dictionary of the mapping of the target column
+        metrics      --> dictionary of metrics
+        task         --> classification or regression
+        log          --> name of the log file
+        n_jobs       --> number of cores for parallel processing
+        verbose      --> verbosity level (0, 1, 2, 3)
+        random_state --> int seed for the RNG
 
         '''
 
-        self.__dict__.update(kwargs)  # Set attributes to child class
+        # Set attributes from ATOM to the model's parent class
+        self.__dict__.update(kwargs)
 
     @timer
-    def BayesianOpt(self, test_size, gib, max_iter, max_time, eps,
+    def BayesianOpt(self, test_size, max_iter, max_time, eps,
                     batch_size, init_points, cv, plot_bo):
 
         '''
@@ -149,7 +152,6 @@ class BaseModel(object):
         PARAMETERS -------------------------------------
 
         test_size   --> fraction test/train size
-        gib         --> metric is a score function or a loss function
         max_iter    --> maximum number of iterations
         max_time    --> maximum time for the BO (in seconds)
         eps         --> minimum distance between two consecutive x's
@@ -189,26 +191,32 @@ class BaseModel(object):
                 ax1 = plt.subplot(gs[0])
                 # Create a variable for the line so we can later update it
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
-                ax1.set_title('Bayesian Optimization for {}'
-                              .format(self.name), fontsize=16)
-                ax1.set_ylabel(self.metric.__name__, fontsize=16, labelpad=12)
+                ax1.set_title(f'Bayesian Optimization for {self.longname}',
+                              fontsize=BaseModel.title_fontsize)
+                ax1.set_ylabel(self.metric.longname,
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
                 # Second subplot
                 ax2 = plt.subplot(gs[1], sharex=ax1)
                 line2, = ax2.plot(x, y2, '-o', alpha=0.8)
-                ax2.set_title('Metric distance between last consecutive steps'
-                              .format(self.name), fontsize=16)
-                ax2.set_xlabel('Step', fontsize=16, labelpad=12)
-                ax2.set_ylabel('d', fontsize=16, labelpad=12)
+                ax2.set_title('Metric distance between last consecutive steps',
+                              fontsize=BaseModel.title_fontsize)
+                ax2.set_xlabel('Step',
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
+                ax2.set_ylabel('d',
+                               fontsize=BaseModel.label_fontsize,
+                               labelpad=12)
                 ax2.set_xticks(self.x)
                 ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
                 ax2.set_ylim([-0.05, 0.1])
 
                 plt.setp(ax1.get_xticklabels(), visible=False)
                 plt.subplots_adjust(hspace=.0)
-                plt.xticks(fontsize=12)
-                plt.yticks(fontsize=12)
+                plt.xticks(fontsize=BaseModel.tick_fontsize)
+                plt.yticks(fontsize=BaseModel.tick_fontsize)
                 fig.tight_layout()
                 plt.show()
 
@@ -250,21 +258,43 @@ class BaseModel(object):
                 # Split each iteration in different train and validation set
                 X_subtrain, X_validation, Y_subtrain, Y_validation = \
                     train_test_split(self.X_train,
-                                     self.Y_train,
+                                     self.y_train,
                                      test_size=test_size,
                                      shuffle=True)
 
-                algorithm.fit(X_subtrain, Y_subtrain)
-                self.predict_test = algorithm.predict(X_validation)
+                # Models without the predict_proba() method need probs with ccv
+                # Not prefit to not have to make an extra cut in the data
+                if self.metric.needs_proba:
+                    if self.name in not_predict_proba:
+                        ccv = CalibratedClassifierCV(algorithm, cv=None)
+                        ccv.fit(X_subtrain, Y_subtrain)
+                        y_pred = ccv.predict_proba(X_validation)
+                    else:
+                        algorithm.fit(X_subtrain, Y_subtrain)
+                        y_pred = algorithm.predict_proba(X_validation)
+
+                else:
+                    algorithm.fit(X_subtrain, Y_subtrain)
+                    y_pred = algorithm.predict(X_validation)
 
                 # Calculate metric on the validation set
-                output = self.metric(Y_validation, self.predict_test)
+                output = self.metric.func(Y_validation, y_pred)
 
             else:  # Use cross validation to get the output of BO
 
-                # Make scoring function for the cross_validator
-                scoring = make_scorer(self.metric, greater_is_better=gib)
+                # Define the estimator dependent on needs_proba
+                if self.name in not_predict_proba and self.metric.needs_proba:
+                    estimator = CalibratedClassifierCV(algorithm, cv=None)
+                else:
+                    estimator = algorithm
 
+                # Make scoring function for the cross_validator
+                # .function (not .func) since make_scorer handles automatically
+                scoring = make_scorer(self.metric.function,
+                                      greater_is_better=self.metric.gib,
+                                      needs_proba=self.metric.needs_proba)
+
+                # Determine number of folds for the cross_val_score
                 if self.task != 'regression':
                     # Folds are made preserving the % of samples for each class
                     # Use same splits for every model
@@ -273,19 +303,20 @@ class BaseModel(object):
                     kfold = KFold(n_splits=cv, random_state=1)
 
                 # Run cross-validation (get mean of results)
-                output = cross_val_score(algorithm,
+                output = cross_val_score(estimator,
                                          self.X_train,
-                                         self.Y_train,
+                                         self.y_train,
                                          cv=kfold,
                                          scoring=scoring,
                                          n_jobs=self.n_jobs).mean()
 
                 # cross_val_score returns negative loss for minimizing metrics
-                output = output if gib else -output
+                output = output if self.metric.gib and output != 0 else -output
 
             # Save output of the BO and plot progress
             self.BO['score'].append(output)
-            prlog(f'Evaluation --> {self.metric.__name__}: {output:.4f}',
+            prlog('Evaluation --> {0}: {1:.{2}f}'
+                  .format(self.metric.longname, output, self.metric.dec),
                   self, 2)
 
             if plot_bo:
@@ -311,8 +342,8 @@ class BaseModel(object):
         # << ============ Running optimization ============ >>
 
         # Skip BO for GNB and GP (no hyperparameter tuning)
-        if self.shortname not in no_bayesian_optimization and max_iter > 0:
-            prlog(f'\n\nRunning BO for {self.name}...', self, 1)
+        if self.name not in no_BO and max_iter > 0 and max_time > 0:
+            prlog(f'\n\nRunning BO for {self.longname}...', self, 1)
 
             # Save dictionary of BO steps
             self.BO = {}
@@ -328,7 +359,7 @@ class BaseModel(object):
             self.ax1, self.ax2 = 0, 0  # Plot axes
 
             # Minimize or maximize the function depending on the metric
-            maximize = True if gib else False
+            maximize = True if self.metric.gib else False
             # Default SKlearn or multiple random initial points
             kwargs = {}
             if init_points > 1:
@@ -353,7 +384,7 @@ class BaseModel(object):
                 plt.close()
 
             # Optimal score of the BO
-            bo_best_score = -opt.fx_opt if gib else opt.fx_opt
+            bo_best_score = -opt.fx_opt if self.metric.gib else opt.fx_opt
 
             # Set to same shape as GPyOpt (2d-array)
             self.best_params = self.get_params(
@@ -366,63 +397,70 @@ class BaseModel(object):
             self.best_model = self.get_model()
 
         # Fit the selected model on the complete training set
-        self.best_model_fit = self.best_model.fit(self.X_train, self.Y_train)
+        self.best_model_fit = self.best_model.fit(self.X_train, self.y_train)
 
         # Save predictions
         self.predict_train = self.best_model_fit.predict(self.X_train)
         self.predict_test = self.best_model_fit.predict(self.X_test)
 
-        # Get metric scores
-        self.score_train = self.metric(self.Y_train, self.predict_train)
-        self.score_test = self.metric(self.Y_test, self.predict_test)
-
-        if self.shortname in not_predict_proba and self.task != 'regression':
-            # Models without predict_proba() method need probs with ccv
-            self.ccv = CalibratedClassifierCV(self.best_model_fit, cv='prefit')
-            self.ccv.fit(self.X_test, self.Y_test)
-            self.predict_proba = self.ccv.predict_proba(self.X_test)
+        # Models without the predict_proba() method need probs with ccv
+        if self.name in not_predict_proba and self.task != 'regression':
+            ccv = CalibratedClassifierCV(self.best_model, cv=None)
+            ccv.fit(self.X_train, self.y_train)
+            self.predict_proba_train = ccv.predict_proba(self.X_train)
+            self.predict_proba_test = ccv.predict_proba(self.X_test)
         elif self.task != 'regression':
-            self.predict_proba = self.best_model_fit.predict_proba(self.X_test)
+            self.predict_proba_train = \
+                self.best_model_fit.predict_proba(self.X_train)
+            self.predict_proba_test = \
+                self.best_model_fit.predict_proba(self.X_test)
 
-        # Calculate some standard metrics
-        if self.task == 'binary classification':
-            cm = confusion_matrix(self.Y_test, self.predict_test)
-            self.tn, self.fp, self.fn, self.tp = cm.ravel()
-            self.auc = roc_auc_score(self.Y_test, self.predict_test)
-            self.mcc = matthews_corrcoef(self.Y_test, self.predict_test)
-            self.accuracy = accuracy_score(self.Y_test, self.predict_test)
-            self.logloss = log_loss(self.Y_test, self.predict_proba[:, 1])
-            avg = 'binary'
+        # Get metric scores
+        if self.metric.needs_proba:
+            self.score_train = self.metric.func(self.y_train,
+                                                self.predict_proba_train)
+            self.score_test = self.metric.func(self.y_test,
+                                               self.predict_proba_test)
         else:
-            avg = 'weighted'
+            self.score_train = self.metric.func(self.y_train,
+                                                self.predict_train)
+            self.score_test = self.metric.func(self.y_test, self.predict_test)
 
-        if self.task != 'regression':
-            args = {'y_true': self.Y_test,
-                    'y_pred': self.predict_test,
-                    'average': avg}
-            self.precision = precision_score(**args)
-            self.jaccard = jaccard_score(**args)
-            self.recall = recall_score(**args)
-            self.f1 = f1_score(**args)
-            self.hamming = hamming_loss(self.Y_test, self.predict_test)
+        # Calculate some standard metrics on the test set
+        for m in self.metric.__dict__.keys():
+            # Skip all non-metric attributes
+            if m in ['function', 'name', 'longname',
+                     'gib', 'needs_proba', 'task', 'dec']:
+                continue
 
-        self.max_error = max_error(self.Y_test, self.predict_test)
-        self.mae = mean_absolute_error(self.Y_test, self.predict_test)
-        self.mse = mean_squared_error(self.Y_test, self.predict_test)
-        self.msle = mean_squared_log_error(self.Y_test, self.predict_test)
-        self.r2 = r2_score(self.Y_test, self.predict_test)
+            try:
+                metric = getattr(self.metric, m)
+                if metric.needs_proba and self.task != 'regression':
+                    y_pred = self.predict_proba_test
+                else:
+                    y_pred = self.predict_test
+                setattr(self, m, metric.func(self.y_test, y_pred))
+            except Exception:
+                msg = f'This metric is unavailable for {self.task} tasks!'
+                setattr(self, m, msg)
 
         # Print stats
-        if self.shortname in no_bayesian_optimization and max_iter > 0:
+        if max_iter == 0:
+            prlog('\n', self, 1)  # Print extra line
+        if self.name in no_BO and max_iter > 0 and max_time > 0:
             prlog('\n', self, 1)  # Print 2 extra lines
-        else:
+        elif max_iter > 0 and max_time > 0:
             prlog('', self, 2)  # Print extra line
-        prlog('Final results for {}:{:9s}'.format(self.name, ' '), self, 1)
-        if self.shortname not in no_bayesian_optimization and max_iter > 0:
+
+        prlog('Final results for {}:{:9s}'.format(self.longname, ' '), self, 1)
+        if self.name not in no_BO and max_iter > 0 and max_time > 0:
             prlog(f'Best hyperparameters: {self.best_params}', self, 1)
-            prlog(f'Best score on the BO: {bo_best_score:.4f}', self, 1)
-        prlog(f'Score on the training set: {self.score_train:.4f}', self, 1)
-        prlog(f'Score on the test set: {self.score_test:.4f}', self, 1)
+            prlog('Best score on the BO: {0:.{1}f}'
+                  .format(bo_best_score, self.metric.dec), self, 1)
+        prlog('Score on the training set: {0:.{1}f}'
+              .format(self.score_train, self.metric.dec), self, 1)
+        prlog('Score on the test set: {0:.{1}f}'
+              .format(self.score_test, self.metric.dec), self, 1)
 
     @timer
     def bagging(self, n_samples=3):
@@ -439,21 +477,31 @@ class BaseModel(object):
 
         '''
 
-        self.bagging_scores = []
+        self.bagging_scores = []  # List of the scores
         for _ in range(n_samples):
             # Create samples with replacement
-            sample_x, sample_y = resample(self.X_train, self.Y_train)
+            sample_x, sample_y = resample(self.X_train, self.y_train)
 
             # Fit on bootstrapped set and predict on the independent test set
-            algorithm = self.best_model.fit(sample_x, sample_y)
-            pred = algorithm.predict(self.X_test)
+            if self.metric.needs_proba:
+                if self.name in not_predict_proba:
+                    ccv = CalibratedClassifierCV(self.best_model, cv=None)
+                    ccv.fit(sample_x, sample_y)
+                    y_pred = ccv.predict_proba(self.X_test)
+                else:
+                    algorithm = self.best_model.fit(sample_x, sample_y)
+                    y_pred = algorithm.predict_proba(self.X_test)
+
+            else:
+                algorithm = self.best_model.fit(sample_x, sample_y)
+                y_pred = algorithm.predict(self.X_test)
 
             # Append metric result to list
-            self.bagging_scores.append(self.metric(self.Y_test, pred))
+            self.bagging_scores.append(self.metric.func(self.y_test, y_pred))
 
         # Numpy array for mean and std
         self.bagging_scores = np.array(self.bagging_scores)
-        prlog('--------------------------------------------------', self, 1)
+        prlog('--------------------------------------------', self, 1)
         prlog('Bagging score --> Mean: {:.4f}   Std: {:.4f}'
               .format(self.bagging_scores.mean(), self.bagging_scores.std()),
               self, 1)
@@ -461,7 +509,7 @@ class BaseModel(object):
     # << ============ Plot functions ============ >>
 
     def plot_threshold(self, metric=None, steps=100,
-                       figsize=(10, 6), filename=None):
+                       title=None, figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION ------------------------------------
@@ -472,6 +520,7 @@ class BaseModel(object):
 
         metric   --> metric(s) to plot
         steps    --> Number of thresholds to try between 0 and 1
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -483,40 +532,50 @@ class BaseModel(object):
 
         # Set metric parameter
         if metric is None:
-            metric = self.metric
-        elif not isinstance(metric, list):
+            metric = self.metric.function
+        if not isinstance(metric, list):
             metric = [metric]
+
+        # Convert all strings to functions
+        mlist = []
+        for m in metric:
+            if isinstance(m, str):
+                mlist.append(getattr(self.metric, m).function)
+            else:
+                mlist.append(m)
 
         # Get results ignoring annoying warnings
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
             results = {}
-            for m in metric:  # Create dict of empty arrays
+            for m in mlist:  # Create dict of empty arrays
                 results[m] = []
             space = np.linspace(0, 1, steps)
             for step in space:
-                for m in metric:
-                    pred = (self.predict_proba[:, 1] >= step).astype(bool)
-                    results[m].append(m(self.Y_test, pred))
+                for m in mlist:
+                    pred = (self.predict_proba_test[:, 1] >= step).astype(bool)
+                    results[m].append(m(self.y_test, pred))
 
         fig, ax = plt.subplots(figsize=figsize)
-        for i, m in enumerate(metric):
-            plt.plot(space, results[m], label=metric[i].__name__, lw=2)
+        for i, m in enumerate(mlist):
+            plt.plot(space, results[m], label=mlist[i].__name__, lw=2)
 
-        plt.xlabel('Threshold', fontsize=16, labelpad=12)
-        plt.ylabel('Score', fontsize=16, labelpad=12)
-        plt.title('Performance metric{} vs threshold value'
-                  .format('' if len(metric) == 1 else 's'), fontsize=16)
-        plt.legend(frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None:
+            temp = '' if len(metric) == 1 else 's'
+            title = f'Performance metric{temp} against threshold value'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
+        plt.xlabel('Threshold', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_probabilities(self, target_class=1,
+    def plot_probabilities(self, target=1, title=None,
                            figsize=(10, 6), filename=None):
 
         '''
@@ -527,9 +586,10 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        target_class --> probability of being that class (as idx or string)
-        figsize      --> figure size: format as (x, y)
-        filename     --> name of the file to save
+        target   --> probability of being that class (as idx or string)
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
 
         '''
 
@@ -537,96 +597,232 @@ class BaseModel(object):
             raise ValueError('This method is only available for ' +
                              'classification tasks.')
 
-        sns.set_style('darkgrid')
+        # Make target mapping
+        inv_map = {str(v): k for k, v in self.mapping.items()}
+        if isinstance(target, str):  # User provides a string
+            target_int = self.mapping[target]
+            target_str = target
+        else:  # User provides an integer
+            target_int = target
+            target_str = inv_map[str(target)]
+
         fig, ax = plt.subplots(figsize=figsize)
-        classes = list(set(self.Y))
-        colors = ['r', 'b', 'g']
-        for n, class_ in enumerate(classes):
-            idx = np.where(self.Y_test == class_)  # Get indices per class
-            sns.distplot(self.predict_proba[idx, target_class],
+        for key, value in self.mapping.items():
+            idx = np.where(self.y_test == value)  # Get indices per class
+            sns.distplot(self.predict_proba_test[idx, target_int],
                          hist=False,
                          kde=True,
                          norm_hist=True,
-                         color=colors[n],
                          kde_kws={"shade": True},
-                         label='Class=' + str(class_))
+                         label='Class=' + key)
 
-        plt.title(f'Predicted probabilities for {self.Y.name}=' +
-                  str(classes[target_class]), fontsize=16)
-        plt.legend(frameon=False, fontsize=16)
-        plt.xlabel('Probability', fontsize=16, labelpad=12)
-        plt.ylabel('Counts', fontsize=16, labelpad=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None:
+            title = f'Predicted probabilities for {self.y.name}={target_str}'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
+        plt.xlabel('Probability', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Counts', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xlim(0, 1)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_feature_importance(self, show=20,
-                                figsize=(10, 15), filename=None):
-        ''' Plot a (Tree based) model's feature importance '''
+    def plot_permutation_importance(self, show=20, n_repeats=10,
+                                    title=None, figsize=None, filename=None):
 
-        if self.shortname not in tree_models:
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a model's feature permutation importance.
+
+        PARAMETERS -------------------------------------
+
+        n_repeats --> number of times to permute a feature
+        show      --> number of best features to show in the plot
+        title     --> plot's title. None for default title
+        figsize   --> figure size: format as (x, y)
+        filename  --> name of the file to save
+
+        '''
+
+        # Set parameters
+        show = self.X.shape[1] if show is None else int(show)
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
+
+        # Calculate the permutation importances
+        # Force random state on function (won't work with numpy default)
+        scoring = make_scorer(self.metric.function,
+                              greater_is_better=self.metric.gib,
+                              needs_proba=self.metric.needs_proba)
+        self.permutations = \
+            permutation_importance(self.best_model_fit,
+                                   self.X_test,
+                                   self.y_test,
+                                   scoring=scoring,
+                                   n_repeats=n_repeats,
+                                   n_jobs=self.n_jobs,
+                                   random_state=self.random_state)
+
+        # Get indices of permutations sorted by the mean
+        idx = self.permutations.importances_mean.argsort()[:show]
+
+        fig, ax = plt.subplots(figsize=figsize)
+        plt.boxplot(self.permutations.importances[idx].T,
+                    vert=False,
+                    labels=self.X.columns[idx])
+
+        title = 'Feature permutation importance' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_feature_importance(self, show=None, title=None,
+                                figsize=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot a (Tree based) model's normalized feature importance.
+
+        PARAMETERS -------------------------------------
+
+        show     --> number of best features to show in the plot. None for all
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if self.name not in tree_models:
             raise ValueError('This method only works for tree-based models!')
 
-        if show is None:
+        # Set parameters
+        if show is None or show > self.X.shape[1]:
             show = self.X.shape[1]
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
 
         # Bagging has no direct feature importance implementation
-        if self.shortname == 'Bag':
+        if self.name == 'Bag':
             feature_importances = np.mean([
                 est.feature_importances_ for est in self.best_model.estimators_
             ], axis=0)
         else:
             feature_importances = self.best_model_fit.feature_importances_
 
+        # Normalize for plotting values adjacent to bar
+        feature_importances = feature_importances/max(feature_importances)
         scores = pd.Series(feature_importances,
                            index=self.X.columns).nlargest(show).sort_values()
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         scores.plot.barh()
-        plt.xlabel('Score', fontsize=16, labelpad=12)
-        plt.ylabel('Features', fontsize=16, labelpad=12)
-        plt.title('Importance of Features', fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        for i, v in enumerate(scores):
+            ax.text(v + 0.01, i - 0.08, f'{v:.2f}', fontsize=BaseModel.tick_fs)
+
+        title = 'Normalized feature importance' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_ROC(self, figsize=(10, 6), filename=None):
-        ''' Plot Receiver Operating Characteristics curve '''
+    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot Receiver Operating Characteristics curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
 
         if self.task != 'binary classification':
             raise ValueError('This method only works for binary ' +
-                             'classification problems.')
+                             'classification tasks.')
 
         # Get False (True) Positive Rate
-        fpr, tpr, _ = roc_curve(self.Y_test, self.predict_proba[:, 1])
+        fpr, tpr, _ = roc_curve(self.y_test, self.predict_proba_test[:, 1])
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(fpr, tpr, lw=2, color='red', label=f'AUC={self.auc:.3f}')
-
+        plt.plot(fpr, tpr, lw=2, label=f'{self.name} (AUC={self.auc:.3f})')
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
-        plt.xlabel('FPR', fontsize=16, labelpad=12)
-        plt.ylabel('TPR', fontsize=16, labelpad=12)
-        plt.title('ROC curve', fontsize=16)
-        plt.legend(loc='lower right', frameon=False, fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        title = 'ROC curve' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(loc='lower right',
+                   frameon=False,
+                   fontsize=BaseModel.label_fs)
+        plt.xlabel('FPR', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('TPR', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot precision-recall curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification tasks.')
+
+        # Get precision-recall pairs for different probability thresholds
+        prec, recall, _ = precision_recall_curve(self.y_test,
+                                                 self.predict_proba_test[:, 1])
+
+        fig, ax = plt.subplots(figsize=figsize)
+        plt.plot(recall, prec, lw=2, label=f'{self.name} (AP={self.ap:.3f})')
+
+        title = 'Precision-recall curve' if title is None else title
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.legend(loc='lower left',
+                   frameon=False,
+                   fontsize=BaseModel.label_fs)
+        plt.xlabel('Recall', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('Precision', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
     def plot_confusion_matrix(self, normalize=True,
-                              figsize=(10, 6), filename=None):
+                              title=None, figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -636,34 +832,31 @@ class BaseModel(object):
         PARAMETERS -------------------------------------
 
         normalize --> wether to normalize the matrix
+        title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
         '''
 
-        if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification problems.')
-
-        if normalize:
-            title = 'Normalized confusion matrix'
-        else:
-            title = 'Confusion matrix'
+        if self.task == 'regression':
+            raise ValueError('This method only works for ' +
+                             'classification tasks.')
 
         # Compute confusion matrix
-        cm = confusion_matrix(self.Y_test, self.predict_test)
+        cm = confusion_matrix(self.y_test, self.predict_test)
 
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        sns.set_style('darkgrid')
+        ticks = [v for v in self.mapping.keys()]
+
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-        ax.figure.colorbar(im, ax=ax)
+        cbar = ax.figure.colorbar(im, ax=ax)
         ax.set(xticks=np.arange(cm.shape[1]),
                yticks=np.arange(cm.shape[0]),
-               xticklabels=['0', '1'],
-               yticklabels=['0', '1'])
+               xticklabels=ticks,
+               yticklabels=ticks)
 
         # Loop over data dimensions and create text annotations
         fmt = '.2f' if normalize else 'd'
@@ -672,78 +865,30 @@ class BaseModel(object):
             for j in range(cm.shape[1]):
                 ax.text(j, i, format(cm[i, j], fmt),
                         ha="center", va="center",
+                        fontsize=BaseModel.tick_fs,
                         color="white" if cm[i, j] > thresh else "black")
 
-        plt.title(title, fontsize=16)
-        plt.xlabel('Predicted label', fontsize=16, labelpad=12)
-        plt.ylabel('True label', fontsize=16, labelpad=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        if title is None and normalize:
+            title = 'Normalized confusion matrix'
+        elif title is None:
+            title = 'Confusion matrix'
+        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
+        plt.xlabel('Predicted label', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.ylabel('True label', fontsize=BaseModel.label_fs, labelpad=12)
+        plt.xticks(fontsize=BaseModel.tick_fs)
+        plt.yticks(fontsize=BaseModel.tick_fs)
+        cbar.ax.tick_params(labelsize=BaseModel.tick_fs)  # Colorbar's ticks
         ax.grid(False)
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_tree(self, num_trees=0, max_depth=None,
-                  rotate=False, figsize=(14, 10), filename=None):
-
-        '''
-        DESCRIPTION -----------------------------------
-
-        Visualize a single decision tree.
-
-        PARAMETERS -------------------------------------
-
-        num_trees --> number of the tree to plot (for ensembles)
-        max_depth --> maximum depth to plot (None for complete tree)
-        rotate    --> when set to True, orient tree left-right, not top-down
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of file to save
-
-        '''
-
-        if self.shortname not in tree_models:
-            raise ValueError('This method only works for tree-based models!')
-
-        fig, ax = plt.subplots(figsize=figsize)
-        if self.shortname in sklearn_trees:
-            # A single decision tree has only one estimator
-            if self.shortname != 'Tree':
-                estimator = self.best_model_fit.estimators_[num_trees]
-            else:
-                estimator = self.best_model_fit
-
-            sklearn.tree.plot_tree(estimator,
-                                   max_depth=max_depth,
-                                   rotate=rotate,
-                                   rounded=True,
-                                   filled=True,
-                                   fontsize=14)
-
-        elif self.shortname == 'XGB':
-            import xgboost as xgb
-            xgb.plot_tree(self.best_model_fit,
-                          num_trees=num_trees,
-                          rankdir='LR' if rotate else 'UT')
-
-        elif self.shortname == 'LGB':
-            import lightgbm as lgb
-            lgb.plotting.plot_tree(self.best_model_fit,
-                                   ax=ax,
-                                   tree_index=num_trees)
-
-        elif self.shortname == 'CatB':
-            self.best_model_fit.plot_tree(tree_idx=num_trees)
-
-        if filename is not None:
-            plt.savefig(filename)
-
     def save(self, filename=None):
         ''' Save model to pickle file '''
 
         if filename is None:
-            filename = 'ATOM_' + self.shortname
+            filename = 'ATOM_' + self.name
         filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         pickle.dump(self.best_model_fit, open(filename, 'wb'))
         print('Model saved successfully!')

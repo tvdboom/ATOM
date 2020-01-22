@@ -3,6 +3,7 @@
 '''
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
+Description: Module containing the main ATOM class
 
 '''
 
@@ -17,50 +18,60 @@ from time import time
 import multiprocessing
 import warnings
 import importlib
-from .basemodel import prlog
 
 # Sklearn
+from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
+from sklearn.metrics import roc_curve, precision_recall_curve
+from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
      chi2, SelectKBest, VarianceThreshold, SelectFromModel, RFE
     )
-from sklearn.model_selection import train_test_split
 
-# Models
+# Own package modules
+from .basemodel import BaseModel, prlog
+from .metrics import BaseMetric
 from .models import *
 
 # Plotting
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set(style='darkgrid', palette="GnBu_d")
+sns.set(style='darkgrid', palette='GnBu_d')
 
 
 # << ============ Global variables ============ >>
 
 # List of all the available models
-model_list = ['BNB', 'GNB', 'MNB', 'GP', 'LinReg', 'LogReg', 'LDA',
-              'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
-              'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+model_list = ['BNB', 'GNB', 'MNB', 'GP', 'OLS', 'Ridge', 'Lasso', 'EN',
+              'BR', 'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET',
+              'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM',
+              'PA', 'SGD', 'MLP']
 
 # Tuple of models that need to import an extra package
 optional_packages = (('XGB', 'xgboost'),
                      ('LGB', 'lightgbm'),
                      ('CatB', 'catboost'))
 
-# List of models that need scaling
-scaling_models = ['LinReg', 'LogReg', 'KNN', 'XGB', 'LGB', 'CatB',
-                  'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+# List of models that need feature scaling
+scaling_models = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR', 'LR', 'KNN',
+                  'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
 # List of models that only work for regression/classification tasks
-only_classification = ['BNB', 'GNB', 'MNB', 'LogReg', 'LDA', 'QDA']
-only_regression = ['LinReg']
+only_classification = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
+only_regression = ['OLS', 'Lasso', 'EN', 'BR']
 
-# Build-in metrics for classification and regression
-class_metrics = ['Precision', 'Recall', 'Accuracy', 'F1', 'AUC', 'Jaccard']
-reg_metrics = ['R2', 'max_error', 'MAE', 'MSE', 'MSLE']
+# List of pre-set binary classification metrics
+mbin = ['tn', 'fp', 'fn', 'tp', 'ap']
+
+# List of pre-set classification metrics
+mclass = ['accuracy', 'auc', 'mcc', 'f1', 'hamming', 'jaccard', 'logloss',
+          'precision', 'recall']
+
+# List of pre-set regression metrics
+mreg = ['mae', 'max_error', 'mse', 'msle', 'r2']
 
 
 # << ============ Functions ============ >>
@@ -78,35 +89,80 @@ def params_to_log(f):
     return wrapper
 
 
-def convert_to_pd(data, columns=None):
-    ''' Convert data to pd.Dataframe or pd.Series '''
+def conv_to_df(data, columns=None, pca=False):
 
-    dim = data.ndim  # Get number of dimensions
-    if dim > 1 and not isinstance(data, pd.DataFrame):
-        if columns is None:
-            columns = ['Feature ' + str(i) for i in range(data.shape[1])]
-        data = pd.DataFrame(data, columns=columns)
+    '''
+    DESCRIPTION -----------------------------------
 
-    elif dim == 1 and not isinstance(data, pd.Series):
-        name = columns if columns is not None else 'target'
-        data = pd.Series(data, name=name)
+    Convert data to pd.Dataframe.
 
-    return data
+    PARAMETERS -------------------------------------
+
+    data    --> dataset to convert
+    columns --> name of the columns in the dataset. If None, autofilled.
+    pca     --> wether the columns need to be called Features or Components
+
+    '''
+    if not isinstance(data, pd.DataFrame):
+        if columns is None and not pca:
+            columns = ['Feature ' + str(i) for i in range(len(data[0]))]
+        elif columns is None:
+            columns = ['Component ' + str(i) for i in range(len(data[0]))]
+        return pd.DataFrame(data, columns=columns)
+    else:
+        return data
 
 
-def merge(X, Y):
+def conv_to_series(data, name=None):
+
+    '''
+    DESCRIPTION -----------------------------------
+
+    Convert data to pd.Series.
+
+    PARAMETERS -------------------------------------
+
+    data --> dataset to convert
+    name --> name of the target column. If None, autofilled.
+
+    '''
+
+    return pd.Series(data, name=name if name is not None else 'target')
+
+
+def merge(X, y):
     ''' Merge pd.DataFrame and pd.Series into one df '''
 
-    return X.merge(Y.to_frame(), left_index=True, right_index=True)
+    return X.merge(y.to_frame(), left_index=True, right_index=True)
+
+
+def raise_TypeError(param, value):
+    ''' Raise TypeError for wrong parameter type '''
+
+    raise TypeError(f'Invalid type for {param} parameter: {type(value)}')
+
+
+def raise_ValueError(param, value):
+    ''' Raise ValueError for invalid parameter value '''
+
+    raise ValueError(f'Invalid value for {param} parameter: {value}')
 
 
 # << ============ Classes ============ >>
 
 class ATOM(object):
 
-    def __init__(self, X, Y=None, target=None, percentage=100,
-                 test_size=0.3, log=None, n_jobs=1,
-                 warnings=False, verbose=0, random_state=None):
+    # Define class variables for plot settings
+    style = 'darkgrid'
+    palette = 'GnBu_d'
+    title_fs = 20
+    label_fs = 16
+    tick_fs = 12
+
+    # << ================= Methods ================= >>
+
+    def __init__(self, X, y=None, percentage=100, test_size=0.3, log=None,
+                 n_jobs=1, warnings=False, verbose=0, random_state=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -116,9 +172,8 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        X            --> dataset as pd.DataFrame or np.array
-        Y            --> target column as pd.Series or np.array
-        target       --> name of target column in X (if Y not provided)
+        X            --> dataset as list, np.array or pd.DataFrame
+        y            --> target column as string, list, np.array or pd.Series
         percentage   --> percentage of data to use
         test_size    --> fraction test/train size
         log          --> name of log file
@@ -129,67 +184,118 @@ class ATOM(object):
 
         '''
 
-        # << ============ Handle input ============ >>
+        # << ============ Handle input data ============ >>
+
+        # Convert X to pd.DataFrame (first to np.array for dimensions)
+        if not isinstance(X, pd.DataFrame):
+            if not isinstance(X, (np.ndarray, list)):
+                raise_TypeError('X', X)
+            X = conv_to_df(X)
 
         # Convert array to dataframe and target column to pandas series
-        if Y is not None:
-            if len(X) != len(Y):
-                raise ValueError("X and Y don't have the same number of rows" +
-                                 f': {len(X)}, {len(Y)}.')
-            X = convert_to_pd(X)
-            Y = convert_to_pd(Y)
-            self.dataset = merge(X, Y)
-            self.target = Y.name
+        if isinstance(y, (list, np.ndarray, pd.Series)):
+            if len(X) != len(y):
+                raise ValueError("X and y don't have the same number of rows" +
+                                 f': {len(X)}, {len(y)}.')
 
-        elif target is not None:  # If target is filled, X has to be a df
-            if target not in X.columns:
-                raise ValueError('Target column not found in the dataset!')
+            # Convert y to pd.Series
+            if not isinstance(y, pd.Series):
+                if not isinstance(y, np.ndarray):
+                    y = np.array(y)
+
+                # Check that y is one-dimensional
+                if y.ndim != 1:
+                    raise ValueError('y should be a one-dimensional list, ' +
+                                     f'array or pd.Series (y.ndim={y.ndim}).')
+                y = conv_to_series(y)
+
+            # Reset indices in case they are not in unison (else merge fails)
+            X.reset_index(drop=True, inplace=True)
+            y.reset_index(drop=True, inplace=True)
+
+            # Merge to one single dataframe with all data
+            self.dataset = merge(X, y)
+            self.target = y.name
+
+        elif isinstance(y, str):
+            if y not in X.columns:
+                raise ValueError('Target column not found in X!')
 
             # Place target column last
-            X = X[[col for col in X if col != target] + [target]]
-            self.dataset = X
-            self.target = target
+            X = X[[col for col in X if col != y] + [y]]
+            self.dataset = X.reset_index(drop=True)
+            self.target = y
 
-        else:
-            self.dataset = convert_to_pd(X)
+        elif y is None:
+            self.dataset = conv_to_df(X.reset_index(drop=True))
             self.target = self.dataset.columns[-1]
 
-        # << ============ Parameters tests ============ >>
+        else:  # y is wrong type
+            raise_TypeError('y', y)
 
-        # Set parameters to default if input is invalid
-        self.percentage = percentage if 0 < percentage < 100 else 100
-        self.test_size = test_size if 0 < test_size < 1 else 0.3
-        self.log = log if log is None or log.endswith('.txt') else log + '.txt'
-        self.warnings = bool(warnings)
-        self.verbose = verbose if verbose in range(4) else 0
-        if random_state is not None:
-            self.random_state = int(random_state)
+        # << ============ Check input parameters ============ >>
+
+        self._isfit = False  # Model has not been fitted yet
+        if not isinstance(percentage, (int, float)):
+            raise_TypeError('percentage', percentage)
+        elif percentage <= 0 or percentage > 100:
+            raise_ValueError('percentage', percentage)
+        else:
+            self.percentage = percentage
+        if not isinstance(test_size, float):
+            raise_TypeError('test_size', test_size)
+        elif test_size <= 0 or test_size >= 1:
+            raise_ValueError('test_size', test_size)
+        else:
+            self.test_size = test_size
+        if not isinstance(log, (type(None), str)):
+            raise_TypeError('log', log)
+        elif log is None or log.endswith('.txt'):
+            self.log = log
+        else:
+            self.log = log + '.txt'
+        if not isinstance(warnings, bool) and warnings not in (0, 1):
+            raise_TypeError('warnings', warnings)
+        else:
+            self.warnings = bool(warnings)
+        if not isinstance(verbose, int):
+            raise_TypeError('verbose', verbose)
+        elif verbose < 0 or verbose > 3:
+            raise_ValueError('verbose', verbose)
+        else:
+            self.verbose = verbose
+        if not isinstance(random_state, (type(None), int)):
+            raise_TypeError('random_state', random_state)
+        elif random_state is not None:
+            self.random_state = random_state
             np.random.seed(self.random_state)  # Set random seed
         else:
-            self.random_state = None
+            self.random_state = random_state
 
         prlog('<<=============== ATOM ===============>>', self, time=True)
 
         # Check number of cores for multiprocessing
-        self.n_jobs = int(n_jobs)
+        if not isinstance(n_jobs, int):
+            raise_TypeError('n_jobs', n_jobs)
         n_cores = multiprocessing.cpu_count()
         if n_jobs > n_cores:
-            prlog('\nWarning! No {} cores available. n_jobs reduced to {}.'
-                  .format(self.n_jobs, n_cores), self)
+            prlog('Warning! No {} cores available. n_jobs reduced to {}.'
+                  .format(n_jobs, n_cores), self)
             self.n_jobs = n_cores
 
-        elif self.n_jobs == 0:
-            prlog("\nWarning! Value of n_jobs can't be {}. Using 1 core."
-                  .format(self.n_jobs), self)
+        elif n_jobs == 0:
+            prlog("Warning! Value of n_jobs can't be 0. Using 1 core.", self)
             self.n_jobs = 1
 
         else:
-            if self.n_jobs <= -1:
-                self.n_jobs = n_cores + 1 + self.n_jobs
+            if n_jobs < 0:
+                self.n_jobs = n_cores + 1 + n_jobs
+            else:
+                self.n_jobs = n_jobs
 
-            # Final check
-            if self.n_jobs < 1 or self.n_jobs > n_cores:
-                raise ValueError('Invalid value for n_jobs!')
+            # Final check for negative input
+            if self.n_jobs < 1:
+                raise_ValueError('n_jobs', n_jobs)
             elif self.n_jobs != 1:
                 prlog(f'Parallel processing with {self.n_jobs} cores.', self)
 
@@ -198,22 +304,33 @@ class ATOM(object):
         prlog('Initial data cleaning...', self, 1)
 
         for column in self.dataset:
+            nunique = self.dataset[column].nunique(dropna=True)
+            unique = self.dataset[column].unique()  # List of unique values
+
             # Drop features with incorrect column type
             dtype = str(self.dataset[column].dtype)
-            if dtype in ('datetime64', 'timedelta[ns]', 'category'):
+            if dtype in ('datetime64', 'datetime64[ns]', 'timedelta[ns]'):
                 prlog(' --> Dropping feature {} due to unhashable type: {}.'
                       .format(column, dtype), self, 2)
                 self.dataset.drop(column, axis=1, inplace=True)
-
-            elif dtype == 'object':
+                continue
+            elif dtype in ('object', 'category'):
                 # Strip categorical features from blank spaces
                 self.dataset[column].astype(str).str.strip()
 
                 # Drop features where all values are unique
-                unique = self.dataset[column].unique()
-                if len(unique) == len(self.dataset):
+                if nunique == len(self.dataset):
                     prlog(f' --> Dropping feature {column} due to maximum' +
                           ' cardinality.', self, 2)
+                    self.dataset.drop(column, axis=1, inplace=True)
+
+            # Drop features where all values are the same
+            if nunique == 1:
+                if column == self.target:
+                    raise ValueError(f'Only found 1 target value: {unique[0]}')
+                else:
+                    prlog(f' --> Dropping feature {column}. Contains only 1 ' +
+                          f'unique value: {unique[0]}', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
 
         # Drop duplicate rows
@@ -228,28 +345,15 @@ class ATOM(object):
         self.dataset.dropna(subset=[self.target], inplace=True)
         diff = length - len(self.dataset)  # Difference in length
         if diff > 0:
-            prlog(f' --> Dropping {diff} rows with NaN values ' +
+            prlog(f' --> Dropping {diff} rows with missing values ' +
                   'in target column.', self, 2)
-
-        # Get unique target values before encoding (for later print)
-        self._unique = self.dataset[self.target].unique()
-
-        # Make sure the target categories are numerical
-        # Not strictly necessary for sklearn models, but cleaner
-        if self.dataset[self.target].dtype.kind not in 'ifu':
-            le = LabelEncoder()
-            self.dataset[self.target] = le.fit_transform(
-                                                    self.dataset[self.target])
-            self.target_mapping = {l: i for i, l in enumerate(le.classes_)}
-
-        self._split_dataset(self.dataset, percentage)  # Make train/test split
-        self.reset_attributes()  # Define data subsets class attributes
 
         # << ============ Set algorithm task ============ >>
 
-        if len(self._unique) < 2:
-            raise ValueError(f'Only found one target value: {self._unique}!')
-        elif len(self._unique) == 2 and self.goal == 'classification':
+        # Get unique target values before encoding (for later print)
+        self._unique = sorted(self.dataset[self.target].unique())
+
+        if len(self._unique) == 2 and self.goal == 'classification':
             prlog('Algorithm task: binary classification.', self)
             self.task = 'binary classification'
         elif self.goal == 'classification':
@@ -260,9 +364,26 @@ class ATOM(object):
             prlog('Algorithm task: regression.', self)
             self.task = 'regression'
 
-        # << ============================================ >>
+        # << ============ Map target column ============ >>
 
-        self.stats(print_only=False)  # Print out data stats
+        # Make sure the target categories are numerical
+        # Not strictly necessary for sklearn models, but cleaner
+        if self.task != 'regression':
+            if self.dataset[self.target].dtype.kind not in 'ifu':
+                le = LabelEncoder()
+                self.dataset[self.target] = \
+                    le.fit_transform(self.dataset[self.target])
+                self.mapping = {str(v): i for i, v in enumerate(le.classes_)}
+            else:
+                self.mapping = {str(i): v for i, v in enumerate(self._unique)}
+        else:
+            self.mapping = 'No target mapping for regression tasks'
+
+        # << =========================================== >>
+
+        self._split_dataset(self.dataset, self.percentage)  # Train/test split
+        self.reset_attributes()  # Define data subsets class attributes
+        self.stats(1)  # Print out data stats
 
     def _split_dataset(self, dataset, percentage=100):
 
@@ -283,12 +404,12 @@ class ATOM(object):
         self.dataset = self.dataset.head(int(len(self.dataset)*percentage/100))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        # Split train and test for the BO on percentage of data
+        # Split train and test sets on percentage of data
         self.train, self.test = train_test_split(self.dataset,
                                                  test_size=self.test_size,
                                                  shuffle=False)
 
-    def reset_attributes(self, truth='all'):
+    def reset_attributes(self, truth='dataset'):
 
         '''
         DESCRIPTION -----------------------------------
@@ -298,11 +419,17 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        truth --> variable with the correct values to start from
+        truth --> variable with the correct values to start from. If 'all',
+                  it assumes dataset, train and test are all correct.
 
         '''
 
-        if truth == 'dataset':  # Split again (no shuffling to keep same data)
+        # Check input parameters
+        if not isinstance(truth, str):
+            raise_TypeError('truth', truth)
+
+        # Depending on truth, we change some attributes or others
+        if truth == 'dataset':
             # Possible because the length of self.train doesn't change
             self.train = self.dataset[:len(self.train)]
             self.test = self.dataset[len(self.train):]
@@ -312,14 +439,14 @@ class ATOM(object):
             self.dataset = pd.concat([self.train, self.test], join='outer',
                                      ignore_index=False, copy=True)
 
-        elif truth in ('X_train', 'Y_train', 'X_test', 'Y_test'):
-            self.train = merge(self.X_train, self.Y_train)
-            self.test = merge(self.X_test, self.Y_test)
+        elif truth in ('X_train', 'y_train', 'X_test', 'y_test'):
+            self.train = merge(self.X_train, self.y_train)
+            self.test = merge(self.X_test, self.y_test)
             self.dataset = pd.concat([self.train, self.test], join='outer',
                                      ignore_index=False, copy=True)
 
-        elif truth in ('X_Y', 'X', 'Y'):
-            self.dataset = merge(self.X, self.Y)
+        elif truth in ('X_y', 'X', 'y'):
+            self.dataset = merge(self.X, self.y)
             self.train = self.dataset[:len(self.train)]
             self.test = self.dataset[len(self.train):]
 
@@ -328,60 +455,56 @@ class ATOM(object):
             getattr(self, data).reset_index(drop=True, inplace=True)
 
         self.X = self.dataset.drop(self.target, axis=1)
-        self.Y = self.dataset[self.target]
+        self.y = self.dataset[self.target]
         self.X_train = self.train.drop(self.target, axis=1)
-        self.Y_train = self.train[self.target]
+        self.y_train = self.train[self.target]
         self.X_test = self.test.drop(self.target, axis=1)
-        self.Y_test = self.test[self.target]
+        self.y_test = self.test[self.target]
 
-    def stats(self, print_only=True):
+    def stats(self, _vb=None):
+        ''' Print some information about the dataset '''
 
-        '''
-        DESCRIPTION -----------------------------------
+        # If the user calls the method, always print
+        _vb = -2 if _vb is None else _vb
 
-        Print some information about the dataset.
-
-        PARAMETERS -------------------------------------
-
-        print_only --> prlog parameter to print only, not save to log
-
-        '''
-
-        prlog('\nData stats =====================>', self, 1, print_only)
-        prlog('Number of features: {}\nNumber of instances: {}'
-              .format(self.X.shape[1], self.X.shape[0]), self, 1, print_only)
+        prlog('\nDataset stats ===================>', self, _vb)
+        prlog(f'Shape: {self.dataset.shape}', self, _vb)
+        prlog('----------------------------------', self, _vb)
         prlog('Size of training set: {}\nSize of test set: {}'
-              .format(len(self.train), len(self.test)), self, 1, print_only)
+              .format(len(self.train), len(self.test)), self, _vb)
 
-        # Print count of target values
+        # Print count of target classes
         if self.task != 'regression':
-            try:
-                _, counts = np.unique(self.Y, return_counts=True)
-                len_classes = max([len(str(i)) for i in self._unique])
-                if hasattr(self, 'target_mapping'):
-                    len_classes += 3
-                lx = max(len_classes, len(self.Y.name))
+            prlog('----------------------------------', self, _vb + 1)
+            prlog(f'Instances in {self.target} per class:', self, _vb + 1)
 
-                prlog('Instances per target class:', self, 2, print_only)
-                prlog(f"{self.Y.name:{lx}} --> Count", self, 2, print_only)
+            # Create dataframe with stats per target class
+            index = []
+            for key, value in self.mapping.items():
+                if '0' not in self.mapping.keys():
+                    index.append(str(value) + ': ' + key)
+                else:
+                    index.append(value)
 
-                # Check wether there is LabelEncoding for the target varaible
-                for i in range(len(self._unique)):
-                    if hasattr(self, 'target_mapping'):
-                        prlog('{0}: {1:<{2}} --> {3}'
-                              .format(self.target_mapping[self._unique[i]],
-                                      self._unique[i], lx - 3, counts[i]),
-                              self, 2, print_only)
-                    else:
-                        prlog('{0:<{1}} --> {2}'
-                              .format(self._unique[i],
-                                      lx, counts[i]), self, 2, print_only)
+            stats = pd.DataFrame(columns=[' total', ' train_set', ' test_set'])
 
-            except Exception:
-                raise ValueError('Are you sure the data corresponds to a ' +
-                                 'classification task? Try ATOMRegressor...')
+            # Count number of occurrences in all sets
+            uq_train, c_train = np.unique(self.y_train, return_counts=True)
+            uq_test, c_test = np.unique(self.y_test, return_counts=True)
+            for i, val in self.mapping.items():
+                # If set has 0 instances of that class the array is empty
+                idx_train = np.where(uq_train == val)[0]
+                train = c_train[idx_train[0]] if len(idx_train) != 0 else 0
+                idx_test = np.where(uq_test == val)[0]
+                test = c_test[idx_test[0]] if len(idx_test) != 0 else 0
+                stats = stats.append({' total': train + test,
+                                      ' train_set': train,
+                                      ' test_set': test}, ignore_index=True)
 
-        prlog('', self, 1, print_only)  # Insert an empty row
+            stats.set_index(pd.Index(index), inplace=True)
+            prlog(stats.to_string(header=True), self, _vb + 1)
+
+        prlog('', self, 1)  # Insert an empty row
 
     def report(self, df='dataset', rows=None, filename=None):
 
@@ -405,9 +528,18 @@ class ATOM(object):
                                       ' package. Install it before using the' +
                                       ' report method.')
 
+        # Check input parameters
+        if not isinstance(df, str):
+            raise_TypeError('df', df)
+        if not isinstance(rows, (type(None), int, float)):
+            raise_TypeError('rows', rows)
+        else:
+            rows = getattr(self, df).shape[0] if rows is None else int(rows)
+        if not isinstance(filename, (type(None), str)):
+            raise_TypeError('filename', filename)
+
         prlog('Creating profile report...', self, 1)
 
-        rows = getattr(self, df).shape[0] if rows is None else rows
         self.report = ProfileReport(getattr(self, df).sample(rows))
         try:  # Render if possible
             from IPython.display import display
@@ -421,8 +553,9 @@ class ATOM(object):
             self.report.to_file(filename)
 
     @params_to_log
-    def impute(self, strat_num='remove', strat_cat='remove', max_frac=0.5,
-               missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'NaN', None]):
+    def impute(self, strat_num='remove', strat_cat='remove',
+               max_frac_rows=0.5, max_frac_cols=0.5,
+               missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']):
 
         '''
         DESCRIPTION -----------------------------------
@@ -431,18 +564,19 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        strat_num  --> impute strategy for numerical columns. Choose from:
-                           'remove': remove row if any missing value
-                           'mean': fill with mean of column
-                           'median': fill with median of column
-                           'most_frequent': fill with most frequent value
-                           fill in with any other numerical value
-        strat_cat  --> impute strategy for categorical columns. Choose from:
-                           'remove': remove row if any missing value
-                           'most_frequent': fill with most frequent value
-                           fill in with any other string value
-        max_frac   --> maximum allowed fraction of missing values in column
-        missing    --> list of values to impute
+        strat_num     --> impute strategy for numerical columns. Choose from:
+                             'remove': remove row if any missing value
+                             'mean': fill with mean of column
+                             'median': fill with median of column
+                             'most_frequent': fill with most frequent value
+                             fill in with any other numerical value
+        strat_cat     --> impute strategy for categorical columns. Choose from:
+                             'remove': remove row if any missing value
+                             'most_frequent': fill with most frequent value
+                             fill in with any other string value
+        min_frac_rows --> minimum fraction of non missing values in row
+        min_frac_cols --> minimum fraction of non missing values in column
+        missing       --> list of values to impute
 
         '''
 
@@ -454,30 +588,59 @@ class ATOM(object):
             self.test[col] = imputer.transform(
                                         self.test[col].values.reshape(-1, 1))
 
-        # Check parameters
-        max_frac = float(max_frac) if 0 < max_frac <= 1 else 0.5
+        # Check input parameters
+        strats = ['remove', 'mean', 'median', 'knn', 'most_frequent']
+        if not isinstance(strat_num, str):
+            try:
+                strat_num = float(strat_num)
+            except TypeError:
+                raise_TypeError('strat_num', strat_num)
+        elif strat_num.lower() not in strats:
+            raise_ValueError('strat_num', strat_num)
+        if not isinstance(strat_cat, str):
+            raise_TypeError('strat_cat', strat_cat)
+        if not isinstance(max_frac_rows, float):
+            raise_TypeError('max_frac_rows', max_frac_rows)
+        elif max_frac_rows <= 0 or max_frac_rows >= 1:
+            raise_ValueError('max_frac_rows', max_frac_rows)
+        if not isinstance(max_frac_cols, float):
+            raise_TypeError('max_frac_cols', max_frac_cols)
+        elif max_frac_cols <= 0 or max_frac_cols >= 1:
+            raise_ValueError('max_frac_cols', max_frac_cols)
         if not isinstance(missing, list):
             missing = [missing]  # Has to be an iterable for loop
 
         # Some values must always be imputed (but can be double)
-        missing.extend([None, '', np.inf, -np.inf])
+        missing.extend([np.inf, -np.inf])
         missing = set(missing)
 
-        prlog('Handling missing values...', self, 1)
+        prlog('Imputing missing values...', self, 1)
 
         # Replace missing values with NaN
-        self.train.replace(missing, np.NaN, inplace=True)
-        self.test.replace(missing, np.NaN, inplace=True)
+        self.dataset.fillna(value=np.NaN, inplace=True)  # Replace None first
+        for to_replace in missing:
+            self.dataset.replace(to_replace, np.NaN, inplace=True)
 
-        # Loop pver all columns to apply strategy dependent on type
-        for col in self.train:
-            series = self.train[col]
+        # Drop rows with too many NaN values
+        max_frac_rows = int(max_frac_rows * self.dataset.shape[1])
+        length = len(self.dataset)
+        self.dataset.dropna(axis=0, thresh=max_frac_rows, inplace=True)
+        diff = length - len(self.dataset)
+        if diff > 0:
+            prlog(f' --> Removing {diff} rows for containing too many ' +
+                  f'missing values.', self, 2)
+
+        self.reset_attributes('dataset')  # Fill train and test with NaNs
+
+        # Loop over all columns to apply strategy dependent on type
+        for col in self.dataset:
+            series = self.dataset[col]
 
             # Drop columns with too many NaN values
             nans = series.isna().sum()  # Number of missing values in column
-            pnans = int(nans/len(self.train)*100)  # Percentage of NaNs
-            if nans > max_frac * len(self.train):
-                prlog(f' --> Removing feature {col} since it contains ' +
+            pnans = int(nans/len(self.dataset) * 100)  # Percentage of NaNs
+            if nans > max_frac_cols * len(self.dataset):
+                prlog(f' --> Removing feature {col} for containing ' +
                       f'{nans} ({pnans}%) missing values.', self, 2)
                 self.train.drop(col, axis=1, inplace=True)
                 self.test.drop(col, axis=1, inplace=True)
@@ -486,13 +649,8 @@ class ATOM(object):
             # Column is numerical and contains missing values
             if series.dtype.kind in 'ifu' and nans > 0:
                 if not isinstance(strat_num, str):
-                    try:
-                        strat_num = float(strat_num)
-                    except ValueError:
-                        raise ValueError('Invalid value for strat_num!')
-
                     prlog(f' --> Imputing {nans} missing values with number ' +
-                          str(strat_num) + f' in feature {col}.', self, 2)
+                          f'{str(strat_num)} in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_num)
                     fit_imputer(imp)
@@ -509,20 +667,17 @@ class ATOM(object):
                     imp = KNNImputer()
                     fit_imputer(imp)
 
-                else:
+                elif strat_num.lower() in ('mean', 'median', 'most_frequent'):
                     prlog(f' --> Imputing {nans} missing values with ' +
-                          strat_num.lower() + f' in feature {col}.', self, 2)
+                          f'{strat_num.lower()} in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy=strat_num.lower())
                     fit_imputer(imp)
 
-            # Column is categorical and contains missing values
+            # Column is non-numeric and contains missing values
             elif nans > 0:
                 if strat_cat.lower() not in ['remove', 'most_frequent']:
-                    if not isinstance(strat_cat, str):
-                        raise ValueError('Invalid value for strat_cat!')
-
                     prlog(f' --> Imputing {nans} missing values with ' +
-                          strat_cat.lower() + f' in feature {col}.', self, 2)
+                          f'{strat_cat} in feature {col}.', self, 2)
                     imp = SimpleImputer(strategy='constant',
                                         fill_value=strat_cat)
                     fit_imputer(imp)
@@ -533,16 +688,16 @@ class ATOM(object):
                     prlog(f' --> Removing {nans} rows due to missing ' +
                           f'values in feature {col}.', self, 2)
 
-                else:
+                elif strat_cat.lower() == 'most_frequent':
                     prlog(f' --> Imputing {nans} missing values with the mo' +
                           f'st frequent occurrence in feature {col}', self, 2)
                     imp = SimpleImputer(strategy=strat_cat)
                     fit_imputer(imp)
 
-        self.reset_attributes('train_test')  # Redefine new attributes
+        self.reset_attributes('train_test')
 
     @params_to_log
-    def encode(self, max_onehot=10, fraction_to_other=0):
+    def encode(self, max_onehot=10, frac_to_other=0):
 
         '''
         DESCRIPTION -----------------------------------
@@ -552,21 +707,26 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        max_onehot        --> threshold between onehot and target-encoding
-        fraction_to_other --> classes with less instances than rows times
-                              fraction_to_other are replaced with 'other'
+        max_onehot    --> threshold between onehot and target-encoding
+        frac_to_other --> classes with less instances than rows times
+                          fraction_to_other are replaced with 'other'
 
         '''
 
-        prlog('Encoding categorical features...', self, 1)
+        # Check parameters
+        if not isinstance(max_onehot, (type(None), int)):
+            raise_TypeError('max_onehot', max_onehot)
+        elif max_onehot is None:
+            max_onehot = 0
+        elif max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
+            raise_ValueError('max_onehot', max_onehot)
+        if not isinstance(frac_to_other, float):
+            if frac_to_other not in (0, 1):  # Just cause doesn't fit in 1 line
+                raise_TypeError('frac_to_other', frac_to_other)
+        elif frac_to_other < 0 or frac_to_other > 1:
+            raise_ValueError('frac_to_other', frac_to_other)
 
-        # Check parameter (if 0, 1 or 2: it never uses one_hot)
-        max_onehot = int(max_onehot) if max_onehot >= 0 else 10
-        # fraction_to_other has to be between 0 and 1
-        if 0 <= fraction_to_other <= 1:
-            fraction_to_other = float(fraction_to_other)
-        else:
-            fraction_to_other = 0
+        prlog('Encoding categorical features...', self, 1)
 
         # Loop over all but last column (target is already encoded)
         for col in self.dataset.columns.values[:-1]:
@@ -574,23 +734,16 @@ class ATOM(object):
             if self.dataset[col].dtype.kind not in 'ifu':
                 # Group uncommon classes into 'other'
                 values = self.dataset[col].value_counts()
-                for idx, count in values.iteritems():
-                    if count < fraction_to_other * len(self.dataset[col]):
-                        self.dataset[col].replace(idx, 'other', inplace=True)
-
-                self.reset_attributes('dataset')
+                for cls_, count in values.items():
+                    if count < frac_to_other * len(self.dataset[col]):
+                        self.dataset[col].replace(cls_, 'other', inplace=True)
+                        self.reset_attributes('dataset')  # For target encoding
 
                 # Count number of unique values in the column
                 n_unique = len(self.dataset[col].unique())
 
                 # Perform encoding type dependent on number of unique values
-                if n_unique == 1:
-                    prlog(f' --> Removing feature {col}. Contains only 1 ' +
-                          'unique category of class: {}.'
-                          .format(self.dataset[col].unique()[0]), self, 2)
-                    self.dataset.drop(col, axis=1, inplace=True)
-
-                elif n_unique == 2:
+                if n_unique == 2:
                     prlog(f' --> Label-encoding feature {col}. Contains ' +
                           f'{n_unique} unique categories.', self, 2)
                     le = LabelEncoder()
@@ -621,16 +774,17 @@ class ATOM(object):
 
         self.reset_attributes('dataset')  # Redefine new attributes
 
-        # Check if mapping didn't fail
+        # Check if mapping failed for the test set
         nans = self.dataset.isna().any()  # pd.Series of columns with nans
-        cols = self.dataset.columns.values[np.nonzero(nans)]
+        cols = self.dataset.columns.values[nans.to_numpy().nonzero()]
+        t = 's' if len(cols) > 1 else ''
         if nans.any():
             prlog('WARNING! It appears the target-encoding was not able to ' +
                   'map all categories in the test set. As a result, there wi' +
-                  f"ll appear missing values in column(s): {', '.join(cols)}" +
-                  '. To solve this, try increasing the size of the training ' +
-                  'set, increase the fraction_to_other parameter ' +
-                  'or remove features with very high cardinality.', self)
+                  f"ll appear missing values in column{t}: {', '.join(cols)}" +
+                  '. To solve this, try increasing the size of the dataset, ' +
+                  'the frac_to_other and max_onehot parameters, or remove ' +
+                  'features with high cardinality.', self)
 
     @params_to_log
     def outliers(self, max_sigma=3, include_target=False):
@@ -638,31 +792,39 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Remove outliers from the dataset.
+        Remove outliers from the training set.
 
         PARAMETERS -------------------------------------
 
         max_sigma      --> maximum sigma accepted
-        include_target --> include target column when deleting outliers
+        include_target --> include target column when checking for outliers
 
         '''
 
         # Check parameters
-        max_sigma = float(max_sigma) if max_sigma > 0 else 3
-        include_target = bool(include_target)
+        if not isinstance(max_sigma, (int, float)):
+            raise_TypeError('max_sigma', max_sigma)
+        elif max_sigma <= 0:
+            raise_ValueError('max_sigma', max_sigma)
+        if not isinstance(include_target, bool):
+            if include_target not in (0, 1):
+                raise_TypeError('include_target', include_target)
+            else:
+                include_target = bool(include_target)
 
         prlog('Handling outliers...', self, 1)
 
         # Get z-score outliers index
         objective = self.train if include_target else self.X_train
-        idx = (np.abs(zscore(objective)) < max_sigma).all(axis=1)
+        # Changes NaN to 0 to not let the algorithm crash
+        ix = (np.nan_to_num(np.abs(zscore(objective))) < max_sigma).all(axis=1)
 
-        delete = len(idx) - idx.sum()  # Number of False values in idx
+        delete = len(ix) - ix.sum()  # Number of False values in index
         if delete > 0:
             prlog(f' --> Dropping {delete} rows due to outliers.', self, 2)
 
         # Remove rows based on index and reset attributes
-        self.train = self.train[idx]
+        self.train = self.train[ix]
         self.reset_attributes('train_test')
 
     @params_to_log
@@ -692,12 +854,29 @@ class ATOM(object):
                             'not minority': resample all but minority class
                             'not majority': resample all but majority class
                             'all': resample all classes
-        n_neighbors   --> number of nearest neighbors for both algorithms
+        n_neighbors --> number of nearest neighbors for both algorithms
 
         '''
 
-        # Check parameters
-        n_neighbors = int(n_neighbors) if n_neighbors > 0 else 5
+        def check_params(string, value):
+            ''' Check the oversample and undersample parameters '''
+
+            opts = ['majority', 'minority',
+                    'not majority', 'not minority', 'all']
+            if isinstance(value, str):
+                if value not in opts:  # Not in one line to skip all elif
+                    raise_ValueError(string, value)
+            elif isinstance(value, float) or value == 1:
+                if not self.task.startswith('binary'):
+                    raise_TypeError(string, value)
+                elif value <= 0 or value > 1:
+                    raise_ValueError(string, value)
+            elif value is not None:
+                raise_TypeError(string, value)
+
+        if self.task == 'regression':
+            raise ValueError('This method only works for ' +
+                             'classification tasks!')
 
         try:
             from imblearn.over_sampling import ADASYN
@@ -707,19 +886,39 @@ class ATOM(object):
                                       ' package. Install it before using the' +
                                       ' balance method.')
 
+        # Check parameters
+        check_params('oversample', oversample)
+        check_params('undersample', undersample)
+        if not isinstance(n_neighbors, int):
+            raise_TypeError('n_neighbors', n_neighbors)
+        elif n_neighbors <= 0:
+            raise_ValueError('n_neighbors', n_neighbors)
+
+        if oversample is None and undersample is None:
+            raise ValueError('Fill in a ratio for over or undersampling!')
+
         columns_x = self.X_train.columns  # Save name columns for later
-        length = len(self.X_train)
+
+        # Save number of instances per target class for counting
+        counts = {}
+        for key, value in self.mapping.items():
+            counts[key] = (self.y_train == value).sum()
 
         # Oversample the minority class with SMOTE
         if oversample is not None:
             prlog('Performing oversampling...', self, 1)
             adasyn = ADASYN(sampling_strategy=oversample,
                             n_neighbors=n_neighbors,
-                            n_jobs=self.n_jobs)
-            self.X_train, self.Y_train = \
-                adasyn.fit_resample(self.X_train, self.Y_train)
-            diff = len(self.X_train) - length  # Difference in length
-            prlog(f' --> Adding {diff} rows to minority class.', self, 2)
+                            n_jobs=self.n_jobs,
+                            random_state=self.random_state)
+            self.X_train, self.y_train = \
+                adasyn.fit_resample(self.X_train, self.y_train)
+
+            # Print changes
+            for key, value in self.mapping.items():
+                diff = (self.y_train == value).sum() - counts[key]
+                if diff > 0:
+                    prlog(f' --> Adding {diff} rows to class {key}.', self, 2)
 
         # Apply undersampling of majority class
         if undersample is not None:
@@ -727,14 +926,19 @@ class ATOM(object):
             NM = NearMiss(sampling_strategy=undersample,
                           n_neighbors=n_neighbors,
                           n_jobs=self.n_jobs)
-            self.X_train, self.Y_train = NM.fit_resample(self.X_train,
-                                                         self.Y_train)
-            diff = length - len(self.X_train)  # Difference in length
-            prlog(f' --> Removing {diff} rows from majority class.', self, 2)
+            self.X_train, self.y_train = NM.fit_resample(self.X_train,
+                                                         self.y_train)
 
-        self.X_train = convert_to_pd(self.X_train, columns=columns_x)
-        self.Y_train = convert_to_pd(self.Y_train, columns=self.target)
-        self.train = merge(self.X_train, self.Y_train)
+            # Print changes
+            for key, value in self.mapping.items():
+                diff = counts[key] - (self.y_train == value).sum()
+                if diff > 0:
+                    prlog(f' --> Removing {diff} rows from class {key}.',
+                          self, 2)
+
+        self.X_train = conv_to_df(self.X_train, columns=columns_x)
+        self.y_train = conv_to_series(self.y_train, name=self.target)
+        self.train = merge(self.X_train, self.y_train)
         self.reset_attributes('train_test')
 
     @params_to_log
@@ -765,12 +969,21 @@ class ATOM(object):
                                       ' feature_insertion method.')
 
         # Check parameters
-        population = int(population) if population > 0 else 500
-        generations = int(generations) if generations > 0 else 20
-        if 0 < n_features < int(0.01 * population):
-            n_features = int(n_features)
-        else:
-            n_features = int(0.01 * population)
+        if not isinstance(population, int):
+            raise_TypeError('population', population)
+        elif population < 100:
+            raise ValueError('A minimum population of 100 is required!')
+        if not isinstance(generations, int):
+            raise_TypeError('generations', generations)
+        elif generations < 1:
+            raise_ValueError('generations', generations)
+        if not isinstance(n_features, int):
+            raise_TypeError('n_features', n_features)
+        elif n_features <= 0:
+            raise_ValueError('n_features', n_features)
+        elif n_features > int(0.01 * population):
+            raise ValueError("n_features can't be more than 1% of the " +
+                             "population's size!")
 
         prlog('Running genetic algorithm...', self, 1)
 
@@ -789,7 +1002,7 @@ class ATOM(object):
                                 verbose=0 if self.verbose < 3 else 1,
                                 n_jobs=self.n_jobs)
 
-        self.genetic_algorithm.fit(self.X_train, self.Y_train)
+        self.genetic_algorithm.fit(self.X_train, self.y_train)
         new_features = self.genetic_algorithm.transform(self.X)
 
         # ix = indicces of all new features that are not in the original set
@@ -854,7 +1067,7 @@ class ATOM(object):
                           solver=None,
                           max_features=None,
                           threshold=-np.inf,
-                          frac_variance=1.,
+                          min_variance_frac=1.,
                           max_correlation=0.98):
 
         '''
@@ -867,25 +1080,47 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
-        X            --> data features: pd.Dataframe or array
-        Y            --> data targets: pd.Series or array
-        strategy     --> strategy for feature selection. Choose from:
-                             'univariate': perform a univariate F-test
-                             'PCA': perform principal component analysis
-                             'SFM': select best features from model
-                             'RFE': recursive feature eliminator
-        solver       --> solver or model class for the strategy
-        max_features --> if < 1: fraction of features to select
-                         if >= 1: number of features to select
-                         None to select all (only for SFM)
-        threshold    --> threshold value to use for selection. Only for model.
-                         Choose from: float, 'mean', 'median'.
-        frac_variance   --> minimum value of the Pearson correlation
-                            cofficient to identify correlated features
-        max_correlation --> remove features with constant instances in at
-                            least this fraction of the total
+        strategy          --> strategy for feature selection. Choose from:
+                                 'univariate': perform a univariate F-test
+                                 'PCA': perform principal component analysis
+                                 'SFM': select best features from model
+                                 'RFE': recursive feature eliminator
+        solver            --> solver or model class for the strategy
+        max_features      --> if < 1: fraction of features to select
+                              if >= 1: number of features to select
+                              None to select all (only for SFM)
+        threshold         --> threshold value to use for selection. Only for
+                              SFM. Choose from: float, 'mean', 'median'.
+        min_variance_frac --> minimum value of the Pearson correlation
+                              cofficient to identify correlated features
+        max_correlation   --> remove features with constant instances in at
+                              least this fraction of the total
 
         '''
+
+        def remove_low_variance(min_variance_frac):
+
+            '''
+            DESCRIPTION -----------------------------------
+
+            Removes featrues with too low variance.
+
+            PARAMETERS -------------------------------------
+
+            min_variance_frac --> remove features with same values in at
+                                  least this fraction of the total
+
+            '''
+
+            threshold = min_variance_frac * (1. - min_variance_frac)
+            var = VarianceThreshold(threshold=threshold).fit(self.X)
+            mask = var.get_support()  # Get boolean mask of selected features
+
+            for n, column in enumerate(self.X):
+                if not mask[n]:
+                    prlog(f' --> Feature {column} was removed due to' +
+                          f' low variance: {var.variances_[n]:.2f}.', self, 2)
+                    self.dataset.drop(column, axis=1, inplace=True)
 
         def remove_collinear(limit):
 
@@ -939,49 +1174,39 @@ class ATOM(object):
                 prlog(f' --> Feature {column} was removed due to ' +
                       'collinearity with another feature.', self, 2)
 
-            self.dataset.drop(to_drop, axis=1)
-
-        def remove_low_variance(frac_variance):
-
-            '''
-            DESCRIPTION -----------------------------------
-
-            Removes featrues with too low variance.
-
-            PARAMETERS -------------------------------------
-
-            frac_variance --> remove features with constant instances in at
-                              least this fraction of the total
-
-            '''
-
-            threshold = frac_variance * (1. - frac_variance)
-            var = VarianceThreshold(threshold=threshold).fit(self.X)
-            mask = var.get_support()  # Get boolean mask of selected features
-
-            for n, column in enumerate(self.X):
-                if not mask[n]:
-                    prlog(f' --> Feature {column} was removed due to' +
-                          f' low variance: {var.variances_[n]:.2f}.', self, 2)
-                    self.dataset.drop(column, axis=1, inplace=True)
+            self.dataset.drop(to_drop, axis=1, inplace=True)
 
         # Check parameters
-        strategy = str(strategy) if strategy is not None else None
-        if frac_variance is not None:
-            frac_variance = float(frac_variance)
-        if max_correlation is not None:
-            max_correlation = float(max_correlation)
+        if not isinstance(strategy, (type(None), str)):
+            raise_TypeError('strategy', strategy)
+        if not isinstance(max_features, (type(None), int, float)):
+            raise_TypeError('max_features', max_features)
+        elif max_features is not None and max_features <= 0:
+            raise_ValueError('max_features', max_features)
+        if not isinstance(threshold, (str, int, float)):
+            raise_TypeError('threshold', threshold)
+        if not isinstance(min_variance_frac, (type(None), int, float)):
+            raise_TypeError('min_variance_frac', min_variance_frac)
+        elif min_variance_frac is not None:
+            if min_variance_frac < 0 or min_variance_frac > 1:
+                raise_ValueError('min_variance_frac', min_variance_frac)
+        if not isinstance(max_correlation, (type(None), int, float)):
+            raise_TypeError('max_correlation', max_correlation)
+        elif max_correlation is not None:
+            if max_correlation < 0 or max_correlation > 1:
+                raise_ValueError('max_correlation', max_correlation)
 
         prlog('Performing feature selection...', self, 1)
 
+        # Then, remove features with too low variance
+        if min_variance_frac is not None:
+            remove_low_variance(min_variance_frac)
+
         # First, drop features with too high correlation
         if max_correlation is not None:
-            remove_collinear(limit=max_correlation)
-        # Then, remove features with too low variance
-        if frac_variance is not None:
-            remove_low_variance(frac_variance=frac_variance)
+            remove_collinear(max_correlation)
 
-        # Dataset is possibly changed so need to reset attributes
+        # The dataset is possibly changed
         self.reset_attributes('dataset')
 
         if strategy is None:
@@ -995,22 +1220,24 @@ class ATOM(object):
 
         # Perform selection based on strategy
         if strategy.lower() == 'univariate':
-
             # Set the solver
-            solvers = ['f_classif', 'f_regression', 'mutual_info_classif',
-                       'mutual_info_regression', 'chi2']
+            solvers_dct = dict(f_classif=f_classif,
+                               f_regression=f_regression,
+                               mutual_info_classif=mutual_info_classif,
+                               mutual_info_regression=mutual_info_regression,
+                               chi2=chi2)
             if solver is None and self.task == 'regression':
                 solver = f_regression
             elif solver is None:
                 solver = f_classif
-            elif solver in solvers:
-                solver = eval(solver)
+            elif solver in solvers_dct.keys():
+                solver = solvers_dct[solver]
             elif isinstance(solver, str):
                 raise ValueError('Unknown solver: Try one {}.'
-                                 .format(', '.join(solvers)))
+                                 .format(', '.join(solvers_dct.keys())))
 
             self.univariate = SelectKBest(solver, k=max_features)
-            self.univariate.fit(self.X, self.Y)
+            self.univariate.fit(self.X, self.y)
             mask = self.univariate.get_support()
             for n, column in enumerate(self.X):
                 if not mask[n]:
@@ -1024,13 +1251,15 @@ class ATOM(object):
         elif strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
-            # Scale features first
-            self.dataset = StandardScaler().fit_transform(self.X_train)
+            # Define PCA
             solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
-            self.X_train = convert_to_pd(self.PCA.fit_transform(self.X_train))
-            self.X_test = convert_to_pd(self.PCA.transform(self.X_test))
-            self.reset_attributes('X_train')  # Will reset all attributes
+
+            # Create and apply pipeline with scaled features
+            pipe = make_pipeline(StandardScaler(), self.PCA).fit(self.X_train)
+            self.X_train = conv_to_df(pipe.transform(self.X_train), pca=True)
+            self.X_test = conv_to_df(pipe.transform(self.X_test), pca=True)
+            self.reset_attributes('X_train')
 
         elif strategy.lower() == 'sfm':
             if solver is None:
@@ -1047,13 +1276,13 @@ class ATOM(object):
                 self.SFM = SelectFromModel(estimator=solver,
                                            threshold=threshold,
                                            max_features=max_features)
-                self.SFM.fit(self.X, self.Y)
+                self.SFM.fit(self.X, self.y)
                 mask = self.SFM.get_support()
 
             for n, column in enumerate(self.X):
                 if not mask[n]:
                     prlog(f' --> Feature {column} was removed by the ' +
-                          'selected model.', self, 2)
+                          f'{solver.__class__.__name__}.', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
             self.reset_attributes('dataset')
 
@@ -1063,7 +1292,7 @@ class ATOM(object):
                 raise ValueError('Select a model for the solver!')
 
             self.RFE = RFE(estimator=solver, n_features_to_select=max_features)
-            self.RFE.fit(self.X, self.Y)
+            self.RFE.fit(self.X, self.y)
             mask = self.RFE.support_
 
             for n, column in enumerate(self.X):
@@ -1074,11 +1303,11 @@ class ATOM(object):
             self.reset_attributes('dataset')
 
         else:
-            raise ValueError('Invalid feature selection strategy selected.'
-                             "Choose from: 'univariate', 'PCA' or 'SFM'")
+            raise ValueError('Invalid value for strategy parameter. Choose ' +
+                             "from: 'univariate', 'PCA', 'SFM' or 'RFE'.")
 
     @params_to_log
-    def fit(self, models, metric, greater_is_better=True,
+    def fit(self, models, metric, greater_is_better=True, needs_proba=False,
             successive_halving=False, skip_iter=0,
             max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1,
             init_points=5, plot_bo=False, cv=3, bagging=None):
@@ -1086,13 +1315,27 @@ class ATOM(object):
         '''
         DESCRIPTION -----------------------------------
 
-        Initialize class.
+        Fit class to the selected models. The optimal hyperparameters per
+        model are selectred using a Bayesian Optimization (BO) algorithm
+        with gaussian process as kernel. The resulting score of each step
+        of the BO is either computed by cross-validation on the complete
+        training set or by creating a validation set from the training set.
+        This process will create some minimal leakage but ensures a maximal
+        use of the provided data. The test set, however, does not contain any
+        leakage and will be used to determine the final score of every model
+        . Note that the best score on the BO can be consistently lower than
+        the final score on the test set (despite the leakage) due to the
+        considerable fewer instances on which it is trained. At the end of
+        te pipeline, you can choose to test the robustness of the model
+        applying a bagging algorithm, providing a distribution of the
+        models' performance.
 
         PARAMETERS -------------------------------------
 
         models             --> list of models to use
-        metric             --> metric to perform evaluation on
+        metric             --> metric to perform the estimator's evaluation on
         greater_is_better  --> metric is a score function or a loss function
+        needs_proba        --> wether the metric needs a probability or score
         successive_halving --> wether to perform successive halving
         skip_iter          --> skip last n steps of successive halving
         max_iter           --> maximum number of iterations of the BO
@@ -1102,7 +1345,7 @@ class ATOM(object):
         init_points        --> initial number of random tests of the BO
         plot_bo            --> boolean to plot the BO's progress
         cv                 --> splits for the cross validation
-        bagging            --> number of splits for bagging (0 for None)
+        bagging            --> number of splits for bagging
 
         '''
 
@@ -1122,21 +1365,24 @@ class ATOM(object):
 
             # Loop over every independent model
             for model in loop:
+                # If PCA was applied, the data doesn't need to be scaled
+                pca = True if hasattr(self, 'PCA') else False
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
+                                                 self.mapping,
                                                  self.metric,
+                                                 pca,
                                                  self.task,
                                                  self.log,
                                                  self.n_jobs,
-                                                 self.verbose))
+                                                 self.verbose,
+                                                 self.random_state))
 
                 try:  # If errors occure, just skip the model
                     with warnings.catch_warnings():
                         if not self.warnings:
                             warnings.simplefilter("ignore")
-
                         getattr(self, model).BayesianOpt(self.test_size,
-                                                         self.gib,
                                                          self.max_iter,
                                                          self.max_time,
                                                          self.eps,
@@ -1149,6 +1395,8 @@ class ATOM(object):
                             getattr(self, model).bagging(self.bagging)
 
                 except Exception as ex:
+                    if self.max_iter == 0:
+                        prlog('\n', self, 1)  # Add two empty lines
                     prlog('Exception encountered while running the '
                           + f'{model} model. Removing model from pipeline.'
                           + f'\n{type(ex).__name__}: {ex}', self, 1, True)
@@ -1173,9 +1421,10 @@ class ATOM(object):
 
             try:  # Fails if all models encountered errors
                 # Get max length of the models' names
-                lenx = max([len(getattr(self, m).name) for m in self.models])
+                len_ = [len(getattr(self, m).longname) for m in self.models]
+                lenx = max(len_)
 
-                # Get best score (min or max dependent on metric)
+                # Get list of scores
                 if self.bagging is None:
                     x = [getattr(self, m).score_test for m in self.models]
                 else:
@@ -1183,7 +1432,19 @@ class ATOM(object):
                     for m in self.models:
                         x.append(getattr(self, m).bagging_scores.mean())
 
-                max_ = min(x) if not self.gib else max(x)
+                # Get length of best scores and index of longest
+                len_ = [len(str(round(score, 3))) for score in x]
+                idx = len_.index(max(len_))
+
+                # Set number of decimals
+                decimals = self.metric.dec if self.bagging is None else 3
+
+                # Decide width of numbers to print (account for point of float)
+                extra = decimals + 1 if decimals > 0 else 0
+                width = len(str(int(x[idx]))) + extra
+
+                # Take into account if score or loss function
+                best = min(x) if not self.gib else max(x)
 
             except (ValueError, AttributeError):
                 raise ValueError('It appears all models failed to run...')
@@ -1195,7 +1456,7 @@ class ATOM(object):
             s = int(t - h*3600 - m*60)
             prlog('\n\nFinal results ================>>', self)
             prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
-            prlog(f'Metric: {self.metric.__name__}', self)
+            prlog(f"Metric: {self.metric.longname}", self)
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
@@ -1210,31 +1471,33 @@ class ATOM(object):
 
             for m in self.models:
                 name = getattr(self, m).name
-                shortname = getattr(self, m).shortname
+                longname = getattr(self, m).longname
                 score_train = getattr(self, m).score_train
                 score_test = getattr(self, m).score_test
                 time_bo = getattr(self, m).time_bo
 
                 if self.bagging is None:
-                    results = results.append({'model': shortname,
+                    results = results.append({'model': name,
                                               'score_train': score_train,
                                               'score_test': score_test,
                                               'time': time_bo},
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if score_test == max_ and len(self.models) > 1:
-                        prlog(u'{0:{1}s} --> {2:.3f} !!'
-                              .format(name, lenx, score_test), self)
+                    if score_test == best and len(self.models) > 1:
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
+                              .format(longname, lenx, score_test,
+                                      width, decimals), self)
                     else:
-                        prlog(u'{0:{1}s} --> {2:.3f}'
-                              .format(name, lenx, score_test), self)
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
+                              .format(longname, lenx, score_test,
+                                      width, decimals), self)
 
                 else:
                     bs_mean = getattr(self, m).bagging_scores.mean()
                     bs_std = getattr(self, m).bagging_scores.std()
                     time_bag = getattr(self, m).time_bag
-                    results = results.append({'model': shortname,
+                    results = results.append({'model': name,
                                               'score_train': score_train,
                                               'score_test': score_test,
                                               'time': time_bo,
@@ -1244,12 +1507,14 @@ class ATOM(object):
                                              ignore_index=True)
 
                     # Highlight best score (if more than one)
-                    if bs_mean == max_ and len(self.models) > 1:
-                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f} !!'
-                              .format(name, lenx, bs_mean, bs_std), self)
+                    if bs_mean == best and len(self.models) > 1:
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f} !!'
+                              .format(longname, lenx, bs_mean, width,
+                                      decimals, bs_std), self)
                     else:
-                        prlog(u'{0:{1}s} --> {2:.3f} \u00B1 {3:.3f}'
-                              .format(name, lenx, bs_mean, bs_std), self)
+                        prlog(u'{0:{1}s} --> {2:>{3}.{4}f} \u00B1 {5:.3f}'
+                              .format(longname, lenx, bs_mean, width,
+                                      decimals, bs_std), self)
 
             return results
 
@@ -1257,77 +1522,124 @@ class ATOM(object):
             ''' Make a dct of the data (complete, train, test and scaled) '''
 
             data = {}
-            for i in ['X', 'Y', 'X_train', 'Y_train', 'X_test', 'Y_test']:
-                data[i] = eval('self.' + i)
+            for set_ in ['X', 'y', 'X_train', 'y_train', 'X_test', 'y_test']:
+                data[set_] = getattr(self, set_)
 
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
             # If PCA was performed, features are already scaled
-            # Made string in case it is None
-            if hasattr(self, 'strategy'):
-                pca = True if str(self.strategy).lower() == 'pca' else False
-            else:
-                pca = False
-            if scale and not pca:
-                features = self.X.columns  # Save feature names
-
+            if scale and not hasattr(self, 'PCA'):
                 # Normalize features to mean=0, std=1
-                data['X_scaled'] = StandardScaler().fit_transform(data['X'])
-                scaler = StandardScaler().fit(data['X_train'])
-                data['X_train_scaled'] = scaler.transform(data['X_train'])
+                scaler = StandardScaler()
+                data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
                 data['X_test_scaled'] = scaler.transform(data['X_test'])
+                data['X_scaled'] = np.concatenate((data['X_train_scaled'],
+                                                   data['X_test_scaled']))
 
                 # Convert np.array to pd.DataFrame for all scaled features
                 for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
-                    data[set_] = convert_to_pd(data[set_], columns=features)
+                    data[set_] = conv_to_df(data[set_], self.X.columns)
 
             return data
 
-        # << ============ Initialize ============ >>
+        # << ======================== Initialize ======================== >>
 
         t_init = time()  # To measure the time the whole pipeline takes
 
         prlog('\nRunning pipeline =================>', self)
 
         # Set args to class attributes and correct inputs
-        self.models = [models] if not isinstance(models, list) else models
-        self.metric = metric
-        self.gib = bool(greater_is_better)
-        self.successive_halving = bool(successive_halving)
-        self.skip_iter = int(skip_iter)
-        self.max_iter = int(max_iter) if max_iter >= 0 else 15
-        self.max_time = float(max_time) if max_time > 0 else np.inf
-        self.eps = float(eps)
-        self.batch_size = int(batch_size) if batch_size > 0 else 1
-        self.init_points = int(init_points) if init_points >= 0 else 5
-        self.plot_bo = bool(plot_bo)
-        self.cv = int(cv) if cv > 0 else 3
-        if bagging is None or bagging == 0:
-            self.bagging = None
+        if not isinstance(models, list):
+            if not isinstance(models, str):
+                raise_TypeError('models', models)
+            else:
+                models = [models]
+        gib = greater_is_better  # Shorter variable name for easy access
+        if not isinstance(gib, bool) and gib not in (0, 1):
+            raise_TypeError('greater_is_better', greater_is_better)
         else:
-            self.bagging = int(bagging)
+            self.gib = bool(greater_is_better)
+        if not isinstance(needs_proba, bool) and needs_proba not in (0, 1):
+            raise_TypeError('needs_proba', needs_proba)
+        else:
+            self.needs_proba = bool(needs_proba)
+        sh = successive_halving
+        if not isinstance(sh, bool) and sh not in (0, 1):
+            raise_TypeError('successive_halving', successive_halving)
+        else:
+            self.successive_halving = bool(sh)
+        if not isinstance(skip_iter, int):
+            raise_TypeError('skip_iter', skip_iter)
+        elif skip_iter < 0:
+            raise_ValueError('skip_iter', skip_iter)
+        else:
+            self.skip_iter = skip_iter
+        if not isinstance(max_iter, int):
+            raise_TypeError('max_iter', max_iter)
+        elif max_iter < 0:
+            raise_ValueError('max_iter', max_iter)
+        else:
+            self.max_iter = max_iter
+        if not isinstance(max_time, (int, float)):
+            raise_TypeError('max_time', max_time)
+        elif max_time < 0:
+            raise_ValueError('max_time', max_time)
+        else:
+            self.max_time = max_time
+        if not isinstance(eps, (int, float)):
+            raise_TypeError('eps', eps)
+        elif eps < 0:
+            raise_ValueError('eps', eps)
+        else:
+            self.eps = eps
+        if not isinstance(batch_size, int):
+            raise_TypeError('batch_size', batch_size)
+        elif batch_size < 1:
+            raise_ValueError('batch_size', batch_size)
+        else:
+            self.batch_size = batch_size
+        if not isinstance(init_points, int):
+            raise_TypeError('init_points', init_points)
+        elif init_points < 1:
+            raise_ValueError('init_points', init_points)
+        else:
+            self.init_points = init_points
+        if not isinstance(plot_bo, bool) and plot_bo not in (0, 1):
+            raise_TypeError('plot_bo', plot_bo)
+        else:
+            self.plot_bo = bool(plot_bo)
+        if not isinstance(cv, int):
+            raise_TypeError('cv', cv)
+        elif batch_size < 1:
+            raise_ValueError('cv', cv)
+        else:
+            self.cv = cv
+        if not isinstance(bagging, (type(None), int)):
+            raise_TypeError('bagging', bagging)
+        elif bagging is None or bagging == 0:
+            self.bagging = None
+        elif bagging < 0:
+            raise_ValueError('bagging', bagging)
+        else:
+            self.bagging = bagging
 
         # Save model erros (if any) in dictionary
         self.errors = {}
-
-        # Save the cv's results in array of dataframes
-        if self.successive_halving:
-            self.results = []
 
         # << ============ Check validity models ============ >>
 
         # Final list of models to be used
         final_models = []
-        if self.models == ['all']:  # Use all possible models
+        if models == 'all':  # Use all possible models
             final_models = model_list.copy()
         else:
             # Remove duplicates keeping same order
             # Use and on the None output of set.add to call the function
-            self.models = [not set().add(x.lower()) and x
-                           for x in self.models if x.lower() not in set()]
+            models = [not set().add(x.lower()) and x
+                      for x in models if x.lower() not in set()]
 
             # Set models to right name
-            for m in self.models:
+            for m in models:
                 # Compare strings case insensitive
                 if m.lower() not in map(str.lower, model_list):
                     prlog(f"Unknown model {m}. Removed from pipeline.", self)
@@ -1368,15 +1680,67 @@ class ATOM(object):
 
         # Update model list attribute with correct values
         self.models = final_models
+
         if not self.successive_halving:
             prlog('Model{} in pipeline: {}'
                   .format('s' if len(self.models) > 1 else '',
                           ', '.join(self.models)), self)
-        prlog(f'Metric: {self.metric.__name__}', self)
+
+        # << ============ Check validity metric ============ >>
+
+        # Create dictionary of all the pre-defined metrics
+        metrics = dict(
+                tn=BaseMetric('tn', True, False, self.task),
+                fp=BaseMetric('fp', False, False, self.task),
+                fn=BaseMetric('fn', False, False, self.task),
+                tp=BaseMetric('tp', True, False, self.task),
+                accuracy=BaseMetric('accuracy', True, False, self.task),
+                ap=BaseMetric('ap', True, True, self.task),
+                auc=BaseMetric('auc', True, True, self.task),
+                mae=BaseMetric('mae', False, False, self.task),
+                max_error=BaseMetric('max_error', False, False, self.task),
+                mcc=BaseMetric('mcc', True, False, self.task),
+                mse=BaseMetric('mse', False, False, self.task),
+                msle=BaseMetric('msle', False, False, self.task),
+                f1=BaseMetric('f1', True, False, self.task),
+                hamming=BaseMetric('hamming', False, False, self.task),
+                jaccard=BaseMetric('jaccard', True, False, self.task),
+                logloss=BaseMetric('logloss', False, True, self.task),
+                precision=BaseMetric('precision', True, False, self.task),
+                r2=BaseMetric('r2', True, False, self.task),
+                recall=BaseMetric('recall', True, False, self.task),
+                )
+
+        if isinstance(metric, str):
+            t = mreg if self.task == 'regression' else mclass
+            if metric.lower() not in mbin + mclass + mreg:
+                raise ValueError(f"Unknown metric: {metric}. " +
+                                 "Try one of {', '.join(t)}.")
+            elif metric.lower() in mbin and not self.task.startswith('binary'):
+                raise ValueError(f'Invalid metric for {self.task} tasks. ' +
+                                 f"Try one of: {', '.join(t)}.")
+            elif metric.lower() not in mreg and self.task == 'regression':
+                raise ValueError(f'{metric} is an invalid metric for regre' +
+                                 f"ssion tasks. Try one of: {', '.join(t)}.")
+            else:
+                self.metric = metrics[metric.lower()]
+
+        elif callable(metric):
+            self.metric = BaseMetric(metric, self.gib,
+                                     self.needs_proba, self.task)
+        else:
+            raise_TypeError('metric', metric)
+
+        # Add all metrics as subclasses of the BaseMetric class
+        for key, value in metrics.items():
+            setattr(self.metric, key, value)
+
+        prlog(f"Metric: {self.metric.longname}", self)
 
         # << =================== Core ==================== >>
 
         if self.successive_halving:
+            self.results = []  # Save the cv's results in list of dataframes
             iteration = 0
             original_data = self.dataset.copy()
             while len(self.models) > 2**self.skip_iter - 1:
@@ -1389,9 +1753,9 @@ class ATOM(object):
                 prlog('Model{} in pipeline: {}'
                       .format('s' if len(self.models) > 1 else '',
                               ', '.join(self.models)), self)
-                self.stats(print_only=False)
+                self.stats(1)
 
-                # Run iteration
+                # Run iteration and append to the results list
                 results = run_iteration(self)
                 self.results.append(results)
 
@@ -1407,13 +1771,17 @@ class ATOM(object):
                 self.models = n.copy()
                 iteration += 1
 
+            self._isfit = True
+
         else:
             self.data = data_preparation()
             self.results = run_iteration(self)
+            self._isfit = True
 
-        # <====================== End fit function ======================>
+    # <====================== Utility methods ======================>
 
-    def boxplot(self, iteration=-1, figsize=None, filename=None):
+    def plot_bagging(self, iteration=-1,
+                     title=None, figsize=None, filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1423,41 +1791,52 @@ class ATOM(object):
         PARAMETERS -------------------------------------
 
         iteration --> iteration of the successive halving to plot
+        title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
 
         '''
 
+        def raise_exception():
+            raise AttributeError('You need to fit the class using bagging ' +
+                                 'before calling the boxplot method!')
+        if not self._isfit:
+            raise_exception()
+
+        if self.bagging is None:
+            raise_exception()
+
         results, names = [], []
-        try:  # Can't make plot before running fit!
-            if self.successive_halving:
-                df = self.results[iteration]
-            else:
-                df = self.results
-            for m in df.model:
-                results.append(getattr(self, m).bagging_scores)
-                names.append(getattr(self, m).shortname)
-        except (IndexError, AttributeError):
-            raise Exception('You need to fit ATOM using bagging!')
+        if self.successive_halving:
+            df = self.results[iteration]
+        else:
+            df = self.results
+        for m in df.model:
+            results.append(getattr(self, m).bagging_scores)
+            names.append(getattr(self, m).name)
 
         if figsize is None:  # Default figsize depends on number of models
-            figsize = (int(8+len(names)/2), 6)
+            figsize = (int(8 + len(names)/2), 6)
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         plt.boxplot(results)
+
+        title = 'Bagging results' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.xlabel('Model', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel(self.metric.longname,
+                   fontsize=ATOM.label_fs,
+                   labelpad=12)
         ax.set_xticklabels(names)
-        plt.xlabel('Model', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
-        plt.title('Model comparison', fontsize=16)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_successive_halving(self, figsize=(10, 6), filename=None):
+    def plot_successive_halving(self, title=None,
+                                figsize=(10, 6), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1466,47 +1845,55 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
         '''
 
+        def raise_exception():
+            raise AttributeError('You need to fit the class using a ' +
+                                 'successive halving approach before ' +
+                                 'calling the plot_successive_halving method!')
+
+        if not self._isfit:
+            raise_exception()
+
         if not self.successive_halving:
-            raise ValueError('This plot is only available if the class was ' +
-                             'fitted using a successive halving approach!')
+            raise_exception()
 
         models = self.results[0].model  # List of models in first iteration
         col = 'score' if self.bagging is None else 'bagging_mean'
         linx = [[] for m in models]
         liny = [[] for m in models]
-        try:  # Can't make plot before running fit!
-            for m, df in enumerate(self.results):
-                for n, model in enumerate(models):
-                    if model in df.model.values:  # If model in iteration
-                        linx[n].append(m)
-                        liny[n].append(
-                                df[col][df.model == model].values[0])
-        except (IndexError, AttributeError):
-            raise Exception('You need to fit the class before plotting!')
+        for m, df in enumerate(self.results):
+            for n, model in enumerate(models):
+                if model in df.model.values:  # If model in iteration
+                    linx[n].append(m)
+                    liny[n].append(
+                            df[col][df.model == model].values[0])
 
-        sns.set_style('darkgrid')
         fig, ax = plt.subplots(figsize=figsize)
         for x, y, label in zip(linx, liny, models):
             plt.plot(x, y, lw=2, marker='o', label=label)
         plt.xlim(-0.1, len(self.results)-0.9)
-        plt.xlabel('Iteration', fontsize=16, labelpad=12)
-        plt.ylabel(self.metric.__name__, fontsize=16, labelpad=12)
-        plt.title('Successive halving scores', fontsize=16)
-        plt.legend(frameon=False, fontsize=14)
+
+        title = 'Successive halving results' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(frameon=False, fontsize=ATOM.label_fs)
+        plt.xlabel('Iteration', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel(self.metric.longname,
+                   fontsize=ATOM.label_fs,
+                   labelpad=12)
         ax.set_xticks(range(len(self.results)))
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show()
 
-    def plot_correlation(self, figsize=(10, 10), filename=None):
+    def plot_correlation(self, title=None, figsize=(10, 10), filename=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1515,6 +1902,7 @@ class ATOM(object):
 
         PARAMETERS -------------------------------------
 
+        title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
 
@@ -1530,18 +1918,312 @@ class ATOM(object):
         mask = np.zeros_like(corr, dtype=np.bool)
         mask[np.triu_indices_from(mask, k=1)] = True
 
-        sns.set_style('white')
+        sns.set_style('white')  # Only for this plot
         fig, ax = plt.subplots(figsize=figsize)
 
         # Draw the heatmap with the mask and correct aspect ratio
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
         sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
                     square=True, linewidths=.5, cbar_kws={"shrink": .5})
-        plt.title('Feature correlation matrix', fontsize=16)
+
+        title = 'Feature correlation matrix' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
         fig.tight_layout()
+        sns.set_style(ATOM.style)  # Set back to originals style
         if filename is not None:
             plt.savefig(filename)
         plt.show()
+
+    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot Receiver Operating Characteristics curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification tasks!')
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the plot_ROC method!')
+
+        fig, ax = plt.subplots(figsize=figsize)
+        for model in self.models:
+            # Get False (True) Positive Rate
+            Y_test = getattr(self, model).Y_test
+            predict_proba = getattr(self, model).predict_proba_test[:, 1]
+            auc = getattr(self, model).auc
+            fpr, tpr, _ = roc_curve(Y_test, predict_proba)
+            plt.plot(fpr, tpr, lw=2, label=f'{model} (AUC={auc:.3f})')
+
+        plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
+
+        title = 'ROC curve' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower right',
+                   frameon=False,
+                   fontsize=ATOM.label_fs)
+        plt.xlabel('FPR', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('TPR', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot precision-recall curve.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if self.task != 'binary classification':
+            raise ValueError('This method only works for binary ' +
+                             'classification tasks!')
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'the plot_PRC method!')
+
+        fig, ax = plt.subplots(figsize=figsize)
+        for model in self.models:
+            # Get precision-recall pairs for different probability thresholds
+            Y_test = getattr(self, model).Y_test
+            predict_proba = getattr(self, model).predict_proba_test[:, 1]
+            ap = getattr(self, model).ap
+            prec, recall, _ = precision_recall_curve(Y_test, predict_proba)
+            plt.plot(recall, prec, lw=2, label=f'{model} (AP={ap:.3f})')
+
+        title = 'Precision-recall curve' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower left',
+                   frameon=False,
+                   fontsize=ATOM.label_fs)
+        plt.xlabel('Recall', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('Precision', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show()
+
+    def plot_PCA(self, show=None, title=None, figsize=None, filename=None):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot the explained variance ratio of the components. Only if PCA
+        was applied on the dataset through the feature_selection method.
+
+        PARAMETERS -------------------------------------
+
+        show     --> number of components to show in the plot. None for all
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+
+        '''
+
+        if not hasattr(self, 'PCA'):
+            raise ValueError('This plot is only availbale if you apply ' +
+                             'PCA on the dataset through the ' +
+                             'feature_selection method!')
+
+        # Set parameters
+        var = np.array(self.PCA.explained_variance_ratio_)
+        if show is None or show > len(var):
+            show = len(var)
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
+
+        scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
+
+        fig, ax = plt.subplots(figsize=figsize)
+        scr.plot.barh(label=f'Total variance retained: {round(var.sum(), 3)}')
+        for i, v in enumerate(scr):
+            ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=ATOM.tick_fs)
+
+        plt.title('Explained variance ratio', fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower right', fontsize=ATOM.label_fs)
+        plt.xlabel('Variance ratio', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('Components', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
+        plt.tight_layout()
+        plt.show()
+
+    # <====================== Metric methods ======================>
+
+    def _final_results(self, metric):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Print final results for a specific metric.
+
+        PARAMETERS -------------------------------------
+
+        metric --> string of the metric attribute in self.metric
+
+        '''
+
+        if not self._isfit:
+            raise AttributeError('You need to fit the class before calling ' +
+                                 'for a metric method!')
+
+        try:
+            # Get max length of the models' names
+            lenx = max([len(getattr(self, m).longname) for m in self.models])
+
+            # Get list of scores
+            x = [getattr(getattr(self, m), metric.name) for m in self.models]
+
+            # Get length of best scores and index of longest
+            len_ = [len(str(round(score, 3))) for score in x]
+            idx = len_.index(max(len_))
+
+            # Decide width of numbers to print (account for point of float)
+            extra = metric.dec + 1 if metric.dec > 0 else 0
+            width = len(str(int(x[idx]))) + extra
+
+            # Take into account if score or loss function
+            best = min(x) if not metric.gib else max(x)
+
+        except Exception:
+            raise ValueError(f'Invalid metric for {self.task} tasks!')
+
+        prlog('\nFinal results ================>>', self)
+        prlog(f'Metric: {metric.longname}', self)
+        prlog('--------------------------------', self)
+
+        for m in self.models:
+            name = getattr(self, m).longname
+            score = getattr(getattr(self, m), metric.name)
+
+            # Highlight best score (if more than one)
+            if score == best and len(self.models) > 1:
+                prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
+                      .format(name, lenx, score, width, metric.dec), self)
+            else:
+                prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
+                      .format(name, lenx, score, width, metric.dec), self)
+
+    def tn(self):
+        self._final_results(self.metric.tn)
+
+    def fp(self):
+        self._final_results(self.metric.fp)
+
+    def fn(self):
+        self._final_results(self.metric.fn)
+
+    def tp(self):
+        self._final_results(self.metric.tp)
+
+    def accuracy(self):
+        self._final_results(self.metric.accuracy)
+
+    def ap(self):
+        self._final_results(self.metric.ap)
+
+    def auc(self):
+        self._final_results(self.metric.auc)
+
+    def mae(self):
+        self._final_results(self.metric.mae)
+
+    def max_error(self):
+        self._final_results(self.metric.max_error)
+
+    def mcc(self):
+        self._final_results(self.metric.mcc)
+
+    def mse(self):
+        self._final_results(self.metric.mse)
+
+    def msle(self):
+        self._final_results(self.metric.msle)
+
+    def f1(self):
+        self._final_results(self.metric.f1)
+
+    def hamming(self):
+        self._final_results(self.metric.hamming)
+
+    def jaccard(self):
+        self._final_results(self.metric.jaccard)
+
+    def logloss(self):
+        self._final_results(self.metric.logloss)
+
+    def precision(self):
+        self._final_results(self.metric.precision)
+
+    def r2(self):
+        self._final_results(self.metric.r2)
+
+    def recall(self):
+        self._final_results(self.metric.recall)
+
+    # <============ Classmethods for plot settings ============>
+
+    @classmethod
+    def set_style(cls, style='darkgrid'):
+        ''' Change the seaborn plotting style '''
+
+        cls.style = style
+        BaseModel.style = style
+        sns.set_style(style)
+
+    @classmethod
+    def set_palette(cls, palette='GnBu_d'):
+        ''' Change the seaborn color palette '''
+
+        cls.palette = palette
+        BaseModel.palette = palette
+        sns.set_palette(palette)
+
+    @classmethod
+    def set_title_fontsize(cls, fontsize=20):
+        ''' Change the fontsize of the plot's title '''
+
+        cls.title_fs = fontsize
+        BaseModel.title_fs = fontsize
+
+    @classmethod
+    def set_label_fontsize(cls, fontsize=16):
+        ''' Change the fontsize of the plot's labels and legends '''
+
+        cls.label_fs = fontsize
+        BaseModel.label_fs = fontsize
+
+    @classmethod
+    def set_tick_fontsize(cls, fontsize=12):
+        ''' Change the fontsize of the plot's ticks '''
+
+        cls.tick_fs = fontsize
+        BaseModel.tick_fs = fontsize
 
 
 class ATOMClassifier(ATOM):
