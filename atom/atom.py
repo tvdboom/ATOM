@@ -1987,7 +1987,7 @@ class ATOM(object):
             raise_exception()
 
         models = self.results[0].model  # List of models in first iteration
-        col = 'score' if self.bagging is None else 'bagging_mean'
+        col = 'score_test' if self.bagging is None else 'bagging_mean'
         linx = [[] for m in models]
         liny = [[] for m in models]
         for m, df in enumerate(self.results):
@@ -2035,8 +2035,8 @@ class ATOM(object):
         '''
 
         if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification tasks!')
+            raise AttributeError('This method only works for binary ' +
+                                 'classification tasks!')
 
         if not self._isFit:
             raise AttributeError('You need to fit the class before calling ' +
@@ -2045,10 +2045,10 @@ class ATOM(object):
         fig, ax = plt.subplots(figsize=figsize)
         for model in self.models:
             # Get False (True) Positive Rate
-            Y_test = getattr(self, model).Y_test
+            y_test = getattr(self, model).y_test
             predict_proba = getattr(self, model).predict_proba_test[:, 1]
             auc = getattr(self, model).auc
-            fpr, tpr, _ = roc_curve(Y_test, predict_proba)
+            fpr, tpr, _ = roc_curve(y_test, predict_proba)
             plt.plot(fpr, tpr, lw=2, label=f'{model} (AUC={auc:.3f})')
 
         plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
@@ -2085,8 +2085,8 @@ class ATOM(object):
         '''
 
         if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification tasks!')
+            raise AttributeError('This method only works for binary ' +
+                                 'classification tasks!')
 
         if not self._isFit:
             raise AttributeError('You need to fit the class before calling ' +
@@ -2095,10 +2095,10 @@ class ATOM(object):
         fig, ax = plt.subplots(figsize=figsize)
         for model in self.models:
             # Get precision-recall pairs for different probability thresholds
-            Y_test = getattr(self, model).Y_test
+            y_test = getattr(self, model).y_test
             predict_proba = getattr(self, model).predict_proba_test[:, 1]
             ap = getattr(self, model).ap
-            prec, recall, _ = precision_recall_curve(Y_test, predict_proba)
+            prec, recall, _ = precision_recall_curve(y_test, predict_proba)
             plt.plot(recall, prec, lw=2, label=f'{model} (AP={ap:.3f})')
 
         title = 'Precision-recall curve' if title is None else title

@@ -241,12 +241,24 @@ def test_data_preparation():
 def test_successive_halving_results():
     ''' Assert that self.results is correctly created '''
 
+    # Without bagging
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
     atom.fit(models=['tree', 'rf', 'xgb', 'lgb'],
              metric='f1',
              successive_halving=True,
-             max_iter=0)
+             max_iter=0,
+             bagging=0)
+    assert isinstance(atom.results, list)
+    assert len(atom.results) == 3
+
+    # With bagging
+    atom = ATOMClassifier(X, y, random_state=1)
+    atom.fit(models=['tree', 'rf', 'xgb', 'lgb'],
+             metric='f1',
+             successive_halving=True,
+             max_iter=0,
+             bagging=5)
     assert isinstance(atom.results, list)
     assert len(atom.results) == 3
 

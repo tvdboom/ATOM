@@ -528,8 +528,8 @@ class BaseModel(object):
         '''
 
         if self.task != 'binary classification':
-            raise ValueError('This method is only available for ' +
-                             'binary classification tasks.')
+            raise AttributeError('This method is only available for ' +
+                                 'binary classification tasks.')
 
         # Set metric parameter
         if metric is None:
@@ -596,8 +596,8 @@ class BaseModel(object):
         '''
 
         if self.task == 'regression':
-            raise ValueError('This method is only available for ' +
-                             'classification tasks.')
+            raise AttributeError('This method is only available for ' +
+                                 'classification tasks.')
 
         # Make target mapping
         inv_map = {str(v): k for k, v in self.mapping.items()}
@@ -642,8 +642,8 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        n_repeats --> number of times to permute a feature
         show      --> number of best features to show in the plot
+        n_repeats --> number of times to permute a feature
         title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
@@ -708,7 +708,7 @@ class BaseModel(object):
         '''
 
         if self.name not in tree_models:
-            raise ValueError('This method only works for tree-based models!')
+            raise AttributeError('Only availabe for tree-based models!')
 
         # Set parameters
         if show is None or show > self.X.shape[1]:
@@ -763,8 +763,8 @@ class BaseModel(object):
         '''
 
         if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification tasks.')
+            raise AttributeError('This method only works for binary ' +
+                                 'classification tasks.')
 
         # Get False (True) Positive Rate
         fpr, tpr, _ = roc_curve(self.y_test, self.predict_proba_test[:, 1])
@@ -805,8 +805,8 @@ class BaseModel(object):
         '''
 
         if self.task != 'binary classification':
-            raise ValueError('This method only works for binary ' +
-                             'classification tasks.')
+            raise AttributeError('This method only works for binary ' +
+                                 'classification tasks.')
 
         # Get precision-recall pairs for different probability thresholds
         prec, recall, _ = precision_recall_curve(self.y_test,
@@ -848,8 +848,8 @@ class BaseModel(object):
         '''
 
         if self.task == 'regression':
-            raise ValueError('This method only works for ' +
-                             'classification tasks.')
+            raise AttributeError('This method only works for ' +
+                                 'classification tasks.')
 
         # Compute confusion matrix
         cm = confusion_matrix(self.y_test, self.predict_test)

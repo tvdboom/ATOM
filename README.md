@@ -307,7 +307,7 @@ Make a boxplot of the bagging's results after fitting the class.
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.<br><br>
 * **plot_PCA(show=None, \*\*kwargs)**  
 Plot the explained variance ratio of the components. Only if PCA was applied on the dataset through the feature_selection method.
-	+ **show: int, optional (default=None)**  
+	+ **show: int, optional (default=20)**  
 	Number of best components to show in the plot. None for all components.<br><br>
 * **plot_successive_halving(\*\*kwargs)**  
 Make a plot of the models' scores per iteration of the successive halving.<br><br>
@@ -347,12 +347,12 @@ Plot performance metrics against multiple threshold values. If None, the metric 
 Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target: int or string, optional (default=1)**  
 	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).<br><br>
-* **plot_permutation_importance(show=None, n_repeats=10, \*\*kwargs)**  
+* **plot_permutation_importance(show=20, n_repeats=10, \*\*kwargs)**  
 Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
-	+ **show: int, optional (default=None)**  
-	Number of best features to show in the plot. None for all features.
 	+ **n_repeats: int, optional (default=10)**  
-	Number of times to permute a feature.<br><br>
+	Number of times to permute a feature.
+	+ **show: int, optional (default=20)**  
+	Number of best features to show in the plot. None for all features.<br><br>
 * **plot_feature_importance(show=None, \*\*kwargs)**  
 Plot the normalized feature importance scores. Only works with tree based algorithms.
 	+ **show: int, optional (default=None)**  
