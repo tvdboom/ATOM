@@ -18,7 +18,7 @@ from atom import ATOMClassifier, ATOMRegressor
 
 # << ====================== Variables ===================== >>
 
-X_dim4 = [[2, 0, 1], [2, 3, 4], [5, 2, 7], [8, 9, 10]]
+X_dim4 = [[2, 0, 1], [2, 3, 0], [5, 2, 0], [8, 9, 1]]
 y_dim4 = ['y', 'n', 'y', 'n']
 
 
@@ -55,7 +55,7 @@ def test_X_y_equal_length():
 def test_y_is1dimensional():
     ''' Assert that error is raised when y is not 1-dimensional '''
 
-    y = [[0, 0], [1, 1], [0, 1]]
+    y = [[0, 0], [1, 1], [0, 1], [1, 1]]
     pytest.raises(ValueError, ATOMClassifier, X_dim4, y)
 
 
@@ -78,7 +78,8 @@ def test_target_when_y_is_none():
     ''' Assert that target is assigned correctly when y is None '''
 
     X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y)
+    X['target'] = y  # Place y as last column of X
+    atom = ATOMClassifier(X)
     assert atom.dataset.columns[-1], atom.target
 
 
@@ -117,18 +118,6 @@ def test_y_type():
 
 # << ====================== Test parameters ====================== >>
 
-def test_isfit_attribute():
-    ''' Assert that the _isfit attribute is set correctly '''
-
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
-    assert not atom._isfit
-    atom.impute()
-    atom.encode()
-    atom.fit('LR', 'f1', max_iter=0, bagging=0)
-    assert atom._isfit
-
-
 def test_percentage_parameter():
     ''' Assert that the percentage parameter is set correctly '''
 
@@ -150,8 +139,14 @@ def test_test_size_parameter():
 def test_log_parameter():
     ''' Assert that the log parameter is set correctly '''
 
+    # Raises an error
     X, y = load_breast_cancer(return_X_y=True)
     pytest.raises(TypeError, ATOMClassifier, X, y, log=3)
+
+    # Writes to file
+    X, y = load_breast_cancer(return_X_y=True)
+    atom = ATOMClassifier(X, y, log='log_file')
+    assert atom.log.endswith('.txt')
 
 
 def test_warnings_parameter():
@@ -178,7 +173,7 @@ def test_random_state_parameter():
     ''' Assert that the random_state parameter is set correctly and works '''
 
     X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, verbose=3.2)
+    pytest.raises(TypeError, ATOMClassifier, X, y, random_state=3.2)
 
     # Check if it gives the same results every time
     X, y = load_breast_cancer(return_X_y=True)
@@ -210,6 +205,29 @@ def test_njobs_parameter():
     for n_jobs in [59, -1, -2, 0]:
         atom = ATOMClassifier(X, y, n_jobs=n_jobs)
         assert 0 < atom.n_jobs <= n_cores
+
+
+def test_isFit_attribute():
+    ''' Assert that the _isFit attribute is set correctly '''
+
+    X, y = load_breast_cancer(return_X_y=True)
+    atom = ATOMClassifier(X, y)
+    assert not atom._isFit
+    atom.fit('LR', 'f1', max_iter=0, bagging=0)
+    assert atom._isFit
+
+
+def test_isScaled_attribute():
+    ''' Assert that the _isScaled attribute is set correctly '''
+
+    X, y = load_breast_cancer(return_X_y=True)
+    atom = ATOMClassifier(X, y)
+    assert not atom._isScaled
+    atom.scale()
+    assert atom._isScaled
+
+    atom2 = ATOMClassifier(atom.X, atom.y)
+    assert atom2._isScaled
 
 
 # << ==================== Test data cleaning ==================== >>

@@ -192,9 +192,9 @@ class BaseModel(object):
                 # Create a variable for the line so we can later update it
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
                 ax1.set_title(f'Bayesian Optimization for {self.longname}',
-                              fontsize=BaseModel.title_fontsize)
+                              fontsize=BaseModel.title_fs)
                 ax1.set_ylabel(self.metric.longname,
-                               fontsize=BaseModel.label_fontsize,
+                               fontsize=BaseModel.label_fs,
                                labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
@@ -202,12 +202,12 @@ class BaseModel(object):
                 ax2 = plt.subplot(gs[1], sharex=ax1)
                 line2, = ax2.plot(x, y2, '-o', alpha=0.8)
                 ax2.set_title('Metric distance between last consecutive steps',
-                              fontsize=BaseModel.title_fontsize)
+                              fontsize=BaseModel.title_fs)
                 ax2.set_xlabel('Step',
-                               fontsize=BaseModel.label_fontsize,
+                               fontsize=BaseModel.label_fs,
                                labelpad=12)
                 ax2.set_ylabel('d',
-                               fontsize=BaseModel.label_fontsize,
+                               fontsize=BaseModel.label_fs,
                                labelpad=12)
                 ax2.set_xticks(self.x)
                 ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
@@ -215,8 +215,8 @@ class BaseModel(object):
 
                 plt.setp(ax1.get_xticklabels(), visible=False)
                 plt.subplots_adjust(hspace=.0)
-                plt.xticks(fontsize=BaseModel.tick_fontsize)
-                plt.yticks(fontsize=BaseModel.tick_fontsize)
+                plt.xticks(fontsize=BaseModel.tick_fs)
+                plt.yticks(fontsize=BaseModel.tick_fs)
                 fig.tight_layout()
                 plt.show()
 
@@ -508,8 +508,8 @@ class BaseModel(object):
 
     # << ============ Plot functions ============ >>
 
-    def plot_threshold(self, metric=None, steps=100,
-                       title=None, figsize=(10, 6), filename=None):
+    def plot_threshold(self, metric=None, steps=100, title=None,
+                       figsize=(10, 6), filename=None, display=True):
 
         '''
         DESCRIPTION ------------------------------------
@@ -523,6 +523,7 @@ class BaseModel(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -573,10 +574,10 @@ class BaseModel(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
     def plot_probabilities(self, target=1, title=None,
-                           figsize=(10, 6), filename=None):
+                           figsize=(10, 6), filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -590,6 +591,7 @@ class BaseModel(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -628,10 +630,10 @@ class BaseModel(object):
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_permutation_importance(self, show=20, n_repeats=10,
-                                    title=None, figsize=None, filename=None):
+    def plot_permutation_importance(self, show=20, n_repeats=10, title=None,
+                                    figsize=None, filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -645,6 +647,7 @@ class BaseModel(object):
         title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
+        display   --> wether to display the plot
 
         '''
 
@@ -684,10 +687,10 @@ class BaseModel(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
     def plot_feature_importance(self, show=None, title=None,
-                                figsize=None, filename=None):
+                                figsize=None, filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -700,6 +703,7 @@ class BaseModel(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -739,9 +743,10 @@ class BaseModel(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+    def plot_ROC(self, title=None, figsize=(10, 6),
+                 filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -753,6 +758,7 @@ class BaseModel(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -779,9 +785,10 @@ class BaseModel(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+    def plot_PRC(self, title=None, figsize=(10, 6),
+                 filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -793,6 +800,7 @@ class BaseModel(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -819,10 +827,10 @@ class BaseModel(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_confusion_matrix(self, normalize=True,
-                              title=None, figsize=(10, 6), filename=None):
+    def plot_confusion_matrix(self, normalize=True, title=None,
+                              figsize=(10, 6), filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -835,6 +843,7 @@ class BaseModel(object):
         title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
+        display   --> wether to display the plot
 
         '''
 
@@ -882,7 +891,7 @@ class BaseModel(object):
         fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
     def save(self, filename=None):
         ''' Save model to pickle file '''

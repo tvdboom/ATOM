@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.datasets import load_breast_cancer, load_boston
-from atom import ATOMClassifier
+from atom import ATOMClassifier, ATOMRegressor
 
 
 # << ====================== Functions ====================== >>
@@ -40,6 +40,18 @@ def test_strategy_parameter():
     atom = ATOMClassifier(X, y)
     pytest.raises(TypeError, atom.feature_selection, strategy=True)
     pytest.raises(ValueError, atom.feature_selection, strategy='test')
+
+
+def test_solver_parameter():
+    ''' Assert that solver raises an error when left empty for sfm and rfe '''
+
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y, random_state=1)
+    pytest.raises(ValueError,  atom.feature_selection, strategy='sfm')
+
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y, random_state=1)
+    pytest.raises(ValueError,  atom.feature_selection, strategy='rfe')
 
 
 def test_max_features_parameter():
@@ -93,10 +105,13 @@ def test_remove_low_variance():
     ''' Assert that the remove_low_variance function works as intended '''
 
     X, y = load_df(load_breast_cancer())
-    X['test_column'] = 3  # Add column with minimum variance
+    X['test'] = 3  # Add column with minimum variance
+    X['test'].iloc[2] = 4  # Except one because of data cleaning at __init__
+
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.feature_selection(min_variance_frac=1., max_correlation=None)
+    atom.feature_selection(min_variance_frac=0.98, max_correlation=None)
     assert len(atom.X.columns) + 1 == len(X.columns)
+    assert atom._isScaled
 
 
 def test_collinear_attribute():
@@ -141,7 +156,7 @@ def test_univariate_attribute():
 
     # For regression tasks (different solver)
     X, y = load_df(load_boston())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMRegressor(X, y, random_state=1)
     atom.feature_selection(strategy='univariate')
     assert hasattr(atom, 'univariate')
 
@@ -163,7 +178,7 @@ def test_PCA_attribute():
     # For classification tasks
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.feature_selection(strategy='pca', max_features=2, solver=None)
+    atom.feature_selection(strategy='pca', max_features=0.8, solver=None)
     assert hasattr(atom, 'PCA')
 
     # For regression tasks (different solver)
@@ -287,7 +302,7 @@ def test_RFE_strategy():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.feature_selection(strategy='sfm',
+    atom.feature_selection(strategy='rfe',
                            solver=RandomForestClassifier(),
                            max_features=13,
                            max_correlation=None)

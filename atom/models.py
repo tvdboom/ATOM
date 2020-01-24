@@ -77,11 +77,11 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # << ============ Functions ============ >>
 
-def set_init(data, mapping, metric, pca, task, log,
+def set_init(data, mapping, metric, isScaled, task, log,
              n_jobs, verbose, random_state, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
-    if scaled and not pca:
+    if scaled and not isScaled:
         params = {'X': data['X_scaled'],
                   'X_train': data['X_train_scaled'],
                   'X_test': data['X_test_scaled']}

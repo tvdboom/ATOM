@@ -34,7 +34,8 @@ mbin = ['tn', 'fp', 'fn', 'tp', 'ap']
 mclass = ['accuracy', 'auc', 'mcc', 'f1', 'hamming', 'jaccard', 'logloss',
           'precision', 'recall']
 
-# List of pre-set regression metrics (no MSLE cause can't handle neg input)
+# List of pre-set regression metrics
+# No MSLE cause can't handle neg inputs (when data is normalized to mean 0)
 mreg = ['mae', 'max_error', 'mse', 'r2']
 
 
@@ -89,29 +90,34 @@ def test_models_attributes():
     assert atom.lr.longname == 'Logistic Regression'
 
 
-def test_models_and_metrics_functionality():
+def test_models_and_metrics_binary():
     ''' Assert that the fit method works with all models and metrics '''
 
-    # Binary classification
     X, y = load_df(load_breast_cancer())
-    for metric in mbin + mclass + [f1_score, recall_score]:
+    for met in mbin + mclass + [f1_score, recall_score]:
         for model in [m for m in model_list if m not in only_regression]:
             atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=metric, max_iter=1, init_points=1)
+            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
     assert 1 == 1  # Assert that all models ran wihtout errors
 
-    # Multiclass classification
+
+def test_models_and_metrics_multiclass():
+    ''' Assert that the fit method works with all models and metrics '''
+
     X, y = load_df(load_wine())
-    for metric in mclass:
+    for met in mclass:
         for model in [m for m in model_list if m not in only_regression]:
             atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=metric, max_iter=1, init_points=1)
+            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
     assert 2 == 2
 
-    # Regression
+
+def test_models_and_metrics_regression():
+    ''' Assert that the fit method works with all models and metrics '''
+
     X, y = load_df(load_boston())
-    for metric in mreg + [max_error]:
+    for met in mreg + [max_error]:
         for model in [m for m in model_list if m not in only_classification]:
             atom = ATOMRegressor(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=metric, max_iter=1, init_points=1)
+            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
     assert 3 == 3

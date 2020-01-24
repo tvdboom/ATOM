@@ -182,12 +182,37 @@ def test_filename_parameter():
 
 
 def test_creates_report():
-    ''' Assert that the report has been created '''
+    ''' Assert that the report has been created and saved'''
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.report(rows=10)
+    atom.report(rows=10, filename='report')
     assert hasattr(atom, 'report')
+
+
+# << ===================== Test scale ====================== >>
+
+def test_scale():
+    ''' Assert that the scale method normalizes the features '''
+
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y, random_state=1)
+    atom.scale()
+    assert atom.dataset.iloc[:, 1].mean() < 0.05  # Not exactly 0
+    assert atom.dataset.iloc[:, 1].std() < 3
+
+
+def test_already_scaled():
+    ''' Assert that the scale method does nothing when already scaled '''
+
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y, random_state=1)
+    atom.scale()
+
+    atom2 = ATOMClassifier(atom.X, atom.y, random_state=1)
+    X_already_scaled = atom2.X.copy()
+    atom2.scale()
+    assert atom2.X.equals(X_already_scaled)
 
 
 # << ================ Test _final_results ================== >>

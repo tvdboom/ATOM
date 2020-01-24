@@ -8,7 +8,7 @@ Email: m.524687@gmail.com
 
 [![Build Status](https://travis-ci.com/tvdboom/ATOM.svg?branch=master)](https://travis-ci.com/tvdboom/ATOM)
 [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
-[![Python 3.6|3.7](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
+[![Python 3.6|3.7|3.8](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
   
@@ -252,13 +252,13 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)
 		- 'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor) 
 	+ **metric: string or callable**  
-	Metric on which the pipeline fits the models. Choose from any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics) or use a score (or loss) function with signature `metric(y, y_pred, **kwargs)`.
+	Metric on which the pipeline fits the models. Choose from any of the metrics described [here](#Metrics) or use a score (or loss) function with signature `metric(y, y_pred, **kwargs)`.
 	+ **greater_is_better: bool, optional (default=True)**  
 	Wether the metric is a score function or a loss function, i.e. if True, a higher score is better and if False, lower is better. Will be ignored if the metric is one of the pre-defined (string) metrics. 
 	+ **needs_proba: bool, optional (default=False)**  
 	Whether the metric function requires predict_proba to get probability estimates out of a classifier. Will be ignored if the metric is one of the pre-defined (string) metrics.
 	+ **successive_halving: bool, optional (default=False)**  
-	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g: only using tree-based models).
+	Fit the pipeline using a successive halving approach, that is, fitting the model on 1/N of the data, where N stands for the number of models still in the pipeline. After this, the best half of the models are selected for the next iteration. This process is repeated until only one model is left. Since models perform quite differently depending on the size of the training set, we recommend to use this feature when fitting similar models (e.g. only using tree-based models).
 	+ **skip_iter: int, optional (default=0)**  
 	Skip n last iterations of the successive halving.
 	+ **max_iter: int, optional (default=15)**  
@@ -285,6 +285,8 @@ Methods (utilities)
 ----------------------------- 
 * **stats()**  
 Print out a list of basic statistics on the dataset.<br><br>
+* **scale()**  
+Scale all the features to mean=1 and std=0.<br><br>
 * **report(df='dataset', rows=None, filename=None)**  
 Get an extensive profile analysis of the data. The report is rendered in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets. Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 	+ **df: string, optional (default='dataset')**  
@@ -297,62 +299,26 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 If you change any of the class' data attributes (dataset, X, y, train, test, X_train, X_test, y_train, y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, y_train and y_test, or truth='train' will also update the test set, etc...
 	+ **truth: string, optional (default='dataset')**  
 	Data attribute that has been changed (as string)<br><br>
-* **plot_bagging(iteration=-1, title=None, figsize=None, filename=None)**  
+* **plot_bagging(iteration=-1, \*\*kwargs)**  
 Make a boxplot of the bagging's results after fitting the class.
 	+ **iteration: int, optional (default=-1)**  
-	Iteration of the successive_halving to plot. If -1, use the last iteration.
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: None or 2d-tuple, optional (default=None)**  
-	Figure size: format as (x, y). If None, adjusts to the number of models.
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_correlation(title=None, figsize=(10, 6), filename=None)**  
-Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_PCA(show=None, title=None, figsize=None, filename=None)**  
+	Iteration of the successive_halving to plot. If -1, use the last iteration.<br><br>
+* **plot_correlation(\*\*kwargs)**  
+Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.<br><br>
+* **plot_PCA(show=None, \*\*kwargs)**  
 Plot the explained variance ratio of the components. Only if PCA was applied on the dataset through the feature_selection method.
 	+ **show: int, optional (default=20)**  
-	Number of best components to show in the plot. None for all components.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=None)**  
-	Figure size: format as (x, y). If None, adjust to the number of components shown.
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_successive_halving(title=None, figsize=(10, 6), filename=None)**  
-Make a plot of the models' scores per iteration of the successive halving.
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
-Plot the ROC curve of all the models. Only for binary classification tasks.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
-Plot the precision-recall curve of all the models. Only for binary classification tasks.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g: `atom.precision()`. For a list of the available metrics click [here](https://github.com/tvdboom/ATOM#Metrics).**
+	Number of best components to show in the plot. None for all components.<br><br>
+* **plot_successive_halving(\*\*kwargs)**  
+Make a plot of the models' scores per iteration of the successive halving.<br><br>
+* **plot_ROC(\*\*kwargs)**  
+Plot the ROC curve of all the models. Only for binary classification tasks.<br><br>
+* **plot_PRC(\*\*kwargs)**  
+Plot the precision-recall curve of all the models. Only for binary classification tasks.<br><br>
+* **Additionnaly, you can call different metrics as methods of the main class to get the results of the fit method on this specific metric, e.g. `atom.precision()`. For a list of the available metrics click [here](#Metrics).**
 
 
-Class attributes  
+Attributes  
 -----------------------------  
 * **dataset**: Dataframe of the complete dataset.
 * **X, y**: Data features and target.
@@ -367,107 +333,38 @@ Class attributes
 * **results**: Dataframe (or list of dataframes if successive_halving=True) of the results.
 
 
-Class methods
------------------------------
-The plotting aesthetics can be changed using the following `@classmethods` (e.g. `ATOMClassifier.set_style('white')`):
-
-* **set_style(style='darkgrid')**  
-Change the seaborn plotting style.
-	+ **style: string, optional (default='darkgrid')**  
-	Name of the style to use. Possible values are: darkgrid, whitegrid, dark, white, and ticks.<br><br>
-* **set_palette(palette='GnBu_d')**  
-Change the seaborn color palette.
-	+ **palette: string, optional (default='GnBu_d')**  
-	Name of the palette to use. Click [here](https://seaborn.pydata.org/tutorial/color_palettes.html) for more information.<br><br>
-* **set_title_fontsize(fontsize=20)**  
-Change the fontsize of the plot's title.
-	+ **fontsize: int, optional (default=20)**  
-	Size of the font.<br><br>	
-* **set_label_fontsize(fontsize=16)**  
-Change the fontsize of the plot's labels and legends.
-	+ **fontsize: int, optional (default=16)**  
-	Size of the font.<br><br>	
-* **set_tick_fontsize(fontsize=12)**  
-Change the fontsize of the plot's ticks.
-	+ **fontsize: int, optional (default=12)**  
-	Size of the font.<br><br>	
-	
-
-### After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes. If successive_halving=True, the model subclass corresponds to the last fitted model.
-
-
 Subclass methods  
------------------------------  
-* **plot_threshold(metric=None, steps=100, title=None, figsize=(10, 6), filename=None)**  
+-----------------------------
+After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes, e.g. `atom.LGB.plot_confusion_matrix()`. If successive_halving=True, the model subclass corresponds to the last fitted model.
+  
+* **plot_threshold(metric=None, steps=100, \*\*kwargs)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
 	+ **metric: None, string, callable or list, optional (default=None)**  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
    	+ **steps: int, optional (default=100)**  
-    	Number of thresholds (steps) to plot.
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_probabilities(target=1, title=None, figsize=(10, 6), filename=None)**  
+    	Number of thresholds (steps) to plot.<br><br>
+* **plot_probabilities(target=1, \*\*kwargs)**  
 Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target: int or string, optional (default=1)**  
-	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_permutation_importance(show=20, n_repeats=10, title=None, figsize=None, filename=None)**  
+	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).<br><br>
+* **plot_permutation_importance(show=20, n_repeats=10, \*\*kwargs)**  
 Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
 	+ **n_repeats: int, optional (default=10)**  
 	Number of times to permute a feature.
 	+ **show: int, optional (default=20)**  
-	Number of best features to show in the plot. None for all features.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: None or 2d-tuple, optional (default=None)**  
-	Figure size: format as (x, y). If None, adjusts to the number of features shown.
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_feature_importance(show=None, title=None, figsize=None, filename=None)**  
+	Number of best features to show in the plot. None for all features.<br><br>
+* **plot_feature_importance(show=None, \*\*kwargs)**  
 Plot the normalized feature importance scores. Only works with tree based algorithms.
 	+ **show: int, optional (default=None)**  
-	Number of best features to show in the plot. None for all features.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: None or 2d-tuple, optional (default=None)**  
-	Figure size: format as (x, y). If None, adjusts to the number of features shown.
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_ROC(title=None, figsize=(10, 6), filename=None)**  
-Plot the ROC curve. Only for binary classification tasks.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_PRC(title=None, figsize=(10, 6), filename=None)**  
-Plot the precision-recall curve. Only for binary classification tasks.  
-	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
-* **plot_confusion_matrix(normalize=True, title=None, figsize=(10, 6), filename=None)**  
+	Number of best features to show in the plot. None for all features.<br><br>
+* **plot_ROC(\*\*kwargs)**  
+Plot the ROC curve. Only for binary classification tasks.<br><br>
+* **plot_PRC(\*\*kwargs)**  
+Plot the precision-recall curve. Only for binary classification tasks.<br><br>
+* **plot_confusion_matrix(normalize=True, \*\*kwargs)**  
 Plot the confusion matrix for the model. Only for classification tasks.
 	+ **normalize: bool, optional (default=True)**  
-	Wether to normalize the confusion matrix.
- 	+ **title: None or string, optional (default=None)**  
-	Plot's title. None for default title.
-	+ **figsize: 2d-tuple, optional (default=(10, 6))**  
-	Figure size: format as (x, y).
-	+ **filename: None or string, optional (default=None)**  
-	Name of the file when saved. None to not save anything.<br><br>
+	Wether to normalize the confusion matrix.<br><br>
 * **save(filename=None)**  
 Save the best found model as a pickle file.
 	 + **filename: None or string, optional (default=None)**  
@@ -491,11 +388,49 @@ Subclass attributes
 * **BO**: Dictionary containing the information of every step taken by the BO.
 	+ 'params': Parameters used for the model
 	+ 'score': Score of the chosen metric
-* **Any of the metrics described [here](https://github.com/tvdboom/ATOM#Metrics).**
+* **Any of the metrics described [here](#Metrics).**
+
+
+Plots
+-----------------------------  
+All plot methods contain the following parameters (on top of the plot-specific parameters explained in their respective documentation):
+
++ **title: None or string, optional (default=None)**  
+Plot's title. None for default title.
++ **figsize: 2d-tuple, optional (default=depends on plot)**  
+Figure size: format as (x, y).
++ **filename: None or string, optional (default=None)**  
+Name of the file when saved. None to not save anything.
++ **display: bool, optional (default=True)**  
+Wether to display the plot.<br><br>
+
+The plotting aesthetics can be customized with the use of the `@classmethods` described hereunder, e.g. `ATOMClassifier.set_style('white')`.
+
+* **set_style(style='darkgrid')**  
+Change the seaborn plotting style.
+	+ **style: string, optional (default='darkgrid')**  
+	Name of the style to use. Possible values are: darkgrid, whitegrid, dark, white, and ticks.<br><br>
+* **set_palette(palette='GnBu_d')**  
+Change the seaborn color palette.
+	+ **palette: string, optional (default='GnBu_d')**  
+	Name of the palette to use. Click [here](https://seaborn.pydata.org/tutorial/color_palettes.html) for more information.<br><br>
+* **set_title_fontsize(fontsize=20)**  
+Change the fontsize of the plot's title.
+	+ **fontsize: int, optional (default=20)**  
+	Size of the font.<br><br>	
+* **set_label_fontsize(fontsize=16)**  
+Change the fontsize of the plot's labels and legends.
+	+ **fontsize: int, optional (default=16)**  
+	Size of the font.<br><br>	
+* **set_tick_fontsize(fontsize=12)**  
+Change the fontsize of the plot's ticks.
+	+ **fontsize: int, optional (default=12)**  
+	Size of the font.
+
 
 Metrics
 -----------------------------  
-Some of the most common metrics are integrated in the ATOM class. They can be filled in the metric parameter of the fit method, called as method of the main class (e.g. `atom.rf.accuracy()`) and they are saved as attributes of every model subclass (e.g. `atom.rf.recall`). All metrics are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. The available metrics are:  
+Some of the most common metrics are integrated in the ATOM class. They can be filled in the metric parameter of the fit method, called as method of the main class, e.g. `atom.RF.accuracy()`, and they are saved as attributes of every model subclass, e.g. `atom.LDA.recall`. All metrics are calculated on the test set. For multiclass tasks, the type of averaging performed on the data is 'weighted'. The available metrics are:  
 * For binary classification tasks only:  
 	+ **tn** for the number of true negatives  
 	+ **fp** for the number of false positives  

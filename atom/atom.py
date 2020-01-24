@@ -20,7 +20,6 @@ import warnings
 import importlib
 
 # Sklearn
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
@@ -89,7 +88,7 @@ def params_to_log(f):
     return wrapper
 
 
-def conv_to_df(data, columns=None, pca=False):
+def to_df(data, columns=None, pca=False):
 
     '''
     DESCRIPTION -----------------------------------
@@ -103,17 +102,15 @@ def conv_to_df(data, columns=None, pca=False):
     pca     --> wether the columns need to be called Features or Components
 
     '''
-    if not isinstance(data, pd.DataFrame):
-        if columns is None and not pca:
-            columns = ['Feature ' + str(i) for i in range(len(data[0]))]
-        elif columns is None:
-            columns = ['Component ' + str(i) for i in range(len(data[0]))]
-        return pd.DataFrame(data, columns=columns)
-    else:
-        return data
+
+    if columns is None and not pca:
+        columns = ['Feature ' + str(i) for i in range(len(data[0]))]
+    elif columns is None:
+        columns = ['Component ' + str(i) for i in range(len(data[0]))]
+    return pd.DataFrame(data, columns=columns)
 
 
-def conv_to_series(data, name=None):
+def to_series(data, name=None):
 
     '''
     DESCRIPTION -----------------------------------
@@ -146,6 +143,12 @@ def raise_ValueError(param, value):
     ''' Raise ValueError for invalid parameter value '''
 
     raise ValueError(f'Invalid value for {param} parameter: {value}')
+
+
+def check_isFit(isFit):
+    if not isFit:
+        raise AttributeError('You need to fit the class before calling ' +
+                             'for a metric method!')
 
 
 # << ============ Classes ============ >>
@@ -190,7 +193,7 @@ class ATOM(object):
         if not isinstance(X, pd.DataFrame):
             if not isinstance(X, (np.ndarray, list)):
                 raise_TypeError('X', X)
-            X = conv_to_df(X)
+            X = to_df(X)
 
         # Convert array to dataframe and target column to pandas series
         if isinstance(y, (list, np.ndarray, pd.Series)):
@@ -207,7 +210,7 @@ class ATOM(object):
                 if y.ndim != 1:
                     raise ValueError('y should be a one-dimensional list, ' +
                                      f'array or pd.Series (y.ndim={y.ndim}).')
-                y = conv_to_series(y)
+                y = to_series(y)
 
             # Reset indices in case they are not in unison (else merge fails)
             X.reset_index(drop=True, inplace=True)
@@ -227,7 +230,7 @@ class ATOM(object):
             self.target = y
 
         elif y is None:
-            self.dataset = conv_to_df(X.reset_index(drop=True))
+            self.dataset = X.reset_index(drop=True)
             self.target = self.dataset.columns[-1]
 
         else:  # y is wrong type
@@ -235,7 +238,6 @@ class ATOM(object):
 
         # << ============ Check input parameters ============ >>
 
-        self._isfit = False  # Model has not been fitted yet
         if not isinstance(percentage, (int, float)):
             raise_TypeError('percentage', percentage)
         elif percentage <= 0 or percentage > 100:
@@ -271,6 +273,12 @@ class ATOM(object):
             np.random.seed(self.random_state)  # Set random seed
         else:
             self.random_state = random_state
+
+        # Check if features are already scaled
+        mean = self.dataset.mean(axis=1).mean()
+        std = self.dataset.std(axis=1).mean()
+        self._isScaled = True if mean < 0.05 and 0.5 < std < 1.5 else False
+        self._isFit = False  # Model has not been fitted yet
 
         prlog('<<=============== ATOM ===============>>', self, time=True)
 
@@ -461,6 +469,25 @@ class ATOM(object):
         self.X_test = self.test.drop(self.target, axis=1)
         self.y_test = self.test[self.target]
 
+    def scale(self, _check=True):
+        ''' Scale all features to mean=0 and std=1 '''
+
+        columns_x = self.X_train.columns
+
+        # Check if features are already scaled
+        if not self._isScaled:
+            if _check:
+                prlog('Scaling features...', self, 1)
+
+            scaler = StandardScaler()
+            self.X_train = to_df(scaler.fit_transform(self.X_train), columns_x)
+            self.X_test = to_df(scaler.transform(self.X_test), columns_x)
+            self.reset_attributes('X_train')
+            self._isScaled = True
+
+        elif _check:  # Inform the user
+            prlog('The features are already scaled!', self)
+
     def stats(self, _vb=None):
         ''' Print some information about the dataset '''
 
@@ -541,7 +568,7 @@ class ATOM(object):
         prlog('Creating profile report...', self, 1)
 
         self.report = ProfileReport(getattr(self, df).sample(rows))
-        try:  # Render if possible
+        try:  # Render if possible (for jupyter notebook)
             from IPython.display import display
             display(self.report)
         except Exception:
@@ -936,8 +963,8 @@ class ATOM(object):
                     prlog(f' --> Removing {diff} rows from class {key}.',
                           self, 2)
 
-        self.X_train = conv_to_df(self.X_train, columns=columns_x)
-        self.y_train = conv_to_series(self.y_train, name=self.target)
+        self.X_train = to_df(self.X_train, columns=columns_x)
+        self.y_train = to_series(self.y_train, name=self.target)
         self.train = merge(self.X_train, self.y_train)
         self.reset_attributes('train_test')
 
@@ -1103,7 +1130,8 @@ class ATOM(object):
             '''
             DESCRIPTION -----------------------------------
 
-            Removes featrues with too low variance.
+            Removes features with too low variance. Will automatically scale
+            the features if threshold variance > 0.
 
             PARAMETERS -------------------------------------
 
@@ -1112,14 +1140,19 @@ class ATOM(object):
 
             '''
 
+            # Calculate threshold variance as p*(1-p)
             threshold = min_variance_frac * (1. - min_variance_frac)
-            var = VarianceThreshold(threshold=threshold).fit(self.X)
-            mask = var.get_support()  # Get boolean mask of selected features
+
+            if threshold > 0:  # In this case: normalize the features
+                self.scale(_check=False)
+
+            self.var = VarianceThreshold(threshold=threshold).fit(self.X)
+            mask = self.var.get_support()  # Get bool mask of selected features
 
             for n, column in enumerate(self.X):
                 if not mask[n]:
-                    prlog(f' --> Feature {column} was removed due to' +
-                          f' low variance: {var.variances_[n]:.2f}.', self, 2)
+                    prlog(f' --> Feature {column} was removed due to low ' +
+                          f'variance: {self.var.variances_[n]:.2f}.', self, 2)
                     self.dataset.drop(column, axis=1, inplace=True)
 
         def remove_collinear(limit):
@@ -1251,14 +1284,14 @@ class ATOM(object):
         elif strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
+            self.scale(_check=False)  # Scale features (if not done already)
+
             # Define PCA
             solver = 'auto' if solver is None else solver
             self.PCA = PCA(n_components=max_features, svd_solver=solver)
-
-            # Create and apply pipeline with scaled features
-            pipe = make_pipeline(StandardScaler(), self.PCA).fit(self.X_train)
-            self.X_train = conv_to_df(pipe.transform(self.X_train), pca=True)
-            self.X_test = conv_to_df(pipe.transform(self.X_test), pca=True)
+            self.PCA.fit(self.X_train)
+            self.X_train = to_df(self.PCA.transform(self.X_train), pca=True)
+            self.X_test = to_df(self.PCA.transform(self.X_test), pca=True)
             self.reset_attributes('X_train')
 
         elif strategy.lower() == 'sfm':
@@ -1365,13 +1398,11 @@ class ATOM(object):
 
             # Loop over every independent model
             for model in loop:
-                # If PCA was applied, the data doesn't need to be scaled
-                pca = True if hasattr(self, 'PCA') else False
                 # Define model class
                 setattr(self, model, eval(model)(self.data,
                                                  self.mapping,
                                                  self.metric,
-                                                 pca,
+                                                 self._isScaled,
                                                  self.task,
                                                  self.log,
                                                  self.n_jobs,
@@ -1527,8 +1558,7 @@ class ATOM(object):
 
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
-            # If PCA was performed, features are already scaled
-            if scale and not hasattr(self, 'PCA'):
+            if scale and not self._isScaled:
                 # Normalize features to mean=0, std=1
                 scaler = StandardScaler()
                 data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
@@ -1538,7 +1568,7 @@ class ATOM(object):
 
                 # Convert np.array to pd.DataFrame for all scaled features
                 for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
-                    data[set_] = conv_to_df(data[set_], self.X.columns)
+                    data[set_] = to_df(data[set_], self.X.columns)
 
             return data
 
@@ -1610,7 +1640,7 @@ class ATOM(object):
             self.plot_bo = bool(plot_bo)
         if not isinstance(cv, int):
             raise_TypeError('cv', cv)
-        elif batch_size < 1:
+        elif cv < 1:
             raise_ValueError('cv', cv)
         else:
             self.cv = cv
@@ -1771,17 +1801,109 @@ class ATOM(object):
                 self.models = n.copy()
                 iteration += 1
 
-            self._isfit = True
+            self._isFit = True
 
         else:
             self.data = data_preparation()
             self.results = run_iteration(self)
-            self._isfit = True
+            self._isFit = True
 
-    # <====================== Utility methods ======================>
+    # <======================= Plot methods =======================>
 
-    def plot_bagging(self, iteration=-1,
-                     title=None, figsize=None, filename=None):
+    def plot_correlation(self, title=None,
+                         figsize=(10, 10), filename=None, display=True):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot the feature's correlation matrix. Ignores non-numeric columns.
+
+        PARAMETERS -------------------------------------
+
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+        display  --> wether to display the plot
+
+        '''
+
+        # Compute the correlation matrix
+        corr = self.dataset.corr()
+        # Drop first row and last column (diagonal line)
+        corr = corr.iloc[1:].drop(self.dataset.columns[-1], axis=1)
+
+        # Generate a mask for the upper triangle
+        # k=1 means keep outermost diagonal line
+        mask = np.zeros_like(corr, dtype=np.bool)
+        mask[np.triu_indices_from(mask, k=1)] = True
+
+        sns.set_style('white')  # Only for this plot
+        fig, ax = plt.subplots(figsize=figsize)
+
+        # Draw the heatmap with the mask and correct aspect ratio
+        cmap = sns.diverging_palette(220, 10, as_cmap=True)
+        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
+                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
+
+        title = 'Feature correlation matrix' if title is None else title
+        plt.title(title, fontsize=ATOM.title_fs, pad=12)
+        fig.tight_layout()
+        sns.set_style(ATOM.style)  # Set back to originals style
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show() if display else plt.close()
+
+    def plot_PCA(self, show=None, title=None,
+                 figsize=None, filename=None, display=True):
+
+        '''
+        DESCRIPTION -----------------------------------
+
+        Plot the explained variance ratio of the components. Only if PCA
+        was applied on the dataset through the feature_selection method.
+
+        PARAMETERS -------------------------------------
+
+        show     --> number of components to show in the plot. None for all
+        title    --> plot's title. None for default title
+        figsize  --> figure size: format as (x, y)
+        filename --> name of the file to save
+        display  --> wether to display the plot
+
+        '''
+
+        if not hasattr(self, 'PCA'):
+            raise AttributeError('This plot is only availbale if you apply ' +
+                                 'PCA on the dataset through the ' +
+                                 'feature_selection method!')
+
+        # Set parameters
+        var = np.array(self.PCA.explained_variance_ratio_)
+        if show is None or show > len(var):
+            show = len(var)
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show/2))
+
+        scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
+
+        fig, ax = plt.subplots(figsize=figsize)
+        scr.plot.barh(label=f'Total variance retained: {round(var.sum(), 3)}')
+        for i, v in enumerate(scr):
+            ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=ATOM.tick_fs)
+
+        plt.title('Explained variance ratio', fontsize=ATOM.title_fs, pad=12)
+        plt.legend(loc='lower right', fontsize=ATOM.label_fs)
+        plt.xlabel('Variance ratio', fontsize=ATOM.label_fs, labelpad=12)
+        plt.ylabel('Components', fontsize=ATOM.label_fs, labelpad=12)
+        plt.xticks(fontsize=ATOM.tick_fs)
+        plt.yticks(fontsize=ATOM.tick_fs)
+        plt.tight_layout()
+        if filename is not None:
+            plt.savefig(filename)
+        plt.show() if display else plt.close()
+
+    def plot_bagging(self, iteration=-1, title=None,
+                     figsize=None, filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1794,13 +1916,14 @@ class ATOM(object):
         title     --> plot's title. None for default title
         figsize   --> figure size: format as (x, y)
         filename  --> name of the file to save
+        display   --> wether to display the plot
 
         '''
 
         def raise_exception():
             raise AttributeError('You need to fit the class using bagging ' +
                                  'before calling the boxplot method!')
-        if not self._isfit:
+        if not self._isFit:
             raise_exception()
 
         if self.bagging is None:
@@ -1833,10 +1956,10 @@ class ATOM(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_successive_halving(self, title=None,
-                                figsize=(10, 6), filename=None):
+    def plot_successive_halving(self, title=None, figsize=(10, 6),
+                                filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1848,6 +1971,7 @@ class ATOM(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -1856,7 +1980,7 @@ class ATOM(object):
                                  'successive halving approach before ' +
                                  'calling the plot_successive_halving method!')
 
-        if not self._isfit:
+        if not self._isFit:
             raise_exception()
 
         if not self.successive_halving:
@@ -1891,50 +2015,10 @@ class ATOM(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_correlation(self, title=None, figsize=(10, 10), filename=None):
-
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot the feature's correlation matrix. Ignores non-numeric columns.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-
-        '''
-
-        # Compute the correlation matrix
-        corr = self.dataset.corr()
-        # Drop first row and last column (diagonal line)
-        corr = corr.iloc[1:].drop(self.dataset.columns[-1], axis=1)
-
-        # Generate a mask for the upper triangle
-        # k=1 means keep outermost diagonal line
-        mask = np.zeros_like(corr, dtype=np.bool)
-        mask[np.triu_indices_from(mask, k=1)] = True
-
-        sns.set_style('white')  # Only for this plot
-        fig, ax = plt.subplots(figsize=figsize)
-
-        # Draw the heatmap with the mask and correct aspect ratio
-        cmap = sns.diverging_palette(220, 10, as_cmap=True)
-        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
-                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
-
-        title = 'Feature correlation matrix' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        fig.tight_layout()
-        sns.set_style(ATOM.style)  # Set back to originals style
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show()
-
-    def plot_ROC(self, title=None, figsize=(10, 6), filename=None):
+    def plot_ROC(self, title=None, figsize=(10, 6),
+                 filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1946,6 +2030,7 @@ class ATOM(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -1953,7 +2038,7 @@ class ATOM(object):
             raise ValueError('This method only works for binary ' +
                              'classification tasks!')
 
-        if not self._isfit:
+        if not self._isFit:
             raise AttributeError('You need to fit the class before calling ' +
                                  'the plot_ROC method!')
 
@@ -1980,9 +2065,10 @@ class ATOM(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
+        plt.show() if display else plt.close()
 
-    def plot_PRC(self, title=None, figsize=(10, 6), filename=None):
+    def plot_PRC(self, title=None, figsize=(10, 6),
+                 filename=None, display=True):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1994,6 +2080,7 @@ class ATOM(object):
         title    --> plot's title. None for default title
         figsize  --> figure size: format as (x, y)
         filename --> name of the file to save
+        display  --> wether to display the plot
 
         '''
 
@@ -2001,7 +2088,7 @@ class ATOM(object):
             raise ValueError('This method only works for binary ' +
                              'classification tasks!')
 
-        if not self._isfit:
+        if not self._isFit:
             raise AttributeError('You need to fit the class before calling ' +
                                  'the plot_PRC method!')
 
@@ -2026,52 +2113,7 @@ class ATOM(object):
         plt.tight_layout()
         if filename is not None:
             plt.savefig(filename)
-        plt.show()
-
-    def plot_PCA(self, show=None, title=None, figsize=None, filename=None):
-
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot the explained variance ratio of the components. Only if PCA
-        was applied on the dataset through the feature_selection method.
-
-        PARAMETERS -------------------------------------
-
-        show     --> number of components to show in the plot. None for all
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-
-        '''
-
-        if not hasattr(self, 'PCA'):
-            raise ValueError('This plot is only availbale if you apply ' +
-                             'PCA on the dataset through the ' +
-                             'feature_selection method!')
-
-        # Set parameters
-        var = np.array(self.PCA.explained_variance_ratio_)
-        if show is None or show > len(var):
-            show = len(var)
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show/2))
-
-        scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
-
-        fig, ax = plt.subplots(figsize=figsize)
-        scr.plot.barh(label=f'Total variance retained: {round(var.sum(), 3)}')
-        for i, v in enumerate(scr):
-            ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=ATOM.tick_fs)
-
-        plt.title('Explained variance ratio', fontsize=ATOM.title_fs, pad=12)
-        plt.legend(loc='lower right', fontsize=ATOM.label_fs)
-        plt.xlabel('Variance ratio', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel('Components', fontsize=ATOM.label_fs, labelpad=12)
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
-        plt.show()
+        plt.show() if display else plt.close()
 
     # <====================== Metric methods ======================>
 
@@ -2087,10 +2129,6 @@ class ATOM(object):
         metric --> string of the metric attribute in self.metric
 
         '''
-
-        if not self._isfit:
-            raise AttributeError('You need to fit the class before calling ' +
-                                 'for a metric method!')
 
         try:
             # Get max length of the models' names
@@ -2130,60 +2168,79 @@ class ATOM(object):
                       .format(name, lenx, score, width, metric.dec), self)
 
     def tn(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.tn)
 
     def fp(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.fp)
 
     def fn(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.fn)
 
     def tp(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.tp)
 
     def accuracy(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.accuracy)
 
     def ap(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.ap)
 
     def auc(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.auc)
 
     def mae(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.mae)
 
     def max_error(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.max_error)
 
     def mcc(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.mcc)
 
     def mse(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.mse)
 
     def msle(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.msle)
 
     def f1(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.f1)
 
     def hamming(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.hamming)
 
     def jaccard(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.jaccard)
 
     def logloss(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.logloss)
 
     def precision(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.precision)
 
     def r2(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.r2)
 
     def recall(self):
+        check_isFit(self._isFit)
         self._final_results(self.metric.recall)
 
     # <============ Classmethods for plot settings ============>

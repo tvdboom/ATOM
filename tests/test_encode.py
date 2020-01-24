@@ -54,18 +54,28 @@ def test_frac_to_other():
 
 # << ================ Test encoding types ================ >>
 
+def test_label_encoder_target_column():
+    ''' Assert that the label-encoder for the target column works '''
+
+    y = ['a', 'b', 'a', 'b']
+    atom = ATOMClassifier(X_dim4, y, random_state=1)
+    assert np.all((atom.y == 0) | (atom.y == 1))
+
+
 def test_label_encoder():
     ''' Assert that the label-encoder works as intended '''
 
-    y = ['a', 'b', 'a', 'b']
-    atom = ATOMClassifier(X_dim4, y)
-    assert np.all((atom.y == 0) | (atom.y == 1))
+    X = [['y', 0, 1], ['y', 3, 4], ['n', 2, 7], ['n', 9, 10]]
+    atom = ATOMClassifier(X, y_dim4, random_state=1)
+    atom.encode(max_onehot=None)
+    col = atom.dataset['Feature 0']
+    assert np.all((col == 0) | (col == 1))
 
 
 def test_one_hot_encoder():
     ''' Assert that the one-hot-encoder works as intended '''
 
-    atom = ATOMClassifier(X_dim10, y_dim10)
+    atom = ATOMClassifier(X_dim10, y_dim10, random_state=1)
     atom.encode(max_onehot=4)
     assert 'Feature 2_c' in atom.dataset.columns
 
