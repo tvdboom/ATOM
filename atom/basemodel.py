@@ -632,7 +632,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
-    def plot_permutation_importance(self, show=20, n_repeats=10, title=None,
+    def plot_permutation_importance(self, show=None, n_repeats=10, title=None,
                                     figsize=None, filename=None, display=True):
 
         '''
