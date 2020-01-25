@@ -106,7 +106,7 @@ def test_metrics_binary():
     X, y = load_df(load_breast_cancer())
     for metric in mbin + mreg:
         atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-        atom.fit(models='tree', metric=metric, max_iter=0, init_points=1, cv=1)
+        atom.fit(models='tree', metric=metric, max_iter=0)
     assert 2 == 2  # Assert that all models ran wihtout errors
 
 
@@ -124,9 +124,9 @@ def test_metrics_multiclass():
     ''' Assert that the fit method works with all metrics for multiclass'''
 
     X, y = load_df(load_wine())
-    for metric in mclass + mreg:
+    for metric in mclass + mreg + [f1_score]:
         atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-        atom.fit(models='pa', metric=metric, max_iter=0, init_points=1, cv=1)
+        atom.fit(models='pa', metric=metric, max_iter=0)
     assert 4 == 4
 
 
@@ -146,5 +146,5 @@ def test_metrics_regression():
     X, y = load_df(load_boston())
     for metric in mreg:
         atom = ATOMRegressor(X, y, n_jobs=-1, random_state=1)
-        atom.fit(models='tree', metric=metric, max_iter=0, init_points=1, cv=1)
+        atom.fit(models='tree', metric=metric, max_iter=0)
     assert 6 == 6
