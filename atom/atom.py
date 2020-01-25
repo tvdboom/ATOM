@@ -496,6 +496,8 @@ class ATOM(object):
 
         prlog('\nDataset stats ===================>', self, _vb)
         prlog(f'Shape: {self.dataset.shape}', self, _vb)
+        prlog(f'Missing values: {self.dataset.isna().sum().sum()}', self, _vb)
+        prlog(f'Data is scaled: {self._isScaled}', self, _vb)
         prlog('----------------------------------', self, _vb)
         prlog('Size of training set: {}\nSize of test set: {}'
               .format(len(self.train), len(self.test)), self, _vb)

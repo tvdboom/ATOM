@@ -14,7 +14,7 @@ install:
   - pip install -r requirements.txt
 # Command to run tests
 # travis_wait because some tests take longer than 10min
-script: travis_wait 150 coverage run -m pytest
+script: travis_wait 50 coverage run -m pytest  # Max 50min run
 # Submit coverage
 after_success:
   - codecov

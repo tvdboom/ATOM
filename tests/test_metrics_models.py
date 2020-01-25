@@ -10,7 +10,7 @@ Description: Unit tests for the models and pre-set metrics available.
 # Import packages
 import numpy as np
 import pandas as pd
-from sklearn.metrics import f1_score, recall_score, max_error
+from sklearn.metrics import f1_score, max_error
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
 
@@ -90,34 +90,61 @@ def test_models_attributes():
     assert atom.lr.longname == 'Logistic Regression'
 
 
-def test_models_and_metrics_binary():
-    ''' Assert that the fit method works with all models and metrics '''
+def test_models_binary():
+    ''' Assert that the fit method works with all models for binary '''
 
     X, y = load_df(load_breast_cancer())
-    for met in mbin + mclass + [f1_score, recall_score]:
-        for model in [m for m in model_list if m not in only_regression]:
-            atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
+    for model in [m for m in model_list if m not in only_regression]:
+        atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models=model, metric='auc', max_iter=1, init_points=1, cv=1)
     assert 1 == 1  # Assert that all models ran wihtout errors
 
 
-def test_models_and_metrics_multiclass():
-    ''' Assert that the fit method works with all models and metrics '''
+def test_metrics_binary():
+    ''' Assert that the fit method works with all metrics for binary '''
+
+    X, y = load_df(load_breast_cancer())
+    for metric in mbin + mreg:
+        atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models='tree', metric=metric, max_iter=0, init_points=1, cv=1)
+    assert 2 == 2  # Assert that all models ran wihtout errors
+
+
+def test_models_multiclass():
+    ''' Assert that the fit method works with all models for multiclass'''
 
     X, y = load_df(load_wine())
-    for met in mclass:
-        for model in [m for m in model_list if m not in only_regression]:
-            atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
-    assert 2 == 2
+    for model in [m for m in model_list if m not in only_regression]:
+        atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models=model, metric='f1', max_iter=1, init_points=1, cv=1)
+    assert 3 == 3
 
 
-def test_models_and_metrics_regression():
-    ''' Assert that the fit method works with all models and metrics '''
+def test_metrics_multiclass():
+    ''' Assert that the fit method works with all metrics for multiclass'''
+
+    X, y = load_df(load_wine())
+    for metric in mclass + mreg:
+        atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models='pa', metric=metric, max_iter=0, init_points=1, cv=1)
+    assert 4 == 4
+
+
+def test_models_regression():
+    ''' Assert that the fit method works with all models for regression '''
 
     X, y = load_df(load_boston())
-    for met in mreg + [max_error]:
-        for model in [m for m in model_list if m not in only_classification]:
-            atom = ATOMRegressor(X, y, n_jobs=-1, random_state=1)
-            atom.fit(models=model, metric=met, max_iter=1, init_points=1, cv=1)
-    assert 3 == 3
+    for model in [m for m in model_list if m not in only_classification]:
+        atom = ATOMRegressor(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models=model, metric='mse', max_iter=1, init_points=1, cv=1)
+    assert 5 == 5
+
+
+def test_metrics_regression():
+    ''' Assert that the fit method works with all metrics for regression '''
+
+    X, y = load_df(load_boston())
+    for metric in mreg:
+        atom = ATOMRegressor(X, y, n_jobs=-1, random_state=1)
+        atom.fit(models='tree', metric=metric, max_iter=0, init_points=1, cv=1)
+    assert 6 == 6
