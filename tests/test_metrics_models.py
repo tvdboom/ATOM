@@ -104,7 +104,7 @@ def test_metrics_binary():
     ''' Assert that the fit method works with all metrics for binary '''
 
     X, y = load_df(load_breast_cancer())
-    for metric in mbin + mreg:
+    for metric in mbin + mreg + [f1_score]:
         atom = ATOMClassifier(X, y, random_state=1)
         atom.fit(models='tree', metric=metric, max_iter=0)
     assert 2 == 2  # Assert that all models ran wihtout errors
@@ -124,7 +124,7 @@ def test_metrics_multiclass():
     ''' Assert that the fit method works with all metrics for multiclass'''
 
     X, y = load_df(load_wine())
-    for metric in mclass + mreg + [f1_score]:
+    for metric in mclass + mreg:
         atom = ATOMClassifier(X, y, random_state=1)
         atom.fit(models='pa', metric=metric, max_iter=0)
     assert 4 == 4
