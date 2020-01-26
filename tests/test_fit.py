@@ -299,14 +299,14 @@ def test_lower_case_model_attribute():
     assert atom.Tree == atom.tree
 
 
-def test_plot_bo():
-    ''' Assert that plot_bo works as intended '''
-
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
-    atom.fit(models='tree', metric='f1',
-             max_iter=15, init_points=10, plot_bo=True)
-    assert 1 == 1  # Test it ran correctly
+#def test_plot_bo():
+#    ''' Assert that plot_bo works as intended '''
+#
+#    X, y = load_df(load_breast_cancer())
+#    atom = ATOMClassifier(X, y, random_state=1)
+#    atom.fit(models='tree', metric='f1',
+#             max_iter=15, init_points=10, plot_bo=True)
+#    assert 1 == 1  # Test it ran correctly
 
 
 def test_different_cv_values():
