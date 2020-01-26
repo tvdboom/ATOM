@@ -144,9 +144,9 @@ def test_log_parameter():
     pytest.raises(TypeError, ATOMClassifier, X, y, log=3)
 
     # Writes to file
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y, log='log_file')
-    assert atom.log.endswith('.txt')
+#    X, y = load_breast_cancer(return_X_y=True)
+#    atom = ATOMClassifier(X, y, log='log_file')
+#    assert atom.log.endswith('.txt')
 
 
 def test_warnings_parameter():

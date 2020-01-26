@@ -496,8 +496,15 @@ class ATOM(object):
 
         prlog('\nDataset stats ===================>', self, _vb)
         prlog(f'Shape: {self.dataset.shape}', self, _vb)
-        prlog(f'Missing values: {self.dataset.isna().sum().sum()}', self, _vb)
-        prlog(f'Data is scaled: {self._isScaled}', self, _vb)
+
+        nans = self.dataset.isna().sum().sum()
+        if nans > 0:
+            prlog(f'Missing values: {nans}', self, _vb)
+        categ = self.X.select_dtypes(include=['category', 'object']).shape[1]
+        if categ > 0:
+            prlog(f'Categorical columns: {categ}', self, _vb)
+
+        prlog(f'Scaled: {self._isScaled}', self, _vb)
         prlog('----------------------------------', self, _vb)
         prlog('Size of training set: {}\nSize of test set: {}'
               .format(len(self.train), len(self.test)), self, _vb)

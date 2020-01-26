@@ -241,9 +241,9 @@ def test_plot_confusion_matrix():
     assert 1 == 1
 
 
-def test_save():
-    ''' Assert that the save method work as intended '''
-
-    atom = ATOMClassifier(X_class, y_class)
-    atom.fit('tree', 'f1', max_iter=0)
-    atom.tree.save()
+#def test_save():
+#    ''' Assert that the save method work as intended '''
+#
+#    atom = ATOMClassifier(X_class, y_class)
+#    atom.fit('tree', 'f1', max_iter=0)
+#    atom.tree.save()

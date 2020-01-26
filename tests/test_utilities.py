@@ -186,7 +186,7 @@ def test_creates_report():
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.report(rows=10, filename='report')
+    atom.report(rows=10)  #, filename='report')
     assert hasattr(atom, 'report')
 
 
