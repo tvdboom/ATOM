@@ -363,3 +363,17 @@ def test_bagging():
     atom = ATOMClassifier(X, y, random_state=1)
     atom.fit(models='tree', metric='f1', max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.Tree, 'bagging_scores')
+
+
+def test_winner_attribute():
+    ''' Assert that the best model is attached to the winner attribute '''
+
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y, random_state=1)
+    atom.fit(['lr', 'tree', 'lgb'], 'f1', max_iter=0)
+    assert atom.winner.name == 'LGB'
+
+    X, y = load_df(load_boston())
+    atom = ATOMRegressor(X, y, random_state=1)
+    atom.fit(['br', 'ols', 'tree'], 'max_error', max_iter=0)
+    assert atom.winner.name == 'Tree'

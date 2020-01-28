@@ -86,7 +86,7 @@ API
 ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances. Usually the case for IDs, names, etc...), remove features with all the same value, removing duplicate rows and remove rows with missing values in the target column.  
 	+ **X: list, np.array or pd.DataFrame**  
 	Data features with shape=(n_samples, n_features).
-	+ **y: None, string, list, np.array or pd.Series, optional (default=None)**  
+	+ **y: string, list, np.array, pd.Series or None, optional (default=None)**  
 		- If None: the last column of X is selected as target column
 		- If string: name of the target column in X (X has to be a pd.DataFrame)
 		- Else: data target column with shape=(n_samples,)
@@ -94,7 +94,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 	Percentage of the data to use.
 	+ **test_size: float, optional (default=0.3)**  
 	Split ratio of the train and test set.
-	+ **log: None or string, optional (default=None)**  
+	+ **log: string or None, optional (default=None)**  
 	Name of the log file. None to not save any log.
 	+ **n_jobs: int, optional (default=1)**  
 	Number of cores to use for parallel processing.
@@ -108,9 +108,9 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 		+ 1 to print minimum information
 		+ 2 to print average information
 		+ 3 to print maximum information
-	+ **random_state: None or int, optional (default=None)**  
+	+ **random_state: int or None, optional (default=None)**  
 	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.<br><br>
-* **ATOMRegressor(X, y=None, target=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
+* **ATOMRegressor(X, y=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
 ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
 
@@ -144,7 +144,7 @@ Handle missing values according to the selected strategy. Also removes rows and 
 	List of values to consider as missing. None, np.nan, np.inf and -np.inf are always imputed since they are incompatible with the models.<br><br>
 * **encode(max_onehot=10, frac_to_other=0)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
-	+ **max_onehot: None or int, optional (default=10)**  
+	+ **max_onehot: int or None, optional (default=10)**  
 	Maximum number of unique values in a feature to perform one-hot-encoding. If None, it will never perform one-hot-encoding.  
 	+ **frac_to_other: float, optional (default=0)**  
 	Classes with less instances than n_rows * frac_to_other are replaced with 'other'.<br><br>
@@ -156,7 +156,7 @@ Remove outliers from the training set.
 	Wether to include the target column when searching for outliers.<br><br>
 * **balance(oversample=None, undersample=None, n_neighbors=5)**  
 Balance the number of instances per target class. Only for classification tasks. Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html).
-	+ **oversample: None, float or string, optional (default=None)**  
+	+ **oversample: float, string or None, optional (default=None)**  
 	Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html#imblearn.over_sampling.ADASYN). Choose from:
 		- None: do not perform oversampling
 		- float: fraction minority/majority (only for binary classification)
@@ -164,7 +164,7 @@ Balance the number of instances per target class. Only for classification tasks.
 		- 'not minority': resample all but minority class
 		- 'not majority': resample all but majority class
 		- 'all': resample all classes
-	+ **undersample: None, float or string, optional (default=None)**  
+	+ **undersample: float, string or None, optional (default=None)**  
 	Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html) methods. Choose from:
 		- None: do not perform undersampling
 		- float: fraction minority/majority (only for binary classification)
@@ -184,14 +184,14 @@ Use a genetic algorithm to create new combinations of existing features and add 
 	Number of entities in each generation.<br><br>
 * **feature_selection(strategy=None, solver=None, max_features=None, threshold=-np.inf, min_variance_frac=1., max_correlation=0.98)**  
 Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
-	+ **strategy: None or string, optional (default=None)**  
+	+ **strategy: string or None, optional (default=None)**  
 	Feature selection strategy to use. Choose from:
 		- None: do not perform any feature selection algorithm (it does still look for multicollinearity and variance)
 		- 'univariate': perform a univariate statistical test
 		- 'PCA': perform a principal component analysis
 		- 'SFM': select best features from an existing model
 		- 'RFE': recursive feature eliminator
-	+ **solver: None, string or callable (default=None)**  
+	+ **solver: string, callable or None (default=None)**  
 	Solver or model to use for the feature selection strategy. See the sklearn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
 		- for 'univariate', choose from:
 			* 'f_classif' (default for classification tasks)
@@ -207,7 +207,7 @@ Select best features according to the selected strategy. Ties between features w
 			* 'randomized'
 		- for 'SFM': choose a base estimator from which the transformer is built. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
 		- for 'RFE': choose a supervised learning estimator. The estimator must have either a feature_importances_ or coef_ attribute after fitting. This parameter has no default option.
-	+ **max_features: None, int or float, optional (default=None)**  
+	+ **max_features: int, float or None, optional (default=None)**  
 	Number of features to select.
 		- None: select all features
 		- if >= 1: number of features to select
@@ -216,9 +216,9 @@ Select best features according to the selected strategy. Ties between features w
 	Threshold value to attain when selecting the best features (only for strategy='SFM'). Features whose importance is greater or equal are kept while the others are discarded.
 		- if 'mean': set the mean of feature_importances as threshold
 		- if 'median': set the median of feature_importances as threshold
-	+ **min_variance_frac: None or float, optional (default=1.)**  
+	+ **min_variance_frac: float or None, optional (default=1.)**  
 	Remove features with the same value in at least this fraction of the total. The default is to keep all features with non-zero variance, i.e. remove the features that have the same value in all samples. None to skip this step.
-	+ **max_correlation: None or float, optional (default=0.98)**  
+	+ **max_correlation: float or None, optional (default=0.98)**  
 	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
 * **fit(models, metric, greater_is_better=True, needs_proba=False, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to evaluate the robustness of the model's performance on the test set applying a bagging algorithm.
@@ -277,7 +277,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 	Strategy to fit and score the model selected after every step of the BO.
 		- if 1, randomly split the training data into a train and validation set
 		- if >1, perform a k-fold cross validation on the training set
-	+ **bagging: None or int, optional (default=None)**  
+	+ **bagging: int or None, optional (default=None)**  
 	Number of data sets (bootstrapped from the training set) to use in the bagging algorithm. If None, no bagging is performed.
 
 
@@ -291,9 +291,9 @@ Scale all the features to mean=1 and std=0.<br><br>
 Get an extensive profile analysis of the data. The report is rendered in HTML5 and CSS3 and can be accessed through the `report` attribute. Note that this method can be very slow for large datasets. Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 	+ **df: string, optional (default='dataset')**  
 	Name of the data class attribute to get the report from.
-	+ **rows: None or int, optional (default=None)**  
+	+ **rows: int or None, optional (default=None)**  
 	Number of rows selected randomly from the dataset to perform the analysis on. None to select all rows.
-	+ **filename: None or string, optional (default=None)**  
+	+ **filename: string or None, optional (default=None)**  
 	Name of the file when saved (as .html). None to not save anything.<br><br>
 * **reset_attributes(truth='dataset')**  
 If you change any of the class' data attributes (dataset, X, y, train, test, X_train, X_test, y_train, y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, y_train and y_test, or truth='train' will also update the test set, etc...
@@ -307,7 +307,7 @@ Make a boxplot of the bagging's results after fitting the class.
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.<br><br>
 * **plot_PCA(show=None, \*\*kwargs)**  
 Plot the explained variance ratio of the components. Only if PCA was applied on the dataset through the feature_selection method.
-	+ **show: int, optional (default=20)**  
+	+ **show: int or None, optional (default=None)**  
 	Number of best components to show in the plot. None for all components.<br><br>
 * **plot_successive_halving(\*\*kwargs)**  
 Make a plot of the models' scores per iteration of the successive halving.<br><br>
@@ -330,6 +330,7 @@ Attributes
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
 * **collinear**: Dataframe of the collinear features and their correlation values (if feature_selection was used).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
+* **winner**: Model subclass that performed best after fit.
 * **results**: Dataframe (or list of dataframes if successive_halving=True) of the results.
 
 
@@ -339,7 +340,7 @@ After fitting, the models become subclasses of the main class. They can be calle
   
 * **plot_threshold(metric=None, steps=100, \*\*kwargs)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
-	+ **metric: None, string, callable or list, optional (default=None)**  
+	+ **metric: string, callable, list or None, optional (default=None)**  
 	Metric(s) to plot. If None, the selected metric will be the one chosen to fit the model.
    	+ **steps: int, optional (default=100)**  
     	Number of thresholds (steps) to plot.<br><br>
@@ -347,15 +348,15 @@ Plot performance metrics against multiple threshold values. If None, the metric 
 Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
 	+ **target: int or string, optional (default=1)**  
 	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).<br><br>
-* **plot_permutation_importance(show=20, n_repeats=10, \*\*kwargs)**  
+* **plot_permutation_importance(show=None, n_repeats=10, \*\*kwargs)**  
 Plot the feature importance permutation scores in a boxplot. A dictionary containing the permutation's results can be accessed through the `permutations` attribute.
+	+ **show: int or None, optional (default=None)**  
+	Number of best features to show in the plot. None for all features.
 	+ **n_repeats: int, optional (default=10)**  
-	Number of times to permute a feature.
-	+ **show: int, optional (default=20)**  
-	Number of best features to show in the plot. None for all features.<br><br>
+	Number of times to permute a feature.<br><br>
 * **plot_feature_importance(show=None, \*\*kwargs)**  
 Plot the normalized feature importance scores. Only works with tree based algorithms.
-	+ **show: int, optional (default=None)**  
+	+ **show: int or None, optional (default=None)**  
 	Number of best features to show in the plot. None for all features.<br><br>
 * **plot_ROC(\*\*kwargs)**  
 Plot the ROC curve. Only for binary classification tasks.<br><br>
@@ -367,7 +368,7 @@ Plot the confusion matrix for the model. Only for classification tasks.
 	Wether to normalize the confusion matrix.<br><br>
 * **save(filename=None)**  
 Save the best found model as a pickle file.
-	 + **filename: None or string, optional (default=None)**  
+	 + **filename: string or None, optional (default=None)**  
 	Name of the file when saved. If None, it will be saved as 'ATOM_[model_type].pkl'.
 
 
@@ -395,11 +396,11 @@ Plots
 -----------------------------  
 All plot methods contain the following parameters (on top of the plot-specific parameters explained in their respective documentation):
 
-+ **title: None or string, optional (default=None)**  
++ **title: string or None, optional (default=None)**  
 Plot's title. None for default title.
 + **figsize: 2d-tuple, optional (default=depends on plot)**  
 Figure size: format as (x, y).
-+ **filename: None or string, optional (default=None)**  
++ **filename: string or None, optional (default=None)**  
 Name of the file when saved. None to not save anything.
 + **display: bool, optional (default=True)**  
 Wether to display the plot.<br><br>

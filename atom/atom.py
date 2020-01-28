@@ -1484,7 +1484,7 @@ class ATOM(object):
                 width = len(str(int(x[idx]))) + extra
 
                 # Take into account if score or loss function
-                best = min(x) if not self.gib else max(x)
+                best = min(x) if not self.metric.gib else max(x)
 
             except (ValueError, AttributeError):
                 raise ValueError('It appears all models failed to run...')
@@ -1523,6 +1523,10 @@ class ATOM(object):
                                               'time': time_bo},
                                              ignore_index=True)
 
+                    # Assign winner attribute
+                    if score_test == best:
+                        self.winner = getattr(self, m)
+
                     # Highlight best score (if more than one)
                     if score_test == best and len(self.models) > 1:
                         prlog(u'{0:{1}s} --> {2:>{3}.{4}f} !!'
@@ -1545,6 +1549,10 @@ class ATOM(object):
                                               'bagging_std': bs_std,
                                               'bagging_time': time_bag},
                                              ignore_index=True)
+
+                    # Assign winner attribute
+                    if bs_mean == best:
+                        self.winner = getattr(self, m)
 
                     # Highlight best score (if more than one)
                     if bs_mean == best and len(self.models) > 1:
