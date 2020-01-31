@@ -8,12 +8,12 @@ Description: Module containing all the available models for the fit method
 
         Name -----------------------------------
 
-        The class name must be equal to the one listed in atom.py
+        Name of the model's class in camel case format.
 
         Attributes -----------------------------
 
-        name     --> same name as the class
-        longname --> extended name of the model
+        name     --> short acronym of the model's longname for calling
+        longname --> name of the model
 
         Methods --------------------------------
 
@@ -35,8 +35,8 @@ Description: Module containing all the available models for the fit method
 
 To add a new model:
     1. Add the model's class to models.py
-    2. Add the model to the variable model_list in atom.py
-    3. Add the model to all the relevant variables in atom.py and basemodel.py
+    2. Add the model to the list model_list in atom.py
+    3. Add the name to all the relevant variables in atom.py and basemodel.py
 
 '''
 
@@ -53,10 +53,11 @@ from sklearn.gaussian_process import (
 from sklearn.naive_bayes import GaussianNB, MultinomialNB, BernoulliNB
 from sklearn.linear_model import (
     LinearRegression, RidgeClassifier, Ridge as RidgeRegressor,
-    Lasso as LassoRegressor, ElasticNet, BayesianRidge, LogisticRegression
+    Lasso as LassoRegressor, ElasticNet as ElasticNetRegressor,
+    BayesianRidge, LogisticRegression as LR
     )
 from sklearn.discriminant_analysis import (
-    LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
+    LinearDiscriminantAnalysis as LDA, QuadraticDiscriminantAnalysis as QDA
     )
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -69,7 +70,7 @@ from sklearn.ensemble import (
     )
 from sklearn.svm import LinearSVC, LinearSVR, SVC, SVR
 from sklearn.linear_model import (
-    PassiveAggressiveClassifier, PassiveAggressiveRegressor,
+    PassiveAggressiveClassifier as PAC, PassiveAggressiveRegressor as PAR,
     SGDClassifier, SGDRegressor
     )
 from sklearn.neural_network import MLPClassifier, MLPRegressor
@@ -77,50 +78,43 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # << ============ Functions ============ >>
 
-def set_init(data, mapping, metric, isScaled, task, log,
-             n_jobs, verbose, random_state, scaled=False):
+def set_init(class_, scaled=False):
     ''' Returns BaseModel's (class) parameters as dictionary '''
 
-    if scaled and not isScaled:
-        params = {'X': data['X_scaled'],
-                  'X_train': data['X_train_scaled'],
-                  'X_test': data['X_test_scaled']}
+    if scaled and not class_._isScaled:
+        params = {'X': class_.data['X_scaled'],
+                  'X_train': class_.data['X_train_scaled'],
+                  'X_test': class_.data['X_test_scaled']}
     else:
-        params = {'X': data['X'],
-                  'X_train': data['X_train'],
-                  'X_test': data['X_test']}
+        params = {'X': class_.data['X'],
+                  'X_train': class_.data['X_train'],
+                  'X_test': class_.data['X_test']}
 
     for p in ('y', 'y_train', 'y_test'):
-        params[p] = data[p]
+        params[p] = class_.data[p]
 
-    params['mapping'] = mapping
-    params['metric'] = metric
-    params['task'] = task
-    params['log'] = log
-    params['n_jobs'] = n_jobs
-    params['verbose'] = verbose
-    params['random_state'] = random_state
+    params['T'] = class_
 
     return params
 
 
 # << ============ Classes ============ >>
 
-class GP(BaseModel):
+class GaussianProcess(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'GP', 'Gaussian Process'
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return GaussianProcessClassifier(random_state=self.random_state,
-                                             n_jobs=self.n_jobs)
+        if self.T.task != 'regression':
+            return GaussianProcessClassifier(random_state=self.T.random_state,
+                                             n_jobs=self.T.n_jobs)
         else:
-            return GaussianProcessRegressor(random_state=self.random_state)
+            return GaussianProcessRegressor(random_state=self.T.random_state)
 
 
-class GNB(BaseModel):
+class GaussianNaïveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -130,7 +124,7 @@ class GNB(BaseModel):
         return GaussianNB()
 
 
-class MNB(BaseModel):
+class MultinomialNaïveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -157,7 +151,7 @@ class MNB(BaseModel):
         return np.array([[1, 0]])
 
 
-class BNB(BaseModel):
+class BernoulliNaïveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -184,14 +178,14 @@ class BNB(BaseModel):
         return np.array([[1, 0]])
 
 
-class OLS(BaseModel):
+class OrdinaryLeastSquares(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
 
     def get_model(self, params={}):
-        return LinearRegression(n_jobs=self.n_jobs)
+        return LinearRegression(n_jobs=self.T.n_jobs)
 
 
 class Ridge(BaseModel):
@@ -200,10 +194,10 @@ class Ridge(BaseModel):
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
         self.name = 'Ridge'
-        if self.task != 'regression':
-            self.longname = 'Ridge Classifier'
+        if self.T.task != 'regression':
+            self.longname = 'Ridge Classification'
         else:
-            self.longname = 'Ridge Regressor'
+            self.longname = 'Ridge Regression'
 
     def get_params(self, x):
         params = {'max_iter': int(x[0, 0]),
@@ -211,10 +205,10 @@ class Ridge(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return RidgeClassifier(random_state=self.random_state, **params)
+        if self.T.task != 'regression':
+            return RidgeClassifier(random_state=self.T.random_state, **params)
         else:
-            return RidgeRegressor(random_state=self.random_state, **params)
+            return RidgeRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         # alpha cannot be 0 for numerical reasons
@@ -234,7 +228,7 @@ class Lasso(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
-        self.name, self.longname = 'Lasso', 'Lasso Regressor'
+        self.name, self.longname = 'Lasso', 'Lasso Regression'
 
     def get_params(self, x):
         params = {'max_iter': int(x[0, 0]),
@@ -242,7 +236,7 @@ class Lasso(BaseModel):
         return params
 
     def get_model(self, params={}):
-        return LassoRegressor(random_state=self.random_state, **params)
+        return LassoRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         # alpha cannot be 0 for numerical reasons
@@ -257,11 +251,11 @@ class Lasso(BaseModel):
         return np.array([[500, 1.0]])
 
 
-class EN(BaseModel):
+class ElasticNet(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
-        self.name, self.longname = 'EN', 'ElasticNet Regressor'
+        self.name, self.longname = 'EN', 'ElasticNet Regression'
 
     def get_params(self, x):
         params = {'max_iter': int(x[0, 0]),
@@ -270,7 +264,7 @@ class EN(BaseModel):
         return params
 
     def get_model(self, params={}):
-        return ElasticNet(random_state=self.random_state, **params)
+        return ElasticNetRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         return [{'name': 'max_iter',
@@ -287,7 +281,7 @@ class EN(BaseModel):
         return np.array([[1000, 1.0, 0.5]])
 
 
-class BR(BaseModel):
+class BayesianRegression(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -309,7 +303,7 @@ class BR(BaseModel):
         return np.array([[300]])
 
 
-class LR(BaseModel):
+class LogisticRegression(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -325,9 +319,9 @@ class LR(BaseModel):
         return params
 
     def get_model(self, params={}):
-        return LogisticRegression(random_state=self.random_state,
-                                  n_jobs=self.n_jobs,
-                                  **params)
+        return LR(random_state=self.T.random_state,
+                  n_jobs=self.T.n_jobs,
+                  **params)
 
     def get_domain(self):
         return [{'name': 'max_iter',
@@ -347,7 +341,7 @@ class LR(BaseModel):
         return np.array([[100, 1.0, 0, 0]])
 
 
-class LDA(BaseModel):
+class LinearDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -364,7 +358,7 @@ class LDA(BaseModel):
         return params
 
     def get_model(self, params={}):
-        return LinearDiscriminantAnalysis(**params)
+        return LDA(**params)
 
     def get_domain(self):
         return [{'name': 'solver',
@@ -378,7 +372,7 @@ class LDA(BaseModel):
         return np.array([[0, 0]])
 
 
-class QDA(BaseModel):
+class QuadraticDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -389,7 +383,7 @@ class QDA(BaseModel):
         return params
 
     def get_model(self, params={}):
-        return QuadraticDiscriminantAnalysis(**params)
+        return QDA(**params)
 
     def get_domain(self):
         return [{'name': 'reg_param',
@@ -400,7 +394,7 @@ class QDA(BaseModel):
         return np.array([[0]])
 
 
-class KNN(BaseModel):
+class KNearestNeighbors(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -415,10 +409,10 @@ class KNN(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return KNeighborsClassifier(n_jobs=self.n_jobs, **params)
+        if self.T.task != 'regression':
+            return KNeighborsClassifier(n_jobs=self.T.n_jobs, **params)
         else:
-            return KNeighborsRegressor(n_jobs=self.n_jobs, **params)
+            return KNeighborsRegressor(n_jobs=self.T.n_jobs, **params)
 
     def get_domain(self):
         return [{'name': 'n_neighbors',
@@ -438,7 +432,7 @@ class KNN(BaseModel):
         return np.array([[5, 30, 2, 1]])
 
 
-class Tree(BaseModel):
+class DecisionTree(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -446,7 +440,7 @@ class Tree(BaseModel):
 
     def get_params(self, x):
         splitter = ['best', 'random']
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
         else:
             criterion = ['mse', 'mae', 'friedman_mse']
@@ -461,17 +455,17 @@ class Tree(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return DecisionTreeClassifier(random_state=self.random_state,
+        if self.T.task != 'regression':
+            return DecisionTreeClassifier(random_state=self.T.random_state,
                                           **params)
         else:
-            return DecisionTreeRegressor(random_state=self.random_state,
+            return DecisionTreeRegressor(random_state=self.T.random_state,
                                          **params)
 
     def get_domain(self):
         return [{'name': 'criterion',
                  'type': 'discrete',
-                 'domain': range(2 if self.task != 'regression' else 3)},
+                 'domain': range(2 if self.T.task != 'regression' else 3)},
                 {'name': 'splitter',
                  'type': 'discrete',
                  'domain': range(2)},
@@ -495,13 +489,13 @@ class Tree(BaseModel):
         return np.array([[0, 0, 10, 1.0, 2, 1, 0.0]])
 
 
-class Bag(BaseModel):
+class Bagging(BaseModel):
     ''' Bagging class (with decision tree as base estimator) '''
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
         self.name = 'Bag'
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             self.longname = 'Bagging Classifier'
         else:
             self.longname = 'Bagging Regressor'
@@ -516,13 +510,13 @@ class Bag(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return BaggingClassifier(random_state=self.random_state,
-                                     n_jobs=self.n_jobs,
+        if self.T.task != 'regression':
+            return BaggingClassifier(random_state=self.T.random_state,
+                                     n_jobs=self.T.n_jobs,
                                      **params)
         else:
-            return BaggingRegressor(random_state=self.random_state,
-                                    n_jobs=self.n_jobs,
+            return BaggingRegressor(random_state=self.T.random_state,
+                                    n_jobs=self.T.n_jobs,
                                     **params)
 
     def get_domain(self):
@@ -546,7 +540,7 @@ class Bag(BaseModel):
         return np.array([[10, 1.0, 1.0, 0, 1]])
 
 
-class ET(BaseModel):
+class ExtraTrees(BaseModel):
     ''' Extremely Randomized Trees '''
 
     def __init__(self, *args):
@@ -555,7 +549,7 @@ class ET(BaseModel):
 
     def get_params(self, x):
         bootstrap = [True, False]
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
         else:
             criterion = ['mse', 'mae']
@@ -575,13 +569,13 @@ class ET(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return ExtraTreesClassifier(random_state=self.random_state,
-                                        n_jobs=self.n_jobs,
+        if self.T.task != 'regression':
+            return ExtraTreesClassifier(random_state=self.T.random_state,
+                                        n_jobs=self.T.n_jobs,
                                         **params)
         else:
-            return ExtraTreesRegressor(random_state=self.random_state,
-                                       n_jobs=self.n_jobs,
+            return ExtraTreesRegressor(random_state=self.T.random_state,
+                                       n_jobs=self.T.n_jobs,
                                        **params)
 
     def get_domain(self):
@@ -617,7 +611,7 @@ class ET(BaseModel):
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 1, 0.9]])
 
 
-class RF(BaseModel):
+class RandomForest(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -625,7 +619,7 @@ class RF(BaseModel):
 
     def get_params(self, x):
         bootstrap = [True, False]
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
         else:
             criterion = ['mse', 'mae']
@@ -645,13 +639,13 @@ class RF(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return RandomForestClassifier(random_state=self.random_state,
-                                          n_jobs=self.n_jobs,
+        if self.T.task != 'regression':
+            return RandomForestClassifier(random_state=self.T.random_state,
+                                          n_jobs=self.T.n_jobs,
                                           **params)
         else:
-            return RandomForestRegressor(random_state=self.random_state,
-                                         n_jobs=self.n_jobs,
+            return RandomForestRegressor(random_state=self.T.random_state,
+                                         n_jobs=self.T.n_jobs,
                                          **params)
 
     def get_domain(self):
@@ -687,7 +681,7 @@ class RF(BaseModel):
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 0, 0.9]])
 
 
-class AdaB(BaseModel):
+class AdaBoost(BaseModel):
     ''' Adaptive Boosting (with decision tree as base estimator) '''
 
     def __init__(self, *args):
@@ -700,10 +694,12 @@ class AdaB(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return AdaBoostClassifier(random_state=self.random_state, **params)
+        if self.T.task != 'regression':
+            return AdaBoostClassifier(random_state=self.T.random_state,
+                                      **params)
         else:
-            return AdaBoostRegressor(random_state=self.random_state, **params)
+            return AdaBoostRegressor(random_state=self.T.random_state,
+                                     **params)
 
     def get_domain(self):
         return [{'name': 'n_estimators',
@@ -717,7 +713,7 @@ class AdaB(BaseModel):
         return np.array([[50, 1]])
 
 
-class GBM(BaseModel):
+class GradientBoostingMachine(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -737,11 +733,11 @@ class GBM(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return GradientBoostingClassifier(random_state=self.random_state,
+        if self.T.task != 'regression':
+            return GradientBoostingClassifier(random_state=self.T.random_state,
                                               **params)
         else:
-            return GradientBoostingRegressor(random_state=self.random_state,
+            return GradientBoostingRegressor(random_state=self.T.random_state,
                                              **params)
 
     def get_domain(self):
@@ -777,7 +773,7 @@ class GBM(BaseModel):
         return np.array([[100, 0.1, 1.0, 3, 1.0, 0, 2, 1, 0.0]])
 
 
-class XGB(BaseModel):
+class XGBoost(BaseModel):
     ''' Extreme Gradient Boosting '''
 
     def __init__(self, *args):
@@ -799,15 +795,15 @@ class XGB(BaseModel):
     def get_model(self, params={}):
         from xgboost import XGBClassifier, XGBRegressor
         # XGBoost can't handle random_state to be None
-        random_state = 0 if self.random_state is None else self.random_state
-        if self.task != 'regression':
-            return XGBClassifier(n_jobs=self.n_jobs,
-                                 random_state=random_state,
+        rs = 0 if self.T.random_state is None else self.T.random_state
+        if self.T.task != 'regression':
+            return XGBClassifier(n_jobs=self.T.n_jobs,
+                                 random_state=rs,
                                  verbosity=0,
                                  **params)
         else:
-            return XGBRegressor(n_jobs=self.n_jobs,
-                                random_state=random_state,
+            return XGBRegressor(n_jobs=self.T.n_jobs,
+                                random_state=rs,
                                 verbosity=0,
                                 **params)
 
@@ -844,7 +840,7 @@ class XGB(BaseModel):
         return np.array([[100, 0.1, 3, 0.0, 1, 1.0, 1.0, 0, 1]])
 
 
-class LGB(BaseModel):
+class LightGBM(BaseModel):
     ''' Light Gradient Boosting Machine '''
 
     def __init__(self, *args):
@@ -866,13 +862,13 @@ class LGB(BaseModel):
 
     def get_model(self, params={}):
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-        if self.task != 'regression':
-            return LGBMClassifier(n_jobs=self.n_jobs,
-                                  random_state=self.random_state,
+        if self.T.task != 'regression':
+            return LGBMClassifier(n_jobs=self.T.n_jobs,
+                                  random_state=self.T.random_state,
                                   **params)
         else:
-            return LGBMRegressor(n_jobs=self.n_jobs,
-                                 random_state=self.random_state,
+            return LGBMRegressor(n_jobs=self.T.n_jobs,
+                                 random_state=self.T.random_state,
                                  **params)
 
     def get_domain(self):
@@ -911,7 +907,7 @@ class LGB(BaseModel):
         return np.array([[100, 0.1, 3, 31, 1, 20, 1.0, 1.0, 0, 0]])
 
 
-class CatB(BaseModel):
+class CatBoost(BaseModel):
     ''' Categorical Boosting Machine '''
 
     def __init__(self, *args):
@@ -929,18 +925,18 @@ class CatB(BaseModel):
 
     def get_model(self, params={}):
         from catboost import CatBoostClassifier, CatBoostRegressor
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             # subsample only works when bootstrap_type=Bernoulli
             return CatBoostClassifier(bootstrap_type='Bernoulli',
                                       train_dir='',
                                       allow_writing_files=False,
-                                      random_state=self.random_state,
+                                      random_state=self.T.random_state,
                                       verbose=False,
                                       **params)
         else:
             return CatBoostRegressor(train_dir='',
                                      allow_writing_files=False,
-                                     random_state=self.random_state,
+                                     random_state=self.T.random_state,
                                      verbose=False,
                                      **params)
 
@@ -969,7 +965,7 @@ class CatB(BaseModel):
         return np.array([[100, 0.1, 3, 1.0, 1.0, 0]])
 
 
-class lSVM(BaseModel):
+class LinearSVM(BaseModel):
     ''' Linear Support Vector Machine '''
 
     def __init__(self, *args):
@@ -977,7 +973,7 @@ class lSVM(BaseModel):
         self.name, self.longname = 'lSVM', 'Linear SVM'
 
     def get_params(self, x):
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             losses = ['hinge', 'squared_hinge']
         else:
             losses = ['epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -994,16 +990,16 @@ class lSVM(BaseModel):
                   'loss': loss,
                   'dual': dual}
 
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             params['penalty'] = penalty
 
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return LinearSVC(random_state=self.random_state, **params)
+        if self.T.task != 'regression':
+            return LinearSVC(random_state=self.T.random_state, **params)
         else:
-            return LinearSVR(random_state=self.random_state, **params)
+            return LinearSVR(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         return [{'name': 'C',
@@ -1020,7 +1016,7 @@ class lSVM(BaseModel):
         return np.array([[1, 1, 1]])
 
 
-class kSVM(BaseModel):
+class KernelSVM(BaseModel):
     ''' Kernel (non-linear) Support Vector Machine '''
 
     def __init__(self, *args):
@@ -1045,8 +1041,8 @@ class kSVM(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return SVC(random_state=self.random_state, **params)
+        if self.T.task != 'regression':
+            return SVC(random_state=self.T.random_state, **params)
         else:
             return SVR(**params)
 
@@ -1074,14 +1070,14 @@ class kSVM(BaseModel):
         return np.array([[1, 3, 0, 0, 1, 0]])
 
 
-class PA(BaseModel):
+class PassiveAggressive(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'PA', 'Passive Aggressive'
 
     def get_params(self, x):
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             loss = ['hinge', 'squared_hinge']
         else:
             loss = ['epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -1094,13 +1090,12 @@ class PA(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return PassiveAggressiveClassifier(random_state=self.random_state,
-                                               n_jobs=self.n_jobs,
-                                               **params)
+        if self.T.task != 'regression':
+            return PAC(random_state=self.T.random_state,
+                       n_jobs=self.T.n_jobs,
+                       **params)
         else:
-            return PassiveAggressiveRegressor(random_state=self.random_state,
-                                              **params)
+            return PAR(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         return [{'name': 'loss',
@@ -1117,14 +1112,14 @@ class PA(BaseModel):
         return np.array([[0, 1, 1]])
 
 
-class SGD(BaseModel):
+class StochasticGradientDescent(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
 
     def get_params(self, x):
-        if self.task != 'regression':
+        if self.T.task != 'regression':
             loss = ['hinge', 'log', 'modified_huber', 'squared_hinge',
                     'perceptron', 'squared_loss', 'huber',
                     'epsilon_insensitive', 'squared_epsilon_insensitive']
@@ -1155,17 +1150,17 @@ class SGD(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return SGDClassifier(random_state=self.random_state,
-                                 n_jobs=self.n_jobs,
+        if self.T.task != 'regression':
+            return SGDClassifier(random_state=self.T.random_state,
+                                 n_jobs=self.T.n_jobs,
                                  **params)
         else:
-            return SGDRegressor(random_state=self.random_state, **params)
+            return SGDRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         return [{'name': 'loss',
                  'type': 'discrete',
-                 'domain': range(9 if self.task != 'regression' else 4)},
+                 'domain': range(9 if self.T.task != 'regression' else 4)},
                 {'name': 'penalty',
                  'type': 'discrete',
                  'domain': range(4)},
@@ -1195,7 +1190,7 @@ class SGD(BaseModel):
         return np.array([[0, 2, 1e-4, 1, 0.1, 0.01, 2, 0.15, 0.25]])
 
 
-class MLP(BaseModel):
+class MultilayerPerceptron(BaseModel):
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -1219,10 +1214,10 @@ class MLP(BaseModel):
         return params
 
     def get_model(self, params={}):
-        if self.task != 'regression':
-            return MLPClassifier(random_state=self.random_state, **params)
+        if self.T.task != 'regression':
+            return MLPClassifier(random_state=self.T.random_state, **params)
         else:
-            return MLPRegressor(random_state=self.random_state, **params)
+            return MLPRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
         return [{'name': 'hidden_layer_1',

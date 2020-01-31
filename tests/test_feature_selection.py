@@ -63,24 +63,6 @@ def test_max_features_parameter():
     pytest.raises(ValueError, atom.feature_selection, max_features=0)
 
 
-def test_threshold_parameter():
-    ''' Assert that the threshold parameter is set correctly '''
-
-    # When wrong type
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_selection, threshold=[2, 2])
-
-    # When wrong string value
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y)
-    pytest.raises(ValueError,
-                  atom.feature_selection,
-                  strategy='sfm',
-                  solver=RandomForestClassifier(),
-                  threshold='test')
-
-
 def test_min_variance_frac_parameter():
     ''' Assert that the min_variance_frac parameter is set correctly '''
 
@@ -257,28 +239,28 @@ def test_SFM_strategy():
     assert len(atom.X.columns) == 5  # Assert number of features
 
 
-def test_SFM_threshold():
-    ''' Assert that the threshold parameter works as intended '''
+def test_kwargs_parameter():
+    ''' Assert that the kwargs parameter works as intended '''
 
-    # For numerical value
+    # Add the threshold parameter to the SFM strategy
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
     atom.feature_selection(strategy='sfm',
                            solver=RandomForestClassifier(),
                            max_features=11,
-                           threshold=0.1,
-                           max_correlation=None)
+                           max_correlation=None,
+                           threshold=0.1,)
     assert len(atom.X.columns) == 4  # Assert number of features
 
-    # For string value
+    # Add tol parameter to PCA strategy
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.feature_selection(strategy='sfm',
-                           solver=RandomForestClassifier(),
-                           max_features=19,
-                           threshold='mean',
+    atom.feature_selection(strategy='pca',
+                           solver='arpack',
+                           tol=0.001,
+                           max_features=12,
                            max_correlation=None)
-    assert len(atom.X.columns) == 10  # Assert number of features
+    assert len(atom.X.columns) == 12
 
 
 def test_RFE_attribute():

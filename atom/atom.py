@@ -31,9 +31,21 @@ from sklearn.feature_selection import (
     )
 
 # Own package modules
-from .basemodel import BaseModel, prlog
+from .utils import (
+     params_to_log, prlog, time_to_string, to_df, to_series, merge,
+     check_isFit, raise_TypeError, raise_ValueError
+     )
+from .basemodel import BaseModel
 from .metrics import BaseMetric
-from .models import *
+from .models import (
+     GaussianProcess, GaussianNaïveBayes, MultinomialNaïveBayes,
+     BernoulliNaïveBayes, OrdinaryLeastSquares, Ridge, Lasso, ElasticNet,
+     BayesianRegression, LogisticRegression, LinearDiscriminantAnalysis,
+     QuadraticDiscriminantAnalysis, KNearestNeighbors, DecisionTree,
+     Bagging, ExtraTrees, RandomForest, AdaBoost, GradientBoostingMachine,
+     XGBoost, LightGBM, CatBoost, LinearSVM, KernelSVM, PassiveAggressive,
+     StochasticGradientDescent, MultilayerPerceptron
+     )
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -44,10 +56,33 @@ sns.set(style='darkgrid', palette='GnBu_d')
 # << ============ Global variables ============ >>
 
 # List of all the available models
-model_list = ['BNB', 'GNB', 'MNB', 'GP', 'OLS', 'Ridge', 'Lasso', 'EN',
-              'BR', 'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET',
-              'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM',
-              'PA', 'SGD', 'MLP']
+model_list = dict(GP=GaussianProcess,
+                  GNB=GaussianNaïveBayes,
+                  MNB=MultinomialNaïveBayes,
+                  BNB=BernoulliNaïveBayes,
+                  OLS=OrdinaryLeastSquares,
+                  Ridge=Ridge,
+                  Lasso=Lasso,
+                  EN=ElasticNet,
+                  BR=BayesianRegression,
+                  LR=LogisticRegression,
+                  LDA=LinearDiscriminantAnalysis,
+                  QDA=QuadraticDiscriminantAnalysis,
+                  KNN=KNearestNeighbors,
+                  Tree=DecisionTree,
+                  Bag=Bagging,
+                  ET=ExtraTrees,
+                  RF=RandomForest,
+                  AdaB=AdaBoost,
+                  GBM=GradientBoostingMachine,
+                  XGB=XGBoost,
+                  LGB=LightGBM,
+                  CatB=CatBoost,
+                  lSVM=LinearSVM,
+                  kSVM=KernelSVM,
+                  PA=PassiveAggressive,
+                  SGD=StochasticGradientDescent,
+                  MLP=MultilayerPerceptron)
 
 # Tuple of models that need to import an extra package
 optional_packages = (('XGB', 'xgboost'),
@@ -71,84 +106,6 @@ mclass = ['accuracy', 'auc', 'mcc', 'f1', 'hamming', 'jaccard', 'logloss',
 
 # List of pre-set regression metrics
 mreg = ['mae', 'max_error', 'mse', 'msle', 'r2']
-
-
-# << ============ Functions ============ >>
-
-def params_to_log(f):
-    ''' Decorator to save function's params to log file '''
-
-    def wrapper(*args, **kwargs):
-        # args[0]=class instance
-        prlog('Function "' + str(f.__name__) + f'" parameters: {kwargs}',
-              args[0], 5)
-        result = f(*args, **kwargs)
-        return result
-
-    return wrapper
-
-
-def to_df(data, columns=None, pca=False):
-
-    '''
-    DESCRIPTION -----------------------------------
-
-    Convert data to pd.Dataframe.
-
-    PARAMETERS -------------------------------------
-
-    data    --> dataset to convert
-    columns --> name of the columns in the dataset. If None, autofilled.
-    pca     --> wether the columns need to be called Features or Components
-
-    '''
-
-    if columns is None and not pca:
-        columns = ['Feature ' + str(i) for i in range(len(data[0]))]
-    elif columns is None:
-        columns = ['Component ' + str(i) for i in range(len(data[0]))]
-    return pd.DataFrame(data, columns=columns)
-
-
-def to_series(data, name=None):
-
-    '''
-    DESCRIPTION -----------------------------------
-
-    Convert data to pd.Series.
-
-    PARAMETERS -------------------------------------
-
-    data --> dataset to convert
-    name --> name of the target column. If None, autofilled.
-
-    '''
-
-    return pd.Series(data, name=name if name is not None else 'target')
-
-
-def merge(X, y):
-    ''' Merge pd.DataFrame and pd.Series into one df '''
-
-    return X.merge(y.to_frame(), left_index=True, right_index=True)
-
-
-def raise_TypeError(param, value):
-    ''' Raise TypeError for wrong parameter type '''
-
-    raise TypeError(f'Invalid type for {param} parameter: {type(value)}')
-
-
-def raise_ValueError(param, value):
-    ''' Raise ValueError for invalid parameter value '''
-
-    raise ValueError(f'Invalid value for {param} parameter: {value}')
-
-
-def check_isFit(isFit):
-    if not isFit:
-        raise AttributeError('You need to fit the class before calling ' +
-                             'for a metric method!')
 
 
 # << ============ Classes ============ >>
@@ -242,14 +199,12 @@ class ATOM(object):
             raise_TypeError('percentage', percentage)
         elif percentage <= 0 or percentage > 100:
             raise_ValueError('percentage', percentage)
-        else:
-            self.percentage = percentage
+        self.percentage = percentage
         if not isinstance(test_size, float):
             raise_TypeError('test_size', test_size)
         elif test_size <= 0 or test_size >= 1:
             raise_ValueError('test_size', test_size)
-        else:
-            self.test_size = test_size
+        self.test_size = test_size
         if not isinstance(log, (type(None), str)):
             raise_TypeError('log', log)
         elif log is None or log.endswith('.txt'):
@@ -258,21 +213,17 @@ class ATOM(object):
             self.log = log + '.txt'
         if not isinstance(warnings, bool) and warnings not in (0, 1):
             raise_TypeError('warnings', warnings)
-        else:
-            self.warnings = bool(warnings)
+        self.warnings = bool(warnings)
         if not isinstance(verbose, int):
             raise_TypeError('verbose', verbose)
         elif verbose < 0 or verbose > 3:
             raise_ValueError('verbose', verbose)
-        else:
-            self.verbose = verbose
+        self.verbose = verbose
         if not isinstance(random_state, (type(None), int)):
             raise_TypeError('random_state', random_state)
         elif random_state is not None:
-            self.random_state = random_state
-            np.random.seed(self.random_state)  # Set random seed
-        else:
-            self.random_state = random_state
+            np.random.seed(random_state)  # Set random seed
+        self.random_state = random_state
 
         # Check if features are already scaled
         mean = self.dataset.mean(axis=1).mean()
@@ -590,8 +541,7 @@ class ATOM(object):
 
     @params_to_log
     def impute(self, strat_num='remove', strat_cat='remove',
-               max_frac_rows=0.5, max_frac_cols=0.5,
-               missing=[np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']):
+               max_frac_rows=0.5, max_frac_cols=0.5, missing=None):
 
         '''
         DESCRIPTION -----------------------------------
@@ -612,7 +562,7 @@ class ATOM(object):
                              fill in with any other string value
         min_frac_rows --> minimum fraction of non missing values in row
         min_frac_cols --> minimum fraction of non missing values in column
-        missing       --> list of values to impute
+        missing       --> list of values to impute. None for default list.
 
         '''
 
@@ -643,7 +593,11 @@ class ATOM(object):
             raise_TypeError('max_frac_cols', max_frac_cols)
         elif max_frac_cols <= 0 or max_frac_cols >= 1:
             raise_ValueError('max_frac_cols', max_frac_cols)
-        if not isinstance(missing, list):
+
+        # Set default missing list
+        if missing is None:
+            missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
+        elif not isinstance(missing, list):
             missing = [missing]  # Has to be an iterable for loop
 
         # Some values must always be imputed (but can be double)
@@ -1102,9 +1056,9 @@ class ATOM(object):
                           strategy=None,
                           solver=None,
                           max_features=None,
-                          threshold=-np.inf,
                           min_variance_frac=1.,
-                          max_correlation=0.98):
+                          max_correlation=0.98,
+                          **kwargs):
 
         '''
         DESCRIPTION -----------------------------------
@@ -1125,12 +1079,11 @@ class ATOM(object):
         max_features      --> if < 1: fraction of features to select
                               if >= 1: number of features to select
                               None to select all (only for SFM)
-        threshold         --> threshold value to use for selection. Only for
-                              SFM. Choose from: float, 'mean', 'median'.
         min_variance_frac --> minimum value of the Pearson correlation
                               cofficient to identify correlated features
         max_correlation   --> remove features with constant instances in at
                               least this fraction of the total
+        **kwargs          --> extra paramteres for PCA, SFM or RFE
 
         '''
 
@@ -1225,8 +1178,6 @@ class ATOM(object):
             raise_TypeError('max_features', max_features)
         elif max_features is not None and max_features <= 0:
             raise_ValueError('max_features', max_features)
-        if not isinstance(threshold, (str, int, float)):
-            raise_TypeError('threshold', threshold)
         if not isinstance(min_variance_frac, (type(None), int, float)):
             raise_TypeError('min_variance_frac', min_variance_frac)
         elif min_variance_frac is not None:
@@ -1297,7 +1248,9 @@ class ATOM(object):
 
             # Define PCA
             solver = 'auto' if solver is None else solver
-            self.PCA = PCA(n_components=max_features, svd_solver=solver)
+            self.PCA = PCA(n_components=max_features,
+                           svd_solver=solver,
+                           **kwargs)
             self.PCA.fit(self.X_train)
             self.X_train = to_df(self.PCA.transform(self.X_train), pca=True)
             self.X_test = to_df(self.PCA.transform(self.X_test), pca=True)
@@ -1309,15 +1262,15 @@ class ATOM(object):
 
             try:  # Model already fitted
                 self.SFM = SelectFromModel(estimator=solver,
-                                           threshold=threshold,
                                            max_features=max_features,
-                                           prefit=True)
+                                           prefit=True,
+                                           **kwargs)
                 mask = self.SFM.get_support()
 
             except Exception:
                 self.SFM = SelectFromModel(estimator=solver,
-                                           threshold=threshold,
-                                           max_features=max_features)
+                                           max_features=max_features,
+                                           **kwargs)
                 self.SFM.fit(self.X, self.y)
                 mask = self.SFM.get_support()
 
@@ -1333,7 +1286,9 @@ class ATOM(object):
             if solver is None:
                 raise ValueError('Select a model for the solver!')
 
-            self.RFE = RFE(estimator=solver, n_features_to_select=max_features)
+            self.RFE = RFE(estimator=solver,
+                           n_features_to_select=max_features,
+                           **kwargs)
             self.RFE.fit(self.X, self.y)
             mask = self.RFE.support_
 
@@ -1393,11 +1348,31 @@ class ATOM(object):
 
         # << ============ Inner Function ============ >>
 
-        def run_iteration(self):
-            ''' Core iterations, multiple needed for successive halving '''
+        def data_preparation():
+            ''' Make a dct of the data (complete, train, test and scaled) '''
 
-            # In case there is no cross-validation
-            results = 'No cross-validation performed'
+            data = {}
+            for set_ in ['X', 'y', 'X_train', 'y_train', 'X_test', 'y_test']:
+                data[set_] = getattr(self, set_)
+
+            # Check if any scaling models in final_models
+            scale = any(model in self.models for model in scaling_models)
+            if scale and not self._isScaled:
+                # Normalize features to mean=0, std=1
+                scaler = StandardScaler()
+                data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
+                data['X_test_scaled'] = scaler.transform(data['X_test'])
+                data['X_scaled'] = np.concatenate((data['X_train_scaled'],
+                                                   data['X_test_scaled']))
+
+                # Convert np.array to pd.DataFrame for all scaled features
+                for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
+                    data[set_] = to_df(data[set_], self.X.columns)
+
+            return data
+
+        def run_iteration():
+            ''' Core iterations, multiple needed for successive halving '''
 
             # If verbose=1, use tqdm to evaluate process
             if self.verbose == 1:
@@ -1407,35 +1382,34 @@ class ATOM(object):
 
             # Loop over every independent model
             for model in loop:
+                model_time = time()
+
                 # Define model class
-                setattr(self, model, eval(model)(self.data,
-                                                 self.mapping,
-                                                 self.metric,
-                                                 self._isScaled,
-                                                 self.task,
-                                                 self.log,
-                                                 self.n_jobs,
-                                                 self.verbose,
-                                                 self.random_state))
+                setattr(self, model, model_list[model](self))
 
                 try:  # If errors occure, just skip the model
                     with warnings.catch_warnings():
                         if not self.warnings:
                             warnings.simplefilter("ignore")
-                        getattr(self, model).BayesianOpt(self.test_size,
-                                                         self.max_iter,
-                                                         self.max_time,
-                                                         self.eps,
-                                                         self.batch_size,
-                                                         self.init_points,
-                                                         self.cv,
-                                                         self.plot_bo)
 
+                        # Run Bayesian Optimization
+                        getattr(self, model).BayesianOpt()
+
+                        # Fit the model to the test set
+                        getattr(self, model).fitting()
+
+                        # Perform bagging
                         if self.bagging is not None:
-                            getattr(self, model).bagging(self.bagging)
+                            getattr(self, model).bagging()
+
+                        # Get the total time spend on this model
+                        total_time = time_to_string(model_time)
+                        setattr(getattr(self, model), 'total_time', total_time)
+                        prlog('-' * 49, self, 1)
+                        prlog(f'Total time: {total_time}', self, 1)
 
                 except Exception as ex:
-                    if self.max_iter == 0:
+                    if not self._BO:
                         prlog('\n', self, 1)  # Add two empty lines
                     prlog('Exception encountered while running the '
                           + f'{model} model. Removing model from pipeline.'
@@ -1446,6 +1420,8 @@ class ATOM(object):
                     getattr(self, model).error = exception
 
                     # Append exception to ATOM errors dictionary
+                    if not isinstance(self.errors, dict):
+                        self.errors = {}
                     self.errors[model] = exception
 
                     # Replace model with value X for later removal
@@ -1490,20 +1466,18 @@ class ATOM(object):
                 raise ValueError('It appears all models failed to run...')
 
             # Print final results
-            t = time() - t_init  # Total time in seconds
-            h = int(t/3600.)
-            m = int(t/60.) - h*60
-            s = int(t - h*3600 - m*60)
             prlog('\n\nFinal results ================>>', self)
-            prlog(f'Duration: {h:02}h:{m:02}m:{s:02}s', self)
+            prlog(f'Duration: {time_to_string(t_init)}', self)
             prlog(f"Metric: {self.metric.longname}", self)
             prlog('--------------------------------', self)
 
             # Create dataframe with final results
             results = pd.DataFrame(columns=['model',
+                                            'total_time',
                                             'score_train',
                                             'score_test',
-                                            'time'])
+                                            'fit_time'])
+
             if self.bagging is not None:
                 pd.concat([results, pd.DataFrame(columns=['bagging_mean',
                                                           'bagging_std',
@@ -1512,15 +1486,17 @@ class ATOM(object):
             for m in self.models:
                 name = getattr(self, m).name
                 longname = getattr(self, m).longname
+                total_time = getattr(self, m).total_time
                 score_train = getattr(self, m).score_train
                 score_test = getattr(self, m).score_test
-                time_bo = getattr(self, m).time_bo
+                fit_time = getattr(self, m).fit_time
 
                 if self.bagging is None:
                     results = results.append({'model': name,
+                                              'total_time': total_time,
                                               'score_train': score_train,
                                               'score_test': score_test,
-                                              'time': time_bo},
+                                              'fit_time': fit_time},
                                              ignore_index=True)
 
                     # Assign winner attribute
@@ -1540,14 +1516,15 @@ class ATOM(object):
                 else:
                     bs_mean = getattr(self, m).bagging_scores.mean()
                     bs_std = getattr(self, m).bagging_scores.std()
-                    time_bag = getattr(self, m).time_bag
+                    bs_time = getattr(self, m).bs_time
                     results = results.append({'model': name,
+                                              'total_time': total_time,
                                               'score_train': score_train,
                                               'score_test': score_test,
-                                              'time': time_bo,
+                                              'fit_time': fit_time,
                                               'bagging_mean': bs_mean,
                                               'bagging_std': bs_std,
-                                              'bagging_time': time_bag},
+                                              'bagging_time': bs_time},
                                              ignore_index=True)
 
                     # Assign winner attribute
@@ -1566,29 +1543,6 @@ class ATOM(object):
 
             return results
 
-        def data_preparation():
-            ''' Make a dct of the data (complete, train, test and scaled) '''
-
-            data = {}
-            for set_ in ['X', 'y', 'X_train', 'y_train', 'X_test', 'y_test']:
-                data[set_] = getattr(self, set_)
-
-            # Check if any scaling models in final_models
-            scale = any(model in self.models for model in scaling_models)
-            if scale and not self._isScaled:
-                # Normalize features to mean=0, std=1
-                scaler = StandardScaler()
-                data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
-                data['X_test_scaled'] = scaler.transform(data['X_test'])
-                data['X_scaled'] = np.concatenate((data['X_train_scaled'],
-                                                   data['X_test_scaled']))
-
-                # Convert np.array to pd.DataFrame for all scaled features
-                for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
-                    data[set_] = to_df(data[set_], self.X.columns)
-
-            return data
-
         # << ======================== Initialize ======================== >>
 
         t_init = time()  # To measure the time the whole pipeline takes
@@ -1601,66 +1555,55 @@ class ATOM(object):
                 raise_TypeError('models', models)
             else:
                 models = [models]
-        gib = greater_is_better  # Shorter variable name for easy access
-        if not isinstance(gib, bool) and gib not in (0, 1):
-            raise_TypeError('greater_is_better', greater_is_better)
-        else:
-            self.gib = bool(greater_is_better)
+        if not isinstance(greater_is_better, bool):
+            if greater_is_better not in (0, 1):
+                raise_TypeError('greater_is_better', greater_is_better)
+        self.gib = bool(greater_is_better)
         if not isinstance(needs_proba, bool) and needs_proba not in (0, 1):
             raise_TypeError('needs_proba', needs_proba)
-        else:
-            self.needs_proba = bool(needs_proba)
-        sh = successive_halving
-        if not isinstance(sh, bool) and sh not in (0, 1):
-            raise_TypeError('successive_halving', successive_halving)
-        else:
-            self.successive_halving = bool(sh)
+        self.needs_proba = bool(needs_proba)
+        if not isinstance(successive_halving, bool):
+            if successive_halving not in (0, 1):
+                raise_TypeError('successive_halving', successive_halving)
+        self.successive_halving = bool(successive_halving)
         if not isinstance(skip_iter, int):
             raise_TypeError('skip_iter', skip_iter)
         elif skip_iter < 0:
             raise_ValueError('skip_iter', skip_iter)
-        else:
-            self.skip_iter = skip_iter
+        self.skip_iter = skip_iter
         if not isinstance(max_iter, int):
             raise_TypeError('max_iter', max_iter)
         elif max_iter < 0:
             raise_ValueError('max_iter', max_iter)
-        else:
-            self.max_iter = max_iter
+        self.max_iter = max_iter
         if not isinstance(max_time, (int, float)):
             raise_TypeError('max_time', max_time)
         elif max_time < 0:
             raise_ValueError('max_time', max_time)
-        else:
-            self.max_time = max_time
+        self.max_time = max_time
         if not isinstance(eps, (int, float)):
             raise_TypeError('eps', eps)
         elif eps < 0:
             raise_ValueError('eps', eps)
-        else:
-            self.eps = eps
+        self.eps = eps
         if not isinstance(batch_size, int):
             raise_TypeError('batch_size', batch_size)
         elif batch_size < 1:
             raise_ValueError('batch_size', batch_size)
-        else:
-            self.batch_size = batch_size
+        self.batch_size = batch_size
         if not isinstance(init_points, int):
             raise_TypeError('init_points', init_points)
         elif init_points < 1:
             raise_ValueError('init_points', init_points)
-        else:
-            self.init_points = init_points
+        self.init_points = init_points
         if not isinstance(plot_bo, bool) and plot_bo not in (0, 1):
             raise_TypeError('plot_bo', plot_bo)
-        else:
-            self.plot_bo = bool(plot_bo)
+        self.plot_bo = bool(plot_bo)
         if not isinstance(cv, int):
             raise_TypeError('cv', cv)
         elif cv < 1:
             raise_ValueError('cv', cv)
-        else:
-            self.cv = cv
+        self.cv = cv
         if not isinstance(bagging, (type(None), int)):
             raise_TypeError('bagging', bagging)
         elif bagging is None or bagging == 0:
@@ -1670,15 +1613,18 @@ class ATOM(object):
         else:
             self.bagging = bagging
 
-        # Save model erros (if any) in dictionary
-        self.errors = {}
+        # Perform BO?
+        self._BO = True if self.max_iter > 0 and self.max_time > 0 else False
+
+        # Save model erros (if any) to attribute
+        self.errors = 'No exceptions encountered!'
 
         # << ============ Check validity models ============ >>
 
         # Final list of models to be used
         final_models = []
         if models == 'all':  # Use all possible models
-            final_models = model_list.copy()
+            final_models = model_list.keys().copy()
         else:
             # Remove duplicates keeping same order
             # Use and on the None output of set.add to call the function
@@ -1688,10 +1634,10 @@ class ATOM(object):
             # Set models to right name
             for m in models:
                 # Compare strings case insensitive
-                if m.lower() not in map(str.lower, model_list):
+                if m.lower() not in map(str.lower, model_list.keys()):
                     prlog(f"Unknown model {m}. Removed from pipeline.", self)
                 else:
-                    for n in model_list:
+                    for n in model_list.keys():
                         if m.lower() == n.lower():
                             final_models.append(n)
                             break
@@ -1723,7 +1669,7 @@ class ATOM(object):
         # Check if there are still valid models
         if len(final_models) == 0:
             raise ValueError("No models found in pipeline. Choose from: {}"
-                             .format({', '.join(model_list)}))
+                             .format({', '.join(model_list.keys())}))
 
         # Update model list attribute with correct values
         self.models = final_models
@@ -1803,7 +1749,7 @@ class ATOM(object):
                 self.stats(1)
 
                 # Run iteration and append to the results list
-                results = run_iteration(self)
+                results = run_iteration()
                 self.results.append(results)
 
                 # Select best models for halving
@@ -1822,7 +1768,7 @@ class ATOM(object):
 
         else:
             self.data = data_preparation()
-            self.results = run_iteration(self)
+            self.results = run_iteration()
             self._isFit = True
 
     # <======================= Plot methods =======================>
@@ -1914,7 +1860,8 @@ class ATOM(object):
         plt.ylabel('Components', fontsize=ATOM.label_fs, labelpad=12)
         plt.xticks(fontsize=ATOM.tick_fs)
         plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
+        plt.xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -1970,7 +1917,7 @@ class ATOM(object):
         ax.set_xticklabels(names)
         plt.xticks(fontsize=ATOM.tick_fs)
         plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -2005,8 +1952,8 @@ class ATOM(object):
 
         models = self.results[0].model  # List of models in first iteration
         col = 'score_test' if self.bagging is None else 'bagging_mean'
-        linx = [[] for m in models]
-        liny = [[] for m in models]
+        linx = [[] for _ in models]
+        liny = [[] for _ in models]
         for m, df in enumerate(self.results):
             for n, model in enumerate(models):
                 if model in df.model.values:  # If model in iteration
@@ -2029,7 +1976,7 @@ class ATOM(object):
         ax.set_xticks(range(len(self.results)))
         plt.xticks(fontsize=ATOM.tick_fs)
         plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -2079,7 +2026,7 @@ class ATOM(object):
         plt.ylabel('TPR', fontsize=ATOM.label_fs, labelpad=12)
         plt.xticks(fontsize=ATOM.tick_fs)
         plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -2127,7 +2074,7 @@ class ATOM(object):
         plt.ylabel('Precision', fontsize=ATOM.label_fs, labelpad=12)
         plt.xticks(fontsize=ATOM.tick_fs)
         plt.yticks(fontsize=ATOM.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -2183,6 +2130,8 @@ class ATOM(object):
             else:
                 prlog(u'{0:{1}s} --> {2:>{3}.{4}f}'
                       .format(name, lenx, score, width, metric.dec), self)
+
+    # <================== Metric methods ==================>
 
     def tn(self):
         check_isFit(self._isFit)

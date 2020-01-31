@@ -16,7 +16,6 @@ import math
 import pickle
 import warnings
 from time import time
-from datetime import datetime
 from collections import deque
 
 # Sklearn
@@ -36,6 +35,9 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
+# Own package modules
+from .utils import timer, prlog, time_to_string
+
 
 # << ============ Global variables ============ >>
 
@@ -46,62 +48,8 @@ tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 no_BO = ['GP', 'GNB', 'OLS']
 
 # List of models with no (or sometimes no) predict_proba method
-not_predict_proba = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR',
-                     'lSVM', 'kSVM', 'PA', 'SGD']
-
-
-# << ============ Functions ============ >>
-
-def timer(f):
-    ''' Decorator to time a function '''
-
-    def wrapper(*args, **kwargs):
-        start = time()
-        result = f(*args, **kwargs)
-
-        # Get duration and print to log (args[0]=class instance)
-        duration = str(round(time() - start, 2)) + 's'
-        prlog(f'Time elapsed: {duration}', args[0], 1)
-
-        # Update class attribute
-        if f.__name__ == 'BayesianOpt':
-            args[0].time_bo = duration
-        elif f.__name__ == 'bagging':
-            args[0].time_bag = duration
-
-        return result
-
-    return wrapper
-
-
-def prlog(string, class_, level=0, time=False):
-
-    '''
-    DESCRIPTION -----------------------------------
-
-    Print and save output to log file.
-
-    PARAMETERS -------------------------------------
-
-    string --> string to output
-    class_ --> class of the element
-    level  --> minimum verbosity level to print
-    time   --> wether to add the timestamp to the log
-
-    '''
-
-    if class_.verbose > level:
-        print(string)
-
-    if class_.log is not None:
-        with open(class_.log, 'a+') as file:
-            if time:
-                # Datetime object containing current date and time
-                now = datetime.now()
-                date = now.strftime("%d/%m/%Y %H:%M:%S")
-                file.write(date + '\n' + string + '\n')
-            else:
-                file.write(string + '\n')
+no_predict_proba = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR',
+                    'lSVM', 'kSVM', 'PA', 'SGD']
 
 
 # << ============ Classes ============ >>
@@ -123,43 +71,22 @@ class BaseModel(object):
 
         PARAMETERS -------------------------------------
 
-        data         --> dictionary of the data (train, test and all)
-        mapping      --> dictionary of the mapping of the target column
-        metrics      --> dictionary of metrics
-        task         --> classification or regression
-        log          --> name of the log file
-        n_jobs       --> number of cores for parallel processing
-        verbose      --> verbosity level (0, 1, 2, 3)
-        random_state --> int seed for the RNG
+        data --> dictionary of the data (train, test and all)
+        T    --> ATOM class. To avoid having to pass attributes throw params
 
         '''
 
         # Set attributes from ATOM to the model's parent class
         self.__dict__.update(kwargs)
+        self.error = 'No exceptions encountered!'
 
-    @timer
-    def BayesianOpt(self, test_size, max_iter, max_time, eps,
-                    batch_size, init_points, cv, plot_bo):
+    def BayesianOpt(self):
 
         '''
-        DESCRIPTION -----------------------------------
-
         Run the bayesian optmization algorithm to search for the best
         combination of hyperparameters. The function to optimize is evaluated
         either with a K-fold cross-validation on the training set or using
         a validation set.
-
-        PARAMETERS -------------------------------------
-
-        test_size   --> fraction test/train size
-        max_iter    --> maximum number of iterations
-        max_time    --> maximum time for the BO (in seconds)
-        eps         --> minimum distance between two consecutive x's
-        batch_size  --> size of the batch in which the objective is evaluated
-        init_points --> number of initial random tests of the BO
-        cv          --> splits for the cross validation
-        plot_bo     --> boolean to plot the BO's progress
-
         '''
 
         def animate_plot(x, y1, y2, line1, line2, ax1, ax2):
@@ -173,9 +100,10 @@ class BaseModel(object):
 
             PARAMETERS -------------------------------------
 
-            x    --> x values of the plot
-            y    --> y values of the plot
-            line --> line element of the plot
+            x    --> x values of the plots
+            y    --> y values of the plots
+            line --> line element of the plots
+            ax   --> plot's axes
 
             '''
 
@@ -193,7 +121,7 @@ class BaseModel(object):
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
                 ax1.set_title(f'Bayesian Optimization for {self.longname}',
                               fontsize=BaseModel.title_fs)
-                ax1.set_ylabel(self.metric.longname,
+                ax1.set_ylabel(self.T.metric.longname,
                                fontsize=BaseModel.label_fs,
                                labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
@@ -248,24 +176,38 @@ class BaseModel(object):
         def optimize(x):
             ''' Function to be optimized by the BO '''
 
+            t_iter = time()  # Get current time for start of the iteration
+
             params = self.get_params(x)
             self.BO['params'].append(params)
+
+            # Print iteration and time
+            self._iter += 1
+            if self._iter > self.T.init_points:
+                _iter = self._iter - self.T.init_points
+                point = 'Iteration'
+            else:
+                _iter = self._iter
+                point = 'Initial point'
+
+            len_ = '-' * (46 - len(point) - len(str(self._iter)))
+            prlog(f"{point}: {_iter} {len_}", self, 1)
             prlog(f'Parameters --> {params}', self, 2, time=True)
 
             algorithm = self.get_model(params)
 
-            if cv == 1:
+            if self.T.cv == 1:
                 # Split each iteration in different train and validation set
                 X_subtrain, X_validation, Y_subtrain, Y_validation = \
                     train_test_split(self.X_train,
                                      self.y_train,
-                                     test_size=test_size,
+                                     test_size=self.T.test_size,
                                      shuffle=True)
 
                 # Models without the predict_proba() method need probs with ccv
                 # Not prefit to not have to make an extra cut in the data
-                if self.metric.needs_proba:
-                    if self.name in not_predict_proba:
+                if self.T.metric.needs_proba:
+                    if self.name in no_predict_proba:
                         ccv = CalibratedClassifierCV(algorithm, cv=None)
                         ccv.fit(X_subtrain, Y_subtrain)
                         y_pred = ccv.predict_proba(X_validation)
@@ -278,74 +220,81 @@ class BaseModel(object):
                     y_pred = algorithm.predict(X_validation)
 
                 # Calculate metric on the validation set
-                output = self.metric.func(Y_validation, y_pred)
+                out = self.T.metric.func(Y_validation, y_pred)
 
             else:  # Use cross validation to get the output of BO
 
                 # Define the estimator dependent on needs_proba
-                if self.name in not_predict_proba and self.metric.needs_proba:
+                if self.name in no_predict_proba and self.T.metric.needs_proba:
                     estimator = CalibratedClassifierCV(algorithm, cv=None)
                 else:
                     estimator = algorithm
 
                 # Make scoring function for the cross_validator
                 # .function (not .func) since make_scorer handles automatically
-                scoring = make_scorer(self.metric.function,
-                                      greater_is_better=self.metric.gib,
-                                      needs_proba=self.metric.needs_proba)
+                scoring = make_scorer(self.T.metric.function,
+                                      greater_is_better=self.T.metric.gib,
+                                      needs_proba=self.T.metric.needs_proba)
 
                 # Determine number of folds for the cross_val_score
-                if self.task != 'regression':
+                if self.T.task != 'regression':
                     # Folds are made preserving the % of samples for each class
                     # Use same splits for every model
-                    kfold = StratifiedKFold(n_splits=cv, random_state=1)
+                    kfold = StratifiedKFold(n_splits=self.T.cv, random_state=1)
                 else:
-                    kfold = KFold(n_splits=cv, random_state=1)
+                    kfold = KFold(n_splits=self.T.cv, random_state=1)
 
                 # Run cross-validation (get mean of results)
-                output = cross_val_score(estimator,
-                                         self.X_train,
-                                         self.y_train,
-                                         cv=kfold,
-                                         scoring=scoring,
-                                         n_jobs=self.n_jobs).mean()
+                out = cross_val_score(estimator,
+                                      self.X_train,
+                                      self.y_train,
+                                      cv=kfold,
+                                      scoring=scoring,
+                                      n_jobs=self.T.n_jobs).mean()
 
                 # cross_val_score returns negative loss for minimizing metrics
-                output = output if self.metric.gib and output != 0 else -output
+                out = out if self.T.metric.gib and out != 0 else -out
 
             # Save output of the BO and plot progress
-            self.BO['score'].append(output)
-            prlog('Evaluation --> {0}: {1:.{2}f}'
-                  .format(self.metric.longname, output, self.metric.dec),
-                  self, 2)
+            self.BO['score'].append(out)
+            prlog('Evaluation --> {0}: {1:.{2}f}'.format(
+                    self.T.metric.longname, out, self.T.metric.dec), self, 2)
 
-            if plot_bo:
+            t = time_to_string(t_iter)
+            t_tot = time_to_string(self._init_bo)
+            self.BO['time'] = t
+            self.BO['total_time'] = t_tot
+            prlog(f'Time elapsed: {t}   Total time: {t_tot}', self, 2)
+
+            if self.T.plot_bo:
                 # Start to fill NaNs with encountered metric values
                 if np.isnan(self.y1).any():
                     for i, value in enumerate(self.y1):
                         if math.isnan(value):
-                            self.y1[i] = output
+                            self.y1[i] = out
                             if i > 0:  # The first value must remain empty
                                 self.y2[i] = abs(self.y1[i] - self.y1[i-1])
                             break
                 else:  # If no NaNs anymore, continue deque
                     self.x.append(max(self.x)+1)
-                    self.y1.append(output)
+                    self.y1.append(out)
                     self.y2.append(abs(self.y1[-1] - self.y1[-2]))
 
                 self.line1, self.line2, self.ax1, self.ax2 = \
                     animate_plot(self.x, self.y1, self.y2,
                                  self.line1, self.line2, self.ax1, self.ax2)
 
-            return output
+            return out
 
         # << ============ Running optimization ============ >>
 
         # Skip BO for GNB and GP (no hyperparameter tuning)
-        if self.name not in no_BO and max_iter > 0 and max_time > 0:
+        if self.name not in no_BO and self.T._BO:
             prlog(f'\n\nRunning BO for {self.longname}...', self, 1)
 
             # Save dictionary of BO steps
+            self._iter = 0
+            self._init_bo = time()
             self.BO = {}
             self.BO['params'] = []
             self.BO['score'] = []
@@ -353,38 +302,38 @@ class BaseModel(object):
             # BO plot variables
             maxlen = 15  # Maximum steps to show at once in the plot
             self.x = deque(list(range(maxlen)), maxlen=maxlen)
-            self.y1 = deque([np.NaN for i in self.x], maxlen=maxlen)
-            self.y2 = deque([np.NaN for i in self.x], maxlen=maxlen)
+            self.y1 = deque([np.NaN for _ in self.x], maxlen=maxlen)
+            self.y2 = deque([np.NaN for _ in self.x], maxlen=maxlen)
             self.line1, self.line2 = [], []  # Plot lines
             self.ax1, self.ax2 = 0, 0  # Plot axes
 
             # Minimize or maximize the function depending on the metric
-            maximize = True if self.metric.gib else False
+            maximize = True if self.T.metric.gib else False
             # Default SKlearn or multiple random initial points
             kwargs = {}
-            if init_points > 1:
-                kwargs['initial_design_numdata'] = init_points
+            if self.T.init_points > 1:
+                kwargs['initial_design_numdata'] = self.T.init_points
             else:
                 kwargs['X'] = self.get_init_values()
             opt = BayesianOptimization(f=optimize,
                                        domain=self.get_domain(),
-                                       model_update_interval=batch_size,
+                                       model_update_interval=self.T.batch_size,
                                        maximize=maximize,
                                        initial_design_type='random',
                                        normalize_Y=False,
-                                       num_cores=self.n_jobs,
+                                       num_cores=self.T.n_jobs,
                                        **kwargs)
 
-            opt.run_optimization(max_iter=max_iter,
-                                 max_time=max_time,
-                                 eps=eps,
-                                 verbosity=True if self.verbose > 2 else False)
+            opt.run_optimization(max_iter=self.T.max_iter,
+                                 max_time=self.T.max_time,
+                                 eps=self.T.eps,
+                                 verbosity=False)
 
-            if plot_bo:
+            if self.T.plot_bo:
                 plt.close()
 
             # Optimal score of the BO
-            bo_best_score = -opt.fx_opt if self.metric.gib else opt.fx_opt
+            self.score_bo = -opt.fx_opt if self.T.metric.gib else opt.fx_opt
 
             # Set to same shape as GPyOpt (2d-array)
             self.best_params = self.get_params(
@@ -393,8 +342,14 @@ class BaseModel(object):
             # Save best model (not yet fitted)
             self.best_model = self.get_model(self.best_params)
 
+            self.time_bo = time_to_string(self._init_bo)  # Get the BO duration
+
         else:
             self.best_model = self.get_model()
+
+    @timer
+    def fitting(self):
+        ''' Fit the best model to the test set '''
 
         # Fit the selected model on the complete training set
         self.best_model_fit = self.best_model.fit(self.X_train, self.y_train)
@@ -404,87 +359,85 @@ class BaseModel(object):
         self.predict_test = self.best_model_fit.predict(self.X_test)
 
         # Models without the predict_proba() method need probs with ccv
-        if self.name in not_predict_proba and self.task != 'regression':
+        if self.name in no_predict_proba and self.T.task != 'regression':
             ccv = CalibratedClassifierCV(self.best_model, cv=None)
             ccv.fit(self.X_train, self.y_train)
             self.predict_proba_train = ccv.predict_proba(self.X_train)
             self.predict_proba_test = ccv.predict_proba(self.X_test)
-        elif self.task != 'regression':
+        elif self.T.task != 'regression':
             self.predict_proba_train = \
                 self.best_model_fit.predict_proba(self.X_train)
             self.predict_proba_test = \
                 self.best_model_fit.predict_proba(self.X_test)
 
         # Get metric scores
-        if self.metric.needs_proba:
-            self.score_train = self.metric.func(self.y_train,
-                                                self.predict_proba_train)
-            self.score_test = self.metric.func(self.y_test,
-                                               self.predict_proba_test)
+        if self.T.metric.needs_proba:
+            self.score_train = self.T.metric.func(self.y_train,
+                                                  self.predict_proba_train)
+            self.score_test = self.T.metric.func(self.y_test,
+                                                 self.predict_proba_test)
         else:
-            self.score_train = self.metric.func(self.y_train,
-                                                self.predict_train)
-            self.score_test = self.metric.func(self.y_test, self.predict_test)
+            self.score_train = self.T.metric.func(self.y_train,
+                                                  self.predict_train)
+            self.score_test = self.T.metric.func(self.y_test,
+                                                 self.predict_test)
 
         # Calculate some standard metrics on the test set
-        for m in self.metric.__dict__.keys():
+        for m in self.T.metric.__dict__.keys():
             # Skip all non-metric attributes
             if m in ['function', 'name', 'longname',
                      'gib', 'needs_proba', 'task', 'dec']:
                 continue
 
             try:
-                metric = getattr(self.metric, m)
-                if metric.needs_proba and self.task != 'regression':
+                metric = getattr(self.T.metric, m)
+                if metric.needs_proba and self.T.task != 'regression':
                     y_pred = self.predict_proba_test
                 else:
                     y_pred = self.predict_test
                 setattr(self, m, metric.func(self.y_test, y_pred))
             except Exception:
-                msg = f'This metric is unavailable for {self.task} tasks!'
+                msg = f'This metric is unavailable for {self.T.task} tasks!'
                 setattr(self, m, msg)
 
-        # Print stats
-        if max_iter == 0:
+        # << ================= Print stats ================= >>
+
+        if not self.T._BO:
             prlog('\n', self, 1)  # Print extra line
-        if self.name in no_BO and max_iter > 0 and max_time > 0:
+        if self.name in no_BO and self.T._BO:
             prlog('\n', self, 1)  # Print 2 extra lines
-        elif max_iter > 0 and max_time > 0:
+        elif self.T._BO:
             prlog('', self, 2)  # Print extra line
 
         prlog('Final results for {}:{:9s}'.format(self.longname, ' '), self, 1)
-        if self.name not in no_BO and max_iter > 0 and max_time > 0:
+        if self.name not in no_BO and self.T._BO:
+            prlog('Bayesian Optimization ---------------------------', self, 1)
             prlog(f'Best hyperparameters: {self.best_params}', self, 1)
             prlog('Best score on the BO: {0:.{1}f}'
-                  .format(bo_best_score, self.metric.dec), self, 1)
+                  .format(self.score_bo, self.T.metric.dec), self, 1)
+            prlog(f'Time elapsed: {self.time_bo}', self, 1)
+        prlog('Fitting -----------------------------------------', self, 1)
         prlog('Score on the training set: {0:.{1}f}'
-              .format(self.score_train, self.metric.dec), self, 1)
+              .format(self.score_train, self.T.metric.dec), self, 1)
         prlog('Score on the test set: {0:.{1}f}'
-              .format(self.score_test, self.metric.dec), self, 1)
+              .format(self.score_test, self.T.metric.dec), self, 1)
 
     @timer
-    def bagging(self, n_samples=3):
+    def bagging(self):
 
         '''
-        DESCRIPTION -----------------------------------
-
         Take bootstrap samples from the training set and test them on the test
         set to get a distribution of the model's results.
-
-        PARAMETERS -------------------------------------
-
-        n_samples --> number of bootstrap samples to take
-
         '''
 
         self.bagging_scores = []  # List of the scores
-        for _ in range(n_samples):
+        for _ in range(self.T.bagging):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.y_train)
 
             # Fit on bootstrapped set and predict on the independent test set
-            if self.metric.needs_proba:
-                if self.name in not_predict_proba:
+            if self.T.metric.needs_proba:
+                if self.name in no_predict_proba:
                     ccv = CalibratedClassifierCV(self.best_model, cv=None)
                     ccv.fit(sample_x, sample_y)
                     y_pred = ccv.predict_proba(self.X_test)
@@ -497,12 +450,12 @@ class BaseModel(object):
                 y_pred = algorithm.predict(self.X_test)
 
             # Append metric result to list
-            self.bagging_scores.append(self.metric.func(self.y_test, y_pred))
+            self.bagging_scores.append(self.T.metric.func(self.y_test, y_pred))
 
         # Numpy array for mean and std
         self.bagging_scores = np.array(self.bagging_scores)
-        prlog('--------------------------------------------', self, 1)
-        prlog('Bagging score --> Mean: {:.4f}   Std: {:.4f}'
+        prlog('Bagging -----------------------------------------', self, 1)
+        prlog('Mean: {:.4f}   Std: {:.4f}'
               .format(self.bagging_scores.mean(), self.bagging_scores.std()),
               self, 1)
 
@@ -527,13 +480,13 @@ class BaseModel(object):
 
         '''
 
-        if self.task != 'binary classification':
+        if self.T.task != 'binary classification':
             raise AttributeError('This method is only available for ' +
                                  'binary classification tasks.')
 
         # Set metric parameter
         if metric is None:
-            metric = self.metric.function
+            metric = self.T.metric.function
         if not isinstance(metric, list):
             metric = [metric]
 
@@ -541,7 +494,7 @@ class BaseModel(object):
         mlist = []
         for m in metric:
             if isinstance(m, str):
-                mlist.append(getattr(self.metric, m).function)
+                mlist.append(getattr(self.T.metric, m).function)
             else:
                 mlist.append(m)
 
@@ -571,7 +524,7 @@ class BaseModel(object):
         plt.ylabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xticks(fontsize=BaseModel.tick_fs)
         plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -595,21 +548,21 @@ class BaseModel(object):
 
         '''
 
-        if self.task == 'regression':
+        if self.T.task == 'regression':
             raise AttributeError('This method is only available for ' +
                                  'classification tasks.')
 
         # Make target mapping
-        inv_map = {str(v): k for k, v in self.mapping.items()}
+        inv_map = {str(v): k for k, v in self.T.mapping.items()}
         if isinstance(target, str):  # User provides a string
-            target_int = self.mapping[target]
+            target_int = self.T.mapping[target]
             target_str = target
         else:  # User provides an integer
             target_int = target
             target_str = inv_map[str(target)]
 
         fig, ax = plt.subplots(figsize=figsize)
-        for key, value in self.mapping.items():
+        for key, value in self.T.mapping.items():
             idx = np.where(self.y_test == value)  # Get indices per class
             sns.distplot(self.predict_proba_test[idx, target_int],
                          hist=False,
@@ -658,17 +611,17 @@ class BaseModel(object):
 
         # Calculate the permutation importances
         # Force random state on function (won't work with numpy default)
-        scoring = make_scorer(self.metric.function,
-                              greater_is_better=self.metric.gib,
-                              needs_proba=self.metric.needs_proba)
+        scoring = make_scorer(self.T.metric.function,
+                              greater_is_better=self.T.metric.gib,
+                              needs_proba=self.T.metric.needs_proba)
         self.permutations = \
             permutation_importance(self.best_model_fit,
                                    self.X_test,
                                    self.y_test,
                                    scoring=scoring,
                                    n_repeats=n_repeats,
-                                   n_jobs=self.n_jobs,
-                                   random_state=self.random_state)
+                                   n_jobs=self.T.n_jobs,
+                                   random_state=self.T.random_state)
 
         # Get indices of permutations sorted by the mean
         idx = self.permutations.importances_mean.argsort()[:show]
@@ -684,7 +637,7 @@ class BaseModel(object):
         plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xticks(fontsize=BaseModel.tick_fs)
         plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -740,7 +693,8 @@ class BaseModel(object):
         plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xticks(fontsize=BaseModel.tick_fs)
         plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.tight_layout()
+        plt.xlim(0, 1.07)
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -762,7 +716,7 @@ class BaseModel(object):
 
         '''
 
-        if self.task != 'binary classification':
+        if self.T.task != 'binary classification':
             raise AttributeError('This method only works for binary ' +
                                  'classification tasks.')
 
@@ -782,7 +736,7 @@ class BaseModel(object):
         plt.ylabel('TPR', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xticks(fontsize=BaseModel.tick_fs)
         plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -804,7 +758,7 @@ class BaseModel(object):
 
         '''
 
-        if self.task != 'binary classification':
+        if self.T.task != 'binary classification':
             raise AttributeError('This method only works for binary ' +
                                  'classification tasks.')
 
@@ -824,7 +778,7 @@ class BaseModel(object):
         plt.ylabel('Precision', fontsize=BaseModel.label_fs, labelpad=12)
         plt.xticks(fontsize=BaseModel.tick_fs)
         plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.tight_layout()
+        fig.tight_layout()
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
@@ -847,7 +801,7 @@ class BaseModel(object):
 
         '''
 
-        if self.task == 'regression':
+        if self.T.task == 'regression':
             raise AttributeError('This method only works for ' +
                                  'classification tasks.')
 
@@ -857,7 +811,7 @@ class BaseModel(object):
         if normalize:
             cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-        ticks = [v for v in self.mapping.keys()]
+        ticks = [v for v in self.T.mapping.keys()]
 
         fig, ax = plt.subplots(figsize=figsize)
         im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
@@ -900,4 +854,4 @@ class BaseModel(object):
             filename = 'ATOM_' + self.name
         filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         pickle.dump(self.best_model_fit, open(filename, 'wb'))
-        print('Model saved successfully!')
+        prlog('Model saved successfully!', self, 1)

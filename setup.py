@@ -13,10 +13,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
       name='atom-ml',
-      version='v2.4.0',
+      version='v2.5.0',
       license='MIT',
       description='Package for fast exploration and experimentation of ML tasks',
-      download_url='https://github.com/tvdboom/ATOM/archive/v2.4.0.tar.gz',
+      download_url='https://github.com/tvdboom/ATOM/archive/v2.5.0.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',

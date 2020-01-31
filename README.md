@@ -8,6 +8,8 @@ Email: m.524687@gmail.com
 
 [![Build Status](https://travis-ci.com/tvdboom/ATOM.svg?branch=master)](https://travis-ci.com/tvdboom/ATOM)
 [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
+[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/context:python)
+[![Total alerts](https://img.shields.io/lgtm/alerts/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/alerts/)
 [![Python 3.6|3.7|3.8](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
@@ -121,7 +123,7 @@ ATOM contains multiple methods for standard data cleaning and feature selection 
 | TIP: Use the `report` method to examine the data and help you determine suitable parameters for the methods |
 | --- |
 
-* **impute(strat_num='remove', strat_cat='remove', max_frac_rows=0.5, max_frac_cols=0.5, missing=[None, np.nan, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'])**  
+* **impute(strat_num='remove', strat_cat='remove', max_frac_rows=0.5, max_frac_cols=0.5, missing=None)**  
 Handle missing values according to the selected strategy. Also removes rows and columns with too many missing values.
 	+ **strat_num: int, float or string, optional (default='remove')**  
 	Imputing strategy for numerical columns. Possible values are:
@@ -140,8 +142,8 @@ Handle missing values according to the selected strategy. Also removes rows and 
 	Minimum fraction of non missing values in row. If less, the row is removed.
 	+ **max_frac_cols: float, optional (default=0.5)**  
 	Minimum fraction of non missing values in column. If less, the column is removed.
-	+ **missing: value or list of values, optional (default=[None, np.nan, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'])**  
-	List of values to consider as missing. None, np.nan, np.inf and -np.inf are always imputed since they are incompatible with the models.<br><br>
+	+ **missing: value or list of values, optional (default=None)**  
+	List of values to consider as missing. If None, the default values are considered: np.nan, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'. Infinite and NaN values are always imputed since they are incompatible with the models.<br><br>
 * **encode(max_onehot=10, frac_to_other=0)**  
 Perform encoding of categorical features. The encoding type depends on the number of unique values in the column: label-encoding for n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and target-encoding for n_unique > max_onehot. It also can replace classes with low occurences with the value 'other' in order to prevent too high cardinality.
 	+ **max_onehot: int or None, optional (default=10)**  
@@ -182,17 +184,17 @@ Use a genetic algorithm to create new combinations of existing features and add 
 	Number of generations to evolve.
 	+ **population: int, optional (default=500)**  
 	Number of entities in each generation.<br><br>
-* **feature_selection(strategy=None, solver=None, max_features=None, threshold=-np.inf, min_variance_frac=1., max_correlation=0.98)**  
+* **feature_selection(strategy=None, solver=None, max_features=None, min_variance_frac=1., max_correlation=0.98, \*\*kwargs)**  
 Select best features according to the selected strategy. Ties between features with equal scores will be broken in an unspecified way. Also removes features with too low variance and too high collinearity.
 	+ **strategy: string or None, optional (default=None)**  
 	Feature selection strategy to use. Choose from:
 		- None: do not perform any feature selection algorithm (it does still look for multicollinearity and variance)
-		- 'univariate': perform a univariate statistical test
-		- 'PCA': perform a principal component analysis
-		- 'SFM': select best features from an existing model
-		- 'RFE': recursive feature eliminator
+		- 'univariate': perform a univariate statistical test. From sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html).
+		- 'PCA': perform a principal component analysis. From sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html).
+		- 'SFM': select best features from an existing model. From sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html).
+		- 'RFE': recursive feature eliminator. From sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html).
 	+ **solver: string, callable or None (default=None)**  
-	Solver or model to use for the feature selection strategy. See the sklearn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM).
+	Solver or model to use for the feature selection strategy. See the sklearn documentation for an extended descrition of the choices. Select None for the default option per strategy (not applicable for SFM or RFE).
 		- for 'univariate', choose from:
 			* 'f_classif' (default for classification tasks)
 			* 'f_regression' (default for regression tasks)
@@ -212,14 +214,12 @@ Select best features according to the selected strategy. Ties between features w
 		- None: select all features
 		- if >= 1: number of features to select
 		- if < 1: fraction of features to select
-	+ **threshold: string, int or float, optional (default=-np.inf)**  
-	Threshold value to attain when selecting the best features (only for strategy='SFM'). Features whose importance is greater or equal are kept while the others are discarded.
-		- if 'mean': set the mean of feature_importances as threshold
-		- if 'median': set the median of feature_importances as threshold
 	+ **min_variance_frac: float or None, optional (default=1.)**  
 	Remove features with the same value in at least this fraction of the total. The default is to keep all features with non-zero variance, i.e. remove the features that have the same value in all samples. None to skip this step.
 	+ **max_correlation: float or None, optional (default=0.98)**  
 	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
+	+ **\*\*kwargs:**  
+	Any extra parameter for the PCA, SFM or RFE. See the sklearn documentation for the available options.<br><br>
 * **fit(models, metric, greater_is_better=True, needs_proba=False, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
 Fit class to the selected models. The optimal hyperparameters per model are selectred using a Bayesian Optimization (BO) algorithm with gaussian process as kernel. The resulting score of each step of the BO is either computed by cross-validation on the complete training set or by creating a validation set from the training set. This process will create some minimal leakage but ensures a maximal use of the provided data. The test set, however, does not contain any leakage and will be used to determine the final score of every model. Note that the best score on the BO can be consistently lower than the final score on the test set (despite the leakage) due to the considerable fewer instances on which it is trained. At the end of te pipeline, you can choose to evaluate the robustness of the model's performance on the test set applying a bagging algorithm.
 	+ **models: string or list of strings**  
@@ -243,7 +243,7 @@ Fit class to the selected models. The optimal hyperparameters per model are sele
 		- 'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)
 		- 'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html) (with decision tree as base estimator)
 		- 'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html) 
-		- 'XGB' for XGBoost [classifier/regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#module-xgboost.sklearn) (if package is available)  
+		- 'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor) (if package is available)  
 		- 'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html) (if package is available)
 		- 'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html) (if package is available)
 		- 'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html) 
@@ -374,7 +374,7 @@ Save the best found model as a pickle file.
 
 Subclass attributes
 -----------------------------  
-* **error**: If the model encountered an exception, this shows it.
+* **error**: Any exception encountered by the model.
 * **best_params**: Get parameters of the model with highest score.
 * **best_model**: Get the model with highest score (not fitted).
 * **best_model_fit**: Get the model with highest score fitted on the training set.
@@ -382,13 +382,16 @@ Subclass attributes
 * **predict_test**: Get the predictions on the test set.
 * **predict_proba_train**: Get the predicted probabilities on the training set.
 * **predict_proba_test**: Get the predicted probabilities on the test set.
+* **score_bo**: Best score of the selected model on the Bayesian Optimization.
 * **score_train**: Metric score of the BO's selected model on the training set.
 * **score_test**: Metric score of the BO's selected model on the test set.
 * **bagging_scores**: Array of the bagging's results.
 * **permutations**: Dictionary of the permutation's results (if plot_permutation_importance was used).
 * **BO**: Dictionary containing the information of every step taken by the BO.
-	+ 'params': Parameters used for the model
-	+ 'score': Score of the chosen metric
+	+ 'params': Parameters used for the model.
+	+ 'score': Score of the chosen metric.
+	+ 'time': Time spent on this iteration.
+	+ 'total_time': Time spent since the start of the BO.
 * **Any of the metrics described [here](#Metrics).**
 
 

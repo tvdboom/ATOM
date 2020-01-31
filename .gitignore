@@ -3,6 +3,15 @@ abalone.csv
 weatherAUS.csv
 run_automl.py
 
+# Log, pickle and figures in root directory
+/*.log
+/*.pkl
+/*.png
+
+# Pytest
+.pytest_cache
+.pytest_cache/*
+
 # System-specific temporary and index files
 .DS_Store
 .swp
@@ -10,9 +19,6 @@ run_automl.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-
-# C extensions
-*.so
 
 # Distribution / packaging
 .Python
@@ -51,19 +57,6 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
 
 # IPython Notebooks
 .ipynb_checkpoints

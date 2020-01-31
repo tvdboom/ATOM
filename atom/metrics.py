@@ -89,23 +89,23 @@ class BaseMetric(object):
 
         # Get right function dependent on task
         if isinstance(function, str):
-            if function == 'tn' and task == 'binary classification':
+            if function == 'tn' and task.startswith('binary'):
                 self.function = tn
                 self.longname = 'true negatives'
-            elif function == 'fp' and task == 'binary classification':
+            elif function == 'fp' and task.startswith('binary'):
                 self.function = fp
                 self.longname = 'false positives'
-            elif function == 'fn' and task == 'binary classification':
+            elif function == 'fn' and task.startswith('binary'):
                 self.function = fn
                 self.longname = 'false negatives'
-            elif function == 'tp' and task == 'binary classification':
+            elif function == 'tp' and task.startswith('binary'):
                 self.function = tp
                 self.longname = 'true positives'
             elif function == 'accuracy':
                 self.function = accuracy_score
             elif function == 'ap':
                 self.function = average_precision_score
-            elif function == 'auc' and task == 'binary classification':
+            elif function == 'auc' and task.startswith('binary'):
                 self.function = roc_auc_score
             elif function == 'auc':
                 self.function = auc_adapted
@@ -120,28 +120,28 @@ class BaseMetric(object):
                 self.function = mean_squared_error
             elif function == 'msle':
                 self.function = mean_squared_log_error
-            elif function == 'f1' and task == 'binary classification':
+            elif function == 'f1' and task.startswith('binary'):
                 self.function = f1_score
             elif function == 'f1':
                 self.function = f1_adapted
                 self.longname = 'f1_score'
             elif function == 'hamming':
                 self.function = hamming_loss
-            elif function == 'jaccard' and task == 'binary classification':
+            elif function == 'jaccard' and task.startswith('binary'):
                 self.function = jaccard_score
             elif function == 'jaccard':
                 self.function = jaccard_adapted
                 self.longname = 'jaccard_score'
             elif function == 'logloss':
                 self.function = log_loss
-            elif function == 'precision' and task == 'binary classification':
+            elif function == 'precision' and task.startswith('binary'):
                 self.function = precision_score
             elif function == 'precision':
                 self.function = precision_adapted
                 self.longname = 'precision_score'
             elif function == 'r2':
                 self.function = r2_score
-            elif function == 'recall' and task == 'binary classification':
+            elif function == 'recall' and task.startswith('binary'):
                 self.function = recall_score
             elif function == 'recall':
                 self.function = recall_adapted
