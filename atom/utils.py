@@ -11,14 +11,42 @@ Description: Module containing utility functions.
 # << ============ Import Packages ============ >>
 
 # Standard packages
+import logging
 import pandas as pd
-import datetime
 from time import time
 
 
 # << ============ Functions ============ >>
 
-def prlog(string, class_, level=0, time=False):
+def prepare_logger(log):
+    ''' Prepare logging file '''
+
+    if not isinstance(log, (type(None), str)):
+        raise_TypeError('log', log)
+    elif log is None or log.endswith('.log'):
+        logger = log
+    else:
+        logger = log + '.log'
+
+    # Creating logging handler
+    if logger is not None:
+        # Define file handler and set formatter
+        file_handler = logging.FileHandler(logger)
+        formatter = logging.Formatter('%(asctime)s: %(message)s')
+        file_handler.setFormatter(formatter)
+
+        # Define logger
+        logger = logging.getLogger('ATOM_logger')
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+        if logger.hasHandlers():  # Remove existing handlers
+            logger.handlers.clear()
+        logger.addHandler(file_handler)  # Add file handler to logger
+
+    return logger
+
+
+def prlog(string, class_, level=0):
 
     '''
     DESCRIPTION -----------------------------------
@@ -30,29 +58,19 @@ def prlog(string, class_, level=0, time=False):
     string --> string to output
     class_ --> class of the element
     level  --> minimum verbosity level to print
-    time   --> wether to add the timestamp to the log
 
     '''
 
-    try:  # For the ATOM class
-        verbose = class_.verbose
-        log = class_.log
-    except AttributeError:  # For the BaseModel class
-        verbose = class_.T.verbose
-        log = class_.T.log
-
+    verbose = class_.T.verbose if hasattr(class_, 'T') else class_.verbose
     if verbose > level:
         print(string)
 
+    log = class_.T.log if hasattr(class_, 'T') else class_.log
     if log is not None:
-        with open(log, 'a+') as file:
-            if time:
-                # Datetime object containing current date and time
-                now = datetime.now()
-                date = now.strftime("%d/%m/%Y %H:%M:%S")
-                file.write(date + '\n' + string + '\n')
-            else:
-                file.write(string + '\n')
+        while string.startswith('\n'):  # Insert empty lines for clean view
+            log.info('')
+            string = string[1:]
+        log.info(string)
 
 
 def time_to_string(t_init):
@@ -135,6 +153,16 @@ def check_isFit(isFit):
 
 # << ============ Decorators ============ >>
 
+def composed(*decs):
+    ''' Add multiple decorators in one line '''
+
+    def deco(f):
+        for dec in reversed(decs):
+            f = dec(f)
+        return f
+    return deco
+
+
 def timer(f):
     ''' Decorator to time a function '''
 
@@ -161,10 +189,31 @@ def params_to_log(f):
     ''' Decorator to save function's params to log file '''
 
     def wrapper(*args, **kwargs):
-        # args[0]=class instance
-        prlog('Function "' + str(f.__name__) + f'" parameters: {kwargs}',
-              args[0], 5)
+        log = args[0].T.log if hasattr(args[0], 'T') else args[0].log
+        if log is not None:
+            log.info('')  # Empty line first
+            log.info(f'{args[0].__class__.__name__}.{f.__name__}. Parameters: {kwargs}')
+
         result = f(*args, **kwargs)
         return result
+
+    return wrapper
+
+
+def crash(f):
+    ''' Decorator to save program crashes to log file '''
+
+    def wrapper(*args, **kwargs):
+        try:  # Run the function
+            result = f(*args, **kwargs)
+            return result
+
+        except Exception as exception:
+            log = args[0].T.log if hasattr(args[0], 'T') else args[0].log
+
+            # Write exception to log and raise it
+            if type(log) == logging.Logger:
+                log.exception("Exception encountered:")
+            raise eval(type(exception).__name__)(exception)
 
     return wrapper

@@ -333,6 +333,8 @@ def test_model_attributes():
     atom.fit(models=['tree', 'lgb'], metric='f1', max_iter=5, cv=1)
     assert 'params' in atom.Tree.BO.keys()
     assert 'score' in atom.Tree.BO.keys()
+    assert 'time' in atom.Tree.BO.keys()
+    assert 'total_time' in atom.Tree.BO.keys()
     assert hasattr(atom.Tree, 'best_params')
     assert hasattr(atom.lgb, 'best_model')
     assert hasattr(atom.Tree, 'best_model_fit')

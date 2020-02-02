@@ -36,7 +36,7 @@ from matplotlib.gridspec import GridSpec
 import seaborn as sns
 
 # Own package modules
-from .utils import timer, prlog, time_to_string
+from .utils import composed, crash, params_to_log, timer, prlog, time_to_string
 
 
 # << ============ Global variables ============ >>
@@ -192,7 +192,7 @@ class BaseModel(object):
 
             len_ = '-' * (46 - len(point) - len(str(self._iter)))
             prlog(f"{point}: {_iter} {len_}", self, 1)
-            prlog(f'Parameters --> {params}', self, 2, time=True)
+            prlog(f'Parameters --> {params}', self, 2)
 
             algorithm = self.get_model(params)
 
@@ -461,6 +461,7 @@ class BaseModel(object):
 
     # << ============ Plot functions ============ >>
 
+    @composed(crash, params_to_log)
     def plot_threshold(self, metric=None, steps=100, title=None,
                        figsize=(10, 6), filename=None, display=True):
 
@@ -529,6 +530,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_probabilities(self, target=1, title=None,
                            figsize=(10, 6), filename=None, display=True):
 
@@ -585,6 +587,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_permutation_importance(self, show=None, n_repeats=10, title=None,
                                     figsize=None, filename=None, display=True):
 
@@ -642,6 +645,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_feature_importance(self, show=None, title=None,
                                 figsize=None, filename=None, display=True):
 
@@ -699,6 +703,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_ROC(self, title=None, figsize=(10, 6),
                  filename=None, display=True):
 
@@ -741,6 +746,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_PRC(self, title=None, figsize=(10, 6),
                  filename=None, display=True):
 
@@ -783,6 +789,7 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_confusion_matrix(self, normalize=True, title=None,
                               figsize=(10, 6), filename=None, display=True):
 
@@ -847,11 +854,12 @@ class BaseModel(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def save(self, filename=None):
-        ''' Save model to pickle file '''
+        ''' Save model subclass to pickle file '''
 
         if filename is None:
             filename = 'ATOM_' + self.name
         filename = filename if filename.endswith('.pkl') else filename + '.pkl'
-        pickle.dump(self.best_model_fit, open(filename, 'wb'))
-        prlog('Model saved successfully!', self, 1)
+        pickle.dump(self, open(filename, 'wb'))
+        prlog(self.longname + ' model subclass saved successfully!', self, 1)

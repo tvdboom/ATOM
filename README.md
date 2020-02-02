@@ -217,7 +217,7 @@ Select best features according to the selected strategy. Ties between features w
 	+ **min_variance_frac: float or None, optional (default=1.)**  
 	Remove features with the same value in at least this fraction of the total. The default is to keep all features with non-zero variance, i.e. remove the features that have the same value in all samples. None to skip this step.
 	+ **max_correlation: float or None, optional (default=0.98)**  
-	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.<br><br>
+	Minimum value of the Pearson correlation cofficient to identify correlated features. A dataframe of the removed features and their correlation values can be accessed through the `collinear` attribute. None to skip this step.
 	+ **\*\*kwargs:**  
 	Any extra parameter for the PCA, SFM or RFE. See the sklearn documentation for the available options.<br><br>
 * **fit(models, metric, greater_is_better=True, needs_proba=False, successive_halving=False, skip_steps=0, max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1, init_points=5, plot_bo=False, cv=3, bagging=None)**  
@@ -320,11 +320,19 @@ Plot the precision-recall curve of all the models. Only for binary classificatio
 
 Attributes  
 -----------------------------  
+
+### Data attributes (as pd.DataFrame)
 * **dataset**: Dataframe of the complete dataset.
-* **X, y**: Data features and target.
-* **train, test**: Train and test set.
-* **X_train, y_train**: Training set features and target.
-* **X_test, y_test**: Test set features and target.
+* **X**: Features: format as (n_samples, n_features).
+* **y**: Target column.
+* **train**: Training set.
+* **test**: Test set.
+* **X_train**: Training set features.
+* **y_train**: Training set target.
+* **X_test**: Test set features.
+* **y_test**: Test set target.
+
+### Utility attributes
 * **mapping**: Dictionary of the target values mapped to their encoded integer (only for classification tasks).
 * **report**: Pandas profiling report of the selected dataset (if the report method was used).
 * **genetic_features**: Contains the description of the generated features and their scores (if feature_insertion was used).
@@ -392,6 +400,7 @@ Subclass attributes
 	+ 'score': Score of the chosen metric.
 	+ 'time': Time spent on this iteration.
 	+ 'total_time': Time spent since the start of the BO.
+* **Any of the data attributes described [here](#Data attributes (as pd.DataFrame))
 * **Any of the metrics described [here](#Metrics).**
 
 

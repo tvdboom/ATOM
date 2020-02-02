@@ -15,6 +15,7 @@ import pandas as pd
 from scipy.stats import zscore
 from tqdm import tqdm
 from time import time
+import pickle
 import multiprocessing
 import warnings
 import importlib
@@ -32,8 +33,8 @@ from sklearn.feature_selection import (
 
 # Own package modules
 from .utils import (
-     params_to_log, prlog, time_to_string, to_df, to_series, merge,
-     check_isFit, raise_TypeError, raise_ValueError
+     prepare_logger, composed, crash, params_to_log, prlog, time_to_string,
+     to_df, to_series, merge, check_isFit, raise_TypeError, raise_ValueError
      )
 from .basemodel import BaseModel
 from .metrics import BaseMetric
@@ -121,8 +122,9 @@ class ATOM(object):
 
     # << ================= Methods ================= >>
 
-    def __init__(self, X, y=None, percentage=100, test_size=0.3, log=None,
-                 n_jobs=1, warnings=False, verbose=0, random_state=None):
+    @composed(crash, params_to_log)
+    def __init__(self, X, y, percentage, test_size,
+                 n_jobs, warnings, verbose, random_state):
 
         '''
         DESCRIPTION -----------------------------------
@@ -205,12 +207,6 @@ class ATOM(object):
         elif test_size <= 0 or test_size >= 1:
             raise_ValueError('test_size', test_size)
         self.test_size = test_size
-        if not isinstance(log, (type(None), str)):
-            raise_TypeError('log', log)
-        elif log is None or log.endswith('.txt'):
-            self.log = log
-        else:
-            self.log = log + '.txt'
         if not isinstance(warnings, bool) and warnings not in (0, 1):
             raise_TypeError('warnings', warnings)
         self.warnings = bool(warnings)
@@ -231,7 +227,7 @@ class ATOM(object):
         self._isScaled = True if mean < 0.05 and 0.5 < std < 1.5 else False
         self._isFit = False  # Model has not been fitted yet
 
-        prlog('<<=============== ATOM ===============>>', self, time=True)
+        prlog('<<=============== ATOM ===============>>', self)
 
         # Check number of cores for multiprocessing
         if not isinstance(n_jobs, int):
@@ -368,6 +364,7 @@ class ATOM(object):
                                                  test_size=self.test_size,
                                                  shuffle=False)
 
+    @crash
     def reset_attributes(self, truth='dataset'):
 
         '''
@@ -420,6 +417,7 @@ class ATOM(object):
         self.X_test = self.test.drop(self.target, axis=1)
         self.y_test = self.test[self.target]
 
+    @crash
     def scale(self, _check=True):
         ''' Scale all features to mean=0 and std=1 '''
 
@@ -439,6 +437,7 @@ class ATOM(object):
         elif _check:  # Inform the user
             prlog('The features are already scaled!', self)
 
+    @crash
     def stats(self, _vb=None):
         ''' Print some information about the dataset '''
 
@@ -457,8 +456,8 @@ class ATOM(object):
 
         prlog(f'Scaled: {self._isScaled}', self, _vb)
         prlog('----------------------------------', self, _vb)
-        prlog('Size of training set: {}\nSize of test set: {}'
-              .format(len(self.train), len(self.test)), self, _vb)
+        prlog(f'Size of training set: {len(self.train)}', self, _vb)
+        prlog(f'Size of test set: {len(self.test)}', self, _vb)
 
         # Print count of target classes
         if self.task != 'regression':
@@ -493,6 +492,7 @@ class ATOM(object):
 
         prlog('', self, 1)  # Insert an empty row
 
+    @crash
     def report(self, df='dataset', rows=None, filename=None):
 
         '''
@@ -539,7 +539,7 @@ class ATOM(object):
                 filename = filename + '.html'
             self.report.to_file(filename)
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def impute(self, strat_num='remove', strat_cat='remove',
                max_frac_rows=0.5, max_frac_cols=0.5, missing=None):
 
@@ -686,7 +686,7 @@ class ATOM(object):
 
         self.reset_attributes('train_test')
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def encode(self, max_onehot=10, frac_to_other=0):
 
         '''
@@ -776,7 +776,7 @@ class ATOM(object):
                   'the frac_to_other and max_onehot parameters, or remove ' +
                   'features with high cardinality.', self)
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def outliers(self, max_sigma=3, include_target=False):
 
         '''
@@ -817,7 +817,7 @@ class ATOM(object):
         self.train = self.train[ix]
         self.reset_attributes('train_test')
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def balance(self, oversample=None, undersample=None, n_neighbors=5):
 
         '''
@@ -931,7 +931,7 @@ class ATOM(object):
         self.train = merge(self.X_train, self.y_train)
         self.reset_attributes('train_test')
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def feature_insertion(self, n_features=2, generations=20, population=500):
 
         '''
@@ -1051,7 +1051,7 @@ class ATOM(object):
 
         self.reset_attributes('X')
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def feature_selection(self,
                           strategy=None,
                           solver=None,
@@ -1303,7 +1303,7 @@ class ATOM(object):
             raise ValueError('Invalid value for strategy parameter. Choose ' +
                              "from: 'univariate', 'PCA', 'SFM' or 'RFE'.")
 
-    @params_to_log
+    @composed(crash, params_to_log)
     def fit(self, models, metric, greater_is_better=True, needs_proba=False,
             successive_halving=False, skip_iter=0,
             max_iter=15, max_time=np.inf, eps=1e-08, batch_size=1,
@@ -1413,7 +1413,7 @@ class ATOM(object):
                         prlog('\n', self, 1)  # Add two empty lines
                     prlog('Exception encountered while running the '
                           + f'{model} model. Removing model from pipeline.'
-                          + f'\n{type(ex).__name__}: {ex}', self, 1, True)
+                          + f'\n{type(ex).__name__}: {ex}', self, 1)
 
                     # Save the exception to model attribute
                     exception = type(ex).__name__ + ': ' + str(ex)
@@ -1771,8 +1771,21 @@ class ATOM(object):
             self.results = run_iteration()
             self._isFit = True
 
+    # <======================= Utility methods =======================>
+
+    @composed(crash, params_to_log)
+    def save(self, filename=None):
+        ''' Save ATOM class to pickle file '''
+
+        if filename is None:
+            filename = 'ATOM'
+        filename = filename if filename.endswith('.pkl') else filename + '.pkl'
+        pickle.dump(self, open(filename, 'wb'))
+        prlog('ATOM class saved successfully!', self, 1)
+
     # <======================= Plot methods =======================>
 
+    @composed(crash, params_to_log)
     def plot_correlation(self, title=None,
                          figsize=(10, 10), filename=None, display=True):
 
@@ -1816,6 +1829,7 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_PCA(self, show=None, title=None,
                  figsize=None, filename=None, display=True):
 
@@ -1866,6 +1880,7 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_bagging(self, iteration=-1, title=None,
                      figsize=None, filename=None, display=True):
 
@@ -1922,6 +1937,7 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_successive_halving(self, title=None, figsize=(10, 6),
                                 filename=None, display=True):
 
@@ -1981,6 +1997,7 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_ROC(self, title=None, figsize=(10, 6),
                  filename=None, display=True):
 
@@ -2031,6 +2048,7 @@ class ATOM(object):
             plt.savefig(filename)
         plt.show() if display else plt.close()
 
+    @composed(crash, params_to_log)
     def plot_PRC(self, title=None, figsize=(10, 6),
                  filename=None, display=True):
 
@@ -2252,18 +2270,24 @@ class ATOM(object):
 class ATOMClassifier(ATOM):
     ''' ATOM object for classificatin tasks '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, X, y=None, percentage=100, test_size=0.3, log=None,
+                 n_jobs=1, warnings=False, verbose=0, random_state=None):
         ''' Initialize class '''
 
+        self.log = prepare_logger(log)
         self.goal = 'classification'
-        super().__init__(*args, **kwargs)
+        super().__init__(X, y, percentage, test_size,
+                         n_jobs, warnings, verbose, random_state)
 
 
 class ATOMRegressor(ATOM):
     ''' ATOM object for regression tasks '''
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, X, y=None, percentage=100, test_size=0.3, log=None,
+                 n_jobs=1, warnings=False, verbose=0, random_state=None):
         ''' Initialize class '''
 
+        self.log = prepare_logger(log)
         self.goal = 'regression'
-        super().__init__(*args, **kwargs)
+        super().__init__(X, y, percentage, test_size,
+                         n_jobs, warnings, verbose, random_state)
