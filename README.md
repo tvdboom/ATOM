@@ -13,6 +13,8 @@ Email: m.524687@gmail.com
 [![Python 3.6|3.7|3.8](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+
   
 Description  
 ------------------------  
@@ -97,7 +99,7 @@ ATOM class for classification tasks. When initializing the class, ATOM will auto
 	+ **test_size: float, optional (default=0.3)**  
 	Split ratio of the train and test set.
 	+ **log: string or None, optional (default=None)**  
-	Name of the log file. None to not save any log.
+	Name of the log file. 'auto' for default name with date and time. None to not save any log.
 	+ **n_jobs: int, optional (default=1)**  
 	Number of cores to use for parallel processing.
 		+ If -1, use all available cores
@@ -299,18 +301,20 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 If you change any of the class' data attributes (dataset, X, y, train, test, X_train, X_test, y_train, y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, y_train and y_test, or truth='train' will also update the test set, etc...
 	+ **truth: string, optional (default='dataset')**  
 	Data attribute that has been changed (as string)<br><br>
-* **plot_bagging(iteration=-1, \*\*kwargs)**  
-Make a boxplot of the bagging's results after fitting the class.
-	+ **iteration: int, optional (default=-1)**  
-	Iteration of the successive_halving to plot. If -1, use the last iteration.<br><br>
 * **plot_correlation(\*\*kwargs)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.<br><br>
 * **plot_PCA(show=None, \*\*kwargs)**  
 Plot the explained variance ratio of the components. Only if PCA was applied on the dataset through the feature_selection method.
 	+ **show: int or None, optional (default=None)**  
 	Number of best components to show in the plot. None for all components.<br><br>
-* **plot_successive_halving(\*\*kwargs)**  
+* **plot_bagging(models=None, \*\*kwargs)**  
+Make a boxplot of the bagging's results after fitting the class.
+	+ **models: str or list, optional (default=None)**  
+	Models to plot. Note that if successive halving=True only the last model is saved, so avoid plotting models from different iterations together.<br><br>
+* **plot_successive_halving(models=None, \*\*kwargs)**  
 Make a plot of the models' scores per iteration of the successive halving.<br><br>
+	+ **models: str or list, optional (default=None)**  
+	Models to plot.<br><br>
 * **plot_ROC(\*\*kwargs)**  
 Plot the ROC curve of all the models. Only for binary classification tasks.<br><br>
 * **plot_PRC(\*\*kwargs)**  
@@ -339,13 +343,25 @@ Attributes
 * **collinear**: Dataframe of the collinear features and their correlation values (if feature_selection was used).
 * **errors**: Dictionary of the encountered exceptions (if any) while fitting the models.
 * **winner**: Model subclass that performed best after fit.
-* **results**: Dataframe (or list of dataframes if successive_halving=True) of the results.
+* **results**: Dataframe (or list of dataframes if successive_halving=True) of the results. Columns can include:
+    + model: model's name.
+    + total_time: time spent on this model.
+    + score_train: metric score on the training set.
+    + score_test: metric score on the test set.
+    + fit_time: time spent fitting and predicting.
+    + bagging_mean: mean score of the bagging's results.
+    + bagging_std: standard deviation score of the bagging's results.
+    + bagging_time: time spent on the bagging algorithm.
 
 
 Subclass methods  
 -----------------------------
 After fitting, the models become subclasses of the main class. They can be called upon for  handy plot functions and attributes, e.g. `atom.LGB.plot_confusion_matrix()`. If successive_halving=True, the model subclass corresponds to the last fitted model.
-  
+
+* **plot_bagging(\*\*kwargs)**  
+Make a boxplot of the bagging's results for this specific model.<br><br>
+* **plot_successive_halving(\*\*kwargs)**  
+Make a plot of the models' scores per iteration of the successive halving.<br><br>
 * **plot_threshold(metric=None, steps=100, \*\*kwargs)**  
 Plot performance metrics against multiple threshold values. If None, the metric used to fit the model will be selected. Only for binary classification tasks.  
 	+ **metric: string, callable, list or None, optional (default=None)**  
@@ -371,7 +387,7 @@ Plot the ROC curve. Only for binary classification tasks.<br><br>
 * **plot_PRC(\*\*kwargs)**  
 Plot the precision-recall curve. Only for binary classification tasks.<br><br>
 * **plot_confusion_matrix(normalize=True, \*\*kwargs)**  
-Plot the confusion matrix for the model. Only for classification tasks.
+Plot the confusion matrix for the model. Only for classification tasks.<br><br>
 	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.<br><br>
 * **save(filename=None)**  
@@ -395,12 +411,12 @@ Subclass attributes
 * **score_test**: Metric score of the BO's selected model on the test set.
 * **bagging_scores**: Array of the bagging's results.
 * **permutations**: Dictionary of the permutation's results (if plot_permutation_importance was used).
-* **BO**: Dictionary containing the information of every step taken by the BO.
+* **BO**: Dictionary containing the information of every step taken by the BO. Keys include:
 	+ 'params': Parameters used for the model.
 	+ 'score': Score of the chosen metric.
 	+ 'time': Time spent on this iteration.
 	+ 'total_time': Time spent since the start of the BO.
-* **Any of the data attributes described [here](#Data attributes (as pd.DataFrame))
+* **Any of the data attributes described [here](#Data attributes).**
 * **Any of the metrics described [here](#Metrics).**
 
 

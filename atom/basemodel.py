@@ -24,9 +24,8 @@ from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
-from sklearn.metrics import (
-        make_scorer, confusion_matrix, roc_curve, precision_recall_curve
-        )
+from sklearn.metrics import make_scorer, confusion_matrix
+
 # Others
 from GPyOpt.methods import BayesianOptimization
 
@@ -37,6 +36,7 @@ import seaborn as sns
 
 # Own package modules
 from .utils import composed, crash, params_to_log, timer, prlog, time_to_string
+from .plots import plot_ROC, plot_PRC, plot_bagging, plot_successive_halving
 
 
 # << ============ Global variables ============ >>
@@ -149,12 +149,12 @@ class BaseModel(object):
                 plt.show()
 
             # Update plot
-            line1.set_xdata(x)   # Update x-data
-            line1.set_ydata(y1)  # Update y-data
-            line2.set_xdata(x)   # Update x-data
-            line2.set_ydata(y2)  # Update y-data
-            ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
-            ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)  # Update x-axis
+            line1.set_xdata(x)
+            line1.set_ydata(y1)
+            line2.set_xdata(x)
+            line2.set_ydata(y2)
+            ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+            ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
             ax1.set_xticks(self.x)  # Update x-ticks
             ax2.set_xticks(self.x)  # Update x-ticks
 
@@ -459,7 +459,22 @@ class BaseModel(object):
               .format(self.bagging_scores.mean(), self.bagging_scores.std()),
               self, 1)
 
-    # << ============ Plot functions ============ >>
+    # << ==================== Plot functions ==================== >>
+
+    @composed(crash, params_to_log)
+    def plot_bagging(self, title=None,
+                     figsize=(10, 6), filename=None, display=True):
+        ''' Plot a boxplot of the bagging's results '''
+
+        plot_bagging(self.T, self.name, title, figsize, filename, display)
+
+    @composed(crash, params_to_log)
+    def plot_successive_halving(self, title=None,
+                                figsize=(10, 6), filename=None, display=True):
+        ''' Plot the successive halving scores '''
+
+        plot_successive_halving(self.T, self.name,
+                                title, figsize, filename, display)
 
     @composed(crash, params_to_log)
     def plot_threshold(self, metric=None, steps=100, title=None,
@@ -704,90 +719,18 @@ class BaseModel(object):
         plt.show() if display else plt.close()
 
     @composed(crash, params_to_log)
-    def plot_ROC(self, title=None, figsize=(10, 6),
-                 filename=None, display=True):
+    def plot_ROC(self, title=None,
+                 figsize=(10, 6), filename=None, display=True):
+        ''' Plot Receiver Operating Characteristics curve '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot Receiver Operating Characteristics curve.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        if self.T.task != 'binary classification':
-            raise AttributeError('This method only works for binary ' +
-                                 'classification tasks.')
-
-        # Get False (True) Positive Rate
-        fpr, tpr, _ = roc_curve(self.y_test, self.predict_proba_test[:, 1])
-
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(fpr, tpr, lw=2, label=f'{self.name} (AUC={self.auc:.3f})')
-        plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
-
-        title = 'ROC curve' if title is None else title
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.legend(loc='lower right',
-                   frameon=False,
-                   fontsize=BaseModel.label_fs)
-        plt.xlabel('FPR', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('TPR', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_ROC(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
-    def plot_PRC(self, title=None, figsize=(10, 6),
-                 filename=None, display=True):
+    def plot_PRC(self, title=None,
+                 figsize=(10, 6), filename=None, display=True):
+        ''' Plot precision-recall curve '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot precision-recall curve.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        if self.T.task != 'binary classification':
-            raise AttributeError('This method only works for binary ' +
-                                 'classification tasks.')
-
-        # Get precision-recall pairs for different probability thresholds
-        prec, recall, _ = precision_recall_curve(self.y_test,
-                                                 self.predict_proba_test[:, 1])
-
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.plot(recall, prec, lw=2, label=f'{self.name} (AP={self.ap:.3f})')
-
-        title = 'Precision-recall curve' if title is None else title
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.legend(loc='lower left',
-                   frameon=False,
-                   fontsize=BaseModel.label_fs)
-        plt.xlabel('Recall', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('Precision', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_PRC(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
     def plot_confusion_matrix(self, normalize=True, title=None,
@@ -853,6 +796,8 @@ class BaseModel(object):
         if filename is not None:
             plt.savefig(filename)
         plt.show() if display else plt.close()
+
+    # << ============ Utility functions ============ >>
 
     @composed(crash, params_to_log)
     def save(self, filename=None):

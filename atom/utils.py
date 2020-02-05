@@ -14,6 +14,7 @@ Description: Module containing utility functions.
 import logging
 import pandas as pd
 from time import time
+from datetime import datetime
 
 
 # << ============ Functions ============ >>
@@ -23,6 +24,9 @@ def prepare_logger(log):
 
     if not isinstance(log, (type(None), str)):
         raise_TypeError('log', log)
+    elif log == 'auto':
+        current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
+        logger = 'ATOM_logger_' + current + '.log'
     elif log is None or log.endswith('.log'):
         logger = log
     else:
@@ -147,8 +151,7 @@ def raise_ValueError(param, value):
 
 def check_isFit(isFit):
     if not isFit:
-        raise AttributeError('You need to fit the class before calling ' +
-                             'for a metric method!')
+        raise AttributeError('Fit the class before calling this method!')
 
 
 # << ============ Decorators ============ >>
@@ -190,9 +193,17 @@ def params_to_log(f):
 
     def wrapper(*args, **kwargs):
         log = args[0].T.log if hasattr(args[0], 'T') else args[0].log
+        kwargs_list = ['{}={!r}'.format(k, v) for k, v in kwargs.items()]
+        args_list = [str(i) for i in args[1:]]
+        args_list = args_list + [''] if len(kwargs_list) != 0 else args_list
         if log is not None:
-            log.info('')  # Empty line first
-            log.info(f'{args[0].__class__.__name__}.{f.__name__}. Parameters: {kwargs}')
+            if f.__name__ == '__init__':
+                log.info(f'Method: {args[0].__class__.__name__}.{f.__name__}' +
+                         f"(X, y, {', '.join(kwargs_list)})")
+            else:
+                log.info('')  # Empty line first
+                log.info(f'Method: {args[0].__class__.__name__}.{f.__name__}' +
+                         f"({', '.join(args_list)}{', '.join(kwargs_list)})")
 
         result = f(*args, **kwargs)
         return result

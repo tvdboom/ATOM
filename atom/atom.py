@@ -24,7 +24,6 @@ import importlib
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
-from sklearn.metrics import roc_curve, precision_recall_curve
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -36,6 +35,10 @@ from .utils import (
      prepare_logger, composed, crash, params_to_log, prlog, time_to_string,
      to_df, to_series, merge, check_isFit, raise_TypeError, raise_ValueError
      )
+from .plots import (
+        plot_correlation, plot_PCA, plot_ROC, plot_PRC, plot_bagging,
+        plot_successive_halving
+        )
 from .basemodel import BaseModel
 from .metrics import BaseMetric
 from .models import (
@@ -49,7 +52,6 @@ from .models import (
      )
 
 # Plotting
-import matplotlib.pyplot as plt
 import seaborn as sns
 sns.set(style='darkgrid', palette='GnBu_d')
 
@@ -417,7 +419,7 @@ class ATOM(object):
         self.X_test = self.test.drop(self.target, axis=1)
         self.y_test = self.test[self.target]
 
-    @crash
+    @composed(crash, params_to_log)
     def scale(self, _check=True):
         ''' Scale all features to mean=0 and std=1 '''
 
@@ -437,7 +439,7 @@ class ATOM(object):
         elif _check:  # Inform the user
             prlog('The features are already scaled!', self)
 
-    @crash
+    @composed(crash, params_to_log)
     def stats(self, _vb=None):
         ''' Print some information about the dataset '''
 
@@ -492,7 +494,7 @@ class ATOM(object):
 
         prlog('', self, 1)  # Insert an empty row
 
-    @crash
+    @composed(crash, params_to_log)
     def report(self, df='dataset', rows=None, filename=None):
 
         '''
@@ -1106,7 +1108,7 @@ class ATOM(object):
             threshold = min_variance_frac * (1. - min_variance_frac)
 
             if threshold > 0:  # In this case: normalize the features
-                self.scale(_check=False)
+                self.scale(0)
 
             self.var = VarianceThreshold(threshold=threshold).fit(self.X)
             mask = self.var.get_support()  # Get bool mask of selected features
@@ -1244,7 +1246,7 @@ class ATOM(object):
         elif strategy.lower() == 'pca':
             prlog(f' --> Applying Principal Component Analysis... ', self, 2)
 
-            self.scale(_check=False)  # Scale features (if not done already)
+            self.scale(0)  # Scale features (if not done already)
 
             # Define PCA
             solver = 'auto' if solver is None else solver
@@ -1788,317 +1790,49 @@ class ATOM(object):
     @composed(crash, params_to_log)
     def plot_correlation(self, title=None,
                          figsize=(10, 10), filename=None, display=True):
+        ''' Plot the feature's correlation matrix '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot the feature's correlation matrix. Ignores non-numeric columns.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        # Compute the correlation matrix
-        corr = self.dataset.corr()
-        # Drop first row and last column (diagonal line)
-        corr = corr.iloc[1:].drop(self.dataset.columns[-1], axis=1)
-
-        # Generate a mask for the upper triangle
-        # k=1 means keep outermost diagonal line
-        mask = np.zeros_like(corr, dtype=np.bool)
-        mask[np.triu_indices_from(mask, k=1)] = True
-
-        sns.set_style('white')  # Only for this plot
-        fig, ax = plt.subplots(figsize=figsize)
-
-        # Draw the heatmap with the mask and correct aspect ratio
-        cmap = sns.diverging_palette(220, 10, as_cmap=True)
-        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
-                    square=True, linewidths=.5, cbar_kws={"shrink": .5})
-
-        title = 'Feature correlation matrix' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        fig.tight_layout()
-        sns.set_style(ATOM.style)  # Set back to originals style
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_correlation(self, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
     def plot_PCA(self, show=None, title=None,
                  figsize=None, filename=None, display=True):
+        ''' Plot the explained variance ratio of the components '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot the explained variance ratio of the components. Only if PCA
-        was applied on the dataset through the feature_selection method.
-
-        PARAMETERS -------------------------------------
-
-        show     --> number of components to show in the plot. None for all
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        if not hasattr(self, 'PCA'):
-            raise AttributeError('This plot is only availbale if you apply ' +
-                                 'PCA on the dataset through the ' +
-                                 'feature_selection method!')
-
-        # Set parameters
-        var = np.array(self.PCA.explained_variance_ratio_)
-        if show is None or show > len(var):
-            show = len(var)
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show/2))
-
-        scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
-
-        fig, ax = plt.subplots(figsize=figsize)
-        scr.plot.barh(label=f'Total variance retained: {round(var.sum(), 3)}')
-        for i, v in enumerate(scr):
-            ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=ATOM.tick_fs)
-
-        plt.title('Explained variance ratio', fontsize=ATOM.title_fs, pad=12)
-        plt.legend(loc='lower right', fontsize=ATOM.label_fs)
-        plt.xlabel('Variance ratio', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel('Components', fontsize=ATOM.label_fs, labelpad=12)
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        plt.xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_PCA(self, show, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
-    def plot_bagging(self, iteration=-1, title=None,
+    def plot_bagging(self, models=None, title=None,
                      figsize=None, filename=None, display=True):
+        ''' Plot a boxplot of the bagging's results '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot a boxplot of the bagging's results.
-
-        PARAMETERS -------------------------------------
-
-        iteration --> iteration of the successive halving to plot
-        title     --> plot's title. None for default title
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of the file to save
-        display   --> wether to display the plot
-
-        '''
-
-        def raise_exception():
-            raise AttributeError('You need to fit the class using bagging ' +
-                                 'before calling the boxplot method!')
-        if not self._isFit:
-            raise_exception()
-
-        if self.bagging is None:
-            raise_exception()
-
-        results, names = [], []
-        if self.successive_halving:
-            df = self.results[iteration]
-        else:
-            df = self.results
-        for m in df.model:
-            results.append(getattr(self, m).bagging_scores)
-            names.append(getattr(self, m).name)
-
-        if figsize is None:  # Default figsize depends on number of models
-            figsize = (int(8 + len(names)/2), 6)
-
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.boxplot(results)
-
-        title = 'Bagging results' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        plt.xlabel('Model', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel(self.metric.longname,
-                   fontsize=ATOM.label_fs,
-                   labelpad=12)
-        ax.set_xticklabels(names)
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_bagging(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
-    def plot_successive_halving(self, title=None, figsize=(10, 6),
-                                filename=None, display=True):
+    def plot_successive_halving(self, models=None, title=None,
+                                figsize=(10, 6), filename=None, display=True):
+        ''' Plot the successive halving scores '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot the successive halving scores.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        def raise_exception():
-            raise AttributeError('You need to fit the class using a ' +
-                                 'successive halving approach before ' +
-                                 'calling the plot_successive_halving method!')
-
-        if not self._isFit:
-            raise_exception()
-
-        if not self.successive_halving:
-            raise_exception()
-
-        models = self.results[0].model  # List of models in first iteration
-        col = 'score_test' if self.bagging is None else 'bagging_mean'
-        linx = [[] for _ in models]
-        liny = [[] for _ in models]
-        for m, df in enumerate(self.results):
-            for n, model in enumerate(models):
-                if model in df.model.values:  # If model in iteration
-                    linx[n].append(m)
-                    liny[n].append(
-                            df[col][df.model == model].values[0])
-
-        fig, ax = plt.subplots(figsize=figsize)
-        for x, y, label in zip(linx, liny, models):
-            plt.plot(x, y, lw=2, marker='o', label=label)
-        plt.xlim(-0.1, len(self.results)-0.9)
-
-        title = 'Successive halving results' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        plt.legend(frameon=False, fontsize=ATOM.label_fs)
-        plt.xlabel('Iteration', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel(self.metric.longname,
-                   fontsize=ATOM.label_fs,
-                   labelpad=12)
-        ax.set_xticks(range(len(self.results)))
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_successive_halving(self, models,
+                                title, figsize, filename, display)
 
     @composed(crash, params_to_log)
-    def plot_ROC(self, title=None, figsize=(10, 6),
-                 filename=None, display=True):
+    def plot_ROC(self, models=None, title=None,
+                 figsize=(10, 6), filename=None, display=True):
+        ''' Plot Receiver Operating Characteristics curve '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot Receiver Operating Characteristics curve.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        if self.task != 'binary classification':
-            raise AttributeError('This method only works for binary ' +
-                                 'classification tasks!')
-
-        if not self._isFit:
-            raise AttributeError('You need to fit the class before calling ' +
-                                 'the plot_ROC method!')
-
-        fig, ax = plt.subplots(figsize=figsize)
-        for model in self.models:
-            # Get False (True) Positive Rate
-            y_test = getattr(self, model).y_test
-            predict_proba = getattr(self, model).predict_proba_test[:, 1]
-            auc = getattr(self, model).auc
-            fpr, tpr, _ = roc_curve(y_test, predict_proba)
-            plt.plot(fpr, tpr, lw=2, label=f'{model} (AUC={auc:.3f})')
-
-        plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
-
-        title = 'ROC curve' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        plt.legend(loc='lower right',
-                   frameon=False,
-                   fontsize=ATOM.label_fs)
-        plt.xlabel('FPR', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel('TPR', fontsize=ATOM.label_fs, labelpad=12)
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_ROC(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log)
-    def plot_PRC(self, title=None, figsize=(10, 6),
-                 filename=None, display=True):
+    def plot_PRC(self, models=None, title=None,
+                 figsize=(10, 6), filename=None, display=True):
+        ''' Plot precision-recall curve '''
 
-        '''
-        DESCRIPTION -----------------------------------
-
-        Plot precision-recall curve.
-
-        PARAMETERS -------------------------------------
-
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        '''
-
-        if self.task != 'binary classification':
-            raise AttributeError('This method only works for binary ' +
-                                 'classification tasks!')
-
-        if not self._isFit:
-            raise AttributeError('You need to fit the class before calling ' +
-                                 'the plot_PRC method!')
-
-        fig, ax = plt.subplots(figsize=figsize)
-        for model in self.models:
-            # Get precision-recall pairs for different probability thresholds
-            y_test = getattr(self, model).y_test
-            predict_proba = getattr(self, model).predict_proba_test[:, 1]
-            ap = getattr(self, model).ap
-            prec, recall, _ = precision_recall_curve(y_test, predict_proba)
-            plt.plot(recall, prec, lw=2, label=f'{model} (AP={ap:.3f})')
-
-        title = 'Precision-recall curve' if title is None else title
-        plt.title(title, fontsize=ATOM.title_fs, pad=12)
-        plt.legend(loc='lower left',
-                   frameon=False,
-                   fontsize=ATOM.label_fs)
-        plt.xlabel('Recall', fontsize=ATOM.label_fs, labelpad=12)
-        plt.ylabel('Precision', fontsize=ATOM.label_fs, labelpad=12)
-        plt.xticks(fontsize=ATOM.tick_fs)
-        plt.yticks(fontsize=ATOM.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+        plot_PRC(self, models, title, figsize, filename, display)
 
     # <====================== Metric methods ======================>
 
+    @crash
     def _final_results(self, metric):
 
         '''
@@ -2112,6 +1846,7 @@ class ATOM(object):
 
         '''
 
+        check_isFit(self._isFit)  # Raise error is class not fitted
         try:
             # Get max length of the models' names
             lenx = max([len(getattr(self, m).longname) for m in self.models])
@@ -2151,80 +1886,80 @@ class ATOM(object):
 
     # <================== Metric methods ==================>
 
+    @params_to_log
     def tn(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.tn)
 
+    @params_to_log
     def fp(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.fp)
 
+    @params_to_log
     def fn(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.fn)
 
+    @params_to_log
     def tp(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.tp)
 
+    @params_to_log
     def accuracy(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.accuracy)
 
+    @params_to_log
     def ap(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.ap)
 
+    @params_to_log
     def auc(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.auc)
 
+    @params_to_log
     def mae(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.mae)
 
+    @params_to_log
     def max_error(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.max_error)
 
+    @params_to_log
     def mcc(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.mcc)
 
+    @params_to_log
     def mse(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.mse)
 
+    @params_to_log
     def msle(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.msle)
 
+    @params_to_log
     def f1(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.f1)
 
+    @params_to_log
     def hamming(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.hamming)
 
+    @params_to_log
     def jaccard(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.jaccard)
 
+    @params_to_log
     def logloss(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.logloss)
 
+    @params_to_log
     def precision(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.precision)
 
+    @params_to_log
     def r2(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.r2)
 
+    @params_to_log
     def recall(self):
-        check_isFit(self._isFit)
         self._final_results(self.metric.recall)
 
     # <============ Classmethods for plot settings ============>
@@ -2276,8 +2011,9 @@ class ATOMClassifier(ATOM):
 
         self.log = prepare_logger(log)
         self.goal = 'classification'
-        super().__init__(X, y, percentage, test_size,
-                         n_jobs, warnings, verbose, random_state)
+        super().__init__(X, y, percentage=percentage, test_size=test_size,
+                         n_jobs=n_jobs, warnings=warnings, verbose=verbose,
+                         random_state=random_state)
 
 
 class ATOMRegressor(ATOM):
@@ -2289,5 +2025,6 @@ class ATOMRegressor(ATOM):
 
         self.log = prepare_logger(log)
         self.goal = 'regression'
-        super().__init__(X, y, percentage, test_size,
-                         n_jobs, warnings, verbose, random_state)
+        super().__init__(X, y, percentage=percentage, test_size=test_size,
+                         n_jobs=n_jobs, warnings=warnings, verbose=verbose,
+                         random_state=random_state)
