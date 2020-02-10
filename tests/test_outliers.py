@@ -21,24 +21,12 @@ y_dim10 = [0, 1, 0, 1, 1, 0, 245, 0, 1, 1]
 
 # << ======================= Tests ========================= >>
 
-# << ================== Test parameters =================== >>
-
 def test_max_sigma_parameter():
     ''' Assert that the max_sigma parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim10, y_dim10)
-    pytest.raises(TypeError, atom.outliers, max_sigma='test')
     pytest.raises(ValueError, atom.outliers, max_sigma=0)
 
-
-def test_include_target_parameter():
-    ''' Assert that the include_target parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim10, y_dim10)
-    pytest.raises(TypeError, atom.outliers, include_target=1.1)
-
-
-# << ================= Test functionality ================= >>
 
 def test_remove_outliers():
     ''' Assert that method works as intended '''

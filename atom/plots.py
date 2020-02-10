@@ -1,16 +1,17 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Automated Tool for Optimized Modelling (self)
 Author: tvdboom
 Description: Module containing plot functions.
 
-'''
+"""
 
 
 # << ============ Import Packages ============ >>
 
 # Standard packages
+import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,52 +19,36 @@ import seaborn as sns
 from sklearn.metrics import roc_curve, precision_recall_curve
 
 # Own package modules
-from .utils import raise_TypeError, raise_ValueError, check_isFit
-
-
-# << ====================== Functions ====================== >>
-
-def check_params(title, figsize, filename, display):
-    ''' Check al all standard input parameters '''
-
-    if not isinstance(title, (type(None), str)):
-        raise_TypeError('title', title)
-    if not isinstance(figsize, (type(None), tuple)):
-        raise_TypeError('figsize', figsize)
-    elif figsize is not None and len(figsize) != 2:
-        raise_ValueError('figsize', figsize)
-    if not isinstance(filename, (type(None), str)):
-        raise_TypeError('filename', filename)
-    if not isinstance(display, bool) and display not in (0, 1):
-        raise_TypeError('display', display)
+from .utils import check_is_fitted
 
 
 # << ======================== Plots ======================== >>
 
-# << ======================== self ========================= >>
-
 def plot_correlation(self, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
+    """
+    Correlation maxtrix plot of the dataset. Ignores non-numeric columns.
 
-    Plot the feature's correlation matrix. Ignores non-numeric columns.
+    PARAMETERS
+    ----------
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    PARAMETERS -------------------------------------
+    figsize: tuple
+        Figure's size, format as (x, y).
 
-    title    --> plot's title. None for default title
-    figsize  --> figure size: format as (x, y)
-    filename --> name of the file to save
-    display  --> wether to display the plot
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
 
-    '''
+    display: bool
+        Wether to render the plot.
 
-    check_params(title, figsize, filename, display)  # Test input params
+    """
 
     # Compute the correlation matrix
     corr = self.dataset.corr()
     # Drop first row and last column (diagonal line)
-    corr = corr.iloc[1:].drop(self.dataset.columns[-1], axis=1)
+    corr = corr.iloc[1:].drop(self.target, axis=1)
 
     # Generate a mask for the upper triangle
     # k=1 means keep outermost diagonal line
@@ -76,9 +61,9 @@ def plot_correlation(self, title, figsize, filename, display):
     # Draw the heatmap with the mask and correct aspect ratio
     cmap = sns.diverging_palette(220, 10, as_cmap=True)
     sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, center=0,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5})
+                square=True, linewidths=.5, cbar_kws={'shrink': .5})
 
-    title = 'Feature correlation matrix' if title is None else title
+    title = "Feature correlation matrix" if title is None else title
     plt.title(title, fontsize=self.title_fs, pad=12)
     fig.tight_layout()
     sns.set_style(self.style)  # Set back to original style
@@ -89,48 +74,52 @@ def plot_correlation(self, title, figsize, filename, display):
 
 def plot_PCA(self, show, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
-
+    """
     Plot the explained variance ratio of the components. Only if PCA
     was applied on the dataset through the feature_selection method.
 
-    PARAMETERS -------------------------------------
+    Parameters
+    ----------
+    show: int or None
+        Number of components to show. If None, all are plotted.
 
-    show     --> number of components to show in the plot. None for all
-    title    --> plot's title. None for default title
-    figsize  --> figure size: format as (x, y)
-    filename --> name of the file to save
-    display  --> wether to display the plot
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    '''
+    figsize: tuple
+        Figure's size, format as (x, y).
+
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool
+        Wether to render the plot.
+
+    """
 
     if not hasattr(self, 'PCA'):
-        raise AttributeError('This plot is only availbale if you apply ' +
-                             'PCA on the dataset through the ' +
-                             'feature_selection method!')
-
-    check_params(title, figsize, filename, display)  # Test input params
-    if not isinstance(show, (type(None), int)):
-        raise_TypeError('show', show)
-    elif show is not None and show < 1:
-        raise_ValueError('show', show)
+        raise AttributeError("This plot is only availbale if you apply " +
+                             "PCA on the dataset through the " +
+                             "feature_selection method!")
 
     # Set parameters
     var = np.array(self.PCA.explained_variance_ratio_)
     if show is None or show > len(var):
         show = len(var)
+    elif show < 1:
+        raise ValueError("Invalid value for the show parameter." +
+                         f"Value should be >0, got {show}.")
     if figsize is None:  # Default figsize depends on features shown
         figsize = (10, int(4 + show/2))
 
     scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
 
     fig, ax = plt.subplots(figsize=figsize)
-    scr.plot.barh(label=f'Total variance retained: {round(var.sum(), 3)}')
+    scr.plot.barh(label=f"Total variance retained: {round(var.sum(), 3)}")
     for i, v in enumerate(scr):
         ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=self.tick_fs)
 
-    plt.title('Explained variance ratio', fontsize=self.title_fs, pad=12)
+    plt.title("Explained variance ratio", fontsize=self.title_fs, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fs)
     plt.xlabel('Variance ratio', fontsize=self.label_fs, labelpad=12)
     plt.ylabel('Components', fontsize=self.label_fs, labelpad=12)
@@ -143,34 +132,39 @@ def plot_PCA(self, show, title, figsize, filename, display):
     plt.show() if display else plt.close()
 
 
-# << ======================== Both ======================== >>
-
 def plot_bagging(self, models, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
-
+    """
     Plot a boxplot of the bagging's results.
 
-    PARAMETERS -------------------------------------
+    Parameters
+    ----------
+    models: string, list, tuple or None
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected. Note that if successive halving=True only
+        the last model is saved, so avoid plotting models from different
+        iterations together.
 
-    models    --> models to plot. None for default (all or just the one)
-    title     --> plot's title. None for default title
-    figsize   --> figure size: format as (x, y)
-    filename  --> name of the file to save
-    display   --> wether to display the plot
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    '''
+    figsize: tuple
+        Figure's size, format as (x, y).
 
-    if self.bagging is None:
-        raise AttributeError('You need to fit the class using bagging ' +
-                             'before calling the boxplot method!')
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
 
-    check_isFit(self._isFit)
-    check_params(title, figsize, filename, display)
-    if not isinstance(models, (type(None), str, list)):
-        raise_TypeError('models', models)
-    elif models is None:
+    display: bool
+        Wether to render the plot.
+
+    """
+
+    check_is_fitted(self._is_fitted)
+    if not self.bagging:
+        raise AttributeError("You need to run the pipeline using bagging" +
+                             " before calling the plot_bagging method!")
+
+    if models is None:
         models = [self.winner.name] if self.successive_halving else self.models
     elif isinstance(models, str):
         models = [models]
@@ -181,7 +175,7 @@ def plot_bagging(self, models, title, figsize, filename, display):
             results.append(getattr(self, model.lower()).bagging_scores)
             names.append(getattr(self, model.lower()).name)
         else:
-            raise ValueError(f'Model {model} not found in pipeline!')
+            raise ValueError(f"Model {model} not found in pipeline!")
 
     if figsize is None:  # Default figsize depends on number of models
         figsize = (int(8 + len(names)/2), 6)
@@ -192,7 +186,7 @@ def plot_bagging(self, models, title, figsize, filename, display):
     title = 'Bagging results' if title is None else title
     plt.title(title, fontsize=self.title_fs, pad=12)
     plt.xlabel('Model', fontsize=self.label_fs, labelpad=12)
-    plt.ylabel(self.metric.longname,
+    plt.ylabel(self.metric.name,
                fontsize=self.label_fs,
                labelpad=12)
     ax.set_xticklabels(names)
@@ -206,31 +200,36 @@ def plot_bagging(self, models, title, figsize, filename, display):
 
 def plot_successive_halving(self, models, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
+    """
+    Plot of the models' scores per iteration of the successive halving.
 
-    Plot the successive halving scores.
+    Parameters
+    ----------
+    models: string, list, tuple or None
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
 
-    PARAMETERS -------------------------------------
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    models   --> models to plot. None for default (all or just the one)
-    title    --> plot's title. None for default title
-    figsize  --> figure size: format as (x, y)
-    filename --> name of the file to save
-    display  --> wether to display the plot
+    figsize: tuple
+        Figure's size, format as (x, y).
 
-    '''
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
 
+    display: bool
+        Wether to render the plot.
+
+    """
+
+    check_is_fitted(self._is_fitted)
     if not self.successive_halving:
-        raise AttributeError('You need to fit the class using a ' +
-                             'successive halving approach before ' +
-                             'calling the plot_successive_halving method!')
+        raise AttributeError("You need to run the pipeline using a " +
+                             "successive halving approach before " +
+                             "calling the plot_successive_halving method!")
 
-    check_isFit(self._isFit)
-    check_params(title, figsize, filename, display)
-    if not isinstance(models, (type(None), str, list)):
-        raise_TypeError('models', models)
-    elif models is None:
+    if models is None:
         models = self.results[0].model  # List of models in first iteration
     elif isinstance(models, str):
         models = [models]
@@ -248,18 +247,18 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
                 else:
                     liny[n].append(np.NaN)
         else:
-            raise ValueError(f'Model {model} not found in pipeline!')
+            raise ValueError(f"Model {model} not found in pipeline!")
 
     fig, ax = plt.subplots(figsize=figsize)
     for y, label in zip(liny, names):
         plt.plot(range(len(self.results)), y, lw=2, marker='o', label=label)
     plt.xlim(-0.1, len(self.results)-0.9)
 
-    title = 'Successive halving results' if title is None else title
+    title = "Successive halving results" if title is None else title
     plt.title(title, fontsize=self.title_fs, pad=12)
     plt.legend(frameon=False, fontsize=self.label_fs)
     plt.xlabel('Iteration', fontsize=self.label_fs, labelpad=12)
-    plt.ylabel(self.metric.longname,
+    plt.ylabel(self.metric.name,
                fontsize=self.label_fs,
                labelpad=12)
     ax.set_xticks(range(len(self.results)))
@@ -271,33 +270,38 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     plt.show() if display else plt.close()
 
 
-def plot_ROC(self, models=None, title=None,
-             figsize=(10, 6), filename=None, display=True):
+def plot_ROC(self, models, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
+    """
+    Plot the Receiver Operating Characteristics curve.
+    Only for binary classification tasks.
 
-    Plot Receiver Operating Characteristics curve.
+    Parameters
+    ----------
+    models: string, list, tuple or None
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
 
-    PARAMETERS -------------------------------------
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    models   --> models to plot. None for default (all or just the one)
-    title    --> plot's title. None for default title
-    figsize  --> figure size: format as (x, y)
-    filename --> name of the file to save
-    display  --> wether to display the plot
+    figsize: tuple
+        Figure's size, format as (x, y).
 
-    '''
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool
+        Wether to render the plot.
+
+    """
 
     if not self.task.startswith('binary'):
-        raise AttributeError('The plot_ROC method only works for binary ' +
-                             'classification tasks!')
+        raise AttributeError("The plot_ROC method is only available for " +
+                             "binary classification tasks!")
 
-    check_isFit(self._isFit)
-    check_params(title, figsize, filename, display)
-    if not isinstance(models, (type(None), str, list)):
-        raise_TypeError('models', models)
-    elif models is None:
+    check_is_fitted(self._is_fitted)
+    if models is None:
         models = self.models
     elif isinstance(models, str):
         models = [models]
@@ -309,10 +313,10 @@ def plot_ROC(self, models=None, title=None,
 
             # Get False (True) Positive Rate
             fpr, tpr, _ = roc_curve(m.y_test, m.predict_proba_test[:, 1])
-            plt.plot(fpr, tpr, lw=2, label=f'{m.name} (AUC={m.auc:.3f})')
+            plt.plot(fpr, tpr, lw=2, label=f"{m.name} (AUC={m.roc_auc:.3f})")
 
         else:
-            raise ValueError(f'Model {model} not found in pipeline!')
+            raise ValueError(f"Model {model} not found in pipeline!")
 
     plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
 
@@ -331,33 +335,37 @@ def plot_ROC(self, models=None, title=None,
     plt.show() if display else plt.close()
 
 
-def plot_PRC(self, models=None, title=None,
-             figsize=(10, 6), filename=None, display=True):
+def plot_PRC(self, models, title, figsize, filename, display):
 
-    '''
-    DESCRIPTION -----------------------------------
+    """
+    Plot the precision-recall curve. Only for binary classification tasks.
 
-    Plot precision-recall curve.
+    Parameters
+    ----------
+    models: string, list, tuple or None
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
 
-    PARAMETERS -------------------------------------
+    title: string or None
+        Plot's title. If None, the default option is used.
 
-    models   --> models to plot. None for default (all or just the one)
-    title    --> plot's title. None for default title
-    figsize  --> figure size: format as (x, y)
-    filename --> name of the file to save
-    display  --> wether to display the plot
+    figsize: tuple
+        Figure's size, format as (x, y).
 
-    '''
+    filename: string or None
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool
+        Wether to render the plot.
+
+    """
 
     if not self.task.startswith('binary'):
-        raise AttributeError('The plot_PRC method only works for binary ' +
-                             'classification tasks!')
+        raise AttributeError("The plot_PRC method is only available for " +
+                             "binary classification tasks!")
 
-    check_isFit(self._isFit)
-    check_params(title, figsize, filename, display)
-    if not isinstance(models, (type(None), str, list)):
-        raise_TypeError('models', models)
-    elif models is None:
+    check_is_fitted(self._is_fitted)
+    if models is None:
         models = self.models
     elif isinstance(models, str):
         models = [models]
@@ -366,16 +374,17 @@ def plot_PRC(self, models=None, title=None,
     for model in models:
         if hasattr(self, model):
             m = getattr(self, model)
+            ap = m.average_precision
 
             # Get precision-recall pairs for different probability thresholds
             predict_proba = m.predict_proba_test[:, 1]
             prec, recall, _ = precision_recall_curve(m.y_test, predict_proba)
-            plt.plot(recall, prec, lw=2, label=f'{m.name} (AP={m.ap:.3f})')
+            plt.plot(recall, prec, lw=2, label=f"{m.name} (AP={ap:.3f})")
 
         else:
-            raise ValueError(f'Model {model} not found in pipeline!')
+            raise ValueError(f"Model {model} not found in pipeline!")
 
-    title = 'Precision-recall curve' if title is None else title
+    title = "Precision-recall curve" if title is None else title
     plt.title(title, fontsize=self.title_fs, pad=12)
     plt.legend(loc='lower left',
                frameon=False,
@@ -388,3 +397,21 @@ def plot_PRC(self, models=None, title=None,
     if filename is not None:
         plt.savefig(filename)
     plt.show() if display else plt.close()
+
+
+# << ====================== Utilities ====================== >>
+
+def save(self, filename):
+
+    """
+    Save class to a pickle file.
+
+    Parameters
+    ----------
+    filename: str or None, optional (default=None)
+        Name of the file when saved (as .html). None to not save anything.
+
+    """
+
+    filename = filename if filename.endswith('.pkl') else filename + '.pkl'
+    pickle.dump(self, open(filename, 'wb'))

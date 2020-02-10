@@ -30,7 +30,6 @@ def test_max_onehot_parameter():
     ''' Assert that the max_onehot parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.encode, max_onehot=3.0)
     pytest.raises(ValueError, atom.encode, max_onehot=-2)
 
 
@@ -38,7 +37,6 @@ def test_frac_to_other_parameter():
     ''' Assert that the frac_to_other parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.encode, frac_to_other=2)
     pytest.raises(ValueError, atom.encode, frac_to_other=2.2)
 
 

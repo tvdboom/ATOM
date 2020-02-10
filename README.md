@@ -6,14 +6,13 @@
 Author: tvdboom  
 Email: m.524687@gmail.com
 
+[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Build Status](https://travis-ci.com/tvdboom/ATOM.svg?branch=master)](https://travis-ci.com/tvdboom/ATOM)
 [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/context:python)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/alerts/)
 [![Python 3.6|3.7|3.8](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
-[![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 
   
 Description  
@@ -301,6 +300,10 @@ Get an extensive profile analysis of the data. The report is rendered in HTML5 a
 If you change any of the class' data attributes (dataset, X, y, train, test, X_train, X_test, y_train, y_test) in between the pipeline, you should call this method to change all other data attributes to their correct values. Independent attributes are updated in unison, that is, setting truth='X_train' will also update X_test, y_train and y_test, or truth='train' will also update the test set, etc...
 	+ **truth: string, optional (default='dataset')**  
 	Data attribute that has been changed (as string)<br><br>
+* **save(filename=None)**  
+Save the `ATOMClassifier` or `ATOMRegressor` class as a pickle file.
+	 + **filename: string or None, optional (default=None)**  
+	Name of the file when saved. If None, it will be saved using the class' __name__.
 * **plot_correlation(\*\*kwargs)**  
 Make a correlation maxtrix plot of the dataset. Ignores non-numeric columns.<br><br>
 * **plot_PCA(show=None, \*\*kwargs)**  
@@ -312,7 +315,7 @@ Make a boxplot of the bagging's results after fitting the class.
 	+ **models: str or list, optional (default=None)**  
 	Models to plot. Note that if successive halving=True only the last model is saved, so avoid plotting models from different iterations together.<br><br>
 * **plot_successive_halving(models=None, \*\*kwargs)**  
-Make a plot of the models' scores per iteration of the successive halving.<br><br>
+Make a plot of the models' scores per iteration of the successive halving.
 	+ **models: str or list, optional (default=None)**  
 	Models to plot.<br><br>
 * **plot_ROC(\*\*kwargs)**  
@@ -369,7 +372,7 @@ Plot performance metrics against multiple threshold values. If None, the metric 
    	+ **steps: int, optional (default=100)**  
     	Number of thresholds (steps) to plot.<br><br>
 * **plot_probabilities(target=1, \*\*kwargs)**  
-Plot the probability of every class in the target variable against the class selected by target_class. Only for classification tasks.
+Plot the probability of every class in the target variable against the class selected by `target`. Only for classification tasks.
 	+ **target: int or string, optional (default=1)**  
 	Target class to plot the probabilities against. Either the class' name or the index (0 corresponds to the first class, 1 to the second, etc...).<br><br>
 * **plot_permutation_importance(show=None, n_repeats=10, \*\*kwargs)**  
@@ -387,13 +390,13 @@ Plot the ROC curve. Only for binary classification tasks.<br><br>
 * **plot_PRC(\*\*kwargs)**  
 Plot the precision-recall curve. Only for binary classification tasks.<br><br>
 * **plot_confusion_matrix(normalize=True, \*\*kwargs)**  
-Plot the confusion matrix for the model. Only for classification tasks.<br><br>
+Plot the confusion matrix for the model. Only for classification tasks.
 	+ **normalize: bool, optional (default=True)**  
 	Wether to normalize the confusion matrix.<br><br>
 * **save(filename=None)**  
 Save the best found model as a pickle file.
 	 + **filename: string or None, optional (default=None)**  
-	Name of the file when saved. If None, it will be saved as 'ATOM_[model_type].pkl'.
+	Name of the file when saved. If None, it will be saved as 'ATOM_[model].pkl'.
 
 
 Subclass attributes
@@ -416,7 +419,7 @@ Subclass attributes
 	+ 'score': Score of the chosen metric.
 	+ 'time': Time spent on this iteration.
 	+ 'total_time': Time spent since the start of the BO.
-* **Any of the data attributes described [here](#Data attributes).**
+* **Any of the data attributes described [here](#data-attributes-as-pddataframe).**
 * **Any of the metrics described [here](#Metrics).**
 
 
@@ -490,6 +493,7 @@ Dependencies
 * **[pandas](https://pandas.pydata.org/)** (>=0.25.1)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.22)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
+* **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
 * **[gpyopt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)
 * **[matplotlib](https://matplotlib.org/)** (>=3.1.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)

@@ -23,41 +23,6 @@ X_reg, y_reg = load_boston(return_X_y=True)
 
 # << ======================= Tests ========================= >>
 
-# << ===================== Parameters ====================== >>
-
-def test_title_parameter():
-    ''' Assert that error is raised when invalid title '''
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(TypeError, atom.plot_correlation, title=42)
-
-
-def test_figsize_parameter():
-    ''' Assert that error is raised when invalid figsize '''
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(TypeError, atom.plot_correlation, figsize='test')
-    pytest.raises(ValueError, atom.plot_correlation, figsize=(3,))
-
-
-def test_filename_parameter():
-    ''' Assert that error is raised when invalid filename '''
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(TypeError, atom.plot_correlation, filename=42)
-
-
-def test_display_parameter():
-    ''' Assert that error is raised when invalid display '''
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(TypeError, atom.plot_correlation, display='test')
-
-
-# << ======================== Plots ======================== >>
-
-# << ======================== ATOM ======================== >>
-
 def test_plot_correlation():
     ''' Assert that the plot_correlation method work as intended '''
 
@@ -73,9 +38,6 @@ def test_plot_PCA():
     pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
     atom.feature_selection(strategy='pca', max_features=10)
 
-    # When show is invalid type
-    pytest.raises(TypeError, atom.plot_PCA, 'test')
-
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_PCA, -2)
 
@@ -83,8 +45,6 @@ def test_plot_PCA():
     atom.plot_PCA(display=False)
     assert 1 == 1
 
-
-# << ======================== Both ======================== >>
 
 def test_plot_bagging():
     ''' Assert that the plot_bagging method work as intended '''
@@ -97,11 +57,8 @@ def test_plot_bagging():
     atom.fit('tree', 'f1', max_iter=2, bagging=0)
     pytest.raises(AttributeError, atom.plot_bagging)
 
-    # When model is invalid type
-    atom.fit('tree', 'f1', max_iter=2, bagging=3)
-    pytest.raises(TypeError, atom.plot_bagging, models=2.0)
-
     # When model is unknown
+    atom.fit('tree', 'f1', max_iter=2, bagging=3)
     pytest.raises(ValueError, atom.plot_bagging, models='unknown')
 
     # Without successive_halving
@@ -121,11 +78,8 @@ def test_plot_successive_halving():
     atom.fit(['tree', 'lgb'], 'f1', successive_halving=False, max_iter=0)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
-    # When model is invalid type
-    atom.fit(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=0)
-    pytest.raises(TypeError, atom.plot_successive_halving, models=2.0)
-
     # When model is unknown
+    atom.fit(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=0)
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
     # When correct
@@ -146,9 +100,6 @@ def test_plot_ROC():
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_ROC)  # When fit is not called yet
     atom.fit('tree', 'r2', max_iter=0)
-
-    # When model is invalid type
-    pytest.raises(TypeError, atom.plot_ROC, 2.0)
 
     # When model is unknown
     pytest.raises(ValueError, atom.plot_ROC, 'unknown')
@@ -171,9 +122,6 @@ def test_plot_PRC():
     pytest.raises(AttributeError, atom.plot_PRC)  # When fit is not called yet
     atom.fit('tree', 'r2', max_iter=0)
 
-    # When model is invalid type
-    pytest.raises(TypeError, atom.plot_PRC, 2.0)
-
     # When model is unknown
     pytest.raises(ValueError, atom.plot_PRC, 'unknown')
 
@@ -182,8 +130,6 @@ def test_plot_PRC():
     atom.tree.plot_PRC(display=False)
     assert 1 == 1
 
-
-# << ===================== BaseModel ====================== >>
 
 def test_plot_threshold():
     ''' Assert that the plot_threshold method work as intended '''
@@ -270,12 +216,3 @@ def test_plot_confusion_matrix():
     atom.fit('tree', 'f1', max_iter=0)
     atom.tree.plot_confusion_matrix(normalize=False, display=False)
     assert 1 == 1
-
-
-#def test_save():
-#    ''' Assert that the save method work as intended '''
-#
-#    atom = ATOMClassifier(X_class, y_class)
-#    atom.fit('tree', 'f1', max_iter=0)
-#    atom.tree.save()
-#    assert 1 == 1

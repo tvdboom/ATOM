@@ -1,11 +1,11 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the __main__ method of the ATOM class.
 
-'''
+"""
 
 # Import packages
 import pytest
@@ -14,6 +14,7 @@ import pandas as pd
 import multiprocessing
 from sklearn.datasets import load_boston, load_wine, load_breast_cancer
 from atom import ATOMClassifier, ATOMRegressor
+from base import ATOM
 
 
 # << ====================== Variables ===================== >>
@@ -25,10 +26,10 @@ y_dim4 = ['y', 'n', 'y', 'n']
 # << ====================== Functions ====================== >>
 
 def load_df(dataset):
-    ''' Load dataset as pd.DataFrame '''
+    """ Load dataset as pd.DataFrame """
 
     data = np.c_[dataset.data, dataset.target]
-    columns = np.append(dataset.feature_names, ["target"])
+    columns = np.append(dataset.feature_names, ['target'])
     data = pd.DataFrame(data, columns=columns)
     X = data.drop('target', axis=1)
     y = data['target']
@@ -39,28 +40,28 @@ def load_df(dataset):
 
 # << ============== Test handling input data =============== >>
 
-def test_X_type():
-    ''' Assert that error is raised when X is of wrong type '''
+def test_calling_ATOM_directly():
+    """ Assert that an error is raised when ATOM is directly instantiated """
 
-    pytest.raises(TypeError, ATOMClassifier, X=23.2)
+    pytest.raises(RuntimeError, ATOM, X_dim4, y_dim4)
 
 
 def test_X_y_equal_length():
-    ''' Assert that error is raised when X and y don't have equal length '''
+    """ Assert that error is raised when X and y don't have equal length """
 
     y = [0, 0, 1, 1, 0]
     pytest.raises(ValueError, ATOMClassifier, X_dim4, y)
 
 
 def test_y_is1dimensional():
-    ''' Assert that error is raised when y is not 1-dimensional '''
+    """ Assert that error is raised when y is not 1-dimensional """
 
     y = [[0, 0], [1, 1], [0, 1], [1, 1]]
     pytest.raises(ValueError, ATOMClassifier, X_dim4, y)
 
 
 def test_merger_X_y():
-    ''' Assert that merger between X and y was successfull '''
+    """ Assert that merger between X and y was successfull """
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
@@ -75,7 +76,7 @@ def test_merger_X_y():
 
 
 def test_target_when_y_is_none():
-    ''' Assert that target is assigned correctly when y is None '''
+    """ Assert that target is assigned correctly when y is None """
 
     X, y = load_df(load_breast_cancer())
     X['target'] = y  # Place y as last column of X
@@ -84,7 +85,7 @@ def test_target_when_y_is_none():
 
 
 def test_target_when_last_column():
-    ''' Assert that target is assigned correctly when last column '''
+    """ Assert that target is assigned correctly when last column """
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
@@ -93,7 +94,7 @@ def test_target_when_last_column():
 
 
 def test_target_when_y_not_last():
-    ''' Assert that target is assigned correctly when not last column '''
+    """ Assert that target is assigned correctly when not last column """
 
     # When it's not last, it should also move to the last position
     X, y = load_df(load_breast_cancer())
@@ -103,78 +104,49 @@ def test_target_when_y_not_last():
 
 
 def test_y_in_X():
-    ''' Assert that the target column given by y is in X '''
+    """ Assert that the target column given by y is in X """
 
     X, y = load_df(load_breast_cancer())
     pytest.raises(ValueError, ATOMClassifier, X, y='test')
 
 
-def test_y_type():
-    ''' Assert that error is raised when y is of wrong type '''
-
-    X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y=23.2)
-
-
 # << ====================== Test parameters ====================== >>
 
 def test_percentage_parameter():
-    ''' Assert that the percentage parameter is set correctly '''
+    """ Assert that the percentage parameter is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, percentage='test')
     for percentage in [0, -1, 120]:
         pytest.raises(ValueError, ATOMClassifier, X, y, percentage=percentage)
 
 
 def test_test_size_parameter():
-    ''' Assert that the test_size parameter is set correctly '''
+    """ Assert that the test_size parameter is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, test_size=3)
     for test_size in [0., -3.1, 12.2]:
         pytest.raises(ValueError, ATOMClassifier, X, y, test_size=test_size)
 
 
 def test_log_parameter():
-    ''' Assert that the log parameter is set correctly '''
+    """ Assert that the log parameter is set correctly """
 
-    # Raises an error
-    X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, log=3)
-
-    # Writes to file
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y, log='logger')
     atom.outliers()
     assert 1 == 1
 
 
-def test_warnings_parameter():
-    ''' Assert that the warnings parameter is set correctly '''
-
-    X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, warnings='True')
-
-    # Check if set True when 1
-    atom = ATOMClassifier(X, y, warnings=1)
-    assert atom.warnings
-
-
 def test_verbose_parameter():
-    ''' Assert that the verbose parameter is set correctly '''
+    """ Assert that the verbose parameter is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, verbose=3.2)
     for verbose in [-2, 4]:
         pytest.raises(ValueError, ATOMClassifier, X, y, verbose=verbose)
 
 
 def test_random_state_parameter():
-    ''' Assert that the random_state parameter is set correctly and works '''
-
-    X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, random_state=3.2)
+    """ Assert that the random_state parameter is set correctly and works """
 
     # Check if it gives the same results every time
     X, y = load_breast_cancer(return_X_y=True)
@@ -196,10 +168,9 @@ def test_random_state_parameter():
 
 
 def test_njobs_parameter():
-    ''' Assert that the n_jobs parameter is set correctly '''
+    """ Assert that the n_jobs parameter is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
-    pytest.raises(TypeError, ATOMClassifier, X, y, n_jobs='test')
     pytest.raises(ValueError, ATOMClassifier, X, y, n_jobs=-200)
 
     n_cores = multiprocessing.cpu_count()
@@ -208,18 +179,18 @@ def test_njobs_parameter():
         assert 0 < atom.n_jobs <= n_cores
 
 
-def test_isFit_attribute():
-    ''' Assert that the _isFit attribute is set correctly '''
+def test_is_fitted_attribute():
+    """ Assert that the _is_fitted attribute is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    assert not atom._isFit
+    assert not atom._is_fitted
     atom.fit('LR', 'f1', max_iter=0, bagging=0)
-    assert atom._isFit
+    assert atom._is_fitted
 
 
 def test_isScaled_attribute():
-    ''' Assert that the _isScaled attribute is set correctly '''
+    """ Assert that the _isScaled attribute is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
@@ -234,7 +205,7 @@ def test_isScaled_attribute():
 # << ==================== Test data cleaning ==================== >>
 
 def test_remove_invalid_column_type():
-    ''' Assert that self.dataset removes invalid columns types '''
+    """ Assert that self.dataset removes invalid columns types """
 
     X, y = load_df(load_breast_cancer())
     X['invalid_column'] = pd.to_datetime(X['mean radius'])  # Datetime column
@@ -243,7 +214,7 @@ def test_remove_invalid_column_type():
 
 
 def test_remove_maximum_cardinality():
-    ''' Assert that self.dataset removes columns with maximum cardinality '''
+    """ Assert that self.dataset removes columns with maximum cardinality """
 
     X, y = load_df(load_breast_cancer())
     # Create column with all different values
@@ -253,7 +224,7 @@ def test_remove_maximum_cardinality():
 
 
 def test_raise_one_target_value():
-    ''' Assert that error raises when there is only 1 target value '''
+    """ Assert that error raises when there is only 1 target value """
 
     X, y = load_breast_cancer(return_X_y=True)
     y = [1 for _ in range(len(y))]  # All targets are equal to 1
@@ -261,7 +232,7 @@ def test_raise_one_target_value():
 
 
 def test_remove_minimum_cardinality():
-    ''' Assert that self.dataset removes columns with only 1 value '''
+    """ Assert that self.dataset removes columns with only 1 value """
 
     X, y = load_df(load_breast_cancer())
     # Create column with all different values
@@ -271,7 +242,7 @@ def test_remove_minimum_cardinality():
 
 
 def test_remove_duplicate_rows():
-    ''' Assert that self.dataset removes duplicate rows '''
+    """ Assert that self.dataset removes duplicate rows """
 
     X, y = load_df(load_breast_cancer())
     len_ = len(X)  # Save number of non-duplicate rows
@@ -283,7 +254,7 @@ def test_remove_duplicate_rows():
 
 
 def test_remove_rows_nan_target():
-    ''' Assert that self.dataset removes rows with NaN in target column '''
+    """ Assert that self.dataset removes rows with NaN in target column """
 
     X, y = load_df(load_breast_cancer())
     len_ = len(X)  # Save number of non-duplicate rows
@@ -295,7 +266,7 @@ def test_remove_rows_nan_target():
 # << ==================== Test task assigning ==================== >>
 
 def test_task_assigning():
-    ''' Assert that self.task is assigned correctly '''
+    """ Assert that self.task is assigned correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
@@ -313,14 +284,14 @@ def test_task_assigning():
 # << ================ Test mapping target column ================ >>
 
 def test_encode_target_column():
-    ''' Test the encoding of the target column '''
+    """ Test the encoding of the target column """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     assert atom.dataset[atom.target].dtype.kind == 'i'
 
 
 def test_target_mapping():
-    ''' Assert that target_mapping attribute is set correctly '''
+    """ Assert that target_mapping attribute is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     assert atom.mapping == dict(n=0, y=1)

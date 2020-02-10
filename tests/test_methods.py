@@ -75,14 +75,6 @@ def test_train_test_split():
 
 # << =============== Test reset_attributes ================= >>
 
-def test_truth_parameter():
-    ''' Assert that the truth parameter is set correctly '''
-
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.reset_attributes, 2)
-
-
 def test_changes_based_ground_truth():
     ''' Assert that method works as intended for different ground truths '''
 
@@ -160,33 +152,12 @@ def test_attributes_equal_length():
 
 # << ==================== Test report ====================== >>
 
-def test_df_parameter():
-    ''' Assert that the df parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.report, df=True)
-
-
-def test_rows_parameter():
-    ''' Assert that the rows parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.report, rows='1000')
-
-
-def test_filename_parameter():
-    ''' Assert that the filename parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.report, filename=False)
-
-
 def test_creates_report():
     ''' Assert that the report has been created and saved'''
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.report(rows=10)  #, filename='report')
+    atom.report(rows=10)
     assert hasattr(atom, 'report')
 
 
@@ -215,46 +186,43 @@ def test_already_scaled():
     assert atom2.X.equals(X_already_scaled)
 
 
-# << ================ Test _final_results ================== >>
+# << ================ Test get_metric ================== >>
 
 def test_error_not_fit():
     ''' Assert that an error is raised when the ATOM class is not fitted '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(AttributeError, atom.hamming)
+    pytest.raises(AttributeError, atom.get_metric)
 
 
 def test_error_wrong_metric():
     ''' Assert that an error is raised when an invalid metric is selected '''
 
     atom = ATOMRegressor(X_dim4, y_dim4)
-    atom.fit(models='lgb', metric='msle', max_iter=0)
-    pytest.raises(ValueError, atom.hamming)
+    atom.fit(models='lgb', metric='r2', max_iter=0)
+    pytest.raises(ValueError, atom.get_metric('unknown'))
 
 
-def test_all_metric_methods():
-    ''' Assert that all metric's methods work as intended '''
+def test_al_tasks():
+    ''' Assert that the method works for all tasks '''
 
     # For binary classification
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.fit(models='lgb', metric='auc', max_iter=0)
-    for metric in mbin:
-        getattr(atom, metric)()
-        assert 1 == 1
+    atom.fit(models='lgb', metric='roc_auc_ovr', max_iter=0)
+    atom.get_metric('jaccard')
+    assert 1 == 1
 
     # For multiclass classification
     X, y = load_wine(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.fit(models='lgb', metric='f1', max_iter=0)
-    for metric in mclass:
-        getattr(atom, metric)()
-        assert 1 == 1
+    atom.fit(models='lgb', metric='recall_macro', max_iter=0)
+    atom.get_metric('f1_micro')
+    assert 2 == 2
 
     # For regression
     X, y = load_boston(return_X_y=True)
     atom = ATOMRegressor(X, y)
-    atom.fit(models='lgb', metric='r2', max_iter=0)
-    for metric in mreg:
-        getattr(atom, metric)()
-        assert 1 == 1
+    atom.fit(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
+    atom.get_metric('neg_mean_poisson_deviance')
+    assert 3 == 3

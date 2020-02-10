@@ -38,7 +38,6 @@ def test_strategy_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_selection, strategy=True)
     pytest.raises(ValueError, atom.feature_selection, strategy='test')
 
 
@@ -59,7 +58,6 @@ def test_max_features_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_selection, max_features='test')
     pytest.raises(ValueError, atom.feature_selection, max_features=0)
 
 
@@ -68,7 +66,6 @@ def test_min_variance_frac_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_selection, min_variance_frac='test')
     pytest.raises(ValueError, atom.feature_selection, min_variance_frac=1.1)
 
 
@@ -77,7 +74,6 @@ def test_max_correlation_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_selection, max_correlation='test')
     pytest.raises(ValueError, atom.feature_selection, max_correlation=-0.2)
 
 

@@ -31,8 +31,6 @@ def test_oversample_parameter():
     # Binary classification tasks
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.balance, oversample=False)
-    pytest.raises(TypeError, atom.balance, oversample=0)
     pytest.raises(ValueError, atom.balance, oversample=-2.1)
     pytest.raises(ValueError, atom.balance, oversample='test')
 
@@ -48,7 +46,6 @@ def test_undersample_parameter():
     # Binary classification tasks
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.balance, undersample=[2, 2])
     pytest.raises(ValueError, atom.balance, undersample=-3.)
     pytest.raises(ValueError, atom.balance, undersample='test')
 
@@ -63,7 +60,6 @@ def test_n_neighbors_parameter():
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.balance, n_neighbors=2.2)
     pytest.raises(ValueError, atom.balance, n_neighbors=0)
 
 

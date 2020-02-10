@@ -37,7 +37,6 @@ def test_population_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_insertion, population='test')
     pytest.raises(ValueError, atom.feature_insertion, population=30)
 
 
@@ -46,7 +45,6 @@ def test_generations_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_insertion, generations=1.2)
     pytest.raises(ValueError, atom.feature_insertion, generations=0)
 
 
@@ -55,7 +53,6 @@ def test_n_features_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    pytest.raises(TypeError, atom.feature_insertion, n_features=1.2)
     with pytest.raises(ValueError, match=r"Invalid value for .*"):
         atom.feature_insertion(n_features=-2)
     with pytest.raises(ValueError, match=r".*be more than 1%.*"):

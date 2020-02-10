@@ -11,6 +11,7 @@ Description: Unit tests for the fit method of the ATOM class.
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.metrics import make_scorer, f1_score
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
 from atom.basemodel import BaseModel
@@ -90,14 +91,11 @@ def test_set_tick_fontsize():
 def test_models_parameter():
     ''' Assert that the models parameter is set correctly '''
 
-    # When wrong type
+    # Raises error when unknown, wrong or duplicate models
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, models=42, metric='f1')
-
-    # Removes unknown or wrong models
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.fit, models='test', metric='auc')
+    pytest.raises(ValueError, atom.fit, models='test', metric='recall')
     pytest.raises(ValueError, atom.fit, models='OLS', metric='recall')
+    pytest.raises(ValueError, atom.fit, models=['lda', 'lda'], metric='recall')
 
     atom = ATOMRegressor(X_dim4, y_dim4_reg)
     pytest.raises(ValueError, atom.fit, models='lda', metric='r2')
@@ -112,45 +110,45 @@ def test_models_parameter():
 def test_metric_parameter():
     ''' Assert that the metric parameter is set correctly '''
 
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, models='lda', metric=42)
-    pytest.raises(ValueError, atom.fit, models='lda', metric='test')
-    pytest.raises(ValueError, atom.fit, models='lda', metric='ap')
+    # Test default metrics
+    X, y = load_df(load_breast_cancer())
+    atom = ATOMClassifier(X, y)
+    atom.fit('lr', max_iter=0)
+    assert atom.metric.name == 'f1_score'
 
     X, y = load_df(load_wine())
     atom = ATOMClassifier(X, y)
-    pytest.raises(ValueError, atom.fit, models='lda', metric='fp')
+    atom.fit('lr', max_iter=0)
+    assert atom.metric.name == 'f1_weighted'
 
+    X, y = load_df(load_boston())
+    atom = ATOMRegressor(X, y)
+    atom.fit('ols', max_iter=0)
+    assert atom.metric.name == 'r2_score'
+
+    # Test unknown metric
+    atom = ATOMClassifier(X_dim4, y_dim4_class)
+    pytest.raises(ValueError, atom.fit, models='lda', metric='unknown')
+
+    # Test custom metric
+    def metric_func(x, y):
+        return x, y
+    pytest.raises(ValueError, atom.fit, models='lda', metric=metric_func)
+
+    atom.fit('lr', metric=f1_score, max_iter=0)
+    assert 1 == 1
+
+    # Test scoring metric
     atom = ATOMRegressor(X_dim4, y_dim4_reg)
-    pytest.raises(ValueError, atom.fit, models='sgd', metric='auc')
-
-
-def test_greater_is_better_parameter():
-    ''' Assert that the greater_is_better parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', greater_is_better=42)
-
-
-def test_needs_proba_parameter():
-    ''' Assert that the needs_proba parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', needs_proba='test')
-
-
-def test_successive_halving_parameter():
-    ''' Assert that the successive_halving parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', successive_halving='test')
+    scorer = make_scorer(f1_score)
+    atom.fit('lr', metric=scorer, max_iter=0)
+    assert 2 == 2
 
 
 def test_skip_iter_parameter():
     ''' Assert that the skip_iter parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', skip_iter=[0, 1])
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', skip_iter=-2)
 
 
@@ -158,7 +156,6 @@ def test_max_iter_parameter():
     ''' Assert that the max_iter parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', max_iter=42.)
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', max_iter=-2)
 
 
@@ -166,7 +163,6 @@ def test_max_time_parameter():
     ''' Assert that the max_time parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', max_time=[0, 1])
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', max_time=-2)
 
 
@@ -174,7 +170,6 @@ def test_eps_parameter():
     ''' Assert that the eps parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', eps=[0, 1])
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', eps=-2)
 
 
@@ -182,7 +177,6 @@ def test_batch_size_parameter():
     ''' Assert that the batch_size parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', batch_size=[0, 1])
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', batch_size=-2)
 
 
@@ -190,22 +184,13 @@ def test_init_points_parameter():
     ''' Assert that the init_points parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', init_points=42.0)
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', init_points=-2)
-
-
-def test_plot_bo_parameter():
-    ''' Assert that the plot_bo parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', plot_bo='test')
 
 
 def test_cv_parameter():
     ''' Assert that the cv parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', cv=42.0)
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', cv=-2)
 
 
@@ -213,7 +198,6 @@ def test_bagging_parameter():
     ''' Assert that the bagging parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(TypeError, atom.fit, 'lda', 'f1', bagging=42.0)
     pytest.raises(ValueError, atom.fit, 'lda', 'f1', bagging=-2)
 
 
@@ -284,7 +268,7 @@ def test_errors_in_models():
     X.iloc[2, 3] = np.NaN  # Make it fail
     atom = ATOMRegressor(X, y, random_state=1)
     atom.fit(models=['Tree', 'XGB'],
-             metric='msle',  # This metric will cause an error for the LGB
+             metric='neg_mean_squared_log_error',
              max_iter=0)
     assert 'Tree' in atom.errors.keys()
     assert 'Tree' not in atom.models
@@ -315,7 +299,7 @@ def test_different_cv_values():
     # For classification
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.fit(models='pa', metric='auc', max_iter=5, cv=3)
+    atom.fit(models='pa', metric='roc_auc', max_iter=5, cv=3)
     assert 1 == 1
 
     # For regression
@@ -353,12 +337,12 @@ def test_bagging():
 
     # For metric needs proba
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.fit(models=['tree', 'lgb'], metric='auc', max_iter=1, cv=1, bagging=5)
+    atom.fit(models=['tree', 'lgb'], metric='f1', max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.Tree, 'bagging_scores')
 
     # For metric needs proba but hasn't attr
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.fit(models='PA', metric='auc', max_iter=1, cv=1, bagging=5)
+    atom.fit(models='PA', metric='roc_auc', max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.PA, 'bagging_scores')
 
     # For metric does not needs proba

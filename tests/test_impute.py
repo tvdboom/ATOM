@@ -44,22 +44,13 @@ def test_strat_num_parameter():
     ''' Assert that the strat_num parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.impute, strat_num=[2, 2])
     pytest.raises(ValueError, atom.impute, strat_num='test')
-
-
-def test_strat_cat_parameter():
-    ''' Assert that the strat_cat parameter is set correctly '''
-
-    atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.impute, strat_cat=1.2)
 
 
 def test_max_frac_rows_parameter():
     ''' Assert that the mac_frac_rows parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.impute, max_frac_rows=2)
     pytest.raises(ValueError, atom.impute, max_frac_rows=1.0)
 
 
@@ -67,7 +58,6 @@ def test_max_frac_cols_parameter():
     ''' Assert that the mac_frac_cols parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(TypeError, atom.impute, max_frac_cols='test')
     pytest.raises(ValueError, atom.impute, max_frac_cols=5.2)
 
 

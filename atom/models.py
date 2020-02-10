@@ -1,36 +1,41 @@
 # -*- coding: utf-8 -*-
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Module containing all the available models for the fit method
              of the ATOM class. All classes must have the following structure:
 
-        Name -----------------------------------
-
+        Name
+        ----
         Name of the model's class in camel case format.
 
-        Attributes -----------------------------
+        Attributes
+        ----------
 
-        name     --> short acronym of the model's longname for calling
-        longname --> name of the model
+        name: string
+            Short acronym of the model's longname for calling.
 
-        Methods --------------------------------
+        longname: string
+            Name of the model.
+
+        Methods
+        -------
 
         __init__(self, *args):
-            Class initializer (contains super() to parent class)
+            Class initializer (contains super() to parent class).
 
         get_params(self, x):
-            Returns the hyperparameters as a dictionary
+            Returns the hyperparameters as a dictionary.
 
         get_model(self, params={}):
-            Returns the model with unpacked parameters
+            Returns the model with unpacked parameters.
 
         get_domain(self):
-            Returns the bounds for the hyperparameters as a list of dicts
+            Returns the bounds for the hyperparameters as a list of dicts.
 
         get_init_values(self):
-            Returns initial values for the BO trials (if init_points=1)
+            Returns initial values for the BO trials (if init_points=1).
 
 
 To add a new model:
@@ -38,7 +43,7 @@ To add a new model:
     2. Add the model to the list model_list in atom.py
     3. Add the name to all the relevant variables in atom.py and basemodel.py
 
-'''
+"""
 
 # << ============ Import Packages ============ >>
 
@@ -79,9 +84,20 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 # << ============ Functions ============ >>
 
 def set_init(class_, scaled=False):
-    ''' Returns BaseModel's (class) parameters as dictionary '''
+    """
+    Returns BaseModel's (class) parameters as dictionary
 
-    if scaled and not class_._isScaled:
+    Parameters
+    ----------
+    class_: class
+        ATOM class.
+
+    scaled: bool, optional (default=False)
+        Wether the model needs the features to be scaled.
+
+    """
+
+    if scaled and not class_._is_scaled:
         params = {'X': class_.data['X_scaled'],
                   'X_train': class_.data['X_train_scaled'],
                   'X_test': class_.data['X_test_scaled']}
@@ -189,7 +205,7 @@ class OrdinaryLeastSquares(BaseModel):
 
 
 class Ridge(BaseModel):
-    ''' Linear Regression/Classification with ridge regularization '''
+    """ Linear Regression/Classification with ridge regularization """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -224,7 +240,7 @@ class Ridge(BaseModel):
 
 
 class Lasso(BaseModel):
-    ''' Linear Regression with lasso regularization '''
+    """ Linear Regression with lasso regularization """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -490,7 +506,7 @@ class DecisionTree(BaseModel):
 
 
 class Bagging(BaseModel):
-    ''' Bagging class (with decision tree as base estimator) '''
+    """ Bagging class (with decision tree as base estimator) """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -541,7 +557,7 @@ class Bagging(BaseModel):
 
 
 class ExtraTrees(BaseModel):
-    ''' Extremely Randomized Trees '''
+    """ Extremely Randomized Trees """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -682,7 +698,7 @@ class RandomForest(BaseModel):
 
 
 class AdaBoost(BaseModel):
-    ''' Adaptive Boosting (with decision tree as base estimator) '''
+    """ Adaptive Boosting (with decision tree as base estimator) """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=False))
@@ -774,7 +790,7 @@ class GradientBoostingMachine(BaseModel):
 
 
 class XGBoost(BaseModel):
-    ''' Extreme Gradient Boosting '''
+    """ Extreme Gradient Boosting """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -841,7 +857,7 @@ class XGBoost(BaseModel):
 
 
 class LightGBM(BaseModel):
-    ''' Light Gradient Boosting Machine '''
+    """ Light Gradient Boosting Machine """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -908,7 +924,7 @@ class LightGBM(BaseModel):
 
 
 class CatBoost(BaseModel):
-    ''' Categorical Boosting Machine '''
+    """ Categorical Boosting Machine """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -966,7 +982,7 @@ class CatBoost(BaseModel):
 
 
 class LinearSVM(BaseModel):
-    ''' Linear Support Vector Machine '''
+    """ Linear Support Vector Machine """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
@@ -1017,7 +1033,7 @@ class LinearSVM(BaseModel):
 
 
 class KernelSVM(BaseModel):
-    ''' Kernel (non-linear) Support Vector Machine '''
+    """ Kernel (non-linear) Support Vector Machine """
 
     def __init__(self, *args):
         super().__init__(**set_init(*args, scaled=True))
