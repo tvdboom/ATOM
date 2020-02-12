@@ -181,7 +181,7 @@ def test_plot_confusion_matrix():
     # When task is not classification
     atom = ATOMRegressor(X_reg, y_reg)
     atom.pipeline('ols', 'r2', max_iter=2, init_points=2)
-    pytest.raises(AttributeError, atom.lda.plot_confusion_matrix)
+    pytest.raises(AttributeError, atom.ols.plot_confusion_matrix)
 
     # When model is unknown
     pytest.raises(ValueError, atom.plot_confusion_matrix, 'unknown')
