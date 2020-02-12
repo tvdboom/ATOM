@@ -877,23 +877,27 @@ def plot_probabilities(self, models, target,
 
     fig, ax = plt.subplots(figsize=figsize)
     for model in models:
-        m = getattr(self, model.lower())
-        if not hasattr(m, 'predict_proba_test'):
-            raise ValueError("The plot_probabilities method is only availa" +
-                             "ble for models with a predict_proba method!")
+        if hasattr(self, model.lower()):
+            m = getattr(self, model.lower())
+            if not hasattr(m, 'predict_proba_test'):
+                raise ValueError("The plot_probabilities method is only " +
+                                 "available for models with a " +
+                                 "predict_proba method!")
 
-        for key, value in self.mapping.items():
-            idx = np.where(m.y_test == value)  # Get indices per class
-            if len(models) == 1:
-                label = f"Class={key}"
-            else:
-                label = f"{m.name} (Class={key})"
-            sns.distplot(m.predict_proba_test[idx, target_int],
-                         hist=False,
-                         kde=True,
-                         norm_hist=True,
-                         kde_kws={'shade': True},
-                         label=label)
+            for key, value in self.mapping.items():
+                idx = np.where(m.y_test == value)  # Get indices per class
+                if len(models) == 1:
+                    label = f"Class={key}"
+                else:
+                    label = f"{m.name} (Class={key})"
+                sns.distplot(m.predict_proba_test[idx, target_int],
+                             hist=False,
+                             kde=True,
+                             norm_hist=True,
+                             kde_kws={'shade': True},
+                             label=label)
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
 
     if title is None:
         title = f"Predicted probabilities for {m.y.name}={target_str}"

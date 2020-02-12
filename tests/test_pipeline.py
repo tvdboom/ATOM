@@ -43,9 +43,8 @@ def load_df(dataset):
 def test_models_parameter():
     ''' Assert that the models parameter is set correctly '''
 
-    # Raises error when empty, unknown, wrong or duplicate models
+    # Raises error when unknown, wrong or duplicate models
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.pipeline, models=())
     pytest.raises(ValueError, atom.pipeline, models='test')
     pytest.raises(ValueError, atom.pipeline, models='OLS')
     pytest.raises(ValueError, atom.pipeline, models=['lda', 'lda'])

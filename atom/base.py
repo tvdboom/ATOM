@@ -1874,9 +1874,6 @@ class ATOM(object):
         # Check parameters
         if isinstance(models, str):
             models = [models]
-        elif len(models) == 0:
-            raise ValueError("No models found in pipeline. Choose from: {}"
-                             .format(', '.join(model_list.keys())))
         if skip_iter < 0:
             raise ValueError("Invalid value for the skip_iter parameter." +
                              f"Value should be >=0, got {skip_iter}.")

@@ -83,7 +83,7 @@ def test_set_tick_fontsize():
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_tick_fontsize(13)
-    assert ATOMClassifier.tick_fs == 13
+    assert ATOMClassifier.tick_fontsize == 13
 
 
 # << ================ Test _split_dataset ================== >>
