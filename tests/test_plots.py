@@ -183,12 +183,14 @@ def test_plot_confusion_matrix():
     atom.pipeline('ols', 'r2', max_iter=2, init_points=2)
     pytest.raises(AttributeError, atom.ols.plot_confusion_matrix)
 
-    # When model is unknown
-    pytest.raises(ValueError, atom.plot_confusion_matrix, 'unknown')
-
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline(['lda', 'et'], max_iter=2, init_points=2)
+
+    # When model is unknown
+    pytest.raises(ValueError, atom.plot_confusion_matrix, 'unknown')
+
+    # When correct
     atom.plot_confusion_matrix(normalize=True, display=False)
     atom.lda.plot_confusion_matrix(normalize=False, display=False)
     assert 1 == 1

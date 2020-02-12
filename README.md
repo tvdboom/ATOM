@@ -70,12 +70,12 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 Run the pipeline with different models:
 
     atom.pipeline(models=['LR', 'LDA', 'XGB', 'lSVM'],
-    	          metric='f1',
-    	          max_iter=10,
-    	          max_time=1000,
-    	          init_points=3,
-    	          cv=4,
-    	          bagging=10)  
+	          metric='f1',
+	          max_iter=10,
+	          max_time=1000,
+	          init_points=3,
+	          cv=4,
+	          bagging=10)  
 
 Make plots and analyze results: 
 
