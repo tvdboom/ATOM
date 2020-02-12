@@ -8,6 +8,7 @@ ATOM is built on top of several existing Python libraries. The required
 * **[numpy](https://numpy.org/)** (>=1.17.2)
 * **[pandas](https://pandas.pydata.org/)** (>=1.0.0)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.22)
+* **[tabulate](https://github.com/astanin/python-tabulate)** tabulate>=0.8.6
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
 * **[gpyopt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)

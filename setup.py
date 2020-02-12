@@ -31,8 +31,9 @@ setuptools.setup(
       ],
       install_requires=[
           'numpy>=1.17.2',
-          'pandas>=1.0.0',
+          'pandas>=1.0.1',
           'scikit-learn>=0.22',
+          'tabulate>=0.8.6',
           'tqdm>=4.35.0',
           'typeguard>=2.7.1',
           'gpyopt>=1.2.5',
