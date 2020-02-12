@@ -198,7 +198,9 @@ def test_plot_confusion_matrix():
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class)
     atom.pipeline(['lda', 'et'], max_iter=2, init_points=2)
-    atom.plot_confusion_matrix(normalize=False, display=False)
+
+    # Multiclass and multiple models not supported
+    pytest.raises(NotImplementedError, atom.plot_confusion_matrix)
     atom.lda.plot_confusion_matrix(normalize=True, display=False)
     assert 1 == 1
 

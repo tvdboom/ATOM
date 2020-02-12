@@ -625,7 +625,8 @@ def plot_confusion_matrix(self, models, normalize,
 
     """
     For 1 model: plot it's confusion matrix in a heatmap.
-    For >1 models: compare TP, FP, FN and TN in a barplot.
+    For >1 models: compare TP, FP, FN and TN in a barplot. Not supported for
+                   multiclass classification.
 
     Parameters
     ----------
@@ -660,6 +661,11 @@ def plot_confusion_matrix(self, models, normalize,
         models = self.models
     elif isinstance(models, str):
         models = [models]
+
+    if self.task.startswith('multiclass') and len(models) > 1:
+        raise NotImplementedError("The plot_confusion_matrix method does not" +
+                                  " support the comparison of various models" +
+                                  " for multiclass classification tasks.")
 
     # Create dataframe to plot with barh if len(models) > 1
     df_to_plot = pd.DataFrame(index=['True negatives',
@@ -707,6 +713,7 @@ def plot_confusion_matrix(self, models, normalize,
 
             else:  # Create barplot
                 df_to_plot[getattr(self, model.lower()).name] = cm.ravel()
+
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
