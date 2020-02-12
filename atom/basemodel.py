@@ -11,21 +11,17 @@ Description: Module containing the parent class for all model subclasses
 
 # Standard packages
 import numpy as np
-import pandas as pd
 import math
-import warnings
 from time import time
 from collections import deque
 from typeguard import typechecked
-from typing import Optional, Union
+from typing import Optional, Union, Sequence, Tuple
 
 # Sklearn
 from sklearn.utils import resample
 from sklearn.metrics import SCORERS
-from sklearn.inspection import permutation_importance
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
-from sklearn.metrics import confusion_matrix
 
 # Others
 from GPyOpt.methods import BayesianOptimization
@@ -33,22 +29,20 @@ from GPyOpt.methods import BayesianOptimization
 # Plots
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-import seaborn as sns
 
 # Own package modules
 from .utils import composed, crash, params_to_log, time_to_string
 from .plots import (
-        save, plot_bagging, plot_successive_halving, plot_ROC, plot_PRC
+        save, plot_bagging, plot_successive_halving, plot_ROC, plot_PRC,
+        plot_permutation_importance, plot_feature_importance,
+        plot_confusion_matrix, plot_probabilities, plot_threshold
         )
 
 
 # << ====================== Global variables ====================== >>
 
 # Variable types
-scalar = Union[int, float]
-
-# List of tree-based models
-tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
+cal = Union[str, callable]
 
 # List of models that don't use the Bayesian Optimization
 no_BO = ['GP', 'GNB', 'OLS']
@@ -57,13 +51,6 @@ no_BO = ['GP', 'GNB', 'OLS']
 # << ====================== Classes ====================== >>
 
 class BaseModel(object):
-
-    # Define class variables for plot settings
-    style = 'darkgrid'
-    palette = 'GnBu_d'
-    title_fs = 20
-    label_fs = 16
-    tick_fs = 12
 
     def __init__(self, **kwargs):
 
@@ -88,7 +75,7 @@ class BaseModel(object):
     @composed(crash, params_to_log, typechecked)
     def bayesian_optimization(self,
                               max_iter: int = 10,
-                              max_time: scalar = np.inf,
+                              max_time: Union[int, float] = np.inf,
                               init_points: int = 5,
                               cv: int = 3,
                               plot_bo: bool = False):
@@ -165,9 +152,9 @@ class BaseModel(object):
                 # Create a variable for the line so we can later update it
                 line1, = ax1.plot(x, y1, '-o', alpha=0.8)
                 ax1.set_title(f"Bayesian Optimization for {self.longname}",
-                              fontsize=BaseModel.title_fs)
-                ax1.set_ylabel(self.T.metric.longname,
-                               fontsize=BaseModel.label_fs,
+                              fontsize=self.T.title_fontsize)
+                ax1.set_ylabel(self.T.metric.name,
+                               fontsize=self.T.label_fontsize,
                                labelpad=12)
                 ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
@@ -175,12 +162,12 @@ class BaseModel(object):
                 ax2 = plt.subplot(gs[1], sharex=ax1)
                 line2, = ax2.plot(x, y2, '-o', alpha=0.8)
                 ax2.set_title("Metric distance between last consecutive steps",
-                              fontsize=BaseModel.title_fs)
+                              fontsize=self.T.title_fontsize)
                 ax2.set_xlabel('Step',
-                               fontsize=BaseModel.label_fs,
+                               fontsize=self.T.label_fontsize,
                                labelpad=12)
                 ax2.set_ylabel('d',
-                               fontsize=BaseModel.label_fs,
+                               fontsize=self.T.label_fontsize,
                                labelpad=12)
                 ax2.set_xticks(self.x)
                 ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
@@ -188,8 +175,8 @@ class BaseModel(object):
 
                 plt.setp(ax1.get_xticklabels(), visible=False)
                 plt.subplots_adjust(hspace=.0)
-                plt.xticks(fontsize=BaseModel.tick_fs)
-                plt.yticks(fontsize=BaseModel.tick_fs)
+                plt.xticks(fontsize=self.T.tick_fontsize)
+                plt.yticks(fontsize=self.T.tick_fontsize)
                 fig.tight_layout()
                 plt.show()
 
@@ -485,7 +472,7 @@ class BaseModel(object):
         if bagging is None or bagging == 0:
             return None  # Do not perform bagging
         elif bagging < 0:
-            raise ValueError("Invalid value for the cv parameter." +
+            raise ValueError("Invalid value for the bagging parameter." +
                              f"Value should be >=0, got {bagging}.")
 
         self.bagging_scores = []  # List of the scores
@@ -513,343 +500,134 @@ class BaseModel(object):
 
     # << ==================== Plot functions ==================== >>
 
-    @composed(crash, params_to_log)
-    def plot_bagging(self, title=None,
-                     figsize=(10, 6), filename=None, display=True):
+    @composed(crash, params_to_log, typechecked)
+    def plot_bagging(self,
+                     title: Optional[str] = None,
+                     figsize: Optional[Tuple[int, int]] = None,
+                     filename: Optional[str] = None,
+                     display: bool = True):
+
         """ Plot a boxplot of the bagging's results """
 
         plot_bagging(self.T, self.name, title, figsize, filename, display)
 
-    @composed(crash, params_to_log)
-    def plot_successive_halving(self, title=None,
-                                figsize=(10, 6), filename=None, display=True):
+    @composed(crash, params_to_log, typechecked)
+    def plot_successive_halving(self,
+                                title: Optional[str] = None,
+                                figsize: Tuple[int, int] = (10, 6),
+                                filename: Optional[str] = None,
+                                display: bool = True):
+
         """ Plot the successive halving scores """
 
         plot_successive_halving(self.T, self.name,
                                 title, figsize, filename, display)
 
-    @composed(crash, params_to_log)
-    def plot_threshold(self, metric=None, steps=100, title=None,
-                       figsize=(10, 6), filename=None, display=True):
+    @composed(crash, params_to_log, typechecked)
+    def plot_ROC(self,
+                 title: Optional[str] = None,
+                 figsize: Tuple[int, int] = (10, 6),
+                 filename: Optional[str] = None,
+                 display: bool = True):
 
-        """
-        DESCRIPTION ------------------------------------
-
-        Plot performance metrics against multiple threshold values.
-
-        ARGUMENTS -------------------------------------
-
-        metric   --> metric(s) to plot
-        steps    --> Number of thresholds to try between 0 and 1
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        """
-
-        if self.T.task != 'binary classification':
-            raise AttributeError('This method is only available for ' +
-                                 'binary classification tasks.')
-
-        # Set metric parameter
-        if metric is None:
-            metric = self.T.metric.function
-        if not isinstance(metric, list):
-            metric = [metric]
-
-        # Convert all strings to functions
-        mlist = []
-        for m in metric:
-            if isinstance(m, str):
-                mlist.append(getattr(self.T.metric, m).function)
-            else:
-                mlist.append(m)
-
-        # Get results ignoring annoying warnings
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-
-            results = {}
-            for m in mlist:  # Create dict of empty arrays
-                results[m] = []
-            space = np.linspace(0, 1, steps)
-            for step in space:
-                for m in mlist:
-                    pred = (self.predict_proba_test[:, 1] >= step).astype(bool)
-                    results[m].append(m(self.y_test, pred))
-
-        fig, ax = plt.subplots(figsize=figsize)
-        for i, m in enumerate(mlist):
-            plt.plot(space, results[m], label=mlist[i].__name__, lw=2)
-
-        if title is None:
-            temp = '' if len(metric) == 1 else 's'
-            title = f'Performance metric{temp} against threshold value'
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
-        plt.xlabel('Threshold', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
-
-    @composed(crash, params_to_log)
-    def plot_probabilities(self, target=1, title=None,
-                           figsize=(10, 6), filename=None, display=True):
-
-        """
-        DESCRIPTION -----------------------------------
-
-        Plot a function of the probability of the classes
-        of being the target class.
-
-        PARAMETERS -------------------------------------
-
-        target   --> probability of being that class (as idx or string)
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        """
-
-        if self.T.task == 'regression':
-            raise AttributeError('This method is only available for ' +
-                                 'classification tasks.')
-
-        # Make target mapping
-        inv_map = {str(v): k for k, v in self.T.mapping.items()}
-        if isinstance(target, str):  # User provides a string
-            target_int = self.T.mapping[target]
-            target_str = target
-        else:  # User provides an integer
-            target_int = target
-            target_str = inv_map[str(target)]
-
-        fig, ax = plt.subplots(figsize=figsize)
-        for key, value in self.T.mapping.items():
-            idx = np.where(self.y_test == value)  # Get indices per class
-            sns.distplot(self.predict_proba_test[idx, target_int],
-                         hist=False,
-                         kde=True,
-                         norm_hist=True,
-                         kde_kws={"shade": True},
-                         label='Class=' + key)
-
-        if title is None:
-            title = f'Predicted probabilities for {self.y.name}={target_str}'
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.legend(frameon=False, fontsize=BaseModel.label_fs)
-        plt.xlabel('Probability', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('Counts', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xlim(0, 1)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
-
-    @composed(crash, params_to_log)
-    def plot_permutation_importance(self, show=None, n_repeats=10, title=None,
-                                    figsize=None, filename=None, display=True):
-
-        """
-        DESCRIPTION -----------------------------------
-
-        Plot a model's feature permutation importance.
-
-        PARAMETERS -------------------------------------
-
-        show      --> number of best features to show in the plot
-        n_repeats --> number of times to permute a feature
-        title     --> plot's title. None for default title
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of the file to save
-        display   --> wether to display the plot
-
-        """
-
-        # Set parameters
-        show = self.X.shape[1] if show is None else int(show)
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show/2))
-
-        # Calculate the permutation importances
-        # Force random state on function (won't work with numpy default)
-        self.permutations = \
-            permutation_importance(self.best_model_fit,
-                                   self.X_test,
-                                   self.y_test,
-                                   scoring=self.T.metric,
-                                   n_repeats=n_repeats,
-                                   n_jobs=self.T.n_jobs,
-                                   random_state=self.T.random_state)
-
-        # Get indices of permutations sorted by the mean
-        idx = self.permutations.importances_mean.argsort()[:show]
-
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.boxplot(self.permutations.importances[idx].T,
-                    vert=False,
-                    labels=self.X.columns[idx])
-
-        title = 'Feature permutation importance' if title is None else title
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
-
-    @composed(crash, params_to_log)
-    def plot_feature_importance(self, show=None, title=None,
-                                figsize=None, filename=None, display=True):
-
-        """
-        DESCRIPTION -----------------------------------
-
-        Plot a (Tree based) model's normalized feature importance.
-
-        PARAMETERS -------------------------------------
-
-        show     --> number of best features to show in the plot. None for all
-        title    --> plot's title. None for default title
-        figsize  --> figure size: format as (x, y)
-        filename --> name of the file to save
-        display  --> wether to display the plot
-
-        """
-
-        if self.name not in tree_models:
-            raise AttributeError('Only availabe for tree-based models!')
-
-        # Set parameters
-        if show is None or show > self.X.shape[1]:
-            show = self.X.shape[1]
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show/2))
-
-        # Bagging has no direct feature importance implementation
-        if self.name == 'Bag':
-            feature_importances = np.mean([
-                est.feature_importances_ for est in self.best_model.estimators_
-            ], axis=0)
-        else:
-            feature_importances = self.best_model_fit.feature_importances_
-
-        # Normalize for plotting values adjacent to bar
-        feature_importances = feature_importances/max(feature_importances)
-        scores = pd.Series(feature_importances,
-                           index=self.X.columns).nlargest(show).sort_values()
-
-        fig, ax = plt.subplots(figsize=figsize)
-        scores.plot.barh()
-        for i, v in enumerate(scores):
-            ax.text(v + 0.01, i - 0.08, f'{v:.2f}', fontsize=BaseModel.tick_fs)
-
-        title = 'Normalized feature importance' if title is None else title
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.xlabel('Score', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('Features', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        plt.xlim(0, 1.07)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
-
-    @composed(crash, params_to_log)
-    def plot_ROC(self, title=None,
-                 figsize=(10, 6), filename=None, display=True):
         """ Plot Receiver Operating Characteristics curve """
 
         plot_ROC(self.T, self.name, title, figsize, filename, display)
 
-    @composed(crash, params_to_log)
-    def plot_PRC(self, title=None,
-                 figsize=(10, 6), filename=None, display=True):
+    @composed(crash, params_to_log, typechecked)
+    def plot_PRC(self,
+                 title: Optional[str] = None,
+                 figsize: Tuple[int, int] = (10, 6),
+                 filename: Optional[str] = None,
+                 display: bool = True):
+
         """ Plot precision-recall curve """
 
         plot_PRC(self.T, self.name, title, figsize, filename, display)
 
-    @composed(crash, params_to_log)
-    def plot_confusion_matrix(self, normalize=True, title=None,
-                              figsize=(10, 6), filename=None, display=True):
+    @composed(crash, params_to_log, typechecked)
+    def plot_permutation_importance(self,
+                                    show: Optional[int] = None,
+                                    n_repeats: int = 10,
+                                    title: Optional[str] = None,
+                                    figsize: Optional[Tuple[int, int]] = None,
+                                    filename: Optional[str] = None,
+                                    display: bool = True):
+
+        """ Plot the feature permutation importance of models """
+
+        plot_permutation_importance(self.T, self.name, show, n_repeats,
+                                    title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_feature_importance(self,
+                                show: Optional[int] = None,
+                                title: Optional[str] = None,
+                                figsize: Optional[Tuple[int, int]] = None,
+                                filename: Optional[str] = None,
+                                display: bool = True):
+
+        """ Plot tree-based model's normalized feature importances """
+
+        plot_feature_importance(self.T, self.name,
+                                show, title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_confusion_matrix(self,
+                              normalize: bool = False,
+                              title: Optional[str] = None,
+                              figsize: Tuple[int, int] = (10, 10),
+                              filename: Optional[str] = None,
+                              display: bool = True):
 
         """
-        DESCRIPTION -----------------------------------
-
-        Plot the confusion matrix in a heatmap.
-
-        PARAMETERS -------------------------------------
-
-        normalize --> wether to normalize the matrix
-        title     --> plot's title. None for default title
-        figsize   --> figure size: format as (x, y)
-        filename  --> name of the file to save
-        display   --> wether to display the plot
+        For 1 model: plot it's confusion matrix in a heatmap.
+        For >1 models: compare TP, FP, FN and TN in a barplot.
 
         """
 
-        if self.T.task == 'regression':
-            raise AttributeError('This method only works for ' +
-                                 'classification tasks.')
+        plot_confusion_matrix(self.T, self.name, normalize,
+                              title, figsize, filename, display)
 
-        # Compute confusion matrix
-        cm = confusion_matrix(self.y_test, self.predict_test)
+    @composed(crash, params_to_log, typechecked)
+    def plot_threshold(self,
+                       metric: Optional[Union[cal, Sequence[cal]]] = None,
+                       steps: int = 100,
+                       title: Optional[str] = None,
+                       figsize: Tuple[int, int] = (10, 6),
+                       filename: Optional[str] = None,
+                       display: bool = True):
 
-        if normalize:
-            cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        """
 
-        ticks = [v for v in self.T.mapping.keys()]
+        Plot performance metric(s) against multiple threshold values.
 
-        fig, ax = plt.subplots(figsize=figsize)
-        im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-        cbar = ax.figure.colorbar(im, ax=ax)
-        ax.set(xticks=np.arange(cm.shape[1]),
-               yticks=np.arange(cm.shape[0]),
-               xticklabels=ticks,
-               yticklabels=ticks)
+        """
 
-        # Loop over data dimensions and create text annotations
-        fmt = '.2f' if normalize else 'd'
-        thresh = cm.max() / 2.
-        for i in range(cm.shape[0]):
-            for j in range(cm.shape[1]):
-                ax.text(j, i, format(cm[i, j], fmt),
-                        ha="center", va="center",
-                        fontsize=BaseModel.tick_fs,
-                        color="white" if cm[i, j] > thresh else "black")
+        plot_threshold(self.T, self.name, metric, steps,
+                       title, figsize, filename, display)
 
-        if title is None and normalize:
-            title = 'Normalized confusion matrix'
-        elif title is None:
-            title = 'Confusion matrix'
-        plt.title(title, fontsize=BaseModel.title_fs, pad=12)
-        plt.xlabel('Predicted label', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.ylabel('True label', fontsize=BaseModel.label_fs, labelpad=12)
-        plt.xticks(fontsize=BaseModel.tick_fs)
-        plt.yticks(fontsize=BaseModel.tick_fs)
-        cbar.ax.tick_params(labelsize=BaseModel.tick_fs)  # Colorbar's ticks
-        ax.grid(False)
-        fig.tight_layout()
-        if filename is not None:
-            plt.savefig(filename)
-        plt.show() if display else plt.close()
+    @composed(crash, params_to_log, typechecked)
+    def plot_probabilities(self,
+                           target: Union[int, str] = 1,
+                           title: Optional[str] = None,
+                           figsize: Tuple[int, int] = (10, 6),
+                           filename: Optional[str] = None,
+                           display: bool = True):
+
+        """
+        Plot a function of the probability of the classes
+        of being the target class.
+
+        """
+
+        plot_probabilities(self.T, self.name, target,
+                           title, figsize, filename, display)
 
     # << ============ Utility functions ============ >>
 
-    @composed(crash, params_to_log)
-    def save(self, filename=None):
+    @composed(crash, params_to_log, typechecked)
+    def save(self, filename: Optional[str] = None):
         """ Save the model subclass to a pickle file """
 
         save(self, 'ATOM_' + self.name if filename is None else filename)

@@ -42,5 +42,5 @@ def test_remove_outlier_in_target():
 
     atom = ATOMClassifier(X_dim10, y_dim10, test_size=0.1, random_state=1)
     length = len(atom.train)
-    atom.outliers(max_sigma=2, include_target=1)
+    atom.outliers(max_sigma=2, include_target=True)
     assert len(atom.train) + 1 == length

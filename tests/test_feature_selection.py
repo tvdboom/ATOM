@@ -89,7 +89,7 @@ def test_remove_low_variance():
     atom = ATOMClassifier(X, y, random_state=1)
     atom.feature_selection(min_variance_frac=0.98, max_correlation=None)
     assert len(atom.X.columns) + 1 == len(X.columns)
-    assert atom._isScaled
+    assert atom._is_scaled
 
 
 def test_collinear_attribute():

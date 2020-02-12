@@ -44,6 +44,48 @@ def load_df(dataset):
     return X, y
 
 
+# << ================ Test class variables ================= >>
+
+def test_set_style():
+    ''' Assert that the set_style classmethod works as intended '''
+
+    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom.set_style('white')
+    assert ATOMClassifier.style == 'white'
+
+
+def test_set_palette():
+    ''' Assert that the set_palette classmethod works as intended '''
+
+    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom.set_palette('Blues')
+    assert ATOMClassifier.palette == 'Blues'
+
+
+def test_set_title_fontsize():
+    ''' Assert that the set_title_fontsize classmethod works as intended '''
+
+    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom.set_title_fontsize(21)
+    assert ATOMClassifier.title_fontsize == 21
+
+
+def test_set_label_fontsize():
+    ''' Assert that the set_label_fontsize classmethod works as intended '''
+
+    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom.set_label_fontsize(4)
+    assert ATOMClassifier.label_fontsize == 4
+
+
+def test_set_tick_fontsize():
+    ''' Assert that the set_tick_fontsize classmethod works as intended '''
+
+    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom.set_tick_fontsize(13)
+    assert ATOMClassifier.tick_fs == 13
+
+
 # << ================ Test _split_dataset ================== >>
 
 def test_dataset_is_shuffled():
@@ -199,8 +241,8 @@ def test_error_wrong_metric():
     ''' Assert that an error is raised when an invalid metric is selected '''
 
     atom = ATOMRegressor(X_dim4, y_dim4)
-    atom.fit(models='lgb', metric='r2', max_iter=0)
-    pytest.raises(ValueError, atom.get_metric('unknown'))
+    atom.pipeline(models='lgb', metric='r2', max_iter=0)
+    pytest.raises(ValueError, atom.get_metric, 'unknown')
 
 
 def test_al_tasks():
@@ -209,20 +251,20 @@ def test_al_tasks():
     # For binary classification
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.fit(models='lgb', metric='roc_auc_ovr', max_iter=0)
+    atom.pipeline(models='lgb', metric='roc_auc_ovr', max_iter=0)
     atom.get_metric('jaccard')
     assert 1 == 1
 
     # For multiclass classification
     X, y = load_wine(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.fit(models='lgb', metric='recall_macro', max_iter=0)
+    atom.pipeline(models='lgb', metric='recall_macro', max_iter=0)
     atom.get_metric('f1_micro')
     assert 2 == 2
 
     # For regression
     X, y = load_boston(return_X_y=True)
     atom = ATOMRegressor(X, y)
-    atom.fit(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
+    atom.pipeline(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
     atom.get_metric('neg_mean_poisson_deviance')
     assert 3 == 3

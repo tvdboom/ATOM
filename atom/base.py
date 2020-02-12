@@ -39,9 +39,10 @@ from .utils import (
      )
 from .plots import (
         save, plot_correlation, plot_PCA, plot_ROC, plot_PRC, plot_bagging,
-        plot_successive_halving
+        plot_successive_halving, plot_permutation_importance,
+        plot_feature_importance, plot_confusion_matrix, plot_threshold,
+        plot_probabilities
         )
-from .basemodel import BaseModel
 from .models import (
      GaussianProcess, GaussianNaïveBayes, MultinomialNaïveBayes,
      BernoulliNaïveBayes, OrdinaryLeastSquares, Ridge, Lasso, ElasticNet,
@@ -109,12 +110,12 @@ only_regression = ['OLS', 'Lasso', 'EN', 'BR']
 
 class ATOM(object):
 
-    # Define class variables for plot settings
+    # Define class variables for plot aesthetics
     style = 'darkgrid'
     palette = 'GnBu_d'
-    title_fs = 20
-    label_fs = 16
-    tick_fs = 12
+    title_fontsize = 20
+    label_fontsize = 16
+    tick_fontsize = 12
 
     # << ================= Methods ================= >>
 
@@ -172,10 +173,6 @@ class ATOM(object):
             number generator is the RandomState instance used by `np.random`.
 
         """
-
-        if self.__class__.__name__ == 'ATOM':
-            raise RuntimeError('Do not instantiate the ATOM class directly. ' +
-                               'Use ATOMClassifier or ATOMRegressor instead.')
 
         # << ============ Handle input data ============ >>
 
@@ -636,8 +633,7 @@ class ATOM(object):
                              f"got {metric}. Try one of {SCORERS.keys()}.")
 
         # Get max length of the models' names
-        len_ = [len(getattr(self, m).longname) for m in self.models]
-        lenx = max(len_)
+        maxlen = max([len(getattr(self, m).longname) for m in self.models])
 
         # Get list of scores
         scores = [getattr(getattr(self, m), metric) for m in self.models]
@@ -655,7 +651,7 @@ class ATOM(object):
             score_test = getattr(getattr(self, m), metric)
 
             # Create string of the score
-            print_ = f"{longname:{lenx}s} --> {score_test:.3f}"
+            print_ = "{:{}s} --> {:.3f}".format(longname, maxlen, score_test)
 
             # Highlight best score (if more than one model in pipeline)
             if score_test == max(scores) and len(self.models) > 1:
@@ -676,7 +672,7 @@ class ATOM(object):
 
         """
 
-        save(self.__class__.__name__ if filename is None else filename)
+        save(self, self.__class__.__name__ if filename is None else filename)
         self._log("ATOM class saved successfully!", 1)
 
     # << ================ Data pre-procesing methods ================ >>
@@ -1521,7 +1517,7 @@ class ATOM(object):
     @composed(crash, params_to_log, typechecked)
     def pipeline(self,
                  models: Union[str, List[str], Tuple[str]],
-                 metric: Union[str, callable],
+                 metric: Optional[Union[str, callable]] = None,
                  greater_is_better: bool = True,
                  needs_proba: bool = False,
                  successive_halving: bool = False,
@@ -1581,10 +1577,14 @@ class ATOM(object):
                 - 'SGD' for Stochastic Gradient Descent
                 - 'MLP' for Multilayer Perceptron
 
-        metric: string or callable
+        metric: string or callable, optional (default=None)
             Metric on which the pipeline fits the models. Choose from any of
-            the metrics predefined by sklearn, use a score (or loss) function
-            with signature metric(y, y_pred, **kwargs) or use a scorer.
+            the string metrics predefined by sklearn, use a score (or loss)
+            function with signature metric(y, y_pred, **kwargs) or use a
+            scorer. If None, the default metric per task is selected:
+                - f1 for binary classificartion
+                - f1_weighted for multiclas classification
+                - r2 for regression
 
         greater_is_better: bool, optional (default=True)
             Wether the metric is a score function or a loss function,
@@ -1661,7 +1661,7 @@ class ATOM(object):
             """
 
             if len(value) != len(models):
-                raise ValueError(f"Invalid value for the {name} parameter." +
+                raise ValueError(f"Invalid value for the {name} parameter. " +
                                  "Length should be equal to the number of " +
                                  f"models, got len(models)={len_models} " +
                                  f"and len({name})={len(value)}.")
@@ -1739,7 +1739,7 @@ class ATOM(object):
                         getattr(self, model).fit()
 
                         # Perform bagging
-                        getattr(self, model).bagging(bagging)
+                        getattr(self, model).bagging(self.bagging)
 
                         # Get the total time spend on this model
                         total_time = time_to_string(model_time)
@@ -1777,7 +1777,7 @@ class ATOM(object):
             try:  # Fails if all models encountered errors
                 # Get max length of the models' names
                 len_ = [len(getattr(self, m).longname) for m in self.models]
-                lenx = max(len_)
+                maxlen = max(len_)
 
                 # Get list of scores
                 scores = []
@@ -1803,7 +1803,7 @@ class ATOM(object):
                                             'score_test',
                                             'fit_time'])
 
-            if bagging is not None:
+            if self.bagging is not None:
                 pd.concat([results, pd.DataFrame(columns=['bagging_mean',
                                                           'bagging_std',
                                                           'bagging_time'])])
@@ -1825,7 +1825,8 @@ class ATOM(object):
                                              ignore_index=True)
 
                     # Create string of the score
-                    print_ = f"{longname:{lenx}s} --> {score_test:.3f}"
+                    print_ = "{0:{1}s} --> {2:.3f}".format(
+                                                longname, maxlen, score_test)
 
                     # Highlight best score and assign winner attribute
                     if score_test == max(scores) and len(self.models) > 1:
@@ -1847,7 +1848,7 @@ class ATOM(object):
                                              ignore_index=True)
 
                     # Create string of the score
-                    print1 = f"{longname:{lenx}s} --> {bs_mean:.3f}"
+                    print1 = f"{longname:{maxlen}s} --> {bs_mean:.3f}"
                     print2 = f"{bs_std:.3f}"
                     print_ = print1 + u" \u00B1 " + print2
 
@@ -1895,10 +1896,7 @@ class ATOM(object):
             check_params('cv', cv, len(models))
         else:
             cv = [cv for _ in models]
-        if bagging is not None and bagging < 0:
-            raise ValueError("Invalid value for the bagging parameter." +
-                             f"Value should be >0, got {bagging}.")
-        elif bagging is None or bagging == 0:
+        if bagging is None or bagging == 0:
             bagging = None
 
         # Make attributes of some parameters to use them in plot functions
@@ -1959,28 +1957,25 @@ class ATOM(object):
         if metric is None:
             if self.task.startswith('binary'):
                 self.metric = get_scorer('f1')
-                self.metric.name = 'f1_score'
+                self.metric.name = 'f1'
             elif self.task.startswith('multiclass'):
                 self.metric = get_scorer('f1_weighted')
                 self.metric.name = 'f1_weighted'
             else:
                 self.metric = get_scorer('r2')
-                self.metric.name = 'r2_score'
+                self.metric.name = 'r2'
         elif isinstance(metric, str):
             if metric not in SCORERS.keys():
                 raise ValueError("Unknown value for the metric parameter, " +
                                  f"got {metric}. Try one of {SCORERS.keys()}.")
             self.metric = get_scorer(metric)
             self.metric.name = metric
-        elif callable(metric) and not hasattr(metric, '_score_func'):
-            self.metric = make_scorer(metric, greater_is_better, needs_proba)
-            self.metric.name = self.metric._score_func.__name__
         elif hasattr(metric, '_score_func'):  # Provided metric is scoring
             self.metric = metric
             self.metric.name = self.metric._score_func.__name__
-        else:
-            raise ValueError("Invalid value for the metric parameter. Read " +
-                             "the documentation for the available options.")
+        else:  # Metric is a metric function with signature metric(y, y_pred)
+            self.metric = make_scorer(metric, greater_is_better, needs_proba)
+            self.metric.name = self.metric._score_func.__name__
 
         # Add all metrics as subclasses of the BaseMetric class
         for key, value in SCORERS.items():
@@ -1991,11 +1986,11 @@ class ATOM(object):
 
         # << ======================== Core ======================== >>
 
-        if successive_halving:
+        if self.successive_halving:
             self.results = []  # Save the cv's results in list of dataframes
             iteration = 0
             original_data = self.dataset.copy()
-            while len(self.models) > 2**self.skip_iter - 1:
+            while len(self.models) > 2**skip_iter - 1:
                 # Select 1/N of data to use for this iteration
                 self._split_dataset(original_data, 100./len(self.models))
                 self.reset_attributes()
@@ -2039,24 +2034,7 @@ class ATOM(object):
                          filename: Optional[str] = None,
                          display: bool = True):
 
-        """
-        Correlation maxtrix plot of the dataset. Ignores non-numeric columns.
-
-        Parameters
-        ----------
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
-        """
+        """ Correlation maxtrix plot of the data """
 
         plot_correlation(self, title, figsize, filename, display)
 
@@ -2064,7 +2042,7 @@ class ATOM(object):
     def plot_PCA(self,
                  show: Optional[int] = None,
                  title: Optional[str] = None,
-                 figsize: Tuple[int, int] = None,
+                 figsize: Optional[Tuple[int, int]] = None,
                  filename: Optional[str] = None,
                  display: bool = True):
 
@@ -2072,168 +2050,147 @@ class ATOM(object):
         Plot the explained variance ratio of the components. Only if PCA
         was applied on the dataset through the feature_selection method.
 
-        Parameters
-        ----------
-        show: int or None
-            Number of components to show. If None, all are plotted.
-
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
         """
 
         plot_PCA(self, show, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_bagging(self,
-                     models: Union[None, str, List[str], Tuple[str]] = None,
+                     models: Union[None, str, Sequence[str]] = None,
                      title: Optional[str] = None,
-                     figsize: Tuple[int, int] = None,
+                     figsize: Optional[Tuple[int, int]] = None,
                      filename: Optional[str] = None,
                      display: bool = True):
 
-        """
-        Plot a boxplot of the bagging's results.
-
-        Parameters
-        ----------
-        models: string, list, tuple or None
-            Name of the models to plot. If None, all the models in the
-            pipeline are selected. Note that if successive halving=True only
-            the last model is saved, so avoid plotting models from different
-            iterations together.
-
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
-        """
+        """ Plot a boxplot of the bagging's results """
 
         plot_bagging(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
-    def plot_successive_halving(
-            self,
-            models: Union[None, str, List[str], Tuple[str, ...]] = None,
-            title: Optional[str] = None,
-            figsize: Tuple[int, int] = (10, 6),
-            filename: Optional[str] = None,
-            display: bool = True):
+    def plot_successive_halving(self,
+                                models: Union[None, str, Sequence[str]] = None,
+                                title: Optional[str] = None,
+                                figsize: Tuple[int, int] = (10, 6),
+                                filename: Optional[str] = None,
+                                display: bool = True):
 
-        """
-        Plot of the models' scores per iteration of the successive halving.
-
-        Parameters
-        ----------
-        models: string, list, tuple or None
-            Name of the models to plot. If None, all the models in the
-            pipeline are selected.
-
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
-        """
+        """ Plot the models' scores per iteration of the successive halving """
 
         plot_successive_halving(self, models,
                                 title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_ROC(self,
-                 models: Union[None, str, List[str], Tuple[str, ...]] = None,
+                 models: Union[None, str, Sequence[str]] = None,
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
 
-        """
-        Plot the Receiver Operating Characteristics curve.
-        Only for binary classification tasks.
-
-        Parameters
-        ----------
-        models: string, list, tuple or None
-            Name of the models to plot. If None, all the models in the
-            pipeline are selected.
-
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
-        """
+        """ Plot the Receiver Operating Characteristics curve """
 
         plot_ROC(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_PRC(self,
-                 models: Union[None, str, List[str], Tuple[str, ...]] = None,
+                 models: Union[None, str, Sequence[str]] = None,
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
 
-        """
-        Plot the precision-recall curve. Only for binary classification tasks.
-
-        Parameters
-        ----------
-        models: string, list, tuple or None
-            Name of the models to plot. If None, all the models in the
-            pipeline are selected.
-
-        title: string or None
-            Plot's title. If None, the default option is used.
-
-        figsize: tuple
-            Figure's size, format as (x, y).
-
-        filename: string or None
-            Name of the file (to save). If None, the figure is not saved.
-
-        display: bool
-            Wether to render the plot.
-
-        """
+        """ Plot the precision-recall curve """
 
         plot_PRC(self, models, title, figsize, filename, display)
 
+    @composed(crash, params_to_log, typechecked)
+    def plot_permutation_importance(
+                            self,
+                            models: Union[None, str, Sequence[str]] = None,
+                            show: Optional[int] = None,
+                            n_repeats: int = 10,
+                            title: Optional[str] = None,
+                            figsize: Optional[Tuple[int, int]] = None,
+                            filename: Optional[str] = None,
+                            display: bool = True):
+
+        """ Plot the feature permutation importance of models """
+
+        plot_permutation_importance(self, models, show, n_repeats,
+                                    title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_feature_importance(self,
+                                models: Union[None, str, Sequence[str]] = None,
+                                show: Optional[int] = None,
+                                title: Optional[str] = None,
+                                figsize: Optional[Tuple[int, int]] = None,
+                                filename: Optional[str] = None,
+                                display: bool = True):
+
+        """ Plot tree-based model's normalized feature importances """
+
+        plot_feature_importance(self, models, show,
+                                title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_confusion_matrix(self,
+                              models: Union[None, str, Sequence[str]] = None,
+                              normalize: bool = False,
+                              title: Optional[str] = None,
+                              figsize: Tuple[int, int] = (10, 10),
+                              filename: Optional[str] = None,
+                              display: bool = True):
+
+        """
+        For 1 model: plot it's confusion matrix in a heatmap.
+        For >1 models: compare TP, FP, FN and TN in a barplot.
+
+        """
+
+        plot_confusion_matrix(self, models, normalize,
+                              title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_threshold(self,
+                       models: Union[None, str, Sequence[str]] = None,
+                       metric: Optional[Union[str, callable]] = None,
+                       steps: int = 100,
+                       title: Optional[str] = None,
+                       figsize: Tuple[int, int] = (10, 6),
+                       filename: Optional[str] = None,
+                       display: bool = True):
+
+        """
+
+        Plot performance metric(s) against multiple threshold values.
+
+        """
+
+        plot_threshold(self, models, metric, steps,
+                       title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_probabilities(self,
+                           models: Union[None, str, Sequence[str]] = None,
+                           target: Union[int, str] = 1,
+                           title: Optional[str] = None,
+                           figsize: Tuple[int, int] = (10, 6),
+                           filename: Optional[str] = None,
+                           display: bool = True):
+
+        """
+        Plot a function of the probability of the classes
+        of being the target class.
+
+        """
+
+        plot_probabilities(self, models, target,
+                           title, figsize, filename, display)
+
     # <============ Classmethods for plot settings ============>
 
-    @classmethod
-    @typechecked
+    @composed(classmethod, typechecked)
     def set_style(cls, style: str = 'darkgrid'):
 
         """
@@ -2247,12 +2204,10 @@ class ATOM(object):
 
         """
 
-        cls.style = style
-        BaseModel.style = style
         sns.set_style(style)
+        cls.style = style
 
-    @classmethod
-    @typechecked
+    @composed(classmethod, typechecked)
     def set_palette(cls, palette: str = 'GnBu_d'):
 
         """
@@ -2266,12 +2221,10 @@ class ATOM(object):
 
         """
 
-        cls.palette = palette
-        BaseModel.palette = palette
         sns.set_palette(palette)
+        cls.palette = palette
 
-    @classmethod
-    @typechecked
+    @composed(classmethod, typechecked)
     def set_title_fontsize(cls, fontsize: int = 20):
 
         """
@@ -2284,11 +2237,9 @@ class ATOM(object):
 
         """
 
-        cls.title_fs = fontsize
-        BaseModel.title_fs = fontsize
+        cls.title_fontsize = fontsize
 
-    @classmethod
-    @typechecked
+    @composed(classmethod, typechecked)
     def set_label_fontsize(cls, fontsize: int = 16):
 
         """
@@ -2301,11 +2252,9 @@ class ATOM(object):
 
         """
 
-        cls.label_fs = fontsize
-        BaseModel.label_fs = fontsize
+        cls.label_fontsize = fontsize
 
-    @classmethod
-    @typechecked
+    @composed(classmethod, typechecked)
     def set_tick_fontsize(cls, fontsize: int = 12):
 
         """
@@ -2318,5 +2267,4 @@ class ATOM(object):
 
         """
 
-        cls.tick_fs = fontsize
-        BaseModel.tick_fs = fontsize
+        cls.tick_fontsize = fontsize

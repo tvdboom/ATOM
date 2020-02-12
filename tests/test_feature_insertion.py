@@ -53,9 +53,9 @@ def test_n_features_parameter():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    with pytest.raises(ValueError, match=r"Invalid value for .*"):
+    with pytest.raises(ValueError, match=r".*value for the n_features.*"):
         atom.feature_insertion(n_features=-2)
-    with pytest.raises(ValueError, match=r".*be more than 1%.*"):
+    with pytest.raises(ValueError, match=r".*should be <1%.*"):
         atom.feature_insertion(n_features=23)
 
 

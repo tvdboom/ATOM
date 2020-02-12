@@ -13,10 +13,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
       name='atom-ml',
-      version='v3.0',
+      version='v3.0.0',
       license='MIT',
-      description='AutoML package for fast exploration and experimentation of machine learning tasks',
-      download_url='https://github.com/tvdboom/ATOM/archive/v3.0.tar.gz',
+      description='A Python AutoML tool for fast exploration and experimentation of supervised machine learning pipelines.',
+      download_url='https://github.com/tvdboom/ATOM/archive/v3.0.0.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',
@@ -31,18 +31,20 @@ setuptools.setup(
       ],
       install_requires=[
           'numpy>=1.17.2',
-          'pandas>=0.25.1',
+          'pandas>=1.0.0',
           'scikit-learn>=0.22',
           'tqdm>=4.35.0',
           'typeguard>=2.7.1',
           'gpyopt>=1.2.5',
           'matplotlib>=3.1.0',
           'seaborn>=0.10.0',
-          'imbalanced-learn>=0.5.0',
-          'pandas-profiling>=2.3.0',
-          'gplearn>=0.4.1',
-          'xgboost>=0.90',
-          'lightgbm>=2.3.0',
-          'catboost>=0.19.1'
       ],
+      extras_require={
+          'pandas-profiling': ['pandas-profiling>=2.3.0'],
+          'imbalanced-learn': ['imbalanced-learn>=0.5.0'],
+          'gplearn': ['gplearn>=0.4.1'],
+          'xgboost': ['xgboost>=0.90'],
+          'lightgbm': ['lightgbm>=2.3.0'],
+          'catboost': ['catboost>=0.19.1'],
+      },
       python_requires='>=3.6')

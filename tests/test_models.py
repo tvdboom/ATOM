@@ -48,7 +48,7 @@ def test_models_attributes():
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y)
-    atom.fit(models='lr', metric='f1', max_iter=0)
+    atom.pipeline(models='lr', metric='f1', max_iter=0)
     assert atom.lr.name == 'LR'
     assert atom.lr.longname == 'Logistic Regression'
 
@@ -59,7 +59,11 @@ def test_models_binary():
     X, y = load_df(load_breast_cancer())
     for model in [m for m in model_list if m not in only_regression]:
         atom = ATOMClassifier(X, y, random_state=1)
-        atom.fit(models=model, metric='f1', max_iter=1, init_points=1, cv=1)
+        atom.pipeline(models=model,
+                      metric='f1',
+                      max_iter=1,
+                      init_points=1,
+                      cv=1)
     assert 1 == 1  # Assert that all models ran wihtout errors
 
 
@@ -69,11 +73,11 @@ def test_models_multiclass():
     X, y = load_df(load_wine())
     for model in [m for m in model_list if m not in only_regression]:
         atom = ATOMClassifier(X, y, random_state=1)
-        atom.fit(models=model,
-                 metric='f1_micro',
-                 max_iter=1,
-                 init_points=1,
-                 cv=1)
+        atom.pipeline(models=model,
+                      metric='f1_micro',
+                      max_iter=1,
+                      init_points=1,
+                      cv=1)
     assert 3 == 3
 
 
@@ -83,9 +87,9 @@ def test_models_regression():
     X, y = load_df(load_boston())
     for model in [m for m in model_list if m not in only_classification]:
         atom = ATOMRegressor(X, y, random_state=1)
-        atom.fit(models=model,
-                 metric='neg_mean_absolute_error',
-                 max_iter=1,
-                 init_points=1,
-                 cv=1)
+        atom.pipeline(models=model,
+                      metric='neg_mean_absolute_error',
+                      max_iter=1,
+                      init_points=1,
+                      cv=1)
     assert 5 == 5

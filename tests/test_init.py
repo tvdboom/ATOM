@@ -14,7 +14,7 @@ import pandas as pd
 import multiprocessing
 from sklearn.datasets import load_boston, load_wine, load_breast_cancer
 from atom import ATOMClassifier, ATOMRegressor
-from base import ATOM
+from atom.base import ATOM
 
 
 # << ====================== Variables ===================== >>
@@ -39,12 +39,6 @@ def load_df(dataset):
 # << ======================= Tests ========================= >>
 
 # << ============== Test handling input data =============== >>
-
-def test_calling_ATOM_directly():
-    """ Assert that an error is raised when ATOM is directly instantiated """
-
-    pytest.raises(RuntimeError, ATOM, X_dim4, y_dim4)
-
 
 def test_X_y_equal_length():
     """ Assert that error is raised when X and y don't have equal length """
@@ -136,6 +130,10 @@ def test_log_parameter():
     atom.outliers()
     assert 1 == 1
 
+    atom = ATOMClassifier(X, y, log='auto')
+    atom.outliers()
+    assert 2 == 2
+
 
 def test_verbose_parameter():
     """ Assert that the verbose parameter is set correctly """
@@ -151,17 +149,17 @@ def test_random_state_parameter():
     # Check if it gives the same results every time
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-    atom.fit(models=['lr', 'lgb', 'pa'],
-             metric='f1',
-             max_iter=3,
-             cv=1,
-             bagging=0)
+    atom.pipeline(models=['lr', 'lgb', 'pa'],
+                  metric='f1',
+                  max_iter=3,
+                  cv=1,
+                  bagging=0)
     atom2 = ATOMClassifier(X, y, n_jobs=-1, random_state=1)
-    atom2.fit(models=['lr', 'lgb', 'pa'],
-              metric='f1',
-              max_iter=3,
-              cv=1,
-              bagging=0)
+    atom2.pipeline(models=['lr', 'lgb', 'pa'],
+                   metric='f1',
+                   max_iter=3,
+                   cv=1,
+                   bagging=0)
     assert atom.lr.score_test == atom2.lr.score_test
     assert atom.lgb.score_test == atom2.lgb.score_test
     assert atom.pa.score_test == atom2.pa.score_test
@@ -185,21 +183,21 @@ def test_is_fitted_attribute():
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
     assert not atom._is_fitted
-    atom.fit('LR', 'f1', max_iter=0, bagging=0)
+    atom.pipeline('LR', 'f1', max_iter=0, bagging=0)
     assert atom._is_fitted
 
 
-def test_isScaled_attribute():
-    """ Assert that the _isScaled attribute is set correctly """
+def test_is_scaled_attribute():
+    """ Assert that the _is_scaled attribute is set correctly """
 
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    assert not atom._isScaled
+    assert not atom._is_scaled
     atom.scale()
-    assert atom._isScaled
+    assert atom._is_scaled
 
     atom2 = ATOMClassifier(atom.X, atom.y)
-    assert atom2._isScaled
+    assert atom2._is_scaled
 
 
 # << ==================== Test data cleaning ==================== >>
