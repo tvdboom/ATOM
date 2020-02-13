@@ -5,7 +5,7 @@
 Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration and experimentation of supervised machine learning tasks. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution. This package supports binary classification, multiclass classification, and regression tasks.
 
 !!!note
-    A data scientist with knowledge of the data can outperform ATOM if he applies usecase-specific feature engineering or data cleaning steps! 
+    A data scientist with domain knowledge can outperform ATOM if he applies usecase-specific feature engineering or data cleaning steps! 
 
 Possible steps taken by the ATOM pipeline:
 
@@ -30,72 +30,6 @@ Possible steps taken by the ATOM pipeline:
 </p>
 
 
-
-Usage  
-------------------------  
-Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
-
-    from atom import ATOMClassifier  
-    
-    atom = ATOMClassifier(X, y, log='atom_log', n_jobs=2, verbose=1)
-
-ATOM has multiple data cleaning methods to help you prepare the data for modelling:
-
-    atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac_rows=0.1)  
-    atom.encode(max_onehot=10, frac_to_other=0.05)  
-    atom.outliers(max_sigma=4)  
-    atom.balance(oversample=0.8, n_neighbors=15)  
-    atom.feature_selection(strategy='univariate', solver='chi2', max_features=0.9)
-
-Fit the data to different models:
-
-    atom.fit(models=['LR', 'LDA', 'XGB', 'lSVM'],
-	         metric='f1',
-	         max_iter=10,
-	         max_time=1000,
-	         init_points=3,
-	         cv=4,
-	         bagging=10)  
-
-Make plots and analyze results: 
-
-	atom.plot_bagging(filename='bagging_results.png')  
-	atom.lSVM.plot_probabilities()  
-	atom.lda.plot_confusion_matrix()  
-  
-
-API
------------------------------
-* **ATOMClassifier(X, y=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
-ATOM class for classification tasks. When initializing the class, ATOM will automatically proceed to apply some standard data cleaning steps unto the data. These steps include transforming the input data into a pd.DataFrame (if it wasn't one already) that can be accessed through the class' attributes, removing columns with prohibited data types, removing categorical columns with maximal cardinality (the number of unique values is equal to the number of instances. Usually the case for IDs, names, etc...), remove features with all the same value, removing duplicate rows and remove rows with missing values in the target column.  
-	+ **X: list, np.array or pd.DataFrame**  
-	Data features with shape=(n_samples, n_features).
-	+ **y: string, list, np.array, pd.Series or None, optional (default=None)**  
-		- If None: the last column of X is selected as target column
-		- If string: name of the target column in X (X has to be a pd.DataFrame)
-		- Else: data target column with shape=(n_samples,)
-	+ **percentage: int or float, optional (default=100)**  
-	Percentage of the data to use.
-	+ **test_size: float, optional (default=0.3)**  
-	Split ratio of the train and test set.
-	+ **log: string or None, optional (default=None)**  
-	Name of the log file. 'auto' for default name with date and time. None to not save any log.
-	+ **n_jobs: int, optional (default=1)**  
-	Number of cores to use for parallel processing.
-		+ If -1, use all available cores
-		+ If <-1, use available_cores - 1 + n_jobs  
-	+ **warnings: bool, optional (default=False)**  
-	Wether to show warnings when running the pipeline.
-	+ **verbose: int, optional (default=0)**  
-	Verbosity level of the class. Possible values are:  
-		+ 0 to not print anything  
-		+ 1 to print minimum information
-		+ 2 to print average information
-		+ 3 to print maximum information
-	+ **random_state: int or None, optional (default=None)**  
-	Seed used by the random number generator. If None, the random number generator is the RandomState instance used by `np.random`.<br><br>
-* **ATOMRegressor(X, y=None, percentage=100, test_size=0.3, log=None, n_jobs=1, warnings=False, verbose=0, random_state=None)**  
-ATOM class for regression tasks. See `ATOMClassifier` for an explanation of the class' parameters.
 
 
 Methods

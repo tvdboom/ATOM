@@ -115,36 +115,36 @@ def test_train_test_split():
     assert len(atom.train) == int(0.87*len(X))
 
 
-# << =============== Test reset_attributes ================= >>
+# << =============== Test update ================= >>
 
-def test_changes_based_ground_truth():
-    ''' Assert that method works as intended for different ground truths '''
+def test_changes_based_df():
+    ''' Assert that method works as intended for different df values '''
 
     # When dataset is changed
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.dataset.iloc[0, 2] = 20
-    atom.reset_attributes('dataset')
+    atom.update('dataset')
     assert atom.train.iloc[0, 2] == 20
     assert atom.X.iloc[0, 2] == 20
     assert atom.X_train.iloc[0, 2] == 20
 
     # When train is changed
     atom.train.iloc[1, 1] = 10
-    atom.reset_attributes('train')
+    atom.update('train')
     assert atom.dataset.iloc[1, 1] == 10
     assert atom.X.iloc[1, 1] == 10
     assert atom.X_train.iloc[1, 1] == 10
 
     # When y_train is changed
     atom.y_train.iloc[0] = 2
-    atom.reset_attributes('y_train')
+    atom.update('y_train')
     assert atom.dataset.iloc[0, -1] == 2
     assert atom.train.iloc[0, -1] == 2
     assert atom.y.iloc[0] == 2
 
     # When X is changed
     atom.X.iloc[0, 1] = 0.112
-    atom.reset_attributes('X')
+    atom.update('X')
     assert atom.dataset.iloc[0, 1] == 0.112
     assert atom.train.iloc[0, 1] == 0.112
     assert atom.X_train.iloc[0, 1] == 0.112
@@ -228,13 +228,13 @@ def test_already_scaled():
     assert atom2.X.equals(X_already_scaled)
 
 
-# << ================ Test get_metric ================== >>
+# << ================ Test results ================== >>
 
 def test_error_not_fit():
     ''' Assert that an error is raised when the ATOM class is not fitted '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(AttributeError, atom.get_metric)
+    pytest.raises(AttributeError, atom.results)
 
 
 def test_error_wrong_metric():
@@ -242,7 +242,7 @@ def test_error_wrong_metric():
 
     atom = ATOMRegressor(X_dim4, y_dim4)
     atom.pipeline(models='lgb', metric='r2', max_iter=0)
-    pytest.raises(ValueError, atom.get_metric, 'unknown')
+    pytest.raises(ValueError, atom.results, 'unknown')
 
 
 def test_al_tasks():
@@ -252,19 +252,19 @@ def test_al_tasks():
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
     atom.pipeline(models='lgb', metric='roc_auc_ovr', max_iter=0)
-    atom.get_metric('jaccard')
+    atom.results('jaccard')
     assert 1 == 1
 
     # For multiclass classification
     X, y = load_wine(return_X_y=True)
     atom = ATOMClassifier(X, y)
     atom.pipeline(models='lgb', metric='recall_macro', max_iter=0)
-    atom.get_metric('f1_micro')
+    atom.results('f1_micro')
     assert 2 == 2
 
     # For regression
     X, y = load_boston(return_X_y=True)
     atom = ATOMRegressor(X, y)
     atom.pipeline(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
-    atom.get_metric('neg_mean_poisson_deviance')
+    atom.results('neg_mean_poisson_deviance')
     assert 3 == 3

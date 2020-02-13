@@ -15,7 +15,7 @@ import pandas as pd
 from tqdm import tqdm
 from time import time
 import multiprocessing
-import warnings
+import warnings as warn
 import importlib
 from scipy.stats import zscore
 from typeguard import typechecked
@@ -139,7 +139,7 @@ class ATOM(object):
         X: dict, iterable, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, list, np.array or pd.Series, optional (default=None)
+        y: string, iterable, np.array or pd.Series, optional (default=None)
             - If None: the last column of X is selected as target column
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
@@ -239,6 +239,8 @@ class ATOM(object):
         self.percentage = percentage
         self.test_size = test_size
         self.warnings = warnings
+        if not warnings:  # Ignore all warnings
+            warn.filterwarnings('ignore')
         self.verbose = verbose
         self.random_state = random_state
         if random_state is not None:
@@ -360,7 +362,7 @@ class ATOM(object):
         # << =========================================== >>
 
         self._split_dataset(self.dataset, self.percentage)  # Train/test split
-        self.reset_attributes()  # Define data subsets class attributes
+        self.update()  # Define data subsets class attributes
         self.stats(1)  # Print out data stats
 
     # << ======================= Utility methods ======================= >>
@@ -413,93 +415,6 @@ class ATOM(object):
         self.train, self.test = train_test_split(self.dataset,
                                                  test_size=self.test_size,
                                                  shuffle=False)
-
-    @composed(crash, typechecked)
-    def reset_attributes(self, truth: str = 'dataset'):
-
-        """
-        If you change any of the class' data attributes (dataset, X, y,
-        train, test, X_train, X_test, y_train, y_test) in between the
-        pipeline, you should call this method to change all other data
-        attributes to their correct values. Independent attributes are
-        updated in unison, that is, setting truth='X_train' will also
-        update X_test, y_train and y_test, or truth='train' will also
-        update the test set, etc...
-
-        PARAMETERS
-        ----------
-        truth: str, optional (default='dataset')
-            Data attribute (as string) that has been changed.
-
-        """
-
-        if truth not in ['train_test', 'X_y'] and not hasattr(self, truth):
-            raise ValueError("Invalid value for the truth parameter." +
-                             "Value should be a data attribute of the ATOM " +
-                             f"class, got {truth}. See the documentation " +
-                             "for the available options.")
-
-        # Depending on truth, we change some attributes or others
-        if truth == 'dataset':
-            # Possible because the length of self.train doesn't change
-            self.train = self.dataset[:len(self.train)]
-            self.test = self.dataset[len(self.train):]
-
-        elif truth in ('train_test', 'train', 'test'):
-            # Join train and test on rows
-            self.dataset = pd.concat([self.train, self.test], join='outer',
-                                     ignore_index=False, copy=True)
-
-        elif truth in ('X_train', 'y_train', 'X_test', 'y_test'):
-            self.train = merge(self.X_train, self.y_train)
-            self.test = merge(self.X_test, self.y_test)
-            self.dataset = pd.concat([self.train, self.test], join='outer',
-                                     ignore_index=False, copy=True)
-
-        elif truth in ('X_y', 'X', 'y'):
-            self.dataset = merge(self.X, self.y)
-            self.train = self.dataset[:len(self.train)]
-            self.test = self.dataset[len(self.train):]
-
-        # Reset all indices
-        for data in ['dataset', 'train', 'test']:
-            getattr(self, data).reset_index(drop=True, inplace=True)
-
-        self.X = self.dataset.drop(self.target, axis=1)
-        self.y = self.dataset[self.target]
-        self.X_train = self.train.drop(self.target, axis=1)
-        self.y_train = self.train[self.target]
-        self.X_test = self.test.drop(self.target, axis=1)
-        self.y_test = self.test[self.target]
-
-    @composed(crash, params_to_log)
-    def scale(self, _print: bool = True):
-
-        """
-        Scale features to mean=0 and std=1.
-
-        PARAMETERS
-        ----------
-        _print: bool, optional (default=True)
-            Internal parameter to know if printing is needed.
-
-        """
-
-        columns_x = self.X_train.columns
-
-        # Check if features are already scaled
-        if not self._is_scaled:
-            if _print:
-                self._log("Scaling features...", 1)
-
-            scaler = StandardScaler()
-            self.X_train = to_df(scaler.fit_transform(self.X_train), columns_x)
-            self.X_test = to_df(scaler.transform(self.X_test), columns_x)
-            self.reset_attributes('X_train')
-            self._is_scaled = True
-
-        elif _print:  # Inform the user
-            self._log("The features are already scaled!")
 
     @composed(crash, params_to_log)
     def stats(self, _verbose: int = -2):
@@ -562,6 +477,93 @@ class ATOM(object):
 
         self._log('', 1)  # Insert an empty row
 
+    @composed(crash, params_to_log)
+    def scale(self, _print: bool = True):
+
+        """
+        Scale features to mean=0 and std=1.
+
+        PARAMETERS
+        ----------
+        _print: bool, optional (default=True)
+            Internal parameter to know if printing is needed.
+
+        """
+
+        columns_x = self.X_train.columns
+
+        # Check if features are already scaled
+        if not self._is_scaled:
+            if _print:
+                self._log("Scaling features...", 1)
+
+            scaler = StandardScaler()
+            self.X_train = to_df(scaler.fit_transform(self.X_train), columns_x)
+            self.X_test = to_df(scaler.transform(self.X_test), columns_x)
+            self.update('X_train')
+            self._is_scaled = True
+
+        elif _print:  # Inform the user
+            self._log("The features are already scaled!")
+
+    @composed(crash, typechecked)
+    def update(self, df: str = 'dataset'):
+
+        """
+        If you change any of the class' data attributes (dataset, X, y,
+        train, test, X_train, X_test, y_train, y_test) in between the
+        pipeline, you should call this method to change all other data
+        attributes to their correct values. Independent attributes are
+        updated in unison, that is, setting df='X_train' will also
+        update X_test, y_train and y_test, or df='train' will also
+        update the test set, etc...
+
+        PARAMETERS
+        ----------
+        df: str, optional (default='dataset')
+            Data attribute (as string) that has been changed.
+
+        """
+
+        if df not in ['train_test', 'X_y'] and not hasattr(self, df):
+            raise ValueError("Invalid value for the df parameter." +
+                             "Value should be a data attribute of the ATOM " +
+                             f"class, got {df}. See the documentation " +
+                             "for the available options.")
+
+        # Depending on df, we change some attributes or others
+        if df == 'dataset':
+            # Possible because the length of self.train doesn't change
+            self.train = self.dataset[:len(self.train)]
+            self.test = self.dataset[len(self.train):]
+
+        elif df in ('train_test', 'train', 'test'):
+            # Join train and test on rows
+            self.dataset = pd.concat([self.train, self.test], join='outer',
+                                     ignore_index=False, copy=True)
+
+        elif df in ('X_train', 'y_train', 'X_test', 'y_test'):
+            self.train = merge(self.X_train, self.y_train)
+            self.test = merge(self.X_test, self.y_test)
+            self.dataset = pd.concat([self.train, self.test], join='outer',
+                                     ignore_index=False, copy=True)
+
+        elif df in ('X_y', 'X', 'y'):
+            self.dataset = merge(self.X, self.y)
+            self.train = self.dataset[:len(self.train)]
+            self.test = self.dataset[len(self.train):]
+
+        # Reset all indices
+        for data in ['dataset', 'train', 'test']:
+            getattr(self, data).reset_index(drop=True, inplace=True)
+
+        self.X = self.dataset.drop(self.target, axis=1)
+        self.y = self.dataset[self.target]
+        self.X_train = self.train.drop(self.target, axis=1)
+        self.y_train = self.train[self.target]
+        self.X_test = self.test.drop(self.target, axis=1)
+        self.y_test = self.test[self.target]
+
     @composed(crash, params_to_log, typechecked)
     def report(self,
                df: str = 'dataset',
@@ -570,8 +572,7 @@ class ATOM(object):
 
         """
         Get an extensive profile analysis of the data. The report is rendered
-        in HTML5 and CSS3 and can be accessed through the `report` attribute.
-        Note that this method can be very slow for large datasets.
+        in HTML5 and CSS3. Note that this method can be slow for rows>10k.
         Dependency: pandas-profiling.
 
         PARAMETERS
@@ -599,7 +600,7 @@ class ATOM(object):
 
         self._log("Creating profile report...", 1)
 
-        self.report = ProfileReport(getattr(self, df).sample(rows))
+        ProfileReport(getattr(self, df).sample(rows))
         try:  # Render if possible (for jupyter notebook)
             from IPython.display import display
             display(self.report)
@@ -612,10 +613,10 @@ class ATOM(object):
             self.report.to_file(filename)
 
     @composed(crash, params_to_log, typechecked)
-    def get_metric(self, metric: Optional[str] = None):
+    def results(self, metric: Optional[str] = None):
 
         """
-        Print final results for a specific metric.
+        Print the pipeline's final results for a specific metric.
 
         PARAMETERS
         ----------
@@ -668,7 +669,7 @@ class ATOM(object):
         Parameters
         ----------
         filename: str or None, optional (default=None)
-            Name of the file when saved (as .html). None to not save anything.
+            Name to save the file with. None to save with default name.
 
         """
 
@@ -767,7 +768,7 @@ class ATOM(object):
             self._log(f" --> Removing {diff} rows for containing too many " +
                       "missing values.", 2)
 
-        self.reset_attributes('dataset')  # Fill train and test with NaNs
+        self.update('dataset')  # Fill train and test with NaNs
 
         # Loop over all columns to apply strategy dependent on type
         for col in self.dataset:
@@ -831,7 +832,7 @@ class ATOM(object):
                     imp = SimpleImputer(strategy=strat_cat)
                     fit_imputer(imp)
 
-        self.reset_attributes('train_test')
+        self.update('train_test')
 
     @composed(crash, params_to_log, typechecked)
     def encode(self, max_onehot: Optional[int] = 10, frac_to_other: float = 0):
@@ -878,7 +879,7 @@ class ATOM(object):
                 for cls_, count in values.items():
                     if count < frac_to_other * len(self.dataset[col]):
                         self.dataset[col].replace(cls_, 'other', inplace=True)
-                        self.reset_attributes('dataset')  # For target encoding
+                        self.update('dataset')  # For target encoding
 
                 # Count number of unique values in the column
                 n_unique = len(self.dataset[col].unique())
@@ -913,7 +914,7 @@ class ATOM(object):
                     # Test set is tranformed with the mapping of the trainset
                     self.dataset[col] = self.dataset[col].map(means)
 
-        self.reset_attributes('dataset')  # Redefine new attributes
+        self.update('dataset')  # Redefine new attributes
 
         # Check if mapping failed for the test set
         nans = self.dataset.isna().any()  # pd.Series of columns with nans
@@ -965,7 +966,7 @@ class ATOM(object):
 
         # Remove rows based on index and reset attributes
         self.train = self.train[ix]
-        self.reset_attributes('train_test')
+        self.update('train_test')
 
     @composed(crash, params_to_log, typechecked)
     def balance(self,
@@ -1098,7 +1099,7 @@ class ATOM(object):
         self.X_train = to_df(self.X_train, columns=columns_x)
         self.y_train = to_series(self.y_train, name=self.target)
         self.train = merge(self.X_train, self.y_train)
-        self.reset_attributes('train_test')
+        self.update('train_test')
 
     @composed(crash, params_to_log, typechecked)
     def feature_insertion(self,
@@ -1227,7 +1228,7 @@ class ATOM(object):
         self.X = pd.DataFrame(np.hstack((self.X, new_features)),
                               columns=self.X.columns.to_list() + names)
 
-        self.reset_attributes('X')
+        self.update('X')
 
     @composed(crash, params_to_log, typechecked)
     def feature_selection(self,
@@ -1239,7 +1240,7 @@ class ATOM(object):
                           **kwargs):
 
         """
-        Select best features according to the selected strategy. Ties between
+        Remove features according to the selected strategy. Ties between
         features with equal scores will be broken in an unspecified way. Also
         removes features with too low variance and too high collinearity.
 
@@ -1409,7 +1410,7 @@ class ATOM(object):
             remove_collinear(max_correlation)
 
         # The dataset is possibly changed
-        self.reset_attributes('dataset')
+        self.update('dataset')
 
         if strategy is None:
             return None  # Exit feature_selection
@@ -1448,7 +1449,7 @@ class ATOM(object):
                               .format(self.univariate.scores_[n],
                                       self.univariate.pvalues_[n]), 2)
                     self.dataset.drop(col, axis=1, inplace=True)
-            self.reset_attributes('dataset')
+            self.update('dataset')
 
         elif strategy.lower() == 'pca':
             self._log(f" --> Applying Principal Component Analysis... ", 2)
@@ -1463,7 +1464,7 @@ class ATOM(object):
             self.PCA.fit(self.X_train)
             self.X_train = to_df(self.PCA.transform(self.X_train), pca=True)
             self.X_test = to_df(self.PCA.transform(self.X_test), pca=True)
-            self.reset_attributes('X_train')
+            self.update('X_train')
 
         elif strategy.lower() == 'sfm':
             if solver is None:
@@ -1488,7 +1489,7 @@ class ATOM(object):
                     self._log(f" --> Feature {column} was removed by the " +
                               f"{solver.__class__.__name__}.", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
-            self.reset_attributes('dataset')
+            self.update('dataset')
 
         elif strategy.lower() == 'rfe':
             # Recursive feature eliminator
@@ -1506,7 +1507,7 @@ class ATOM(object):
                     self._log(f" --> Feature {column} was removed by the " +
                               "recursive feature eliminator.", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
-            self.reset_attributes('dataset')
+            self.update('dataset')
 
         else:
             raise ValueError("Invalid value for the strategy parameter. Cho" +
@@ -1530,19 +1531,32 @@ class ATOM(object):
                  bagging: Optional[int] = None):
 
         """
-        Fit class to the selected models. The optimal hyperparameters per
-        model are selectred using a Bayesian Optimization (BO) algorithm with
-        gaussian process as kernel. The resulting score of each step of the BO
-        is either computed by cross-validation on the complete training set or
-        by creating a validation set from the training set. This process will
-        create some minimal leakage but ensures a maximal use of the provided
-        data. The test set, however, does not contain any leakage and will be
-        used to determine the final score of every model. Note that the best
-        score on the BO can be consistently lower than the final score on the
-        test set (despite the leakage) due to the considerable fewer instances
-        on which it is trained. At the end of te pipeline, you can choose to
-        evaluate the robustness of the model's performance on the test set
-        applying a bagging algorithm.
+        The pipeline method is where the models are fitted to the data and
+        their performance is evaluated according to the selected metric. For
+        every model, the pipeline applies the following steps:
+
+            1. The optimal hyperparameters are selectred using a Bayesian
+               Optimization (BO) algorithm with gaussian process as kernel.
+               The resulting score of each step of the BO is either computed
+               by cross-validation on the complete training set or by randomly
+               splitting the training set every iteration into a (sub) training
+               set and a validation set. This process can create some data
+               leakage but ensures a maximal use of the provided data. The test
+               set, however, does not contain any leakage and will be used to
+               determine the final score of every model. Note that, if the
+               dataset is relatively small, the best score on the BO can
+               consistently be lower than the final score on the test set
+               (despite the leakage) due to the considerable fewer instances on
+               which it is trained.
+
+            2. Once the best hyperparameters are found, the model is trained
+               again, now using the complete training set. After this,
+               predictions are made on the test set.
+
+            3. You can choose to evaluate the robustness of each model's
+            applying a bagging algorithm, i.e. the model will be trained
+            multiple times on a bootstrapped training set, returning a
+            distribution of its performance on the test set.
 
         PARAMETERS
         ----------
@@ -1597,14 +1611,14 @@ class ATOM(object):
             metric is a string or a scorer.
 
         successive_halving: bool, optional (default=False)
-            Fit the pipeline using a successive halving approach, that is,
-            fitting the model on 1/N of the data, where N stands for the number
-            of models still in the pipeline. After this, the best half of the
-            models are selected for the next iteration. This process is
-            repeated until only one model is left. Since models perform quite
-            differently depending on the size of the training set, we recommend
-            to use this feature when fitting similar models (e.g. only using
-            tree-based models).
+            Wether to use a successive halving approach when running the
+            pipeline. This technique fits N models to 1/N of the data. The best
+            half are selected to go to the next iteration where the process is
+            repeated. This continues until only one model remains, which is
+            fitted on the complete dataset. Beware that a model's performance
+            can depend greatly on the amount of data on which it is trained.
+            For this reason we recommend only to use this technique with
+            similar models, e.g. only using tree-based models.
 
         skip_iter: int, optional (default=0)
             Skip last `skip_iter` iterations of the successive halving.
@@ -1706,8 +1720,8 @@ class ATOM(object):
 
             Returns
             -------
-            results: pd.DataFrame
-                Dataframe of the results for this iteration of the pipeline.
+            scores: pd.DataFrame
+                Dataframe of the scores for this iteration of the pipeline.
 
             """
 
@@ -1727,25 +1741,21 @@ class ATOM(object):
                 setattr(self, model, model_list[model](self))
 
                 try:  # If errors occure, just skip the model
-                    with warnings.catch_warnings():
-                        if not self.warnings:
-                            warnings.simplefilter('ignore')
+                    # Run Bayesian Optimization
+                    getattr(self, model).bayesian_optimization(
+                            max_iter_, max_time_, init_points_, cv_, plot_bo)
 
-                        # Run Bayesian Optimization
-                        getattr(self, model).bayesian_optimization(
-                              max_iter_, max_time_, init_points_, cv_, plot_bo)
+                    # Fit the model to the test set
+                    getattr(self, model).fit()
 
-                        # Fit the model to the test set
-                        getattr(self, model).fit()
+                    # Perform bagging
+                    getattr(self, model).bagging(self.bagging)
 
-                        # Perform bagging
-                        getattr(self, model).bagging(self.bagging)
-
-                        # Get the total time spend on this model
-                        total_time = time_to_string(model_time)
-                        setattr(getattr(self, model), 'total_time', total_time)
-                        self._log('-' * 49, 1)
-                        self._log(f'Total time: {total_time}', 1)
+                    # Get the total time spend on this model
+                    total_time = time_to_string(model_time)
+                    setattr(getattr(self, model), 'total_time', total_time)
+                    self._log('-' * 49, 1)
+                    self._log(f'Total time: {total_time}', 1)
 
                 except Exception as ex:
                     if max_iter_ > 0 and max_time_ > 0:
@@ -1797,16 +1807,16 @@ class ATOM(object):
             self._log("--------------------------------")
 
             # Create dataframe with final results
-            results = pd.DataFrame(columns=['model',
-                                            'total_time',
-                                            'score_train',
-                                            'score_test',
-                                            'fit_time'])
+            scores = pd.DataFrame(columns=['model',
+                                           'total_time',
+                                           'score_train',
+                                           'score_test',
+                                           'fit_time'])
 
             if self.bagging is not None:
-                pd.concat([results, pd.DataFrame(columns=['bagging_mean',
-                                                          'bagging_std',
-                                                          'bagging_time'])])
+                pd.concat([scores, pd.DataFrame(columns=['bagging_mean',
+                                                         'bagging_std',
+                                                         'bagging_time'])])
 
             for m in self.models:
                 name = getattr(self, m).name
@@ -1817,12 +1827,12 @@ class ATOM(object):
                 fit_time = getattr(self, m).fit_time
 
                 if bagging is None:
-                    results = results.append({'model': name,
-                                              'total_time': total_time,
-                                              'score_train': score_train,
-                                              'score_test': score_test,
-                                              'fit_time': fit_time},
-                                             ignore_index=True)
+                    scores = scores.append({'model': name,
+                                            'total_time': total_time,
+                                            'score_train': score_train,
+                                            'score_test': score_test,
+                                            'fit_time': fit_time},
+                                           ignore_index=True)
 
                     # Create string of the score
                     print_ = "{0:{1}s} --> {2:.3f}".format(
@@ -1837,15 +1847,15 @@ class ATOM(object):
                     bs_mean = getattr(self, m).bagging_scores.mean()
                     bs_std = getattr(self, m).bagging_scores.std()
                     bs_time = getattr(self, m).bs_time
-                    results = results.append({'model': name,
-                                              'total_time': total_time,
-                                              'score_train': score_train,
-                                              'score_test': score_test,
-                                              'fit_time': fit_time,
-                                              'bagging_mean': bs_mean,
-                                              'bagging_std': bs_std,
-                                              'bagging_time': bs_time},
-                                             ignore_index=True)
+                    scores = scores.append({'model': name,
+                                            'total_time': total_time,
+                                            'score_train': score_train,
+                                            'score_test': score_test,
+                                            'fit_time': fit_time,
+                                            'bagging_mean': bs_mean,
+                                            'bagging_std': bs_std,
+                                            'bagging_time': bs_time},
+                                           ignore_index=True)
 
                     # Create string of the score
                     print1 = f"{longname:{maxlen}s} --> {bs_mean:.3f}"
@@ -1861,9 +1871,9 @@ class ATOM(object):
                 if score_train - 0.2 * score_train > score_test:
                     print_ += ' ~'
 
-                self._log(print_, 1)  # Print the score
+                self._log(print_)  # Print the score
 
-            return results
+            return scores
 
         # << ======================== Initialize ======================== >>
 
@@ -1984,13 +1994,13 @@ class ATOM(object):
         # << ======================== Core ======================== >>
 
         if self.successive_halving:
-            self.results = []  # Save the cv's results in list of dataframes
+            self.scores = []  # Save the cv's scores in list of dataframes
             iteration = 0
             original_data = self.dataset.copy()
             while len(self.models) > 2**skip_iter - 1:
                 # Select 1/N of data to use for this iteration
                 self._split_dataset(original_data, 100./len(self.models))
-                self.reset_attributes()
+                self.update()
                 self.data = data_preparation()
                 self._log("\n\n<<=============== Iteration {} ==============>>"
                           .format(iteration))
@@ -1999,15 +2009,15 @@ class ATOM(object):
                                   ', '.join(self.models)))
                 self.stats(1)
 
-                # Run iteration and append to the results list
-                results = run_iteration()
-                self.results.append(results)
+                # Run iteration and append to the scores list
+                scores = run_iteration()
+                self.scores.append(scores)
 
                 # Select best models for halving
                 col = 'score_test' if self.bagging is None else 'bagging_mean'
-                lx = results.nlargest(n=int(len(self.models)/2),
-                                      columns=col,
-                                      keep='all')
+                lx = scores.nlargest(n=int(len(self.models)/2),
+                                     columns=col,
+                                     keep='all')
 
                 # Keep the models in the same order
                 n = []  # List of new models
@@ -2019,7 +2029,7 @@ class ATOM(object):
 
         else:
             self.data = data_preparation()
-            self.results = run_iteration()
+            self.scores = run_iteration()
             self._is_fitted = True
 
     # ======================== Plot methods =======================>
@@ -2135,7 +2145,7 @@ class ATOM(object):
                               models: Union[None, str, Sequence[str]] = None,
                               normalize: bool = False,
                               title: Optional[str] = None,
-                              figsize: Tuple[int, int] = (10, 10),
+                              figsize: Tuple[int, int] = (8, 8),
                               filename: Optional[str] = None,
                               display: bool = True):
 
@@ -2160,7 +2170,7 @@ class ATOM(object):
 
         """
 
-        Plot performance metric(s) against multiple threshold values.
+        Plot performance metric(s) against threshold values.
 
         """
 
@@ -2196,7 +2206,7 @@ class ATOM(object):
 
         Parameters
         ----------
-        style: string
+        style: string, optional (default='darkgrid')
             Name of the plotting style.
 
         """
@@ -2213,7 +2223,7 @@ class ATOM(object):
 
         Parameters
         ----------
-        palette: string
+        palette: string, optional(default='GnBu_d')
             Name of the palette.
 
         """

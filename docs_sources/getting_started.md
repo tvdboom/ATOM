@@ -1,15 +1,23 @@
 Installation
 ------------------------  
 Intall ATOM easily using `pip`.
-	
+
+```Python
 	pip install atom-ml
+```
+
+!!! note
+    Since atom was already taken, the name of the package in pypi is `atom-ml`!
+   
 
 Usage  
 ------------------------  
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
-    from atom import ATOMClassifier  
+    from sklearn.datasets import load_breast_cancer
+    from atom import ATOMClassifier
     
+    X, y = load_breast_cancer(return_X_y)
     atom = ATOMClassifier(X, y, log='auto', n_jobs=2, verbose=2)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
@@ -33,5 +41,5 @@ Run the pipeline with different models:
 Make plots and analyze results: 
 
 	atom.plot_bagging(filename='bagging_results.png')  
-	atom.lSVM.plot_probabilities()  
-	atom.lda.plot_confusion_matrix()
+	atom.lSVM.plot_probabilities(figsize=(9, 6))  
+	atom.lda.plot_confusion_matrix(normalize=True)

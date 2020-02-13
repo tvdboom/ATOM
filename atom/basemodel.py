@@ -576,7 +576,7 @@ class BaseModel(object):
     def plot_confusion_matrix(self,
                               normalize: bool = False,
                               title: Optional[str] = None,
-                              figsize: Tuple[int, int] = (10, 10),
+                              figsize: Tuple[int, int] = (8, 8),
                               filename: Optional[str] = None,
                               display: bool = True):
 

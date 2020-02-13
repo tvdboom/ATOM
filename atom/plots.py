@@ -15,6 +15,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 from sklearn.inspection import permutation_importance
 from sklearn.metrics import (
@@ -36,20 +37,20 @@ tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 def plot_correlation(self, title, figsize, filename, display):
 
     """
-    Correlation maxtrix plot of the dataset. Ignores non-numeric columns.
+    Correlation matrix plot of the dataset. Ignores non-numeric columns.
 
     PARAMETERS
     ----------
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 10))
+    figsize: tuple, optional (default=(10, 10))
         Figure's size, format as (x, y).
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -89,19 +90,19 @@ def plot_PCA(self, show, title, figsize, filename, display):
 
     Parameters
     ----------
-    show: int or None, optional(defalt=None)
+    show: int or None, optional (defalt=None)
         Number of components to show. If None, all are plotted.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=None)
+    figsize: tuple, optional (default=None)
         Figure's size, format as (x, y). If None, adapts size to `show` param.
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -155,16 +156,16 @@ def plot_bagging(self, models, title, figsize, filename, display):
         the last model is saved, so avoid plotting models from different
         iterations together.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, adapts size to number of models.
 
-    figsize: tuple, optional(default=None)
+    figsize: tuple, optional (default=None)
         Figure's size, format as (x, y).
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -219,16 +220,16 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
         Name of the models to plot. If None, all the models in the
         pipeline are selected.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 6))
+    figsize: tuple, optional (default=(10, 6))
         Figure's size, format as (x, y).
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -240,7 +241,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
                              "calling the plot_successive_halving method!")
 
     if models is None:
-        models = self.results[0].model  # List of models in first iteration
+        models = self.scores[0].model  # List of models in first iteration
     elif isinstance(models, str):
         models = [models]
 
@@ -250,7 +251,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     for n, model in enumerate(models):
         if hasattr(self, model.lower()):  # If model in pipeline
             names.append(getattr(self, model.lower()).name)
-            for m, df in enumerate(self.results):
+            for m, df in enumerate(self.scores):
                 if names[-1] in df.model.values:
                     idx = np.where(names[-1] == df.model.values)[0]
                     liny[n].append(df[col].iloc[idx].values[0])
@@ -261,8 +262,8 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
 
     fig, ax = plt.subplots(figsize=figsize)
     for y, label in zip(liny, names):
-        plt.plot(range(len(self.results)), y, lw=2, marker='o', label=label)
-    plt.xlim(-0.1, len(self.results)-0.9)
+        plt.plot(range(len(self.scores)), y, lw=2, marker='o', label=label)
+    plt.xlim(-0.1, len(self.scores)-0.9)
 
     title = "Successive halving results" if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
@@ -271,7 +272,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     plt.ylabel(self.metric.name,
                fontsize=self.label_fontsize,
                labelpad=12)
-    ax.set_xticks(range(len(self.results)))
+    ax.set_xticks(range(len(self.scores)))
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
     fig.tight_layout()
@@ -292,16 +293,16 @@ def plot_ROC(self, models, title, figsize, filename, display):
         Name of the models to plot. If None, all the models in the
         pipeline are selected.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10,6))
+    figsize: tuple, optional (default=(10,6))
         Figure's size, format as (x, y).
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -360,10 +361,10 @@ def plot_PRC(self, models, title, figsize, filename, display):
         Name of the models to plot. If None, all the models in the
         pipeline are selected.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 6))
+    figsize: tuple, optional (default=(10, 6))
         Figure's size, format as (x, y).
 
     filename: string or None, optional (default=None)
@@ -434,7 +435,7 @@ def plot_permutation_importance(self, models, show, n_repeats,
     n_repeats: int, optional (default=10)
         Number of times to permute each feature.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
     figsize: tuple, optional(default=(10, 6))
@@ -542,16 +543,16 @@ def plot_feature_importance(self, models, show,
     show: int, optional (default=None)
         Number of best features to show in the plot. None for all.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=None)
+    figsize: tuple, optional (default=None)
         Figure's size, format as (x, y). If None, adapts size to `show` param.
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -637,16 +638,16 @@ def plot_confusion_matrix(self, models, normalize,
     normalize: bool, optional (default=False)
        Wether to normalize the matrix.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 10))
+    figsize: tuple, optional (default=(10, 10))
         Figure's size, format as (x, y). If None, adapts size to `show` param.
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -672,6 +673,11 @@ def plot_confusion_matrix(self, models, normalize,
                                      'False positives',
                                      'False negatives',
                                      'True positives'])
+    # Define title
+    if title is None and normalize:
+        title = "Normalized confusion matrix"
+    elif title is None:
+        title = "Confusion matrix"
 
     for model in models:
         if hasattr(self, model.lower()):
@@ -687,7 +693,13 @@ def plot_confusion_matrix(self, models, normalize,
 
                 fig, ax = plt.subplots(figsize=figsize)
                 im = ax.imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-                cbar = ax.figure.colorbar(im, ax=ax)
+
+                # Create an axes on the right side of ax. The width of cax will
+                # be 5% of ax and the padding between cax and ax will be fixed
+                # at 0.3 inch.
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("right", size="5%", pad=0.3)
+                cbar = ax.figure.colorbar(im, cax=cax)
                 ax.set(xticks=np.arange(cm.shape[1]),
                        yticks=np.arange(cm.shape[0]),
                        xticklabels=ticks,
@@ -702,12 +714,17 @@ def plot_confusion_matrix(self, models, normalize,
                                 fontsize=self.tick_fontsize,
                                 color='w' if cm[i, j] > cm.max() / 2. else 'k')
 
-                plt.xlabel('Predicted label',
-                           fontsize=self.label_fontsize,
-                           labelpad=12)
-                plt.ylabel('True label',
-                           fontsize=self.label_fontsize,
-                           labelpad=12)
+                ax.set_title(title, fontsize=self.title_fontsize, pad=12)
+                ax.set_xlabel('Predicted label',
+                              fontsize=self.label_fontsize,
+                              labelpad=12)
+                ax.set_ylabel('True label',
+                              fontsize=self.label_fontsize,
+                              labelpad=12)
+                cbar.set_label('Counts',
+                               fontsize=self.label_fontsize,
+                               labelpad=15,
+                               rotation=270)
                 cbar.ax.tick_params(labelsize=self.tick_fontsize)
                 ax.grid(False)
 
@@ -720,13 +737,9 @@ def plot_confusion_matrix(self, models, normalize,
     if len(models) > 1:
         df_to_plot.plot.barh(figsize=figsize, width=0.6)
         plt.xlabel('Counts', fontsize=self.label_fontsize, labelpad=12)
+        plt.title(title, fontsize=self.title_fontsize, pad=12)
         plt.legend(fontsize=self.label_fontsize)
 
-    if title is None and normalize:
-        title = "Normalized confusion matrix"
-    elif title is None:
-        title = "Confusion matrix"
-    plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
     plt.tight_layout()
@@ -753,16 +766,16 @@ def plot_threshold(self, models, metric, steps,
     steps: int, optional (default=100)
         Number of thresholds measured.
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 10))
+    figsize: tuple, optional (default=(10, 10))
         Figure's size, format as (x, y). If None, adapts size to `show` param.
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -848,16 +861,16 @@ def plot_probabilities(self, models, target,
     target: int or string, optional (default=1)
         Probability of being that class (as idx or name)
 
-    title: string or None, optional(defalt=None)
+    title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
 
-    figsize: tuple, optional(default=(10, 10))
+    figsize: tuple, optional (default=(10, 10))
         Figure's size, format as (x, y). If None, adapts size to `show` param.
 
     filename: string or None, optional (default=None)
         Name of the file (to save). If None, the figure is not saved.
 
-    display: bool, optioanl(default=True)
+    display: bool, optional (default=True)
         Wether to render the plot.
 
     """
@@ -892,7 +905,7 @@ def plot_probabilities(self, models, target,
                                  "predict_proba method!")
 
             for key, value in self.mapping.items():
-                idx = np.where(m.y_test == value)  # Get indices per class
+                idx = np.where(m.y_test == value)[0]  # Get indices per class
                 if len(models) == 1:
                     label = f"Class={key}"
                 else:

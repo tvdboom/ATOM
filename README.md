@@ -19,7 +19,7 @@ Description
 ------------------------  
 Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration and experimentation of supervised machine learning tasks. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution. This package supports binary classification, multiclass classification, and regression tasks.
 
-| NOTE: A data scientist with knowledge of the data will quickly outperform ATOM if he applies usecase-specific feature engineering or data cleaning methods. Use ATOM only for a fast exploration of the problem! |
+| NOTE: A data scientist with domain knowledge can outperform ATOM if he applies usecase-specific feature engineering or data cleaning steps! |
 | --- |
 
 Possible steps taken by the ATOM pipeline:
@@ -47,8 +47,14 @@ Possible steps taken by the ATOM pipeline:
 Installation
 ------------------------  
 Intall ATOM easily using `pip`.
-	
+	    
+| NOTE: Since atom was already taken, the name of the package in pypi is `atom-ml`! |
+| --- |
+
+
+```Python
 	pip install atom-ml
+```
 
 
 Usage
@@ -70,12 +76,12 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 Run the pipeline with different models:
 
     atom.pipeline(models=['LR', 'LDA', 'XGB', 'lSVM'],
-	          metric='f1',
-	          max_iter=10,
-	          max_time=1000,
-	          init_points=3,
-	          cv=4,
-	          bagging=10)  
+	              metric='f1',
+	              max_iter=10,
+	              max_time=1000,
+	              init_points=3,
+	              cv=4,
+	              bagging=10)  
 
 Make plots and analyze results: 
 
@@ -86,4 +92,4 @@ Make plots and analyze results:
 
 Documentation
 ------------------------  
-For further information about ATOM, please see the project [documentation](tvdboom.github.io/ATOM).
+For further information about ATOM, please see the project [documentation](https://tvdboom.github.io/ATOM).

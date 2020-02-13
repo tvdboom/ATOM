@@ -164,8 +164,8 @@ def test_data_preparation():
             assert atom.data['X_test_scaled'].iloc[:, 0].std() < 1.25
 
 
-def test_successive_halving_results():
-    ''' Assert that self.results is correctly created '''
+def test_successive_halving_scores():
+    ''' Assert that self.scores is correctly created '''
 
     # Without bagging
     X, y = load_df(load_breast_cancer())
@@ -175,8 +175,8 @@ def test_successive_halving_results():
                   successive_halving=True,
                   max_iter=0,
                   bagging=0)
-    assert isinstance(atom.results, list)
-    assert len(atom.results) == 3
+    assert isinstance(atom.scores, list)
+    assert len(atom.scores) == 3
 
     # With bagging
     atom = ATOMClassifier(X, y, random_state=1)
@@ -185,12 +185,12 @@ def test_successive_halving_results():
                   successive_halving=True,
                   max_iter=0,
                   bagging=5)
-    assert isinstance(atom.results, list)
-    assert len(atom.results) == 3
+    assert isinstance(atom.scores, list)
+    assert len(atom.scores) == 3
 
 
-def test_skip_iter_results():
-    ''' Assert that self.results is correctly created when skip_iter > 0 '''
+def test_skip_iter_scores():
+    ''' Assert that self.scores is correctly created when skip_iter > 0 '''
 
     X, y = load_df(load_breast_cancer())
     atom = ATOMClassifier(X, y, random_state=1)
@@ -199,8 +199,8 @@ def test_skip_iter_results():
                   successive_halving=True,
                   skip_iter=1,
                   max_iter=0)
-    assert isinstance(atom.results, list)
-    assert len(atom.results) == 2
+    assert isinstance(atom.scores, list)
+    assert len(atom.scores) == 2
 
 
 def test_errors_in_models():

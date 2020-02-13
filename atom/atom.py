@@ -45,7 +45,7 @@ class ATOMClassifier(ATOM):
         X: dict, iterable, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, list, np.array or pd.Series, optional (default=None)
+        y: string, iterable, np.array or pd.Series, optional (default=None)
             - If None: the last column of X is selected as target column
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
@@ -118,7 +118,7 @@ class ATOMRegressor(ATOM):
         X: dict, iterable, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, list, np.array or pd.Series, optional (default=None)
+        y: string, iterable, np.array or pd.Series, optional (default=None)
             - If None: the last column of X is selected as target column
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
