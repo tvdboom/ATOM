@@ -6,5 +6,5 @@ Author: tvdboom
 
 '''
 
-from .atom import ATOMClassifier, ATOMRegressor
+from .api import ATOMClassifier, ATOMRegressor
 __version__ = '3.0.1'
