@@ -152,12 +152,10 @@ def plot_bagging(self, models, title, figsize, filename, display):
     ----------
     models: string, list, tuple or None, optional (default=None)
         Name of the models to plot. If None, all the models in the
-        pipeline are selected. Note that if successive halving=True only
-        the last model is saved, so avoid plotting models from different
-        iterations together.
+        pipeline are selected.
 
     title: string or None, optional (default=None)
-        Plot's title. If None, adapts size to number of models.
+        Plot's title. If None, adapts size to the number of models.
 
     figsize: tuple, optional (default=None)
         Figure's size, format as (x, y).
@@ -761,7 +759,9 @@ def plot_threshold(self, models, metric, steps,
         pipeline are selected.
 
     metric: string, callable, list, tuple or None, optional (default=None)
-        Metric(s) to plot.
+        Metric(s) to plot. These can be one of the pre-defined sklearn scorers
+        as string, a metric function or a sklearn scorer object. If None, the
+        metric used to fit the pipeline is used.
 
     steps: int, optional (default=100)
         Number of thresholds measured.
@@ -859,7 +859,7 @@ def plot_probabilities(self, models, target,
         pipeline are selected.
 
     target: int or string, optional (default=1)
-        Probability of being that class (as idx or name)
+        Probability of being that class (as index or name).
 
     title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.

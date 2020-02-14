@@ -1,5 +1,138 @@
-# ATOM
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <meta name="author" content="tvdboom">
+  <link rel="shortcut icon" href="../img/favicon.ico">
+  <title>API - ATOM</title>
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
 
+  <link rel="stylesheet" href="../css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../css/theme_extra.css" type="text/css" />
+  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+  
+  <script>
+    // Current page data
+    var mkdocs_page_name = "API";
+    var mkdocs_page_input_path = "api.md";
+    var mkdocs_page_url = "/ATOM/api/";
+  </script>
+  
+  <script src="../js/jquery-2.1.1.min.js" defer></script>
+  <script src="../js/modernizr-2.8.3.min.js" defer></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script> 
+  
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+      <div class="wy-side-nav-search">
+        <a href=".." class="icon icon-home"> ATOM</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+	<ul class="current">
+	  
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="..">Home</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../getting_started/">Getting started</a>
+	    </li>
+          
+            <li class="toctree-l1 current">
+		
+    <a class="current" href="./">API</a>
+    <ul class="subnav">
+            
+    <li class="toctree-l2"><a href="#atom">ATOM</a></li>
+    
+        <ul>
+        
+            <li><a class="toctree-l3" href="#utilities">Utilities</a></li>
+        
+            <li><a class="toctree-l3" href="#data-cleaning">Data cleaning</a></li>
+        
+            <li><a class="toctree-l3" href="#feature-selection">Feature selection</a></li>
+        
+            <li><a class="toctree-l3" href="#pipeline">Pipeline</a></li>
+        
+            <li><a class="toctree-l3" href="#model-subclass">Model subclass</a></li>
+        
+            <li><a class="toctree-l3" href="#plots">Plots</a></li>
+        
+        </ul>
+    
+
+    </ul>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../examples/">Examples</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../dependencies/">Dependencies</a>
+	    </li>
+          
+            <li class="toctree-l1">
+		
+    <a class="" href="../license/">License</a>
+	    </li>
+          
+        </ul>
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="..">ATOM</a>
+      </nav>
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="..">Docs</a> &raquo;</li>
+    
+      
+    
+    <li>API</li>
+    <li class="wy-breadcrumbs-aside">
+      
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            <div class="section">
+              
+                <h1 id="atom">ATOM</h1>
 <pre><strong><em>class</em> atom.<strong style="color:#008AB8">ATOM</strong>(X,
                 y=None,
                 percentage=100,
@@ -12,31 +145,30 @@
                 verbose=0)</strong><br>
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L111">[source]</a></div></pre>
 
-Main class of the package. The `ATOM` class is a parent class of the `ATOMClassifier`
- and `ATOMRegressor` classes. These will inherit all methods and attributes described
+<p>Main class of the package. The <code>ATOM</code> class is a parent class of the <code>ATOMClassifier</code>
+ and <code>ATOMRegressor</code> classes. These will inherit all methods and attributes described
  in this page. Note that contrary to scikit-learn's API, the ATOM object already contains
  the dataset on which we want to perform the analysis. Calling a method will automatically
- apply it on the dataset it contains.
-
-!!! warning
-    Don't call the `ATOM` class directly! Use `ATOMClassifier` or `ATOMRegressor`
-     depending on the task at hand. Click [here](/getting_started/#usage) for an example.
-
-The class initializer will automatically proceed to apply some standard data
-cleaning steps unto the data. These steps include:
-
-  * Transforming the input data into a pd.DataFrame (if it wasn't one already)
-   that can be accessed through the class' data attributes.
-  * Removing columns with prohibited data types ('datetime64',
-   'datetime64[ns]', 'timedelta[ns]').
-  * Removing categorical columns with maximal cardinality (the number of
+ apply it on the dataset it contains.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Don't call the <code>ATOM</code> class directly! Use <code>ATOMClassifier</code> or <code>ATOMRegressor</code>
+ depending on the task at hand. Click <a href="/getting_started/#usage">here</a> for an example.</p>
+</div>
+<p>The class initializer will automatically proceed to apply some standard data
+cleaning steps unto the data. These steps include:</p>
+<ul>
+<li>Transforming the input data into a pd.DataFrame (if it wasn't one already)
+   that can be accessed through the class' data attributes.</li>
+<li>Removing columns with prohibited data types ('datetime64',
+   'datetime64[ns]', 'timedelta[ns]').</li>
+<li>Removing categorical columns with maximal cardinality (the number of
    unique values is equal to the number of instances. Usually the case for IDs,
-    names, etc...).
-  * Remove columns with minimum cardinality.
-  * Removing duplicate rows.
-  * Remove rows with missing values in the target column.
-
-
+    names, etc...).</li>
+<li>Remove columns with minimum cardinality.</li>
+<li>Removing duplicate rows.</li>
+<li>Remove rows with missing values in the target column.</li>
+</ul>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -195,15 +327,11 @@ Dataframe (or list of dataframes if successive_halving=True) of the results. Col
 </td>
 </tr>
 </table>
-<br>
 
-
-
-## Utilities
-
-The ATOM class contains a variety of methods to help you handle the data and
-inspect the pipeline.
-
+<p><br></p>
+<h2 id="utilities">Utilities</h2>
+<p>The ATOM class contains a variety of methods to help you handle the data and
+inspect the pipeline.</p>
 <table width="100%">
 <tr>
 <td width="15%"><a href="#atom-stats">stats</a></td>
@@ -235,28 +363,23 @@ inspect the pipeline.
 <td>Save the ATOM class to a pickle file.</td>
 </tr>
 </table>
-<br>
 
-
-<a name="atom-stats"></a>
+<p><br></p>
+<p><a name="atom-stats"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">stats</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L420">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Print out a list of basic statistics on the dataset.
 </div>
-<br /><br />
-
-
-<a name="atom-scale"></a>
+<br /><br /></p>
+<p><a name="atom-scale"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">scale</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L481">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Scale all the features to mean=1 and std=0.
 </div>
-<br /><br />
-
-
-<a name="atom-update"></a>
+<br /><br /></p>
+<p><a name="atom-update"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">update</strong>(df='dataset')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L510">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -278,16 +401,14 @@ Data attribute that has been changed.
 </td></tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-report"></a>
+<br /></p>
+<p><a name="atom-report"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">report</strong>(df='dataset', rows=None, filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L568">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Get an extensive profile analysis of the data. The report is rendered
 in HTML5 and CSS3. Note that this method can be slow for very large datasets.
-Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
+Dependency: <a href="https://pandas-profiling.github.io/pandas-profiling/docs/">pandas-profiling</a>.
 <br /><br />
 <table width="100%">
 <tr>
@@ -308,15 +429,13 @@ Name of the file when saved (as .html). None to not save anything.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-results"></a>
+<br /></p>
+<p><a name="atom-results"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">results</strong>(metric=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L616">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Print the final results for a specific metric. This method can only
- be called after running the [`pipeline`](#atom-pipeline) method.
+ be called after running the <a href="#atom-pipeline"><code>pipeline</code></a> method.
 <br /><br />
 <table width="100%">
 <tr>
@@ -330,15 +449,13 @@ used to fit the pipeline is selected.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-save"></a>
+<br /></p>
+<p><a name="atom-save"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L664">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Save the ATOM class to a pickle file. This method is also available for the model
- subclasses, e.g. `atom.XGB.save(filename='ATOM_xgboost')`. In this case, the
+ subclasses, e.g. <code>atom.XGB.save(filename='ATOM_xgboost')</code>. In this case, the
  model subclass is saved, instead of the ATOM class.
 <br /><br />
 <table width="100%">
@@ -352,23 +469,18 @@ Name to save the file with. None to save with default name.
 </tr>
 </table>
 </div>
-<br />
-
-
-
-## Data cleaning
-
-Before throwing your data in a model, it is crucial to apply some standard data
+<br /></p>
+<h2 id="data-cleaning">Data cleaning</h2>
+<p>Before throwing your data in a model, it is crucial to apply some standard data
 cleaning steps. ATOM provides four data cleaning methods to handle missing values,
  categorical columns, outliers and unbalanced datasets. Calling on one of them
  will automatically apply the method on the dataset in the class and update the
- class' data attributes accordingly.
-
-!!! tip
-    Use the `report` method to examine the data and help you determine suitable
-    parameters for the data cleaning methods.
-    
-
+ class' data attributes accordingly.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <code>report</code> method to examine the data and help you determine suitable
+parameters for the data cleaning methods.</p>
+</div>
 <table width="100%">
 <tr>
 <td><a href="#atom-impute">impute</a></td>
@@ -390,10 +502,9 @@ cleaning steps. ATOM provides four data cleaning methods to handle missing value
 <td>Balance the number of instances per target class.</td>
 </tr>
 </table>
-<br>
 
-
-<a name="atom-impute"></a>
+<p><br></p>
+<p><a name="atom-impute"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">impute</strong>(strat_num='remove',
                           strat_cat='remove',
                           max_frac_rows=0.5,
@@ -444,10 +555,8 @@ List of values to impute. None for default list: [None, np.NaN, np.inf, -np.inf,
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-encode"></a>
+<br /></p>
+<p><a name="atom-encode"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">encode</strong>(max_onehot=10, frac_to_other=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#840">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -455,8 +564,8 @@ Perform encoding of categorical features. The encoding type depends on the
  number of unique values in the column:
 <ul>
 <li>label-encoding for n_unique=2</li>
-<li>one-hot-encoding for 2 < n_unique <= max_onehot</li>
-<li>target-encoding for n_unique > max_onehot</li>
+<li>one-hot-encoding for 2 &lt; n_unique &lt;= max_onehot</li>
+<li>target-encoding for n_unique &gt; max_onehot</li>
 </ul>
 It also replaces classes with low occurences with the value 'other' in order
  to prevent too high cardinality.
@@ -476,15 +585,13 @@ Classes with less instances than n_rows * fraction_to_other are replaced with 'o
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-outliers"></a>
+<br /></p>
+<p><a name="atom-outliers"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">outliers</strong>(max_sigma=3, include_target=False) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#935">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Remove rows from the training set where at least one of the values lies further
- than `max_sigma` * standard_deviation away from the mean of the column.
+ than <code>max_sigma</code> * standard_deviation away from the mean of the column.
  <br /><br />
 <table width="100%">
 <tr>
@@ -501,15 +608,13 @@ Wether to include the target column when searching for outliers.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-balance"></a>
+<br /></p>
+<p><a name="atom-balance"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">balance</strong>(oversample=None, undersample=None, n_neighbors=5) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#974">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Balance the number of instances per target class. Only for classification tasks.
- Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/).
+ Dependency: <a href="https://imbalanced-learn.readthedocs.io/en/stable/">imbalanced-learn</a>.
  <br /><br />
 <table width="100%">
 <tr>
@@ -517,7 +622,7 @@ Balance the number of instances per target class. Only for classification tasks.
 <td width="75%" style="background:white;">
 <strong>oversample: float, string or None, optional (default=None)</strong>
 <blockquote>
-Oversampling strategy using  [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html).
+Oversampling strategy using  <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html">ADASYN</a>.
  Choose from:
 <ul>
 <li>None: don't oversample</li>
@@ -530,7 +635,7 @@ Oversampling strategy using  [ADASYN](https://imbalanced-learn.readthedocs.io/en
 </blockquote>
 <strong>undersample: float, string or None, optional (default=None)</strong>
 <blockquote>
-Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html).
+Undersampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html">NearMiss</a>.
  Choose from:
 <ul>
 <li>None: don't oversample</li>
@@ -548,16 +653,11 @@ Number of nearest neighbors used for any of the algorithms.
 </tr>
 </table>
 </div>
-<br />
-
-
-
-## Feature selection
-
-To further pre-process the data you can create new non-linear features using a
+<br /></p>
+<h2 id="feature-selection">Feature selection</h2>
+<p>To further pre-process the data you can create new non-linear features using a
  genetic algorithm or, if your dataset is too large, remove features using one
- of the provided strategies.
-
+ of the provided strategies.</p>
 <table width="100%">
 <tr>
 <tr>
@@ -570,11 +670,9 @@ To further pre-process the data you can create new non-linear features using a
 <td>Remove features according to the selected strategy.</td>
 </tr>
 </table>
-<br>
 
-
-
-<a name="atom-feature-insertion"></a>
+<p><br></p>
+<p><a name="atom-feature-insertion"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_insertion</strong>(n_features=2, generations=20, population=500) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#1107">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -582,11 +680,11 @@ Use a genetic algorithm to create new combinations of existing
 features and add them to the original dataset in order to capture
 the non-linear relations between the original features. A dataframe
 containing the description of the newly generated features and their
-scores can be accessed through the `genetic_features` attribute. The
-algorithm is implemented using the [Symbolic Transformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer)
- method, which can be accessed through the `genetic_algorithm` attribute. It is
+scores can be accessed through the <code>genetic_features</code> attribute. The
+algorithm is implemented using the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">Symbolic Transformer</a>
+ method, which can be accessed through the <code>genetic_algorithm</code> attribute. It is
 adviced to only use this method when fitting linear models.
-Dependency: [gplearn](https://gplearn.readthedocs.io/en/stable/).
+Dependency: <a href="https://gplearn.readthedocs.io/en/stable/">gplearn</a>.
  <br /><br />
 <table width="100%">
 <tr>
@@ -607,10 +705,8 @@ Number of programs in each generation.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-feature-selection"></a>
+<br /></p>
+<p><a name="atom-feature-selection"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_selection</strong>(strategy=None,
                                      solver=None,
                                      max_features=None,
@@ -634,10 +730,10 @@ limit (in terms of absolute value), it removes one of the two.
 Feature selection strategy to use. Choose from:
 <ul>
 <li>None: do not perform any feature selection algorithm</li>
-<li>'univariate': perform a univariate F-test, from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)</li>
-<li>'PCA': perform a principal component analysis, from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</li>
-<li>'SFM': select best features from model, from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</li>
-<li>'RFE': recursive feature eliminator, from sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</li>
+<li>'univariate': perform a univariate F-test, from sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">SelectKBest</a></li>
+<li>'PCA': perform a principal component analysis, from sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a></li>
+<li>'SFM': select best features from model, from sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SelectFromModel</a></li>
+<li>'RFE': recursive feature eliminator, from sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a></li>
 </ul>
 </blockquote>
 <strong>solver: string, callable or None, optional (default=None)</strong>
@@ -665,11 +761,11 @@ for SFM and RFE).
     </ul>
 <li>for 'SFM': choose a base estimator from which the
              transformer is built. The estimator must have
-             either a `feature_importances_` or `coef_` attribute
+             either a <code>feature_importances_</code> or <code>coef_</code> attribute
              after fitting. No default option.</li>
 <li>for 'RFE': choose a supervised learning estimator. The
-             estimator must have either a `feature_importances_`
-             or `coef_` attribute after fitting. No default
+             estimator must have either a <code>feature_importances_</code>
+             or <code>coef_</code> attribute after fitting. No default
              option.</li>
 </ul>
 </blockquote>
@@ -677,8 +773,8 @@ for SFM and RFE).
 <blockquote>
 Number of features to select.
 <ul>
-<li>if < 1: fraction of features to select</li>
-<li>if >= 1: number of features to select</li>
+<li>if &lt; 1: fraction of features to select</li>
+<li>if &gt;= 1: number of features to select</li>
 <li>None to select all</li>
 </ul>
 </blockquote>
@@ -687,7 +783,7 @@ Number of features to select.
 Remove features with the same value in at least this fraction of
 the total. The default is to keep all features with non-zero
 variance, i.e. remove the features that have the same value in all
-samples. Will automatically scale the features if threshold variance > 0.
+samples. Will automatically scale the features if threshold variance &gt; 0.
 None to skip this step.
 </blockquote>
 <strong>max_correlation: float or None, optional (default=0.98)</strong>
@@ -697,7 +793,7 @@ correlated features. A dataframe of the removed features and their
 correlation values can be accessed through the collinear attribute.
 None to skip this step.
 </blockquote>
-<strong>\*\*kwargs</strong>
+<strong>**kwargs</strong>
 <blockquote>
 Any extra parameter for the PCA, SFM or RFE. See the sklearn
 documentation for the available options.
@@ -705,17 +801,14 @@ documentation for the available options.
 </tr>
 </table>
 </div>
-<br />
-
-
-
-## Pipeline
-
-The pipeline method is where the models are fitted to the data and their
+<br /></p>
+<h2 id="pipeline">Pipeline</h2>
+<p>The pipeline method is where the models are fitted to the data and their
  performance is evaluated according to the selected metric. For every model, the
- pipeline applies the following steps:
-
-1. The optimal hyperparameters are selectred using a Bayesian Optimization (BO)
+ pipeline applies the following steps:</p>
+<ol>
+<li>
+<p>The optimal hyperparameters are selectred using a Bayesian Optimization (BO)
  algorithm with gaussian process as kernel. The resulting score of each step of
  the BO is either computed by cross-validation on the complete training set or
  by randomly splitting the training set every iteration into a (sub) training
@@ -725,27 +818,27 @@ The pipeline method is where the models are fitted to the data and their
  Note that, if the dataset is relatively small, the best score on the BO can
  consistently be lower than the final score on the test set (despite the
  leakage) due to the considerable fewer instances on which it is trained.
-<div></div>
- 
-2. Once the best hyperparameters are found, the model is trained again, now
+<div></div></p>
+</li>
+<li>
+<p>Once the best hyperparameters are found, the model is trained again, now
  using the complete training set. After this, predictions are made on the test set.
-<div></div>
-
-3. You can choose to evaluate the robustness of each model's applying a bagging
+<div></div></p>
+</li>
+<li>
+<p>You can choose to evaluate the robustness of each model's applying a bagging
  algorithm, i.e. the model will be trained multiple times on a bootstrapped
- training set, returning a distribution of its performance on the test set.
-
-
-If you want to compare similar models, you can choose to use a successive halving
+ training set, returning a distribution of its performance on the test set.</p>
+</li>
+</ol>
+<p>If you want to compare similar models, you can choose to use a successive halving
  approach when running the pipeline. This technique fits N models to 1/N of the
  data. The best half are selected to go to the next iteration where the process
  is repeated. This continues until only one model remains, which is fitted on
  the complete dataset. Beware that a model's performance can depend greatly on
  the amount of data on which it is trained. For this reason we recommend only to
- use this technique with similar models, e.g. only using tree-based models. 
-
-
-<a name="atom-pipeline"></a>
+ use this technique with similar models, e.g. only using tree-based models. </p>
+<p><a name="atom-pipeline"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">pipeline</strong>(models,
                             metric,
                             greater_is_better=True,
@@ -769,33 +862,33 @@ If you want to compare similar models, you can choose to use a successive halvin
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html) (no hyperparameter tuning)</li>
-<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)</li>
-<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)</li>
-<li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html) (no hyperparameter tuning)</li>
-<li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html) (no hyperparameter tuning)</li>
-<li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)</li>
-<li>'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)</li>
-<li>'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)</li>
-<li>'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)</li>
-<li>'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)</li> 
-<li>'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html)</li>
-<li>'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)</li>
-<li>'KNN' for K-Nearest Neighbors [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html)</li>
-<li>'Tree' for a single Decision Tree [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html)</li>
-<li>'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html) (decision tree as base estimator)</li>
-<li>'ET' for Extra-Trees [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)</li>
-<li>'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)</li>
-<li>'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html) (decision tree as base estimator)</li>
-<li>'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html)</li> 
-<li>'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor) (if package is available)</li>
-<li>'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html) (if package is available)</li>
-<li>'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html) (if package is available)</li>
-<li>'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html)</li> 
-<li>'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)</li>
-<li>'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)</li>
-<li>'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)</li>
-<li>'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor)</li> 
+<li>'GNB' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html">Gaussian Naïve Bayes</a> (no hyperparameter tuning)</li>
+<li>'MNB' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html">Multinomial Naïve Bayes</a></li>
+<li>'BNB' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html">Bernoulli Naïve Bayes</a></li>
+<li>'GP' for Gaussian Process <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">regressor</a> (no hyperparameter tuning)</li>
+<li>'OLS' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a> (no hyperparameter tuning)</li>
+<li>'Ridge' for Ridge Linear <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">regressor</a></li>
+<li>'Lasso' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html">Lasso Linear Regression</a></li>
+<li>'EN' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet Linear Regression</a></li>
+<li>'BR' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html">Bayesian Regression</a> (with ridge regularization)</li>
+<li>'LR' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">Logistic Regression</a></li> 
+<li>'LDA' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html">Linear Discriminant Analysis</a></li>
+<li>'QDA' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html">Quadratic Discriminant Analysis</a></li>
+<li>'KNN' for K-Nearest Neighbors <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html">regressor</a></li>
+<li>'Tree' for a single Decision Tree <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html">regressor</a></li>
+<li>'Bag' for Bagging <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html">regressor</a> (decision tree as base estimator)</li>
+<li>'ET' for Extra-Trees <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html">regressor</a></li>
+<li>'RF' for Random Forest <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html">regressor</a></li>
+<li>'AdaB' for AdaBoost <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html">regressor</a> (decision tree as base estimator)</li>
+<li>'GBM' for Gradient Boosting Machine <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html">regressor</a></li> 
+<li>'XGB' for XGBoost <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier">classifier</a>/<a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">regressor</a> (if package is available)</li>
+<li>'LGB' for LightGBM <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html">classifier</a>/<a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">regressor</a> (if package is available)</li>
+<li>'CatB' for CatBoost <a href="https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html">classifier</a>/<a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">regressor</a> (if package is available)</li>
+<li>'lSVM' for Linear Support Vector Machine <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">regressor</a></li> 
+<li>'kSVM' for Kernel (non-linear) Support Vector Machine <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">regressor</a></li>
+<li>'PA' for Passive Aggressive <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">regressor</a></li>
+<li>'SGD' for Stochastic Gradient Descent <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">regressor</a></li>
+<li>'MLP' for Multilayer Perceptron <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html">classifier</a>/<a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">regressor</a></li> 
 </ul>
 </blockquote>
 <strong>metric: string or callable, optional (default=None)</strong>
@@ -820,7 +913,7 @@ better. Will be ignored if the metric is a string or a scorer.
 <blockquote>
 Whether the metric function requires probability estimates out of a
  classifier. If True, make sure that every model in the pipeline has
- a `predict_proba` method! Will be ignored if the metric is a string
+ a <code>predict_proba</code> method! Will be ignored if the metric is a string
  or a scorer.
 </blockquote>
 <strong>successive_halving: bool, optional (default=False)</strong>
@@ -830,7 +923,7 @@ Wether to use successive halving on the pipeline. Only recommended when fitting
 </blockquote>
 <strong>skip_iter: int, optional (default=0)</strong>
 <blockquote>
-Skip last `skip_iter` iterations of the successive halving. Will be ignored if
+Skip last <code>skip_iter</code> iterations of the successive halving. Will be ignored if
  successive_halving=False.
 </blockquote>
 <strong>max_iter: int or iterable, optional (default=10)</strong>
@@ -856,7 +949,7 @@ Initial number of tests of the BO before fitting the surrogate
 Strategy to fit and score the model selected after every step of the BO.
 <ul>
 <li>if 1, randomly split into a train and validation set</li>
-<li>if >1, perform a k-fold cross validation on the training set</li>
+<li>if &gt;1, perform a k-fold cross validation on the training set</li>
 </ul>
 </blockquote>
 <strong>plot_bo: bool, optional (default=False)</strong>
@@ -864,7 +957,7 @@ Strategy to fit and score the model selected after every step of the BO.
 Wether to plot the BO's progress as it runs. Creates a canvas with
 two plots: the first plot shows the score of every trial and the
 second shows the distance between the last consecutive steps. Don't
-forget to call `%matplotlib` at the start of the cell if you are
+forget to call <code>%matplotlib</code> at the start of the cell if you are
 using jupyter notebook!
 </blockquote>
 <strong>bagging: int or None, optional (default=None)</strong>
@@ -875,27 +968,21 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
 </tr>
 </table>
 </div>
-<br />
-
-
-
-## Model subclass
-
-After running the pipeline method, a class for every selected model is created and
+<br /></p>
+<h2 id="model-subclass">Model subclass</h2>
+<p>After running the pipeline method, a class for every selected model is created and
  attached to the main ATOM class as an attribute. These classes can be called upon
- using the models' acronyms, e.g. `atom.LGB`. Lowercase calls are also allowed
- for this attribute, e.g. `atom.lgb`. The model subclasses contain a variety of
+ using the models' acronyms, e.g. <code>atom.LGB</code>. Lowercase calls are also allowed
+ for this attribute, e.g. <code>atom.lgb</code>. The model subclasses contain a variety of
  attributes to help you understand how every specific model performed.
- Furthermore, the majority of the [plots](#plots) can be called directly
+ Furthermore, the majority of the <a href="#plots">plots</a> can be called directly
  from these subclasses as well. For example, to plot the ROC for the LightGBM
- model we could type `atom.lgb.plot_ROC()`.
-
-The model subclasses contain the same data attributes the ATOM class has,
- e.g. `atom.lSVM.X_train`. These can differ from each other depending on if the
+ model we could type <code>atom.lgb.plot_ROC()</code>.</p>
+<p>The model subclasses contain the same data attributes the ATOM class has,
+ e.g. <code>atom.lSVM.X_train</code>. These can differ from each other depending on if the
  model needs scaled data. You can also call for any of the sklearn pre-defined
- metrics, e.g. `atom.ET.recall`. The rest of the available attributes can be
- found hereunder:
-
+ metrics, e.g. <code>atom.ET.recall</code>. The rest of the available attributes can be
+ found hereunder:</p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -980,32 +1067,26 @@ Dictionary containing the information of every step taken by the BO. Keys includ
 </blockquote>
 </tr>
 </table>
-<br>
 
-
-
-
-## Plots
-
-The ATOM class provides a variety of plot methods to analyze the results of the
+<p><br></p>
+<h2 id="plots">Plots</h2>
+<p>The ATOM class provides a variety of plot methods to analyze the results of the
  pipeline. To use the plots to compare the results of multiple models, you can
- call them directly from the main class using the `models` parameter, e.g.
- `atom.plot_PRC(models=['LDA', 'LGB'])`.
- 
- To call the plot for a single model, you can either fill the model in the `models`
- parameter (e.g. `atom.plot_PRC(models='LDA')`) or call the from the model subclass
- (e.g. `atom.LDA.plot_PRC()`). These two examples will render the same plot.
- Note that the latter approach is not available for the [`plot_correlation`](#atom-plot-correlation)
- and [`plot_PCA`](#atom-plot-pca) methods since they are unrelated to the models
- fitted in the pipeline.
-
-!!! note
-    Remember that if successive halving=True, only the last fitted model is saved
-    in the model subclass. Avoid plotting models from different iterations
-    together since this can lead to misleading insights.
-
-The plots aesthetics can be customized using various [classmethods](#atom-plot-customization).
-
+ call them directly from the main class using the <code>models</code> parameter, e.g.
+ <code>atom.plot_PRC(models=['LDA', 'LGB'])</code>.</p>
+<p>To call the plot for a single model, you can either fill the model in the <code>models</code>
+ parameter (e.g. <code>atom.plot_PRC(models='LDA')</code>) or call the from the model subclass
+ (e.g. <code>atom.LDA.plot_PRC()</code>). These two examples will render the same plot.
+ Note that the latter approach is not available for the <a href="#atom-plot-correlation"><code>plot_correlation</code></a>
+ and <a href="#atom-plot-pca"><code>plot_PCA</code></a> methods since they are unrelated to the models
+ fitted in the pipeline.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Remember that if successive halving=True, only the last fitted model is saved
+in the model subclass. Avoid plotting models from different iterations
+together since this can lead to misleading insights.</p>
+</div>
+<p>The plots aesthetics can be customized using various <a href="#atom-plot-customization">classmethods</a>.</p>
 <table width="100%">
 <tr>
 <td><a href="#atom-plot-correlation">plot_correlation</a></td>
@@ -1068,9 +1149,9 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 </tr>
 
 </table>
-<br>
 
-<a name="atom-plot-correlation"></a>
+<p><br></p>
+<p><a name="atom-plot-correlation"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_correlation</strong>(title=None,
                                     figsize=(10, 10),
                                     filename=None,
@@ -1103,10 +1184,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-PCA"></a>
+<br /></p>
+<p><a name="atom-plot-PCA"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PCA</strong>(show=None,
                             title=None,
                             figsize=None,
@@ -1115,7 +1194,7 @@ Wether to render the plot.
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#85">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the explained variance ratio of the components. Only if a Principal Component Analysis
- was applied on the dataset through the [`feature_selection`](#atom-feature-selection) method.
+ was applied on the dataset through the <a href="#atom-feature-selection"><code>feature_selection</code></a> method.
  Can't be called from the model subclasses.
 <br /><br />
 <table width="100%">
@@ -1132,7 +1211,7 @@ Plot's title. If None, the default option is used.
 </blockquote>
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to `show` parameter.
+Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
 </blockquote>
 <strong>filename: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1145,10 +1224,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-bagging"></a>
+<br /></p>
+<p><a name="atom-plot-bagging"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_bagging</strong>(models=None,
                                 title=None,
                                 figsize=None,
@@ -1185,10 +1262,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-successive-halving"></a>
+<br /></p>
+<p><a name="atom-plot-successive-halving"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_successive_halving</strong>(models=None,
                                            title=None,
                                            figsize=(10, 6),
@@ -1225,10 +1300,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-ROC"></a>
+<br /></p>
+<p><a name="atom-plot-ROC"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_ROC</strong>(models=None,
                             title=None,
                             figsize=(10, 6)),
@@ -1265,10 +1338,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-PRC"></a>
+<br /></p>
+<p><a name="atom-plot-PRC"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PRC</strong>(models=None,
                             title=None,
                             figsize=(10, 6),
@@ -1305,10 +1376,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-permutation-importance"></a>
+<br /></p>
+<p><a name="atom-plot-permutation-importance"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_permutation_importance</strong>(models=None,
                                                show=None,
                                                n_repeats=10,
@@ -1342,7 +1411,7 @@ Plot's title. If None, the default option is used.
 </blockquote>
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to `show` parameter.
+Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
 </blockquote>
 <strong>filename: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1355,10 +1424,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-feature-importance"></a>
+<br /></p>
+<p><a name="atom-plot-feature-importance"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_feature_importance</strong>(models=None,
                                            show=None,
                                            title=None,
@@ -1387,7 +1454,7 @@ Plot's title. If None, the default option is used.
 </blockquote>
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to `show` parameter.
+Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
 </blockquote>
 <strong>filename: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1400,10 +1467,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-confusion-matrix"></a>
+<br /></p>
+<p><a name="atom-plot-confusion-matrix"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None,
                                          normalize=False,
                                          title=None,
@@ -1414,7 +1479,7 @@ Wether to render the plot.
 <div style="padding-left:3%" width="100%">
 <ul>
 <li>For 1 model: plot it's confusion matrix in a heatmap.</li>
-<li>For >1 models: compare TP, FP, FN and TN in a barplot. Not supported for multiclass classification.</li>
+<li>For &gt;1 models: compare TP, FP, FN and TN in a barplot. Not supported for multiclass classification.</li>
 </ul>
 <table width="100%">
 <tr>
@@ -1447,10 +1512,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-threshold"></a>
+<br /></p>
+<p><a name="atom-plot-threshold"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_threshold</strong>(models=None,
                                   metric=None,
                                   steps=100,
@@ -1499,10 +1562,8 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-<a name="atom-plot-probabilities"></a>
+<br /></p>
+<p><a name="atom-plot-probabilities"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_probabilities</strong>(models=None,
                                       target=1,
                                       title=None,
@@ -1544,16 +1605,10 @@ Wether to render the plot.
 </tr>
 </table>
 </div>
-<br />
-
-
-
-<a name="atom-plot-customization"></a>
-### Plot customization
-
-The plotting aesthetics can be customized with the use of the `@classmethods` described hereunder, e.g. `ATOMClassifier.set_style('white')`.
-
-
+<br /></p>
+<p><a name="atom-plot-customization"></a></p>
+<h3 id="plot-customization">Plot customization</h3>
+<p>The plotting aesthetics can be customized with the use of the <code>@classmethods</code> described hereunder, e.g. <code>ATOMClassifier.set_style('white')</code>.</p>
 <table width="100%">
 <tr>
 <td width="15%"><a href="#atom-set-style">set_style</a></td>
@@ -1580,13 +1635,13 @@ The plotting aesthetics can be customized with the use of the `@classmethods` de
 <td>Change the fontsize of the plot's ticks.</td>
 </tr>
 </table>
-<br>
 
-<a name="atom-set-style"></a>
+<p><br></p>
+<p><a name="atom-set-style"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_style</strong>(style='darkgrid')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L2188">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Change the plotting style. See the seaborn [documentation](https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles).
+Change the plotting style. See the seaborn <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
 <br /><br />
 <table width="100%">
 <tr>
@@ -1599,13 +1654,12 @@ Style to change to. Available options are: 'darkgrid', 'whitegrid', 'dark', 'whi
 </tr>
 </table>
 </div>
-<br />
-
-<a name="atom-set-palette"></a>
+<br /></p>
+<p><a name="atom-set-palette"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_palette</strong>(palette='GnBu_d')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L2205">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Change the plotting palette. See the seaborn [documentation](https://seaborn.pydata.org/tutorial/color_palettes.html)
+Change the plotting palette. See the seaborn <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>
  for the available options.
 <br /><br />
 <table width="100%">
@@ -1619,9 +1673,8 @@ Palette to change to.
 </tr>
 </table>
 </div>
-<br />
-
-<a name="atom-set-title-fontsize"></a>
+<br /></p>
+<p><a name="atom-set-title-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_title_fontsize</strong>(fontsize=20)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L2222">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -1638,9 +1691,8 @@ Fontsize to change to.
 </tr>
 </table>
 </div>
-<br />
-
-<a name="atom-set-label-fontsize"></a>
+<br /></p>
+<p><a name="atom-set-label-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_label_fontsize</strong>(fontsize=16)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L2237">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -1657,9 +1709,8 @@ Fontsize to change to.
 </tr>
 </table>
 </div>
-<br />
-
-<a name="atom-set-tick-fontsize"></a>
+<br /></p>
+<p><a name="atom-set-tick-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_tick_fontsize</strong>(fontsize=12)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/base.py#L2252">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -1676,4 +1727,57 @@ Fontsize to change to.
 </tr>
 </table>
 </div>
-<br />
+<br /></p>
+              
+            </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../examples/" class="btn btn-neutral float-right" title="Examples">Next <span class="icon icon-circle-arrow-right"></span></a>
+      
+      
+        <a href="../getting_started/" class="btn btn-neutral" title="Getting started"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+    
+      <p>© Copyright 2020, by tvdboom.</p>
+    
+  </div>
+
+  Built with <a href="http://www.mkdocs.org">MkDocs</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+      
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" style="cursor: pointer">
+    <span class="rst-current-version" data-toggle="rst-current-version">
+      
+          <a href="https://github.com/tvdboom/ATOM" class="fa fa-github" style="float: left; color: #fcfcfc"> GitHub</a>
+      
+      
+        <span><a href="../getting_started/" style="color: #fcfcfc;">&laquo; Previous</a></span>
+      
+      
+        <span style="margin-left: 15px"><a href="../examples/" style="color: #fcfcfc">Next &raquo;</a></span>
+      
+    </span>
+</div>
+    <script>var base_url = '..';</script>
+    <script src="../js/theme.js" defer></script>
+      <script src="../search/main.js" defer></script>
+
+</body>
+</html>

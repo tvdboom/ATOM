@@ -20,5 +20,6 @@ nav:
 - Home: index.md
 - Getting started: getting_started.md
 - API: api.md
+- Examples: examples.md
 - Dependencies: dependencies.md
 - License: license.md
