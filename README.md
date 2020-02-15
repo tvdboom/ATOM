@@ -61,8 +61,10 @@ Usage
 ------------------------  
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
-    from atom import ATOMClassifier  
+    from sklearn.datasets import load_breast_cancer  
+    from sklearn.datasets import 
     
+    X, y = load_breast_cancer(return_X_y)
     atom = ATOMClassifier(X, y, log='auto', n_jobs=2, verbose=2)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
@@ -86,8 +88,8 @@ Run the pipeline with different models:
 Make plots and analyze results: 
 
 	atom.plot_bagging(filename='bagging_results.png')  
-	atom.lSVM.plot_probabilities()  
-	atom.lda.plot_confusion_matrix()
+    atom.lSVM.plot_probabilities(figsize=(9, 6))  
+    atom.lda.plot_confusion_matrix(normalize=True)
 
 
 Documentation
