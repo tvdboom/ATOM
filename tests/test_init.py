@@ -14,7 +14,6 @@ import pandas as pd
 import multiprocessing
 from sklearn.datasets import load_boston, load_wine, load_breast_cancer
 from atom import ATOMClassifier, ATOMRegressor
-from atom.base import ATOM
 
 
 # << ====================== Variables ===================== >>

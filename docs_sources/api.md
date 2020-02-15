@@ -747,7 +747,7 @@ If you want to compare similar models, you can choose to use a successive halvin
 
 <a name="atom-pipeline"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">pipeline</strong>(models,
-                            metric,
+                            metric=None,
                             greater_is_better=True,
                             needs_proba=False,
                             successive_halving=False,

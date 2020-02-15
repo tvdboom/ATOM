@@ -1,4 +1,4 @@
-# Binary Classification
+# Binary classification
 ---------------------------------
 
 Download the Australian weather dataset from [https://www.kaggle.com/jsphyg/weather-dataset-rattle-package](https://www.kaggle.com/jsphyg/weather-dataset-rattle-package).
@@ -7,10 +7,12 @@ Download the Australian weather dataset from [https://www.kaggle.com/jsphyg/weat
 
 **Load the data**
 
+
 ```python
 # Import packages
 import numpy as np
 import pandas as pd
+from sklearn.metrics import fbeta_score
 from atom import ATOMClassifier
 
 # Load the Australian weather dataset
@@ -20,19 +22,21 @@ X = X.drop(['RISK_MM', 'Date'], axis=1)  # Drop unrelated features
 
 **Run the pipeline**
 
+
 ```python
 # Call ATOM using only a percentage of the complete dataset (for explanatory purposes)
-atom = ATOMClassifier(X, y="RainTomorrow", percentage=5, log='auto', verbose=3)
+atom = ATOMClassifier(X, y="RainTomorrow", percentage=5, log='auto', n_jobs=2, verbose=3)
 ```
 
     <<=============== ATOM ===============>>
+    Parallel processing with 2 cores.
     Initial data cleaning...
      --> Dropping 45 duplicate rows.
     Algorithm task: binary classification.
     
     Dataset stats ===================>
     Shape: (7107, 22)
-    Missing values: 15778
+    Missing values: 15346
     Categorical columns: 5
     Scaled: False
     ----------------------------------
@@ -42,8 +46,8 @@ atom = ATOMClassifier(X, y="RainTomorrow", percentage=5, log='auto', verbose=3)
     Instances in RainTomorrow per class:
     |        |    total |    train_set |    test_set |
     |:-------|---------:|-------------:|------------:|
-    | 0: No  |     5479 |         3854 |        1625 |
-    | 1: Yes |     1628 |         1120 |         508 |
+    | 0: No  |     5520 |         3867 |        1653 |
+    | 1: Yes |     1587 |         1107 |         480 |
     
     
 
@@ -68,27 +72,27 @@ atom.impute(strat_num='knn', strat_cat='missing', max_frac_rows=0.8)
 ```
 
     Imputing missing values...
-     --> Removing 766 rows for containing too many missing values.
-     --> Imputing 3 missing values using the KNN imputer in feature MinTemp.
-     --> Imputing 3 missing values using the KNN imputer in feature MaxTemp.
-     --> Imputing 27 missing values using the KNN imputer in feature Rainfall.
-     --> Imputing 2289 missing values using the KNN imputer in feature Evaporation.
-     --> Imputing 2597 missing values using the KNN imputer in feature Sunshine.
-     --> Imputing 240 missing values with missing in feature WindGustDir.
-     --> Imputing 238 missing values using the KNN imputer in feature WindGustSpeed.
-     --> Imputing 321 missing values with missing in feature WindDir9am.
-     --> Imputing 28 missing values with missing in feature WindDir3pm.
+     --> Removing 702 rows for containing too many missing values.
+     --> Imputing 4 missing values using the KNN imputer in feature MinTemp.
+     --> Imputing 4 missing values using the KNN imputer in feature MaxTemp.
+     --> Imputing 26 missing values using the KNN imputer in feature Rainfall.
+     --> Imputing 2318 missing values using the KNN imputer in feature Evaporation.
+     --> Imputing 2624 missing values using the KNN imputer in feature Sunshine.
+     --> Imputing 239 missing values with missing in feature WindGustDir.
+     --> Imputing 239 missing values using the KNN imputer in feature WindGustSpeed.
+     --> Imputing 309 missing values with missing in feature WindDir9am.
+     --> Imputing 24 missing values with missing in feature WindDir3pm.
      --> Imputing 1 missing values using the KNN imputer in feature WindSpeed9am.
-     --> Imputing 4 missing values using the KNN imputer in feature WindSpeed3pm.
-     --> Imputing 28 missing values using the KNN imputer in feature Humidity9am.
-     --> Imputing 56 missing values using the KNN imputer in feature Humidity3pm.
-     --> Imputing 46 missing values using the KNN imputer in feature Pressure9am.
-     --> Imputing 46 missing values using the KNN imputer in feature Pressure3pm.
-     --> Imputing 2111 missing values using the KNN imputer in feature Cloud9am.
-     --> Imputing 2236 missing values using the KNN imputer in feature Cloud3pm.
-     --> Imputing 9 missing values using the KNN imputer in feature Temp9am.
-     --> Imputing 33 missing values using the KNN imputer in feature Temp3pm.
-     --> Imputing 27 missing values with missing in feature RainToday.
+     --> Imputing 1 missing values using the KNN imputer in feature WindSpeed3pm.
+     --> Imputing 38 missing values using the KNN imputer in feature Humidity9am.
+     --> Imputing 64 missing values using the KNN imputer in feature Humidity3pm.
+     --> Imputing 48 missing values using the KNN imputer in feature Pressure9am.
+     --> Imputing 45 missing values using the KNN imputer in feature Pressure3pm.
+     --> Imputing 2086 missing values using the KNN imputer in feature Cloud9am.
+     --> Imputing 2190 missing values using the KNN imputer in feature Cloud3pm.
+     --> Imputing 4 missing values using the KNN imputer in feature Temp9am.
+     --> Imputing 29 missing values using the KNN imputer in feature Temp3pm.
+     --> Imputing 26 missing values with missing in feature RainToday.
     
 
 
@@ -120,9 +124,9 @@ atom.collinear
      --> Feature Temp9am was removed due to collinearity with another feature.
      --> Feature Temp3pm was removed due to collinearity with another feature.
      --> Feature RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature Evaporation was removed after the univariate test (score: 52.21  p-value: 0.00).
-     --> Feature WindSpeed9am was removed after the univariate test (score: 39.05  p-value: 0.00).
-     --> Feature RainToday_other was removed after the univariate test (score: 35.28  p-value: 0.00).
+     --> Feature WindSpeed9am was removed after the univariate test (score: 36.90  p-value: 0.00).
+     --> Feature WindSpeed3pm was removed after the univariate test (score: 55.43  p-value: 0.00).
+     --> Feature RainToday_other was removed after the univariate test (score: 23.65  p-value: 0.00).
     
 
 
@@ -156,25 +160,25 @@ atom.collinear
       <th>0</th>
       <td>Pressure3pm</td>
       <td>Pressure9am</td>
-      <td>0.95794</td>
+      <td>0.96065</td>
     </tr>
     <tr>
       <th>1</th>
       <td>Temp9am</td>
       <td>MinTemp, MaxTemp</td>
-      <td>0.90569, 0.88154</td>
+      <td>0.90137, 0.87496</td>
     </tr>
     <tr>
       <th>2</th>
       <td>Temp3pm</td>
       <td>MaxTemp, Temp9am</td>
-      <td>0.96201, 0.85449</td>
+      <td>0.96166, 0.84807</td>
     </tr>
     <tr>
       <th>3</th>
       <td>RainToday_Yes</td>
       <td>RainToday_No</td>
-      <td>-0.98701</td>
+      <td>-0.98762</td>
     </tr>
   </tbody>
 </table>
@@ -209,9 +213,13 @@ atom.outliers(max_sigma=5)
 # Change the verbosity of ATOM to not print too much details while fitting
 atom.verbose = 2
 
+# Let's use a custom metric
+def f2_score(y_true, y_pred):
+    return fbeta_score(y_true, y_pred, beta=2)
+
 # Let's compare the performance of various gradient boosting algorithms
 atom.pipeline(['gbm', 'lgb', 'catb'],
-              metric='accuracy',  # You can use a custom metric as well!
+              metric=f2_score,
               max_iter=5,
               init_points=5,
               cv=1,
@@ -221,82 +229,83 @@ atom.pipeline(['gbm', 'lgb', 'catb'],
     
     Running pipeline =================>
     Models in pipeline: GBM, LGB, CatB
-    Metric: accuracy
+    Metric: f2_score
     
     
     Running BO for Gradient Boosting Machine...
     Final results for Gradient Boosting Machine:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 500, 'learning_rate': 0.01, 'subsample': 0.7, 'max_depth': 10, 'max_features': 0.6, 'criterion': 'friedman_mse', 'min_samples_split': 8, 'min_samples_leaf': 18, 'ccp_alpha': 0.0}
-    Best score on the BO: 0.8098
-    Time elapsed: 1m:32s
+    Best hyperparameters: {'n_estimators': 348, 'learning_rate': 1.0, 'subsample': 1.0, 'max_depth': 4, 'max_features': 0.6, 'criterion': 'mse', 'min_samples_split': 7, 'min_samples_leaf': 8, 'ccp_alpha': 0.0}
+    Best score on the BO: 0.7208
+    Time elapsed: 36.286s
     Fitting -----------------------------------------
-    Score on the training set: 0.9441
-    Score on the test set: 0.7257
-    Time elapsed: 5.090s
+    Score on the training set: 1.0000
+    Score on the test set: 0.5660
+    Time elapsed: 1.601s
     Bagging -----------------------------------------
-    Mean: 0.7260   Std: 0.0097
-    Time elapsed: 16.632s
+    Mean: 0.5531   Std: 0.0154
+    Time elapsed: 3.781s
     -------------------------------------------------
-    Total time: 1m:54s
+    Total time: 41.672s
     
     
     Running BO for LightGBM...
     Final results for LightGBM:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 500, 'learning_rate': 0.18, 'max_depth': 10, 'num_leaves': 40, 'min_child_weight': 2, 'min_child_samples': 11, 'subsample': 0.5, 'colsample_bytree': 0.3, 'reg_alpha': 0.0, 'reg_lambda': 100.0}
-    Best score on the BO: 0.8152
-    Time elapsed: 2.772s
+    Best hyperparameters: {'n_estimators': 500, 'learning_rate': 0.75, 'max_depth': 10, 'num_leaves': 29, 'min_child_weight': 12, 'min_child_samples': 13, 'subsample': 0.6, 'colsample_bytree': 0.3, 'reg_alpha': 0.0, 'reg_lambda': 0.0}
+    Best score on the BO: 0.7371
+    Time elapsed: 2.250s
     Fitting -----------------------------------------
-    Score on the training set: 0.9637
-    Score on the test set: 0.7030
-    Time elapsed: 3.904s
+    Score on the training set: 1.0000
+    Score on the test set: 0.5622
+    Time elapsed: 1.348s
     Bagging -----------------------------------------
-    Mean: 0.7116   Std: 0.0118
-    Time elapsed: 2.291s
+    Mean: 0.5752   Std: 0.0197
+    Time elapsed: 0.579s
     -------------------------------------------------
-    Total time: 8.968s
+    Total time: 4.178s
     
     
     Running BO for CatBoost...
     Final results for CatBoost:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 500, 'learning_rate': 0.28, 'max_depth': 2, 'subsample': 0.8, 'colsample_bylevel': 1.0, 'reg_lambda': 100.0}
-    Best score on the BO: 0.8045
-    Time elapsed: 13.710s
+    Best hyperparameters: {'n_estimators': 172, 'learning_rate': 0.68, 'max_depth': 6, 'subsample': 0.6, 'colsample_bylevel': 0.3, 'reg_lambda': 0.01}
+    Best score on the BO: 0.7606
+    Time elapsed: 14.099s
     Fitting -----------------------------------------
-    Score on the training set: 0.8850
-    Score on the test set: 0.6803
-    Time elapsed: 0.670s
+    Score on the training set: 1.0000
+    Score on the test set: 0.5861
+    Time elapsed: 0.349s
     Bagging -----------------------------------------
-    Mean: 0.7004   Std: 0.0108
-    Time elapsed: 2.709s
+    Mean: 0.5817   Std: 0.0078
+    Time elapsed: 1.097s
     -------------------------------------------------
-    Total time: 17.089s
+    Total time: 15.547s
     
     
     Final results ================>>
-    Duration: 2m:20s
-    Metric: accuracy
+    Duration: 1m:01s
+    Metric: f2_score
     --------------------------------
-    Gradient Boosting Machine --> 0.726 ± 0.010 !! ~
-    LightGBM                  --> 0.712 ± 0.012 ~
-    CatBoost                  --> 0.700 ± 0.011 ~
+    Gradient Boosting Machine --> 0.553 ± 0.015 ~
+    LightGBM                  --> 0.575 ± 0.020 ~
+    CatBoost                  --> 0.582 ± 0.008 !! ~
     
 
 **Analyze the results**
 
+
 ```python
-# Lets have a look at the best model
+# Let's have a look at the best model
 print('And the winner is...', atom.winner.longname)
 
 print('Score on the training set: ', atom.winner.score_train)
 print('Score on the test set: ', atom.winner.score_test)
 ```
 
-    And the winner is... Gradient Boosting Machine
-    Score on the training set:  0.9441117764471058
-    Score on the test set:  0.7256766642282371
+    And the winner is... CatBoost
+    Score on the training set:  1.0
+    Score on the test set:  0.5860702151755378
     
 
 
@@ -332,6 +341,8 @@ atom.catb.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=5
 
 
 ![png](img/threshold.png)
+
+
 
 
 <br><br>
