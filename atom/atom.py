@@ -1560,6 +1560,13 @@ class ATOM(object):
             multiple times on a bootstrapped training set, returning a
             distribution of its performance on the test set.
 
+            If an exception is encountered while fitting a model, the pipeline
+            will automatically jump to the next model and save the exception in
+            the `errors` attribute. When showing the final results, a `!!`
+            indicates the highest score and a `~` indicates that the model is
+            possibly overfitting (training set has a score at least 20% higher
+            than the test set).
+
         PARAMETERS
         ----------
         models: string, list or tuple

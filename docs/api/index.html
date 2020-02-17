@@ -831,13 +831,20 @@ documentation for the available options.
  training set, returning a distribution of its performance on the test set.</p>
 </li>
 </ol>
-<p>If you want to compare similar models, you can choose to use a successive halving
- approach when running the pipeline. This technique fits N models to 1/N of the
- data. The best half are selected to go to the next iteration where the process
- is repeated. This continues until only one model remains, which is fitted on
- the complete dataset. Beware that a model's performance can depend greatly on
- the amount of data on which it is trained. For this reason we recommend only to
- use this technique with similar models, e.g. only using tree-based models. </p>
+<p>If you want to compare similar models, you can choose to use a successive
+ halving approach when running the pipeline. This technique fits N models to
+ 1/N of the data. The best half are selected to go to the next iteration where
+ the process is repeated. This continues until only one model remains, which is
+ fitted on the complete dataset. Beware that a model's performance can depend
+ greatly on the amount of data on which it is trained. For this reason we
+ recommend only to use this technique with similar models, e.g. only using
+ tree-based models.</p>
+<p>If an exception is encountered while fitting a model, the pipeline
+ will automatically jump to the next model and save the exception in
+ the <code>errors</code> attribute. When showing the final results, a <code>!!</code>
+ indicates the highest score and a <code>~</code> indicates that the model is
+ possibly overfitting (training set has a score at least 20% higher
+ than the test set).</p>
 <p><a name="atom-pipeline"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">pipeline</strong>(models,
                             metric=None,
@@ -981,13 +988,12 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
 <p>The model subclasses contain the same data attributes the ATOM class has,
  e.g. <code>atom.lSVM.X_train</code>. These can differ from each other depending on if the
  model needs scaled data. You can also call for any of the sklearn pre-defined
- metrics, e.g. <code>atom.ET.recall</code>. The rest of the available attributes can be
- found hereunder:</p>
-<table>
+ metrics, e.g. <code>atom.ET.recall</code> or <code>atom.kSVM.average_precision</code>. The rest of
+ the available attributes can be found hereunder:</p>
+<table width="100%">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-
 <strong>error: string</strong>
 <blockquote>
 Any exception encountered by the model.

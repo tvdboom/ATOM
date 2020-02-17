@@ -735,14 +735,21 @@ The pipeline method is where the models are fitted to the data and their
  algorithm, i.e. the model will be trained multiple times on a bootstrapped
  training set, returning a distribution of its performance on the test set.
 
+If you want to compare similar models, you can choose to use a successive
+ halving approach when running the pipeline. This technique fits N models to
+ 1/N of the data. The best half are selected to go to the next iteration where
+ the process is repeated. This continues until only one model remains, which is
+ fitted on the complete dataset. Beware that a model's performance can depend
+ greatly on the amount of data on which it is trained. For this reason we
+ recommend only to use this technique with similar models, e.g. only using
+ tree-based models.
 
-If you want to compare similar models, you can choose to use a successive halving
- approach when running the pipeline. This technique fits N models to 1/N of the
- data. The best half are selected to go to the next iteration where the process
- is repeated. This continues until only one model remains, which is fitted on
- the complete dataset. Beware that a model's performance can depend greatly on
- the amount of data on which it is trained. For this reason we recommend only to
- use this technique with similar models, e.g. only using tree-based models. 
+If an exception is encountered while fitting a model, the pipeline
+ will automatically jump to the next model and save the exception in
+ the `errors` attribute. When showing the final results, a `!!`
+ indicates the highest score and a `~` indicates that the model is
+ possibly overfitting (training set has a score at least 20% higher
+ than the test set).
 
 
 <a name="atom-pipeline"></a>
@@ -893,14 +900,14 @@ After running the pipeline method, a class for every selected model is created a
 The model subclasses contain the same data attributes the ATOM class has,
  e.g. `atom.lSVM.X_train`. These can differ from each other depending on if the
  model needs scaled data. You can also call for any of the sklearn pre-defined
- metrics, e.g. `atom.ET.recall`. The rest of the available attributes can be
- found hereunder:
+ metrics, e.g. `atom.ET.recall` or `atom.kSVM.average_precision`. The rest of
+ the available attributes can be found hereunder:
 
-<table>
+
+<table width="100%">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-
 <strong>error: string</strong>
 <blockquote>
 Any exception encountered by the model.

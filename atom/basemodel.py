@@ -428,11 +428,17 @@ class BaseModel(object):
         # Calculate all pre-defined metrics on the test set
         for key in SCORERS.keys():
             try:
-                metric = getattr(self.T.metric, key)
-                score = metric(self.best_model_fit, self.X_test, self.y_test)
-                setattr(self, key, score)
+                m = getattr(self.T.metric, key)
+
+                # Some metrics need probabilities and other need predict
+                if type(m).__name__ == '_ProbaScorer':
+                    y_pred = self.predict_proba_test
+                else:
+                    y_pred = self.predict_test
+                scr = m._sign * m._score_func(self.y_test, y_pred, **m._kwargs)
+                setattr(self, key, scr)
             except Exception:
-                msg = f"This metric is unavailable for {self.T.task} tasks!"
+                msg = f"This metric is unavailable!"
                 setattr(self, key, msg)
 
         # << ================= Print stats ================= >>
