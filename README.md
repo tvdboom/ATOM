@@ -62,7 +62,7 @@ Usage
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
     from sklearn.datasets import load_breast_cancer  
-    from sklearn.datasets import 
+    from atom import ATOMClassifier 
     
     X, y = load_breast_cancer(return_X_y)
     atom = ATOMClassifier(X, y, log='auto', n_jobs=2, verbose=2)
