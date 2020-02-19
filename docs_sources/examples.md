@@ -36,18 +36,19 @@ atom = ATOMClassifier(X, y="RainTomorrow", percentage=5, log='auto', n_jobs=2, v
     
     Dataset stats ===================>
     Shape: (7107, 22)
-    Missing values: 15346
+    Missing values: 15680
     Categorical columns: 5
     Scaled: False
     ----------------------------------
     Size of training set: 4974
     Size of test set: 2133
     ----------------------------------
+    Class balance: No:Yes <==> 3.4:1.0
     Instances in RainTomorrow per class:
     |        |    total |    train_set |    test_set |
     |:-------|---------:|-------------:|------------:|
-    | 0: No  |     5520 |         3867 |        1653 |
-    | 1: Yes |     1587 |         1107 |         480 |
+    | 0: No  |     5502 |         3854 |        1648 |
+    | 1: Yes |     1605 |         1120 |         485 |
     
     
 
@@ -58,8 +59,8 @@ atom = ATOMClassifier(X, y="RainTomorrow", percentage=5, log='auto', n_jobs=2, v
 
 atom.X['MaxTemp'] = np.log(atom.X['MaxTemp'])
 
-# MaxTemp has now been changed for atom.X, but not for in atom.X_train, atom.dataset, etc...
-# To do se, we do...
+# MaxTemp has now been changed for atom.X, but not in atom.X_train, atom.dataset, etc...
+# To do so, we use the update method...
 atom.update('X')
 
 assert atom.X['MaxTemp'].equals(atom.dataset['MaxTemp'])
@@ -68,31 +69,31 @@ assert atom.X['MaxTemp'].equals(atom.dataset['MaxTemp'])
 
 ```python
 # Impute missing values
-atom.impute(strat_num='knn', strat_cat='missing', max_frac_rows=0.8)
+atom.impute(strat_num='knn', strat_cat='remove', max_frac_rows=0.8)
 ```
 
     Imputing missing values...
-     --> Removing 702 rows for containing too many missing values.
-     --> Imputing 4 missing values using the KNN imputer in feature MinTemp.
+     --> Removing 741 rows for containing too many missing values.
+     --> Imputing 3 missing values using the KNN imputer in feature MinTemp.
      --> Imputing 4 missing values using the KNN imputer in feature MaxTemp.
-     --> Imputing 26 missing values using the KNN imputer in feature Rainfall.
-     --> Imputing 2318 missing values using the KNN imputer in feature Evaporation.
-     --> Imputing 2624 missing values using the KNN imputer in feature Sunshine.
-     --> Imputing 239 missing values with missing in feature WindGustDir.
-     --> Imputing 239 missing values using the KNN imputer in feature WindGustSpeed.
-     --> Imputing 309 missing values with missing in feature WindDir9am.
-     --> Imputing 24 missing values with missing in feature WindDir3pm.
-     --> Imputing 1 missing values using the KNN imputer in feature WindSpeed9am.
-     --> Imputing 1 missing values using the KNN imputer in feature WindSpeed3pm.
-     --> Imputing 38 missing values using the KNN imputer in feature Humidity9am.
-     --> Imputing 64 missing values using the KNN imputer in feature Humidity3pm.
-     --> Imputing 48 missing values using the KNN imputer in feature Pressure9am.
-     --> Imputing 45 missing values using the KNN imputer in feature Pressure3pm.
-     --> Imputing 2086 missing values using the KNN imputer in feature Cloud9am.
-     --> Imputing 2190 missing values using the KNN imputer in feature Cloud3pm.
-     --> Imputing 4 missing values using the KNN imputer in feature Temp9am.
-     --> Imputing 29 missing values using the KNN imputer in feature Temp3pm.
-     --> Imputing 26 missing values with missing in feature RainToday.
+     --> Imputing 43 missing values using the KNN imputer in feature Rainfall.
+     --> Imputing 2315 missing values using the KNN imputer in feature Evaporation.
+     --> Imputing 2661 missing values using the KNN imputer in feature Sunshine.
+     --> Removing 222 rows due to missing values in feature WindGustDir.
+     --> Imputing 221 missing values using the KNN imputer in feature WindGustSpeed.
+     --> Removing 327 rows due to missing values in feature WindDir9am.
+     --> Removing 24 rows due to missing values in feature WindDir3pm.
+     --> Imputing 6 missing values using the KNN imputer in feature WindSpeed9am.
+     --> Imputing 2 missing values using the KNN imputer in feature WindSpeed3pm.
+     --> Imputing 25 missing values using the KNN imputer in feature Humidity9am.
+     --> Imputing 55 missing values using the KNN imputer in feature Humidity3pm.
+     --> Imputing 56 missing values using the KNN imputer in feature Pressure9am.
+     --> Imputing 51 missing values using the KNN imputer in feature Pressure3pm.
+     --> Imputing 2118 missing values using the KNN imputer in feature Cloud9am.
+     --> Imputing 2253 missing values using the KNN imputer in feature Cloud3pm.
+     --> Imputing 5 missing values using the KNN imputer in feature Temp9am.
+     --> Imputing 32 missing values using the KNN imputer in feature Temp3pm.
+     --> Removing 43 rows due to missing values in feature RainToday.
     
 
 
@@ -103,16 +104,36 @@ atom.encode(max_onehot=10, frac_to_other=0.04)
 
     Encoding categorical features...
      --> Target-encoding feature Location.  Contains 1 unique categories.
-     --> Target-encoding feature WindGustDir.  Contains 17 unique categories.
-     --> Target-encoding feature WindDir9am.  Contains 17 unique categories.
-     --> Target-encoding feature WindDir3pm.  Contains 17 unique categories.
-     --> One-hot-encoding feature RainToday. Contains 3 unique categories.
+     --> Target-encoding feature WindGustDir.  Contains 16 unique categories.
+     --> Target-encoding feature WindDir9am.  Contains 16 unique categories.
+     --> Target-encoding feature WindDir3pm.  Contains 16 unique categories.
+     --> Label-encoding feature RainToday. Contains 2 unique categories.
+    
+
+
+```python
+# Perform undersampling of the majority class to balance the dataset
+atom.balance(undersample=0.8)
+```
+
+    Performing undersampling...
+     --> Removing 249 rows from class No.
+    
+
+
+```python
+# Remove outliers from the training set
+atom.outliers(max_sigma=5)
+```
+
+    Handling outliers...
+     --> Dropping 18 rows due to outliers.
     
 
 
 ```python
 # Select only the best 10 features
-atom.feature_selection(strategy="univariate", solver='f_classif', max_features=15, max_correlation=0.8)
+atom.feature_selection(strategy="univariate", max_features=15, max_correlation=0.8)
 
 # See which features were removed due to collinearity
 atom.collinear
@@ -123,10 +144,8 @@ atom.collinear
      --> Feature Pressure3pm was removed due to collinearity with another feature.
      --> Feature Temp9am was removed due to collinearity with another feature.
      --> Feature Temp3pm was removed due to collinearity with another feature.
-     --> Feature RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature WindSpeed9am was removed after the univariate test (score: 36.90  p-value: 0.00).
-     --> Feature WindSpeed3pm was removed after the univariate test (score: 55.43  p-value: 0.00).
-     --> Feature RainToday_other was removed after the univariate test (score: 23.65  p-value: 0.00).
+     --> Feature MinTemp was removed after the univariate test (score: 9.36  p-value: 0.00).
+     --> Feature Evaporation was removed after the univariate test (score: 27.00  p-value: 0.00).
     
 
 
@@ -160,53 +179,25 @@ atom.collinear
       <th>0</th>
       <td>Pressure3pm</td>
       <td>Pressure9am</td>
-      <td>0.96065</td>
+      <td>0.95413</td>
     </tr>
     <tr>
       <th>1</th>
       <td>Temp9am</td>
       <td>MinTemp, MaxTemp</td>
-      <td>0.90137, 0.87496</td>
+      <td>0.9201, 0.89643</td>
     </tr>
     <tr>
       <th>2</th>
       <td>Temp3pm</td>
       <td>MaxTemp, Temp9am</td>
-      <td>0.96166, 0.84807</td>
-    </tr>
-    <tr>
-      <th>3</th>
-      <td>RainToday_Yes</td>
-      <td>RainToday_No</td>
-      <td>-0.98762</td>
+      <td>0.9587, 0.87527</td>
     </tr>
   </tbody>
 </table>
 </div>
 
 
-
-
-```python
-# Perform undersampling of the majority class to balance the dataset
-atom.balance(undersample=0.8)
-```
-
-    Using TensorFlow backend.
-    
-
-    Performing undersampling...
-    
-
-
-```python
-# Remove outliers from the training set
-atom.outliers(max_sigma=5)
-```
-
-    Handling outliers...
-     --> Dropping 30 rows due to outliers.
-    
 
 
 ```python
@@ -235,61 +226,61 @@ atom.pipeline(['gbm', 'lgb', 'catb'],
     Running BO for Gradient Boosting Machine...
     Final results for Gradient Boosting Machine:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 348, 'learning_rate': 1.0, 'subsample': 1.0, 'max_depth': 4, 'max_features': 0.6, 'criterion': 'mse', 'min_samples_split': 7, 'min_samples_leaf': 8, 'ccp_alpha': 0.0}
-    Best score on the BO: 0.7208
-    Time elapsed: 36.286s
+    Best hyperparameters: {'n_estimators': 414, 'learning_rate': 1.0, 'subsample': 0.5, 'max_depth': 2, 'max_features': 0.8, 'criterion': 'mse', 'min_samples_split': 12, 'min_samples_leaf': 1, 'ccp_alpha': 0.0}
+    Best score on the BO: 0.7485
+    Time elapsed: 37.958s
     Fitting -----------------------------------------
-    Score on the training set: 1.0000
-    Score on the test set: 0.5660
-    Time elapsed: 1.601s
+    Score on the training set: 0.8465
+    Score on the test set: 0.5824
+    Time elapsed: 0.796s
     Bagging -----------------------------------------
-    Mean: 0.5531   Std: 0.0154
-    Time elapsed: 3.781s
+    Mean: 0.5587   Std: 0.0105
+    Time elapsed: 3.562s
     -------------------------------------------------
-    Total time: 41.672s
+    Total time: 42.316s
     
     
     Running BO for LightGBM...
     Final results for LightGBM:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 500, 'learning_rate': 0.75, 'max_depth': 10, 'num_leaves': 29, 'min_child_weight': 12, 'min_child_samples': 13, 'subsample': 0.6, 'colsample_bytree': 0.3, 'reg_alpha': 0.0, 'reg_lambda': 0.0}
-    Best score on the BO: 0.7371
-    Time elapsed: 2.250s
+    Best hyperparameters: {'n_estimators': 345, 'learning_rate': 0.6, 'max_depth': 3, 'num_leaves': 24, 'min_child_weight': 9, 'min_child_samples': 17, 'subsample': 0.5, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 0.1}
+    Best score on the BO: 0.7583
+    Time elapsed: 3.261s
     Fitting -----------------------------------------
-    Score on the training set: 1.0000
-    Score on the test set: 0.5622
-    Time elapsed: 1.348s
+    Score on the training set: 0.9937
+    Score on the test set: 0.6182
+    Time elapsed: 0.187s
     Bagging -----------------------------------------
-    Mean: 0.5752   Std: 0.0197
-    Time elapsed: 0.579s
+    Mean: 0.6169   Std: 0.0197
+    Time elapsed: 0.370s
     -------------------------------------------------
-    Total time: 4.178s
+    Total time: 3.819s
     
     
     Running BO for CatBoost...
     Final results for CatBoost:         
     Bayesian Optimization ---------------------------
-    Best hyperparameters: {'n_estimators': 172, 'learning_rate': 0.68, 'max_depth': 6, 'subsample': 0.6, 'colsample_bylevel': 0.3, 'reg_lambda': 0.01}
-    Best score on the BO: 0.7606
-    Time elapsed: 14.099s
+    Best hyperparameters: {'n_estimators': 499, 'learning_rate': 0.09, 'max_depth': 9, 'subsample': 0.7, 'colsample_bylevel': 0.8, 'reg_lambda': 100.0}
+    Best score on the BO: 0.7714
+    Time elapsed: 14.712s
     Fitting -----------------------------------------
-    Score on the training set: 1.0000
-    Score on the test set: 0.5861
-    Time elapsed: 0.349s
+    Score on the training set: 0.9390
+    Score on the test set: 0.6365
+    Time elapsed: 3.890s
     Bagging -----------------------------------------
-    Mean: 0.5817   Std: 0.0078
-    Time elapsed: 1.097s
+    Mean: 0.6374   Std: 0.0083
+    Time elapsed: 19.245s
     -------------------------------------------------
-    Total time: 15.547s
+    Total time: 37.847s
     
     
     Final results ================>>
-    Duration: 1m:01s
+    Duration: 1m:23s
     Metric: f2_score
     --------------------------------
-    Gradient Boosting Machine --> 0.553 ± 0.015 ~
-    LightGBM                  --> 0.575 ± 0.020 ~
-    CatBoost                  --> 0.582 ± 0.008 !! ~
+    Gradient Boosting Machine --> 0.559 ± 0.010 ~
+    LightGBM                  --> 0.617 ± 0.020 ~
+    CatBoost                  --> 0.637 ± 0.008 !! ~
     
 
 **Analyze the results**
@@ -304,8 +295,8 @@ print('Score on the test set: ', atom.winner.score_test)
 ```
 
     And the winner is... CatBoost
-    Score on the training set:  1.0
-    Score on the test set:  0.5860702151755378
+    Score on the training set:  0.9390495867768595
+    Score on the test set:  0.6364787840405319
     
 
 
@@ -324,23 +315,23 @@ atom.catb.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=5
 ```
 
 
-![png](img/confusion_matrix.png)
+![confusion_matrix](img/confusion_matrix.png)
 
 
 
-![png](img/probabilities.png)
+![probabilities](img/probabilities.png)
 
 
 
-![png](img/ROC.png)
+![ROC](img/ROC.png)
 
 
 
-![png](img/PRC.png)
+![PRC](img/PRC.png)
 
 
 
-![png](img/threshold.png)
+![threshold](img/threshold.png)
 
 
 
@@ -651,7 +642,7 @@ atom.plot_bagging()
 ```
 
 
-![png](img/bagging_results.png)
+![bagging_results](img/bagging_results.png)
 
 
 **Let's have a closer look at the Random Forest**
@@ -675,11 +666,11 @@ atom.lda.plot_permutation_importance(show=10)
 ```
 
 
-![png](img/feature_importance.png)
+![feature_importance](img/feature_importance.png)
 
 
 
-![png](img/permutation_importance.png)
+![permutation_importance](img/permutation_importance.png)
 
 
 
@@ -722,7 +713,7 @@ atom.plot_PCA(figsize=(8, 6), filename='atom_PCA_plot')
     
 
 
-![png](img/PCA.png)
+![PCA](img/PCA.png)
 
 
 **Run the pipeline**
@@ -809,5 +800,5 @@ atom.plot_successive_halving()
 ```
 
 
-![png](img/successive_halving.png)
+![successive_halving](img/successive_halving.png)
 

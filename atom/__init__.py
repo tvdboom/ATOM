@@ -7,4 +7,4 @@ Author: tvdboom
 '''
 
 from .api import ATOMClassifier, ATOMRegressor
-__version__ = '3.0.2'
+__version__ = '3.0.3'

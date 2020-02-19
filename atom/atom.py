@@ -407,8 +407,7 @@ class ATOM(object):
         """
 
         # Get percentage of data (for successive halving)
-        self.dataset = dataset.sample(frac=1)  # Shuffle first
-        self.dataset = self.dataset.head(int(len(self.dataset)*percentage/100))
+        self.dataset = dataset.sample(frac=percentage/100.)  # Shuffle first
         self.dataset.reset_index(drop=True, inplace=True)
 
         # Split train and test sets on percentage of data
@@ -446,9 +445,6 @@ class ATOM(object):
 
         # Print count of target classes
         if self.task != 'regression':
-            self._log("----------------------------------", _verbose + 1)
-            self._log(f"Instances in {self.target} per class:", _verbose + 1)
-
             # Create dataframe with stats per target class
             index = []
             for key, value in self.mapping.items():
@@ -462,17 +458,31 @@ class ATOM(object):
             # Count number of occurrences in all sets
             uq_train, c_train = np.unique(self.y_train, return_counts=True)
             uq_test, c_test = np.unique(self.y_test, return_counts=True)
-            for i, val in self.mapping.items():
+            keys, values = '', []
+            for key, value in self.mapping.items():
                 # If set has 0 instances of that class the array is empty
-                idx_train = np.where(uq_train == val)[0]
+                idx_train = np.where(uq_train == value)[0]
                 train = c_train[idx_train[0]] if len(idx_train) != 0 else 0
-                idx_test = np.where(uq_test == val)[0]
+                idx_test = np.where(uq_test == value)[0]
                 test = c_test[idx_test[0]] if len(idx_test) != 0 else 0
                 stats = stats.append({' total': train + test,
                                       ' train_set': train,
                                       ' test_set': test}, ignore_index=True)
 
+                keys += key + ':'
+                values.append(train + test)
+
             stats.set_index(pd.Index(index), inplace=True)
+
+            string = ''  # Class balance string for values
+            for i in values:
+                string += str(round(i/(train+test), 1)) + ':'
+
+            self._log("----------------------------------", _verbose + 1)
+            if len(self.mapping.keys()) < 5:  # Gets ugly for too many classes
+                self._log("Class balance: {} <==> {}"  # [-1] to remove last :
+                          .format(keys[:-1], string[:-1]), _verbose + 1)
+            self._log(f"Instances in {self.target} per class:", _verbose + 1)
             self._log(stats.to_markdown(), _verbose + 1)
 
         self._log('', 1)  # Insert an empty row
@@ -533,7 +543,7 @@ class ATOM(object):
 
         # Depending on df, we change some attributes or others
         if df == 'dataset':
-            # Possible because the length of self.train doesn't change
+            # Appart attr for len(train) for if it changes halfway the pipeline
             self.train = self.dataset[:len(self.train)]
             self.test = self.dataset[len(self.train):]
 
@@ -616,20 +626,27 @@ class ATOM(object):
     def results(self, metric: Optional[str] = None):
 
         """
-        Print the pipeline's final results for a specific metric.
+        Print the pipeline's final results for a specific metric. If a model
+        shows a `XXX`, it means the metric failed for that specific model. This
+        can happen if either the metric is unavailable for the task or if the
+        model does not have a `predict_proba` method while the metric needs it.
 
         PARAMETERS
         ----------
         metric: string or None, optional (default=None)
             String of one of sklearn's predefined metrics. If None, the metric
-            used to fit the pipeline is selected.
+            used to fit the pipeline is selected and the bagging results will
+            be showed (if used).
 
         """
 
         check_is_fitted(self._is_fitted)  # Raise error is class not fitted
+        _isNone = False  # If the metric parameter is called with None or not
         if metric is None:
+            _isNone = True
             metric = self.metric.name
-        elif metric not in SCORERS.keys():
+
+        if metric not in SCORERS.keys():
             raise ValueError("Unknown value for the metric parameter, " +
                              f"got {metric}. Try one of {SCORERS.keys()}.")
 
@@ -637,26 +654,52 @@ class ATOM(object):
         maxlen = max([len(getattr(self, m).longname) for m in self.models])
 
         # Get list of scores
-        scores = [getattr(getattr(self, m), metric) for m in self.models]
-
-        self._log("\nFinal results ================>>")
-        self._log(f"Metric: {metric}")
-        self._log("--------------------------------")
-
+        scrs = []
         for m in self.models:
-            # Check that the metric is valid for this task
-            if isinstance(getattr(getattr(self, m), metric), str):
-                raise ValueError(f"Invalid metric for {self.task} tasks!")
+            if _isNone and self.bagging is not None:
+                scrs.append(getattr(self, m).bagging_scores.mean())
 
-            longname = getattr(self, m).longname
-            score_test = getattr(getattr(self, m), metric)
+            # If invalid metric, don't append to scores
+            elif not isinstance(getattr(getattr(self, m), metric), str):
+                scrs.append(getattr(getattr(self, m), metric))
 
-            # Create string of the score
-            print_ = "{:{}s} --> {:.3f}".format(longname, maxlen, score_test)
+        if len(scrs) == 0:  # All metrics failed
+            raise ValueError("Invalid metric!")
+
+        self._log("\nFinal results ================>>", -2)
+        self._log(f"Metric: {metric}", -2)
+        self._log("--------------------------------", -2)
+
+        for model in self.models:
+            m = getattr(self, model)
+
+            # If metric is None and bagging, print out bagging results
+            if _isNone and self.bagging is not None:
+                score = m.bagging_scores.mean()
+
+                # Create string of the score
+                print1 = f"{m.longname:{maxlen}s} --> {score:.3f}"
+                print2 = f"{m.bagging_scores.std():.3f}"
+                print_ = print1 + u" \u00B1 " + print2
+            else:
+                score = getattr(m, metric)
+
+                # Create string of the score (if wrong metric for model -> XXX)
+                if isinstance(score, str):
+                    print_ = "{:{}s} --> XXX".format(m.longname, maxlen)
+                else:
+                    print_ = "{:{}s} --> {:.3f}".format(m.longname,
+                                                        maxlen,
+                                                        score)
 
             # Highlight best score (if more than one model in pipeline)
-            if score_test == max(scores) and len(self.models) > 1:
+            if score == max(scrs) and len(self.models) > 1:
                 print_ += ' !!'
+
+            # Annotate if model overfitted when train 20% > test
+            if metric == self.metric.name:
+                if m.score_train - 0.2 * m.score_train > m.score_test:
+                    print_ += ' ~'
 
             self._log(print_, -2)  # Always print
 
@@ -1095,8 +1138,8 @@ class ATOM(object):
             # Print changes
             for k, value in self.mapping.items():
                 diff = counts[key] - (self.y_train == value).sum()
-                if diff > 0:
-                    self._log(f" --> Removing {diff} rows from class {k}.", 2)
+                if diff < 0:  # diff is negative since it removes
+                    self._log(f" --> Removing {-diff} rows from class {k}.", 2)
 
         self.X_train = to_df(self.X_train, columns=columns_x)
         self.y_train = to_series(self.y_train, name=self.target)
@@ -1244,7 +1287,9 @@ class ATOM(object):
         """
         Remove features according to the selected strategy. Ties between
         features with equal scores will be broken in an unspecified way. Also
-        removes features with too low variance and too high collinearity.
+        removes features with too low variance and too high collinearity. The
+        sklearn objects can be found under the `univariate`, `PCA`, `SFM` or
+        `RFE` attributes.
 
         PARAMETERS
         ----------
@@ -1560,12 +1605,25 @@ class ATOM(object):
             multiple times on a bootstrapped training set, returning a
             distribution of its performance on the test set.
 
-            If an exception is encountered while fitting a model, the pipeline
-            will automatically jump to the next model and save the exception in
-            the `errors` attribute. When showing the final results, a `!!`
-            indicates the highest score and a `~` indicates that the model is
-            possibly overfitting (training set has a score at least 20% higher
-            than the test set).
+        If you want to compare similar models, you can choose to use a
+        successive halving approach when running the pipeline. This technique
+        fits N models to 1/N of the data. The best half are selected to go to
+        the next iteration where the process is repeated. This continues until
+        only one model remains, which is fitted on the complete dataset. Beware
+        that a model's performance can depend greatly on the amount of data on
+        which it is trained. For this reason we recommend only to use this
+        technique with similar models, e.g. only using tree-based models.
+
+        A couple of things to take into account:
+            - The metric implementation follows sklearn's API. This means that
+              the implementation always tries to maximize the scorer, i.e. loss
+              functions will be made negative.
+            - If an exception is encountered while fitting a model, the
+              pipeline will automatically jump to the next model and save the
+              exception in the `errors` attribute.
+            - When showing the final results, a `!!` indicates the highest
+              score and a `~` indicates that the model is possibly overfitting
+              (training set has a score at least 20% higher than the test set).
 
         PARAMETERS
         ----------
@@ -1621,14 +1679,8 @@ class ATOM(object):
             or a scorer.
 
         successive_halving: bool, optional (default=False)
-            Wether to use a successive halving approach when running the
-            pipeline. This technique fits N models to 1/N of the data. The best
-            half are selected to go to the next iteration where the process is
-            repeated. This continues until only one model remains, which is
-            fitted on the complete dataset. Beware that a model's performance
-            can depend greatly on the amount of data on which it is trained.
-            For this reason we recommend only to use this technique with
-            similar models, e.g. only using tree-based models.
+            Wether to use successive halving on the pipeline. Only recommended
+            when fitting similar models, e.g. only using tree-based models.
 
         skip_iter: int, optional (default=0)
             Skip last `skip_iter` iterations of the successive halving. Will be

@@ -237,12 +237,20 @@ def test_error_not_fit():
     pytest.raises(AttributeError, atom.results)
 
 
-def test_error_wrong_metric():
-    ''' Assert that an error is raised when an invalid metric is selected '''
+def test_error_unknown_metric():
+    ''' Assert that an error is raised when an unknown metric is selected '''
 
     atom = ATOMRegressor(X_dim4, y_dim4)
     atom.pipeline(models='lgb', metric='r2', max_iter=0)
     pytest.raises(ValueError, atom.results, 'unknown')
+
+
+def test_error_invalid_metric():
+    ''' Assert that an error is raised when an invalid metric is selected '''
+
+    atom = ATOMRegressor(X_dim4, y_dim4)
+    atom.pipeline(models='lgb', metric='r2', max_iter=0)
+    pytest.raises(ValueError, atom.results, 'average_precision')
 
 
 def test_al_tasks():
@@ -251,14 +259,16 @@ def test_al_tasks():
     # For binary classification
     X, y = load_breast_cancer(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.pipeline(models='lgb', metric='roc_auc_ovr', max_iter=0)
+    atom.pipeline(models=['lda', 'lgb'], metric='f1', max_iter=0, bagging=3)
+    atom.results()
     atom.results('jaccard')
     assert 1 == 1
 
     # For multiclass classification
     X, y = load_wine(return_X_y=True)
     atom = ATOMClassifier(X, y)
-    atom.pipeline(models='lgb', metric='recall_macro', max_iter=0)
+    atom.pipeline(models=['pa', 'lgb'], metric='recall_macro', max_iter=0)
+    atom.results()
     atom.results('f1_micro')
     assert 2 == 2
 
@@ -266,5 +276,6 @@ def test_al_tasks():
     X, y = load_boston(return_X_y=True)
     atom = ATOMRegressor(X, y)
     atom.pipeline(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
+    atom.results()
     atom.results('neg_mean_poisson_deviance')
     assert 3 == 3
