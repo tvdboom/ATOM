@@ -27,7 +27,8 @@ def prepare_logger(log):
     Parameters
     ----------
     log: string
-        Name of the logging file.
+        Name of the logging file. 'auto' for default name with date and time.
+        None to not save any log.
 
     Returns
     -------
@@ -36,28 +37,30 @@ def prepare_logger(log):
 
     """
 
-    if log == 'auto':
+    if log is None:  # No logger
+        return None
+
+    if not log.endswith('.log'):
+        log += '.log'
+
+    if log == 'auto.log' or log.endswith('/auto.log'):
         current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
-        logger = 'ATOM_logger_' + current + '.log'
-    elif log is None or log.endswith('.log'):
-        logger = log
-    else:
-        logger = log + '.log'
+        log = log.replace('auto', 'ATOM_logger_' + current)
 
-    # Creating logging handler
-    if logger is not None:
-        # Define file handler and set formatter
-        file_handler = logging.FileHandler(logger)
-        formatter = logging.Formatter('%(asctime)s: %(message)s')
-        file_handler.setFormatter(formatter)
+    # << ============ Create logging handler ============ >>
 
-        # Define logger
-        logger = logging.getLogger('ATOM_logger')
-        logger.setLevel(logging.DEBUG)
-        logger.propagate = False
-        if logger.hasHandlers():  # Remove existing handlers
-            logger.handlers.clear()
-        logger.addHandler(file_handler)  # Add file handler to logger
+    # Define file handler and set formatter
+    file_handler = logging.FileHandler(log)
+    formatter = logging.Formatter('%(asctime)s: %(message)s')
+    file_handler.setFormatter(formatter)
+
+    # Define logger
+    logger = logging.getLogger('ATOM_logger')
+    logger.setLevel(logging.DEBUG)
+    logger.propagate = False
+    if logger.hasHandlers():  # Remove existing handlers
+        logger.handlers.clear()
+    logger.addHandler(file_handler)  # Add file handler to logger
 
     return logger
 

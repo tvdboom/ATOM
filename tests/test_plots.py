@@ -247,14 +247,14 @@ def test_plot_probabilities():
     # For target is string
     y = ['a' if i == 0 else 'b' for i in y_bin]
     atom = ATOMClassifier(X_bin, y)
-    atom.pipeline(['tree', 'lda'], 'f1', max_iter=0)
-    atom.tree.plot_probabilities(target='a', display=False)
+    atom.pipeline(['lda', 'qda'], 'f1', max_iter=0)
+    atom.lda.plot_probabilities(target='a', display=False)
     atom.plot_probabilities(target='a', display=False)
     assert 1 == 1
 
     # For target is numerical
     atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'lda'], 'f1', max_iter=0)
-    atom.tree.plot_probabilities(target=0, display=False)
+    atom.pipeline(['lda', 'qda'], 'f1', max_iter=0)
+    atom.lda.plot_probabilities(target=0, display=False)
     atom.plot_probabilities(target=1, display=False)
     assert 2 == 2

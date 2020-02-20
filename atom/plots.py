@@ -467,7 +467,7 @@ def plot_permutation_importance(self, models, show, n_repeats,
         figsize = (10, int(4 + show/2))
 
     # Create dataframe with columns as indices to plot with barh
-    df_to_plot = pd.DataFrame(columns=['features', 'score', 'model'])
+    df = pd.DataFrame(columns=['features', 'score', 'model'])
 
     # Create dictionary to store the permutations per model
     self.permutations = {}
@@ -493,15 +493,15 @@ def plot_permutation_importance(self, models, show, n_repeats,
             # Append data to the dataframe
             for i, feature in enumerate(self.X.columns):
                 for score in m.permutations.importances[i, :]:
-                    df_to_plot = df_to_plot.append({'features': feature,
-                                                    'score': score,
-                                                    'model': m.name},
-                                                   ignore_index=True)
+                    df = df.append({'features': feature,
+                                    'score': score,
+                                    'model': m.name},
+                                   ignore_index=True)
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
     # Get the column names sorted by mean of score
-    get_idx = df_to_plot.groupby('features', as_index=False)['score'].mean()
+    get_idx = df.groupby('features', as_index=False)['score'].mean()
     get_idx.sort_values('score', ascending=False, inplace=True)
     column_order = get_idx.features.values[:show]
 
@@ -509,7 +509,7 @@ def plot_permutation_importance(self, models, show, n_repeats,
     sns.boxplot(x='score',
                 y='features',
                 hue='model',
-                data=df_to_plot,
+                data=df,
                 order=column_order,
                 width=0.75 if len(models) > 1 else 0.6)
 
@@ -568,7 +568,7 @@ def plot_feature_importance(self, models, show,
                          f"Value should be >0, got {show}.")
 
     # Create dataframe with columns as indices to plot with barh
-    df_to_plot = pd.DataFrame(index=self.X.columns)
+    df = pd.DataFrame(index=self.X.columns)
 
     for model in models:
         if hasattr(self, model.lower()):
@@ -587,22 +587,22 @@ def plot_feature_importance(self, models, show,
                 feature_importances = m.best_model_fit.feature_importances_
 
             # Normalize for plotting values adjacent to bar
-            df_to_plot[m.name] = feature_importances/max(feature_importances)
+            df[m.name] = feature_importances/max(feature_importances)
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
     # Select best and sort ascending
-    df_to_plot = df_to_plot.nlargest(show, columns=models[-1])
-    df_to_plot.sort_values(by=models[-1], ascending=True, inplace=True)
+    df = df.nlargest(show, columns=df.columns[-1])
+    df.sort_values(by=df.columns[-1], ascending=True, inplace=True)
 
     if figsize is None:  # Default figsize depends on features shown
         figsize = (10, int(4 + show/2))
 
     # Plot figure
     width = 0.75 if len(models) > 1 else 0.6
-    ax = df_to_plot.plot.barh(figsize=figsize, width=width)
+    ax = df.plot.barh(figsize=figsize, width=width)
     if len(models) == 1:
-        for i, v in enumerate(df_to_plot[models[0]]):
+        for i, v in enumerate(df[df.columns[0]]):
             ax.text(v + .01, i - .08, f'{v:.2f}', fontsize=self.tick_fontsize)
 
     title = "Normalized feature importance" if title is None else title
@@ -667,10 +667,10 @@ def plot_confusion_matrix(self, models, normalize,
                                   " for multiclass classification tasks.")
 
     # Create dataframe to plot with barh if len(models) > 1
-    df_to_plot = pd.DataFrame(index=['True negatives',
-                                     'False positives',
-                                     'False negatives',
-                                     'True positives'])
+    df = pd.DataFrame(index=['True negatives',
+                             'False positives',
+                             'False negatives',
+                             'True positives'])
     # Define title
     if title is None and normalize:
         title = "Normalized confusion matrix"
@@ -727,13 +727,13 @@ def plot_confusion_matrix(self, models, normalize,
                 ax.grid(False)
 
             else:  # Create barplot
-                df_to_plot[getattr(self, model.lower()).name] = cm.ravel()
+                df[getattr(self, model.lower()).name] = cm.ravel()
 
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
     if len(models) > 1:
-        df_to_plot.plot.barh(figsize=figsize, width=0.6)
+        df.plot.barh(figsize=figsize, width=0.6)
         plt.xlabel('Counts', fontsize=self.label_fontsize, labelpad=12)
         plt.title(title, fontsize=self.title_fontsize, pad=12)
         plt.legend(fontsize=self.label_fontsize)

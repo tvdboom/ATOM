@@ -66,7 +66,7 @@ Split fraction of the train and test set.
 
 <strong>log: string or None, optional (default=None)</strong>
 <blockquote>
-Name of the log file. 'auto' for default name with date and time. None to not save any log.
+Name of the logging file. 'auto' for default name with date and time. None to not save any log.
 </blockquote>
 
 <strong>n_jobs: int, optional (default=1)</strong>
@@ -528,7 +528,7 @@ Oversampling strategy using  [ADASYN](https://imbalanced-learn.readthedocs.io/en
  Choose from:
 <ul>
 <li>None: don't oversample</li>
-<li>float: fraction minority/majority (only for binary classif.)</li>
+<li>float: fraction of minority/majority classes (only for binary classif.)</li>
 <li>'minority': resample only the minority class</li>
 <li>'not minority': resample all but minority class</li>
 <li>'not majority': resample all but majority class</li>
@@ -541,7 +541,7 @@ Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/
  Choose from:
 <ul>
 <li>None: don't oversample</li>
-<li>float: fraction majority/minority (only for binary classif.)</li>
+<li>float: fraction of minority/majority classes (only for binary classif.)</li>
 <li>'majority': resample only the majority class</li>
 <li>'not minority': resample all but minority class</li>
 <li>'not majority': resample all but majority class</li>
@@ -665,7 +665,7 @@ for SFM and RFE).
    <li>'mutual_info_classif'</li>
    <li>'mutual_info_regression'</li>
    <li>'chi2'</li>
-   <li>Any function taking two arrays (X, y), and returning arrays (scores, pvalues). See the documentation.</li>
+   <li>Any function taking two arrays (X, y), and returning arrays (scores, pvalues).</li>
    </ul>
 <li>for 'PCA', choose from:
     <ul>

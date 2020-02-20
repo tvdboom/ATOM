@@ -21,19 +21,9 @@ from atom import ATOMClassifier, ATOMRegressor
 X_dim4 = [[2, 0, 1], [2, 3, 4], [5, 2, 7], [8, 9, 10]]
 y_dim4_class = [0, 1, 1, 0]
 y_dim4_reg = [1, 2, 4, 3]
-
-
-# << ====================== Functions ====================== >>
-
-def load_df(dataset):
-    ''' Load dataset as pd.DataFrame '''
-
-    data = np.c_[dataset.data, dataset.target]
-    columns = np.append(dataset.feature_names, ["target"])
-    data = pd.DataFrame(data, columns=columns)
-    X = data.drop('target', axis=1)
-    y = data['target']
-    return X, y
+X_bin, y_bin = load_breast_cancer(return_X_y=True)
+X_class, y_class = load_wine(return_X_y=True)
+X_reg, y_reg = load_boston(return_X_y=True)
 
 
 # << ======================= Tests ========================= >>
@@ -53,8 +43,7 @@ def test_models_parameter():
     pytest.raises(ValueError, atom.pipeline, models='lda', metric='r2')
 
     # Makes it a list
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline('lr', 'precision', max_iter=0)
     assert isinstance(atom.models, list)
 
@@ -63,18 +52,15 @@ def test_metric_parameter():
     ''' Assert that the metric parameter is set correctly '''
 
     # Test default metrics
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline('lr', max_iter=0)
     assert atom.metric.name == 'f1'
 
-    X, y = load_df(load_wine())
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_class, y_class)
     atom.pipeline('lr', max_iter=0)
     assert atom.metric.name == 'f1_weighted'
 
-    X, y = load_df(load_boston())
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X_reg, y_reg)
     atom.pipeline('ols', max_iter=0)
     assert atom.metric.name == 'r2'
 
@@ -149,9 +135,8 @@ def test_data_preparation():
     ''' Assert that the data_preparation function works as intended '''
 
     # For scaling and non-scaling models
-    X, y = load_df(load_breast_cancer())
     for model in ['tree', 'lgb']:
-        atom = ATOMClassifier(X, y, random_state=1)
+        atom = ATOMClassifier(X_bin, y_bin, random_state=1)
         atom.pipeline(models=model, metric='f1', max_iter=0)
         assert isinstance(atom.data, dict)
         for set_ in ['X', 'X_train', 'X_test']:
@@ -168,8 +153,7 @@ def test_successive_halving_scores():
     ''' Assert that self.scores is correctly created '''
 
     # Without bagging
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
                   metric='f1',
                   successive_halving=True,
@@ -179,7 +163,7 @@ def test_successive_halving_scores():
     assert len(atom.scores) == 3
 
     # With bagging
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
                   metric='f1',
                   successive_halving=True,
@@ -192,8 +176,7 @@ def test_successive_halving_scores():
 def test_skip_iter_scores():
     ''' Assert that self.scores is correctly created when skip_iter > 0 '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
                   metric='f1',
                   successive_halving=True,
@@ -206,9 +189,9 @@ def test_skip_iter_scores():
 def test_errors_in_models():
     ''' Assert that errors when running models are handled correctly '''
 
-    X, y = load_df(load_boston())
-    X.iloc[2, 3] = np.NaN  # Make it fail
-    atom = ATOMRegressor(X, y, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.X.iloc[2, 3] = np.NaN  # Make it fail
+    atom.update('X')
     atom.pipeline(models=['Tree', 'XGB'],
                   metric='neg_mean_squared_log_error',
                   max_iter=0)
@@ -228,8 +211,7 @@ def test_lower_case_model_attribute():
 def test_plot_bo():
     ''' Assert that plot_bo works as intended '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline('tree', 'f1',  max_iter=15, init_points=10, plot_bo=True)
     assert 1 == 1
 
@@ -238,14 +220,12 @@ def test_different_cv_values():
     ''' Assert that changing the cv parameter works as intended '''
 
     # For classification
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models='pa', metric='roc_auc', max_iter=5, cv=3)
     assert 1 == 1
 
     # For regression
-    X, y = load_df(load_boston())
-    atom = ATOMRegressor(X, y, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.pipeline(models='tree', metric='r2', max_iter=5, cv=3)
     assert 2 == 2
 
@@ -253,8 +233,7 @@ def test_different_cv_values():
 def test_model_attributes():
     ''' Assert that the model subclass has all attributes set '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'lgb'], metric='f1', max_iter=5, cv=1)
     assert 'params' in atom.Tree.BO.keys()
     assert 'score' in atom.Tree.BO.keys()
@@ -274,20 +253,18 @@ def test_model_attributes():
 def test_bagging():
     ''' Assert that bagging workas as intended '''
 
-    X, y = load_df(load_breast_cancer())
-
     # For metric needs proba
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'lgb'], max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.Tree, 'bagging_scores')
 
     # For metric needs proba but hasn't attr
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models='PA', metric='roc_auc', max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.PA, 'bagging_scores')
 
     # For metric does not needs proba
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models='tree', metric='f1', max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.Tree, 'bagging_scores')
 
@@ -295,12 +272,10 @@ def test_bagging():
 def test_winner_attribute():
     ''' Assert that the best model is attached to the winner attribute '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(['lr', 'tree', 'lgb'], 'f1', max_iter=0)
     assert atom.winner.name == 'LGB'
 
-    X, y = load_df(load_boston())
-    atom = ATOMRegressor(X, y, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.pipeline(['br', 'ols', 'tree'], 'max_error', max_iter=0)
     assert atom.winner.name == 'Tree'

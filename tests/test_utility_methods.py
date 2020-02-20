@@ -19,29 +19,9 @@ from atom import ATOMClassifier, ATOMRegressor
 
 X_dim4 = [[2, 0, 1], [2, 3, 4], [5, 2, 7], [8, 9, 10]]
 y_dim4 = [0, 1, 1, 0]
-
-# List of pre-set binary classification metrics
-mbin = ['tn', 'fp', 'fn', 'tp', 'ap']
-
-# List of pre-set classification metrics
-mclass = ['accuracy', 'auc', 'mcc', 'f1', 'hamming', 'jaccard', 'logloss',
-          'precision', 'recall']
-
-# List of pre-set regression metrics
-mreg = ['mae', 'max_error', 'mse', 'msle', 'r2']
-
-
-# << ====================== Functions ====================== >>
-
-def load_df(dataset):
-    ''' Load dataset as pd.DataFrame '''
-
-    data = np.c_[dataset.data, dataset.target]
-    columns = np.append(dataset.feature_names, ["target"])
-    data = pd.DataFrame(data, columns=columns)
-    X = data.drop('target', axis=1)
-    y = data['target']
-    return X, y
+X_bin, y_bin = load_breast_cancer(return_X_y=True)
+X_class, y_class = load_wine(return_X_y=True)
+X_reg, y_reg = load_boston(return_X_y=True)
 
 
 # << ================ Test class variables ================= >>
@@ -91,28 +71,25 @@ def test_set_tick_fontsize():
 def test_dataset_is_shuffled():
     ''' Assert that self.dataset is shuffled '''
 
-    X, y = load_df(load_wine())
-    atom = ATOMClassifier(X, y)
-    for i in np.random.randint(0, len(X), 10):
-        assert not atom.X.equals(X)
+    atom = ATOMClassifier(X_class, y_class)
+    for i in np.random.randint(0, len(X_class), 10):
+        assert not atom.X.equals(X_class)
 
 
 def test_percentage_data_selected():
     ''' Assert that a percentage of the data is selected correctly '''
 
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y, percentage=10)
-    assert len(atom.X) == int(len(X) * 0.10)
-    atom = ATOMClassifier(X, y, percentage=48)
-    assert len(atom.y) == int(len(y) * 0.48)
+    atom = ATOMClassifier(X_bin, y_bin, percentage=10, random_state=1)
+    assert len(atom.X) == int(len(X_bin) * 0.10) + 1  # +1 due to rounding
+    atom = ATOMClassifier(X_bin, y_bin, percentage=48, random_state=1)
+    assert len(atom.y) == int(len(y_bin) * 0.48)
 
 
 def test_train_test_split():
     ''' Assert that the train and test split is made correctly '''
 
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y, test_size=0.13)
-    assert len(atom.train) == int(0.87*len(X))
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.13)
+    assert len(atom.train) == int(0.87*len(X_bin))
 
 
 # << =============== Test update ================= >>
@@ -153,8 +130,7 @@ def test_changes_based_df():
 def test_index_reset():
     ''' Assert that indices are reset for all data attributes '''
 
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
     for attr in ['dataset', 'train', 'test', 'X', 'y',
                  'X_train', 'y_train', 'X_test', 'y_test']:
         idx = list(getattr(atom, attr).index)
@@ -184,8 +160,7 @@ def test_isPandas():
 def test_attributes_equal_length():
     ''' Assert that data attributes have the same number of rows '''
 
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
 
     attr1, attr2 = ['X', 'X_train', 'X_test'], ['y', 'y_train', 'y_test']
     for df1, df2 in zip(attr1, attr2):
@@ -197,8 +172,7 @@ def test_attributes_equal_length():
 def test_creates_report():
     ''' Assert that the report has been created and saved'''
 
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
     atom.report(rows=10)
     assert hasattr(atom, 'report')
 
@@ -208,8 +182,7 @@ def test_creates_report():
 def test_scale():
     ''' Assert that the scale method normalizes the features '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     assert atom.dataset.iloc[:, 1].mean() < 0.05  # Not exactly 0
     assert atom.dataset.iloc[:, 1].std() < 3
@@ -218,8 +191,7 @@ def test_scale():
 def test_already_scaled():
     ''' Assert that the scale method does nothing when already scaled '''
 
-    X, y = load_df(load_breast_cancer())
-    atom = ATOMClassifier(X, y, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
 
     atom2 = ATOMClassifier(atom.X, atom.y, random_state=1)
@@ -248,7 +220,7 @@ def test_error_unknown_metric():
 def test_error_invalid_metric():
     ''' Assert that an error is raised when an invalid metric is selected '''
 
-    atom = ATOMRegressor(X_dim4, y_dim4)
+    atom = ATOMRegressor(X_reg, y_reg)
     atom.pipeline(models='lgb', metric='r2', max_iter=0)
     pytest.raises(ValueError, atom.results, 'average_precision')
 
@@ -257,24 +229,21 @@ def test_al_tasks():
     ''' Assert that the method works for all tasks '''
 
     # For binary classification
-    X, y = load_breast_cancer(return_X_y=True)
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline(models=['lda', 'lgb'], metric='f1', max_iter=0, bagging=3)
     atom.results()
     atom.results('jaccard')
     assert 1 == 1
 
     # For multiclass classification
-    X, y = load_wine(return_X_y=True)
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X_class, y_class)
     atom.pipeline(models=['pa', 'lgb'], metric='recall_macro', max_iter=0)
     atom.results()
     atom.results('f1_micro')
     assert 2 == 2
 
     # For regression
-    X, y = load_boston(return_X_y=True)
-    atom = ATOMRegressor(X, y)
+    atom = ATOMRegressor(X_reg, y_reg)
     atom.pipeline(models='lgb', metric='neg_mean_absolute_error', max_iter=0)
     atom.results()
     atom.results('neg_mean_poisson_deviance')
