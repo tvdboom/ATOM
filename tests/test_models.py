@@ -8,24 +8,8 @@ Description: Unit tests for the models and pre-set metrics available.
 '''
 
 # Import packages
-import numpy as np
-import pandas as pd
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
-
-
-# << ====================== Functions ====================== >>
-
-def load_df(dataset, nrows=250):
-    ''' Load dataset as pd.DataFrame '''
-
-    data = np.c_[dataset.data, dataset.target]
-    columns = np.append(dataset.feature_names, ["target"])
-    data = pd.DataFrame(data, columns=columns)
-    data = data.sample(frac=1).reset_index(drop=True)
-    X = data.drop('target', axis=1)
-    y = data['target']
-    return X.iloc[:nrows, :], y.iloc[:nrows]
 
 
 # << ====================== Variables ====================== >>

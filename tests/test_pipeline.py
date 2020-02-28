@@ -53,15 +53,15 @@ def test_metric_parameter():
 
     # Test default metrics
     atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline('lr', max_iter=0)
+    atom.pipeline('lr')
     assert atom.metric.name == 'f1'
 
     atom = ATOMClassifier(X_class, y_class)
-    atom.pipeline('lr', max_iter=0)
+    atom.pipeline('lr')
     assert atom.metric.name == 'f1_weighted'
 
     atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('ols', max_iter=0)
+    atom.pipeline('ols')
     assert atom.metric.name == 'r2'
 
     # Test unknown metric
@@ -73,13 +73,13 @@ def test_metric_parameter():
         return x, y
     pytest.raises(ValueError, atom.pipeline, models='lda', metric=metric_func)
 
-    atom.pipeline('lr', metric=f1_score, max_iter=0)
+    atom.pipeline('lr', metric=f1_score)
     assert 1 == 1
 
     # Test scoring metric
     atom = ATOMRegressor(X_dim4, y_dim4_reg)
     scorer = get_scorer('neg_mean_squared_error')
-    atom.pipeline('ols', metric=scorer, max_iter=0)
+    atom.pipeline('ols', metric=scorer)
     assert 2 == 2
 
 
@@ -273,9 +273,9 @@ def test_winner_attribute():
     ''' Assert that the best model is attached to the winner attribute '''
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(['lr', 'tree', 'lgb'], 'f1', max_iter=0)
+    atom.pipeline(['lr', 'tree', 'lgb'], 'f1')
     assert atom.winner.name == 'LGB'
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.pipeline(['br', 'ols', 'tree'], 'max_error', max_iter=0)
+    atom.pipeline(['br', 'ols', 'tree'], 'max_error')
     assert atom.winner.name == 'Tree'

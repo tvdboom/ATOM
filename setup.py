@@ -13,10 +13,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
       name='atom-ml',
-      version='v3.0.3',
+      version='v3.1.0',
       license='MIT',
       description='A Python AutoML tool for fast exploration and experimentation of supervised machine learning pipelines.',
-      download_url='https://github.com/tvdboom/ATOM/archive/v3.0.3.tar.gz',
+      download_url='https://github.com/tvdboom/ATOM/archive/v3.1.0.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',

@@ -15,6 +15,7 @@ import pickle
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 from sklearn.inspection import permutation_importance
@@ -143,6 +144,66 @@ def plot_PCA(self, show, title, figsize, filename, display):
     plt.show() if display else plt.close()
 
 
+def plot_RFECV(self, title, figsize, filename, display):
+
+    """
+    Plot the scores obtained by the estimator fitted on every subset of
+    the data. Only if RFECV was applied on the dataset through the
+    feature_selection method.
+
+    Parameters
+    ----------
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=None)
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
+
+    """
+
+    if not hasattr(self, 'RFECV'):
+        raise AttributeError("This plot is only availbale if you apply " +
+                             "RFECV on the dataset through the " +
+                             "feature_selection method!")
+
+    try:  # Define the y-label for the plot
+        ylabel = self.RFECV.get_params()['scoring'].name
+    except AttributeError:
+        if self.RFECV.get_params()['scoring'] is None:
+            ylabel = 'score'
+        else:
+            ylabel = str(self.RFECV.get_params()['scoring'])
+
+    fig, ax = plt.subplots(figsize=figsize)
+    n_features = self.RFECV.get_params()['min_features_to_select']
+    xline = range(n_features,  n_features + len(self.RFECV.grid_scores_))
+    ax.axvline(xline[np.argmax(self.RFECV.grid_scores_)],
+               ls='--',
+               label=f'Best score: {round(max(self.RFECV.grid_scores_), 3)}')
+    plt.plot(xline, self.RFECV.grid_scores_)
+
+    plt.title("RFE cross-validation scores",
+              fontsize=self.title_fontsize,
+              pad=12)
+    plt.legend(loc='lower right', fontsize=self.label_fontsize)
+    plt.xlabel('Number of features', fontsize=self.label_fontsize, labelpad=12)
+    plt.ylabel(ylabel, fontsize=self.label_fontsize, labelpad=12)
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    plt.xlim(n_features - 0.5, n_features + len(self.RFECV.grid_scores_) - 0.5)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
 def plot_bagging(self, models, title, figsize, filename, display):
 
     """
@@ -243,9 +304,12 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     elif isinstance(models, str):
         models = [models]
 
+    # Define variables
     col = 'score_test' if self.bagging is None else 'bagging_mean'
     names = []
     liny = [[] for _ in models]
+    filly = [[] for _ in models]
+
     for n, model in enumerate(models):
         if hasattr(self, model.lower()):  # If model in pipeline
             names.append(getattr(self, model.lower()).name)
@@ -253,14 +317,22 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
                 if names[-1] in df.model.values:
                     idx = np.where(names[-1] == df.model.values)[0]
                     liny[n].append(df[col].iloc[idx].values[0])
+                    if self.bagging is not None:
+                        filly[n].append(df['bagging_std'].iloc[idx].values[0])
                 else:
                     liny[n].append(np.NaN)
+                    filly[n].append(np.NaN)
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
     fig, ax = plt.subplots(figsize=figsize)
-    for y, label in zip(liny, names):
+    for y, std, label in zip(liny, filly, names):
         plt.plot(range(len(self.scores)), y, lw=2, marker='o', label=label)
+        if self.bagging is not None:  # Fill the std area
+            plt.fill_between(range(len(self.scores)),
+                             [a + b for a, b in zip(y, std)],
+                             [a - b for a, b in zip(y, std)],
+                             alpha=0.4)
     plt.xlim(-0.1, len(self.scores)-0.9)
 
     title = "Successive halving results" if title is None else title

@@ -84,6 +84,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 # << ============ Functions ============ >>
 
 def set_init(class_, scaled=False):
+
     """
     Returns BaseModel's (class) parameters as dictionary
 
@@ -97,17 +98,19 @@ def set_init(class_, scaled=False):
 
     """
 
-    if scaled and not class_._is_scaled:
-        params = {'X': class_.data['X_scaled'],
-                  'X_train': class_.data['X_train_scaled'],
-                  'X_test': class_.data['X_test_scaled']}
-    else:
-        params = {'X': class_.data['X'],
-                  'X_train': class_.data['X_train'],
-                  'X_test': class_.data['X_test']}
+    # Create dict with data attributes
+    params = {'X_train': class_.X_train,
+              'X_test': class_.X_test}
 
-    for p in ('y', 'y_train', 'y_test'):
-        params[p] = class_.data[p]
+    if scaled and not class_._is_scaled:
+        try:  # Can fail if called from feature_selection
+            params = {'X_train': class_.X_train_scaled,
+                      'X_test': class_.X_test_scaled}
+        except AttributeError:
+            pass
+
+    for attr in ('y_train', 'y_test'):
+        params[attr] = getattr(class_, attr)
 
     params['T'] = class_
 

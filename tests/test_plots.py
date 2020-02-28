@@ -46,6 +46,18 @@ def test_plot_PCA():
     assert 1 == 1
 
 
+def test_plot_RFECV():
+    ''' Assert that the plot_RFECV method work as intended '''
+
+    atom = ATOMClassifier(X_bin, y_bin)
+    pytest.raises(AttributeError, atom.plot_RFECV)  # When no RFECV attribute
+    atom.feature_selection(strategy='rfecv', max_features=26, cv=2)
+
+    # When correct
+    atom.plot_RFECV(display=False)
+    assert 1 == 1
+
+
 def test_plot_bagging():
     ''' Assert that the plot_bagging method work as intended '''
 
@@ -82,8 +94,14 @@ def test_plot_successive_halving():
     atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=0)
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
-    # When correct
+    # When correct (with bagging)
     atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=3)
+    atom.plot_successive_halving(display=False)
+    atom.tree.plot_successive_halving(display=False)
+    assert 1 == 1
+
+    # When correct (without bagging)
+    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, bagging=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
     assert 1 == 1

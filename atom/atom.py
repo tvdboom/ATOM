@@ -29,7 +29,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
      f_classif, f_regression, mutual_info_classif, mutual_info_regression,
-     chi2, SelectKBest, VarianceThreshold, SelectFromModel, RFE
+     chi2, SelectKBest, SelectFromModel, RFE, RFECV
     )
 
 # Own package modules
@@ -38,8 +38,8 @@ from .utils import (
      to_df, to_series, merge, check_is_fitted
      )
 from .plots import (
-        save, plot_correlation, plot_PCA, plot_ROC, plot_PRC, plot_bagging,
-        plot_successive_halving, plot_permutation_importance,
+        save, plot_correlation, plot_PCA, plot_RFECV, plot_ROC, plot_PRC,
+        plot_bagging, plot_successive_halving, plot_permutation_importance,
         plot_feature_importance, plot_confusion_matrix, plot_threshold,
         plot_probabilities
         )
@@ -98,7 +98,8 @@ optional_packages = (('XGB', 'xgboost'),
                      ('CatB', 'catboost'))
 
 # List of models that need feature scaling
-scaling_models = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR', 'LR', 'KNN',
+# Logistic regression can use regularization. Bayesian regression uses ridge
+scaling_models = ['Ridge', 'Lasso', 'EN', 'BR', 'LR', 'KNN',
                   'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
 # List of models that only work for regression/classification tasks
@@ -131,15 +132,24 @@ class ATOM(object):
                  random_state: Optional[int]):
 
         """
-        Transform the input data into pandas objects and set the data class
-        attributes. Also performs standard data cleaning steps.
+        The class initializer will automatically proceed to apply some standard
+        data cleaning steps unto the data. These steps include:
+            - Transforming the input data into a pd.DataFrame (if it wasn't one
+              already) that can be accessed through the class' data attributes.
+            - Removing columns with prohibited data types ('datetime64',
+             'datetime64[ns]', 'timedelta[ns]').
+            - Removing categorical columns with maximal cardinality (the number
+              of unique values is equal to the number of instances. Usually the
+              case for names, IDs, etc...).
+            - Removing columns with minimum cardinality (all values are equal).
+            - Removing rows with missing values in the target column.
 
         PARAMETERS
         ----------
-        X: dict, iterable, np.array or pd.DataFrame
+        X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, iterable, np.array or pd.Series, optional (default=None)
+        y: string, sequence, np.array or pd.Series, optional (default=None)
             - If None: the last column of X is selected as target column
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
@@ -159,7 +169,7 @@ class ATOM(object):
             memory issues for large datasets.
 
         warnings: bool, optional (default=False)
-            Wether to show warnings when fitting the models.
+            If False, it supresses all warnings.
 
         verbose: int, optional (default=0)
             Verbosity level of the class. Possible values are:
@@ -312,13 +322,6 @@ class ATOM(object):
                     self._log(f" --> Dropping feature {column}. Contains " +
                               f"only one unique value: {unique[0]}", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
-
-        # Drop duplicate rows
-        length = len(self.dataset)
-        self.dataset.drop_duplicates(inplace=True)
-        diff = length - len(self.dataset)  # Difference in length
-        if diff > 0:
-            self._log(f" --> Dropping {diff} duplicate rows.", 2)
 
         # Delete rows with NaN in target
         length = len(self.dataset)
@@ -1020,8 +1023,10 @@ class ATOM(object):
                 n_neighbors: int = 5):
 
         """
-        Balance the number of instances per target class. Only for
-        classification tasks. Dependency: imbalanced-learn.
+        Balance the number of instances per target class in the training set.
+        If both oversampling and undersampling are used, they will be applied
+        in that order.
+        Only for classification tasks. Dependency: imbalanced-learn.
 
         PARAMETERS
         ----------
@@ -1037,7 +1042,7 @@ class ATOM(object):
         undersample: float, string or None, optional (default=None)
             Undersampling strategy using NearMiss. Choose from:
                 - None: don't undersample
-                - float: fraction majority/minority (only for binary)
+                - float: fraction minority/majority (only for binary classif.)
                 - 'majority': resample only the majority class
                 - 'not minority': resample all but minority class
                 - 'not majority': resample all but majority class
@@ -1144,7 +1149,7 @@ class ATOM(object):
         self.X_train = to_df(self.X_train, columns=columns_x)
         self.y_train = to_series(self.y_train, name=self.target)
         self.train = merge(self.X_train, self.y_train)
-        self.update('train_test')
+        self.update('train')
 
     @composed(crash, params_to_log, typechecked)
     def feature_insertion(self,
@@ -1279,17 +1284,23 @@ class ATOM(object):
     def feature_selection(self,
                           strategy: Optional[str] = None,
                           solver: Optional[Union[str, callable]] = None,
-                          max_features: Optional[scalar] = None,
-                          min_variance_frac: Optional[scalar] = 1.,
+                          n_features: Optional[scalar] = None,
+                          max_frac_repeated: Optional[scalar] = 1.,
                           max_correlation: Optional[float] = 0.98,
                           **kwargs):
 
         """
         Remove features according to the selected strategy. Ties between
-        features with equal scores will be broken in an unspecified way. Also
-        removes features with too low variance and too high collinearity. The
-        sklearn objects can be found under the `univariate`, `PCA`, `SFM` or
-        `RFE` attributes.
+        features with equal scores will be broken in an unspecified way.
+        Also removes features with too low variance and finds pairs of
+        collinear features based on the Pearson correlation coefficient. For
+        each pair above the specified limit (in terms of absolute value), it
+        removes one of the two.
+
+        Note that the RFE and RFECV strategies don't work when the solver is a
+        CatBoost model due to incompatibility of the APIs. If the pipeline has
+        already ran before running the RFECV, the scoring parameter will be set
+        to the selected metric (if scoring=None).
 
         PARAMETERS
         ----------
@@ -1300,12 +1311,16 @@ class ATOM(object):
                 - 'PCA': perform principal component analysis
                 - 'SFM': select best features from model
                 - 'RFE': recursive feature eliminator
+                - 'RFECV': RFE with cross-validated selection
+
+            The sklearn objects can be found under the univariate, PCA, SFM,
+            RFE or RFECV attributes of the class.
 
         solver: string, callable or None, optional (default=None)
             Solver or model to use for the feature selection strategy. See the
             sklearn documentation for an extended descrition of the choices.
             Select None for the default option per strategy (not applicable
-            for SFM and RFE).
+            for SFM, RFE and RFECV).
                 - for 'univariate', choose from:
                     + 'f_classif' (default for classification tasks)
                     + 'f_regression' (default for regression tasks)
@@ -1322,21 +1337,27 @@ class ATOM(object):
                 - for 'SFM': choose a base estimator from which the
                              transformer is built. The estimator must have
                              either a feature_importances_ or coef_ attribute
-                             after fitting. No default option.
+                             after fitting. No default option. You can use a
+                             model from the ATOM pipeline. No default option.
                 - for 'RFE': choose a supervised learning estimator. The
                              estimator must have either a feature_importances_
-                             or coef_ attribute after fitting. No default
-                             option.
+                             or coef_ attribute after fitting. You can use a
+                             model from the ATOM pipeline. No default option.
+                - for 'RFECV': choose a supervised learning estimator. The
+                               estimator must have either feature_importances_
+                               or coef_ attribute after fitting. You can use a
+                               model from the ATOM pipeline. No default option.
 
-        max_features: int, float or None, optional (default=None)
-            Number of features to select.
+        n_features: int, float or None, optional (default=None)
+            Number of features to select (execpt for RFECV, where it's the
+            minimum number of features to select).
                 - if < 1: fraction of features to select
                 - if >= 1: number of features to select
                 - None to select all
 
-        min_variance_frac: float or None, optional (default=1.)
+        max_frac_repeated: float or None, optional (default=1.)
             Remove features with the same value in at least this fraction of
-            the total. The default is to keep all features with non-zero
+            the total rows. The default is to keep all features with non-zero
             variance, i.e. remove the features that have the same value in all
             samples. None to skip this step.
 
@@ -1347,39 +1368,35 @@ class ATOM(object):
             None to skip this step.
 
         **kwargs
-            Any extra parameter for the PCA, SFM or RFE. See the sklearn
-            documentation for the available options.
+            Any extra parameter for the PCA, SFM, RFE or RFECV. See the
+            sklearn documentation for the available options.
 
         """
 
-        def remove_low_variance(min_variance_frac):
+        def remove_low_variance(max_frac_repeated):
 
             """
-            Removes features with too low variance. Will automatically scale
-            the features if threshold variance > 0.
+            Removes features with too low variance.
 
             PARAMETERS
             ----------
-            min_variance_frac: float
+            max_frac_repeated: float
                 Remove features with same values in at least this fraction
                 of the total.
 
             """
 
-            # Calculate threshold variance as p*(1-p)
-            threshold = min_variance_frac * (1. - min_variance_frac)
-
-            if threshold > 0:  # In this case: normalize the features
-                self.scale(0)
-
-            self.var = VarianceThreshold(threshold=threshold).fit(self.X)
-            mask = self.var.get_support()  # Get bool mask of selected features
-
-            for n, column in enumerate(self.X):
-                if not mask[n]:
-                    self._log(f" --> Feature {column} was removed due to low" +
-                              f" variance: {self.var.variances_[n]:.2f}.", 2)
-                    self.dataset.drop(column, axis=1, inplace=True)
+            for n, col in enumerate(self.X):
+                uniq, count = np.unique(self.dataset[col], return_counts=True)
+                for u, c in zip(uniq, count):
+                    # If count is larger than fraction of total...
+                    if c > max_frac_repeated * len(self.X):
+                        self._log(f" --> Feature {col} was removed due to " +
+                                  f"low variance. Value {u} repeated in " +
+                                  f"{round(c/len(self.X)*100., 1)}% of rows.",
+                                  2)
+                        self.dataset.drop(col, axis=1, inplace=True)
+                        break
 
         def remove_collinear(limit):
 
@@ -1433,14 +1450,42 @@ class ATOM(object):
 
             self.dataset.drop(to_drop, axis=1, inplace=True)
 
+        def check_solver(solver):
+
+            """
+            Check the validity of the solver parameter for the SFM, RFE and
+            RFECV strategies.
+
+            PARAMETERS
+            ----------
+            solver: string, callable or None
+                Estimator to use, either as string from the ATOM's models or as
+                callable.
+
+            """
+
+            if solver is None:
+                raise ValueError("Select a model for the solver!")
+            elif isinstance(solver, str):
+                if solver.lower() not in map(str.lower, model_list.keys()):
+                    raise ValueError("Unknown value for the solver parameter" +
+                                     f", got {solver}. Try one of " +
+                                     f"{model_list.keys()}.")
+                else:  # Set to right model name and call estimator
+                    for m in model_list.keys():
+                        if m.lower() == solver.lower():
+                            return model_list[m](self).get_model()
+            else:
+                return solver
+
         # Check parameters
-        if max_features is not None and max_features <= 0:
-            raise ValueError("Invalid value for the max_features parameter." +
-                             f"Value should be >0, got {max_features}.")
-        if min_variance_frac is not None and not 0 <= min_variance_frac <= 1:
-            raise ValueError("Invalid value for the min_variance_frac param" +
+        if n_features is not None and n_features <= 0:
+            raise ValueError("Invalid value for the n_features parameter." +
+                             f"Value should be >0, got {n_features}.")
+        if max_frac_repeated is not None and not 0 <= max_frac_repeated <= 1:
+            raise ValueError("Invalid value for the max_frac_repeated param" +
                              "eter. Value should be between 0 and 1, got {}."
-                             .format(min_variance_frac))
+                             .format(max_frac_repeated))
         if max_correlation is not None and not 0 <= max_correlation <= 1:
             raise ValueError("Invalid value for the max_correlation param" +
                              "eter. Value should be between 0 and 1, got {}."
@@ -1449,8 +1494,8 @@ class ATOM(object):
         self._log("Performing feature selection...", 1)
 
         # Then, remove features with too low variance
-        if min_variance_frac is not None:
-            remove_low_variance(min_variance_frac)
+        if max_frac_repeated is not None:
+            remove_low_variance(max_frac_repeated)
 
         # First, drop features with too high correlation
         if max_correlation is not None:
@@ -1462,11 +1507,11 @@ class ATOM(object):
         if strategy is None:
             return None  # Exit feature_selection
 
-        # Set max_features as all or fraction of total
-        if max_features is None:
-            max_features = self.X_train.shape[1]
-        elif max_features < 1:
-            max_features = int(max_features * self.X_train.shape[1])
+        # Set n_features as all or fraction of total
+        if n_features is None:
+            n_features = self.X_train.shape[1]
+        elif n_features < 1:
+            n_features = int(n_features * self.X_train.shape[1])
 
         # Perform selection based on strategy
         if strategy.lower() == 'univariate':
@@ -1486,7 +1531,7 @@ class ATOM(object):
                 raise ValueError("Unknown solver: Try one {}."
                                  .format(', '.join(solvers_dct.keys())))
 
-            self.univariate = SelectKBest(solver, k=max_features)
+            self.univariate = SelectKBest(solver, k=n_features)
             self.univariate.fit(self.X, self.y)
             mask = self.univariate.get_support()
             for n, col in enumerate(self.X):
@@ -1505,7 +1550,7 @@ class ATOM(object):
 
             # Define PCA
             solver = 'auto' if solver is None else solver
-            self.PCA = PCA(n_components=max_features,
+            self.PCA = PCA(n_components=n_features,
                            svd_solver=solver,
                            **kwargs)
             self.PCA.fit(self.X_train)
@@ -1514,51 +1559,66 @@ class ATOM(object):
             self.update('X_train')
 
         elif strategy.lower() == 'sfm':
-            if solver is None:
-                raise ValueError("Select a model for the solver!")
+            solver = check_solver(solver)
 
             try:  # Model already fitted
                 self.SFM = SelectFromModel(estimator=solver,
-                                           max_features=max_features,
+                                           max_features=n_features,
                                            prefit=True,
                                            **kwargs)
-                mask = self.SFM.get_support()
 
             except Exception:
                 self.SFM = SelectFromModel(estimator=solver,
-                                           max_features=max_features,
+                                           max_features=n_features,
                                            **kwargs)
-                self.SFM.fit(self.X, self.y)
-                mask = self.SFM.get_support()
+                self.SFM.fit(self.X_train, self.y_train)
 
             for n, column in enumerate(self.X):
-                if not mask[n]:
+                if not self.SFM.get_support()[n]:
                     self._log(f" --> Feature {column} was removed by the " +
                               f"{solver.__class__.__name__}.", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
             self.update('dataset')
 
         elif strategy.lower() == 'rfe':
-            # Recursive feature eliminator
-            if solver is None:
-                raise ValueError('Select a model for the solver!')
+            solver = check_solver(solver)
 
             self.RFE = RFE(estimator=solver,
-                           n_features_to_select=max_features,
+                           n_features_to_select=n_features,
                            **kwargs)
-            self.RFE.fit(self.X, self.y)
-            mask = self.RFE.support_
+            self.RFE.fit(self.X_train, self.y_train)
 
             for n, column in enumerate(self.X):
-                if not mask[n]:
+                if not self.RFECV.support_[n]:
                     self._log(f" --> Feature {column} was removed by the " +
                               "recursive feature eliminator.", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
             self.update('dataset')
 
+        elif strategy.lower() == 'rfecv':
+            solver = check_solver(solver)
+
+            # If pipeline ran already, use selected metric
+            if hasattr(self, 'metric') and 'scoring' not in kwargs.keys():
+                kwargs['scoring'] = self.metric
+
+            self.RFECV = RFECV(estimator=solver,
+                               min_features_to_select=n_features,
+                               n_jobs=self.n_jobs,
+                               **kwargs)
+            self.RFECV.fit(self.X_train, self.y_train)
+
+            for n, column in enumerate(self.X):
+                if not self.RFECV.support_[n]:
+                    self._log(f" --> Feature {column} was removed by the " +
+                              "RFECV.", 2)
+                    self.dataset.drop(column, axis=1, inplace=True)
+            self.update('dataset')
+
         else:
-            raise ValueError("Invalid value for the strategy parameter. Cho" +
-                             "ose from: 'univariate', 'PCA', 'SFM' or 'RFE'.")
+            raise ValueError("Invalid value for the strategy parameter. " +
+                             "Choose from: 'univariate', 'PCA', 'SFM', " +
+                             "'RFE' or 'RFECV'.")
 
     # << ======================== Pipeline ======================== >>
 
@@ -1570,7 +1630,7 @@ class ATOM(object):
                  needs_proba: bool = False,
                  successive_halving: bool = False,
                  skip_iter: int = 0,
-                 max_iter: Union[int, Sequence[int]] = 10,
+                 max_iter: Union[int, Sequence[int]] = 0,
                  max_time: Union[scalar, Sequence[scalar]] = np.inf,
                  init_points: Union[int, Sequence[int]] = 5,
                  cv: Union[int, Sequence[int]] = 3,
@@ -1624,6 +1684,8 @@ class ATOM(object):
             - When showing the final results, a `!!` indicates the highest
               score and a `~` indicates that the model is possibly overfitting
               (training set has a score at least 20% higher than the test set).
+            - The winning model subclass will be attached to the `winner`
+              attribute.
 
         PARAMETERS
         ----------
@@ -1686,22 +1748,22 @@ class ATOM(object):
             Skip last `skip_iter` iterations of the successive halving. Will be
             ignored if successive_halving=False.
 
-        max_iter: int or iterable, optional (default=10)
+        max_iter: int or sequence, optional (default=10)
             Maximum number of iterations of the BO. If 0, skip the BO and fit
-            the model on its default parameters. If iterable, the n-th value
+            the model on its default parameters. If sequence, the n-th value
             will apply to the n-th model in the pipeline.
 
-        max_time: int, float or iterable, optional (default=np.inf)
+        max_time: int, float or sequence, optional (default=np.inf)
             Maximum time allowed for the BO per model (in seconds). If 0, skip
-            the BO and fit the model on its default parameters. If iterable,
+            the BO and fit the model on its default parameters. If sequence,
             the n-th value will apply to the n-th model in the pipeline.
 
-        init_points: int or iterable, optional (default=5)
+        init_points: int or sequence, optional (default=5)
             Initial number of tests of the BO before fitting the surrogate
-            function. If iterable, the n-th value will apply to the n-th model
+            function. If sequence, the n-th value will apply to the n-th model
             in the pipeline.
 
-        cv: int or iterable, optional (default=3)
+        cv: int or sequence, optional (default=3)
             Strategy to fit and score the model selected after every step
             of the BO.
                 - if 1, randomly split into a train and validation set
@@ -1748,35 +1810,17 @@ class ATOM(object):
 
         def data_preparation():
 
-            """
-            Make a dict of the data (complete, train, test and scaled)
-
-            Returns
-            -------
-            data: dictionary
-                Dictionary of the data. Can differ per model due to scaling.
-
-            """
-
-            data = {}
-            for set_ in ['X', 'y', 'X_train', 'y_train', 'X_test', 'y_test']:
-                data[set_] = getattr(self, set_)
+            """ Create scaled data attributes if needed """
 
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
             if scale and not self._is_scaled:
                 # Normalize features to mean=0, std=1
                 scaler = StandardScaler()
-                data['X_train_scaled'] = scaler.fit_transform(data['X_train'])
-                data['X_test_scaled'] = scaler.transform(data['X_test'])
-                data['X_scaled'] = np.concatenate((data['X_train_scaled'],
-                                                   data['X_test_scaled']))
-
-                # Convert np.array to pd.DataFrame for all scaled features
-                for set_ in ['X_scaled', 'X_train_scaled', 'X_test_scaled']:
-                    data[set_] = to_df(data[set_], self.X.columns)
-
-            return data
+                self.X_train_scaled = to_df(scaler.fit_transform(self.X_train),
+                                            self.X.columns)
+                self.X_test_scaled = to_df(scaler.transform(self.X_test),
+                                           self.X.columns)
 
         def run_iteration():
 
@@ -2126,6 +2170,22 @@ class ATOM(object):
         """
 
         plot_PCA(self, show, title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_RFECV(self,
+                   title: Optional[str] = None,
+                   figsize: Optional[Tuple[int, int]] = (10, 6),
+                   filename: Optional[str] = None,
+                   display: bool = True):
+
+        """
+        Plot the scores obtained by the estimator fitted on every subset of
+        the data. Only if RFECV was applied on the dataset through the
+        feature_selection method.
+
+        """
+
+        plot_RFECV(self, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_bagging(self,

@@ -20,7 +20,7 @@ Main class of the package. The `ATOM` class is a parent class of the `ATOMClassi
 
 !!! warning
     Don't call the `ATOM` class directly! Use `ATOMClassifier` or `ATOMRegressor`
-     depending on the task at hand. Click [here](/getting_started/#usage) for an example.
+     depending on the task at hand. Click [here](../getting_started/#usage) for an example.
 
 The class initializer will automatically proceed to apply some standard data
 cleaning steps unto the data. These steps include:
@@ -30,18 +30,17 @@ cleaning steps unto the data. These steps include:
   * Removing columns with prohibited data types ('datetime64',
    'datetime64[ns]', 'timedelta[ns]').
   * Removing categorical columns with maximal cardinality (the number of
-   unique values is equal to the number of instances. Usually the case for IDs,
-    names, etc...).
-  * Remove columns with minimum cardinality.
-  * Removing duplicate rows.
-  * Remove rows with missing values in the target column.
+   unique values is equal to the number of instances. Usually the case for
+    names, IDs, etc...).
+  * Removing columns with minimum cardinality (all values are the same).
+  * Removing rows with missing values in the target column.
 
 
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>X: dict, iterable, np.array or pd.DataFrame</strong>
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
 <blockquote>
 Dataset containing the features, with shape=(n_samples, n_features).
 </blockquote>
@@ -81,7 +80,7 @@ memory issues for large datasets.
 
 <strong> warnings: bool, optional (default=False)</strong>
 <blockquote>
-If False, it will supress all warnings.
+If False, it supresses all warnings.
 </blockquote>
 
 <strong>verbose: int, optional (default=0)</strong>
@@ -515,7 +514,9 @@ Wether to include the target column when searching for outliers.
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">balance</strong>(oversample=None, undersample=None, n_neighbors=5) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1017">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Balance the number of instances per target class. Only for classification tasks.
+Balance the number of instances per target class in the training set. If both
+ oversampling and undersampling are used, they will be applied in that order.
+ Only for classification tasks.
  Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/).
  <br /><br />
 <table width="100%">
@@ -620,8 +621,8 @@ Number of programs in each generation.
 <a name="atom-feature-selection"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_selection</strong>(strategy=None,
                                      solver=None,
-                                     max_features=None,
-                                     min_variance_frac=1.,
+                                     n_features=None,
+                                     max_frac_repeated=1.,
                                      max_correlation=0.98,
                                      **kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1279">[source]</a></div></pre>
@@ -631,7 +632,11 @@ features with equal scores will be broken in an unspecified way. Also
 removes features with too low variance and finds pairs of collinear features
 based on the Pearson correlation coefficient. For each pair above the specified
 limit (in terms of absolute value), it removes one of the two.
- <br /><br />
+
+Note that the RFE and RFECV strategies don't work when the solver is a
+ CatBoost model due to incompatibility of the APIs. If the pipeline has already
+ ran before running the RFECV, the scoring parameter will be set to the selected
+ metric (if scoring=None).
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -645,18 +650,17 @@ Feature selection strategy to use. Choose from:
 <li>'PCA': perform a principal component analysis, from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</li>
 <li>'SFM': select best features from model, from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</li>
 <li>'RFE': recursive feature eliminator, from sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</li>
+<li>'RFECV': RFE with cross-validated selection, from sklearn [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)</li>
 </ul>
-The sklearn objects can be found under the `univariate`, `PCA`, `SFM` or
- `RFE` attributes of the class.
-Note that the RFE strategy does not work when the solver is a CatBoost model
-due to incompatibility of the APIs.
+The sklearn objects can be found under the `univariate`, `PCA`, `SFM`,
+ `RFE` or `RFECV` attributes of the class.
 </blockquote>
 <strong>solver: string, callable or None, optional (default=None)</strong>
 <blockquote>
 Solver or model to use for the feature selection strategy. See the
 sklearn documentation for an extended descrition of the choices.
 Select None for the default option per strategy (not applicable
-for SFM and RFE).
+for SFM, RFE and RFECV).
 <ul>
 <li>for 'univariate', choose from:
    <ul>
@@ -674,43 +678,47 @@ for SFM and RFE).
     <li>'arpack'</li>
     <li>'randomized'</li>
     </ul>
-<li>for 'SFM': choose a base estimator from which the
-             transformer is built. The estimator must have
-             either a `feature_importances_` or `coef_` attribute
-             after fitting. No default option.</li>
-<li>for 'RFE': choose a supervised learning estimator. The
-             estimator must have either a `feature_importances_`
-             or `coef_` attribute after fitting. No default
-             option.</li>
+<li>for 'SFM': choose a base estimator from which the transformer is built.
+               The estimator must have either a `feature_importances_` or
+               `coef_` attribute after fitting. You can use a model from the
+               [pipeline](#pipeline). No default option.</li>
+<li>for 'RFE': choose a supervised learning estimator. The estimator must have
+               either a `feature_importances_` or `coef_` attribute after
+               fitting. You can use a model from the [pipeline](#pipeline).
+               No default option.</li>
+<li>for 'RFECV': choose a supervised learning estimator. The estimator must have
+               either a `feature_importances_` or `coef_` attribute after
+               fitting. You can use a model from the [pipeline](#pipeline).
+               No default option.</li>
 </ul>
 </blockquote>
-<strong>max_features: int, float or None, optional (default=None)</strong>
+<strong>n_features: int, float or None, optional (default=None)</strong>
 <blockquote>
-Number of features to select.
+Number of features to select (execpt for RFECV, where it's the
+ minimum number of features to select).
 <ul>
 <li>if < 1: fraction of features to select</li>
 <li>if >= 1: number of features to select</li>
 <li>None to select all</li>
 </ul>
 </blockquote>
-<strong>min_variance_frac: float or None, optional (default=1.)</strong>
+<strong>max_frac_repeated: float or None, optional (default=1.)</strong>
 <blockquote>
 Remove features with the same value in at least this fraction of
-the total. The default is to keep all features with non-zero
-variance, i.e. remove the features that have the same value in all
-samples. Will automatically scale the features if threshold variance > 0.
-None to skip this step.
+ the total rows. The default is to keep all features with non-zero
+ variance, i.e. remove the features that have the same value in all
+ samples. None to skip this step.
 </blockquote>
 <strong>max_correlation: float or None, optional (default=0.98)</strong>
 <blockquote>
 Minimum value of the Pearson correlation cofficient to identify
 correlated features. A dataframe of the removed features and their
-correlation values can be accessed through the collinear attribute.
+correlation values can be accessed through the `collinear` attribute.
 None to skip this step.
 </blockquote>
 <strong>\*\*kwargs</strong>
 <blockquote>
-Any extra parameter for the PCA, SFM or RFE. See the sklearn
+Any extra parameter for the PCA, SFM, RFE or RFECV. See the sklearn
 documentation for the available options.
 </blockquote>
 </tr>
@@ -777,7 +785,7 @@ A couple of things to take into account:
                             needs_proba=False,
                             successive_halving=False,
                             skip_steps=0,
-                            max_iter=15,
+                            max_iter=0,
                             max_time=np.inf,
                             init_points=5,
                             plot_bo=False,
@@ -790,43 +798,43 @@ A couple of things to take into account:
 <tr>
 <td width="13%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="73%" style="background:white;">
-<strong>models: string or list</strong>
+<strong>models: string or sequence</strong>
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html) (no hyperparameter tuning)</li>
-<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)</li>
-<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)</li>
-<li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html) (no hyperparameter tuning)</li>
-<li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html) (no hyperparameter tuning)</li>
-<li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)</li>
-<li>'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)</li>
-<li>'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)</li>
-<li>'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html) (with ridge regularization)</li>
-<li>'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)</li> 
-<li>'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html)</li>
-<li>'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)</li>
+<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
+<li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
+<li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
+<li>'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)<br>Only for regression tasks.</li>
+<li>'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)<br>Only for regression tasks.</li>
+<li>'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html)<br>Only for regression tasks. Uses ridge regularization.</li>
+<li>'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)<br>Only for classification tasks.</li> 
+<li>'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
+<li>'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
 <li>'KNN' for K-Nearest Neighbors [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html)</li>
 <li>'Tree' for a single Decision Tree [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html)</li>
-<li>'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html) (decision tree as base estimator)</li>
+<li>'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html)<br>Uses a decision tree as base estimator.</li>
 <li>'ET' for Extra-Trees [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)</li>
 <li>'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)</li>
-<li>'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html) (decision tree as base estimator)</li>
+<li>'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html)<br>Uses a decision tree as base estimator.</li>
 <li>'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html)</li> 
-<li>'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor) (if package is available)</li>
-<li>'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html) (if package is available)</li>
-<li>'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html) (if package is available)</li>
-<li>'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html)</li> 
-<li>'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)</li>
+<li>'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor)<br>Only available if package is installed.</li>
+<li>'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html)<br>Only available if package is installed.</li>
+<li>'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html)<br>Only available if package is installed.</li>
+<li>'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html)<br>Uses a one-vs-rest strategy for multiclass classification tasks.</li> 
+<li>'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)<br>Uses a one-vs-one strategy for multiclass classification tasks.</li>
 <li>'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)</li>
 <li>'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)</li>
-<li>'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor)</li> 
+<li>'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor)<br>Can have between one and three hidden layers.</li> 
 </ul>
 </blockquote>
 <strong>metric: string or callable, optional (default=None)</strong>
 <blockquote>
 Metric on which the pipeline fits the models. Choose from any of
-the string scorers predefined by sklearn, use a score (or loss)
+sklearn's predefined [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules), use a score (or loss)
 function with signature metric(y, y_pred, **kwargs) or use a
 scorer object. If None, the default metric per task is selected:
 <ul>
@@ -858,25 +866,25 @@ Wether to use successive halving on the pipeline. Only recommended when fitting
 Skip last `skip_iter` iterations of the successive halving. Will be ignored if
  successive_halving=False.
 </blockquote>
-<strong>max_iter: int or iterable, optional (default=10)</strong>
+<strong>max_iter: int or sequence, optional (default=0)</strong>
 <blockquote>
 Maximum number of iterations of the BO. If 0, skip the BO and fit
- the model on its default parameters. If iterable, the n-th value
+ the model on its default parameters. If sequence, the n-th value
  will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>max_time: int, float or iterable, optional (default=np.inf)</strong>
+<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
 <blockquote>
 Maximum time allowed for the BO per model (in seconds). If 0, skip
- the BO and fit the model on its default parameters. If iterable,
+ the BO and fit the model on its default parameters. If sequence,
  the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>init_points: int or iterable, optional (default=5)</strong>
+<strong>init_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of tests of the BO before fitting the surrogate
- function. If iterable, the n-th value will apply to the n-th model
+ function. If sequence, the n-th value will apply to the n-th model
  in the pipeline.
 </blockquote>
-<strong>cv: int or iterable, optional (default=3)</strong>
+<strong>cv: int or sequence, optional (default=3)</strong>
 <blockquote>
 Strategy to fit and score the model selected after every step of the BO.
 <ul>
@@ -915,9 +923,7 @@ After running the pipeline method, a class for every selected model is created a
  from these subclasses as well. For example, to plot the ROC for the LightGBM
  model we could type `atom.lgb.plot_ROC()`.
 
-The model subclasses contain the same data attributes the ATOM class has,
- e.g. `atom.lSVM.X_train`. These can differ from each other depending on if the
- model needs scaled data. You can also call for any of the sklearn pre-defined
+You can also call for any of the sklearn pre-defined
  metrics, e.g. `atom.ET.recall` or `atom.kSVM.average_precision`. The rest of
  the available attributes can be found hereunder:
 
@@ -1043,6 +1049,11 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 </tr>
 
 <tr>
+<td><a href="#atom-plot-RFECV">plot_RFECV</a></td>
+<td>Plot the scores obtained by the estimator on the RFECV.</td>
+</tr>
+
+<tr>
 <td><a href="#atom-plot-bagging">plot_bagging</a></td>
 <td>Plot a boxplot of the bagging's results.</td>
 </tr>
@@ -1158,6 +1169,44 @@ Plot's title. If None, the default option is used.
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>
 Figure's size, format as (x, y). If None, adapts size to `show` parameter.
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-plot-RFECV"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_RFECV</strong>(title=None,
+                              figsize=(10, 6),
+                              filename=None,
+                              display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L85">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the scores obtained by the estimator fitted on every subset of
+ the data. Only if RFECV was applied on the dataset through the
+ [`feature_selection`](#atom-feature-selection) method. Can't be called from
+ the model subclasses.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
 </blockquote>
 <strong>filename: string or None, optional (default=None)</strong>
 <blockquote>
