@@ -19,6 +19,7 @@ from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 from sklearn.inspection import permutation_importance
+from sklearn.model_selection import learning_curve
 from sklearn.metrics import (
         SCORERS, roc_curve, precision_recall_curve, confusion_matrix
         )
@@ -343,6 +344,127 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
                fontsize=self.label_fontsize,
                labelpad=12)
     ax.set_xticks(range(len(self.scores)))
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_learning_curve(self, models, train_sizes, cv,
+                        title, figsize, filename, display):
+
+    """
+    Plot the model's learning curve: score vs number of training samples. The
+    `learning_curve` attribute is created, a dictionary of the plotted models
+    containing the scores and fit duration per number of samples.
+
+    Parameters
+    ----------
+    models: string, list, tuple or None, optional (default=None)
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
+
+    train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))
+        Relative or absolute numbers of training examples that will be used to
+        generate the learning curve. If the dtype is float, it is regarded as a
+        fraction of the maximum size of the training set. Otherwise it is
+        interpreted as absolute sizes of the training sets.
+
+    cv: int, sequence, callable or None, optional (default=None)
+        Determines the cross-validation splitting strategy. Possible values:
+            - None, to use the default 5-fold cross validation
+            - int, to specify the number of folds in a (Stratified) KFold
+            - CV splitter instance
+            - An iterable yielding (train, test) splits as arrays of indices
+
+        For int/None inputs, if the estimator is a classifier and y is
+        either binary or multiclass, StratifiedKFold is used. In all other
+        cases, KFold is used.
+
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 6))
+        Figure's size, format as (x, y).
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
+
+    """
+
+    check_is_fitted(self._is_fitted)
+    if models is None:
+        models = self.models
+    elif isinstance(models, str):
+        models = [models]
+
+    self.learning_curve = {}
+    fig, ax = plt.subplots(figsize=figsize)
+    for model in models:
+        if hasattr(self, model):
+            m = getattr(self, model)
+
+            # Get learning curve scores
+            samples, train_scores, test_scores, time, _ = \
+                learning_curve(m.best_model,
+                               self.X_train,
+                               self.y_train,
+                               train_sizes=train_sizes,
+                               cv=cv,
+                               scoring=self.metric,
+                               n_jobs=self.n_jobs,
+                               return_times=True)
+
+            train_scores_mean = np.mean(train_scores, axis=1)
+            train_scores_std = np.std(train_scores, axis=1)
+            test_scores_mean = np.mean(test_scores, axis=1)
+            test_scores_std = np.std(test_scores, axis=1)
+            time_mean = np.mean(time, axis=1)
+            time_std = np.std(time, axis=1)
+
+            # Draw line
+            if len(models) == 1:
+                label_train = f"Training score"
+                label_test = f"Test score"
+            else:
+                label_train = f"{m.name} (Training score)"
+                label_test = f"{m.name} (Test score)"
+            plt.plot(samples, train_scores_mean, lw=2, label=label_train)
+            plt.fill_between(samples,
+                             train_scores_mean + train_scores_std,
+                             train_scores_mean - train_scores_std,
+                             alpha=0.4)
+            plt.plot(samples, test_scores_mean, lw=2, label=label_test)
+            plt.fill_between(samples,
+                             test_scores_mean + test_scores_std,
+                             test_scores_mean - test_scores_std,
+                             alpha=0.4)
+
+            # Append results to the attribute
+            fraction = np.round(samples/len(self.X_train), 2)
+            self.learning_curve[m.name] = \
+                pd.DataFrame({'fraction of train_set': fraction,
+                              'samples': samples,
+                              'train_scores_mean': train_scores_mean,
+                              'train_scores_std': train_scores_std,
+                              'test_scores_mean': test_scores_mean,
+                              'test_scores_std': test_scores_std,
+                              'time_mean (s)': time_mean,
+                              'time_std (s)': time_std})
+
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
+
+    title = 'Learning curve' if title is None else title
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
+    plt.legend(fontsize=self.label_fontsize)
+    plt.xlabel('Number of samples', fontsize=self.label_fontsize, labelpad=12)
+    plt.ylabel(self.metric.name, fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
     fig.tight_layout()
@@ -992,7 +1114,7 @@ def plot_probabilities(self, models, target,
             raise ValueError(f"Model {model} not found in pipeline!")
 
     if title is None:
-        title = f"Predicted probabilities for {m.y.name}={target_str}"
+        title = f"Predicted probabilities for {m.y_train.name}={target_str}"
     plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(fontsize=self.label_fontsize)
     plt.xlabel('Probability', fontsize=self.label_fontsize, labelpad=12)

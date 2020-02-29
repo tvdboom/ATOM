@@ -211,7 +211,7 @@ def test_RFE_attribute():
     assert hasattr(atom, 'RFE')
 
     # For regression tasks
-    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy='rfe', solver=RandomForestRegressor())
     assert hasattr(atom, 'RFE')
 
@@ -236,7 +236,7 @@ def test_RFECV_attribute():
     assert hasattr(atom, 'RFECV')
 
     # For regression tasks
-    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy='rfecv', solver='et')
     assert hasattr(atom, 'RFECV')
 
@@ -250,7 +250,7 @@ def test_RFECV_strategy():
                            solver='lgb',
                            n_features=16,
                            max_correlation=None)
-    assert len(atom.X.columns) == 20
+    assert len(atom.X.columns) == 23
 
     # After pipeline (uses selected metric)
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

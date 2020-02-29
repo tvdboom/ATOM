@@ -134,19 +134,10 @@ def test_bagging_parameter():
 def test_data_preparation():
     ''' Assert that the data_preparation function works as intended '''
 
-    # For scaling and non-scaling models
-    for model in ['tree', 'lgb']:
-        atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-        atom.pipeline(models=model, metric='f1', max_iter=0)
-        assert isinstance(atom.data, dict)
-        for set_ in ['X', 'X_train', 'X_test']:
-            assert isinstance(atom.data[set_], pd.DataFrame)
-        for set_ in ['y', 'y_train', 'y_test']:
-            assert isinstance(atom.data[set_], pd.Series)
-
-        if model == 'lgb':
-            assert atom.data['X_train_scaled'].iloc[:, 1].mean() < 0.05
-            assert atom.data['X_test_scaled'].iloc[:, 0].std() < 1.25
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(models='lgb')
+    assert atom.X_train_scaled.iloc[:, 1].mean() < 0.05
+    assert atom.X_test_scaled.iloc[:, 0].std() < 1.25
 
 
 def test_successive_halving_scores():

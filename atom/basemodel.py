@@ -33,9 +33,10 @@ from matplotlib.gridspec import GridSpec
 # Own package modules
 from .utils import composed, crash, params_to_log, time_to_string
 from .plots import (
-        save, plot_bagging, plot_successive_halving, plot_ROC, plot_PRC,
-        plot_permutation_importance, plot_feature_importance,
-        plot_confusion_matrix, plot_probabilities, plot_threshold
+        save, plot_bagging, plot_successive_halving, plot_learning_curve,
+        plot_ROC, plot_PRC, plot_permutation_importance,
+        plot_feature_importance, plot_confusion_matrix, plot_probabilities,
+        plot_threshold
         )
 
 
@@ -43,6 +44,8 @@ from .plots import (
 
 # Variable types
 cal = Union[str, callable]
+scalar = Union[int, float]
+train_types = Union[Sequence[scalar], np.ndarray]
 
 # List of models that don't use the Bayesian Optimization
 no_BO = ['GP', 'GNB', 'OLS']
@@ -528,6 +531,21 @@ class BaseModel(object):
 
         plot_successive_halving(self.T, self.name,
                                 title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_learning_curve(
+                    self,
+                    train_sizes: train_types = np.linspace(0.1, 1.0, 10),
+                    cv: Optional[Union[int, callable, Sequence[int]]] = None,
+                    title: Optional[str] = None,
+                    figsize: Tuple[int, int] = (10, 6),
+                    filename: Optional[str] = None,
+                    display: bool = True):
+
+        """ Plot the model's learning curve: score vs training samples """
+
+        plot_learning_curve(self.T, self.name, train_sizes, cv,
+                            title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_ROC(self,

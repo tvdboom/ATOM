@@ -177,7 +177,7 @@ cleaning steps unto the data. These steps include:</p>
 Dataset containing the features, with shape=(n_samples, n_features).
 </blockquote>
 
-<strong>y: string, list, np.array or pd.Series, optional (default=None)</strong>
+<strong>y: string, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: the last column of X is selected as target column</li>
@@ -223,6 +223,7 @@ Verbosity level of the class. Possible values are:
 <li>1 to print minimum information</li>
 <li>2 to print average information</li>
 <li>3 to print maximum information</li>
+</ul>
 </blockquote>
 
 <strong>random_state: int or None, optional (default=None)</strong>
@@ -287,16 +288,6 @@ Test target.
 <strong>mapping: dict</strong>
 <blockquote>
 Dictionary of the target values mapped to their respective encoded integer. Only for classification tasks.
-</blockquote>
-
-<strong>genetic_features: pd.DataFrame</strong>
-<blockquote>
-Contains the description of the generated features by the feature_insertion method and their scores.
-</blockquote>
-
-<strong>collinear: pd.DataFrame</strong>
-<blockquote>
-Dataframe of the collinear features and their correlation values (if feature_selection was used).
 </blockquote>
 
 <strong>errors: dict</strong>
@@ -1145,6 +1136,11 @@ together since this can lead to misleading insights.</p>
 </tr>
 
 <tr>
+<td><a href="#atom-plot-learning-curve">plot_learning_curve</a></td>
+<td>Plot the model's learning curve: score vs training samples.</td>
+</tr>
+
+<tr>
 <td><a href="#atom-plot-ROC">plot_ROC</a></td>
 <td>Plot the Receiver Operating Characteristics curve.</td>
 </tr>
@@ -1311,7 +1307,7 @@ Plot a boxplot of the bagging's results.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1349,9 +1345,71 @@ Plot of the models' scores per iteration of the successive halving.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
+</blockquote>
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
+<p><a name="atom-plot-learning-curve"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_learning_curve</strong>(models=None,
+                                       train_sizes=np.linspace(0.1, 1.0, 10),
+                                       cv=None, 
+                                       title=None,
+                                       figsize=(10, 6),
+                                       filename=None,
+                                       display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L210">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the model's learning curve: score vs number of training samples. The
+ <code>learning_curve</code> attribute is created, a dictionary of the plotted models
+ containing the scores and fit duration (in seconds) per number of samples.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: string, sequence or None, optional (default=None)</strong>
+<blockquote>
+Name of the models to plot. If None, all the models in the pipeline are selected.
+</blockquote>
+<strong>train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))</strong>
+<blockquote>
+Relative or absolute numbers of training examples that will be used to
+ generate the learning curve. If the dtype is float, it is regarded as a
+ fraction of the maximum size of the training set. Otherwise it is
+ interpreted as absolute sizes of the training sets.
+</blockquote>
+<strong>cv: int, sequence, callable or None, optional (default=None)</strong>
+<blockquote>
+Determines the cross-validation splitting strategy. Possible values:
+<ul>
+<li>None, to use the default 5-fold cross validation</li>
+<li>int, to specify the number of folds in a (Stratified) KFold</li>
+<li>CV splitter instance</li>
+<li>An iterable yielding (train, test) splits as arrays of indices</li>
+</ul>
+For int/None inputs, if the estimator is a classifier and y is
+either binary or multiclass, StratifiedKFold is used. In all other
+cases, KFold is used.
 </blockquote>
 <strong>title: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1387,7 +1445,7 @@ Plot the Receiver Operating Characteristics curve. Only for binary classificatio
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1425,7 +1483,7 @@ Plot the precision-recall curve. Only for binary classification tasks.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1465,7 +1523,7 @@ Plot the feature permutation importance of models.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1512,7 +1570,7 @@ Plot a tree-based model's normalized feature importance.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1557,7 +1615,7 @@ Wether to render the plot.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
@@ -1601,11 +1659,11 @@ Plot performance metric(s) against multiple threshold values.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
-<strong>metric: string, callable, list, tuple or None, optional (default=None)</strong>
+<strong>metric: string, callable, sequence or None, optional (default=None)</strong>
 <blockquote>
 Metric(s) to plot. These can be one of the pre-defined sklearn scorers as string,
  a metric function or a sklearn scorer object. If None, the metric used to fit
@@ -1650,7 +1708,7 @@ Plot a function of the probability of the classes of being the target class.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: string, list, tuple or None, optional (default=None)</strong>
+<strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>

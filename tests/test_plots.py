@@ -36,7 +36,7 @@ def test_plot_PCA():
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
-    atom.feature_selection(strategy='pca', max_features=10)
+    atom.feature_selection(strategy='pca', n_features=10)
 
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_PCA, -2)
@@ -51,7 +51,7 @@ def test_plot_RFECV():
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_RFECV)  # When no RFECV attribute
-    atom.feature_selection(strategy='rfecv', max_features=26, cv=2)
+    atom.feature_selection(strategy='rfecv', solver='lgb', n_features=27)
 
     # When correct
     atom.plot_RFECV(display=False)
@@ -87,11 +87,11 @@ def test_plot_successive_halving():
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When fit is called without successive_halving
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=False, max_iter=0)
+    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=False)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When model is unknown
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=0)
+    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True)
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
     # When correct (with bagging)
@@ -104,7 +104,26 @@ def test_plot_successive_halving():
     atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, bagging=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
+    assert 2 == 2
+
+
+def test_plot_learning_curve():
+    ''' Assert that the plot_lerning_curve method work as intended '''
+
+    # When fit is not called yet
+    atom = ATOMClassifier(X_bin, y_bin)
+    pytest.raises(AttributeError, atom.plot_learning_curve)
+
+    # When model is unknown
+    atom.pipeline(['tree', 'lgb'], 'f1')
+    pytest.raises(ValueError, atom.plot_learning_curve, models='unknown')
+
+    # When correct
+    atom.pipeline(['tree', 'lgb'], 'f1')
+    atom.plot_learning_curve(display=False)
+    atom.tree.plot_learning_curve(display=False)
     assert 1 == 1
+    assert hasattr(atom.learning_curve)
 
 
 def test_plot_ROC():

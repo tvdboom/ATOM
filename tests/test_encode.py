@@ -84,5 +84,5 @@ def test_target_encoder():
     atom = ATOMClassifier(X_dim10, y_dim10, random_state=1)
     atom.encode(max_onehot=None)
     assert len(atom.X.columns) == len(X_dim10[0])
-    assert atom.dataset.iloc[0, 2] == 2./3.
-    assert atom.dataset.iloc[4, 2] == 0.5
+    assert atom.dataset.iloc[0, 2] == 0
+    assert atom.dataset.iloc[3, 2] == 1

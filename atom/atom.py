@@ -39,9 +39,9 @@ from .utils import (
      )
 from .plots import (
         save, plot_correlation, plot_PCA, plot_RFECV, plot_ROC, plot_PRC,
-        plot_bagging, plot_successive_halving, plot_permutation_importance,
-        plot_feature_importance, plot_confusion_matrix, plot_threshold,
-        plot_probabilities
+        plot_bagging, plot_successive_halving, plot_learning_curve,
+        plot_permutation_importance, plot_feature_importance,
+        plot_confusion_matrix, plot_threshold, plot_probabilities
         )
 from .models import (
      GaussianProcess, GaussianNaïveBayes, MultinomialNaïveBayes,
@@ -62,6 +62,7 @@ sns.set(style='darkgrid', palette='GnBu_d')
 
 # Variable types
 scalar = Union[int, float]
+train_types = Union[Sequence[scalar], np.ndarray]
 
 # List of all the available models
 model_list = dict(GP=GaussianProcess,
@@ -1561,16 +1562,15 @@ class ATOM(object):
         elif strategy.lower() == 'sfm':
             solver = check_solver(solver)
 
-            try:  # Model already fitted
-                self.SFM = SelectFromModel(estimator=solver,
-                                           max_features=n_features,
-                                           prefit=True,
-                                           **kwargs)
+            # If any of these attr exists, model is already fitted
+            condition1 = hasattr(solver, 'coef_')
+            condition2 = hasattr(solver, 'feature_importances_')
+            kwargs['prefit'] = True if condition1 or condition2 else False
 
-            except Exception:
-                self.SFM = SelectFromModel(estimator=solver,
-                                           max_features=n_features,
-                                           **kwargs)
+            self.SFM = SelectFromModel(estimator=solver,
+                                       max_features=n_features,
+                                       **kwargs)
+            if not kwargs['prefit']:
                 self.SFM.fit(self.X_train, self.y_train)
 
             for n, column in enumerate(self.X):
@@ -1589,7 +1589,7 @@ class ATOM(object):
             self.RFE.fit(self.X_train, self.y_train)
 
             for n, column in enumerate(self.X):
-                if not self.RFECV.support_[n]:
+                if not self.RFE.support_[n]:
                     self._log(f" --> Feature {column} was removed by the " +
                               "recursive feature eliminator.", 2)
                     self.dataset.drop(column, axis=1, inplace=True)
@@ -2211,6 +2211,22 @@ class ATOM(object):
 
         plot_successive_halving(self, models,
                                 title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_learning_curve(
+                    self,
+                    models: Union[None, str, Sequence[str]] = None,
+                    train_sizes: train_types = np.linspace(0.1, 1.0, 10),
+                    cv: Optional[Union[int, callable, Sequence[int]]] = None,
+                    title: Optional[str] = None,
+                    figsize: Tuple[int, int] = (10, 6),
+                    filename: Optional[str] = None,
+                    display: bool = True):
+
+        """ Plot the model's learning curve: score vs training samples """
+
+        plot_learning_curve(self, models, train_sizes, cv,
+                            title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_ROC(self,

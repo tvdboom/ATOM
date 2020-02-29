@@ -229,18 +229,6 @@ def test_remove_minimum_cardinality():
     assert 'invalid_column' not in atom.dataset.columns
 
 
-def test_remove_duplicate_rows():
-    """ Assert that self.dataset removes duplicate rows """
-
-    X, y = X_bin.copy(), y_bin.copy()
-    len_ = len(X)  # Save number of non-duplicate rows
-    for i in range(5):  # Add 5 rows with exactly the same values
-        X.loc[len(X)] = X.iloc[i, :]
-        y.loc[len(X)] = y.iloc[i]
-    atom = ATOMClassifier(X, y)
-    assert len_ == len(atom.dataset)
-
-
 def test_remove_rows_nan_target():
     """ Assert that self.dataset removes rows with NaN in target column """
 

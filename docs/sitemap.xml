@@ -2,32 +2,32 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
      <loc>http://tvdboom.github.io/ATOM/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://tvdboom.github.io/ATOM/getting_started/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://tvdboom.github.io/ATOM/api/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://tvdboom.github.io/ATOM/examples/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://tvdboom.github.io/ATOM/dependencies/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
     <url>
      <loc>http://tvdboom.github.io/ATOM/license/</loc>
-     <lastmod>2020-02-28</lastmod>
+     <lastmod>2020-02-29</lastmod>
      <changefreq>daily</changefreq>
     </url>
 </urlset>
