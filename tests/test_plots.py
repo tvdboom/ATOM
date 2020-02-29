@@ -123,7 +123,7 @@ def test_plot_learning_curve():
     atom.plot_learning_curve(display=False)
     atom.tree.plot_learning_curve(display=False)
     assert 1 == 1
-    assert hasattr(atom.learning_curve)
+    assert hasattr(atom, 'learning_curve')
 
 
 def test_plot_ROC():

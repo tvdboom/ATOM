@@ -10,7 +10,7 @@
                 verbose=0,
                 random_state=None,
                 verbose=0)</strong><br>
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L111">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L113">[source]</a></div></pre>
 
 Main class of the package. The `ATOM` class is a parent class of the `ATOMClassifier`
  and `ATOMRegressor` classes. These will inherit all methods and attributes described
@@ -230,7 +230,7 @@ inspect the pipeline.
 
 <a name="atom-stats"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">stats</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L419">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L423">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Print out a list of basic statistics on the dataset.
 </div>
@@ -239,7 +239,7 @@ Print out a list of basic statistics on the dataset.
 
 <a name="atom-scale"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">scale</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L491">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L495">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Scale all the features to mean=1 and std=0.
 </div>
@@ -248,7 +248,7 @@ Scale all the features to mean=1 and std=0.
 
 <a name="atom-update"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">update</strong>(df='dataset')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L520">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L524">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 If you change any of the class' data attributes in between the pipeline, you
  should call this method to change all other data attributes to their correct
@@ -273,7 +273,7 @@ Data attribute that has been changed.
 
 <a name="atom-report"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">report</strong>(df='dataset', rows=None, filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L578">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L582">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Get an extensive profile analysis of the data. The report is rendered
 in HTML5 and CSS3. Note that this method can be slow for very large datasets.
@@ -303,7 +303,7 @@ Name of the file when saved (as .html). None to not save anything.
 
 <a name="atom-results"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">results</strong>(metric=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L626">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L630">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Print the pipeline's final results for a specific metric. If a model
  shows a `XXX`, it means the metric failed for that specific model. This
@@ -328,7 +328,7 @@ String of one of sklearn's predefined metrics. If None, the metric
 
 <a name="atom-save"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L707">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Save the ATOM class to a pickle file. This method is also available for the model
  subclasses, e.g. `atom.XGB.save(filename='ATOM_xgboost')`. In this case, the
@@ -396,7 +396,7 @@ cleaning steps. ATOM provides four data cleaning methods to handle missing value
                           max_frac_rows=0.5,
                           max_frac_cols=0.5,
                           missing=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L725">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L729">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values.
@@ -446,7 +446,7 @@ List of values to impute. None for default list: [None, np.NaN, np.inf, -np.inf,
 
 <a name="atom-encode"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">encode</strong>(max_onehot=10, frac_to_other=0) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L883">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L887">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Perform encoding of categorical features. The encoding type depends on the
  number of unique values in the column:
@@ -478,7 +478,7 @@ Classes with less instances than n_rows * fraction_to_other are replaced with 'o
 
 <a name="atom-outliers"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">outliers</strong>(max_sigma=3, include_target=False) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L978">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L982">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Remove rows from the training set where at least one of the values lies further
  than `max_sigma` * standard_deviation away from the mean of the column.
@@ -503,7 +503,7 @@ Wether to include the target column when searching for outliers.
 
 <a name="atom-balance"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">balance</strong>(oversample=None, undersample=None, n_neighbors=5) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1017">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1021">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Balance the number of instances per target class in the training set. If both
  oversampling and undersampling are used, they will be applied in that order.
@@ -575,7 +575,7 @@ To further pre-process the data you can create new non-linear features using a
 
 <a name="atom-feature-insertion"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_insertion</strong>(n_features=2, generations=20, population=500) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1150">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1156">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Use a genetic algorithm to create new combinations of existing
 features and add them to the original dataset in order to capture
@@ -616,7 +616,7 @@ Number of programs in each generation.
                                      max_frac_repeated=1.,
                                      max_correlation=0.98,
                                      **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1279">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1285">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Remove features according to the selected strategy. Ties between
 features with equal scores will be broken in an unspecified way. Also
@@ -782,7 +782,7 @@ A couple of things to take into account:
                             plot_bo=False,
                             cv=3,
                             bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1566">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1626">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 <br /><br />
 <table width="100%">
@@ -1107,7 +1107,7 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
                                     figsize=(10, 10),
                                     filename=None,
                                     display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L37">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L39">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Correlation matrix plot of the dataset. Ignores non-numeric columns. Can't be called
  from the model subclasses.
@@ -1144,7 +1144,7 @@ Wether to render the plot.
                             figsize=None,
                             filename=None,
                             display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L85">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L87">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the explained variance ratio of the components. Only if a Principal Component Analysis
  was applied on the dataset through the [`feature_selection`](#atom-feature-selection) method.
@@ -1185,7 +1185,7 @@ Wether to render the plot.
                               figsize=(10, 6),
                               filename=None,
                               display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L85">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L148">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the scores obtained by the estimator fitted on every subset of
  the data. Only if RFECV was applied on the dataset through the
@@ -1224,7 +1224,7 @@ Wether to render the plot.
                                 figsize=None,
                                 filename=None,
                                 display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L146">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L208">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot a boxplot of the bagging's results.
 <br /><br />
@@ -1264,7 +1264,7 @@ Wether to render the plot.
                                            figsize=(10, 6),
                                            filename=None,
                                            display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L210">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L272">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot of the models' scores per iteration of the successive halving.
 <br /><br />
@@ -1306,7 +1306,7 @@ Wether to render the plot.
                                        figsize=(10, 6),
                                        filename=None,
                                        display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L210">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L355">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the model's learning curve: score vs number of training samples. The
  `learning_curve` attribute is created, a dictionary of the plotted models
@@ -1368,7 +1368,7 @@ Wether to render the plot.
                             figsize=(10, 6)),
                             filename=None,
                             display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L282">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L476">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the Receiver Operating Characteristics curve. Only for binary classification tasks.
 <br /><br />
@@ -1408,7 +1408,7 @@ Wether to render the plot.
                             figsize=(10, 6),
                             filename=None,
                             display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L351">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L545">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the precision-recall curve. Only for binary classification tasks.
 <br /><br />
@@ -1450,7 +1450,7 @@ Wether to render the plot.
                                                figsize=None,
                                                filename=None,
                                                display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L418">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L612">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the feature permutation importance of models.
 <br /><br />
@@ -1499,7 +1499,7 @@ Wether to render the plot.
                                            figsize=None,
                                            filename=None,
                                            display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L529">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L723">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot a tree-based model's normalized feature importance.
 <br /><br />
@@ -1544,7 +1544,7 @@ Wether to render the plot.
                                          figsize=(8, 8),
                                          filename=None,
                                          display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L622">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L816">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 <ul>
 <li>For 1 model: plot it's confusion matrix in a heatmap.</li>
@@ -1592,7 +1592,7 @@ Wether to render the plot.
                                   figsize=(10, 6),
                                   filename=None,
                                   display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L749">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L943">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot performance metric(s) against multiple threshold values.
 <br /><br />
@@ -1643,7 +1643,7 @@ Wether to render the plot.
                                       figsize=(10, 6),
                                       filename=None,
                                       display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L848">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1042">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot a function of the probability of the classes of being the target class.
 <br /><br />
@@ -1718,7 +1718,7 @@ The plotting aesthetics can be customized with the use of the `@classmethods` de
 
 <a name="atom-set-style"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_style</strong>(style='darkgrid')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2267">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2343">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Change the plotting style. See the seaborn [documentation](https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles).
 <br /><br />
@@ -1737,7 +1737,7 @@ Style to change to. Available options are: 'darkgrid', 'whitegrid', 'dark', 'whi
 
 <a name="atom-set-palette"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_palette</strong>(palette='GnBu_d')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2284">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2360">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Change the plotting palette. See the seaborn [documentation](https://seaborn.pydata.org/tutorial/color_palettes.html)
  for the available options.
@@ -1757,7 +1757,7 @@ Palette to change to.
 
 <a name="atom-set-title-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_title_fontsize</strong>(fontsize=20)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2301">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2377">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Change the fontsize of the plot's title.
 <br /><br />
@@ -1776,7 +1776,7 @@ Fontsize to change to.
 
 <a name="atom-set-label-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_label_fontsize</strong>(fontsize=16)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2316">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2392">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Change the fontsize of the plot's labels and legends.
 <br /><br />
@@ -1795,7 +1795,7 @@ Fontsize to change to.
 
 <a name="atom-set-tick-fontsize"></a>
 <pre><em>classmethod</em> ATOM.<strong style="color:#008AB8">set_tick_fontsize</strong>(fontsize=12)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2331">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2407">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Change the fontsize of the plot's ticks.
 <br /><br />
