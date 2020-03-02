@@ -2111,7 +2111,7 @@ class ATOM(object):
                 # Select 1/N of data to use for this iteration
                 self._split_dataset(original_data, 100./len(self.models))
                 self.update()
-                self.data = data_preparation()
+                data_preparation()
                 self._log("\n\n<<=============== Iteration {} ==============>>"
                           .format(iteration))
                 self._log("Model{} in pipeline: {}"
@@ -2138,7 +2138,7 @@ class ATOM(object):
             self._is_fitted = True
 
         else:
-            self.data = data_preparation()
+            data_preparation()
             self.scores = run_iteration()
             self._is_fitted = True
 
@@ -2310,11 +2310,7 @@ class ATOM(object):
                        filename: Optional[str] = None,
                        display: bool = True):
 
-        """
-
-        Plot performance metric(s) against threshold values.
-
-        """
+        """ Plot performance metric(s) against threshold values """
 
         plot_threshold(self, models, metric, steps,
                        title, figsize, filename, display)
