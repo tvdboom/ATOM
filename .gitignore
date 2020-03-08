@@ -68,4 +68,10 @@ coverage.xml
 # PyCharm
 .idea
 
+# Spyder
+.spyproject
+
+# Others
+.pylint.d
+
 github.com/

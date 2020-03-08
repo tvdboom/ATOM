@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="500" height="140"/>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="600" height="180"/>
 </p>
 
 # Automated Tool for Optimized Modelling

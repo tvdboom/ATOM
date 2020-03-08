@@ -1225,7 +1225,7 @@ class ATOM(object):
         self.genetic_algorithm.fit(self.X_train, self.y_train)
         new_features = self.genetic_algorithm.transform(self.X)
 
-        # ix = indicces of all new features that are not in the original set
+        # ix = indices of all new features that are not in the original set
         # descript = list of the operators applied to create the new features
         # fitness = list of fitness scores of the new features
         ix, descript, fitness = [], [], []
