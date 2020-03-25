@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-'''
-Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+"""Automated Tool for Optimized Modelling (ATOM).
 
-'''
+Author: tvdboom
+Description: Version and import module.
+
+"""
 
 from .api import ATOMClassifier, ATOMRegressor
-__version__ = '3.1.0'
+__version__ = '3.2.0'

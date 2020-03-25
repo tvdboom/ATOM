@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing all the available models for the fit method
              of the ATOM class. All classes must have the following structure:
@@ -12,7 +12,6 @@ Description: Module containing all the available models for the fit method
 
         Attributes
         ----------
-
         name: string
             Short acronym of the model's longname for calling.
 
@@ -21,21 +20,20 @@ Description: Module containing all the available models for the fit method
 
         Methods
         -------
-
         __init__(self, *args):
             Class initializer (contains super() to parent class).
 
         get_params(self, x):
-            Returns the hyperparameters as a dictionary.
+            Return a dictionary of the model´s hyperparameters.
 
         get_model(self, params={}):
-            Returns the model with unpacked parameters.
+            Return the model object with unpacked parameters.
 
         get_domain(self):
-            Returns the bounds for the hyperparameters as a list of dicts.
+            Return a list of the bounds for the hyperparameters.
 
         get_init_values(self):
-            Returns initial values for the BO trials (if init_points=1).
+            Return the default values of the model's hypertparameters.
 
 
 To add a new model:
@@ -84,9 +82,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 # << ============ Functions ============ >>
 
 def set_init(class_, scaled=False):
-
-    """
-    Returns BaseModel's (class) parameters as dictionary
+    """Return BaseModel's (class) parameters as dictionary.
 
     Parameters
     ----------
@@ -97,7 +93,6 @@ def set_init(class_, scaled=False):
         Wether the model needs the features to be scaled.
 
     """
-
     # Create dict with data attributes
     params = {'X_train': class_.X_train,
               'X_test': class_.X_test}
@@ -120,12 +115,15 @@ def set_init(class_, scaled=False):
 # << ============ Classes ============ >>
 
 class GaussianProcess(BaseModel):
+    """Gaussian process model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'GP', 'Gaussian Process'
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return GaussianProcessClassifier(random_state=self.T.random_state,
                                              n_jobs=self.T.n_jobs)
@@ -134,31 +132,39 @@ class GaussianProcess(BaseModel):
 
 
 class GaussianNaïveBayes(BaseModel):
+    """Gaussian Naïve Bayes model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'GNB', 'Gaussian Naïve Bayes'
 
     def get_model(self, params={}):
+        """Call the model object."""
         return GaussianNB()
 
 
 class MultinomialNaïveBayes(BaseModel):
+    """Multinomial Naïve Bayes model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'MNB', 'Multinomial Naïve Bayes'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         prior = [True, False]
         params = {'alpha': round(x[0, 0], 2),
                   'fit_prior': prior[int(x[0, 1])]}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return MultinomialNB(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'alpha',
                  'type': 'discrete',
                  'domain': np.linspace(0, 5, 101)},
@@ -167,25 +173,31 @@ class MultinomialNaïveBayes(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[1, 0]])
 
 
 class BernoulliNaïveBayes(BaseModel):
+    """Bernoulli Naïve Bayes model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'BNB', 'Bernoulli Naïve Bayes'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         prior = [True, False]
         params = {'alpha': round(x[0, 0], 2),
                   'fit_prior': prior[int(x[0, 1])]}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return BernoulliNB(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'alpha',
                  'type': 'discrete',
                  'domain': np.linspace(0, 5, 101)},
@@ -194,23 +206,28 @@ class BernoulliNaïveBayes(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[1, 0]])
 
 
 class OrdinaryLeastSquares(BaseModel):
+    """Linear Regression without regularization (OLS)."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
 
     def get_model(self, params={}):
+        """Call the model object."""
         return LinearRegression(n_jobs=self.T.n_jobs)
 
 
 class Ridge(BaseModel):
-    """ Linear Regression/Classification with ridge regularization """
+    """Linear Regression/Classification with ridge regularization."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name = 'Ridge'
         if self.T.task != 'regression':
@@ -219,17 +236,20 @@ class Ridge(BaseModel):
             self.longname = 'Ridge Regression'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'max_iter': int(x[0, 0]),
                   'alpha': round(x[0, 1], 2)}
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return RidgeClassifier(random_state=self.T.random_state, **params)
         else:
             return RidgeRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         # alpha cannot be 0 for numerical reasons
         return [{'name': 'max_iter',
                  'type': 'discrete',
@@ -239,25 +259,30 @@ class Ridge(BaseModel):
                  'domain': np.linspace(0.05, 5, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[500, 1.0]])
 
 
 class Lasso(BaseModel):
-    """ Linear Regression with lasso regularization """
+    """Linear Regression with lasso regularization."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'Lasso', 'Lasso Regression'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'max_iter': int(x[0, 0]),
                   'alpha': round(x[0, 1], 2)}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return LassoRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         # alpha cannot be 0 for numerical reasons
         return [{'name': 'max_iter',
                  'type': 'discrete',
@@ -267,25 +292,31 @@ class Lasso(BaseModel):
                  'domain': np.linspace(0.05, 5, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[500, 1.0]])
 
 
 class ElasticNet(BaseModel):
+    """Linear Regression with both lasso and ridge regularization."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'EN', 'ElasticNet Regression'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'max_iter': int(x[0, 0]),
                   'alpha': round(x[0, 1], 2),
                   'l1_ratio': round(x[0, 2], 2)}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return ElasticNetRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'max_iter',
                  'type': 'discrete',
                  'domain': range(100, 1010, 10)},
@@ -297,38 +328,48 @@ class ElasticNet(BaseModel):
                  'domain': np.linspace(0.05, 0.95, 19)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[1000, 1.0, 0.5]])
 
 
 class BayesianRegression(BaseModel):
+    """Linear Bayesian Regression model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'BR', 'Bayesian Regression'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'n_iter': int(x[0, 0])}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return BayesianRidge(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_iter',
                  'type': 'discrete',
                  'domain': range(100, 1010, 10)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[300]])
 
 
 class LogisticRegression(BaseModel):
+    """Logistic Regression model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'LR', 'Logistic Regression'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         regularization = ['l2', 'none']
         class_weight = [None, 'balanced']
         params = {'max_iter': int(x[0, 0]),
@@ -338,11 +379,13 @@ class LogisticRegression(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return LR(random_state=self.T.random_state,
                   n_jobs=self.T.n_jobs,
                   **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'max_iter',
                  'type': 'discrete',
                  'domain': range(100, 1010, 10)},
@@ -357,16 +400,20 @@ class LogisticRegression(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 1.0, 0, 0]])
 
 
 class LinearDiscriminantAnalysis(BaseModel):
+    """Linear Discrimnant Analysis model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'LDA', 'Linear Discriminant Analysis'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         solver_types = ['svd', 'lsqr', 'eigen']
         solver = solver_types[int(x[0, 0])]
         params = {'solver': solver}
@@ -377,9 +424,11 @@ class LinearDiscriminantAnalysis(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return LDA(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'solver',
                  'type': 'discrete',
                  'domain': range(3)},
@@ -388,38 +437,48 @@ class LinearDiscriminantAnalysis(BaseModel):
                  'domain': np.linspace(0.0, 1.0, 11)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[0, 0]])
 
 
 class QuadraticDiscriminantAnalysis(BaseModel):
+    """Quadratic Discrimnant Analysis model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'QDA', 'Quadratic Discriminant Analysis'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'reg_param': round(x[0, 0], 1)}
         return params
 
     def get_model(self, params={}):
+        """Call the model object."""
         return QDA(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'reg_param',
                  'type': 'discrete',
                  'domain': np.linspace(0.0, 1.0, 11)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[0]])
 
 
 class KNearestNeighbors(BaseModel):
+    """K-Nearest Neighbors model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         weights = ['distance', 'uniform']
         params = {'n_neighbors': int(x[0, 0]),
                   'leaf_size': int(x[0, 1]),
@@ -428,12 +487,14 @@ class KNearestNeighbors(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return KNeighborsClassifier(n_jobs=self.T.n_jobs, **params)
         else:
             return KNeighborsRegressor(n_jobs=self.T.n_jobs, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_neighbors',
                  'type': 'discrete',
                  'domain': range(1, 101)},
@@ -448,16 +509,20 @@ class KNearestNeighbors(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[5, 30, 2, 1]])
 
 
 class DecisionTree(BaseModel):
+    """Single Decision Tree."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'Tree', 'Decision Tree'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         splitter = ['best', 'random']
         if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
@@ -474,6 +539,7 @@ class DecisionTree(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return DecisionTreeClassifier(random_state=self.T.random_state,
                                           **params)
@@ -482,6 +548,7 @@ class DecisionTree(BaseModel):
                                          **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'criterion',
                  'type': 'discrete',
                  'domain': range(2 if self.T.task != 'regression' else 3)},
@@ -505,13 +572,15 @@ class DecisionTree(BaseModel):
                  'domain': np.linspace(0, 0.035, 8)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[0, 0, 10, 1.0, 2, 1, 0.0]])
 
 
 class Bagging(BaseModel):
-    """ Bagging class (with decision tree as base estimator) """
+    """Bagging model (with decision tree as base estimator)."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name = 'Bag'
         if self.T.task != 'regression':
@@ -520,6 +589,7 @@ class Bagging(BaseModel):
             self.longname = 'Bagging Regressor'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         bootstrap = [True, False]
         params = {'n_estimators': int(x[0, 0]),
                   'max_samples': round(x[0, 1], 1),
@@ -529,6 +599,7 @@ class Bagging(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return BaggingClassifier(random_state=self.T.random_state,
                                      n_jobs=self.T.n_jobs,
@@ -539,6 +610,7 @@ class Bagging(BaseModel):
                                     **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(10, 501)},
@@ -556,17 +628,20 @@ class Bagging(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[10, 1.0, 1.0, 0, 1]])
 
 
 class ExtraTrees(BaseModel):
-    """ Extremely Randomized Trees """
+    """Extremely Randomized Trees."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'ET', 'Extra-Trees'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         bootstrap = [True, False]
         if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
@@ -588,6 +663,7 @@ class ExtraTrees(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return ExtraTreesClassifier(random_state=self.T.random_state,
                                         n_jobs=self.T.n_jobs,
@@ -598,6 +674,7 @@ class ExtraTrees(BaseModel):
                                        **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(20, 501)},
@@ -627,16 +704,20 @@ class ExtraTrees(BaseModel):
                  'domain': np.linspace(0.5, 0.9, 5)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 1, 0.9]])
 
 
 class RandomForest(BaseModel):
+    """Random Forest model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'RF', 'Random Forest'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         bootstrap = [True, False]
         if self.T.task != 'regression':
             criterion = ['gini', 'entropy']
@@ -658,6 +739,7 @@ class RandomForest(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return RandomForestClassifier(random_state=self.T.random_state,
                                           n_jobs=self.T.n_jobs,
@@ -668,6 +750,7 @@ class RandomForest(BaseModel):
                                          **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(20, 501)},
@@ -697,22 +780,26 @@ class RandomForest(BaseModel):
                  'domain': np.linspace(0.5, 0.9, 5)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 0, 0.9]])
 
 
 class AdaBoost(BaseModel):
-    """ Adaptive Boosting (with decision tree as base estimator) """
+    """Adaptive Boosting (with decision tree as base estimator)."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'AdaB', 'AdaBoost'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'n_estimators': int(x[0, 0]),
                   'learning_rate': round(x[0, 1], 2)}
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return AdaBoostClassifier(random_state=self.T.random_state,
                                       **params)
@@ -721,6 +808,7 @@ class AdaBoost(BaseModel):
                                      **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(50, 501)},
@@ -729,16 +817,20 @@ class AdaBoost(BaseModel):
                  'domain': np.linspace(0.01, 1, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[50, 1]])
 
 
 class GradientBoostingMachine(BaseModel):
+    """Gradient Boosting Machine model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=False))
         self.name, self.longname = 'GBM', 'Gradient Boosting Machine'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         criterion = ['friedman_mse', 'mae', 'mse']
         params = {'n_estimators': int(x[0, 0]),
                   'learning_rate': round(x[0, 1], 2),
@@ -752,6 +844,7 @@ class GradientBoostingMachine(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return GradientBoostingClassifier(random_state=self.T.random_state,
                                               **params)
@@ -760,6 +853,7 @@ class GradientBoostingMachine(BaseModel):
                                              **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(50, 501)},
@@ -789,17 +883,20 @@ class GradientBoostingMachine(BaseModel):
                  'domain': np.linspace(0, 0.035, 8)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 0.1, 1.0, 3, 1.0, 0, 2, 1, 0.0]])
 
 
 class XGBoost(BaseModel):
-    """ Extreme Gradient Boosting """
+    """Extreme Gradient Boosting."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'XGB', 'XGBoost'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'n_estimators': int(x[0, 0]),
                   'learning_rate': round(x[0, 1], 2),
                   'max_depth': int(x[0, 2]),
@@ -812,6 +909,7 @@ class XGBoost(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         from xgboost import XGBClassifier, XGBRegressor
         # XGBoost can't handle random_state to be None
         rs = 0 if self.T.random_state is None else self.T.random_state
@@ -827,6 +925,7 @@ class XGBoost(BaseModel):
                                 **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(20, 501)},
@@ -856,17 +955,20 @@ class XGBoost(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 0.1, 3, 0.0, 1, 1.0, 1.0, 0, 1]])
 
 
 class LightGBM(BaseModel):
-    """ Light Gradient Boosting Machine """
+    """Light Gradient Boosting Machine."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'LGB', 'LightGBM'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'n_estimators': int(x[0, 0]),
                   'learning_rate': round(x[0, 1], 2),
                   'max_depth': int(x[0, 2]),
@@ -880,6 +982,7 @@ class LightGBM(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
         if self.T.task != 'regression':
             return LGBMClassifier(n_jobs=self.T.n_jobs,
@@ -891,6 +994,7 @@ class LightGBM(BaseModel):
                                  **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'n_estimators',
                  'type': 'discrete',
                  'domain': range(20, 501)},
@@ -923,17 +1027,20 @@ class LightGBM(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 0.1, 3, 31, 1, 20, 1.0, 1.0, 0, 0]])
 
 
 class CatBoost(BaseModel):
-    """ Categorical Boosting Machine """
+    """Categorical Boosting Machine."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'CatB', 'CatBoost'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         params = {'n_estimators': int(x[0, 0]),
                   'learning_rate': round(x[0, 1], 2),
                   'max_depth': int(x[0, 2]),
@@ -943,6 +1050,7 @@ class CatBoost(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         from catboost import CatBoostClassifier, CatBoostRegressor
         if self.T.task != 'regression':
             # subsample only works when bootstrap_type=Bernoulli
@@ -960,6 +1068,7 @@ class CatBoost(BaseModel):
                                      **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         # num_leaves and min_child_samples not availbale for CPU implementation
         return [{'name': 'n_estimators',
                  'type': 'discrete',
@@ -981,17 +1090,20 @@ class CatBoost(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[100, 0.1, 3, 1.0, 1.0, 0]])
 
 
 class LinearSVM(BaseModel):
-    """ Linear Support Vector Machine """
+    """Linear Support Vector Machine."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'lSVM', 'Linear SVM'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         if self.T.task != 'regression':
             losses = ['hinge', 'squared_hinge']
         else:
@@ -1015,12 +1127,14 @@ class LinearSVM(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return LinearSVC(random_state=self.T.random_state, **params)
         else:
             return LinearSVR(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'C',
                  'type': 'discrete',
                  'domain': (1e-3, 0.01, 0.1, 1, 10, 100)},
@@ -1032,17 +1146,20 @@ class LinearSVM(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[1, 1, 1]])
 
 
 class KernelSVM(BaseModel):
-    """ Kernel (non-linear) Support Vector Machine """
+    """Kernel (non-linear) Support Vector Machine."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'kSVM', 'Kernel SVM'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         kernels = ['poly', 'rbf', 'sigmoid']
         kernel = kernels[int(x[0, 4])]
         gamma = ['auto', 'scale']
@@ -1060,12 +1177,14 @@ class KernelSVM(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return SVC(random_state=self.T.random_state, **params)
         else:
             return SVR(**params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'C',
                  'type': 'discrete',
                  'domain': (1e-3, 0.01, 0.1, 1, 10, 100)},
@@ -1086,16 +1205,20 @@ class KernelSVM(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[1, 3, 0, 0, 1, 0]])
 
 
 class PassiveAggressive(BaseModel):
+    """Passive Aggressive model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'PA', 'Passive Aggressive'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         if self.T.task != 'regression':
             loss = ['hinge', 'squared_hinge']
         else:
@@ -1109,6 +1232,7 @@ class PassiveAggressive(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return PAC(random_state=self.T.random_state,
                        n_jobs=self.T.n_jobs,
@@ -1117,6 +1241,7 @@ class PassiveAggressive(BaseModel):
             return PAR(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'loss',
                  'type': 'discrete',
                  'domain': range(2)},
@@ -1128,16 +1253,20 @@ class PassiveAggressive(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[0, 1, 1]])
 
 
 class StochasticGradientDescent(BaseModel):
+    """Stochastic Gradient Descent model."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         if self.T.task != 'regression':
             loss = ['hinge', 'log', 'modified_huber', 'squared_hinge',
                     'perceptron', 'squared_loss', 'huber',
@@ -1169,6 +1298,7 @@ class StochasticGradientDescent(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return SGDClassifier(random_state=self.T.random_state,
                                  n_jobs=self.T.n_jobs,
@@ -1177,6 +1307,7 @@ class StochasticGradientDescent(BaseModel):
             return SGDRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'loss',
                  'type': 'discrete',
                  'domain': range(9 if self.T.task != 'regression' else 4)},
@@ -1206,16 +1337,20 @@ class StochasticGradientDescent(BaseModel):
                  'domain': np.linspace(0.05, 1, 20)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[0, 2, 1e-4, 1, 0.1, 0.01, 2, 0.15, 0.25]])
 
 
 class MultilayerPerceptron(BaseModel):
+    """Multilayer Perceptron with 1 to 3 hidden layers."""
 
     def __init__(self, *args):
+        """Class initializer (contains super() to parent class)."""
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'MLP', 'Multilayer Perceptron'
 
     def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
         # Set the number of neurons per layer
         n1, n2, n3 = int(x[0, 0]), int(x[0, 1]), int(x[0, 2])
         if n2 == 0:
@@ -1233,12 +1368,14 @@ class MultilayerPerceptron(BaseModel):
         return params
 
     def get_model(self, params={}):
+        """Return the model object with unpacked parameters."""
         if self.T.task != 'regression':
             return MLPClassifier(random_state=self.T.random_state, **params)
         else:
             return MLPRegressor(random_state=self.T.random_state, **params)
 
     def get_domain(self):
+        """Return a list of the bounds for the hyperparameters."""
         return [{'name': 'hidden_layer_1',
                  'type': 'discrete',
                  'domain': range(10, 101)},
@@ -1262,4 +1399,5 @@ class MultilayerPerceptron(BaseModel):
                  'domain': (1, 8, 32, 64)}]
 
     def get_init_values(self):
+        """Return the default values of the model's hypertparameters."""
         return np.array([[20, 0, 0, 1e-4, 1e-3, 200, 32]])

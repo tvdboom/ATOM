@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing the main ATOM class
 
@@ -28,30 +28,31 @@ from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import (
-     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
-     chi2, SelectKBest, SelectFromModel, RFE, RFECV
+    f_classif, f_regression, mutual_info_classif, mutual_info_regression,
+    chi2, SelectKBest, SelectFromModel, RFE, RFECV
     )
 
 # Own package modules
 from .utils import (
-     composed, crash, params_to_log, time_to_string,
-     to_df, to_series, merge, check_is_fitted
-     )
+    composed, crash, params_to_log, time_to_string,
+    to_df, to_series, merge, check_is_fitted
+    )
 from .plots import (
-        save, plot_correlation, plot_PCA, plot_RFECV, plot_ROC, plot_PRC,
-        plot_bagging, plot_successive_halving, plot_learning_curve,
-        plot_permutation_importance, plot_feature_importance,
-        plot_confusion_matrix, plot_threshold, plot_probabilities
-        )
+    save, plot_correlation, plot_PCA, plot_components, plot_RFECV,
+    plot_ROC, plot_PRC, plot_bagging, plot_successive_halving,
+    plot_learning_curve, plot_permutation_importance, plot_feature_importance,
+    plot_confusion_matrix, plot_threshold, plot_probabilities,
+    plot_calibration, plot_gains, plot_lift
+    )
 from .models import (
-     GaussianProcess, GaussianNaïveBayes, MultinomialNaïveBayes,
-     BernoulliNaïveBayes, OrdinaryLeastSquares, Ridge, Lasso, ElasticNet,
-     BayesianRegression, LogisticRegression, LinearDiscriminantAnalysis,
-     QuadraticDiscriminantAnalysis, KNearestNeighbors, DecisionTree,
-     Bagging, ExtraTrees, RandomForest, AdaBoost, GradientBoostingMachine,
-     XGBoost, LightGBM, CatBoost, LinearSVM, KernelSVM, PassiveAggressive,
-     StochasticGradientDescent, MultilayerPerceptron
-     )
+    GaussianProcess, GaussianNaïveBayes, MultinomialNaïveBayes,
+    BernoulliNaïveBayes, OrdinaryLeastSquares, Ridge, Lasso, ElasticNet,
+    BayesianRegression, LogisticRegression, LinearDiscriminantAnalysis,
+    QuadraticDiscriminantAnalysis, KNearestNeighbors, DecisionTree,
+    Bagging, ExtraTrees, RandomForest, AdaBoost, GradientBoostingMachine,
+    XGBoost, LightGBM, CatBoost, LinearSVM, KernelSVM, PassiveAggressive,
+    StochasticGradientDescent, MultilayerPerceptron
+    )
 
 # Plotting
 import seaborn as sns
@@ -111,6 +112,7 @@ only_regression = ['OLS', 'Lasso', 'EN', 'BR']
 # << ================= Classes ================= >>
 
 class ATOM(object):
+    """ATOM base class."""
 
     # Define class variables for plot aesthetics
     style = 'darkgrid'
@@ -131,10 +133,9 @@ class ATOM(object):
                  warnings: bool,
                  verbose: int,
                  random_state: Optional[int]):
+        """Class initializer.
 
-        """
-        The class initializer will automatically proceed to apply some standard
-        data cleaning steps unto the data. These steps include:
+        Applies standard data cleaning. These steps include:
             - Transforming the input data into a pd.DataFrame (if it wasn't one
               already) that can be accessed through the class' data attributes.
             - Removing columns with prohibited data types ('datetime64',
@@ -145,7 +146,7 @@ class ATOM(object):
             - Removing columns with minimum cardinality (all values are equal).
             - Removing rows with missing values in the target column.
 
-        PARAMETERS
+        Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
@@ -184,7 +185,6 @@ class ATOM(object):
             number generator is the RandomState instance used by `np.random`.
 
         """
-
         # << ============ Handle input data ============ >>
 
         # Convert X to pd.DataFrame
@@ -229,7 +229,7 @@ class ATOM(object):
             self.dataset = X.reset_index(drop=True)
             self.target = self.dataset.columns[-1]
 
-        # << ============ Check input parameters ============ >>
+        # << ============ Check input Parameters ============ >>
 
         if percentage <= 0 or percentage > 100:
             raise ValueError("Invalid value for the percentage parameter." +
@@ -287,7 +287,7 @@ class ATOM(object):
                 raise ValueError("Invalid value for the n_jobs parameter, " +
                                  f"got {n_jobs}.")
 
-            elif self.n_jobs != 1:
+            if self.n_jobs != 1:
                 self._log(f"Parallel processing with {self.n_jobs} cores.")
 
         # << ============ Data cleaning ============ >>
@@ -353,30 +353,25 @@ class ATOM(object):
         # Make sure the target categories are numerical
         # Not strictly necessary for sklearn models, but cleaner
         if self.task != 'regression':
-            if self.dataset[self.target].dtype.kind not in 'ifu':
-                le = LabelEncoder()
-                self.dataset[self.target] = \
-                    le.fit_transform(self.dataset[self.target])
-                self.mapping = {str(v): i for i, v in enumerate(le.classes_)}
-            else:
-                self.mapping = {str(i): v for i, v in enumerate(self._unique)}
+            le = LabelEncoder()
+            self.dataset[self.target] = \
+                le.fit_transform(self.dataset[self.target])
+            self.mapping = {str(v): i for i, v in enumerate(le.classes_)}
         else:
-            self.mapping = "No target mapping for regression tasks"
+            self.mapping = "No target mapping for regression tasks!"
 
         # << =========================================== >>
 
-        self._split_dataset(self.dataset, self.percentage)  # Train/test split
+        self._split_dataset(self.dataset, percentage)  # Train/test split
         self.update()  # Define data subsets class attributes
         self.stats(1)  # Print out data stats
 
     # << ======================= Utility methods ======================= >>
 
     def _log(self, string, level=0):
+        """Print and save output to log file.
 
-        """
-        Print and save output to log file.
-
-        PARAMETERS
+        Parameters
         ----------
         string: string
             Message to save to log and print to stdout.
@@ -385,7 +380,6 @@ class ATOM(object):
             Minimum verbosity level in order to print the message to stdout.
 
         """
-
         if self.verbose > level:
             print(string)
 
@@ -396,11 +390,9 @@ class ATOM(object):
             self.log.info(string)
 
     def _split_dataset(self, dataset, percentage=100):
+        """Split a percentage of the dataset into a train and test set.
 
-        """
-        Split a percentage of the dataset into a train and test set.
-
-        PARAMETERS
+        Parameters
         ----------
         dataset: pd.DataFrame
             Dataset to use for splitting.
@@ -409,9 +401,8 @@ class ATOM(object):
             Percentage of the data to use.
 
         """
-
-        # Get percentage of data (for successive halving)
-        self.dataset = dataset.sample(frac=percentage/100.)  # Shuffle first
+        # Shuffle the dataset and get percentage of data
+        self.dataset = dataset.sample(frac=percentage/100.)
         self.dataset.reset_index(drop=True, inplace=True)
 
         # Split train and test sets on percentage of data
@@ -421,17 +412,14 @@ class ATOM(object):
 
     @composed(crash, params_to_log)
     def stats(self, _verbose: int = -2):
+        """Print some information about the dataset.
 
-        """
-        Print some information about the dataset.
-
-        PARAMETERS
+        Parameters
         ----------
         _verbose: int, optional (default=-2)
             Internal parameter to always print if the user calls this method.
 
         """
-
         self._log("\nDataset stats ===================>", _verbose)
         self._log(f"Shape: {self.dataset.shape}", _verbose)
 
@@ -452,10 +440,14 @@ class ATOM(object):
             # Create dataframe with stats per target class
             index = []
             for key, value in self.mapping.items():
-                if '0' not in self.mapping.keys():
+                try:
+                    list_ = list(map(int, self.mapping.keys()))
+                    if list_ != list(self.mapping.values()):
+                        index.append(str(value) + ': ' + key)
+                    else:
+                        index.append(value)
+                except ValueError:
                     index.append(str(value) + ': ' + key)
-                else:
-                    index.append(value)
 
             stats = pd.DataFrame(columns=[' total', ' train_set', ' test_set'])
 
@@ -493,17 +485,14 @@ class ATOM(object):
 
     @composed(crash, params_to_log)
     def scale(self, _print: bool = True):
+        """Scale features to mean=0 and std=1.
 
-        """
-        Scale features to mean=0 and std=1.
-
-        PARAMETERS
+        Parameters
         ----------
         _print: bool, optional (default=True)
             Internal parameter to know if printing is needed.
 
         """
-
         columns_x = self.X_train.columns
 
         # Check if features are already scaled
@@ -522,8 +511,8 @@ class ATOM(object):
 
     @composed(crash, typechecked)
     def update(self, df: str = 'dataset'):
+        """Update data attributes.
 
-        """
         If you change any of the class' data attributes (dataset, X, y,
         train, test, X_train, X_test, y_train, y_test) in between the
         pipeline, you should call this method to change all other data
@@ -532,13 +521,12 @@ class ATOM(object):
         update X_test, y_train and y_test, or df='train' will also
         update the test set, etc...
 
-        PARAMETERS
+        Parameters
         ----------
         df: str, optional (default='dataset')
             Data attribute (as string) that has been changed.
 
         """
-
         if df not in ['train_test', 'X_y'] and not hasattr(self, df):
             raise ValueError("Invalid value for the df parameter." +
                              "Value should be a data attribute of the ATOM " +
@@ -583,13 +571,12 @@ class ATOM(object):
                df: str = 'dataset',
                rows: Optional[scalar] = None,  # float for 1e3, etc.
                filename: Optional[str] = None):
+        """Create an extensive profile analysis of the data.
 
-        """
-        Get an extensive profile analysis of the data. The report is rendered
-        in HTML5 and CSS3. Note that this method can be slow for rows>10k.
-        Dependency: pandas-profiling.
+        The profile report is rendered in HTML5 and CSS3. Note that this
+        method can be slow for rows>10k. Dependency: pandas-profiling.
 
-        PARAMETERS
+        Parameters
         ----------
         df: str, optional(default='dataset')
             Name of the data class attribute to get the report from.
@@ -601,7 +588,6 @@ class ATOM(object):
             Name of the file when saved (as .html). None to not save anything.
 
         """
-
         try:
             from pandas_profiling import ProfileReport
         except ImportError:
@@ -614,28 +600,28 @@ class ATOM(object):
 
         self._log("Creating profile report...", 1)
 
-        ProfileReport(getattr(self, df).sample(rows))
+        self.profile = ProfileReport(getattr(self, df).sample(rows))
         try:  # Render if possible (for jupyter notebook)
             from IPython.display import display
-            display(self.report)
+            display(self.profile)
         except Exception:
             pass
 
         if filename is not None:
             if not filename.endswith('.html'):
                 filename = filename + '.html'
-            self.report.to_file(filename)
+            self.profile.to_file(filename)
 
     @composed(crash, params_to_log, typechecked)
     def results(self, metric: Optional[str] = None):
+        """Print the pipeline's final results for a specific metric.
 
-        """
-        Print the pipeline's final results for a specific metric. If a model
-        shows a `XXX`, it means the metric failed for that specific model. This
-        can happen if either the metric is unavailable for the task or if the
-        model does not have a `predict_proba` method while the metric needs it.
+        If a model shows a `XXX`, it means the metric failed for that specific
+        model. This can happen if either the metric is unavailable for the task
+        or if the model does not have a `predict_proba` method while the metric
+        needs it.
 
-        PARAMETERS
+        Parameters
         ----------
         metric: string or None, optional (default=None)
             String of one of sklearn's predefined metrics. If None, the metric
@@ -643,7 +629,6 @@ class ATOM(object):
             be showed (if used).
 
         """
-
         check_is_fitted(self._is_fitted)  # Raise error is class not fitted
         _isNone = False  # If the metric parameter is called with None or not
         if metric is None:
@@ -660,7 +645,7 @@ class ATOM(object):
         # Get list of scores
         scrs = []
         for m in self.models:
-            if _isNone and self.bagging is not None:
+            if _isNone and self._has_bag:
                 scrs.append(getattr(self, m).bagging_scores.mean())
 
             # If invalid metric, don't append to scores
@@ -678,7 +663,7 @@ class ATOM(object):
             m = getattr(self, model)
 
             # If metric is None and bagging, print out bagging results
-            if _isNone and self.bagging is not None:
+            if _isNone and self._has_bag:
                 score = m.bagging_scores.mean()
 
                 # Create string of the score
@@ -709,9 +694,7 @@ class ATOM(object):
 
     @composed(crash, params_to_log, typechecked)
     def save(self, filename: Optional[str] = None):
-
-        """
-        Save the ATOM class to a pickle file.
+        """Save the ATOM class to a pickle file.
 
         Parameters
         ----------
@@ -719,7 +702,6 @@ class ATOM(object):
             Name to save the file with. None to save with default name.
 
         """
-
         save(self, self.__class__.__name__ if filename is None else filename)
         self._log("ATOM class saved successfully!", 1)
 
@@ -732,12 +714,12 @@ class ATOM(object):
                max_frac_rows: float = 0.5,
                max_frac_cols: float = 0.5,
                missing: Optional[Union[scalar, str, list]] = None):
+        """Handle missing values in the dataset.
 
-        """
-        Handle missing values according to the selected strategy. Also
-        removes rows and columns with too many missing values.
+        Impute or remove missing values according to the selected strategy.
+        Also removes rows and columns with too many missing values.
 
-        PARAMETERS
+        Parameters
         ----------
         strat_num: str, int or float, optional (default='remove')
             Imputing strategy for numerical columns. Choose from:
@@ -767,16 +749,14 @@ class ATOM(object):
             np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
 
         """
-
         def fit_imputer(imputer):
-            """ Fit and transform the imputer class """
-
+            """Fit and transform the imputer class."""
             self.train[col] = imputer.fit_transform(
-                                        self.train[col].values.reshape(-1, 1))
+                self.train[col].values.reshape(-1, 1))
             self.test[col] = imputer.transform(
-                                        self.test[col].values.reshape(-1, 1))
+                self.test[col].values.reshape(-1, 1))
 
-        # Check input parameters
+        # Check input Parameters
         strats = ['remove', 'mean', 'median', 'knn', 'most_frequent']
         if isinstance(strat_num, str) and strat_num.lower() not in strats:
             raise ValueError("Unknown strategy for the strat_num parameter" +
@@ -885,16 +865,17 @@ class ATOM(object):
 
     @composed(crash, params_to_log, typechecked)
     def encode(self, max_onehot: Optional[int] = 10, frac_to_other: float = 0):
+        """Perform encoding of categorical features.
 
-        """
-        Perform encoding of categorical features. The encoding type depends
-        on the number of unique values in the column: label-encoding for
-        n_unique=2, one-hot-encoding for 2 < n_unique <= max_onehot and
-        target-encoding for n_unique > max_onehot. It also replaces classes
-        with low occurences with the value 'other' in order to prevent too
-        high cardinality.
+        The encoding type depends on the number of unique values in the column:
+            - label-encoding for n_unique=2
+            - one-hot-encoding for 2 < n_unique <= max_onehot
+            - target-encoding for n_unique > max_onehot
 
-        PARAMETERS
+        It also replaces classes with low occurences with the value 'other' in
+        order to prevent too high cardinality.
+
+        Parameters
         ----------
         max_onehot: int or None, optional (default=10)
             Maximum number of unique values in a feature to perform
@@ -905,8 +886,7 @@ class ATOM(object):
             are replaced with 'other'.
 
         """
-
-        # Check parameters
+        # Check Parameters
         if max_onehot is None:
             max_onehot = 0
         elif max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
@@ -949,8 +929,8 @@ class ATOM(object):
 
                     # Place target column last
                     self.dataset = self.dataset[
-                            [col for col in self.dataset if col != self.target]
-                            + [self.target]]
+                        [col for col in self.dataset if col != self.target]
+                        + [self.target]]
 
                 else:
                     self._log(f" --> Target-encoding feature {col}.  " +
@@ -975,19 +955,19 @@ class ATOM(object):
                       "result, there will appear missing values in " +
                       f"column{t}: {', '.join(cols)}. To solve this, try " +
                       "increasing the size of the dataset, the " +
-                      "frac_to_other and max_onehot parameters, or remove " +
+                      "frac_to_other and max_onehot Parameters, or remove " +
                       "features with high cardinality.")
 
     @composed(crash, params_to_log, typechecked)
     def outliers(self,
                  max_sigma: scalar = 3,
                  include_target: bool = False):
+        """Remove outliers for the training set.
 
-        """
         Remove rows from the training set where at least one value lies further
         than `max_sigma` * standard_deviation away from the mean of the column.
 
-        PARAMETERS
+        Parameters
         ----------
         max_sigma: int or float, optional (default=3)
             Maximum allowed standard deviations from the mean.
@@ -996,8 +976,7 @@ class ATOM(object):
             Wether to include the target column when searching for outliers.
 
         """
-
-        # Check parameters
+        # Check Parameters
         if max_sigma <= 0:
             raise ValueError("Invalid value for the max_sigma parameter." +
                              f"Value should be > 0, got {max_sigma}.")
@@ -1022,14 +1001,14 @@ class ATOM(object):
                 oversample: Optional[Union[scalar, str]] = None,
                 undersample: Optional[Union[scalar, str]] = None,
                 n_neighbors: int = 5):
+        """Balance the dataset.
 
-        """
         Balance the number of instances per target class in the training set.
         If both oversampling and undersampling are used, they will be applied
-        in that order.
-        Only for classification tasks. Dependency: imbalanced-learn.
+        in that order. Only for classification tasks.
+        Dependency: imbalanced-learn.
 
-        PARAMETERS
+        Parameters
         ----------
         oversample: float, string or None, optional (default=None)
             Oversampling strategy using ADASYN. Choose from:
@@ -1053,11 +1032,8 @@ class ATOM(object):
             Number of nearest neighbors used for any of the algorithms.
 
         """
-
         def check_params(name, value):
-
-            """
-            Check the oversample and undersample parameters.
+            """Check the oversample and undersample parameters.
 
             Parameters
             ----------
@@ -1068,7 +1044,6 @@ class ATOM(object):
                 Value of the parameter.
 
             """
-
             # List of admitted string values
             strategies = ['majority', 'minority',
                           'not majority', 'not minority', 'all']
@@ -1098,7 +1073,7 @@ class ATOM(object):
                                       " package. Install it before using the" +
                                       " balance method.")
 
-        # Check parameters
+        # Check Parameters
         check_params('oversample', oversample)
         check_params('undersample', undersample)
         if n_neighbors <= 0:
@@ -1157,8 +1132,8 @@ class ATOM(object):
                           n_features: int = 2,
                           generations: int = 20,
                           population: int = 500):
+        """Create new non-linear features.
 
-        """
         Use a genetic algorithm to create new combinations of existing
         features and add them to the original dataset in order to capture
         the non-linear relations between the original features. A dataframe
@@ -1169,7 +1144,7 @@ class ATOM(object):
         adviced to only use this method when fitting linear models.
         Dependency: gplearn.
 
-        PARAMETERS -------------------------------------
+        Parameters -------------------------------------
 
         n_features: int, optional (default=2)
             Maximum number of newly generated features (no more than 1%
@@ -1182,7 +1157,6 @@ class ATOM(object):
             Number of programs in each generation.
 
         """
-
         try:
             from gplearn.genetic import SymbolicTransformer
         except ImportError:
@@ -1190,7 +1164,7 @@ class ATOM(object):
                                       " package. Install it before using " +
                                       "the feature_insertion method.")
 
-        # Check parameters
+        # Check Parameters
         if population < 100:
             raise ValueError("Invalid value for the population parameter." +
                              f"Value should be >100, got {population}.")
@@ -1289,8 +1263,8 @@ class ATOM(object):
                           max_frac_repeated: Optional[scalar] = 1.,
                           max_correlation: Optional[float] = 0.98,
                           **kwargs):
+        """Apply feature selection techniques.
 
-        """
         Remove features according to the selected strategy. Ties between
         features with equal scores will be broken in an unspecified way.
         Also removes features with too low variance and finds pairs of
@@ -1303,7 +1277,7 @@ class ATOM(object):
         already ran before running the RFECV, the scoring parameter will be set
         to the selected metric (if scoring=None).
 
-        PARAMETERS
+        Parameters
         ----------
         strategy: string or None, optional (default=None)
             Feature selection strategy to use. Choose from:
@@ -1373,20 +1347,16 @@ class ATOM(object):
             sklearn documentation for the available options.
 
         """
-
         def remove_low_variance(max_frac_repeated):
+            """Remove features with too low variance.
 
-            """
-            Removes features with too low variance.
-
-            PARAMETERS
+            Parameters
             ----------
             max_frac_repeated: float
                 Remove features with same values in at least this fraction
                 of the total.
 
             """
-
             for n, col in enumerate(self.X):
                 uniq, count = np.unique(self.dataset[col], return_counts=True)
                 for u, c in zip(uniq, count):
@@ -1400,22 +1370,21 @@ class ATOM(object):
                         break
 
         def remove_collinear(limit):
+            """Remove collinear features.
 
-            """
             Finds pairs of collinear features based on the Pearson
             correlation coefficient. For each pair above the specified
             limit (in terms of absolute value), it removes one of the two.
             Using code adapted from: https://chrisalbon.com/machine_learning/
             feature_selection/drop_highly_correlated_features
 
-            PARAMETERS
+            Parameters
             ----------
             limit: float
                 Minimum value of the Pearson correlation cofficient to
                 identify correlated features.
 
             """
-
             mtx = self.X_train.corr()  # Pearson correlation coefficient matrix
 
             # Extract the upper triangle of the correlation matrix
@@ -1436,7 +1405,7 @@ class ATOM(object):
 
                 # Find the correlated values
                 corr_values = list(round(
-                                upper[column][abs(upper[column]) > limit], 5))
+                    upper[column][abs(upper[column]) > limit], 5))
                 drop_features = set([column for _ in corr_features])
 
                 # Add to class attribute
@@ -1452,19 +1421,15 @@ class ATOM(object):
             self.dataset.drop(to_drop, axis=1, inplace=True)
 
         def check_solver(solver):
+            """Check the validity of the solver parameter.
 
-            """
-            Check the validity of the solver parameter for the SFM, RFE and
-            RFECV strategies.
-
-            PARAMETERS
+            Parameters
             ----------
             solver: string, callable or None
                 Estimator to use, either as string from the ATOM's models or as
                 callable.
 
             """
-
             if solver is None:
                 raise ValueError("Select a model for the solver!")
             elif isinstance(solver, str):
@@ -1479,7 +1444,7 @@ class ATOM(object):
             else:
                 return solver
 
-        # Check parameters
+        # Check Parameters
         if n_features is not None and n_features <= 0:
             raise ValueError("Invalid value for the n_features parameter." +
                              f"Value should be >0, got {n_features}.")
@@ -1545,7 +1510,7 @@ class ATOM(object):
             self.update('dataset')
 
         elif strategy.lower() == 'pca':
-            self._log(f" --> Applying Principal Component Analysis... ", 2)
+            self._log(f" --> Applying Principal Component Analysis...", 2)
 
             self.scale(0)  # Scale features (if not done already)
 
@@ -1555,8 +1520,18 @@ class ATOM(object):
                            svd_solver=solver,
                            **kwargs)
             self.PCA.fit(self.X_train)
+            var = np.array(self.PCA.explained_variance_ratio_)
+
+            # Another PCA object to get the explained variances for all the
+            # components for the plots
+            self._PCA_all = PCA(n_components=None,
+                                svd_solver=solver,
+                                **kwargs)
+            self._PCA_all.fit(self.X_train)
             self.X_train = to_df(self.PCA.transform(self.X_train), pca=True)
             self.X_test = to_df(self.PCA.transform(self.X_test), pca=True)
+            self._log("   >>> Total explained variance: {}"
+                      .format(round(var.sum(), 3)), 2)
             self.update('X_train')
 
         elif strategy.lower() == 'sfm':
@@ -1597,6 +1572,8 @@ class ATOM(object):
 
         elif strategy.lower() == 'rfecv':
             solver = check_solver(solver)
+            if n_features == self.X_train.shape[1]:
+                n_features = 1
 
             # If pipeline ran already, use selected metric
             if hasattr(self, 'metric') and 'scoring' not in kwargs.keys():
@@ -1623,26 +1600,29 @@ class ATOM(object):
     # << ======================== Pipeline ======================== >>
 
     @composed(crash, params_to_log, typechecked)
-    def pipeline(self,
-                 models: Union[str, List[str], Tuple[str]],
-                 metric: Optional[Union[str, callable]] = None,
-                 greater_is_better: bool = True,
-                 needs_proba: bool = False,
-                 successive_halving: bool = False,
-                 skip_iter: int = 0,
-                 max_iter: Union[int, Sequence[int]] = 0,
-                 max_time: Union[scalar, Sequence[scalar]] = np.inf,
-                 init_points: Union[int, Sequence[int]] = 5,
-                 cv: Union[int, Sequence[int]] = 3,
-                 plot_bo: bool = False,
-                 bagging: Optional[int] = None):
+    def _run_pipeline(self,
+                      models: Union[str, List[str], Tuple[str]],
+                      metric: Optional[Union[str, callable]] = None,
+                      greater_is_better: bool = True,
+                      needs_proba: bool = False,
+                      needs_threshold: bool = False,
+                      successive_halving: bool = False,
+                      skip_iter: int = 0,
+                      train_sizing: bool = False,
+                      train_sizes: train_types = np.linspace(0.1, 1.0, 10),
+                      max_iter: Union[int, Sequence[int]] = 0,
+                      max_time: Union[scalar, Sequence[scalar]] = np.inf,
+                      init_points: Union[int, Sequence[int]] = 5,
+                      cv: Union[int, Sequence[int]] = 3,
+                      plot_bo: bool = False,
+                      bagging: Optional[int] = None):
+        """Fit the models to the dataset.
 
-        """
         The pipeline method is where the models are fitted to the data and
         their performance is evaluated according to the selected metric. For
         every model, the pipeline applies the following steps:
 
-            1. The optimal hyperparameters are selectred using a Bayesian
+            1. The optimal hyperParameters are selectred using a Bayesian
                Optimization (BO) algorithm with gaussian process as kernel.
                The resulting score of each step of the BO is either computed
                by cross-validation on the complete training set or by randomly
@@ -1656,7 +1636,7 @@ class ATOM(object):
                (despite the leakage) due to the considerable fewer instances on
                which it is trained.
 
-            2. Once the best hyperparameters are found, the model is trained
+            2. Once the best hyperParameters are found, the model is trained
                again, now using the complete training set. After this,
                predictions are made on the test set.
 
@@ -1664,15 +1644,6 @@ class ATOM(object):
             applying a bagging algorithm, i.e. the model will be trained
             multiple times on a bootstrapped training set, returning a
             distribution of its performance on the test set.
-
-        If you want to compare similar models, you can choose to use a
-        successive halving approach when running the pipeline. This technique
-        fits N models to 1/N of the data. The best half are selected to go to
-        the next iteration where the process is repeated. This continues until
-        only one model remains, which is fitted on the complete dataset. Beware
-        that a model's performance can depend greatly on the amount of data on
-        which it is trained. For this reason we recommend only to use this
-        technique with similar models, e.g. only using tree-based models.
 
         A couple of things to take into account:
             - The metric implementation follows sklearn's API. This means that
@@ -1687,7 +1658,7 @@ class ATOM(object):
             - The winning model subclass will be attached to the `winner`
               attribute.
 
-        PARAMETERS
+        Parameters
         ----------
         models: string, list or tuple
             List of models to fit on the data. Use the predefined acronyms
@@ -1740,6 +1711,12 @@ class ATOM(object):
             a `predict_proba` method! Will be ignored if the metric is a string
             or a scorer.
 
+        needs_threshold: bool, optional (default=False)
+            Whether the metric function takes a continuous decision certainty.
+            This only works for binary classification using estimators that
+            have either a `decision_function` or `predict_proba` method. Will
+            be ignored if the metric is a string or a scorer.
+
         successive_halving: bool, optional (default=False)
             Wether to use successive halving on the pipeline. Only recommended
             when fitting similar models, e.g. only using tree-based models.
@@ -1748,14 +1725,24 @@ class ATOM(object):
             Skip last `skip_iter` iterations of the successive halving. Will be
             ignored if successive_halving=False.
 
+        train_sizing: bool, optional (default=False)
+            Wether to use train sizing on the pipeline.
+
+        train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))
+            Relative or absolute numbers of training examples that will be used
+            to generate the learning curve. If the dtype is float, it is
+            regarded as a fraction of the maximum size of the training set.
+            Otherwise it is interpreted as absolute sizes of the training sets.
+            Will be ignored if train_sizing=False.
+
         max_iter: int or sequence, optional (default=10)
             Maximum number of iterations of the BO. If 0, skip the BO and fit
-            the model on its default parameters. If sequence, the n-th value
+            the model on its default Parameters. If sequence, the n-th value
             will apply to the n-th model in the pipeline.
 
         max_time: int, float or sequence, optional (default=np.inf)
             Maximum time allowed for the BO per model (in seconds). If 0, skip
-            the BO and fit the model on its default parameters. If sequence,
+            the BO and fit the model on its default Parameters. If sequence,
             the n-th value will apply to the n-th model in the pipeline.
 
         init_points: int or sequence, optional (default=5)
@@ -1781,13 +1768,10 @@ class ATOM(object):
             the bagging algorithm. If None or 0, no bagging is performed.
 
         """
-
         # << ================= Inner Function ================= >>
 
         def check_params(name, value, len_models):
-
-            """
-            Validate the length of the parameter. Mut be equal to len(models).
+            """Validate the length of the parameter (equal to len(models)).
 
             Parameters
             ----------
@@ -1801,7 +1785,6 @@ class ATOM(object):
                 Length of the list of models in the pipeline.
 
             """
-
             if len(value) != len(models):
                 raise ValueError(f"Invalid value for the {name} parameter. " +
                                  "Length should be equal to the number of " +
@@ -1809,9 +1792,7 @@ class ATOM(object):
                                  f"and len({name})={len(value)}.")
 
         def data_preparation():
-
-            """ Create scaled data attributes if needed """
-
+            """Create scaled data attributes if needed."""
             # Check if any scaling models in final_models
             scale = any(model in self.models for model in scaling_models)
             if scale and not self._is_scaled:
@@ -1823,10 +1804,7 @@ class ATOM(object):
                                            self.X.columns)
 
         def run_iteration():
-
-            """
-            Core iterations of the pipeline, where models are created and
-            fitted. Multiple needed for successive halving.
+            """Core iterations of the pipeline.
 
             Returns
             -------
@@ -1834,7 +1812,6 @@ class ATOM(object):
                 Dataframe of the scores for this iteration of the pipeline.
 
             """
-
             # If verbose=1, use tqdm to evaluate process
             if self.verbose == 1:
                 loop = tqdm(self.models, desc='Processing')
@@ -1853,13 +1830,13 @@ class ATOM(object):
                 try:  # If errors occure, just skip the model
                     # Run Bayesian Optimization
                     getattr(self, model).bayesian_optimization(
-                            max_iter_, max_time_, init_points_, cv_, plot_bo)
+                        max_iter_, max_time_, init_points_, cv_, plot_bo)
 
                     # Fit the model to the test set
                     getattr(self, model).fit()
 
                     # Perform bagging
-                    getattr(self, model).bagging(self.bagging)
+                    getattr(self, model).bagging(bagging)
 
                     # Get the total time spend on this model
                     total_time = time_to_string(model_time)
@@ -1923,7 +1900,7 @@ class ATOM(object):
                                            'score_test',
                                            'fit_time'])
 
-            if self.bagging is not None:
+            if self._has_bag:
                 pd.concat([scores, pd.DataFrame(columns=['bagging_mean',
                                                          'bagging_std',
                                                          'bagging_time'])])
@@ -1991,7 +1968,7 @@ class ATOM(object):
 
         self._log('\nRunning pipeline =================>')
 
-        # Check parameters
+        # Check Parameters
         if isinstance(models, str):
             models = [models]
         if skip_iter < 0:
@@ -2016,9 +1993,10 @@ class ATOM(object):
         if bagging is None or bagging == 0:
             bagging = None
 
-        # Make attributes of some parameters to use them in plot functions
-        self.successive_halving = successive_halving
-        self.bagging = bagging
+        # Make attributes of some Parameters to use them in plot functions
+        self._has_sh = successive_halving
+        self._has_ts = train_sizing
+        self._has_bag = False if bagging is None else True
 
         # Save model erros (if any) to attribute
         self.errors = "No exceptions encountered!"
@@ -2071,7 +2049,7 @@ class ATOM(object):
 
         # << ================== Check validity metric =================== >>
 
-        if metric is None:
+        if metric is None and not hasattr(self, 'metric'):
             if self.task.startswith('binary'):
                 self.metric = get_scorer('f1')
                 self.metric.name = 'f1'
@@ -2081,6 +2059,8 @@ class ATOM(object):
             else:
                 self.metric = get_scorer('r2')
                 self.metric.name = 'r2'
+        elif metric is None and hasattr(self, 'metric'):
+            pass  # Metric is already defined
         elif isinstance(metric, str):
             if metric not in SCORERS.keys():
                 raise ValueError("Unknown value for the metric parameter, " +
@@ -2091,7 +2071,10 @@ class ATOM(object):
             self.metric = metric
             self.metric.name = self.metric._score_func.__name__
         else:  # Metric is a metric function with signature metric(y, y_pred)
-            self.metric = make_scorer(metric, greater_is_better, needs_proba)
+            self.metric = make_scorer(metric,
+                                      greater_is_better,
+                                      needs_proba,
+                                      needs_threshold)
             self.metric.name = self.metric._score_func.__name__
 
         # Add all metrics as subclasses of the BaseMetric class
@@ -2103,13 +2086,14 @@ class ATOM(object):
 
         # << ======================== Core ======================== >>
 
-        if self.successive_halving:
+        if successive_halving:
             self.scores = []  # Save the cv's scores in list of dataframes
+            original_df = self.dataset.copy()
             iteration = 0
-            original_data = self.dataset.copy()
             while len(self.models) > 2**skip_iter - 1:
                 # Select 1/N of data to use for this iteration
-                self._split_dataset(original_data, 100./len(self.models))
+                percentage = 100./len(self.models)
+                self._split_dataset(original_df, percentage)
                 self.update()
                 data_preparation()
                 self._log("\n\n<<=============== Iteration {} ==============>>"
@@ -2117,14 +2101,16 @@ class ATOM(object):
                 self._log("Model{} in pipeline: {}"
                           .format('s' if len(self.models) > 1 else '',
                                   ', '.join(self.models)))
-                self.stats(1)
+                self._log(f"Percentage of data: {round(percentage, 1)}%")
+                self._log(f"Size of training set: {len(self.train)}")
+                self._log(f"Size of test set: {len(self.test)}")
 
                 # Run iteration and append to the scores list
                 scores = run_iteration()
                 self.scores.append(scores)
 
                 # Select best models for halving
-                col = 'score_test' if self.bagging is None else 'bagging_mean'
+                col = 'score_test' if not self._has_bag else 'bagging_mean'
                 lx = scores.nlargest(n=int(len(self.models)/2),
                                      columns=col,
                                      keep='all')
@@ -2135,12 +2121,106 @@ class ATOM(object):
                 self.models = n.copy()
                 iteration += 1
 
-            self._is_fitted = True
+        elif train_sizing:
+            self.scores = []  # Save the cv's scores in list of dataframes
+            self._sizes = []  # Number of training samples for plot
+            original_df = self.dataset.copy()
+            for iteration, size in enumerate(train_sizes):
+                # Set size to percentage of data
+                size = size*100 if size <= 1 else size*100/len(original_df)
+
+                # Select fraction of data to use for this iteration
+                self._split_dataset(original_df, size)
+                self.update()
+                self._sizes.append(len(self.X_train))
+                data_preparation()
+                self._log("\n\n<<=============== Iteration {} ==============>>"
+                          .format(iteration))
+                self._log(f"Percentage of data: {round(size, 1)}%")
+                self._log(f"Size of training set: {len(self.train)}")
+                self._log(f"Size of test set: {len(self.test)}")
+
+                # Run iteration and append to the scores list
+                scores = run_iteration()
+                self.scores.append(scores)
 
         else:
             data_preparation()
             self.scores = run_iteration()
-            self._is_fitted = True
+
+        self._is_fitted = True
+
+    # =================== API pipeline methods ====================>
+
+    def pipeline(self,
+                 models: Union[str, List[str], Tuple[str]],
+                 metric: Optional[Union[str, callable]] = None,
+                 greater_is_better: bool = True,
+                 needs_proba: bool = False,
+                 needs_threshold: bool = False,
+                 max_iter: Union[int, Sequence[int]] = 0,
+                 max_time: Union[scalar, Sequence[scalar]] = np.inf,
+                 init_points: Union[int, Sequence[int]] = 5,
+                 cv: Union[int, Sequence[int]] = 3,
+                 plot_bo: bool = False,
+                 bagging: Optional[int] = None):
+        """Fit the models to the dataset in a direct fashion."""
+        self._run_pipeline(models, metric, greater_is_better, needs_proba,
+                           needs_threshold, False, 0, False, [0], max_iter,
+                           max_time, init_points, cv, plot_bo, bagging)
+
+    def successive_halving(self,
+                           models: Union[str, List[str], Tuple[str]],
+                           metric: Optional[Union[str, callable]] = None,
+                           greater_is_better: bool = True,
+                           needs_proba: bool = False,
+                           needs_threshold: bool = False,
+                           skip_iter: int = 0,
+                           max_iter: Union[int, Sequence[int]] = 0,
+                           max_time: Union[scalar, Sequence[scalar]] = np.inf,
+                           init_points: Union[int, Sequence[int]] = 5,
+                           cv: Union[int, Sequence[int]] = 3,
+                           plot_bo: bool = False,
+                           bagging: Optional[int] = None):
+        """Fit the models to the dataset in a successive halving fashion.
+
+        If you want to compare similar models, you can choose to use a
+        successive halving approach when running the pipeline. This technique
+        fits N models to 1/N of the data. The best half are selected to go to
+        the next iteration where the process is repeated. This continues until
+        only one model remains, which is fitted on the complete dataset. Beware
+        that a model's performance can depend greatly on the amount of data on
+        which it is trained. For this reason we recommend only to use this
+        technique with similar models, e.g. only using tree-based models.
+        """
+        self._run_pipeline(models, metric, greater_is_better, needs_proba,
+                           needs_threshold, True, skip_iter, False, [0],
+                           max_iter, max_time, init_points, cv, plot_bo,
+                           bagging)
+
+    def train_sizing(self,
+                     models: Union[str, List[str], Tuple[str]],
+                     metric: Optional[Union[str, callable]] = None,
+                     greater_is_better: bool = True,
+                     needs_proba: bool = False,
+                     needs_threshold: bool = False,
+                     train_sizes: train_types = np.linspace(0.1, 1.0, 10),
+                     max_iter: Union[int, Sequence[int]] = 0,
+                     max_time: Union[scalar, Sequence[scalar]] = np.inf,
+                     init_points: Union[int, Sequence[int]] = 5,
+                     cv: Union[int, Sequence[int]] = 3,
+                     plot_bo: bool = False,
+                     bagging: Optional[int] = None):
+        """Fit the models to the dataset in a training sizing fashion.
+
+        If you want to compare how different models perform when training on
+        varying dataset sizes, you can choose to use the train_sizing approach
+        when running the pipeline.
+        """
+        self._run_pipeline(models, metric, greater_is_better, needs_proba,
+                           needs_threshold, False, 0, True, train_sizes,
+                           max_iter, max_time, init_points, cv, plot_bo,
+                           bagging)
 
     # ======================== Plot methods =======================>
 
@@ -2150,26 +2230,37 @@ class ATOM(object):
                          figsize: Tuple[int, int] = (10, 10),
                          filename: Optional[str] = None,
                          display: bool = True):
-
-        """ Correlation maxtrix plot of the data """
-
+        """Plot the data's correlation maxtrix."""
         plot_correlation(self, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_PCA(self,
-                 show: Optional[int] = None,
                  title: Optional[str] = None,
-                 figsize: Optional[Tuple[int, int]] = None,
+                 figsize: Optional[Tuple[int, int]] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
+        """Plot the explained variance ratio vs the number of component.
+
+        Only if PCA was applied on the dataset through the feature_selection
+        method.
 
         """
-        Plot the explained variance ratio of the components. Only if PCA
-        was applied on the dataset through the feature_selection method.
+        plot_PCA(self, title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_components(self,
+                        show: Optional[int] = None,
+                        title: Optional[str] = None,
+                        figsize: Optional[Tuple[int, int]] = None,
+                        filename: Optional[str] = None,
+                        display: bool = True):
+        """Plot the explained variance ratio per component.
+
+        Only if PCA was applied on the dataset through the feature_selection
+        method.
 
         """
-
-        plot_PCA(self, show, title, figsize, filename, display)
+        plot_components(self, show, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_RFECV(self,
@@ -2177,14 +2268,13 @@ class ATOM(object):
                    figsize: Optional[Tuple[int, int]] = (10, 6),
                    filename: Optional[str] = None,
                    display: bool = True):
+        """Plot the RFECV results.
 
-        """
         Plot the scores obtained by the estimator fitted on every subset of
         the data. Only if RFECV was applied on the dataset through the
         feature_selection method.
 
         """
-
         plot_RFECV(self, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -2194,9 +2284,7 @@ class ATOM(object):
                      figsize: Optional[Tuple[int, int]] = None,
                      filename: Optional[str] = None,
                      display: bool = True):
-
-        """ Plot a boxplot of the bagging's results """
-
+        """Boxplot of the bagging's results."""
         plot_bagging(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -2206,9 +2294,7 @@ class ATOM(object):
                                 figsize: Tuple[int, int] = (10, 6),
                                 filename: Optional[str] = None,
                                 display: bool = True):
-
-        """ Plot the models' scores per iteration of the successive halving """
-
+        """Plot the models' scores per iteration of the successive halving."""
         plot_successive_halving(self, models,
                                 title, figsize, filename, display)
 
@@ -2216,17 +2302,12 @@ class ATOM(object):
     def plot_learning_curve(
                     self,
                     models: Union[None, str, Sequence[str]] = None,
-                    train_sizes: train_types = np.linspace(0.1, 1.0, 10),
-                    cv: Optional[Union[int, callable, Sequence[int]]] = None,
                     title: Optional[str] = None,
                     figsize: Tuple[int, int] = (10, 6),
                     filename: Optional[str] = None,
                     display: bool = True):
-
-        """ Plot the model's learning curve: score vs training samples """
-
-        plot_learning_curve(self, models, train_sizes, cv,
-                            title, figsize, filename, display)
+        """Plot the model's learning curve: score vs training samples."""
+        plot_learning_curve(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_ROC(self,
@@ -2235,9 +2316,7 @@ class ATOM(object):
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
-
-        """ Plot the Receiver Operating Characteristics curve """
-
+        """Plot the Receiver Operating Characteristics curve."""
         plot_ROC(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -2247,9 +2326,7 @@ class ATOM(object):
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
-
-        """ Plot the precision-recall curve """
-
+        """Plot the precision-recall curve."""
         plot_PRC(self, models, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -2262,9 +2339,7 @@ class ATOM(object):
                             figsize: Optional[Tuple[int, int]] = None,
                             filename: Optional[str] = None,
                             display: bool = True):
-
-        """ Plot the feature permutation importance of models """
-
+        """Plot the feature permutation importance of models."""
         plot_permutation_importance(self, models, show, n_repeats,
                                     title, figsize, filename, display)
 
@@ -2276,9 +2351,7 @@ class ATOM(object):
                                 figsize: Optional[Tuple[int, int]] = None,
                                 filename: Optional[str] = None,
                                 display: bool = True):
-
-        """ Plot tree-based model's normalized feature importances """
-
+        """Plot a tree-based model's normalized feature importances."""
         plot_feature_importance(self, models, show,
                                 title, figsize, filename, display)
 
@@ -2290,13 +2363,12 @@ class ATOM(object):
                               figsize: Tuple[int, int] = (8, 8),
                               filename: Optional[str] = None,
                               display: bool = True):
+        """Plot the confusion matrix.
 
-        """
         For 1 model: plot it's confusion matrix in a heatmap.
         For >1 models: compare TP, FP, FN and TN in a barplot.
 
         """
-
         plot_confusion_matrix(self, models, normalize,
                               title, figsize, filename, display)
 
@@ -2309,9 +2381,7 @@ class ATOM(object):
                        figsize: Tuple[int, int] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-
-        """ Plot performance metric(s) against threshold values """
-
+        """Plot performance metric(s) against threshold values."""
         plot_threshold(self, models, metric, steps,
                        title, figsize, filename, display)
 
@@ -2323,23 +2393,48 @@ class ATOM(object):
                            figsize: Tuple[int, int] = (10, 6),
                            filename: Optional[str] = None,
                            display: bool = True):
-
-        """
-        Plot a function of the probability of the classes
-        of being the target class.
-
-        """
-
+        """Plot the distribution of predicted probabilities."""
         plot_probabilities(self, models, target,
                            title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_calibration(self,
+                         n_bins: int = 10,
+                         models: Union[None, str, Sequence[str]] = None,
+                         title: Optional[str] = None,
+                         figsize: Tuple[int, int] = (10, 10),
+                         filename: Optional[str] = None,
+                         display: bool = True):
+        """Plot the calibration curve for a binary classifier."""
+        plot_calibration(self, models, n_bins,
+                         title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_gains(self,
+                   models: Union[None, str, Sequence[str]] = None,
+                   title: Optional[str] = None,
+                   figsize: Tuple[int, int] = (10, 6),
+                   filename: Optional[str] = None,
+                   display: bool = True):
+        """Plot the cumulative gains curve."""
+        plot_gains(self, models, title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_lift(self,
+                  models: Union[None, str, Sequence[str]] = None,
+                  title: Optional[str] = None,
+                  figsize: Tuple[int, int] = (10, 6),
+                  filename: Optional[str] = None,
+                  display: bool = True):
+        """Plot the lift curve."""
+        plot_lift(self, models, title, figsize, filename, display)
 
     # <============ Classmethods for plot settings ============>
 
     @composed(classmethod, typechecked)
     def set_style(cls, style: str = 'darkgrid'):
+        """Change the seaborn plotting style.
 
-        """
-        Change the seaborn plotting style.
         See https://seaborn.pydata.org/tutorial/aesthetics.html
 
         Parameters
@@ -2348,15 +2443,13 @@ class ATOM(object):
             Name of the plotting style.
 
         """
-
         sns.set_style(style)
         cls.style = style
 
     @composed(classmethod, typechecked)
     def set_palette(cls, palette: str = 'GnBu_d'):
+        """Change the seaborn color palette.
 
-        """
-        Change the seaborn color palette.
         See https://seaborn.pydata.org/tutorial/color_palettes.html
 
         Parameters
@@ -2365,15 +2458,12 @@ class ATOM(object):
             Name of the palette.
 
         """
-
         sns.set_palette(palette)
         cls.palette = palette
 
     @composed(classmethod, typechecked)
     def set_title_fontsize(cls, fontsize: int = 20):
-
-        """
-        Change the fontsize of the plot's title.
+        """Change the fontsize of the plot's title.
 
         Parameters
         ----------
@@ -2381,14 +2471,11 @@ class ATOM(object):
             Size of the font.
 
         """
-
         cls.title_fontsize = fontsize
 
     @composed(classmethod, typechecked)
     def set_label_fontsize(cls, fontsize: int = 16):
-
-        """
-        Change the fontsize of the plot's labels and legends.
+        """Change the fontsize of the plot's labels and legends.
 
         Parameters
         ----------
@@ -2396,14 +2483,11 @@ class ATOM(object):
             Size of the font.
 
         """
-
         cls.label_fontsize = fontsize
 
     @composed(classmethod, typechecked)
     def set_tick_fontsize(cls, fontsize: int = 12):
-
-        """
-        Change the fontsize of the plot's ticks.
+        """Change the fontsize of the plot's ticks.
 
         Parameters
         ----------
@@ -2411,5 +2495,4 @@ class ATOM(object):
             Size of the font.
 
         """
-
         cls.tick_fontsize = fontsize

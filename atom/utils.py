@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing utility functions.
 
@@ -20,9 +20,7 @@ from datetime import datetime
 # << ============ Functions ============ >>
 
 def prepare_logger(log):
-
-    """
-    Prepare logging file.
+    """Prepare logging file.
 
     Parameters
     ----------
@@ -36,7 +34,6 @@ def prepare_logger(log):
         Logger object.
 
     """
-
     if log is None:  # No logger
         return None
 
@@ -66,8 +63,8 @@ def prepare_logger(log):
 
 
 def time_to_string(t_init):
+    """Convert time integer to string.
 
-    """
     Convert a time duration to a neat string in format 00h:00m:00s
     or 1.000s if under 1 min.
 
@@ -77,7 +74,6 @@ def time_to_string(t_init):
         Time to convert (in seconds).
 
     """
-
     t = time() - t_init  # Total time in seconds
     h = int(t/3600.)
     m = int(t/60.) - h*60
@@ -91,13 +87,10 @@ def time_to_string(t_init):
 
 
 def to_df(data, columns=None, pca=False):
-
-    """
-    Convert a dataset to pd.Dataframe.
+    """Convert a dataset to pd.Dataframe.
 
     PARAMETERS
     ----------
-
     data: list, tuple or np.array
         Dataset to convert to a dataframe.
 
@@ -108,7 +101,6 @@ def to_df(data, columns=None, pca=False):
         Wether the columns need to be called Features or Components.
 
     """
-
     if columns is None and not pca:
         columns = ['Feature ' + str(i) for i in range(len(data[0]))]
     elif columns is None:
@@ -117,9 +109,7 @@ def to_df(data, columns=None, pca=False):
 
 
 def to_series(data, name=None):
-
-    """
-    Convert data to pd.Series.
+    """Convert a column to pd.Series.
 
     PARAMETERS
     ----------
@@ -130,17 +120,16 @@ def to_series(data, name=None):
         Name of the target column. If None, the name is set to 'target'.
 
     """
-
     return pd.Series(data, name=name if name is not None else 'target')
 
 
 def merge(X, y):
-    """ Merge pd.DataFrame and pd.Series into one df """
-
+    """Merge pd.DataFrame and pd.Series into one dataframe."""
     return X.merge(y.to_frame(), left_index=True, right_index=True)
 
 
 def check_is_fitted(is_fitted):
+    """Check if the class has been fitted."""
     if not is_fitted:
         raise AttributeError('Run the pipeline before calling this method!')
 
@@ -148,9 +137,7 @@ def check_is_fitted(is_fitted):
 # << ============ Decorators ============ >>
 
 def composed(*decs):
-
-    """
-    Add multiple decorators in one line.
+    """Add multiple decorators in one line.
 
     Parameters
     ----------
@@ -158,7 +145,6 @@ def composed(*decs):
         Decorators to run.
 
     """
-
     def deco(f):
         for dec in reversed(decs):
             f = dec(f)
@@ -167,8 +153,7 @@ def composed(*decs):
 
 
 def crash(f):
-    """ Decorator to save program crashes to log file """
-
+    """Save program crashes to log file."""
     def wrapper(*args, **kwargs):
         try:  # Run the function
             result = f(*args, **kwargs)
@@ -186,8 +171,7 @@ def crash(f):
 
 
 def params_to_log(f):
-    """ Decorator to save function's parameters to log file """
-
+    """Save function's parameters to log file."""
     def wrapper(*args, **kwargs):
         log = args[0].T.log if hasattr(args[0], 'T') else args[0].log
         kwargs_list = ['{}={!r}'.format(k, v) for k, v in kwargs.items()]

@@ -266,11 +266,11 @@ def test_encode_target_column():
 def test_target_mapping():
     """ Assert that target_mapping attribute is set correctly """
 
-    atom = ATOMClassifier(X_dim4, y_dim4)
+    atom = ATOMClassifier(X_dim4, y_dim4, random_state=1)
     assert atom.mapping == dict(n=0, y=1)
 
-    atom = ATOMClassifier(X_class, y_class)
-    assert atom.mapping == {'0': 0, '1': 1, '2': 2}
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.mapping == {'0.0': 0, '1.0': 1, '2.0': 2}
 
-    atom = ATOMRegressor(X_reg, y_reg)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     assert isinstance(atom.mapping, str)

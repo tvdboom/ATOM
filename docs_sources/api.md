@@ -22,8 +22,9 @@ Main class of the package. The `ATOM` class is a parent class of the `ATOMClassi
     Don't call the `ATOM` class directly! Use `ATOMClassifier` or `ATOMRegressor`
      depending on the task at hand. Click [here](../getting_started/#usage) for an example.
 
-The class initializer will automatically proceed to apply some standard data
-cleaning steps unto the data. These steps include:
+The class initializer will label-encode the target column if its labels are
+not ordered integers. It will also apply some standard data
+cleaning steps unto the dataset. These steps include:
 
   * Transforming the input data into a pd.DataFrame (if it wasn't one already)
    that can be accessed through the class' data attributes.
@@ -276,7 +277,8 @@ Data attribute that has been changed.
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L582">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Get an extensive profile analysis of the data. The report is rendered
-in HTML5 and CSS3. Note that this method can be slow for very large datasets.
+ in HTML5 and CSS3 and saved to the `profile` attribute. Note that this method
+ can be slow for very large datasets.
 Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/).
 <br /><br />
 <table width="100%">
@@ -285,7 +287,7 @@ Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profili
 <td width="75%" style="background:white;">
 <strong>df: string, optional(default='dataset')</strong>
 <blockquote>
-Name of the data class attribute to get the report from.
+Name of the data class attribute to get the profile from.
 </blockquote>
 <strong>rows: int or None, optional(default=None)</strong>
 <blockquote>
@@ -685,12 +687,12 @@ for SFM, RFE and RFECV).
 </blockquote>
 <strong>n_features: int, float or None, optional (default=None)</strong>
 <blockquote>
-Number of features to select (execpt for RFECV, where it's the
+Number of features to select (except for RFECV, where it's the
  minimum number of features to select).
 <ul>
 <li>if < 1: fraction of features to select</li>
 <li>if >= 1: number of features to select</li>
-<li>None to select all</li>
+<li>None to select all, or 1 for the RFECV</li>
 </ul>
 </blockquote>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong>
@@ -745,15 +747,6 @@ The pipeline method is where the models are fitted to the data and their
  algorithm, i.e. the model will be trained multiple times on a bootstrapped
  training set, returning a distribution of its performance on the test set.
 
-If you want to compare similar models, you can choose to use a successive
- halving approach when running the pipeline. This technique fits N models to
- 1/N of the data. The best half are selected to go to the next iteration where
- the process is repeated. This continues until only one model remains, which is
- fitted on the complete dataset. Beware that a model's performance can depend
- greatly on the amount of data on which it is trained. For this reason we
- recommend only to use this technique with similar models, e.g. only using
- tree-based models.
-
 A couple of things to take into account:
 
 * The metric implementation follows [sklearn's API](https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values).
@@ -769,13 +762,49 @@ A couple of things to take into account:
 </br>
 
 
+There are three methods to call for the pipeline.
+
+* The `pipeline` method fits the models directly to the dataset.
+ 
+* If you want to compare similar models, you can use the `successive_halving`
+ method when running the pipeline. This technique fits N models to
+ 1/N of the data. The best half are selected to go to the next iteration where
+ the process is repeated. This continues until only one model remains, which is
+ fitted on the complete dataset. Beware that a model's performance can depend
+ greatly on the amount of data on which it is trained. For this reason we
+ recommend only to use this technique with similar models, e.g. only using
+ tree-based models.
+
+* The `train_sizing` method fits the models on subsets of the training data.
+ This can be used to examine the optimum size of the dataset needed for a
+ satisfying performance.
+</br>
+
+<table width="100%">
+<tr>
+<td><a href="#atom-pipeline">pipeline</a></td>
+<td>Fit the models to the data in a direct fashion.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-successive-halving">successive_halving</a></td>
+<td>Fit the models to the data in a successive halving fashion.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-train-sizing">train_sizing</a></td>
+<td>Fit the models to the data in a train sizing fashion.</td>
+</tr>
+
+</table>
+<br>
+
+
 <a name="atom-pipeline"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">pipeline</strong>(models,
                             metric=None,
                             greater_is_better=True,
                             needs_proba=False,
-                            successive_halving=False,
-                            skip_steps=0,
                             max_iter=0,
                             max_time=np.inf,
                             init_points=5,
@@ -827,7 +856,8 @@ List of models to fit on the data. Use the predefined acronyms to select the mod
 Metric on which the pipeline fits the models. Choose from any of
 sklearn's predefined [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules), use a score (or loss)
 function with signature metric(y, y_pred, **kwargs) or use a
-scorer object. If None, the default metric per task is selected:
+scorer object. If None, ATOM will try to use any metric it already has in the
+pipeline. If it hasn't got any, a default metric per task is selected:
 <ul>
 <li>'f1' for binary classification</li>
 <li>'f1_weighted' for multiclas classification</li>
@@ -847,10 +877,142 @@ Whether the metric function requires probability estimates out of a
  a `predict_proba` method! Will be ignored if the metric is a string
  or a scorer.
 </blockquote>
-<strong>successive_halving: bool, optional (default=False)</strong>
+<strong> needs_threshold: bool, optional (default=False)</strong>
 <blockquote>
-Wether to use successive halving on the pipeline. Only recommended when fitting
- similar models, e.g. only using tree-based models.
+Whether the metric function takes a continuous decision certainty. This only
+ works for binary classification using estimators that have either a
+ `decision_function` or `predict_proba` method. Will be ignored if the metric
+ is a string or a scorer.
+</blockquote>
+<strong>max_iter: int or sequence, optional (default=0)</strong>
+<blockquote>
+Maximum number of iterations of the BO. If 0, skip the BO and fit
+ the model on its default parameters. If sequence, the n-th value
+ will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
+<blockquote>
+Maximum time allowed for the BO per model (in seconds). If 0, skip
+ the BO and fit the model on its default parameters. If sequence,
+ the n-th value will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>init_points: int or sequence, optional (default=5)</strong>
+<blockquote>
+Initial number of tests of the BO before fitting the surrogate
+ function. If 1, the default models' hyperparameters will be used. If sequence,
+ the n-th value will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>cv: int or sequence, optional (default=3)</strong>
+<blockquote>
+Strategy to fit and score the model selected after every step of the BO.
+<ul>
+<li>if 1, randomly split into a train and validation set</li>
+<li>if >1, perform a k-fold cross validation on the training set</li>
+</ul>
+</blockquote>
+<strong>plot_bo: bool, optional (default=False)</strong>
+<blockquote>
+Wether to plot the BO's progress as it runs. Creates a canvas with
+two plots: the first plot shows the score of every trial and the
+second shows the distance between the last consecutive steps. Don't
+forget to call `%matplotlib` at the start of the cell if you are
+using jupyter notebook!
+</blockquote>
+<strong>bagging: int or None, optional (default=None)</strong>
+<blockquote>
+Number of data sets (bootstrapped from the training set) to use in the bagging
+ algorithm. If None or 0, no bagging is performed.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-successive-halving"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">successive_halving</strong>(models,
+                                      metric=None,
+                                      greater_is_better=True,
+                                      needs_proba=False,
+                                      skip_iter=0,
+                                      max_iter=0,
+                                      max_time=np.inf,
+                                      init_points=5,
+                                      plot_bo=False,
+                                      cv=3,
+                                      bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1626">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+<br /><br />
+<table width="100%">
+<tr>
+<td width="13%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="73%" style="background:white;">
+<strong>models: string or sequence</strong>
+<blockquote>
+List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
+<ul>
+<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
+<li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
+<li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
+<li>'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)<br>Only for regression tasks.</li>
+<li>'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)<br>Only for regression tasks.</li>
+<li>'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html)<br>Only for regression tasks. Uses ridge regularization.</li>
+<li>'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)<br>Only for classification tasks.</li> 
+<li>'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
+<li>'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
+<li>'KNN' for K-Nearest Neighbors [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html)</li>
+<li>'Tree' for a single Decision Tree [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html)</li>
+<li>'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html)<br>Uses a decision tree as base estimator.</li>
+<li>'ET' for Extra-Trees [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)</li>
+<li>'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)</li>
+<li>'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html)<br>Uses a decision tree as base estimator.</li>
+<li>'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html)</li> 
+<li>'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor)<br>Only available if package is installed.</li>
+<li>'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html)<br>Only available if package is installed.</li>
+<li>'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html)<br>Only available if package is installed.</li>
+<li>'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html)<br>Uses a one-vs-rest strategy for multiclass classification tasks.</li> 
+<li>'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)<br>Uses a one-vs-one strategy for multiclass classification tasks.</li>
+<li>'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)</li>
+<li>'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)</li>
+<li>'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor)<br>Can have between one and three hidden layers.</li> 
+</ul>
+</blockquote>
+<strong>metric: string or callable, optional (default=None)</strong>
+<blockquote>
+Metric on which the pipeline fits the models. Choose from any of
+sklearn's predefined [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules), use a score (or loss)
+function with signature metric(y, y_pred, **kwargs) or use a
+scorer object. If None, ATOM will try to use any metric it already has in the
+pipeline. If it hasn't got any, a default metric per task is selected:
+<ul>
+<li>'f1' for binary classification</li>
+<li>'f1_weighted' for multiclas classification</li>
+<li>'r2' for regression</li>
+</ul>
+</blockquote>
+<strong>greater_is_better: bool, optional (default=True)</strong>
+<blockquote>
+Wether the metric is a score function or a loss function,
+i.e. if True, a higher score is better and if False, lower is
+better. Will be ignored if the metric is a string or a scorer.
+</blockquote>
+<strong> needs_proba: bool, optional (default=False)</strong>
+<blockquote>
+Whether the metric function requires probability estimates out of a
+ classifier. If True, make sure that every model in the pipeline has
+ a `predict_proba` method! Will be ignored if the metric is a string
+ or a scorer.
+</blockquote>
+<strong> needs_threshold: bool, optional (default=False)</strong>
+<blockquote>
+Whether the metric function takes a continuous decision certainty. This only
+ works for binary classification using estimators that have either a
+ `decision_function` or `predict_proba` method. Will be ignored if the metric
+ is a string or a scorer.
 </blockquote>
 <strong>skip_iter: int, optional (default=0)</strong>
 <blockquote>
@@ -872,8 +1034,145 @@ Maximum time allowed for the BO per model (in seconds). If 0, skip
 <strong>init_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of tests of the BO before fitting the surrogate
- function. If sequence, the n-th value will apply to the n-th model
- in the pipeline.
+ function. If 1, the default models' hyperparameters will be used. If sequence,
+ the n-th value will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>cv: int or sequence, optional (default=3)</strong>
+<blockquote>
+Strategy to fit and score the model selected after every step of the BO.
+<ul>
+<li>if 1, randomly split into a train and validation set</li>
+<li>if >1, perform a k-fold cross validation on the training set</li>
+</ul>
+</blockquote>
+<strong>plot_bo: bool, optional (default=False)</strong>
+<blockquote>
+Wether to plot the BO's progress as it runs. Creates a canvas with
+two plots: the first plot shows the score of every trial and the
+second shows the distance between the last consecutive steps. Don't
+forget to call `%matplotlib` at the start of the cell if you are
+using jupyter notebook!
+</blockquote>
+<strong>bagging: int or None, optional (default=None)</strong>
+<blockquote>
+Number of data sets (bootstrapped from the training set) to use in the bagging
+ algorithm. If None or 0, no bagging is performed.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-train-sizing"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">train_sizing</strong>(models,
+                                metric=None,
+                                greater_is_better=True,
+                                needs_proba=False,
+                                train_sizes=np.linspcae(0.1, 1.0, 10),
+                                max_iter=0,
+                                max_time=np.inf,
+                                init_points=5,
+                                plot_bo=False,
+                                cv=3,
+                                bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1626">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+<br /><br />
+<table width="100%">
+<tr>
+<td width="13%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="73%" style="background:white;">
+<strong>models: string or sequence</strong>
+<blockquote>
+List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
+<ul>
+<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
+<li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
+<li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
+<li>'Lasso' for [Lasso Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html)<br>Only for regression tasks.</li>
+<li>'EN' for [ElasticNet Linear Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)<br>Only for regression tasks.</li>
+<li>'BR' for [Bayesian Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html)<br>Only for regression tasks. Uses ridge regularization.</li>
+<li>'LR' for [Logistic Regression](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html)<br>Only for classification tasks.</li> 
+<li>'LDA' for [Linear Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
+<li>'QDA' for [Quadratic Discriminant Analysis](https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html)<br>Only for classification tasks.</li>
+<li>'KNN' for K-Nearest Neighbors [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html)</li>
+<li>'Tree' for a single Decision Tree [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html)</li>
+<li>'Bag' for Bagging [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html)<br>Uses a decision tree as base estimator.</li>
+<li>'ET' for Extra-Trees [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html)</li>
+<li>'RF' for Random Forest [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)</li>
+<li>'AdaB' for AdaBoost [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html)<br>Uses a decision tree as base estimator.</li>
+<li>'GBM' for Gradient Boosting Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html)</li> 
+<li>'XGB' for XGBoost [classifier](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier)/[regressor](https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor)<br>Only available if package is installed.</li>
+<li>'LGB' for LightGBM [classifier](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html)/[regressor](https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html)<br>Only available if package is installed.</li>
+<li>'CatB' for CatBoost [classifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)/[regressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html)<br>Only available if package is installed.</li>
+<li>'lSVM' for Linear Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html)<br>Uses a one-vs-rest strategy for multiclass classification tasks.</li> 
+<li>'kSVM' for Kernel (non-linear) Support Vector Machine [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html)<br>Uses a one-vs-one strategy for multiclass classification tasks.</li>
+<li>'PA' for Passive Aggressive [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html)</li>
+<li>'SGD' for Stochastic Gradient Descent [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html)</li>
+<li>'MLP' for Multilayer Perceptron [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor)<br>Can have between one and three hidden layers.</li> 
+</ul>
+</blockquote>
+<strong>metric: string or callable, optional (default=None)</strong>
+<blockquote>
+Metric on which the pipeline fits the models. Choose from any of
+sklearn's predefined [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules), use a score (or loss)
+function with signature metric(y, y_pred, **kwargs) or use a
+scorer object. If None, ATOM will try to use any metric it already has in the
+pipeline. If it hasn't got any, a default metric per task is selected:
+<ul>
+<li>'f1' for binary classification</li>
+<li>'f1_weighted' for multiclas classification</li>
+<li>'r2' for regression</li>
+</ul>
+</blockquote>
+<strong>greater_is_better: bool, optional (default=True)</strong>
+<blockquote>
+Wether the metric is a score function or a loss function,
+i.e. if True, a higher score is better and if False, lower is
+better. Will be ignored if the metric is a string or a scorer.
+</blockquote>
+<strong> needs_proba: bool, optional (default=False)</strong>
+<blockquote>
+Whether the metric function requires probability estimates out of a
+ classifier. If True, make sure that every model in the pipeline has
+ a `predict_proba` method! Will be ignored if the metric is a string
+ or a scorer.
+</blockquote>
+<strong> needs_threshold: bool, optional (default=False)</strong>
+<blockquote>
+Whether the metric function takes a continuous decision certainty. This only
+ works for binary classification using estimators that have either a
+ `decision_function` or `predict_proba` method. Will be ignored if the metric
+ is a string or a scorer.
+</blockquote>
+<strong>train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))</strong>
+<blockquote>
+Relative or absolute numbers of training examples that will be used
+ to generate the learning curve. If the dtype is float, it is
+ regarded as a fraction of the maximum size of the training set.
+ Otherwise it is interpreted as absolute sizes of the training sets.
+</blockquote>
+<strong>max_iter: int or sequence, optional (default=0)</strong>
+<blockquote>
+Maximum number of iterations of the BO. If 0, skip the BO and fit
+ the model on its default parameters. If sequence, the n-th value
+ will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
+<blockquote>
+Maximum time allowed for the BO per model (in seconds). If 0, skip
+ the BO and fit the model on its default parameters. If sequence,
+ the n-th value will apply to the n-th model in the pipeline.
+</blockquote>
+<strong>init_points: int or sequence, optional (default=5)</strong>
+<blockquote>
+Initial number of tests of the BO before fitting the surrogate
+ function. If 1, the default models' hyperparameters will be used. If sequence,
+ the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
 <strong>cv: int or sequence, optional (default=3)</strong>
 <blockquote>
@@ -909,14 +1208,21 @@ After running the pipeline method, a class for every selected model is created a
  attached to the main ATOM class as an attribute. These classes can be called upon
  using the models' acronyms, e.g. `atom.LGB`. Lowercase calls are also allowed
  for this attribute, e.g. `atom.lgb`. The model subclasses contain a variety of
- attributes to help you understand how every specific model performed.
- Furthermore, the majority of the [plots](#plots) can be called directly
- from these subclasses as well. For example, to plot the ROC for the LightGBM
- model we could type `atom.lgb.plot_ROC()`.
+ methods and attributes to help you understand how every specific model performed.
+ 
+The majority of the [plots](#plots) can be called directly from the
+ subclasses. For example, to plot the ROC for the LightGBM model we could type
+ `atom.lgb.plot_ROC()`. You can also save the whole subclass to a pickle file
+ using the `save` method, e.g. `atom.rf.save('random_forest')`, or only save 
+ the best fitted model with the `save_model` method,
+ e.g.`atom.rf.save_model('random_forest_model')`.
 
-You can also call for any of the sklearn pre-defined
- metrics, e.g. `atom.ET.recall` or `atom.kSVM.average_precision`. The rest of
- the available attributes can be found hereunder:
+You can also call for any of the sklearn pre-defined metrics,
+ (e.g. `atom.ET.recall`) or for any of the
+ following custom metrics: `tn` (true negatives), `fp` (false positives), `fn` (false
+ negatives), `tp` (true positives), `tpr` (true positive rate), `fpr` (false
+ positive rate), `sup` (support/predicted positive rate) or `lift`. The rest
+ of the available attributes can be found hereunder:
 
 
 <table width="100%">
@@ -963,6 +1269,18 @@ a `predict_proba` method.
 <blockquote>
 Predict probabilities of the model on the test set. Only for models with
 a `predict_proba` method.
+</blockquote>
+
+<strong>decision_function_train: list</strong>
+<blockquote>
+Decision function scores on the training set. Only for models with
+a `decision_function` method.
+</blockquote>
+
+<strong>decision_function_test: list</strong>
+<blockquote>
+Decision function scores on the test set. Only for models with
+a `decision_function` method.
 </blockquote>
 
 <strong>score_bo: float</strong>
@@ -1017,8 +1335,9 @@ The ATOM class provides a variety of plot methods to analyze the results of the
  To call the plot for a single model, you can either fill the model in the `models`
  parameter (e.g. `atom.plot_PRC(models='LDA')`) or call the from the model subclass
  (e.g. `atom.LDA.plot_PRC()`). These two examples will render the same plot.
- Note that the latter approach is not available for the [`plot_correlation`](#atom-plot-correlation)
- and [`plot_PCA`](#atom-plot-pca) methods since they are unrelated to the models
+ Note that the latter approach is not available for the [`plot_correlation`](#atom-plot-correlation),
+ [`plot_PCA`](#atom-plot-pca), [`plot_components`](#atom-plot-components) and 
+ [`plot_RFECV`](#atom-plot-RFECV) methods since they are unrelated to the models
  fitted in the pipeline.
 
 !!! note
@@ -1036,7 +1355,12 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 
 <tr>
 <td><a href="#atom-plot-PCA">plot_PCA</a></td>
-<td>Plot the explained variance ratio of the components.</td>
+<td>Plot the explained variance ratio vs the number of components.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-plot-components">plot_components</a></td>
+<td>Plot the explained variance ratio per component.</td>
 </tr>
 
 <tr>
@@ -1099,6 +1423,21 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 <td>Plot the probabilities of the different classes of belonging to the target class.</td>
 </tr>
 
+<tr>
+<td><a href="#atom-plot-calibration">plot_calibration</a></td>
+<td>Plot the calibration curve for a binary classifier.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-plot-gains">plot_gains</a></td>
+<td>Plot the cumulative gains curve.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-plot-lift">plot_lift</a></td>
+<td>Plot the lift curve.</td>
+</tr>
+
 </table>
 <br>
 
@@ -1111,6 +1450,8 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 <div style="padding-left:3%" width="100%">
 Correlation matrix plot of the dataset. Ignores non-numeric columns. Can't be called
  from the model subclasses.
+<br /><br />
+![plot_correlation](img/plots/plot_correlation.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1139,16 +1480,57 @@ Wether to render the plot.
 
 
 <a name="atom-plot-PCA"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PCA</strong>(show=None,
-                            title=None,
-                            figsize=None,
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PCA</strong>(title=None,
+                            figsize=(10, 6),
                             filename=None,
                             display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L87">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot the explained variance ratio of the components. Only if a Principal Component Analysis
+Plot the explained variance ratio vs the number of componenets. Only if a Principal Component Analysis
  was applied on the dataset through the [`feature_selection`](#atom-feature-selection) method.
  Can't be called from the model subclasses.
+<br /><br />
+![plot_PCA](img/plots/plot_PCA.png)
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-plot-components"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_components</strong>(show=None,
+                                   title=None,
+                                   figsize=None,
+                                   filename=None,
+                                   display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L87">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the explained variance ratio per components. Only if a Principal Component Analysis
+ was applied on the dataset through the [`feature_selection`](#atom-feature-selection) method.
+ Can't be called from the model subclasses.
+<br /><br />
+![plot_components](img/plots/plot_components.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1156,7 +1538,7 @@ Plot the explained variance ratio of the components. Only if a Principal Compone
 <td width="75%" style="background:white;">
 <strong>show: int or None, optional (default=None)</strong>
 <blockquote>
-Number of components to show. If None, all are plotted.
+Number of components to show. If None, the selected number of componenets are plotted.
 </blockquote>
 <strong>title: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1192,6 +1574,8 @@ Plot the scores obtained by the estimator fitted on every subset of
  [`feature_selection`](#atom-feature-selection) method. Can't be called from
  the model subclasses.
 <br /><br />
+![plot_RFECV](img/plots/plot_RFECV.png)
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1226,7 +1610,10 @@ Wether to render the plot.
                                 display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L208">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot a boxplot of the bagging's results.
+Plot a boxplot of the bagging's results. Only available if the models were
+ fitted using bagging>0.
+<br /><br />
+![plot_bagging](img/plots/plot_bagging.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1266,7 +1653,10 @@ Wether to render the plot.
                                            display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L272">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot of the models' scores per iteration of the successive halving.
+Plot of the models' scores per iteration of the successive halving. Only
+ available if the models were fitted via successive_halving.
+<br /><br />
+![plot_successive_halving](img/plots/plot_successive_halving.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1308,9 +1698,8 @@ Wether to render the plot.
                                        display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L355">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot the model's learning curve: score vs number of training samples. The
- `learning_curve` attribute is created, a dictionary of the plotted models
- containing the scores and fit duration (in seconds) per number of samples.
+Plot the model's learning curve: score vs number of training samples.
+ Only available if the models were fitted via train_sizing.
 <br /><br />
 <table width="100%">
 <tr>
@@ -1319,26 +1708,6 @@ Plot the model's learning curve: score vs number of training samples. The
 <strong>models: string, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
-</blockquote>
-<strong>train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))</strong>
-<blockquote>
-Relative or absolute numbers of training examples that will be used to
- generate the learning curve. If the dtype is float, it is regarded as a
- fraction of the maximum size of the training set. Otherwise it is
- interpreted as absolute sizes of the training sets.
-</blockquote>
-<strong>cv: int, sequence, callable or None, optional (default=None)</strong>
-<blockquote>
-Determines the cross-validation splitting strategy. Possible values:
-<ul>
-<li>None, to use the default 5-fold cross validation</li>
-<li>int, to specify the number of folds in a (Stratified) KFold</li>
-<li>CV splitter instance</li>
-<li>An iterable yielding (train, test) splits as arrays of indices</li>
-</ul>
-For int/None inputs, if the estimator is a classifier and y is
-either binary or multiclass, StratifiedKFold is used. In all other
-cases, KFold is used.
 </blockquote>
 <strong>title: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1370,7 +1739,10 @@ Wether to render the plot.
                             display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L476">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot the Receiver Operating Characteristics curve. Only for binary classification tasks.
+Plot the Receiver Operating Characteristics curve. The legend shows the Area Under the ROC Curve (AUC) score.
+ Only for binary classification tasks.
+<br /><br />
+![plot_ROC](img/plots/plot_ROC.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1410,7 +1782,10 @@ Wether to render the plot.
                             display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L545">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot the precision-recall curve. Only for binary classification tasks.
+Plot the precision-recall curve. The legend shows the average precision (AP) score.
+ Only for binary classification tasks.
+<br /><br />
+![plot_PRC](img/plots/plot_PRC.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1453,6 +1828,8 @@ Wether to render the plot.
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L612">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot the feature permutation importance of models.
+<br /><br />
+![plot_permutation_importance](img/plots/plot_permutation_importance.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1503,6 +1880,8 @@ Wether to render the plot.
 <div style="padding-left:3%" width="100%">
 Plot a tree-based model's normalized feature importance.
 <br /><br />
+![plot_feature_importance](img/plots/plot_feature_importance.png)
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1550,6 +1929,8 @@ Wether to render the plot.
 <li>For 1 model: plot it's confusion matrix in a heatmap.</li>
 <li>For >1 models: compare TP, FP, FN and TN in a barplot. Not supported for multiclass classification.</li>
 </ul>
+![plot_confusion_matrix](img/plots/plot_confusion_matrix.png)
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1595,6 +1976,8 @@ Wether to render the plot.
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L943">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Plot performance metric(s) against multiple threshold values.
+<br /><br />
+![plot_threshold](img/plots/plot_threshold.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1647,6 +2030,8 @@ Wether to render the plot.
 <div style="padding-left:3%" width="100%">
 Plot a function of the probability of the classes of being the target class.
 <br /><br />
+![plot_probabilities](img/plots/plot_probabilities.png)
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1658,6 +2043,149 @@ Name of the models to plot. If None, all the models in the pipeline are selected
 <strong>target: int or string, optional (default=1)</strong>
 <blockquote>
 Probability of being that class (as index or name).
+</blockquote>
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-plot-calibration"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_calibration</strong>(models=None,
+                                    n_bins=10,
+                                    title=None,
+                                    figsize=(10, 10),
+                                    filename=None,
+                                    display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1042">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the calibration curve for a binary classifier.
+
+ Well calibrated classifiers are probabilistic classifiers for which the
+ output of the predict_proba method can be directly interpreted as a
+ confidence level. For instance a well calibrated (binary) classifier
+ should classify the samples such that among the samples to which it gave
+ a predict_proba value close to 0.8, approx. 80% actually belong to the
+ positive class. This figure shows two plots: the calibration curve and a
+ distribution of all predicted probabilities of the classifier.
+ Code snippets from [https://scikit-learn.org/stable/auto_examples/
+calibration/plot_calibration_curve.html](https://scikit-learn.org/stable/auto_examples/
+calibration/plot_calibration_curve.html).
+<br /><br />
+![plot_calibration](img/plots/plot_calibration.png)
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: string, sequence or None, optional (default=None)</strong>
+<blockquote>
+Name of the models to plot. If None, all the models in the pipeline are selected.
+</blockquote>
+<strong>n_bins: int, optional (default=10)</strong>
+<blockquote>
+Number of bins for the calibration calculation and the histogram.
+ Minimum of 5 required.
+</blockquote>
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 10))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-plot-gains"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_gains</strong>(models=None,
+                              title=None,
+                              figsize=(10, 6),
+                              filename=None,
+                              display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1042">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the cumulative gains curve. Only for binary classification.
+<br /><br />
+![plot_gains](img/plots/plot_gains.png)
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: string, sequence or None, optional (default=None)</strong>
+<blockquote>
+Name of the models to plot. If None, all the models in the pipeline are selected.
+</blockquote>
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Wether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-plot-lift"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_lift</strong>(models=None,
+                             title=None,
+                             figsize=(10, 6),
+                             filename=None,
+                             display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1042">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the lift curve. Only for binary classification.
+<br /><br />
+![plot_lift](img/plots/plot_lift.png)
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: string, sequence or None, optional (default=None)</strong>
+<blockquote>
+Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
 <strong>title: string or None, optional (default=None)</strong>
 <blockquote>

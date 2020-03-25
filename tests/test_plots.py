@@ -38,6 +38,18 @@ def test_plot_PCA():
     pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
     atom.feature_selection(strategy='pca', n_features=10)
 
+    # When correct
+    atom.plot_PCA(display=False)
+    assert 1 == 1
+
+
+def test_plot_components():
+    ''' Assert that the plot_components method work as intended '''
+
+    atom = ATOMClassifier(X_bin, y_bin)
+    pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
+    atom.feature_selection(strategy='pca', n_features=10)
+
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_PCA, -2)
 
@@ -87,21 +99,21 @@ def test_plot_successive_halving():
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When fit is called without successive_halving
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=False)
+    atom.pipeline(['tree', 'lgb'])
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When model is unknown
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True)
+    atom.successive_halving(['tree', 'lgb'], 'f1')
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
     # When correct (with bagging)
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, max_iter=3)
+    atom.successive_halving(['tree', 'lgb'], 'f1', max_iter=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
     assert 1 == 1
 
     # When correct (without bagging)
-    atom.pipeline(['tree', 'lgb'], 'f1', successive_halving=True, bagging=3)
+    atom.successive_halving(['tree', 'lgb'], 'f1', bagging=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
     assert 2 == 2
@@ -115,15 +127,14 @@ def test_plot_learning_curve():
     pytest.raises(AttributeError, atom.plot_learning_curve)
 
     # When model is unknown
-    atom.pipeline(['tree', 'lgb'], 'f1')
+    atom.train_sizing(['tree', 'lgb'], 'f1')
     pytest.raises(ValueError, atom.plot_learning_curve, models='unknown')
 
     # When correct
-    atom.pipeline(['tree', 'lgb'], 'f1')
+    atom.train_sizing(['tree', 'lgb'], 'f1')
     atom.plot_learning_curve(display=False)
     atom.tree.plot_learning_curve(display=False)
     assert 1 == 1
-    assert hasattr(atom, 'learning_curve')
 
 
 def test_plot_ROC():
@@ -295,3 +306,72 @@ def test_plot_probabilities():
     atom.lda.plot_probabilities(target=0, display=False)
     atom.plot_probabilities(target=1, display=False)
     assert 2 == 2
+
+
+def test_plot_calibration():
+    ''' Assert that the plot_calibration method work as intended '''
+
+    # When task is not binary classification
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.pipeline('tree', 'r2', max_iter=0)
+    pytest.raises(AttributeError, atom.tree.plot_calibration)
+
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.pipeline(['tree', 'pa'], 'f1', max_iter=0)
+
+    # When invalid model
+    pytest.raises(ValueError, atom.plot_calibration, models='unknown')
+
+    # When invalid bins
+    pytest.raises(ValueError, atom.plot_calibration, n_bins=3)
+
+    # When correct
+    atom.tree.plot_calibration(display=False)
+    atom.plot_calibration(display=False)
+    assert 1 == 1
+
+
+def test_plot_gains():
+    ''' Assert that the plot_gains method work as intended '''
+
+    # When task is not binary classification
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.pipeline('tree', 'r2', max_iter=0)
+    pytest.raises(AttributeError, atom.tree.plot_gains)
+
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.pipeline(['tree', 'lgb', 'pa'], 'f1', max_iter=0)
+
+    # When invalid model
+    pytest.raises(ValueError, atom.plot_gains, models='unknown')
+
+    # When model with no rpedict_proba method
+    pytest.raises(ValueError, atom.pa.plot_gains)
+
+    # When correct
+    atom.tree.plot_gains(display=False)
+    atom.plot_gains(models=['tree', 'lgb'], display=False)
+    assert 1 == 1
+
+
+def test_plot_lift():
+    ''' Assert that the plot_lift method work as intended '''
+
+    # When task is not binary classification
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.pipeline('tree', 'r2', max_iter=0)
+    pytest.raises(AttributeError, atom.tree.plot_lift)
+
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.pipeline(['tree', 'lgb', 'pa'], 'f1', max_iter=0)
+
+    # When invalid model
+    pytest.raises(ValueError, atom.plot_lift, models='unknown')
+
+    # When model with no rpedict_proba method
+    pytest.raises(ValueError, atom.pa.plot_lift)
+
+    # When correct
+    atom.tree.plot_lift(display=False)
+    atom.plot_lift(models=['tree', 'lgb'], display=False)
+    assert 1 == 1

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing plot functions.
 
@@ -18,10 +18,13 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
-from sklearn.inspection import permutation_importance
+
+# Sklearn
 from sklearn.model_selection import learning_curve
+from sklearn.inspection import permutation_importance
+from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
-        SCORERS, roc_curve, precision_recall_curve, confusion_matrix
+        SCORERS, roc_curve, precision_recall_curve
         )
 
 # Own package modules
@@ -37,11 +40,9 @@ tree_models = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 # << ======================== Plots ======================== >>
 
 def plot_correlation(self, title, figsize, filename, display):
+    """Plot the data's correlation matrix. Ignores non-numeric columns.
 
-    """
-    Correlation matrix plot of the dataset. Ignores non-numeric columns.
-
-    PARAMETERS
+    Parameters
     ----------
     title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
@@ -56,7 +57,6 @@ def plot_correlation(self, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     # Compute the correlation matrix
     corr = self.dataset.corr()
     # Drop first row and last column (diagonal line)
@@ -84,11 +84,71 @@ def plot_correlation(self, title, figsize, filename, display):
     plt.show() if display else plt.close()
 
 
-def plot_PCA(self, show, title, figsize, filename, display):
+def plot_PCA(self, title, figsize, filename, display):
+    """Plot the explained variance ratio vs the number of components.
+
+    Only if PCA was applied on the dataset through the feature_selection
+    method.
+
+    Parameters
+    ----------
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 6))
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
 
     """
-    Plot the explained variance ratio of the components. Only if PCA
-    was applied on the dataset through the feature_selection method.
+    if not hasattr(self, 'PCA'):
+        raise AttributeError("This plot is only availbale if you apply " +
+                             "PCA on the dataset through the " +
+                             "feature_selection method!")
+
+    var = np.array(self.PCA.explained_variance_ratio_)
+    var_all = np.array(self._PCA_all.explained_variance_ratio_)
+
+    fig, ax = plt.subplots(figsize=figsize)
+    plt.scatter(self.PCA.n_components_ - 1,
+                var.sum(),
+                marker='*',
+                s=130,
+                c='blue',
+                edgecolors='b',
+                zorder=3,
+                label=f"Total variance retained: {round(var.sum(), 3)}")
+    plt.plot(range(0, self._PCA_all.n_components_),
+             np.cumsum(var_all),
+             marker='o')
+    plt.axhline(var.sum(), ls='--', color='k')
+
+    plt.title("PCA explained variances", fontsize=self.title_fontsize, pad=12)
+    plt.legend(loc='lower right', fontsize=self.label_fontsize)
+    plt.xlabel('First N principal components',
+               fontsize=self.label_fontsize,
+               labelpad=12)
+    plt.ylabel('Cumulative variance ratio',
+               fontsize=self.label_fontsize,
+               labelpad=12)
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_components(self, show, title, figsize, filename, display):
+    """Plot the explained variance ratio per component.
+
+    Only if PCA was applied on the dataset through the feature_selection
+    method.
 
     Parameters
     ----------
@@ -108,23 +168,25 @@ def plot_PCA(self, show, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     if not hasattr(self, 'PCA'):
         raise AttributeError("This plot is only availbale if you apply " +
                              "PCA on the dataset through the " +
                              "feature_selection method!")
 
     # Set parameters
-    var = np.array(self.PCA.explained_variance_ratio_)
-    if show is None or show > len(var):
-        show = len(var)
+    if show is None:
+        show = self.PCA.n_components_
+    elif show > self._PCA_all.n_components_:
+        show = self._PCA_all.n_components_
     elif show < 1:
         raise ValueError("Invalid value for the show parameter." +
                          f"Value should be >0, got {show}.")
     if figsize is None:  # Default figsize depends on features shown
         figsize = (10, int(4 + show/2))
 
-    scr = pd.Series(var, index=self.X.columns).nlargest(show).sort_values()
+    var = np.array(self._PCA_all.explained_variance_ratio_)[:show]
+    indices = ['Component ' + str(i) for i in range(len(var))]
+    scr = pd.Series(var, index=indices).sort_values()
 
     fig, ax = plt.subplots(figsize=figsize)
     scr.plot.barh(label=f"Total variance retained: {round(var.sum(), 3)}",
@@ -132,9 +194,13 @@ def plot_PCA(self, show, title, figsize, filename, display):
     for i, v in enumerate(scr):
         ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=self.tick_fontsize)
 
-    plt.title("Explained variance ratio", fontsize=self.title_fontsize, pad=12)
+    plt.title("PCA explained variance per component",
+              fontsize=self.title_fontsize,
+              pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
-    plt.xlabel('Variance ratio', fontsize=self.label_fontsize, labelpad=12)
+    plt.xlabel('Explained variance ratio',
+               fontsize=self.label_fontsize,
+               labelpad=12)
     plt.ylabel('Components', fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
@@ -146,8 +212,8 @@ def plot_PCA(self, show, title, figsize, filename, display):
 
 
 def plot_RFECV(self, title, figsize, filename, display):
+    """Plot the RFECV results.
 
-    """
     Plot the scores obtained by the estimator fitted on every subset of
     the data. Only if RFECV was applied on the dataset through the
     feature_selection method.
@@ -167,7 +233,6 @@ def plot_RFECV(self, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     if not hasattr(self, 'RFECV'):
         raise AttributeError("This plot is only availbale if you apply " +
                              "RFECV on the dataset through the " +
@@ -186,6 +251,7 @@ def plot_RFECV(self, title, figsize, filename, display):
     xline = range(n_features,  n_features + len(self.RFECV.grid_scores_))
     ax.axvline(xline[np.argmax(self.RFECV.grid_scores_)],
                ls='--',
+               color='k',
                label=f'Best score: {round(max(self.RFECV.grid_scores_), 3)}')
     plt.plot(xline, self.RFECV.grid_scores_)
 
@@ -206,9 +272,9 @@ def plot_RFECV(self, title, figsize, filename, display):
 
 
 def plot_bagging(self, models, title, figsize, filename, display):
+    """Boxplot of the bagging's results.
 
-    """
-    Plot a boxplot of the bagging's results.
+    Only available if the models were fitted using bagging>0.
 
     Parameters
     ----------
@@ -229,14 +295,13 @@ def plot_bagging(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     check_is_fitted(self._is_fitted)
-    if not self.bagging:
-        raise AttributeError("You need to run the pipeline using bagging" +
+    if not self._has_bag:
+        raise AttributeError("You need to fit the models using bagging" +
                              " before calling the plot_bagging method!")
 
     if models is None:
-        models = [self.winner.name] if self.successive_halving else self.models
+        models = [self.winner.name] if self._has_sh else self.models
     elif isinstance(models, str):
         models = [models]
 
@@ -270,9 +335,9 @@ def plot_bagging(self, models, title, figsize, filename, display):
 
 
 def plot_successive_halving(self, models, title, figsize, filename, display):
+    """Plot of the models' scores per iteration of the successive halving.
 
-    """
-    Plot of the models' scores per iteration of the successive halving.
+    Only available if the models were fitted via successive_halving.
 
     Parameters
     ----------
@@ -293,11 +358,10 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     check_is_fitted(self._is_fitted)
-    if not self.successive_halving:
-        raise AttributeError("You need to run the pipeline using a " +
-                             "successive halving approach before " +
+    if not self._has_sh:
+        raise AttributeError("You need to fit the models using the " +
+                             "successive_halving approach before " +
                              "calling the plot_successive_halving method!")
 
     if models is None:
@@ -306,7 +370,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
         models = [models]
 
     # Define variables
-    col = 'score_test' if self.bagging is None else 'bagging_mean'
+    col = 'score_test' if not self._has_bag else 'bagging_mean'
     names = []
     liny = [[] for _ in models]
     filly = [[] for _ in models]
@@ -318,7 +382,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
                 if names[-1] in df.model.values:
                     idx = np.where(names[-1] == df.model.values)[0]
                     liny[n].append(df[col].iloc[idx].values[0])
-                    if self.bagging is not None:
+                    if self._has_bag:
                         filly[n].append(df['bagging_std'].iloc[idx].values[0])
                 else:
                     liny[n].append(np.NaN)
@@ -329,7 +393,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     fig, ax = plt.subplots(figsize=figsize)
     for y, std, label in zip(liny, filly, names):
         plt.plot(range(len(self.scores)), y, lw=2, marker='o', label=label)
-        if self.bagging is not None:  # Fill the std area
+        if self._has_bag:  # Fill the std area
             plt.fill_between(range(len(self.scores)),
                              [a + b for a, b in zip(y, std)],
                              [a - b for a, b in zip(y, std)],
@@ -352,36 +416,16 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
     plt.show() if display else plt.close()
 
 
-def plot_learning_curve(self, models, train_sizes, cv,
-                        title, figsize, filename, display):
+def plot_learning_curve(self, models, title, figsize, filename, display):
+    """Plot the model's learning curve: score vs number of training samples.
 
-    """
-    Plot the model's learning curve: score vs number of training samples. The
-    `learning_curve` attribute is created, a dictionary of the plotted models
-    containing the scores and fit duration per number of samples.
+    Only available if the models were fitted via train_sizing.
 
     Parameters
     ----------
     models: string, list, tuple or None, optional (default=None)
         Name of the models to plot. If None, all the models in the
         pipeline are selected.
-
-    train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))
-        Relative or absolute numbers of training examples that will be used to
-        generate the learning curve. If the dtype is float, it is regarded as a
-        fraction of the maximum size of the training set. Otherwise it is
-        interpreted as absolute sizes of the training sets.
-
-    cv: int, sequence, callable or None, optional (default=None)
-        Determines the cross-validation splitting strategy. Possible values:
-            - None, to use the default 5-fold cross validation
-            - int, to specify the number of folds in a (Stratified) KFold
-            - CV splitter instance
-            - An iterable yielding (train, test) splits as arrays of indices
-
-        For int/None inputs, if the estimator is a classifier and y is
-        either binary or multiclass, StratifiedKFold is used. In all other
-        cases, KFold is used.
 
     title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
@@ -396,77 +440,55 @@ def plot_learning_curve(self, models, train_sizes, cv,
         Wether to render the plot.
 
     """
-
     check_is_fitted(self._is_fitted)
+    if not self._has_ts:
+        raise AttributeError("You need to fit the models using the " +
+                             "train_sizing approach before " +
+                             "calling the plot_learning_curves method!")
+
     if models is None:
         models = self.models
     elif isinstance(models, str):
         models = [models]
 
-    self.learning_curve = {}
-    fig, ax = plt.subplots(figsize=figsize)
-    for model in models:
-        if hasattr(self, model):
-            m = getattr(self, model)
+    # Define variables
+    col = 'score_test' if not self._has_bag else 'bagging_mean'
+    names = []
+    liny = [[] for _ in models]
+    filly = [[] for _ in models]
 
-            # Get learning curve scores
-            samples, train_scores, test_scores, time, _ = \
-                learning_curve(m.best_model,
-                               self.X_train,
-                               self.y_train,
-                               train_sizes=train_sizes,
-                               cv=cv,
-                               scoring=self.metric,
-                               n_jobs=self.n_jobs,
-                               return_times=True)
-
-            train_scores_mean = np.mean(train_scores, axis=1)
-            train_scores_std = np.std(train_scores, axis=1)
-            test_scores_mean = np.mean(test_scores, axis=1)
-            test_scores_std = np.std(test_scores, axis=1)
-            time_mean = np.mean(time, axis=1)
-            time_std = np.std(time, axis=1)
-
-            # Draw line
-            if len(models) == 1:
-                label_train = f"Training score"
-                label_test = f"Test score"
-            else:
-                label_train = f"{m.name} (Training score)"
-                label_test = f"{m.name} (Test score)"
-            plt.plot(samples, train_scores_mean, lw=2, label=label_train)
-            plt.fill_between(samples,
-                             train_scores_mean + train_scores_std,
-                             train_scores_mean - train_scores_std,
-                             alpha=0.4)
-            plt.plot(samples, test_scores_mean, lw=2, label=label_test)
-            plt.fill_between(samples,
-                             test_scores_mean + test_scores_std,
-                             test_scores_mean - test_scores_std,
-                             alpha=0.4)
-
-            # Append results to the attribute
-            fraction = np.round(samples/len(self.X_train), 2)
-            self.learning_curve[m.name] = \
-                pd.DataFrame({'fraction of train_set': fraction,
-                              'samples': samples,
-                              'train_scores_mean': train_scores_mean,
-                              'train_scores_std': train_scores_std,
-                              'test_scores_mean': test_scores_mean,
-                              'test_scores_std': test_scores_std,
-                              'time_mean (s)': time_mean,
-                              'time_std (s)': time_std})
-
+    for n, model in enumerate(models):
+        if hasattr(self, model.lower()):  # If model in pipeline
+            names.append(getattr(self, model.lower()).name)
+            for m, df in enumerate(self.scores):
+                if names[-1] in df.model.values:
+                    idx = np.where(names[-1] == df.model.values)[0]
+                    liny[n].append(df[col].iloc[idx].values[0])
+                    if self._has_bag:
+                        filly[n].append(df['bagging_std'].iloc[idx].values[0])
+                else:
+                    liny[n].append(np.NaN)
+                    filly[n].append(np.NaN)
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
+    fig, ax = plt.subplots(figsize=figsize)
+    for y, std, label in zip(liny, filly, names):
+        plt.plot(self._sizes, y, lw=2, marker='o', label=label)
+        if self._has_bag:  # Fill the std area
+            plt.fill_between(self._sizes,
+                             [a + b for a, b in zip(y, std)],
+                             [a - b for a, b in zip(y, std)],
+                             alpha=0.4)
+
     title = 'Learning curve' if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
-    plt.legend(fontsize=self.label_fontsize)
-    plt.xlabel('Number of samples', fontsize=self.label_fontsize, labelpad=12)
+    plt.legend(loc='lower right', fontsize=self.label_fontsize)
+    plt.xlabel('Number of training samples', fontsize=self.label_fontsize, labelpad=12)
     plt.ylabel(self.metric.name, fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(3,3))
     fig.tight_layout()
     if filename is not None:
         plt.savefig(filename)
@@ -474,10 +496,10 @@ def plot_learning_curve(self, models, train_sizes, cv,
 
 
 def plot_ROC(self, models, title, figsize, filename, display):
+    """Plot the Receiver Operating Characteristics curve.
 
-    """
-    Plot the Receiver Operating Characteristics curve.
-    Only for binary classification tasks.
+    The legend shows the Area Under the ROC Curve (AUC) score. Only for
+    binary classification tasks.
 
     Parameters
     ----------
@@ -498,7 +520,6 @@ def plot_ROC(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     if not self.task.startswith('binary'):
         raise AttributeError("The plot_ROC method is only available for " +
                              "binary classification tasks!")
@@ -514,7 +535,7 @@ def plot_ROC(self, models, title, figsize, filename, display):
         if hasattr(self, model):
             m = getattr(self, model)
 
-            # Get False (True) Positive Rate
+            # Get False (True) Positive Rate as arrays
             fpr, tpr, _ = roc_curve(m.y_test, m.predict_proba_test[:, 1])
 
             # Draw line
@@ -543,9 +564,10 @@ def plot_ROC(self, models, title, figsize, filename, display):
 
 
 def plot_PRC(self, models, title, figsize, filename, display):
+    """Plot the precision-recall curve.
 
-    """
-    Plot the precision-recall curve. Only for binary classification tasks.
+    The legend shows the average precision (AP) score. Only for binary
+    classification tasks.
 
     Parameters
     ----------
@@ -566,7 +588,6 @@ def plot_PRC(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-
     if not self.task.startswith('binary'):
         raise AttributeError("The plot_PRC method is only available for " +
                              "binary classification tasks!")
@@ -611,11 +632,12 @@ def plot_PRC(self, models, title, figsize, filename, display):
 
 def plot_permutation_importance(self, models, show, n_repeats,
                                 title, figsize, filename, display):
+    """Plot the feature permutation importance of models.
 
-    """
-    Plot the feature permutation importance of models.
+    If a permutation is repeated for the same model with the same amont of
+    n_repeats, the calculation is skipped.
 
-    PARAMETERS
+    Parameters
     ----------
     models: string, list, tuple or None, optional (default=None)
         Name of the models to plot. If None, all the models in the
@@ -640,7 +662,6 @@ def plot_permutation_importance(self, models, show, n_repeats,
         Wether to render the plot.
 
     """
-
     # Set parameters
     check_is_fitted(self._is_fitted)
     if models is None:
@@ -664,15 +685,21 @@ def plot_permutation_importance(self, models, show, n_repeats,
     df = pd.DataFrame(columns=['features', 'score', 'model'])
 
     # Create dictionary to store the permutations per model
-    self.permutations = {}
+    if not hasattr(self, 'permutations'):
+        self.permutations = {}
 
-    for count, model in enumerate(models):
+    for model in models:
         if hasattr(self, model.lower()):
             m = getattr(self, model.lower())
 
-            # Permutation importances returns Bunch object from sklearn
-            # Force random state on function (won't work with numpy default)
-            m.permutations = permutation_importance(
+            # If permutations are already calculated and n_repeats is same,
+            # use known permutations (for efficient re-plotting)
+            if not hasattr(m, '_rpts'):
+                m._rpts = -np.inf
+            if m.name not in self.permutations.keys() or m._rpts != n_repeats:
+                m._rpts = n_repeats
+                # Permutation importances returns Bunch object from sklearn
+                self.permutations[m.name] = permutation_importance(
                                                 m.best_model_fit,
                                                 m.X_test,
                                                 m.y_test,
@@ -681,12 +708,9 @@ def plot_permutation_importance(self, models, show, n_repeats,
                                                 n_jobs=self.n_jobs,
                                                 random_state=self.random_state)
 
-            # Assign attribute to ATOM class
-            self.permutations[m.name] = m.permutations
-
             # Append data to the dataframe
             for i, feature in enumerate(self.X.columns):
-                for score in m.permutations.importances[i, :]:
+                for score in self.permutations[m.name].importances[i, :]:
                     df = df.append({'features': feature,
                                     'score': score,
                                     'model': m.name},
@@ -722,9 +746,7 @@ def plot_permutation_importance(self, models, show, n_repeats,
 
 def plot_feature_importance(self, models, show,
                             title, figsize, filename, display):
-
-    """
-    Plot a tree-based model's normalized feature importance.
+    """Plot a tree-based model's normalized feature importance.
 
     Parameters
     ----------
@@ -748,7 +770,6 @@ def plot_feature_importance(self, models, show,
         Wether to render the plot.
 
     """
-
     # Set parameters
     check_is_fitted(self._is_fitted)
     if models is None:
@@ -815,8 +836,8 @@ def plot_feature_importance(self, models, show,
 
 def plot_confusion_matrix(self, models, normalize,
                           title, figsize, filename, display):
+    """Plot the confusion matrix.
 
-    """
     For 1 model: plot it's confusion matrix in a heatmap.
     For >1 models: compare TP, FP, FN and TN in a barplot. Not supported for
                    multiclass classification.
@@ -843,7 +864,6 @@ def plot_confusion_matrix(self, models, normalize,
         Wether to render the plot.
 
     """
-
     if self.task == 'regression':
         raise AttributeError("The plot_confusion_matrix_method is only " +
                              "available for classification tasks!")
@@ -873,10 +893,8 @@ def plot_confusion_matrix(self, models, normalize,
 
     for model in models:
         if hasattr(self, model.lower()):
-            # Compute confusion matrix
-            cm = confusion_matrix(getattr(self, model.lower()).y_test,
-                                  getattr(self, model.lower()).predict_test)
 
+            cm = self.confusion_matrix
             if normalize:
                 cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
@@ -913,7 +931,7 @@ def plot_confusion_matrix(self, models, normalize,
                 ax.set_ylabel('True label',
                               fontsize=self.label_fontsize,
                               labelpad=12)
-                cbar.set_label('Counts',
+                cbar.set_label('Count',
                                fontsize=self.label_fontsize,
                                labelpad=15,
                                rotation=270)
@@ -928,7 +946,7 @@ def plot_confusion_matrix(self, models, normalize,
 
     if len(models) > 1:
         df.plot.barh(figsize=figsize, width=0.6)
-        plt.xlabel('Counts', fontsize=self.label_fontsize, labelpad=12)
+        plt.xlabel('Count', fontsize=self.label_fontsize, labelpad=12)
         plt.title(title, fontsize=self.title_fontsize, pad=12)
         plt.legend(fontsize=self.label_fontsize)
 
@@ -942,11 +960,9 @@ def plot_confusion_matrix(self, models, normalize,
 
 def plot_threshold(self, models, metric, steps,
                    title, figsize, filename, display):
+    """Plot performance metric(s) against multiple threshold values.
 
-    """
-    Plot performance metric(s) against multiple threshold values.
-
-    PARAMETERS
+    Parameters
     ----------
     models: string, list, tuple or None, optional (default=None)
         Name of the models to plot. If None, all the models in the
@@ -973,7 +989,6 @@ def plot_threshold(self, models, metric, steps,
         Wether to render the plot.
 
     """
-
     if not self.task.startswith('binary'):
         raise AttributeError("The plot_threshold method is only available " +
                              "for binary classification tasks!")
@@ -1041,12 +1056,9 @@ def plot_threshold(self, models, metric, steps,
 
 def plot_probabilities(self, models, target,
                        title, figsize, filename, display):
+    """Plot performance metric(s) against threshold values.
 
-    """
-    Plot a function of the probability of the classes
-    of being the target class.
-
-    PARAMETERS
+    Parameters
     ----------
     models: string, list, tuple or None, optional (default=None)
         Name of the models to plot. If None, all the models in the
@@ -1068,7 +1080,6 @@ def plot_probabilities(self, models, target,
         Wether to render the plot.
 
     """
-
     if self.task == 'regression':
         raise AttributeError("The plot_probabilities method is only " +
                              "available for classification tasks!")
@@ -1118,8 +1129,268 @@ def plot_probabilities(self, models, target,
     plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(fontsize=self.label_fontsize)
     plt.xlabel('Probability', fontsize=self.label_fontsize, labelpad=12)
-    plt.ylabel('Counts', fontsize=self.label_fontsize, labelpad=12)
+    plt.ylabel('Count', fontsize=self.label_fontsize, labelpad=12)
     plt.xlim(0, 1)
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_calibration(self, models, n_bins,
+                     title, figsize, filename, display):
+    """Plot the calibration curve for a binary classifier.
+
+    Well calibrated classifiers are probabilistic classifiers for which the
+    output of the predict_proba method can be directly interpreted as a
+    confidence level. For instance a well calibrated (binary) classifier
+    should classify the samples such that among the samples to which it gave
+    a predict_proba value close to 0.8, approx. 80% actually belong to the
+    positive class. This figure shows two plots: the calibration curve and a
+    distribution of all predicted probabilities of the classifier.
+    Code snippets from https://scikit-learn.org/stable/auto_examples/
+    calibration/plot_calibration_curve.html
+
+    Parameters
+    ----------
+    models: string, list, tuple or None, optional (default=None)
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
+
+    n_bins: int, optional (default=10)
+        Number of bins for the calibration calculation and the histogram.
+        Minimum of 5 required.
+
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 10))
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
+
+    """
+    if not self.task.startswith('binary'):
+        raise AttributeError("The plot_probabilities method is only " +
+                             "available for binary classification tasks!")
+
+    # Set parameters
+    check_is_fitted(self._is_fitted)
+    if models is None:
+        models = self.models
+    elif isinstance(models, str):
+        models = [models]
+    if n_bins < 5:
+        raise ValueError("Invalid value for the n_bins parameter." +
+                         f"Value should be >=5, got {n_bins}.")
+
+    fig = plt.figure(figsize=figsize)
+    ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
+    ax2 = plt.subplot2grid((3, 1), (2, 0))
+    ax1.plot([0, 1], [0, 1], color='k', ls='--')
+    for model in models:
+        if hasattr(self, model.lower()):
+            m = getattr(self, model.lower())
+            if hasattr(m, "predict_proba_test"):
+                probs = m.predict_proba_test[:, 1]
+            elif hasattr(m, "decision_function_test"):
+                probs = m.decision_function_test
+                probs = (probs - probs.min()) / (probs.max() - probs.min())
+
+            # Calculate the calibration
+            fraction_of_positives, predicted_value = \
+                calibration_curve(self.y_test, probs, n_bins=n_bins)
+
+            # Draw plots
+            ax1.plot(predicted_value,
+                     fraction_of_positives,
+                     marker='o',
+                     lw=2,
+                     label=f"{m.name}")
+
+            ax2.hist(probs,
+                     range=(0, 1),
+                     bins=n_bins,
+                     label=m.name,
+                     histtype="step", lw=2)
+
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
+
+    ax1.set_title('Calibration curve', fontsize=self.title_fontsize, pad=12)
+    ax1.legend(loc="lower right", fontsize=self.label_fontsize)
+    ax1.set_ylabel("Fraction of positives",
+                   fontsize=self.label_fontsize,
+                   labelpad=12)
+    ax1.set_ylim([-0.05, 1.05])
+
+    ax2.legend(loc="upper center", fontsize=self.label_fontsize, ncol=3)
+    ax2.set_xlabel("Predicted value",
+                   fontsize=self.label_fontsize,
+                   labelpad=12)
+    ax2.set_ylabel("Count", fontsize=self.label_fontsize, labelpad=12)
+
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_gains(self, models, title, figsize, filename, display):
+    """Plot the cumulative gains curve.
+
+    Only for binary classification. Code snippet from https://github.com/
+    reiinakano/scikit-plot/
+
+    Parameters
+    ----------
+    models: string, list, tuple or None, optional (default=None)
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
+
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 10))
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
+
+    """
+    if not self.task.startswith('binary'):
+        raise AttributeError("The plot_gain method is only " +
+                             "available for binary classification tasks!")
+
+    # Set parameters
+    check_is_fitted(self._is_fitted)
+    if models is None:
+        models = self.models
+    elif isinstance(models, str):
+        models = [models]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    plt.plot([0, 1], [0, 1], 'k--', lw=2)
+    for model in models:
+        if hasattr(self, model.lower()):
+            m = getattr(self, model.lower())
+            if not hasattr(m, 'predict_proba_test'):
+                raise ValueError("The plot_lift method is only " +
+                                 "available for models with a " +
+                                 "predict_proba method!")
+
+            # Compute Cumulative Gain Curves
+            y_true = (m.y_test == 1)  # Make y_true a boolean vector
+
+            sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
+            gains = np.cumsum(y_true[sorted_indices])/float(np.sum(y_true))
+
+            x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
+            plt.plot(x, gains, lw=2, label=f'{m.name}')
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
+
+    if title is None:
+        title = "Cumulative gains curve"
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
+    plt.legend(loc='lower right', fontsize=self.label_fontsize)
+    plt.xlabel("Fraction of sample",
+               fontsize=self.label_fontsize,
+               labelpad=12)
+    plt.ylabel('Gain', fontsize=self.label_fontsize, labelpad=12)
+    plt.xlim(0, 1)
+    plt.ylim(0, 1.02)
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_lift(self, models, title, figsize, filename, display):
+    """Plot the lift curve.
+
+    Only for binary classification. Code snippet from https://github.com/
+    reiinakano/scikit-plot/
+
+    Parameters
+    ----------
+    models: string, list, tuple or None, optional (default=None)
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
+
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 10))
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        Wether to render the plot.
+
+    """
+    if not self.task.startswith('binary'):
+        raise AttributeError("The plot_gain method is only " +
+                             "available for binary classification tasks!")
+
+    # Set parameters
+    check_is_fitted(self._is_fitted)
+    if models is None:
+        models = self.models
+    elif isinstance(models, str):
+        models = [models]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    plt.plot([0, 1], [1, 1], 'k--', lw=2)
+    for model in models:
+        if hasattr(self, model.lower()):
+            m = getattr(self, model.lower())
+            if not hasattr(m, 'predict_proba_test'):
+                raise ValueError("The plot_lift method is only " +
+                                 "available for models with a " +
+                                 "predict_proba method!")
+
+            # Compute Cumulative Gain Curves
+            y_true = (m.y_test == 1)  # Make y_true a boolean vector
+
+            sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
+            gains = np.cumsum(y_true[sorted_indices])/float(np.sum(y_true))
+
+            # Draw line
+            if len(models) == 1:
+                label = f"Lift={round(m.lift, 3)}"
+            else:
+                label = f"{m.name} (Lift={round(m.lift, 3)})"
+            x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
+            plt.plot(x, gains/x, lw=2, label=label)
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
+
+    if title is None:
+        title = "Lift curve"
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
+    plt.legend(loc='upper right', fontsize=self.label_fontsize)
+    plt.xlabel("Fraction of sample",
+               fontsize=self.label_fontsize,
+               labelpad=12)
+    plt.ylabel('Lift', fontsize=self.label_fontsize, labelpad=12)
+    plt.xlim(0, 1)
+    # plt.ylim(0, 1.02)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
     fig.tight_layout()
@@ -1131,9 +1402,7 @@ def plot_probabilities(self, models, target,
 # << ====================== Utilities ====================== >>
 
 def save(self, filename):
-
-    """
-    Save class to a pickle file.
+    """Save class to a pickle file.
 
     Parameters
     ----------
@@ -1141,6 +1410,5 @@ def save(self, filename):
         Name of the file when saved (as .html). None to not save anything.
 
     """
-
     filename = filename if filename.endswith('.pkl') else filename + '.pkl'
     pickle.dump(self, open(filename, 'wb'))

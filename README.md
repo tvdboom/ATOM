@@ -40,7 +40,7 @@ Possible steps taken by the ATOM pipeline:
 <br/><br/>
 
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="700" height="250" />
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="900" height="300" />
 </p>
 
 

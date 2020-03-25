@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing the parent class for all model subclasses
 
@@ -19,7 +19,7 @@ from typing import Optional, Union, Sequence, Tuple
 
 # Sklearn
 from sklearn.utils import resample
-from sklearn.metrics import SCORERS
+from sklearn.metrics import SCORERS, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 
@@ -35,8 +35,8 @@ from .utils import composed, crash, params_to_log, time_to_string
 from .plots import (
         save, plot_bagging, plot_successive_halving, plot_learning_curve,
         plot_ROC, plot_PRC, plot_permutation_importance,
-        plot_feature_importance, plot_confusion_matrix, plot_probabilities,
-        plot_threshold
+        plot_feature_importance, plot_confusion_matrix, plot_threshold,
+        plot_probabilities, plot_calibration, plot_gains, plot_lift
         )
 
 
@@ -54,15 +54,13 @@ no_BO = ['GP', 'GNB', 'OLS']
 # << ====================== Classes ====================== >>
 
 class BaseModel(object):
+    """Parent class of all model subclasses."""
 
     def __init__(self, **kwargs):
+        """Initialize class.
 
-        """
-        Initialize class.
-
-        PARAMETERS
+        Parameters
         ----------
-
         data: dict
             Dictionary of the data used for this model (train, test and all).
 
@@ -70,7 +68,6 @@ class BaseModel(object):
             ATOM class. To avoid having to pass attributes throw params.
 
         """
-
         # Set attributes from ATOM to the model's parent class
         self.__dict__.update(kwargs)
         self.error = "No exceptions encountered!"
@@ -82,12 +79,11 @@ class BaseModel(object):
                               init_points: int = 5,
                               cv: int = 3,
                               plot_bo: bool = False):
+        """Run the bayesian optmization algorithm.
 
-        """
-        Run the bayesian optmization algorithm to search for the best
-        combination of hyperparameters. The function to optimize is evaluated
-        either with a K-fold cross-validation on the training set or using
-        a validation set.
+        Search for the best combination of hyperparameters. The function to
+        optimize is evaluated either with a K-fold cross-validation on the
+        training set or using a validation set.
 
         Parameters
         ----------
@@ -117,17 +113,15 @@ class BaseModel(object):
             using jupyter notebook!
 
         """
-
         def animate_plot(x, y1, y2, line1, line2, ax1, ax2):
+            """Plot the BO's progress as it runs.
 
-            """
-            Plot the BO's progress as it runs. Creates a canvas with two plots.
-            The first plot shows the score of every trial and the second shows
-            the distance between the last consecutive steps.
+            Creates a canvas with two plots. The first plot shows the score of
+            every trial and the second shows the distance between the last
+            consecutive steps.
 
-            PARAMETERS
+            Parameters
             ----------
-
             x: list
                 Values of both on the X-axis.
 
@@ -141,7 +135,6 @@ class BaseModel(object):
                 Axes objects (from matplotlib) of the first and second plot.
 
             """
-
             if line1 == []:  # At the start of the plot...
                 # This is the call to matplotlib that allows dynamic plotting
                 plt.ion()
@@ -209,9 +202,7 @@ class BaseModel(object):
             return line1, line2, ax1, ax2
 
         def optimize(x):
-
-            """
-            Function to be optimized by the BO.
+            """Optimization function for the baysisan optimization algorithm.
 
             Parameters
             ----------
@@ -224,7 +215,6 @@ class BaseModel(object):
                 Score achieved by the model.
 
             """
-
             t_iter = time()  # Get current time for start of the iteration
 
             params = self.get_params(x)
@@ -397,8 +387,7 @@ class BaseModel(object):
 
     @composed(crash, params_to_log)
     def fit(self):
-        """ Fit the best model to the test set """
-
+        """Fit the best model to the test set."""
         t_init = time()
 
         # In case the bayesian_optimization method wasn't called
@@ -414,13 +403,16 @@ class BaseModel(object):
 
         # Save probability predictions
         if self.T.task != 'regression':
-            try:  # Only works if model has predict_proba attribute
+            if hasattr(self.best_model_fit, 'predict_proba'):
                 self.predict_proba_train = \
                     self.best_model_fit.predict_proba(self.X_train)
                 self.predict_proba_test = \
                     self.best_model_fit.predict_proba(self.X_test)
-            except AttributeError:
-                pass
+            if hasattr(self.best_model_fit, 'decision_function'):
+                self.decision_function_train = \
+                    self.best_model_fit.decision_function(self.X_train)
+                self.decision_function_test = \
+                    self.best_model_fit.decision_function(self.X_test)
 
         # Save scores on complete training and test set
         self.score_train = self.T.metric(
@@ -428,20 +420,49 @@ class BaseModel(object):
         self.score_test = self.T.metric(
                             self.best_model_fit, self.X_test, self.y_test)
 
+        # Calculate custom metrics and attach to attributes
+        if self.T.task != 'regression':
+            self.confusion_matrix = confusion_matrix(self.y_test,
+                                                     self.predict_test)
+            if self.T.task.startswith('binary'):
+                tn, fp, fn, tp = self.confusion_matrix.ravel()
+
+                # Get metrics (lift, true (false) positive rate and support)
+                self.lift = (tp/(tp+fp))/((tp+fn)/(tp+tn+fp+fn))
+                self.fpr = fp/(fp+tn)
+                self.tpr = tp/(tp+fn)
+                self.sup = (tp+fp)/(tp+fp+fn+tn)
+
+                self.tn, self.fp, self.fn, self.tp = tn, fp, fn, tp
+
         # Calculate all pre-defined metrics on the test set
         for key in SCORERS.keys():
             try:
                 m = getattr(self.T.metric, key)
 
                 # Some metrics need probabilities and other need predict
-                if type(m).__name__ == '_ProbaScorer':
-                    y_pred = self.predict_proba_test
+                if type(m).__name__ == '_ThresholdScorer':
+                    if self.T.task == 'regression':
+                        y_pred = self.predict_test
+                    elif hasattr(self, 'decision_function_test'):
+                        y_pred = self.decision_function_test
+                    else:
+                        y_pred = self.predict_proba_test
+                        if self.T.task.startswith('binary'):
+                            y_pred = y_pred[:, 1]
+                elif type(m).__name__ == '_ProbaScorer':
+                    if hasattr(self, 'predict_proba_test'):
+                        y_pred = self.predict_proba_test
+                        if self.T.task.startswith('binary'):
+                            y_pred = y_pred[:, 1]
+                    else:
+                        y_pred = self.decision_function_test
                 else:
                     y_pred = self.predict_test
                 scr = m._sign * m._score_func(self.y_test, y_pred, **m._kwargs)
                 setattr(self, key, scr)
             except Exception:
-                msg = f"This metric is unavailable!"
+                msg = f"This metric is unavailable for the {self.name} model!"
                 setattr(self, key, msg)
 
         # << ================= Print stats ================= >>
@@ -463,8 +484,8 @@ class BaseModel(object):
 
     @composed(crash, params_to_log, typechecked)
     def bagging(self, bagging: Optional[int] = 5):
+        """Peform bagging algorithm.
 
-        """
         Take bootstrap samples from the training set and test them on the test
         set to get a distribution of the model's results.
 
@@ -475,7 +496,6 @@ class BaseModel(object):
             the bagging algorithm. If None or 0, no bagging is performed.
 
         """
-
         t_init = time()
 
         if bagging is None or bagging == 0:
@@ -515,9 +535,7 @@ class BaseModel(object):
                      figsize: Optional[Tuple[int, int]] = None,
                      filename: Optional[str] = None,
                      display: bool = True):
-
-        """ Plot a boxplot of the bagging's results """
-
+        """Boxplot of the bagging's results."""
         plot_bagging(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -526,25 +544,19 @@ class BaseModel(object):
                                 figsize: Tuple[int, int] = (10, 6),
                                 filename: Optional[str] = None,
                                 display: bool = True):
-
-        """ Plot the successive halving scores """
-
+        """Plot the models' scores per iteration of the successive halving."""
         plot_successive_halving(self.T, self.name,
                                 title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_learning_curve(
                     self,
-                    train_sizes: train_types = np.linspace(0.1, 1.0, 10),
-                    cv: Optional[Union[int, callable, Sequence[int]]] = None,
                     title: Optional[str] = None,
                     figsize: Tuple[int, int] = (10, 6),
                     filename: Optional[str] = None,
                     display: bool = True):
-
-        """ Plot the model's learning curve: score vs training samples """
-
-        plot_learning_curve(self.T, self.name, train_sizes, cv,
+        """Plot the model's learning curve: score vs training samples."""
+        plot_learning_curve(self.T, self.name,
                             title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -553,9 +565,7 @@ class BaseModel(object):
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
-
-        """ Plot Receiver Operating Characteristics curve """
-
+        """Plot the Receiver Operating Characteristics curve."""
         plot_ROC(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -564,9 +574,7 @@ class BaseModel(object):
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
-
-        """ Plot precision-recall curve """
-
+        """Plot the precision-recall curve."""
         plot_PRC(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
@@ -577,9 +585,7 @@ class BaseModel(object):
                                     figsize: Optional[Tuple[int, int]] = None,
                                     filename: Optional[str] = None,
                                     display: bool = True):
-
-        """ Plot the feature permutation importance of models """
-
+        """Plot the feature permutation importance of models."""
         plot_permutation_importance(self.T, self.name, show, n_repeats,
                                     title, figsize, filename, display)
 
@@ -590,9 +596,7 @@ class BaseModel(object):
                                 figsize: Optional[Tuple[int, int]] = None,
                                 filename: Optional[str] = None,
                                 display: bool = True):
-
-        """ Plot tree-based model's normalized feature importances """
-
+        """Plot a tree-based model's normalized feature importances."""
         plot_feature_importance(self.T, self.name,
                                 show, title, figsize, filename, display)
 
@@ -603,13 +607,12 @@ class BaseModel(object):
                               figsize: Tuple[int, int] = (8, 8),
                               filename: Optional[str] = None,
                               display: bool = True):
+        """Plot the confusion matrix.
 
-        """
         For 1 model: plot it's confusion matrix in a heatmap.
         For >1 models: compare TP, FP, FN and TN in a barplot.
 
         """
-
         plot_confusion_matrix(self.T, self.name, normalize,
                               title, figsize, filename, display)
 
@@ -621,13 +624,7 @@ class BaseModel(object):
                        figsize: Tuple[int, int] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-
-        """
-
-        Plot performance metric(s) against multiple threshold values.
-
-        """
-
+        """Plot performance metric(s) against threshold values."""
         plot_threshold(self.T, self.name, metric, steps,
                        title, figsize, filename, display)
 
@@ -638,21 +635,53 @@ class BaseModel(object):
                            figsize: Tuple[int, int] = (10, 6),
                            filename: Optional[str] = None,
                            display: bool = True):
-
-        """
-        Plot a function of the probability of the classes
-        of being the target class.
-
-        """
-
+        """Plot the distribution of predicted probabilities."""
         plot_probabilities(self.T, self.name, target,
                            title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_calibration(self,
+                         n_bins: int = 10,
+                         models: Union[None, str, Sequence[str]] = None,
+                         title: Optional[str] = None,
+                         figsize: Tuple[int, int] = (10, 10),
+                         filename: Optional[str] = None,
+                         display: bool = True):
+        """Plot the calibration curve for a binary classifier."""
+        plot_calibration(self.T, self.name, n_bins,
+                         title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_gains(self,
+                   models: Union[None, str, Sequence[str]] = None,
+                   title: Optional[str] = None,
+                   figsize: Tuple[int, int] = (10, 6),
+                   filename: Optional[str] = None,
+                   display: bool = True):
+        """Plot the cumulative gains curve."""
+        plot_gains(self.T, self.name, title, figsize, filename, display)
+
+    @composed(crash, params_to_log, typechecked)
+    def plot_lift(self,
+                  models: Union[None, str, Sequence[str]] = None,
+                  title: Optional[str] = None,
+                  figsize: Tuple[int, int] = (10, 6),
+                  filename: Optional[str] = None,
+                  display: bool = True):
+        """Plot the lift curve."""
+        plot_lift(self.T, self.name, title, figsize, filename, display)
 
     # << ============ Utility functions ============ >>
 
     @composed(crash, params_to_log, typechecked)
-    def save(self, filename: Optional[str] = None):
-        """ Save the model subclass to a pickle file """
+    def save_model(self, filename: Optional[str] = None):
+        """Save the best found model (fitted) to a pickle file."""
+        save(self.best_model_fit,
+             'model_' + self.name if filename is None else filename)
+        self.T._log(self.longname + " model saved successfully!", 1)
 
+    @composed(crash, params_to_log, typechecked)
+    def save(self, filename: Optional[str] = None):
+        """Save the class to a pickle file."""
         save(self, 'ATOM_' + self.name if filename is None else filename)
-        self.T._log(self.longname + ' model subclass saved successfully!', 1)
+        self.T._log("ATOM's " + self.name + " class saved successfully!", 1)

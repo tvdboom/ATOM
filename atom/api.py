@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM).
+
 Author: tvdboom
 Description: Module containing the API classes
 
@@ -23,6 +23,7 @@ from .utils import prepare_logger
 # << ================= Classes ================= >>
 
 class ATOMClassifier(ATOM):
+    """ATOM class for classification tasks."""
 
     @typechecked
     def __init__(
@@ -36,11 +37,9 @@ class ATOMClassifier(ATOM):
             warnings: bool = False,
             verbose: int = 0,
             random_state: Optional[int] = None):
+        """Class initializer.
 
-        """
-        ATOM object for classificatin tasks.
-
-        PARAMETERS
+        Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
@@ -83,7 +82,6 @@ class ATOMClassifier(ATOM):
             number generator is the RandomState instance used by `np.random`.
 
         """
-
         self.log = prepare_logger(log)
         self.goal = 'classification'
         super().__init__(X, y,
@@ -96,6 +94,7 @@ class ATOMClassifier(ATOM):
 
 
 class ATOMRegressor(ATOM):
+    """ATOM class for regression tasks."""
 
     @typechecked
     def __init__(
@@ -109,11 +108,9 @@ class ATOMRegressor(ATOM):
             warnings: bool = False,
             verbose: int = 0,
             random_state: Optional[int] = None):
+        """Class initializer.
 
-        """
-        ATOM object for regression tasks.
-
-        PARAMETERS
+        Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
@@ -156,7 +153,6 @@ class ATOMRegressor(ATOM):
             number generator is the RandomState instance used by `np.random`.
 
         """
-
         self.log = prepare_logger(log)
         self.goal = 'regression'
         super().__init__(X, y,

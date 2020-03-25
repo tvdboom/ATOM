@@ -10,7 +10,6 @@ Description: Unit tests for the fit method of the ATOM class.
 # Import packages
 import pytest
 import numpy as np
-import pandas as pd
 from sklearn.metrics import get_scorer, f1_score
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
@@ -82,6 +81,12 @@ def test_metric_parameter():
     atom.pipeline('ols', metric=scorer)
     assert 2 == 2
 
+    # Test same metric as last run
+    atom = ATOMRegressor(X_dim4, y_dim4_reg)
+    atom.pipeline('ols', metric='max_error')
+    atom.pipeline('br')
+    assert atom.metric.name == 'max_error'
+
 
 def test_skip_iter_parameter():
     ''' Assert that the skip_iter parameter is set correctly '''
@@ -140,26 +145,24 @@ def test_data_preparation():
     assert atom.X_test_scaled.iloc[:, 0].std() < 1.25
 
 
-def test_successive_halving_scores():
-    ''' Assert that self.scores is correctly created '''
+def test_successive_halving():
+    ''' Assert that the successive_halving method works as intended '''
 
     # Without bagging
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
-                  metric='f1',
-                  successive_halving=True,
-                  max_iter=0,
-                  bagging=0)
+    atom.successive_halving(models=['tree', 'rf', 'xgb', 'lgb'],
+                            metric='f1',
+                            max_iter=0,
+                            bagging=0)
     assert isinstance(atom.scores, list)
     assert len(atom.scores) == 3
 
     # With bagging
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
-                  metric='f1',
-                  successive_halving=True,
-                  max_iter=0,
-                  bagging=5)
+    atom.successive_halving(models=['tree', 'rf', 'xgb', 'lgb'],
+                            metric='f1',
+                            max_iter=0,
+                            bagging=5)
     assert isinstance(atom.scores, list)
     assert len(atom.scores) == 3
 
@@ -168,13 +171,24 @@ def test_skip_iter_scores():
     ''' Assert that self.scores is correctly created when skip_iter > 0 '''
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(models=['tree', 'rf', 'xgb', 'lgb'],
-                  metric='f1',
-                  successive_halving=True,
-                  skip_iter=1,
-                  max_iter=0)
+    atom.successive_halving(models=['tree', 'rf', 'xgb', 'lgb'],
+                            metric='f1',
+                            skip_iter=1,
+                            max_iter=0)
     assert isinstance(atom.scores, list)
     assert len(atom.scores) == 2
+
+
+def test_train_sizing():
+    ''' Assert that the train_sizing method works as intended '''
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.train_sizing(models=['tree', 'rf', 'xgb', 'lgb'],
+                      metric='f1',
+                      max_iter=0,
+                      bagging=5)
+    assert isinstance(atom.scores, list)
+    assert len(atom.scores) == 10    
 
 
 def test_errors_in_models():
@@ -225,20 +239,25 @@ def test_model_attributes():
     ''' Assert that the model subclass has all attributes set '''
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(models=['tree', 'lgb'], metric='f1', max_iter=5, cv=1)
+    atom.pipeline(models=['tree', 'pa'])
     assert 'params' in atom.Tree.BO.keys()
     assert 'score' in atom.Tree.BO.keys()
     assert 'time' in atom.Tree.BO.keys()
     assert 'total_time' in atom.Tree.BO.keys()
     assert hasattr(atom.Tree, 'best_params')
-    assert hasattr(atom.lgb, 'best_model')
+    assert hasattr(atom.PA, 'best_model')
     assert hasattr(atom.Tree, 'best_model_fit')
     assert hasattr(atom.Tree, 'predict_train')
-    assert hasattr(atom.lgb, 'predict_test')
+    assert hasattr(atom.pa, 'predict_test')
     assert hasattr(atom.Tree, 'predict_proba_train')
     assert hasattr(atom.Tree, 'predict_proba_test')
+    assert hasattr(atom.PA, 'decision_function_train')
+    assert hasattr(atom.PA, 'decision_function_test')
     assert hasattr(atom.Tree, 'score_train')
-    assert hasattr(atom.lgb, 'score_test')
+    assert hasattr(atom.PA, 'score_test')
+    assert hasattr(atom.PA, 'confusion_matrix')
+    assert hasattr(atom.PA, 'tp')
+    assert hasattr(atom.PA, 'fn')
 
 
 def test_bagging():
