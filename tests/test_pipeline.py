@@ -92,7 +92,7 @@ def test_skip_iter_parameter():
     ''' Assert that the skip_iter parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', skip_iter=-2)
+    pytest.raises(ValueError, atom.successive_halving, 'lda', skip_iter=-2)
 
 
 def test_max_iter_parameter():
@@ -188,7 +188,7 @@ def test_train_sizing():
                       max_iter=0,
                       bagging=5)
     assert isinstance(atom.scores, list)
-    assert len(atom.scores) == 10    
+    assert len(atom.scores) == 10
 
 
 def test_errors_in_models():
@@ -239,7 +239,7 @@ def test_model_attributes():
     ''' Assert that the model subclass has all attributes set '''
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(models=['tree', 'pa'])
+    atom.pipeline(models=['tree', 'pa'], max_iter=2)
     assert 'params' in atom.Tree.BO.keys()
     assert 'score' in atom.Tree.BO.keys()
     assert 'time' in atom.Tree.BO.keys()

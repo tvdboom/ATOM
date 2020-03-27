@@ -60,7 +60,9 @@ def test_merger_X_y():
     """ Assert that merger between X and y was successfull """
 
     atom = ATOMClassifier(X_bin, y_bin)
-    merger = X_bin.merge(y_bin.to_frame(), left_index=True, right_index=True)
+    merger = X_bin.merge(
+        y_bin.astype(np.int64).to_frame(), left_index=True, right_index=True
+        )
 
     # Order of rows can be different
     df1 = merger.sort_values(by=merger.columns.tolist())

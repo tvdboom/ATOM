@@ -396,11 +396,11 @@ atom.plot_PRC(title=&quot;PRC comparison of the models&quot;)
 atom.catb.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=50, filename='thresholds.png')
 </code></pre>
 
-<p><img alt="confusion_matrix" src="../img/confusion_matrix.png" /></p>
-<p><img alt="probabilities" src="../img/probabilities.png" /></p>
-<p><img alt="ROC" src="../img/ROC.png" /></p>
-<p><img alt="PRC" src="../img/PRC.png" /></p>
-<p><img alt="threshold" src="../img/threshold.png" /></p>
+<p><img alt="confusion_matrix" src="img/confusion_matrix.png" /></p>
+<p><img alt="probabilities" src="img/probabilities.png" /></p>
+<p><img alt="ROC" src="img/ROC.png" /></p>
+<p><img alt="PRC" src="img/PRC.png" /></p>
+<p><img alt="threshold" src="img/threshold.png" /></p>
 <p><br><br></p>
 <h1 id="multiclass-classification">Multiclass classification</h1>
 <hr />
@@ -682,7 +682,7 @@ Linear SVM                   --&gt; 0.956 !!
 <pre><code class="python">atom.plot_bagging()
 </code></pre>
 
-<p><img alt="bagging_results" src="../img/bagging_results.png" /></p>
+<p><img alt="bagging_results" src="img/bagging_results.png" /></p>
 <p><strong>Let's have a closer look at the Random Forest</strong></p>
 <pre><code class="python"># Get the results on some other metrics
 print('Jaccard score:', atom.rf.jaccard_weighted)
@@ -697,8 +697,8 @@ atom.rf.plot_feature_importance(show=10)
 atom.lda.plot_permutation_importance(show=10)
 </code></pre>
 
-<p><img alt="feature_importance" src="../img/feature_importance.png" /></p>
-<p><img alt="permutation_importance" src="../img/permutation_importance.png" /></p>
+<p><img alt="feature_importance" src="img/feature_importance.png" /></p>
+<p><img alt="permutation_importance" src="img/permutation_importance.png" /></p>
 <pre><code class="python"># Save the random forest class for production
 atom.RF.save('Random_Forest_class')
 </code></pre>
@@ -730,7 +730,7 @@ atom.plot_PCA(figsize=(8, 6), filename='atom_PCA_plot')
 <pre><code>&lt;&lt;=============== ATOM ===============&gt;&gt;
 Algorithm task: regression.
 </code></pre>
-<p><img alt="PCA" src="../img/PCA.png" /></p>
+<p><img alt="PCA" src="img/PCA.png" /></p>
 <p><strong>Run the pipeline</strong></p>
 <pre><code class="python"># Let's compare tree-based models using a successive halving approach
 atom.pipeline(['tree', 'bag', 'et', 'rf', 'gbm', 'lgb'],
@@ -804,7 +804,7 @@ Bagging Regressor --&gt; -4.925 ± 0.403 ~
 atom.plot_successive_halving()
 </code></pre>
 
-<p><img alt="successive_halving" src="../img/successive_halving.png" /></p>
+<p><img alt="successive_halving" src="img/successive_halving.png" /></p>
               
             </div>
           </div>

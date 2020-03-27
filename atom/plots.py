@@ -20,7 +20,6 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 
 # Sklearn
-from sklearn.model_selection import learning_curve
 from sklearn.inspection import permutation_importance
 from sklearn.calibration import calibration_curve
 from sklearn.metrics import (
@@ -484,11 +483,13 @@ def plot_learning_curve(self, models, title, figsize, filename, display):
     title = 'Learning curve' if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
-    plt.xlabel('Number of training samples', fontsize=self.label_fontsize, labelpad=12)
+    plt.xlabel('Number of training samples',
+               fontsize=self.label_fontsize,
+               labelpad=12)
     plt.ylabel(self.metric.name, fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
-    plt.ticklabel_format(axis="x", style="sci", scilimits=(3,3))
+    plt.ticklabel_format(axis="x", style="sci", scilimits=(3, 3))
     fig.tight_layout()
     if filename is not None:
         plt.savefig(filename)
@@ -894,7 +895,7 @@ def plot_confusion_matrix(self, models, normalize,
     for model in models:
         if hasattr(self, model.lower()):
 
-            cm = self.confusion_matrix
+            cm = getattr(self, model.lower()).confusion_matrix
             if normalize:
                 cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 

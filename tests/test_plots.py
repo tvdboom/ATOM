@@ -51,10 +51,10 @@ def test_plot_components():
     atom.feature_selection(strategy='pca', n_features=10)
 
     # When show is invalid value
-    pytest.raises(ValueError, atom.plot_PCA, -2)
+    pytest.raises(ValueError, atom.plot_components, -2)
 
     # When correct
-    atom.plot_PCA(display=False)
+    atom.plot_components(display=False)
     assert 1 == 1
 
 
