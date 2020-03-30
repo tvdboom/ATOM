@@ -355,12 +355,12 @@ def test_plot_gains():
     # When invalid model
     pytest.raises(ValueError, atom.plot_gains, models='unknown')
 
-    # When model with no rpedict_proba method
+    # When model with no predict_proba method
     pytest.raises(ValueError, atom.pa.plot_gains)
 
     # When correct
     atom.tree.plot_gains(display=False)
-    atom.plot_gains(display=False)
+    atom.plot_gains(['tree', 'lgb'], display=False)
     assert 1 == 1
 
 
@@ -383,5 +383,5 @@ def test_plot_lift():
 
     # When correct
     atom.tree.plot_lift(display=False)
-    atom.plot_lift(display=False)
+    atom.plot_lift(['tree', 'lgb'], display=False)
     assert 1 == 1

@@ -395,8 +395,8 @@ cleaning steps. ATOM provides four data cleaning methods to handle missing value
 <a name="atom-impute"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">impute</strong>(strat_num='remove',
                           strat_cat='remove',
-                          max_frac_rows=0.5,
-                          max_frac_cols=0.5,
+                          min_frac_rows=0.5,
+                          min_frac_cols=0.5,
                           missing=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">

@@ -47,18 +47,18 @@ def test_strat_num_parameter():
     pytest.raises(ValueError, atom.impute, strat_num='test')
 
 
-def test_max_frac_rows_parameter():
-    ''' Assert that the mac_frac_rows parameter is set correctly '''
+def test_min_frac_rows_parameter():
+    ''' Assert that the min_frac_rows parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(ValueError, atom.impute, max_frac_rows=1.0)
+    pytest.raises(ValueError, atom.impute, min_frac_rows=1.0)
 
 
-def test_max_frac_cols_parameter():
-    ''' Assert that the mac_frac_cols parameter is set correctly '''
+def test_min_frac_cols_parameter():
+    ''' Assert that the min_frac_cols parameter is set correctly '''
 
     atom = ATOMClassifier(X_dim4, y_dim4)
-    pytest.raises(ValueError, atom.impute, max_frac_cols=5.2)
+    pytest.raises(ValueError, atom.impute, min_frac_cols=5.2)
 
 
 def test_missing_string():
