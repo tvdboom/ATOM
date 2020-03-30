@@ -711,8 +711,8 @@ class ATOM(object):
     def impute(self,
                strat_num: Union[scalar, str] = 'remove',
                strat_cat: str = 'remove',
-               max_frac_rows: float = 0.5,
-               max_frac_cols: float = 0.5,
+               min_frac_rows: float = 0.5,
+               min_frac_cols: float = 0.5,
                missing: Optional[Union[scalar, str, list]] = None):
         """Handle missing values in the dataset.
 
@@ -737,11 +737,11 @@ class ATOM(object):
                 - string: impute with provided string
 
         min_frac_rows: float, optional (default=0.5)
-            Minimum fraction of non missing values in row. If less,
+            Minimum fraction of non missing values in a row. If less,
             the row is removed.
 
         min_frac_cols: float, optional (default=0.5)
-            Minimum fraction of non missing values in column. If less,
+            Minimum fraction of non missing values in a column. If less,
             the column is removed.
 
         missing: int, float or list, optional (default=None)
@@ -762,14 +762,14 @@ class ATOM(object):
             raise ValueError("Unknown strategy for the strat_num parameter" +
                              ", got {}. Choose from: {}."
                              .format(strat_num, ', '.join(strats)))
-        if max_frac_rows <= 0 or max_frac_rows >= 1:
-            raise ValueError("Invalid value for the max_frac_rows parameter." +
+        if min_frac_rows <= 0 or min_frac_rows >= 1:
+            raise ValueError("Invalid value for the min_frac_rows parameter." +
                              "Value should be between 0 and 1, got {}."
-                             .format(max_frac_rows))
-        if max_frac_cols <= 0 or max_frac_cols >= 1:
-            raise ValueError("Invalid value for the max_frac_cols parameter." +
+                             .format(min_frac_rows))
+        if min_frac_cols <= 0 or min_frac_cols >= 1:
+            raise ValueError("Invalid value for the min_frac_cols parameter." +
                              "Value should be between 0 and 1, got {}."
-                             .format(max_frac_cols))
+                             .format(min_frac_cols))
 
         # Set default missing list
         if missing is None:
@@ -789,9 +789,9 @@ class ATOM(object):
             self.dataset.replace(to_replace, np.NaN, inplace=True)
 
         # Drop rows with too many NaN values
-        max_frac_rows = int(max_frac_rows * self.dataset.shape[1])
+        min_frac_rows = int(min_frac_rows * self.dataset.shape[1])
         length = len(self.dataset)
-        self.dataset.dropna(axis=0, thresh=max_frac_rows, inplace=True)
+        self.dataset.dropna(axis=0, thresh=min_frac_rows, inplace=True)
         diff = length - len(self.dataset)
         if diff > 0:
             self._log(f" --> Removing {diff} rows for containing too many " +
@@ -806,7 +806,7 @@ class ATOM(object):
             # Drop columns with too many NaN values
             nans = series.isna().sum()  # Number of missing values in column
             pnans = int(nans/len(self.dataset) * 100)  # Percentage of NaNs
-            if nans > max_frac_cols * len(self.dataset):
+            if nans > min_frac_cols * len(self.dataset):
                 self._log(f" --> Removing feature {col} for containing " +
                           f"{nans} ({pnans}%) missing values.", 2)
                 self.train.drop(col, axis=1, inplace=True)

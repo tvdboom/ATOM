@@ -47,14 +47,14 @@ def test_plot_components():
     ''' Assert that the plot_components method work as intended '''
 
     atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
+    pytest.raises(AttributeError, atom.plot_components)
     atom.feature_selection(strategy='pca', n_features=10)
 
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_components, -2)
 
-    # When correct
-    atom.plot_components(display=False)
+    # When correct (test if show is converted to maximum number of components)
+    atom.plot_components(show=100, display=False)
     assert 1 == 1
 
 
@@ -63,11 +63,19 @@ def test_plot_RFECV():
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_RFECV)  # When no RFECV attribute
-    atom.feature_selection(strategy='rfecv', solver='lgb', n_features=27)
 
-    # When correct
+    # When scoring is unspecified
+    atom.feature_selection(strategy='rfecv', solver='lgb', n_features=27)
     atom.plot_RFECV(display=False)
     assert 1 == 1
+
+    # When scoring is specified
+    atom.feature_selection(strategy='rfecv',
+                           solver='lgb',
+                           scoring='recall',
+                           n_features=27)
+    atom.plot_RFECV(display=False)
+    assert 2 == 2
 
 
 def test_plot_bagging():
@@ -98,21 +106,17 @@ def test_plot_successive_halving():
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
-    # When fit is called without successive_halving
-    atom.pipeline(['tree', 'lgb'])
-    pytest.raises(AttributeError, atom.plot_successive_halving)
-
     # When model is unknown
     atom.successive_halving(['tree', 'lgb'], 'f1')
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
-    # When correct (with bagging)
+    # When correct (without bagging)
     atom.successive_halving(['tree', 'lgb'], 'f1', max_iter=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
     assert 1 == 1
 
-    # When correct (without bagging)
+    # When correct (with bagging)
     atom.successive_halving(['tree', 'lgb'], 'f1', bagging=3)
     atom.plot_successive_halving(display=False)
     atom.tree.plot_successive_halving(display=False)
@@ -130,11 +134,17 @@ def test_plot_learning_curve():
     atom.train_sizing(['tree', 'lgb'], 'f1')
     pytest.raises(ValueError, atom.plot_learning_curve, models='unknown')
 
-    # When correct
-    atom.train_sizing(['tree', 'lgb'], 'f1')
+    # When correct (without bagging)
+    atom.train_sizing(['tree', 'lgb'], 'f1', max_iter=3)
     atom.plot_learning_curve(display=False)
     atom.tree.plot_learning_curve(display=False)
     assert 1 == 1
+
+    # When correct (with bagging)
+    atom.train_sizing(['tree', 'lgb'], 'f1', bagging=3)
+    atom.plot_learning_curve(display=False)
+    atom.tree.plot_learning_curve(display=False)
+    assert 2 == 2
 
 
 def test_plot_ROC():
@@ -147,7 +157,7 @@ def test_plot_ROC():
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_ROC)  # When fit is not called yet
-    atom.pipeline('tree', 'r2', max_iter=0)
+    atom.pipeline(['tree', 'lda'], 'r2', max_iter=0)
 
     # When model is unknown
     pytest.raises(ValueError, atom.plot_ROC, 'unknown')
@@ -168,7 +178,7 @@ def test_plot_PRC():
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_PRC)  # When fit is not called yet
-    atom.pipeline('tree', 'r2', max_iter=0)
+    atom.pipeline(['tree', 'lda'], 'r2', max_iter=0)
 
     # When model is unknown
     pytest.raises(ValueError, atom.plot_PRC, 'unknown')
@@ -250,7 +260,7 @@ def test_plot_confusion_matrix():
     # Multiclass and multiple models not supported
     pytest.raises(NotImplementedError, atom.plot_confusion_matrix)
     atom.lda.plot_confusion_matrix(normalize=True, display=False)
-    assert 1 == 1
+    assert 2 == 2
 
 
 def test_plot_threshold():
@@ -350,7 +360,7 @@ def test_plot_gains():
 
     # When correct
     atom.tree.plot_gains(display=False)
-    atom.plot_gains(models=['tree', 'lgb'], display=False)
+    atom.plot_gains(display=False)
     assert 1 == 1
 
 
@@ -373,5 +383,5 @@ def test_plot_lift():
 
     # When correct
     atom.tree.plot_lift(display=False)
-    atom.plot_lift(models=['tree', 'lgb'], display=False)
+    atom.plot_lift(display=False)
     assert 1 == 1

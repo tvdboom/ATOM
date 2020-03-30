@@ -77,6 +77,12 @@
     <li class="toctree-l2"><a href="#regression">Regression</a></li>
     
 
+    <li class="toctree-l2"><a href="#successive-halving">Successive halving</a></li>
+    
+
+    <li class="toctree-l2"><a href="#train-sizing">Train sizing</a></li>
+    
+
     </ul>
 	    </li>
           
@@ -139,6 +145,182 @@ X = pd.read_csv('../weatherAUS.csv')
 X = X.drop(['RISK_MM', 'Date'], axis=1)  # Drop unrelated features
 </code></pre>
 
+<pre><code class="python"># Let's have a look at the dataset
+X.head()
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Location</th>
+      <th>MinTemp</th>
+      <th>MaxTemp</th>
+      <th>Rainfall</th>
+      <th>Evaporation</th>
+      <th>Sunshine</th>
+      <th>WindGustDir</th>
+      <th>WindGustSpeed</th>
+      <th>WindDir9am</th>
+      <th>WindDir3pm</th>
+      <th>WindSpeed9am</th>
+      <th>WindSpeed3pm</th>
+      <th>Humidity9am</th>
+      <th>Humidity3pm</th>
+      <th>Pressure9am</th>
+      <th>Pressure3pm</th>
+      <th>Cloud9am</th>
+      <th>Cloud3pm</th>
+      <th>Temp9am</th>
+      <th>Temp3pm</th>
+      <th>RainToday</th>
+      <th>RainTomorrow</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Albury</td>
+      <td>13.4</td>
+      <td>22.9</td>
+      <td>0.6</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>W</td>
+      <td>44.0</td>
+      <td>W</td>
+      <td>WNW</td>
+      <td>20.0</td>
+      <td>24.0</td>
+      <td>71.0</td>
+      <td>22.0</td>
+      <td>1007.7</td>
+      <td>1007.1</td>
+      <td>8.0</td>
+      <td>NaN</td>
+      <td>16.9</td>
+      <td>21.8</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Albury</td>
+      <td>7.4</td>
+      <td>25.1</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WNW</td>
+      <td>44.0</td>
+      <td>NNW</td>
+      <td>WSW</td>
+      <td>4.0</td>
+      <td>22.0</td>
+      <td>44.0</td>
+      <td>25.0</td>
+      <td>1010.6</td>
+      <td>1007.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>17.2</td>
+      <td>24.3</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Albury</td>
+      <td>12.9</td>
+      <td>25.7</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WSW</td>
+      <td>46.0</td>
+      <td>W</td>
+      <td>WSW</td>
+      <td>19.0</td>
+      <td>26.0</td>
+      <td>38.0</td>
+      <td>30.0</td>
+      <td>1007.6</td>
+      <td>1008.7</td>
+      <td>NaN</td>
+      <td>2.0</td>
+      <td>21.0</td>
+      <td>23.2</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Albury</td>
+      <td>9.2</td>
+      <td>28.0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NE</td>
+      <td>24.0</td>
+      <td>SE</td>
+      <td>E</td>
+      <td>11.0</td>
+      <td>9.0</td>
+      <td>45.0</td>
+      <td>16.0</td>
+      <td>1017.6</td>
+      <td>1012.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>18.1</td>
+      <td>26.5</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Albury</td>
+      <td>17.5</td>
+      <td>32.3</td>
+      <td>1.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>W</td>
+      <td>41.0</td>
+      <td>ENE</td>
+      <td>NW</td>
+      <td>7.0</td>
+      <td>20.0</td>
+      <td>82.0</td>
+      <td>33.0</td>
+      <td>1010.8</td>
+      <td>1006.0</td>
+      <td>7.0</td>
+      <td>8.0</td>
+      <td>17.8</td>
+      <td>29.7</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
 <p><strong>Run the pipeline</strong></p>
 <pre><code class="python"># Call ATOM using only a percentage of the complete dataset (for explanatory purposes)
 atom = ATOMClassifier(X, y=&quot;RainTomorrow&quot;, percentage=5, log='auto', n_jobs=2, verbose=3)
@@ -147,63 +329,62 @@ atom = ATOMClassifier(X, y=&quot;RainTomorrow&quot;, percentage=5, log='auto', n
 <pre><code>&lt;&lt;=============== ATOM ===============&gt;&gt;
 Parallel processing with 2 cores.
 Initial data cleaning...
- --&gt; Dropping 45 duplicate rows.
 Algorithm task: binary classification.
 
 Dataset stats ===================&gt;
-Shape: (7107, 22)
-Missing values: 15680
+Shape: (7110, 22)
+Missing values: 15836
 Categorical columns: 5
 Scaled: False
 ----------------------------------
-Size of training set: 4974
+Size of training set: 4977
 Size of test set: 2133
 ----------------------------------
-Class balance: No:Yes &lt;==&gt; 3.4:1.0
+Class balance: No:Yes &lt;==&gt; 3.6:1.0
 Instances in RainTomorrow per class:
 |        |    total |    train_set |    test_set |
 |:-------|---------:|-------------:|------------:|
-| 0: No  |     5502 |         3854 |        1648 |
-| 1: Yes |     1605 |         1120 |         485 |
+| 0: No  |     5562 |         3896 |        1666 |
+| 1: Yes |     1548 |         1081 |         467 |
 </code></pre>
 <pre><code class="python"># If we change a column during the pre-processing,
 # we need to call the update method to update all data attributes
 
-atom.X['MaxTemp'] = np.log(atom.X['MaxTemp'])
+atom.X['MaxTemp'] = np.log(atom.X['MaxTemp'])  # Random operator on column MaxTemp
 
 # MaxTemp has now been changed for atom.X, but not in atom.X_train, atom.dataset, etc...
-# To do so, we use the update method...
+# To do so, we use the update method, where the parameter is a string of the changed attribute
 atom.update('X')
 
 assert atom.X['MaxTemp'].equals(atom.dataset['MaxTemp'])
 </code></pre>
 
 <pre><code class="python"># Impute missing values
-atom.impute(strat_num='knn', strat_cat='remove', max_frac_rows=0.8)
+atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
 </code></pre>
 
 <pre><code>Imputing missing values...
- --&gt; Removing 741 rows for containing too many missing values.
- --&gt; Imputing 3 missing values using the KNN imputer in feature MinTemp.
- --&gt; Imputing 4 missing values using the KNN imputer in feature MaxTemp.
- --&gt; Imputing 43 missing values using the KNN imputer in feature Rainfall.
- --&gt; Imputing 2315 missing values using the KNN imputer in feature Evaporation.
- --&gt; Imputing 2661 missing values using the KNN imputer in feature Sunshine.
- --&gt; Removing 222 rows due to missing values in feature WindGustDir.
- --&gt; Imputing 221 missing values using the KNN imputer in feature WindGustSpeed.
+ --&gt; Removing 736 rows for containing too many missing values.
+ --&gt; Imputing 10 missing values using the KNN imputer in feature MinTemp.
+ --&gt; Imputing 2 missing values using the KNN imputer in feature MaxTemp.
+ --&gt; Imputing 35 missing values using the KNN imputer in feature Rainfall.
+ --&gt; Imputing 2365 missing values using the KNN imputer in feature Evaporation.
+ --&gt; Imputing 2666 missing values using the KNN imputer in feature Sunshine.
+ --&gt; Removing 224 rows due to missing values in feature WindGustDir.
+ --&gt; Imputing 223 missing values using the KNN imputer in feature WindGustSpeed.
  --&gt; Removing 327 rows due to missing values in feature WindDir9am.
- --&gt; Removing 24 rows due to missing values in feature WindDir3pm.
- --&gt; Imputing 6 missing values using the KNN imputer in feature WindSpeed9am.
- --&gt; Imputing 2 missing values using the KNN imputer in feature WindSpeed3pm.
+ --&gt; Removing 26 rows due to missing values in feature WindDir3pm.
+ --&gt; Imputing 4 missing values using the KNN imputer in feature WindSpeed9am.
+ --&gt; Imputing 5 missing values using the KNN imputer in feature WindSpeed3pm.
  --&gt; Imputing 25 missing values using the KNN imputer in feature Humidity9am.
- --&gt; Imputing 55 missing values using the KNN imputer in feature Humidity3pm.
- --&gt; Imputing 56 missing values using the KNN imputer in feature Pressure9am.
- --&gt; Imputing 51 missing values using the KNN imputer in feature Pressure3pm.
- --&gt; Imputing 2118 missing values using the KNN imputer in feature Cloud9am.
- --&gt; Imputing 2253 missing values using the KNN imputer in feature Cloud3pm.
+ --&gt; Imputing 59 missing values using the KNN imputer in feature Humidity3pm.
+ --&gt; Imputing 55 missing values using the KNN imputer in feature Pressure9am.
+ --&gt; Imputing 52 missing values using the KNN imputer in feature Pressure3pm.
+ --&gt; Imputing 2127 missing values using the KNN imputer in feature Cloud9am.
+ --&gt; Imputing 2209 missing values using the KNN imputer in feature Cloud3pm.
  --&gt; Imputing 5 missing values using the KNN imputer in feature Temp9am.
- --&gt; Imputing 32 missing values using the KNN imputer in feature Temp3pm.
- --&gt; Removing 43 rows due to missing values in feature RainToday.
+ --&gt; Imputing 41 missing values using the KNN imputer in feature Temp3pm.
+ --&gt; Removing 35 rows due to missing values in feature RainToday.
 </code></pre>
 <pre><code class="python"># Encode the categorical features
 atom.encode(max_onehot=10, frac_to_other=0.04)
@@ -221,14 +402,17 @@ atom.balance(undersample=0.8)
 </code></pre>
 
 <pre><code>Performing undersampling...
- --&gt; Removing 249 rows from class No.
+ --&gt; Removing 239 rows from class No.
+
+
+Using TensorFlow backend.
 </code></pre>
 <pre><code class="python"># Remove outliers from the training set
 atom.outliers(max_sigma=5)
 </code></pre>
 
 <pre><code>Handling outliers...
- --&gt; Dropping 18 rows due to outliers.
+ --&gt; Dropping 22 rows due to outliers.
 </code></pre>
 <pre><code class="python"># Select only the best 10 features
 atom.feature_selection(strategy=&quot;univariate&quot;, max_features=15, max_correlation=0.8)
@@ -238,12 +422,9 @@ atom.collinear
 </code></pre>
 
 <pre><code>Performing feature selection...
- --&gt; Feature Location was removed due to low variance: 0.00.
  --&gt; Feature Pressure3pm was removed due to collinearity with another feature.
  --&gt; Feature Temp9am was removed due to collinearity with another feature.
  --&gt; Feature Temp3pm was removed due to collinearity with another feature.
- --&gt; Feature MinTemp was removed after the univariate test (score: 9.36  p-value: 0.00).
- --&gt; Feature Evaporation was removed after the univariate test (score: 27.00  p-value: 0.00).
 </code></pre>
 <div>
 <style scoped>
@@ -273,19 +454,19 @@ atom.collinear
       <th>0</th>
       <td>Pressure3pm</td>
       <td>Pressure9am</td>
-      <td>0.95413</td>
+      <td>0.95258</td>
     </tr>
     <tr>
       <th>1</th>
       <td>Temp9am</td>
       <td>MinTemp, MaxTemp</td>
-      <td>0.9201, 0.89643</td>
+      <td>0.93135, 0.89859</td>
     </tr>
     <tr>
       <th>2</th>
       <td>Temp3pm</td>
       <td>MaxTemp, Temp9am</td>
-      <td>0.9587, 0.87527</td>
+      <td>0.95784, 0.88146</td>
     </tr>
   </tbody>
 </table>
@@ -294,11 +475,11 @@ atom.collinear
 <pre><code class="python"># Change the verbosity of ATOM to not print too much details while fitting
 atom.verbose = 2
 
-# Let's use a custom metric
+# Define a custom metric
 def f2_score(y_true, y_pred):
     return fbeta_score(y_true, y_pred, beta=2)
 
-# Let's compare the performance of various gradient boosting algorithms
+# We can compare the performance of various gradient boosting algorithms
 atom.pipeline(['gbm', 'lgb', 'catb'],
               metric=f2_score,
               max_iter=5,
@@ -315,92 +496,100 @@ Metric: f2_score
 Running BO for Gradient Boosting Machine...
 Final results for Gradient Boosting Machine:         
 Bayesian Optimization ---------------------------
-Best hyperparameters: {'n_estimators': 414, 'learning_rate': 1.0, 'subsample': 0.5, 'max_depth': 2, 'max_features': 0.8, 'criterion': 'mse', 'min_samples_split': 12, 'min_samples_leaf': 1, 'ccp_alpha': 0.0}
-Best score on the BO: 0.7485
-Time elapsed: 37.958s
+Best hyperparameters: {'n_estimators': 249, 'learning_rate': 1.0, 'subsample': 0.7, 'max_depth': 2, 'max_features': 0.6, 'criterion': 'friedman_mse', 'min_samples_split': 20, 'min_samples_leaf': 11, 'ccp_alpha': 0.02}
+Best score on the BO: 0.7684
+Time elapsed: 6.856s
 Fitting -----------------------------------------
-Score on the training set: 0.8465
-Score on the test set: 0.5824
-Time elapsed: 0.796s
+Score on the training set: 0.7305
+Score on the test set: 0.6330
+Time elapsed: 0.491s
 Bagging -----------------------------------------
-Mean: 0.5587   Std: 0.0105
-Time elapsed: 3.562s
+Mean: 0.6086   Std: 0.0269
+Time elapsed: 2.117s
 -------------------------------------------------
-Total time: 42.316s
+Total time: 9.469s
 
 
 Running BO for LightGBM...
 Final results for LightGBM:         
 Bayesian Optimization ---------------------------
-Best hyperparameters: {'n_estimators': 345, 'learning_rate': 0.6, 'max_depth': 3, 'num_leaves': 24, 'min_child_weight': 9, 'min_child_samples': 17, 'subsample': 0.5, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 0.1}
-Best score on the BO: 0.7583
-Time elapsed: 3.261s
+Best hyperparameters: {'n_estimators': 361, 'learning_rate': 0.8, 'max_depth': 1, 'num_leaves': 37, 'min_child_weight': 11, 'min_child_samples': 14, 'subsample': 1.0, 'colsample_bytree': 0.5, 'reg_alpha': 0.1, 'reg_lambda': 100.0}
+Best score on the BO: 0.7471
+Time elapsed: 3.781s
 Fitting -----------------------------------------
-Score on the training set: 0.9937
-Score on the test set: 0.6182
-Time elapsed: 0.187s
+Score on the training set: 0.7702
+Score on the test set: 0.6831
+Time elapsed: 0.139s
 Bagging -----------------------------------------
-Mean: 0.6169   Std: 0.0197
-Time elapsed: 0.370s
+Mean: 0.6671   Std: 0.0173
+Time elapsed: 0.258s
 -------------------------------------------------
-Total time: 3.819s
+Total time: 4.181s
 
 
 Running BO for CatBoost...
 Final results for CatBoost:         
 Bayesian Optimization ---------------------------
-Best hyperparameters: {'n_estimators': 499, 'learning_rate': 0.09, 'max_depth': 9, 'subsample': 0.7, 'colsample_bylevel': 0.8, 'reg_lambda': 100.0}
-Best score on the BO: 0.7714
-Time elapsed: 14.712s
+Best hyperparameters: {'n_estimators': 461, 'learning_rate': 0.38, 'max_depth': 3, 'subsample': 0.6, 'colsample_bylevel': 1.0, 'reg_lambda': 30.0}
+Best score on the BO: 0.7465
+Time elapsed: 24.624s
 Fitting -----------------------------------------
-Score on the training set: 0.9390
-Score on the test set: 0.6365
-Time elapsed: 3.890s
+Score on the training set: 0.9644
+Score on the test set: 0.6531
+Time elapsed: 0.596s
 Bagging -----------------------------------------
-Mean: 0.6374   Std: 0.0083
-Time elapsed: 19.245s
+Mean: 0.6606   Std: 0.0074
+Time elapsed: 2.815s
 -------------------------------------------------
-Total time: 37.847s
+Total time: 28.040s
 
 
 Final results ================&gt;&gt;
-Duration: 1m:23s
+Duration: 41.841s
 Metric: f2_score
 --------------------------------
-Gradient Boosting Machine --&gt; 0.559 ± 0.010 ~
-LightGBM                  --&gt; 0.617 ± 0.020 ~
-CatBoost                  --&gt; 0.637 ± 0.008 !! ~
+Gradient Boosting Machine --&gt; 0.609 ± 0.027
+LightGBM                  --&gt; 0.667 ± 0.017 !!
+CatBoost                  --&gt; 0.661 ± 0.007 ~
 </code></pre>
 <p><strong>Analyze the results</strong></p>
 <pre><code class="python"># Let's have a look at the best model
 print('And the winner is...', atom.winner.longname)
 
+# The ~ symbol indicates that the model is probably overfitting the training set
+# This happens because we only use 5% of the dataset
+# We can see that the training score is &gt;20% of the test score
 print('Score on the training set: ', atom.winner.score_train)
 print('Score on the test set: ', atom.winner.score_test)
 </code></pre>
 
-<pre><code>And the winner is... CatBoost
-Score on the training set:  0.9390495867768595
-Score on the test set:  0.6364787840405319
+<pre><code>And the winner is... LightGBM
+Score on the training set:  0.7702407002188184
+Score on the test set:  0.6830769230769231
 </code></pre>
-<pre><code class="python"># Make some plots to analyze the results
+<pre><code class="python"># Check the winner's confusion matrix and probability distribution
 atom.winner.plot_confusion_matrix(normalize=True, figsize=(7, 7), filename='confusion_matrix.png')
 atom.winner.plot_probabilities()
+
+# How do other metrics perform for different thresholds on the winning model
+atom.winner.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=50, filename='thresholds.png')
 
 # Change plots aesthetics
 ATOMClassifier.set_style('whitegrid')
 ATOMClassifier.set_title_fontsize(24)
 
-atom.plot_ROC(models=('LGB', 'CatB'), title=&quot;ROC for the LightGBM vs CatBoost model&quot;)
+# Make some plots to compare the models
+atom.plot_ROC(title=&quot;ROC for the LightGBM vs CatBoost model&quot;)
 atom.plot_PRC(title=&quot;PRC comparison of the models&quot;)
-atom.catb.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=50, filename='thresholds.png')
 </code></pre>
 
-<p><img alt="confusion_matrix" src="img/confusion_matrix.png" /></p>
-<p><img alt="probabilities" src="img/probabilities.png" /></p>
-<p><img alt="ROC" src="img/ROC.png" /></p>
-<p><img alt="PRC" src="img/PRC.png" /></p>
-<p><img alt="threshold" src="img/threshold.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_0.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_1.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_2.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_3.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_4.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_5.png" /></p>
+<p><img alt="png" src="../img/examples/output_15_6.png" /></p>
 <p><br><br></p>
 <h1 id="multiclass-classification">Multiclass classification</h1>
 <hr />
@@ -412,19 +601,141 @@ atom.catb.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=5
 <pre><code class="python"># Import packages
 import numpy as np
 import pandas as pd
-from sklearn.datasets load_wine
-from atom.atom import ATOMClassifier
+from sklearn.datasets import load_wine
+from atom import ATOMClassifier
 
 # Load the dataset's features and targets
 dataset = load_wine()
 
-# Convert to pd.DtaFrame to get the names of the features
+# Convert to pd.DataFrame to get the names of the features
 data = np.c_[dataset.data, dataset.target]
 columns = np.append(dataset.feature_names, [&quot;target&quot;])
 data = pd.DataFrame(data, columns=columns)
 X = data.drop('target', axis=1)
 y = data['target']
 </code></pre>
+
+<pre><code class="python"># Let's have a look at the dataset
+X.head()
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>alcohol</th>
+      <th>malic_acid</th>
+      <th>ash</th>
+      <th>alcalinity_of_ash</th>
+      <th>magnesium</th>
+      <th>total_phenols</th>
+      <th>flavanoids</th>
+      <th>nonflavanoid_phenols</th>
+      <th>proanthocyanins</th>
+      <th>color_intensity</th>
+      <th>hue</th>
+      <th>od280/od315_of_diluted_wines</th>
+      <th>proline</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>14.23</td>
+      <td>1.71</td>
+      <td>2.43</td>
+      <td>15.6</td>
+      <td>127.0</td>
+      <td>2.80</td>
+      <td>3.06</td>
+      <td>0.28</td>
+      <td>2.29</td>
+      <td>5.64</td>
+      <td>1.04</td>
+      <td>3.92</td>
+      <td>1065.0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>13.20</td>
+      <td>1.78</td>
+      <td>2.14</td>
+      <td>11.2</td>
+      <td>100.0</td>
+      <td>2.65</td>
+      <td>2.76</td>
+      <td>0.26</td>
+      <td>1.28</td>
+      <td>4.38</td>
+      <td>1.05</td>
+      <td>3.40</td>
+      <td>1050.0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>13.16</td>
+      <td>2.36</td>
+      <td>2.67</td>
+      <td>18.6</td>
+      <td>101.0</td>
+      <td>2.80</td>
+      <td>3.24</td>
+      <td>0.30</td>
+      <td>2.81</td>
+      <td>5.68</td>
+      <td>1.03</td>
+      <td>3.17</td>
+      <td>1185.0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>14.37</td>
+      <td>1.95</td>
+      <td>2.50</td>
+      <td>16.8</td>
+      <td>113.0</td>
+      <td>3.85</td>
+      <td>3.49</td>
+      <td>0.24</td>
+      <td>2.18</td>
+      <td>7.80</td>
+      <td>0.86</td>
+      <td>3.45</td>
+      <td>1480.0</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>13.24</td>
+      <td>2.59</td>
+      <td>2.87</td>
+      <td>21.0</td>
+      <td>118.0</td>
+      <td>2.80</td>
+      <td>2.69</td>
+      <td>0.39</td>
+      <td>1.82</td>
+      <td>4.32</td>
+      <td>1.04</td>
+      <td>2.93</td>
+      <td>735.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
 
 <p><strong>Run the pipeline</strong></p>
 <pre><code class="python"># Call ATOMclass for ML task exploration
@@ -451,12 +762,13 @@ Scaled: False
 Size of training set: 124
 Size of test set: 54
 ----------------------------------
+Class balance: 0:1:2 &lt;==&gt; 1.2:1.5:1.0
 Instances in target per class:
 |    |    total |    train_set |    test_set |
 |---:|---------:|-------------:|------------:|
-|  0 |       59 |           42 |          17 |
-|  1 |       71 |           47 |          24 |
-|  2 |       48 |           35 |          13 |
+|  0 |       59 |           40 |          19 |
+|  1 |       71 |           53 |          18 |
+|  2 |       48 |           31 |          17 |
 
 
 Running pipeline =================&gt;
@@ -466,137 +778,149 @@ Metric: f1_macro
 
 Running BO for Linear Discriminant Analysis...
 Initial point: 1 --------------------------------
-Parameters --&gt; {'solver': 'lsqr', 'shrinkage': 0.9}
-Evaluation --&gt; f1_macro: 0.6787
-Time elapsed: 0.815s   Total time: 0.816s
+Parameters --&gt; {'solver': 'svd'}
+Evaluation --&gt; f1_macro: 0.9754
+Time elapsed: 0.774s   Total time: 0.774s
 Initial point: 2 --------------------------------
-Parameters --&gt; {'solver': 'lsqr', 'shrinkage': 0.8}
-Evaluation --&gt; f1_macro: 0.6865
-Time elapsed: 0.505s   Total time: 1.320s
+Parameters --&gt; {'solver': 'eigen', 'shrinkage': 0.3}
+Evaluation --&gt; f1_macro: 0.6488
+Time elapsed: 0.477s   Total time: 1.251s
 Initial point: 3 --------------------------------
-Parameters --&gt; {'solver': 'eigen', 'shrinkage': 0.7}
-Evaluation --&gt; f1_macro: 0.6667
-Time elapsed: 0.021s   Total time: 1.341s
+Parameters --&gt; {'solver': 'svd'}
+Evaluation --&gt; f1_macro: 0.9754
+Time elapsed: 0.019s   Total time: 1.270s
 Iteration: 1 ------------------------------------
 Parameters --&gt; {'solver': 'svd'}
-Evaluation --&gt; f1_macro: 0.9753
-Time elapsed: 0.020s   Total time: 1.560s
+Evaluation --&gt; f1_macro: 0.9754
+Time elapsed: 0.019s   Total time: 1.485s
 Iteration: 2 ------------------------------------
 Parameters --&gt; {'solver': 'svd'}
-Evaluation --&gt; f1_macro: 0.9753
-Time elapsed: 0.026s   Total time: 1.796s
+Evaluation --&gt; f1_macro: 0.9754
+Time elapsed: 0.024s   Total time: 1.690s
+Iteration: 3 ------------------------------------
+Parameters --&gt; {'solver': 'eigen', 'shrinkage': 0.7}
+Evaluation --&gt; f1_macro: 0.6951
+Time elapsed: 0.020s   Total time: 1.895s
+Iteration: 4 ------------------------------------
+Parameters --&gt; {'solver': 'lsqr', 'shrinkage': 1.0}
+Evaluation --&gt; f1_macro: 0.7274
+Time elapsed: 0.024s   Total time: 2.107s
 
 Final results for Linear Discriminant Analysis:         
 Bayesian Optimization ---------------------------
 Best hyperparameters: {'solver': 'svd'}
-Best score on the BO: 0.9753
-Time elapsed: 1.936s
+Best score on the BO: 0.9754
+Time elapsed: 2.240s
 Fitting -----------------------------------------
 Score on the training set: 1.0000
-Score on the test set: 0.9617
-Time elapsed: 0.079s
+Score on the test set: 1.0000
+Time elapsed: 0.043s
 Bagging -----------------------------------------
-Mean: 0.9788   Std: 0.0159
-Time elapsed: 0.035s
+Mean: 1.0000   Std: 0.0000
+Time elapsed: 0.039s
 -------------------------------------------------
-Total time: 2.050s
+Total time: 2.324s
 
 
 Running BO for Random Forest...
 Initial point: 1 --------------------------------
-Parameters --&gt; {'n_estimators': 460, 'max_depth': 5, 'max_features': 0.9, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 20, 'ccp_alpha': 0.03, 'bootstrap': True, 'max_samples': 0.7}
-Evaluation --&gt; f1_macro: 0.8673
-Time elapsed: 0.835s   Total time: 0.836s
+Parameters --&gt; {'n_estimators': 361, 'max_depth': 7, 'max_features': 0.7, 'criterion': 'gini', 'min_samples_split': 6, 'min_samples_leaf': 2, 'ccp_alpha': 0.03, 'bootstrap': True, 'max_samples': 0.7}
+Evaluation --&gt; f1_macro: 0.9377
+Time elapsed: 0.497s   Total time: 0.498s
 Initial point: 2 --------------------------------
-Parameters --&gt; {'n_estimators': 210, 'max_depth': 6, 'max_features': 0.5, 'criterion': 'entropy', 'min_samples_split': 11, 'min_samples_leaf': 14, 'ccp_alpha': 0.025, 'bootstrap': False}
-Evaluation --&gt; f1_macro: 0.9357
-Time elapsed: 0.449s   Total time: 1.286s
+Parameters --&gt; {'n_estimators': 39, 'max_depth': 7, 'max_features': 0.6, 'criterion': 'gini', 'min_samples_split': 17, 'min_samples_leaf': 1, 'ccp_alpha': 0.035, 'bootstrap': True, 'max_samples': 0.8}
+Evaluation --&gt; f1_macro: 0.9454
+Time elapsed: 0.271s   Total time: 0.769s
 Initial point: 3 --------------------------------
-Parameters --&gt; {'n_estimators': 155, 'max_depth': 7, 'max_features': 0.7, 'criterion': 'entropy', 'min_samples_split': 18, 'min_samples_leaf': 13, 'ccp_alpha': 0.02, 'bootstrap': False}
-Evaluation --&gt; f1_macro: 0.8638
-Time elapsed: 0.405s   Total time: 1.691s
+Parameters --&gt; {'n_estimators': 62, 'max_depth': 9, 'max_features': 0.9, 'criterion': 'entropy', 'min_samples_split': 19, 'min_samples_leaf': 4, 'ccp_alpha': 0.005, 'bootstrap': False}
+Evaluation --&gt; f1_macro: 0.8743
+Time elapsed: 0.274s   Total time: 1.044s
 Iteration: 1 ------------------------------------
-Parameters --&gt; {'n_estimators': 460, 'max_depth': 6, 'max_features': 0.9, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 20, 'ccp_alpha': 0.035, 'bootstrap': True, 'max_samples': 0.7}
-Evaluation --&gt; f1_macro: 0.9073
-Time elapsed: 0.827s   Total time: 2.801s
+Parameters --&gt; {'n_estimators': 40, 'max_depth': 7, 'max_features': 0.6, 'criterion': 'gini', 'min_samples_split': 17, 'min_samples_leaf': 1, 'ccp_alpha': 0.03, 'bootstrap': True, 'max_samples': 0.8}
+Evaluation --&gt; f1_macro: 0.9229
+Time elapsed: 0.243s   Total time: 1.556s
 Iteration: 2 ------------------------------------
-Parameters --&gt; {'n_estimators': 20, 'max_depth': 3, 'max_features': 0.7, 'criterion': 'gini', 'min_samples_split': 3, 'min_samples_leaf': 18, 'ccp_alpha': 0.015, 'bootstrap': False}
-Evaluation --&gt; f1_macro: 0.8953
-Time elapsed: 0.234s   Total time: 3.362s
+Parameters --&gt; {'n_estimators': 500, 'max_depth': 3, 'max_features': 0.5, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'ccp_alpha': 0.035, 'bootstrap': True, 'max_samples': 0.9}
+Evaluation --&gt; f1_macro: 0.9377
+Time elapsed: 0.624s   Total time: 2.408s
 Iteration: 3 ------------------------------------
-Parameters --&gt; {'n_estimators': 20, 'max_depth': 8, 'max_features': 0.6, 'criterion': 'entropy', 'min_samples_split': 14, 'min_samples_leaf': 3, 'ccp_alpha': 0.03, 'bootstrap': True, 'max_samples': 0.6}
-Evaluation --&gt; f1_macro: 0.9512
-Time elapsed: 0.231s   Total time: 3.822s
+Parameters --&gt; {'n_estimators': 500, 'max_depth': 3, 'max_features': 0.6, 'criterion': 'entropy', 'min_samples_split': 18, 'min_samples_leaf': 4, 'ccp_alpha': 0.02, 'bootstrap': False}
+Evaluation --&gt; f1_macro: 0.9141
+Time elapsed: 0.754s   Total time: 3.437s
 Iteration: 4 ------------------------------------
-Parameters --&gt; {'n_estimators': 20, 'max_depth': 9, 'max_features': 1.0, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 7, 'ccp_alpha': 0.02, 'bootstrap': False}
-Evaluation --&gt; f1_macro: 0.8560
-Time elapsed: 0.235s   Total time: 4.563s
+Parameters --&gt; {'n_estimators': 499, 'max_depth': 5, 'max_features': 0.5, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 7, 'ccp_alpha': 0.015, 'bootstrap': True, 'max_samples': 0.5}
+Evaluation --&gt; f1_macro: 0.9460
+Time elapsed: 0.632s   Total time: 4.321s
 
 Final results for Random Forest:         
 Bayesian Optimization ---------------------------
-Best hyperparameters: {'n_estimators': 20, 'max_depth': 8, 'max_features': 0.6, 'criterion': 'entropy', 'min_samples_split': 14, 'min_samples_leaf': 3, 'ccp_alpha': 0.03, 'bootstrap': True, 'max_samples': 0.6}
-Best score on the BO: 0.9512
-Time elapsed: 4.790s
+Best hyperparameters: {'n_estimators': 499, 'max_depth': 5, 'max_features': 0.5, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 7, 'ccp_alpha': 0.015, 'bootstrap': True, 'max_samples': 0.5}
+Best score on the BO: 0.9460
+Time elapsed: 4.527s
 Fitting -----------------------------------------
-Score on the training set: 1.0000
-Score on the test set: 0.9448
-Time elapsed: 5.671s
+Score on the training set: 0.9758
+Score on the test set: 1.0000
+Time elapsed: 1.150s
 Bagging -----------------------------------------
-Mean: 0.9240   Std: 0.0274
-Time elapsed: 2.345s
+Mean: 0.9817   Std: 0.0184
+Time elapsed: 6.119s
 -------------------------------------------------
-Total time: 12.806s
+Total time: 11.797s
 
 
 Running BO for Linear SVM...
 Initial point: 1 --------------------------------
-Parameters --&gt; {'C': 0.01, 'loss': 'squared_hinge', 'dual': True, 'penalty': 'l2'}
-Evaluation --&gt; f1_macro: 0.9833
-Time elapsed: 0.031s   Total time: 0.031s
+Parameters --&gt; {'C': 0.1, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
+Evaluation --&gt; f1_macro: 0.9680
+Time elapsed: 0.023s   Total time: 0.024s
 Initial point: 2 --------------------------------
-Parameters --&gt; {'C': 0.001, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
-Evaluation --&gt; f1_macro: 0.9290
-Time elapsed: 0.016s   Total time: 0.047s
+Parameters --&gt; {'C': 0.1, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
+Evaluation --&gt; f1_macro: 0.9913
+Time elapsed: 0.020s   Total time: 0.045s
 Initial point: 3 --------------------------------
-Parameters --&gt; {'C': 0.001, 'loss': 'squared_hinge', 'dual': True, 'penalty': 'l2'}
-Evaluation --&gt; f1_macro: 0.9601
-Time elapsed: 0.031s   Total time: 0.078s
+Parameters --&gt; {'C': 0.001, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
+Evaluation --&gt; f1_macro: 0.9215
+Time elapsed: 0.019s   Total time: 0.065s
 Iteration: 1 ------------------------------------
-Parameters --&gt; {'C': 10, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
-Evaluation --&gt; f1_macro: 0.9842
-Time elapsed: 0.028s   Total time: 0.359s
+Parameters --&gt; {'C': 100, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
+Evaluation --&gt; f1_macro: 0.9503
+Time elapsed: 0.025s   Total time: 0.282s
 Iteration: 2 ------------------------------------
-Parameters --&gt; {'C': 100, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
-Evaluation --&gt; f1_macro: 0.9842
-Time elapsed: 0.025s   Total time: 0.730s
+Parameters --&gt; {'C': 0.001, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
+Evaluation --&gt; f1_macro: 0.1626
+Time elapsed: 0.024s   Total time: 0.563s
 Iteration: 3 ------------------------------------
-Parameters --&gt; {'C': 100, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
-Evaluation --&gt; f1_macro: 0.9842
-Time elapsed: 0.016s   Total time: 1.059s
+Parameters --&gt; {'C': 100, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
+Evaluation --&gt; f1_macro: 0.9503
+Time elapsed: 0.021s   Total time: 0.806s
+Iteration: 4 ------------------------------------
+Parameters --&gt; {'C': 100, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
+Evaluation --&gt; f1_macro: 0.9503
+Time elapsed: 0.021s   Total time: 1.056s
 
 Final results for Linear SVM:         
 Bayesian Optimization ---------------------------
-Best hyperparameters: {'C': 10.0, 'loss': 'squared_hinge', 'dual': False, 'penalty': 'l1'}
-Best score on the BO: 0.9842
-Time elapsed: 1.230s
+Best hyperparameters: {'C': 0.1, 'loss': 'hinge', 'dual': True, 'penalty': 'l2'}
+Best score on the BO: 0.9913
+Time elapsed: 1.247s
 Fitting -----------------------------------------
-Score on the training set: 1.0000
-Score on the test set: 0.9617
-Time elapsed: 0.047s
+Score on the training set: 0.9842
+Score on the test set: 1.0000
+Time elapsed: 0.032s
 Bagging -----------------------------------------
-Mean: 0.9498   Std: 0.0117
-Time elapsed: 0.101s
+Mean: 1.0000   Std: 0.0000
+Time elapsed: 0.030s
 -------------------------------------------------
-Total time: 1.379s
+Total time: 1.309s
 
 
 Final results ================&gt;&gt;
-Duration: 16.238s
+Duration: 15.434s
 Metric: f1_macro
 --------------------------------
-Linear Discriminant Analysis --&gt; 0.979 ± 0.016 !!
-Random Forest                --&gt; 0.924 ± 0.027
-Linear SVM                   --&gt; 0.950 ± 0.012
+Linear Discriminant Analysis --&gt; 1.000 ± 0.000 !!
+Random Forest                --&gt; 0.982 ± 0.018
+Linear SVM                   --&gt; 1.000 ± 0.000 !!
 </code></pre>
 <p><strong>Analyze the results</strong></p>
 <pre><code class="python">atom.scores
@@ -634,35 +958,35 @@ Linear SVM                   --&gt; 0.950 ± 0.012
     <tr>
       <th>0</th>
       <td>LDA</td>
-      <td>2.050s</td>
+      <td>2.324s</td>
+      <td>1.000000</td>
       <td>1.0</td>
-      <td>0.961698</td>
-      <td>0.079s</td>
-      <td>0.978848</td>
-      <td>0.015898</td>
-      <td>0.035s</td>
+      <td>0.043s</td>
+      <td>1.000000</td>
+      <td>0.000000</td>
+      <td>0.039s</td>
     </tr>
     <tr>
       <th>1</th>
       <td>RF</td>
-      <td>12.806s</td>
+      <td>11.797s</td>
+      <td>0.975759</td>
       <td>1.0</td>
-      <td>0.944813</td>
-      <td>5.671s</td>
-      <td>0.923975</td>
-      <td>0.027393</td>
-      <td>2.345s</td>
+      <td>1.150s</td>
+      <td>0.981706</td>
+      <td>0.018371</td>
+      <td>6.119s</td>
     </tr>
     <tr>
       <th>2</th>
       <td>lSVM</td>
-      <td>1.379s</td>
+      <td>1.309s</td>
+      <td>0.984184</td>
       <td>1.0</td>
-      <td>0.961698</td>
-      <td>0.047s</td>
-      <td>0.949818</td>
-      <td>0.011717</td>
-      <td>0.101s</td>
+      <td>0.032s</td>
+      <td>1.000000</td>
+      <td>0.000000</td>
+      <td>0.030s</td>
     </tr>
   </tbody>
 </table>
@@ -675,30 +999,30 @@ atom.results('precision_macro')
 <pre><code>Final results ================&gt;&gt;
 Metric: precision_macro
 --------------------------------
-Linear Discriminant Analysis --&gt; 0.956 !!
-Random Forest                --&gt; 0.941
-Linear SVM                   --&gt; 0.956 !!
+Linear Discriminant Analysis --&gt; 1.000 !!
+Random Forest                --&gt; 1.000 !!
+Linear SVM                   --&gt; 1.000 !!
 </code></pre>
 <pre><code class="python">atom.plot_bagging()
 </code></pre>
 
-<p><img alt="bagging_results" src="img/bagging_results.png" /></p>
+<p><img alt="png" src="../img/examples/output_9_0.png" /></p>
 <p><strong>Let's have a closer look at the Random Forest</strong></p>
 <pre><code class="python"># Get the results on some other metrics
 print('Jaccard score:', atom.rf.jaccard_weighted)
 print('Recall score:', atom.rf.recall_macro)
 </code></pre>
 
-<pre><code>Jaccard score: 0.8960493827160495
-Recall score: 0.9526143790849674
+<pre><code>Jaccard score: 1.0
+Recall score: 1.0
 </code></pre>
-<pre><code class="python"># Plot the feature importance and compare it to the permutation importance of the LDA
-atom.rf.plot_feature_importance(show=10)
-atom.lda.plot_permutation_importance(show=10)
+<pre><code class="python"># Check the winner's confusion matrix
+atom.RF.plot_confusion_matrix()
 </code></pre>
 
-<p><img alt="feature_importance" src="img/feature_importance.png" /></p>
-<p><img alt="permutation_importance" src="img/permutation_importance.png" /></p>
+<p><img alt="png" src="../img/examples/output_12_0.png" /></p>
+<p><img alt="png" src="../img/examples/output_12_1.png" /></p>
+<p><img alt="png" src="../img/examples/output_12_2.png" /></p>
 <pre><code class="python"># Save the random forest class for production
 atom.RF.save('Random_Forest_class')
 </code></pre>
@@ -717,29 +1041,378 @@ from atom import ATOMRegressor
 
 # Load the abalone dataset
 X = pd.read_csv('../abalone.csv')
-atom = ATOMRegressor(X, y=&quot;Rings&quot;, percentage=10, warnings=False, verbose=1, random_state=42)
+</code></pre>
 
-# Encode categorical features
+<pre><code class="python"># Let's have a look at the dataset
+X.head()
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Sex</th>
+      <th>Length</th>
+      <th>Diameter</th>
+      <th>Height</th>
+      <th>Whole weight</th>
+      <th>Shucked weight</th>
+      <th>Viscera weight</th>
+      <th>Shell weight</th>
+      <th>Rings</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>M</td>
+      <td>0.455</td>
+      <td>0.365</td>
+      <td>0.095</td>
+      <td>0.5140</td>
+      <td>0.2245</td>
+      <td>0.1010</td>
+      <td>0.150</td>
+      <td>15</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>M</td>
+      <td>0.350</td>
+      <td>0.265</td>
+      <td>0.090</td>
+      <td>0.2255</td>
+      <td>0.0995</td>
+      <td>0.0485</td>
+      <td>0.070</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>F</td>
+      <td>0.530</td>
+      <td>0.420</td>
+      <td>0.135</td>
+      <td>0.6770</td>
+      <td>0.2565</td>
+      <td>0.1415</td>
+      <td>0.210</td>
+      <td>9</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>M</td>
+      <td>0.440</td>
+      <td>0.365</td>
+      <td>0.125</td>
+      <td>0.5160</td>
+      <td>0.2155</td>
+      <td>0.1140</td>
+      <td>0.155</td>
+      <td>10</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>I</td>
+      <td>0.330</td>
+      <td>0.255</td>
+      <td>0.080</td>
+      <td>0.2050</td>
+      <td>0.0895</td>
+      <td>0.0395</td>
+      <td>0.055</td>
+      <td>7</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># Initlaize ATOM for regression tasks and encode the categorical features
+atom = ATOMRegressor(X, y=&quot;Rings&quot;, verbose=2, random_state=42)
 atom.encode()
+</code></pre>
 
-# Apply PCA for dimensionality reduction
-atom.feature_selection(strategy=&quot;pca&quot;, max_features=6)
-atom.plot_PCA(figsize=(8, 6), filename='atom_PCA_plot')
+<pre><code>&lt;&lt;=============== ATOM ===============&gt;&gt;
+Initial data cleaning...
+Algorithm task: regression.
+
+Dataset stats ===================&gt;
+Shape: (4177, 9)
+Categorical columns: 1
+Scaled: False
+----------------------------------
+Size of training set: 2923
+Size of test set: 1254
+
+Encoding categorical features...
+</code></pre>
+<pre><code class="python"># Plot the dataset's correlation matrix
+atom.plot_correlation()
+</code></pre>
+
+<p><img alt="png" src="../img/examples/output_5_0.png" /></p>
+<pre><code class="python"># Apply PCA for dimensionality reduction
+atom.feature_selection(strategy=&quot;pca&quot;, n_features=6)
+atom.plot_PCA()
+atom.plot_components(figsize=(8, 6), filename='atom_PCA_plot')
+</code></pre>
+
+<pre><code>Performing feature selection...
+</code></pre>
+<p><img alt="png" src="../img/examples/output_6_1.png" /></p>
+<p><img alt="png" src="../img/examples/output_6_2.png" /></p>
+<p><strong>Run the pipeline</strong></p>
+<pre><code class="python">atom.pipeline(['tree', 'bag', 'et'],
+              metric='neg_mean_squared_error',
+              max_iter=5,
+              init_points=2,
+              cv=1,
+              bagging=5)
+</code></pre>
+
+<pre><code>Running pipeline =================&gt;
+Models in pipeline: Tree, Bag, ET
+Metric: neg_mean_squared_error
+
+
+Running BO for Decision Tree...
+Final results for Decision Tree:         
+Bayesian Optimization ---------------------------
+Best hyperparameters: {'criterion': 'mse', 'splitter': 'random', 'max_depth': 10, 'max_features': 0.5, 'min_samples_split': 2, 'min_samples_leaf': 20, 'ccp_alpha': 0.0}
+Best score on the BO: -6.6417
+Time elapsed: 0.894s
+Fitting -----------------------------------------
+Score on the training set: -10.0595
+Score on the test set: -8.7809
+Time elapsed: 0.024s
+Bagging -----------------------------------------
+Mean: -7.5249   Std: 1.2204
+Time elapsed: 0.013s
+-------------------------------------------------
+Total time: 0.932s
+
+
+Running BO for Bagging Regressor...
+Final results for Bagging Regressor:         
+Bayesian Optimization ---------------------------
+Best hyperparameters: {'n_estimators': 93, 'max_samples': 0.5, 'max_features': 1.0, 'bootstrap': False, 'bootstrap_features': True}
+Best score on the BO: -5.2595
+Time elapsed: 7.585s
+Fitting -----------------------------------------
+Score on the training set: -1.4264
+Score on the test set: -4.9367
+Time elapsed: 0.971s
+Bagging -----------------------------------------
+Mean: -5.0745   Std: 0.0345
+Time elapsed: 3.621s
+-------------------------------------------------
+Total time: 12.178s
+
+
+Running BO for Extra-Trees...
+Final results for Extra-Trees:         
+Bayesian Optimization ---------------------------
+Best hyperparameters: {'n_estimators': 159, 'max_depth': 10, 'max_features': 0.9, 'criterion': 'mae', 'min_samples_split': 10, 'min_samples_leaf': 15, 'ccp_alpha': 0.01, 'bootstrap': True, 'max_samples': 0.8}
+Best score on the BO: -6.2369
+Time elapsed: 11.282s
+Fitting -----------------------------------------
+Score on the training set: -7.2610
+Score on the test set: -6.4164
+Time elapsed: 3.024s
+Bagging -----------------------------------------
+Mean: -6.2672   Std: 0.0772
+Time elapsed: 15.529s
+-------------------------------------------------
+Total time: 29.835s
+
+
+Final results ================&gt;&gt;
+Duration: 42.945s
+Metric: neg_mean_squared_error
+--------------------------------
+Decision Tree     --&gt; -7.525 ± 1.220 ~
+Bagging Regressor --&gt; -5.075 ± 0.035 !! ~
+Extra-Trees       --&gt; -6.267 ± 0.077 ~
+</code></pre>
+<p><br><br></p>
+<h1 id="successive-halving">Successive halving</h1>
+<hr />
+<p>Import the boston dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#boston-dataset">sklearn.datasets</a>.
+ This is a small and easy to train dataset which goal is to predict house prices.</p>
+<p><strong>Load the data</strong></p>
+<pre><code class="python"># Import packages
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_boston
+from atom import ATOMRegressor
+
+# Load the dataset's features and targets
+dataset = load_boston()
+
+# Convert to pd.DataFrame to get the names of the features
+data = np.c_[dataset.data, dataset.target]
+columns = np.append(dataset.feature_names, [&quot;target&quot;])
+data = pd.DataFrame(data, columns=columns)
+X = data.drop('target', axis=1)
+y = data['target']
+</code></pre>
+
+<pre><code class="python"># Let's have a look at the dataset
+X.head()
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>CRIM</th>
+      <th>ZN</th>
+      <th>INDUS</th>
+      <th>CHAS</th>
+      <th>NOX</th>
+      <th>RM</th>
+      <th>AGE</th>
+      <th>DIS</th>
+      <th>RAD</th>
+      <th>TAX</th>
+      <th>PTRATIO</th>
+      <th>B</th>
+      <th>LSTAT</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.00632</td>
+      <td>18.0</td>
+      <td>2.31</td>
+      <td>0.0</td>
+      <td>0.538</td>
+      <td>6.575</td>
+      <td>65.2</td>
+      <td>4.0900</td>
+      <td>1.0</td>
+      <td>296.0</td>
+      <td>15.3</td>
+      <td>396.90</td>
+      <td>4.98</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.02731</td>
+      <td>0.0</td>
+      <td>7.07</td>
+      <td>0.0</td>
+      <td>0.469</td>
+      <td>6.421</td>
+      <td>78.9</td>
+      <td>4.9671</td>
+      <td>2.0</td>
+      <td>242.0</td>
+      <td>17.8</td>
+      <td>396.90</td>
+      <td>9.14</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.02729</td>
+      <td>0.0</td>
+      <td>7.07</td>
+      <td>0.0</td>
+      <td>0.469</td>
+      <td>7.185</td>
+      <td>61.1</td>
+      <td>4.9671</td>
+      <td>2.0</td>
+      <td>242.0</td>
+      <td>17.8</td>
+      <td>392.83</td>
+      <td>4.03</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.03237</td>
+      <td>0.0</td>
+      <td>2.18</td>
+      <td>0.0</td>
+      <td>0.458</td>
+      <td>6.998</td>
+      <td>45.8</td>
+      <td>6.0622</td>
+      <td>3.0</td>
+      <td>222.0</td>
+      <td>18.7</td>
+      <td>394.63</td>
+      <td>2.94</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.06905</td>
+      <td>0.0</td>
+      <td>2.18</td>
+      <td>0.0</td>
+      <td>0.458</td>
+      <td>7.147</td>
+      <td>54.2</td>
+      <td>6.0622</td>
+      <td>3.0</td>
+      <td>222.0</td>
+      <td>18.7</td>
+      <td>396.90</td>
+      <td>5.33</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># Initialize ATOM
+atom = ATOMRegressor(X, y, verbose=1, random_state=42)
+
+# Select best features with the RFECV strategy
+atom.feature_selection('RFECV', solver='OLS', scoring='r2')
+atom.plot_RFECV()
 </code></pre>
 
 <pre><code>&lt;&lt;=============== ATOM ===============&gt;&gt;
 Algorithm task: regression.
 </code></pre>
-<p><img alt="PCA" src="img/PCA.png" /></p>
+<p><img alt="png" src="../img/examples/output_4_1.png" /></p>
 <p><strong>Run the pipeline</strong></p>
-<pre><code class="python"># Let's compare tree-based models using a successive halving approach
-atom.pipeline(['tree', 'bag', 'et', 'rf', 'gbm', 'lgb'],
-              successive_halving=True,
-              metric='neg_mean_squared_error',
-              max_iter=5,
-              init_points=5,
-              cv=1,
-              bagging=5)
+<pre><code class="python"># We can compare tree-based models via successive halving
+atom.successive_halving(['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
+                        metric='neg_mean_squared_error',
+                        max_iter=5,
+                        init_points=2,
+                        cv=1,
+                        bagging=5)
 </code></pre>
 
 <pre><code>Running pipeline =================&gt;
@@ -747,64 +1420,486 @@ Metric: neg_mean_squared_error
 
 
 &lt;&lt;=============== Iteration 0 ==============&gt;&gt;
-Models in pipeline: Tree, Bag, ET, RF, GBM, LGB
+Models in pipeline: Tree, Bag, ET, RF, LGB, CatB
+Percentage of data: 16.7%
+Size of training set: 58
+Size of test set: 26
 
 
-Processing: 100%|████████████████████████████████| 6/6 [00:25&lt;00:00,  4.18s/it]
+Processing: 100%|████████████████████████████████| 6/6 [00:12&lt;00:00,  2.04s/it]
 
 
 
 
 Final results ================&gt;&gt;
-Duration: 25.079s
+Duration: 12.251s
 Metric: neg_mean_squared_error
 --------------------------------
-Decision Tree             --&gt; -9.479 ± 0.667 !! ~
-Bagging Regressor         --&gt; -11.409 ± 2.167 ~
-Extra-Trees               --&gt; -11.788 ± 1.270 ~
-Random Forest             --&gt; -11.441 ± 1.059 ~
-Gradient Boosting Machine --&gt; -11.044 ± 2.575 ~
-LightGBM                  --&gt; -12.929 ± 3.211 ~
+Decision Tree     --&gt; -49.394 ± 27.206 ~
+Bagging Regressor --&gt; -38.655 ± 3.232 ~
+Extra-Trees       --&gt; -49.144 ± 13.045 ~
+Random Forest     --&gt; -100.813 ± 101.754 ~
+LightGBM          --&gt; -31.724 ± 8.447 !! ~
 
 
 &lt;&lt;=============== Iteration 1 ==============&gt;&gt;
-Models in pipeline: Tree, Bag, GBM
+Models in pipeline: Bag, LGB
+Percentage of data: 50.0%
+Size of training set: 177
+Size of test set: 76
 
 
-Processing: 100%|████████████████████████████████| 3/3 [00:12&lt;00:00,  4.03s/it]
+Processing: 100%|████████████████████████████████| 2/2 [00:05&lt;00:00,  2.58s/it]
 
 
 
 
 Final results ================&gt;&gt;
-Duration: 37.229s
+Duration: 17.454s
 Metric: neg_mean_squared_error
 --------------------------------
-Decision Tree             --&gt; -11.110 ± 5.487 ~
-Bagging Regressor         --&gt; -6.780 ± 1.605 !! ~
-Gradient Boosting Machine --&gt; -8.079 ± 0.545 ~
+Bagging Regressor --&gt; -27.847 ± 4.189 !! ~
+LightGBM          --&gt; -32.049 ± 6.159 ~
 
 
 &lt;&lt;=============== Iteration 2 ==============&gt;&gt;
 Model in pipeline: Bag
+Percentage of data: 100.0%
+Size of training set: 354
+Size of test set: 152
 
 
-Processing: 100%|████████████████████████████████| 1/1 [00:10&lt;00:00, 10.36s/it]
+Processing: 100%|████████████████████████████████| 1/1 [00:05&lt;00:00,  5.73s/it]
 
 
 
 Final results ================&gt;&gt;
-Duration: 47.619s
+Duration: 23.209s
 Metric: neg_mean_squared_error
 --------------------------------
-Bagging Regressor --&gt; -4.925 ± 0.403 ~
+Bagging Regressor --&gt; -16.360 ± 3.548 ~
 </code></pre>
-<p><strong>Analyze the results</strong></p>
-<pre><code class="python"># Plot successive halving results
-atom.plot_successive_halving()
+<pre><code class="python">atom.plot_successive_halving()
 </code></pre>
 
-<p><img alt="successive_halving" src="img/successive_halving.png" /></p>
+<p><img alt="png" src="../img/examples/output_7_0.png" /></p>
+<p><br><br></p>
+<h1 id="train-sizing">Train sizing</h1>
+<hr />
+<p>Download the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>.
+ This dataset tries to predict whether or not it will rain tomorrow by
+ training a classification model on target <code>RainTomorrow</code>.</p>
+<p><strong>Load the data</strong></p>
+<pre><code class="python"># Import packages
+import numpy as np
+import pandas as pd
+from sklearn.metrics import fbeta_score
+from atom import ATOMClassifier
+
+# Load the Australian weather dataset
+X = pd.read_csv('../weatherAUS.csv')
+X = X.drop(['RISK_MM', 'Date'], axis=1)  # Drop unrelated features
+</code></pre>
+
+<pre><code class="python"># Let's have a look at the dataset
+X.head()
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Location</th>
+      <th>MinTemp</th>
+      <th>MaxTemp</th>
+      <th>Rainfall</th>
+      <th>Evaporation</th>
+      <th>Sunshine</th>
+      <th>WindGustDir</th>
+      <th>WindGustSpeed</th>
+      <th>WindDir9am</th>
+      <th>WindDir3pm</th>
+      <th>...</th>
+      <th>Humidity9am</th>
+      <th>Humidity3pm</th>
+      <th>Pressure9am</th>
+      <th>Pressure3pm</th>
+      <th>Cloud9am</th>
+      <th>Cloud3pm</th>
+      <th>Temp9am</th>
+      <th>Temp3pm</th>
+      <th>RainToday</th>
+      <th>RainTomorrow</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Albury</td>
+      <td>13.4</td>
+      <td>22.9</td>
+      <td>0.6</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>W</td>
+      <td>44.0</td>
+      <td>W</td>
+      <td>WNW</td>
+      <td>...</td>
+      <td>71.0</td>
+      <td>22.0</td>
+      <td>1007.7</td>
+      <td>1007.1</td>
+      <td>8.0</td>
+      <td>NaN</td>
+      <td>16.9</td>
+      <td>21.8</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Albury</td>
+      <td>7.4</td>
+      <td>25.1</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WNW</td>
+      <td>44.0</td>
+      <td>NNW</td>
+      <td>WSW</td>
+      <td>...</td>
+      <td>44.0</td>
+      <td>25.0</td>
+      <td>1010.6</td>
+      <td>1007.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>17.2</td>
+      <td>24.3</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Albury</td>
+      <td>12.9</td>
+      <td>25.7</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WSW</td>
+      <td>46.0</td>
+      <td>W</td>
+      <td>WSW</td>
+      <td>...</td>
+      <td>38.0</td>
+      <td>30.0</td>
+      <td>1007.6</td>
+      <td>1008.7</td>
+      <td>NaN</td>
+      <td>2.0</td>
+      <td>21.0</td>
+      <td>23.2</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Albury</td>
+      <td>9.2</td>
+      <td>28.0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NE</td>
+      <td>24.0</td>
+      <td>SE</td>
+      <td>E</td>
+      <td>...</td>
+      <td>45.0</td>
+      <td>16.0</td>
+      <td>1017.6</td>
+      <td>1012.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>18.1</td>
+      <td>26.5</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Albury</td>
+      <td>17.5</td>
+      <td>32.3</td>
+      <td>1.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>W</td>
+      <td>41.0</td>
+      <td>ENE</td>
+      <td>NW</td>
+      <td>...</td>
+      <td>82.0</td>
+      <td>33.0</td>
+      <td>1010.8</td>
+      <td>1006.0</td>
+      <td>7.0</td>
+      <td>8.0</td>
+      <td>17.8</td>
+      <td>29.7</td>
+      <td>No</td>
+      <td>No</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 22 columns</p>
+</div>
+
+<p><strong>Run the pipeline</strong></p>
+<pre><code class="python"># Initialize ATOM
+atom = ATOMClassifier(X, verbose=1, random_state=42)
+atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.8)
+atom.encode()
+
+# We can compare tree-based models via successive halving
+atom.train_sizing('lgb',
+                  metric='accuracy',
+                  max_iter=5,
+                  init_points=2,
+                  cv=3)
+</code></pre>
+
+<pre><code>&lt;&lt;=============== ATOM ===============&gt;&gt;
+Algorithm task: binary classification.
+
+
+
+
+
+Running pipeline =================&gt;
+Model in pipeline: LGB
+Metric: accuracy
+
+
+&lt;&lt;=============== Iteration 0 ==============&gt;&gt;
+Percentage of data: 10.0%
+Size of training set: 8890
+Size of test set: 3811
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:08&lt;00:00,  8.79s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 8.837s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.845
+
+
+&lt;&lt;=============== Iteration 1 ==============&gt;&gt;
+Percentage of data: 20.0%
+Size of training set: 17781
+Size of test set: 7621
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:09&lt;00:00,  9.97s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 18.863s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.837
+
+
+&lt;&lt;=============== Iteration 2 ==============&gt;&gt;
+Percentage of data: 30.0%
+Size of training set: 26672
+Size of test set: 11431
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:17&lt;00:00, 17.26s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 36.187s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.852
+
+
+&lt;&lt;=============== Iteration 3 ==============&gt;&gt;
+Percentage of data: 40.0%
+Size of training set: 35562
+Size of test set: 15242
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:29&lt;00:00, 29.42s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 1m:05s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.862
+
+
+
+
+
+
+&lt;&lt;=============== Iteration 4 ==============&gt;&gt;
+Percentage of data: 50.0%
+Size of training set: 44454
+Size of test set: 19052
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:24&lt;00:00, 24.44s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 1m:30s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.857
+
+
+
+
+
+
+&lt;&lt;=============== Iteration 5 ==============&gt;&gt;
+Percentage of data: 60.0%
+Size of training set: 53344
+Size of test set: 22863
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:30&lt;00:00, 30.59s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 2m:01s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.859
+
+
+Processing:   0%|                                        | 0/1 [00:00&lt;?, ?it/s]
+
+
+
+&lt;&lt;=============== Iteration 6 ==============&gt;&gt;
+Percentage of data: 70.0%
+Size of training set: 62235
+Size of test set: 26673
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:47&lt;00:00, 47.88s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 2m:50s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.862
+
+
+&lt;&lt;=============== Iteration 7 ==============&gt;&gt;
+Percentage of data: 80.0%
+Size of training set: 71126
+Size of test set: 30483
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:58&lt;00:00, 58.07s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 3m:48s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.854
+
+
+
+
+
+
+&lt;&lt;=============== Iteration 8 ==============&gt;&gt;
+Percentage of data: 90.0%
+Size of training set: 80017
+Size of test set: 34293
+
+
+Processing: 100%|████████████████████████████████| 1/1 [00:57&lt;00:00, 57.22s/it]
+
+
+
+
+Final results ================&gt;&gt;
+Duration: 4m:46s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.860
+
+
+
+
+
+
+&lt;&lt;=============== Iteration 9 ==============&gt;&gt;
+Percentage of data: 100.0%
+Size of training set: 88907
+Size of test set: 38104
+
+
+Processing: 100%|████████████████████████████████| 1/1 [01:15&lt;00:00, 75.39s/it]
+
+
+
+Final results ================&gt;&gt;
+Duration: 6m:02s
+Metric: accuracy
+--------------------------------
+LightGBM --&gt; 0.855
+</code></pre>
+<pre><code class="python">atom.plot_learning_curve()
+</code></pre>
+
+<p><img alt="png" src="../img/examples/output_6_0.png" /></p>
               
             </div>
           </div>

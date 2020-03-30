@@ -357,7 +357,6 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-    check_is_fitted(self._is_fitted)
     if not self._has_sh:
         raise AttributeError("You need to fit the models using the " +
                              "successive_halving approach before " +
@@ -439,7 +438,6 @@ def plot_learning_curve(self, models, title, figsize, filename, display):
         Wether to render the plot.
 
     """
-    check_is_fitted(self._is_fitted)
     if not self._has_ts:
         raise AttributeError("You need to fit the models using the " +
                              "train_sizing approach before " +
@@ -460,14 +458,10 @@ def plot_learning_curve(self, models, title, figsize, filename, display):
         if hasattr(self, model.lower()):  # If model in pipeline
             names.append(getattr(self, model.lower()).name)
             for m, df in enumerate(self.scores):
-                if names[-1] in df.model.values:
-                    idx = np.where(names[-1] == df.model.values)[0]
-                    liny[n].append(df[col].iloc[idx].values[0])
-                    if self._has_bag:
-                        filly[n].append(df['bagging_std'].iloc[idx].values[0])
-                else:
-                    liny[n].append(np.NaN)
-                    filly[n].append(np.NaN)
+                idx = np.where(names[-1] == df.model.values)[0]
+                liny[n].append(df[col].iloc[idx].values[0])
+                if self._has_bag:
+                    filly[n].append(df['bagging_std'].iloc[idx].values[0])
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
@@ -1128,7 +1122,7 @@ def plot_probabilities(self, models, target,
     if title is None:
         title = f"Predicted probabilities for {m.y_train.name}={target_str}"
     plt.title(title, fontsize=self.title_fontsize, pad=12)
-    plt.legend(fontsize=self.label_fontsize)
+    plt.legend(loc='upper center', fontsize=self.label_fontsize)
     plt.xlabel('Probability', fontsize=self.label_fontsize, labelpad=12)
     plt.ylabel('Count', fontsize=self.label_fontsize, labelpad=12)
     plt.xlim(0, 1)

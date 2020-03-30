@@ -32,13 +32,18 @@ def test_strategy_parameter():
 
 
 def test_solver_parameter():
-    ''' Assert that solver raises an error when left empty for sfm and rfe '''
+    ''' Assert that solver raises an error '''
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+
+    # When left empty
     pytest.raises(ValueError,  atom.feature_selection, strategy='sfm')
 
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError,  atom.feature_selection, strategy='rfe')
+    # When invalid value
+    pytest.raises(ValueError,
+                  atom.feature_selection,
+                  strategy='rfe',
+                  solver='invalid')
 
 
 def test_n_features_parameter():

@@ -94,12 +94,16 @@ def test_train_test_split():
 
 # << =============== Test update ================= >>
 
-def test_changes_based_df():
-    ''' Assert that method works as intended for different df values '''
+def test_update():
+    ''' Assert that the update method works as intended '''
 
     # When dataset is changed
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.dataset.iloc[0, 2] = 20
+
+    # Error when df is invalid
+    pytest.raises(ValueError, atom.update, 'invalid')
+
     atom.update('dataset')
     assert atom.train.iloc[0, 2] == 20
     assert atom.X.iloc[0, 2] == 20
