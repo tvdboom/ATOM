@@ -1,11 +1,11 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the utility methods of the ATOM class.
 
-'''
+"""
 
 # Import packages
 import pytest
@@ -27,7 +27,7 @@ X_reg, y_reg = load_boston(return_X_y=True)
 # << ================ Test class variables ================= >>
 
 def test_set_style():
-    ''' Assert that the set_style classmethod works as intended '''
+    """ Assert that the set_style classmethod works as intended """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_style('white')
@@ -35,7 +35,7 @@ def test_set_style():
 
 
 def test_set_palette():
-    ''' Assert that the set_palette classmethod works as intended '''
+    """ Assert that the set_palette classmethod works as intended """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_palette('Blues')
@@ -43,7 +43,7 @@ def test_set_palette():
 
 
 def test_set_title_fontsize():
-    ''' Assert that the set_title_fontsize classmethod works as intended '''
+    """ Assert that the set_title_fontsize classmethod works as intended """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_title_fontsize(21)
@@ -51,7 +51,7 @@ def test_set_title_fontsize():
 
 
 def test_set_label_fontsize():
-    ''' Assert that the set_label_fontsize classmethod works as intended '''
+    """ Assert that the set_label_fontsize classmethod works as intended """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_label_fontsize(4)
@@ -59,7 +59,7 @@ def test_set_label_fontsize():
 
 
 def test_set_tick_fontsize():
-    ''' Assert that the set_tick_fontsize classmethod works as intended '''
+    """ Assert that the set_tick_fontsize classmethod works as intended """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     atom.set_tick_fontsize(13)
@@ -69,7 +69,7 @@ def test_set_tick_fontsize():
 # << ================ Test _split_dataset ================== >>
 
 def test_dataset_is_shuffled():
-    ''' Assert that self.dataset is shuffled '''
+    """ Assert that self.dataset is shuffled """
 
     atom = ATOMClassifier(X_class, y_class)
     for i in np.random.randint(0, len(X_class), 10):
@@ -77,7 +77,7 @@ def test_dataset_is_shuffled():
 
 
 def test_percentage_data_selected():
-    ''' Assert that a percentage of the data is selected correctly '''
+    """ Assert that a percentage of the data is selected correctly """
 
     atom = ATOMClassifier(X_bin, y_bin, percentage=10, random_state=1)
     assert len(atom.X) == int(len(X_bin) * 0.10) + 1  # +1 due to rounding
@@ -86,7 +86,7 @@ def test_percentage_data_selected():
 
 
 def test_train_test_split():
-    ''' Assert that the train and test split is made correctly '''
+    """ Assert that the train and test split is made correctly """
 
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.13)
     assert len(atom.train) == int(0.87*len(X_bin))
@@ -95,7 +95,7 @@ def test_train_test_split():
 # << =============== Test update ================= >>
 
 def test_update():
-    ''' Assert that the update method works as intended '''
+    """ Assert that the update method works as intended """
 
     # When dataset is changed
     atom = ATOMClassifier(X_dim4, y_dim4)
@@ -132,7 +132,7 @@ def test_update():
 
 
 def test_index_reset():
-    ''' Assert that indices are reset for all data attributes '''
+    """ Assert that indices are reset for all data attributes """
 
     atom = ATOMClassifier(X_bin, y_bin)
     for attr in ['dataset', 'train', 'test', 'X', 'y',
@@ -142,7 +142,7 @@ def test_index_reset():
 
 
 def test_isPandas():
-    ''' Assert that data attributes are pd.DataFrames or pd.Series '''
+    """ Assert that data attributes are pd.DataFrames or pd.Series """
 
     def test(atom):
         for attr in ['dataset', 'train', 'test', 'X', 'X_train', 'X_test']:
@@ -162,7 +162,7 @@ def test_isPandas():
 
 
 def test_attributes_equal_length():
-    ''' Assert that data attributes have the same number of rows '''
+    """ Assert that data attributes have the same number of rows """
 
     atom = ATOMClassifier(X_bin, y_bin)
 
@@ -174,7 +174,7 @@ def test_attributes_equal_length():
 # << ==================== Test report ====================== >>
 
 def test_creates_report():
-    ''' Assert that the report has been created and saved'''
+    """ Assert that the report has been created and saved"""
 
     atom = ATOMClassifier(X_bin, y_bin)
     atom.report(rows=10)
@@ -184,7 +184,7 @@ def test_creates_report():
 # << ===================== Test scale ====================== >>
 
 def test_scale():
-    ''' Assert that the scale method normalizes the features '''
+    """ Assert that the scale method normalizes the features """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
@@ -193,7 +193,7 @@ def test_scale():
 
 
 def test_already_scaled():
-    ''' Assert that the scale method does nothing when already scaled '''
+    """ Assert that the scale method does nothing when already scaled """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
@@ -207,14 +207,14 @@ def test_already_scaled():
 # << ================ Test results ================== >>
 
 def test_error_not_fit():
-    ''' Assert that an error is raised when the ATOM class is not fitted '''
+    """ Assert that an error is raised when the ATOM class is not fitted """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     pytest.raises(AttributeError, atom.results)
 
 
 def test_error_unknown_metric():
-    ''' Assert that an error is raised when an unknown metric is selected '''
+    """ Assert that an error is raised when an unknown metric is selected """
 
     atom = ATOMRegressor(X_dim4, y_dim4)
     atom.pipeline(models='lgb', metric='r2', max_iter=0)
@@ -222,7 +222,7 @@ def test_error_unknown_metric():
 
 
 def test_error_invalid_metric():
-    ''' Assert that an error is raised when an invalid metric is selected '''
+    """ Assert that an error is raised when an invalid metric is selected """
 
     atom = ATOMRegressor(X_reg, y_reg)
     atom.pipeline(models='lgb', metric='r2', max_iter=0)
@@ -230,7 +230,7 @@ def test_error_invalid_metric():
 
 
 def test_al_tasks():
-    ''' Assert that the method works for all tasks '''
+    """ Assert that the method works for all tasks """
 
     # For binary classification
     atom = ATOMClassifier(X_bin, y_bin)

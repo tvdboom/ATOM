@@ -1,11 +1,11 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the models and pre-set metrics available.
 
-'''
+"""
 
 # Import packages
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
@@ -32,7 +32,7 @@ X_reg, y_reg = load_boston(return_X_y=True)
 # << ======================= Tests ========================= >>
 
 def test_models_attributes():
-    ''' Assert that model subclasses have the right attributes '''
+    """ Assert that model subclasses have the right attributes """
 
     atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline(models='lr', metric='f1', max_iter=0)
@@ -41,7 +41,7 @@ def test_models_attributes():
 
 
 def test_models_binary():
-    ''' Assert that the fit method works with all models for binary '''
+    """ Assert that the fit method works with all models for binary """
 
     for model in [m for m in model_list if m not in only_regression]:
         atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -50,11 +50,11 @@ def test_models_binary():
                       max_iter=1,
                       init_points=1,
                       cv=1)
-    assert 1 == 1  # Assert that all models ran wihtout errors
+    assert 1 == 1  # Assert that all models ran without errors
 
 
 def test_models_multiclass():
-    ''' Assert that the fit method works with all models for multiclass'''
+    """ Assert that the fit method works with all models for multiclass"""
 
     for model in [m for m in model_list if m not in only_regression]:
         atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -67,7 +67,7 @@ def test_models_multiclass():
 
 
 def test_models_regression():
-    ''' Assert that the fit method works with all models for regression '''
+    """ Assert that the fit method works with all models for regression """
 
     for model in [m for m in model_list if m not in only_classification]:
         atom = ATOMRegressor(X_reg, y_reg, random_state=1)

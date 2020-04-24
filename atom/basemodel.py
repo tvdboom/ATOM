@@ -31,24 +31,15 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 # Own package modules
-from .utils import composed, crash, params_to_log, time_to_string
+from .utils import (
+    cal, X_types, no_BO, composed, crash, params_to_log, time_to_string
+    )
 from .plots import (
         save, plot_bagging, plot_successive_halving, plot_learning_curve,
         plot_ROC, plot_PRC, plot_permutation_importance,
         plot_feature_importance, plot_confusion_matrix, plot_threshold,
         plot_probabilities, plot_calibration, plot_gains, plot_lift
         )
-
-
-# << ====================== Global variables ====================== >>
-
-# Variable types
-cal = Union[str, callable]
-scalar = Union[int, float]
-train_types = Union[Sequence[scalar], np.ndarray]
-
-# List of models that don't use the Bayesian Optimization
-no_BO = ['GP', 'GNB', 'OLS']
 
 
 # << ====================== Classes ====================== >>
@@ -106,7 +97,7 @@ class BaseModel(object):
                 - if >1, perform a k-fold cross validation on the training set
 
         plot_bo: bool, optional (default=False)
-            Wether to plot the BO's progress as it runs. Creates a canvas with
+            whether to plot the BO's progress as it runs. Creates a canvas with
             two plots: the first plot shows the score of every trial and the
             second shows the distance between the last consecutive steps. Don't
             forget to call %matplotlib at the start of the cell if you are
@@ -526,6 +517,63 @@ class BaseModel(object):
         duration = time_to_string(t_init)
         self.bs_time = duration
         self.T._log(f"Time elapsed: {duration}", 1)
+
+    # << =================== Pipeline methods =================== >>
+
+    def _pipeline_methods(self, X, attribute, **kwargs):
+        """Apply pipeline methods on new data.
+
+        First transform the new data and apply the attribute on the best
+        model. The model has to have the provided attribute.
+
+        Parameters
+        ----------
+        X: dict, sequence, np.array or pd.DataFrame
+            Data containing the features, with shape=(n_samples, n_features).
+
+        attribute: str
+            Attribute of the model to be applied.
+
+        **kwargs
+            Additional parameters for the transform method.
+
+        Returns
+        -------
+        np.array
+            Return of the attribute.
+
+        """
+        if not hasattr(self.best_model_fit, attribute):
+            raise AttributeError("The winning model doesn't have a " +
+                                 f"{attribute} attribute!")
+
+        X_transformed = self.T.transform(X, **kwargs)
+        return getattr(self.best_model_fit, attribute)(X_transformed)
+
+    @composed(crash, params_to_log, typechecked)
+    def transform(self, X: X_types, **kwargs):
+        """Apply all data transformations in ATOM to new data."""
+        return self.T.transform(X, **kwargs)
+
+    @composed(crash, params_to_log, typechecked)
+    def predict(self, X: X_types, **kwargs):
+        """Get predictions on new data."""
+        return self._pipeline_methods(X, 'predict', **kwargs)
+
+    @composed(crash, params_to_log, typechecked)
+    def predict_proba(self, X: X_types, **kwargs):
+        """Get probability predictions on new data."""
+        return self._pipeline_methods(X, 'predict_proba', **kwargs)
+
+    @composed(crash, params_to_log, typechecked)
+    def predict_log_proba(self, X: X_types, **kwargs):
+        """Get log probability predictions on new data."""
+        return self._pipeline_methods(X, 'predict_log_proba', **kwargs)
+
+    @composed(crash, params_to_log, typechecked)
+    def decision_function(self, X: X_types, **kwargs):
+        """Get the decision function on new data."""
+        return self._pipeline_methods(X, 'decision_function', **kwargs)
 
     # << ==================== Plot functions ==================== >>
 

@@ -28,8 +28,9 @@ cleaning steps unto the dataset. These steps include:
 
   * Transforming the input data into a pd.DataFrame (if it wasn't one already)
    that can be accessed through the class' data attributes.
+  * Strip categorical features from white spaces.
   * Removing columns with prohibited data types ('datetime64',
-   'datetime64[ns]', 'timedelta[ns]').
+   'datetime64[ns]', 'timedelta[ns]'). ATOM can't (yet) handle these types.
   * Removing categorical columns with maximal cardinality (the number of
    unique values is equal to the number of instances. Usually the case for
     names, IDs, etc...).
@@ -447,7 +448,7 @@ List of values to impute. None for default list: [None, np.NaN, np.inf, -np.inf,
 
 
 <a name="atom-encode"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">encode</strong>(max_onehot=10, frac_to_other=0) 
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">encode</strong>(max_onehot=10, encode_type='LeaveOneOut', frac_to_other=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L867">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Perform encoding of categorical features. The encoding type depends on the
@@ -455,9 +456,9 @@ Perform encoding of categorical features. The encoding type depends on the
 <ul>
 <li>label-encoding for n_unique=2</li>
 <li>one-hot-encoding for 2 < n_unique <= max_onehot</li>
-<li>target-encoding for n_unique > max_onehot</li>
+<li>'encode_type' for n_unique > max_onehot</li>
 </ul>
-It also replaces classes with low occurences with the value 'other' in order
+It also replaces classes with low occurrences with the value 'other' in order
  to prevent too high cardinality.
  <br /><br />
 <table width="100%">
@@ -469,6 +470,11 @@ It also replaces classes with low occurences with the value 'other' in order
 Maximum number of unique values in a feature to perform one-hot-encoding.
  If None, it will never perform one-hot-encoding.
 </blockquote>
+<strong>encode_type: str, optional (default='Target')</strong>
+<blockquote>
+Type of encoding to use for high cardinality features. Choose from
+ one of the encoders available from the `category_encoders` package.
+</blockquote>
 <strong>frac_to_other: float, optional (default=0)</strong>
 <blockquote>
 Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.
@@ -479,23 +485,33 @@ Classes with less instances than n_rows * fraction_to_other are replaced with 'o
 
 
 <a name="atom-outliers"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">outliers</strong>(max_sigma=3, include_target=False) 
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">outliers</strong>(strategy='remove', max_sigma=3, include_target=False) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L962">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Remove rows from the training set where at least one of the values lies further
- than `max_sigma` * standard_deviation away from the mean of the column.
- <br /><br />
+Remove or replace outliers in the training set.
+Outliers are defined as values that lie further than
+`max_sigma` * standard_deviation away from the mean of the column.
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
+<strong>strategy: int, float or string, optional (default='remove')</strong>
+Which strategy to apply on the outliers. Choose from:
+<ul>
+<li>'remove' to drop any row with outliers from the dataset</li>
+<li>'min_max' to replace it with the min or max of the column</li>
+<li>Any numerical value with which to replace the outliers</li>
+</ul>
+</blockquote>
 <strong>max_sigma: int or float, optional (default=3)</strong>
 <blockquote>
 Maximum allowed standard deviations from the mean.
 </blockquote>
 <strong>include_target: bool, optional (default=False)</strong>
 <blockquote>
-Wether to include the target column when searching for outliers.
+Whether to include the target column when searching for outliers.
+ Can be useful for regression tasks.
 </blockquote>
 </tr>
 </table>
@@ -562,7 +578,7 @@ To further pre-process the data you can create new non-linear features using a
 <table width="100%">
 <tr>
 <tr>
-<td><a href="#atom-feature-insertion">feature_insertion</a></td>
+<td><a href="#atom-feature-generation">feature_insertion</a></td>
 <td>Use a genetic algorithm to create new combinations of existing features.</td>
 </tr>
 
@@ -575,8 +591,8 @@ To further pre-process the data you can create new non-linear features using a
 
 
 
-<a name="atom-feature-insertion"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_insertion</strong>(n_features=2, generations=20, population=500) 
+<a name="atom-feature-generation"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">feature_generation</strong>(n_features=2, generations=20, population=500) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1131">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Use a genetic algorithm to create new combinations of existing
@@ -652,8 +668,7 @@ The sklearn objects can be found under the `univariate`, `PCA`, `SFM`,
 <blockquote>
 Solver or model to use for the feature selection strategy. See the
 sklearn documentation for an extended descrition of the choices.
-Select None for the default option per strategy (not applicable
-for SFM, RFE and RFECV).
+Select None for the default option per strategy.
 <ul>
 <li>for 'univariate', choose from:
    <ul>
@@ -674,15 +689,18 @@ for SFM, RFE and RFECV).
 <li>for 'SFM': choose a base estimator from which the transformer is built.
                The estimator must have either a `feature_importances_` or
                `coef_` attribute after fitting. You can use a model from the
-               [pipeline](#pipeline). No default option.</li>
+               [pipeline](#pipeline). If None, it will use the winning model in
+               the pipeline (raises an exception if it doesn't exist).</li>
 <li>for 'RFE': choose a supervised learning estimator. The estimator must have
                either a `feature_importances_` or `coef_` attribute after
                fitting. You can use a model from the [pipeline](#pipeline).
-               No default option.</li>
+               If None, it will use the winning model in the pipeline (raises
+                an exception if it doesn't exist).</li>
 <li>for 'RFECV': choose a supervised learning estimator. The estimator must have
                either a `feature_importances_` or `coef_` attribute after
                fitting. You can use a model from the [pipeline](#pipeline).
-               No default option.</li>
+               If None, it will use the winning model in the pipeline (raises
+                an exception if it doesn't exist).</li>
 </ul>
 </blockquote>
 <strong>n_features: int, float or None, optional (default=None)</strong>
@@ -797,6 +815,41 @@ There are three methods to call for the pipeline.
 </tr>
 
 </table>
+
+
+Like the majority of estimators in scikit-learn, you can use a fitted `ATOM` class
+ to make predictions onto new data, e.g. `atom.predict_proba(X)`. The following methods will apply all selected
+ data pre-processing steps on the provided data first, and use the winning
+ model from the pipeline (under attribute `winner`) to make the predictions. If you want to use a different
+ model, you can call the method from the model subclass, e.g. `atom.LGB.predict(X)`.
+
+<table width="100%">
+<tr>
+<td><a href="#atom-transform">transform</a></td>
+<td>Transform new data through all the pre-processing data steps.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-predict">predict</a></td>
+<td>Make predictions on new data.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-predict-proba">predict_proba</a></td>
+<td>Make probability predictions on new data.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-predict-log-proba">predict_log_proba</a></td>
+<td>Make logarithmic probability predictions on new data.</td>
+</tr>
+
+<tr>
+<td><a href="#atom-decision-function">decision_function</a></td>
+<td>Return the decision function of a model on new data.</td>
+</tr>
+
+</table>
 <br>
 
 
@@ -861,13 +914,13 @@ scorer object. If None, ATOM will try to use any metric it already has in the
 pipeline. If it hasn't got any, a default metric per task is selected:
 <ul>
 <li>'f1' for binary classification</li>
-<li>'f1_weighted' for multiclas classification</li>
+<li>'f1_weighted' for multiclass classification</li>
 <li>'r2' for regression</li>
 </ul>
 </blockquote>
 <strong>greater_is_better: bool, optional (default=True)</strong>
 <blockquote>
-Wether the metric is a score function or a loss function,
+Whether the metric is a score function or a loss function,
 i.e. if True, a higher score is better and if False, lower is
 better. Will be ignored if the metric is a string or a scorer.
 </blockquote>
@@ -913,7 +966,7 @@ Strategy to fit and score the model selected after every step of the BO.
 </blockquote>
 <strong>plot_bo: bool, optional (default=False)</strong>
 <blockquote>
-Wether to plot the BO's progress as it runs. Creates a canvas with
+Whether to plot the BO's progress as it runs. Creates a canvas with
 two plots: the first plot shows the score of every trial and the
 second shows the distance between the last consecutive steps. Don't
 forget to call `%matplotlib` at the start of the cell if you are
@@ -998,7 +1051,7 @@ pipeline. If it hasn't got any, a default metric per task is selected:
 </blockquote>
 <strong>greater_is_better: bool, optional (default=True)</strong>
 <blockquote>
-Wether the metric is a score function or a loss function,
+Whether the metric is a score function or a loss function,
 i.e. if True, a higher score is better and if False, lower is
 better. Will be ignored if the metric is a string or a scorer.
 </blockquote>
@@ -1049,7 +1102,7 @@ Strategy to fit and score the model selected after every step of the BO.
 </blockquote>
 <strong>plot_bo: bool, optional (default=False)</strong>
 <blockquote>
-Wether to plot the BO's progress as it runs. Creates a canvas with
+Whether to plot the BO's progress as it runs. Creates a canvas with
 two plots: the first plot shows the score of every trial and the
 second shows the distance between the last consecutive steps. Don't
 forget to call `%matplotlib` at the start of the cell if you are
@@ -1134,7 +1187,7 @@ pipeline. If it hasn't got any, a default metric per task is selected:
 </blockquote>
 <strong>greater_is_better: bool, optional (default=True)</strong>
 <blockquote>
-Wether the metric is a score function or a loss function,
+Whether the metric is a score function or a loss function,
 i.e. if True, a higher score is better and if False, lower is
 better. Will be ignored if the metric is a string or a scorer.
 </blockquote>
@@ -1187,7 +1240,7 @@ Strategy to fit and score the model selected after every step of the BO.
 </blockquote>
 <strong>plot_bo: bool, optional (default=False)</strong>
 <blockquote>
-Wether to plot the BO's progress as it runs. Creates a canvas with
+Whether to plot the BO's progress as it runs. Creates a canvas with
 two plots: the first plot shows the score of every trial and the
 second shows the distance between the last consecutive steps. Don't
 forget to call `%matplotlib` at the start of the cell if you are
@@ -1202,6 +1255,179 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
 </table>
 </div>
 <br />
+
+
+<a name="atom-transform"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">transform</strong>(X,
+                             standard_cleaner=True,
+                             scale=True,
+                             impute=True,
+                             encode=True,
+                             outliers=False,
+                             balance=False,
+                             feature_generation=True,
+                             feature_selection=True,
+                             verbose=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform new data through all the pre-processing steps. The outliers and balancer
+steps are not included in the default steps since they should only be applied
+on the training set.
+ <br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>standard_cleaner: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the standard cleaning step in the transformer.
+</blockquote>
+<strong>scale: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the scaler step in the transformer.
+</blockquote>
+<strong>impute: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the imputer step in the transformer.
+</blockquote>
+<strong>encode: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the encoder step in the transformer.
+</blockquote>
+<strong>outliers: bool, optional (default=False)</strong>
+<blockquote>
+Whether to apply the outliers step in the transformer.
+</blockquote>
+<strong>balance: bool, optional (default=False)</strong>
+<blockquote>
+Whether to apply the balance step in the transformer.
+</blockquote>
+<strong>feature_generation: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the feature_generation step in the transformer.
+</blockquote>
+<strong>feature_selection: bool, optional (default=True)</strong>
+<blockquote>
+Whether to apply the feature_selection step in the transformer.
+</blockquote>
+<strong>verbose: int, optional (default=None)</strong>
+<blockquote>
+Verbosity level of the output. If None, it uses the ATOM verbosity.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-predict"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">predict</strong>(X, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform the data and make predictions using the winning model in the pipeline.
+The model has to have a `predict` method.
+ <br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same arguments as the <a href="#atom-transform">transform</a> method to
+ include/exclude pre-processing steps from the transformer.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-predict-proba"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">predict_proba</strong>(X, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform the data and make probability predictions using the winning model in the pipeline.
+The model has to have a `predict_proba` method.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same arguments as the <a href="#atom-transform">transform</a> method to
+ include/exclude pre-processing steps from the transformer.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+
+<a name="atom-predict-log-proba"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">predict_log_proba</strong>(X, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform the data and make logarithmic probability predictions using the winning model in the pipeline.
+The model has to have a `predict_log_proba` method.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same arguments as the <a href="#atom-transform">transform</a> method to
+ include/exclude pre-processing steps from the transformer.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="atom-decision-function"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">decision_function</strong>(X, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform the data and run the decision function of the winning model in the pipeline.
+The model has to have a `decision_function` method.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same arguments as the <a href="#atom-transform">transform</a> method to
+ include/exclude pre-processing steps from the transformer.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
 
 
 
@@ -1476,7 +1702,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1515,7 +1741,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1559,7 +1785,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1599,7 +1825,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1642,7 +1868,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1685,7 +1911,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1730,7 +1956,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1773,7 +1999,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1816,7 +2042,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1868,7 +2094,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1915,7 +2141,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -1948,7 +2174,7 @@ Name of the models to plot. If None, all the models in the pipeline are selected
 </blockquote>
 <strong>normalize: bool, optional (default=False)</strong>
 <blockquote>
-Wether to normalize the matrix.
+Whether to normalize the matrix.
 </blockquote>
 <strong>title: string or None, optional (default=None)</strong>
 <blockquote>
@@ -1964,7 +2190,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -2018,7 +2244,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -2065,7 +2291,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -2124,7 +2350,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -2166,7 +2392,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>
@@ -2208,7 +2434,7 @@ Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
-Wether to render the plot.
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>

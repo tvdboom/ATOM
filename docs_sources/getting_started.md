@@ -22,7 +22,7 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-    atom.impute(strat_num='knn', strat_cat='most_frequent',  max_frac_rows=0.1)  
+    atom.impute(strat_num='knn', strat_cat='most_frequent',  min_frac_rows=0.1)  
     atom.encode(max_onehot=10, frac_to_other=0.05)  
     atom.outliers(max_sigma=4)  
     atom.balance(oversample=0.8, n_neighbors=15)  

@@ -53,7 +53,7 @@ def plot_correlation(self, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     # Compute the correlation matrix
@@ -101,19 +101,19 @@ def plot_PCA(self, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
-    if not hasattr(self, 'PCA'):
-        raise AttributeError("This plot is only availbale if you apply " +
+    if not hasattr(self.feature_selector, 'PCA'):
+        raise AttributeError("This plot is only available if you apply " +
                              "PCA on the dataset through the " +
                              "feature_selection method!")
 
-    var = np.array(self.PCA.explained_variance_ratio_)
-    var_all = np.array(self._PCA_all.explained_variance_ratio_)
+    var = np.array(self.feature_selector.PCA.explained_variance_ratio_)
+    var_all = np.array(self.feature_selector.PCA2.explained_variance_ratio_)
 
     fig, ax = plt.subplots(figsize=figsize)
-    plt.scatter(self.PCA.n_components_ - 1,
+    plt.scatter(self.feature_selector.PCA.n_components_ - 1,
                 var.sum(),
                 marker='*',
                 s=130,
@@ -121,12 +121,13 @@ def plot_PCA(self, title, figsize, filename, display):
                 edgecolors='b',
                 zorder=3,
                 label=f"Total variance retained: {round(var.sum(), 3)}")
-    plt.plot(range(0, self._PCA_all.n_components_),
+    plt.plot(range(0, self.feature_selector.PCA2.n_components_),
              np.cumsum(var_all),
              marker='o')
     plt.axhline(var.sum(), ls='--', color='k')
 
-    plt.title("PCA explained variances", fontsize=self.title_fontsize, pad=12)
+    title = "PCA explained variances" if title is None else title
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
     plt.xlabel('First N principal components',
                fontsize=self.label_fontsize,
@@ -164,26 +165,26 @@ def plot_components(self, show, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
-    if not hasattr(self, 'PCA'):
-        raise AttributeError("This plot is only availbale if you apply " +
+    if not hasattr(self.feature_selector, 'PCA'):
+        raise AttributeError("This plot is only available if you apply " +
                              "PCA on the dataset through the " +
                              "feature_selection method!")
 
     # Set parameters
     if show is None:
-        show = self.PCA.n_components_
-    elif show > self._PCA_all.n_components_:
-        show = self._PCA_all.n_components_
+        show = self.feature_selector.PCA.n_components_
+    elif show > self.feature_selector.PCA2.n_components_:
+        show = self.feature_selector.PCA2.n_components_
     elif show < 1:
         raise ValueError("Invalid value for the show parameter." +
                          f"Value should be >0, got {show}.")
     if figsize is None:  # Default figsize depends on features shown
         figsize = (10, int(4 + show/2))
 
-    var = np.array(self._PCA_all.explained_variance_ratio_)[:show]
+    var = np.array(self.feature_selector.PCA2.explained_variance_ratio_)[:show]
     indices = ['Component ' + str(i) for i in range(len(var))]
     scr = pd.Series(var, index=indices).sort_values()
 
@@ -193,9 +194,8 @@ def plot_components(self, show, title, figsize, filename, display):
     for i, v in enumerate(scr):
         ax.text(v + 0.005, i - 0.08, f'{v:.3f}', fontsize=self.tick_fontsize)
 
-    plt.title("PCA explained variance per component",
-              fontsize=self.title_fontsize,
-              pad=12)
+    title = "PCA explained variance per component" if title is None else title
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
     plt.xlabel('Explained variance ratio',
                fontsize=self.label_fontsize,
@@ -229,34 +229,35 @@ def plot_RFECV(self, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
-    if not hasattr(self, 'RFECV'):
-        raise AttributeError("This plot is only availbale if you apply " +
+    if not hasattr(self.feature_selector, 'RFECV'):
+        raise AttributeError("This plot is only available if you apply " +
                              "RFECV on the dataset through the " +
                              "feature_selection method!")
+    else:
+        RFECV = self.feature_selector.RFECV
 
     try:  # Define the y-label for the plot
-        ylabel = self.RFECV.get_params()['scoring'].name
+        ylabel = RFECV.get_params()['scoring'].name
     except AttributeError:
-        if self.RFECV.get_params()['scoring'] is None:
+        if RFECV.get_params()['scoring'] is None:
             ylabel = 'score'
         else:
-            ylabel = str(self.RFECV.get_params()['scoring'])
+            ylabel = str(RFECV.get_params()['scoring'])
 
     fig, ax = plt.subplots(figsize=figsize)
-    n_features = self.RFECV.get_params()['min_features_to_select']
-    xline = range(n_features,  n_features + len(self.RFECV.grid_scores_))
-    ax.axvline(xline[np.argmax(self.RFECV.grid_scores_)],
+    n_features = RFECV.get_params()['min_features_to_select']
+    xline = range(n_features,  n_features + len(RFECV.grid_scores_))
+    ax.axvline(xline[np.argmax(RFECV.grid_scores_)],
                ls='--',
                color='k',
                label=f'Best score: {round(max(self.RFECV.grid_scores_), 3)}')
     plt.plot(xline, self.RFECV.grid_scores_)
 
-    plt.title("RFE cross-validation scores",
-              fontsize=self.title_fontsize,
-              pad=12)
+    title = "RFE cross-validation scores" if title is None else title
+    plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
     plt.xlabel('Number of features', fontsize=self.label_fontsize, labelpad=12)
     plt.ylabel(ylabel, fontsize=self.label_fontsize, labelpad=12)
@@ -291,7 +292,7 @@ def plot_bagging(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     check_is_fitted(self._is_fitted)
@@ -354,7 +355,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self._has_sh:
@@ -435,7 +436,7 @@ def plot_learning_curve(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self._has_ts:
@@ -512,7 +513,7 @@ def plot_ROC(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -580,7 +581,7 @@ def plot_PRC(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -654,7 +655,7 @@ def plot_permutation_importance(self, models, show, n_repeats,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     # Set parameters
@@ -762,7 +763,7 @@ def plot_feature_importance(self, models, show,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     # Set parameters
@@ -844,7 +845,7 @@ def plot_confusion_matrix(self, models, normalize,
         pipeline are selected.
 
     normalize: bool, optional (default=False)
-       Wether to normalize the matrix.
+       whether to normalize the matrix.
 
     title: string or None, optional (default=None)
         Plot's title. If None, the default option is used.
@@ -856,7 +857,7 @@ def plot_confusion_matrix(self, models, normalize,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if self.task == 'regression':
@@ -981,7 +982,7 @@ def plot_threshold(self, models, metric, steps,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -1072,7 +1073,7 @@ def plot_probabilities(self, models, target,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if self.task == 'regression':
@@ -1168,7 +1169,7 @@ def plot_calibration(self, models, n_bins,
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -1218,7 +1219,8 @@ def plot_calibration(self, models, n_bins,
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
-    ax1.set_title('Calibration curve', fontsize=self.title_fontsize, pad=12)
+    title = 'Calibration curve' if title is None else title
+    ax1.set_title(title, fontsize=self.title_fontsize, pad=12)
     ax1.legend(loc="lower right", fontsize=self.label_fontsize)
     ax1.set_ylabel("Fraction of positives",
                    fontsize=self.label_fontsize,
@@ -1261,7 +1263,7 @@ def plot_gains(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -1296,8 +1298,7 @@ def plot_gains(self, models, title, figsize, filename, display):
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
-    if title is None:
-        title = "Cumulative gains curve"
+    title = "Cumulative gains curve" if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='lower right', fontsize=self.label_fontsize)
     plt.xlabel("Fraction of sample",
@@ -1336,7 +1337,7 @@ def plot_lift(self, models, title, figsize, filename, display):
         Name of the file (to save). If None, the figure is not saved.
 
     display: bool, optional (default=True)
-        Wether to render the plot.
+        whether to render the plot.
 
     """
     if not self.task.startswith('binary'):
@@ -1376,8 +1377,7 @@ def plot_lift(self, models, title, figsize, filename, display):
         else:
             raise ValueError(f"Model {model} not found in pipeline!")
 
-    if title is None:
-        title = "Lift curve"
+    title = "Lift curve" if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
     plt.legend(loc='upper right', fontsize=self.label_fontsize)
     plt.xlabel("Fraction of sample",
@@ -1385,7 +1385,6 @@ def plot_lift(self, models, title, figsize, filename, display):
                labelpad=12)
     plt.ylabel('Lift', fontsize=self.label_fontsize, labelpad=12)
     plt.xlim(0, 1)
-    # plt.ylim(0, 1.02)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
     fig.tight_layout()

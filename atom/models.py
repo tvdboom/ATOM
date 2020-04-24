@@ -33,7 +33,7 @@ Description: Module containing all the available models for the fit method
             Return a list of the bounds for the hyperparameters.
 
         get_init_values(self):
-            Return the default values of the model's hypertparameters.
+            Return the default values of the model's hyperparameters.
 
 
 To add a new model:
@@ -90,24 +90,26 @@ def set_init(class_, scaled=False):
         ATOM class.
 
     scaled: bool, optional (default=False)
-        Wether the model needs the features to be scaled.
+        whether the model needs the features to be scaled.
 
     """
-    # Create dict with data attributes
-    params = {'X_train': class_.X_train,
-              'X_test': class_.X_test}
-
-    if scaled and not class_._is_scaled:
-        try:  # Can fail if called from feature_selection
+    try:  # Can fail if called from feature_selection
+        # Create dict with data attributes
+        if scaled and not class_._is_scaled:
             params = {'X_train': class_.X_train_scaled,
                       'X_test': class_.X_test_scaled}
-        except AttributeError:
-            pass
+        else:
+            params = {'X_train': class_.X_train,
+                      'X_test': class_.X_test}
 
-    for attr in ('y_train', 'y_test'):
-        params[attr] = getattr(class_, attr)
+        for attr in ('y_train', 'y_test'):
+            params[attr] = getattr(class_, attr)
 
-    params['T'] = class_
+    except AttributeError:
+        params = {}
+
+    finally:
+        params['T'] = class_  # ATOM or FeatureSelector class
 
     return params
 
@@ -173,7 +175,7 @@ class MultinomialNaïveBayes(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[1, 0]])
 
 
@@ -206,7 +208,7 @@ class BernoulliNaïveBayes(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[1, 0]])
 
 
@@ -259,7 +261,7 @@ class Ridge(BaseModel):
                  'domain': np.linspace(0.05, 5, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[500, 1.0]])
 
 
@@ -292,7 +294,7 @@ class Lasso(BaseModel):
                  'domain': np.linspace(0.05, 5, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[500, 1.0]])
 
 
@@ -328,7 +330,7 @@ class ElasticNet(BaseModel):
                  'domain': np.linspace(0.05, 0.95, 19)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[1000, 1.0, 0.5]])
 
 
@@ -356,7 +358,7 @@ class BayesianRegression(BaseModel):
                  'domain': range(100, 1010, 10)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[300]])
 
 
@@ -400,12 +402,12 @@ class LogisticRegression(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 1.0, 0, 0]])
 
 
 class LinearDiscriminantAnalysis(BaseModel):
-    """Linear Discrimnant Analysis model."""
+    """Linear Discriminant Analysis model."""
 
     def __init__(self, *args):
         """Class initializer (contains super() to parent class)."""
@@ -437,12 +439,12 @@ class LinearDiscriminantAnalysis(BaseModel):
                  'domain': np.linspace(0.0, 1.0, 11)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[0, 0]])
 
 
 class QuadraticDiscriminantAnalysis(BaseModel):
-    """Quadratic Discrimnant Analysis model."""
+    """Quadratic Discriminant Analysis model."""
 
     def __init__(self, *args):
         """Class initializer (contains super() to parent class)."""
@@ -465,7 +467,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
                  'domain': np.linspace(0.0, 1.0, 11)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[0]])
 
 
@@ -477,7 +479,8 @@ class KNearestNeighbors(BaseModel):
         super().__init__(**set_init(*args, scaled=True))
         self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
 
-    def get_params(self, x):
+    @staticmethod
+    def get_params(x):
         """Return a dictionary of the model´s hyperparameters."""
         weights = ['distance', 'uniform']
         params = {'n_neighbors': int(x[0, 0]),
@@ -509,7 +512,7 @@ class KNearestNeighbors(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[5, 30, 2, 1]])
 
 
@@ -572,7 +575,7 @@ class DecisionTree(BaseModel):
                  'domain': np.linspace(0, 0.035, 8)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[0, 0, 10, 1.0, 2, 1, 0.0]])
 
 
@@ -628,7 +631,7 @@ class Bagging(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[10, 1.0, 1.0, 0, 1]])
 
 
@@ -704,7 +707,7 @@ class ExtraTrees(BaseModel):
                  'domain': np.linspace(0.5, 0.9, 5)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 1, 0.9]])
 
 
@@ -780,7 +783,7 @@ class RandomForest(BaseModel):
                  'domain': np.linspace(0.5, 0.9, 5)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 10, 1.0, 0, 2, 1, 0.0, 0, 0.9]])
 
 
@@ -817,7 +820,7 @@ class AdaBoost(BaseModel):
                  'domain': np.linspace(0.01, 1, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[50, 1]])
 
 
@@ -883,7 +886,7 @@ class GradientBoostingMachine(BaseModel):
                  'domain': np.linspace(0, 0.035, 8)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 0.1, 1.0, 3, 1.0, 0, 2, 1, 0.0]])
 
 
@@ -955,7 +958,7 @@ class XGBoost(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 0.1, 3, 0.0, 1, 1.0, 1.0, 0, 1]])
 
 
@@ -1027,7 +1030,7 @@ class LightGBM(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 0.1, 3, 31, 1, 20, 1.0, 1.0, 0, 0]])
 
 
@@ -1090,7 +1093,7 @@ class CatBoost(BaseModel):
                  'domain': (0, 1e-3, 0.01, 0.1, 1, 10, 30, 100)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[100, 0.1, 3, 1.0, 1.0, 0]])
 
 
@@ -1146,7 +1149,7 @@ class LinearSVM(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[1, 1, 1]])
 
 
@@ -1205,7 +1208,7 @@ class KernelSVM(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[1, 3, 0, 0, 1, 0]])
 
 
@@ -1253,7 +1256,7 @@ class PassiveAggressive(BaseModel):
                  'domain': range(2)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[0, 1, 1]])
 
 
@@ -1337,7 +1340,7 @@ class StochasticGradientDescent(BaseModel):
                  'domain': np.linspace(0.05, 1, 20)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[0, 2, 1e-4, 1, 0.1, 0.01, 2, 0.15, 0.25]])
 
 
@@ -1399,5 +1402,37 @@ class MultilayerPerceptron(BaseModel):
                  'domain': (1, 8, 32, 64)}]
 
     def get_init_values(self):
-        """Return the default values of the model's hypertparameters."""
+        """Return the default values of the model's hyperparameters."""
         return np.array([[20, 0, 0, 1e-4, 1e-3, 200, 32]])
+
+
+# << ============ Global variables ============ >>
+
+# List of all the available models
+model_list = dict(GP=GaussianProcess,
+                  GNB=GaussianNaïveBayes,
+                  MNB=MultinomialNaïveBayes,
+                  BNB=BernoulliNaïveBayes,
+                  OLS=OrdinaryLeastSquares,
+                  Ridge=Ridge,
+                  Lasso=Lasso,
+                  EN=ElasticNet,
+                  BR=BayesianRegression,
+                  LR=LogisticRegression,
+                  LDA=LinearDiscriminantAnalysis,
+                  QDA=QuadraticDiscriminantAnalysis,
+                  KNN=KNearestNeighbors,
+                  Tree=DecisionTree,
+                  Bag=Bagging,
+                  ET=ExtraTrees,
+                  RF=RandomForest,
+                  AdaB=AdaBoost,
+                  GBM=GradientBoostingMachine,
+                  XGB=XGBoost,
+                  LGB=LightGBM,
+                  CatB=CatBoost,
+                  lSVM=LinearSVM,
+                  kSVM=KernelSVM,
+                  PA=PassiveAggressive,
+                  SGD=StochasticGradientDescent,
+                  MLP=MultilayerPerceptron)

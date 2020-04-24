@@ -1,15 +1,16 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the fit method of the ATOM class.
 
-'''
+"""
 
 # Import packages
 import pytest
 import numpy as np
+import pandas as pd
 from sklearn.metrics import get_scorer, f1_score
 from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
@@ -24,13 +25,22 @@ X_bin, y_bin = load_breast_cancer(return_X_y=True)
 X_class, y_class = load_wine(return_X_y=True)
 X_reg, y_reg = load_boston(return_X_y=True)
 
+def load_australian_dataset(nrows=None):
+    """ Load the Australian weather dataset for binary classification """
+
+    X = pd.read_csv('../weatherAUS.csv', nrows=nrows)
+    y = X['RainTomorrow']
+    X = X.drop('RISK_MM', axis=1)  # Feature related to RainTomorrow
+    X = X.drop('Date', axis=1)  # Irrelevant feature
+    X = X.drop('RainTomorrow', axis=1)
+    return X, y
 
 # << ======================= Tests ========================= >>
 
 # << =================== Test parameters =================== >>
 
 def test_models_parameter():
-    ''' Assert that the models parameter is set correctly '''
+    """ Assert that the models parameter is set correctly """
 
     # Raises error when unknown, wrong or duplicate models
     atom = ATOMClassifier(X_dim4, y_dim4_class)
@@ -48,7 +58,7 @@ def test_models_parameter():
 
 
 def test_metric_parameter():
-    ''' Assert that the metric parameter is set correctly '''
+    """ Assert that the metric parameter is set correctly """
 
     # Test default metrics
     atom = ATOMClassifier(X_bin, y_bin)
@@ -89,14 +99,14 @@ def test_metric_parameter():
 
 
 def test_skip_iter_parameter():
-    ''' Assert that the skip_iter parameter is set correctly '''
+    """ Assert that the skip_iter parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.successive_halving, 'lda', skip_iter=-2)
 
 
 def test_max_iter_parameter():
-    ''' Assert that the max_iter parameter is set correctly '''
+    """ Assert that the max_iter parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', max_iter=-2)
@@ -104,7 +114,7 @@ def test_max_iter_parameter():
 
 
 def test_max_time_parameter():
-    ''' Assert that the max_time parameter is set correctly '''
+    """ Assert that the max_time parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', max_time=-2)
@@ -112,7 +122,7 @@ def test_max_time_parameter():
 
 
 def test_init_points_parameter():
-    ''' Assert that the init_points parameter is set correctly '''
+    """ Assert that the init_points parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', init_points=-2)
@@ -120,7 +130,7 @@ def test_init_points_parameter():
 
 
 def test_cv_parameter():
-    ''' Assert that the cv parameter is set correctly '''
+    """ Assert that the cv parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', cv=-2)
@@ -128,16 +138,16 @@ def test_cv_parameter():
 
 
 def test_bagging_parameter():
-    ''' Assert that the bagging parameter is set correctly '''
+    """ Assert that the bagging parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', bagging=-2)
 
 
-# << ================== Test functionality ================= >>
+# << ================== Test pipelines ================= >>
 
 def test_data_preparation():
-    ''' Assert that the data_preparation function works as intended '''
+    """ Assert that the data_preparation function works as intended """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models='lgb')
@@ -146,7 +156,7 @@ def test_data_preparation():
 
 
 def test_successive_halving():
-    ''' Assert that the successive_halving method works as intended '''
+    """ Assert that the successive_halving method works as intended """
 
     # Without bagging
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -168,7 +178,7 @@ def test_successive_halving():
 
 
 def test_skip_iter_scores():
-    ''' Assert that self.scores is correctly created when skip_iter > 0 '''
+    """ Assert that self.scores is correctly created when skip_iter > 0 """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.successive_halving(models=['tree', 'rf', 'xgb', 'lgb'],
@@ -180,7 +190,7 @@ def test_skip_iter_scores():
 
 
 def test_train_sizing():
-    ''' Assert that the train_sizing method works as intended '''
+    """ Assert that the train_sizing method works as intended """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing(models=['tree', 'rf', 'xgb', 'lgb'],
@@ -192,7 +202,7 @@ def test_train_sizing():
 
 
 def test_errors_in_models():
-    ''' Assert that errors when running models are handled correctly '''
+    """ Assert that errors when running models are handled correctly """
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.X.iloc[2, 3] = np.NaN  # Make it fail
@@ -205,7 +215,7 @@ def test_errors_in_models():
 
 
 def test_lower_case_model_attribute():
-    ''' Assert that model attributes can be called with lowercase as well '''
+    """ Assert that model attributes can be called with lowercase as well """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class,
                           random_state=1, verbose=1)  # vb=1 for coverage :D
@@ -214,7 +224,7 @@ def test_lower_case_model_attribute():
 
 
 def test_plot_bo():
-    ''' Assert that plot_bo works as intended '''
+    """ Assert that plot_bo works as intended """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline('tree', 'f1',  max_iter=15, init_points=10, plot_bo=True)
@@ -222,7 +232,7 @@ def test_plot_bo():
 
 
 def test_different_cv_values():
-    ''' Assert that changing the cv parameter works as intended '''
+    """ Assert that changing the cv parameter works as intended """
 
     # For classification
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -236,7 +246,7 @@ def test_different_cv_values():
 
 
 def test_model_attributes():
-    ''' Assert that the model subclass has all attributes set '''
+    """ Assert that the model subclass has all attributes set """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(models=['tree', 'pa'], max_iter=2)
@@ -261,7 +271,7 @@ def test_model_attributes():
 
 
 def test_bagging():
-    ''' Assert that bagging workas as intended '''
+    """ Assert that bagging workas as intended """
 
     # For metric needs proba
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -280,7 +290,7 @@ def test_bagging():
 
 
 def test_winner_attribute():
-    ''' Assert that the best model is attached to the winner attribute '''
+    """ Assert that the best model is attached to the winner attribute """
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(['lr', 'tree', 'lgb'], 'f1')
@@ -289,3 +299,93 @@ def test_winner_attribute():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.pipeline(['br', 'ols', 'tree'], 'max_error')
     assert atom.winner.name == 'Tree'
+
+
+# << ================== Test transforming methods ================= >>
+
+def test_transform_method():
+    """ Assert that the transform method works as intended """
+
+    X, y = load_australian_dataset()
+    atom = ATOMClassifier(X, y, random_state=1)
+    atom.impute(strat_num='median', strat_cat='remove')
+    atom.encode(max_onehot=None)
+    atom.pipeline('Tree', 'f1')
+
+    # With default arguments
+    X_trans = atom.transform(X)
+    assert X_trans.Location.dtype.kind in 'ifu'
+
+    # From model
+    X_trans = atom.Tree.transform(X)
+    assert X_trans.Location.dtype.kind in 'ifu'
+
+    # Changing arguments
+    X_trans = atom.transform(X, encode=False)
+    assert X_trans.Location.dtype.kind not in 'ifu'
+
+
+def test_predict_method():
+    """ Assert that the predict method works as intended """
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=3)
+
+    # Check if error is raised when its not fitted
+    pytest.raises(AttributeError, atom.predict, X_bin)
+
+    atom.pipeline('Tree', 'f1')
+    predictions1 = atom.predict(X_bin)
+    predictions2 = atom.Tree.predict(X_bin)
+
+    # Check if array only consists of 0 and 1
+    assert np.array_equal(predictions1, predictions1.astype(bool))
+    assert np.array_equal(predictions2, predictions2.astype(bool))
+
+
+def test_predict_proba_method():
+    """ Assert that the predict_proba method works as intended """
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=3)
+    atom.pipeline('Tree', 'f1')
+    predictions1 = atom.predict_proba(X_bin)
+    predictions2 = atom.Tree.predict_proba(X_bin)
+
+    # Check if array is 2-dimensional
+    assert predictions1.shape[1] == 2
+    assert predictions2.shape[1] == 2
+
+
+def test_predict_log_proba_method():
+    """ Assert that the predict_log_proba method works as intended """
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=3)
+    atom.pipeline('Tree', 'f1')
+    predictions1 = atom.predict_log_proba(X_bin)
+    predictions2 = atom.Tree.predict_log_proba(X_bin)
+
+    # Check if array is 2-dimensional
+    assert predictions1.shape[1] == 2
+    assert predictions2.shape[1] == 2
+
+
+def test_decision_function_method():
+    """ Assert that the predict_log_proba method works as intended """
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=3)
+    atom.pipeline('Tree', 'f1')
+
+    # When model hasn't got the attribute
+    pytest.raises(AttributeError, atom.decision_function, X_bin)
+    pytest.raises(AttributeError, atom.Tree.decision_function, X_bin)
+
+    atom.pipeline('lsvm', 'f1')
+    predictions1 = atom.decision_function(X_bin)
+    predictions2 = atom.lsvm.decision_function(X_bin)
+
+    # Check if array is 2-dimensional
+    assert isinstance(predictions1, np.ndarray)
+    assert isinstance(predictions2, np.ndarray)

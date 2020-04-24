@@ -72,15 +72,6 @@ def test_merger_X_y():
     assert df1.equals(df2)
 
 
-def test_target_when_y_is_none():
-    """ Assert that target is assigned correctly when y is None """
-
-    X, y = X_bin.copy(), y_bin.copy()
-    X['target'] = y  # Place y as last column of X
-    atom = ATOMClassifier(X)
-    assert atom.dataset.columns[-1], atom.target
-
-
 def test_target_when_last_column():
     """ Assert that target is assigned correctly when last column """
 
@@ -102,6 +93,14 @@ def test_y_in_X():
     """ Assert that the target column given by y is in X """
 
     pytest.raises(ValueError, ATOMClassifier, X_bin, y='test')
+
+
+def test_y_is_int():
+    """ Assert that the target column is assigned correctly given an int """
+
+    atom = ATOMClassifier(X_bin, y=-2)
+    assert atom.target == 'worst symmetry'
+    assert atom.dataset.columns[-1] == atom.target
 
 
 # << ====================== Test parameters ====================== >>
@@ -258,11 +257,11 @@ def test_task_assigning():
 
 # << ================ Test mapping target column ================ >>
 
-def test_encode_target_column():
-    """ Test the encoding of the target column """
+def test_label_encoder_target_column():
+    """ Assert that the label-encoder for the target column works """
 
-    atom = ATOMClassifier(X_dim4, y_dim4)
-    assert atom.dataset[atom.target].dtype.kind == 'i'
+    atom = ATOMClassifier(X_dim4, y_dim4, random_state=1)
+    assert np.all((atom.y == 0) | (atom.y == 1))
 
 
 def test_target_mapping():
@@ -273,6 +272,3 @@ def test_target_mapping():
 
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     assert atom.mapping == {'0.0': 0, '1.0': 1, '2.0': 2}
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    assert isinstance(atom.mapping, str)

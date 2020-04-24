@@ -1,11 +1,11 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the impute method of the ATOM class.
 
-'''
+"""
 
 # Import packages
 import pytest
@@ -18,7 +18,7 @@ from atom import ATOMClassifier
 # << ====================== Functions ====================== >>
 
 def load_df(dataset):
-    ''' Load dataset as pd.DataFrame '''
+    """ Load dataset as pd.DataFrame """
 
     data = np.c_[dataset.data, dataset.target]
     columns = np.append(dataset.feature_names, ["target"])
@@ -41,28 +41,28 @@ y_dim4 = [0, 1, 0, 1]
 # << =================== Test parameters =================== >>
 
 def test_strat_num_parameter():
-    ''' Assert that the strat_num parameter is set correctly '''
+    """ Assert that the strat_num parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     pytest.raises(ValueError, atom.impute, strat_num='test')
 
 
 def test_min_frac_rows_parameter():
-    ''' Assert that the min_frac_rows parameter is set correctly '''
+    """ Assert that the min_frac_rows parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     pytest.raises(ValueError, atom.impute, min_frac_rows=1.0)
 
 
 def test_min_frac_cols_parameter():
-    ''' Assert that the min_frac_cols parameter is set correctly '''
+    """ Assert that the min_frac_cols parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4)
     pytest.raises(ValueError, atom.impute, min_frac_cols=5.2)
 
 
 def test_missing_string():
-    ''' Assert that the missing parameter handles only a string correctly '''
+    """ Assert that the missing parameter handles only a string correctly """
 
     X = [[4, 1, 2], [3, 1, 2], ['r', 'a', 'b'], [2, 1, 1]]
     atom = ATOMClassifier(X, y_dim4)
@@ -71,32 +71,40 @@ def test_missing_string():
 
 
 def test_missing_extra_values():
-    ''' Assert that the missing parameter adds obligatory values '''
+    """ Assert that the missing parameter adds obligatory values """
 
-    X = [[np.nan, 1, 2], [None, 1, 2], ['', 'a', 'b'], [2, np.inf, 1]]
-    atom = ATOMClassifier(X, y_dim4)
-    atom.impute(strat_num='remove', strat_cat='remove', missing=['O', 'N'])
+    X = [[1, 1, 2], [None, 1, 2], ['a', 'a', 'b'], [2, np.inf, 1]]
+    atom = ATOMClassifier(X, y_dim4, random_state=1)
+    atom.impute(strat_num='remove',
+                strat_cat='remove',
+                missing=['O', 'N'],
+                min_frac_rows=0.1,
+                min_frac_cols=0.1)
     assert atom.dataset.isna().sum().sum() == 0
 
 
 def test_imputing_all_missing_values():
-    ''' Assert that all missing values are imputed in str and numeric '''
+    """ Assert that all missing values are imputed in str and numeric """
 
-    missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
-    for v in missing:
-        # Create new inputs with different missing values
-        Xs = [[[v, 1, 1], [2, 5, 2], [4, v, 1], [2, 1, 1]],
-              [[v, '1', '1'], ['2', '5', v], ['2', '1', '3'], ['3', '1', '1']]]
-        for X in Xs:
-            atom = ATOMClassifier(X, y_dim4, random_state=1)
-            atom.impute(strat_num='mean')
-            assert atom.dataset.isna().sum().sum() == 0
+    # For numerical columns
+    for v in [None, np.NaN, np.inf, -np.inf]:
+        X = [[v, 1, 1], [2, 5, 2], [4, v, 1], [2, 1, 1]]
+        atom = ATOMClassifier(X, y_dim4, random_state=1)
+        atom.impute(strat_num='mean')
+        assert atom.dataset.isna().sum().sum() == 0
+
+    # For categorical columns
+    for v in ['', '?', 'NA', 'nan', 'inf']:
+        X = [[v, '1', '1'], ['2', '5', v], ['2', '1', '3'], ['3', '1', '1']]
+        atom = ATOMClassifier(X, y_dim4, random_state=1)
+        atom.impute(strat_cat='most_frequent')
+        assert atom.dataset.isna().sum().sum() == 0
 
 
 # << ========= Test too many NaNs in rows and cols ========= >>
 
 def test_rows_too_many_nans():
-    ''' Assert that rows with too many NaN values are dropped '''
+    """ Assert that rows with too many NaN values are dropped """
 
     X, y = load_df(load_breast_cancer())
     for i in range(5):  # Add 5 rows with all NaN values
@@ -109,7 +117,7 @@ def test_rows_too_many_nans():
 
 
 def test_cols_too_many_nans():
-    ''' Assert that columns with too many NaN values are dropped '''
+    """ Assert that columns with too many NaN values are dropped """
 
     X, y = load_df(load_breast_cancer())
     for i in range(5):  # Add 5 cols with all NaN values
@@ -123,7 +131,7 @@ def test_cols_too_many_nans():
 # << ================ Test numeric columns ================ >>
 
 def test_imputing_numeric_remove():
-    ''' Assert that imputing remove for numerical values works '''
+    """ Assert that imputing remove for numerical values works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
     atom.impute(strat_num='remove')
@@ -132,16 +140,16 @@ def test_imputing_numeric_remove():
 
 
 def test_imputing_numeric_number():
-    ''' Assert that imputing a number for numerical values works '''
+    """ Assert that imputing a number for numerical values works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
-    atom.impute(strat_num=3.2)
+    atom.impute(strat_num=3.2, min_frac_cols=0.1, min_frac_rows=0.1)
     assert atom.dataset.iloc[2, 0] == 3.2
     assert atom.dataset.isna().sum().sum() == 0
 
 
 def test_imputing_numeric_knn():
-    ''' Assert that imputing numerical values with KNNImputer works '''
+    """ Assert that imputing numerical values with KNNImputer works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
     atom.impute(strat_num='knn')
@@ -150,7 +158,7 @@ def test_imputing_numeric_knn():
 
 
 def test_imputing_numeric_mean():
-    ''' Assert that imputing the mean for numerical values works '''
+    """ Assert that imputing the mean for numerical values works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
     atom.impute(strat_num='mean')
@@ -159,7 +167,7 @@ def test_imputing_numeric_mean():
 
 
 def test_imputing_numeric_median():
-    ''' Assert that imputing the median for numerical values works '''
+    """ Assert that imputing the median for numerical values works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
     atom.impute(strat_num='median')
@@ -168,7 +176,7 @@ def test_imputing_numeric_median():
 
 
 def test_imputing_numeric_most_frequent():
-    ''' Assert that imputing the most_frequent for numerical values works '''
+    """ Assert that imputing the most_frequent for numerical values works """
 
     atom = ATOMClassifier(X_dim4_missing, y_dim4, random_state=1)
     atom.impute(strat_num='most_frequent')
@@ -179,7 +187,7 @@ def test_imputing_numeric_most_frequent():
 # << ================ Test non-numeric columns ================ >>
 
 def test_imputing_non_numeric_string():
-    ''' Test imputing a string for non-numerical '''
+    """ Test imputing a string for non-numerical """
 
     atom = ATOMClassifier(X_str, y_dim4, random_state=1)
     atom.impute(strat_num='mean', strat_cat='3.2')
@@ -188,7 +196,7 @@ def test_imputing_non_numeric_string():
 
 
 def test_imputing_non_numeric_remove():
-    ''' Test imputing remove for non-numerical '''
+    """ Test imputing remove for non-numerical """
 
     atom = ATOMClassifier(X_str, y_dim4, random_state=1)
     atom.impute(strat_num='knn', strat_cat='remove')
@@ -197,7 +205,7 @@ def test_imputing_non_numeric_remove():
 
 
 def test_imputing_non_numeric_most_frequent():
-    ''' Test imputing most_frequent for non-numerical '''
+    """ Test imputing most_frequent for non-numerical """
 
     atom = ATOMClassifier(X_str, y_dim4, random_state=1)
     atom.impute(strat_num='knn', strat_cat='most_frequent')

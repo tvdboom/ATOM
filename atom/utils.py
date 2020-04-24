@@ -12,9 +12,38 @@ Description: Module containing utility functions.
 
 # Standard packages
 import logging
+import numpy as np
 import pandas as pd
 from time import time
 from datetime import datetime
+from typing import Union, Sequence
+
+
+# << ============ Global variables ============ >>
+
+# Variable types
+cal = Union[str, callable]
+scalar = Union[int, float]
+X_types = Union[dict, Sequence[Sequence], np.ndarray, pd.DataFrame]
+y_types = Union[int, str, list, tuple, dict, np.ndarray, pd.Series]
+train_types = Union[Sequence[scalar], np.ndarray]
+
+# Tuple of models that need to import an extra package
+optional_packages = (('XGB', 'xgboost'),
+                     ('LGB', 'lightgbm'),
+                     ('CatB', 'catboost'))
+
+# List of models that need feature scaling
+# Logistic regression can use regularization. Bayesian regression uses ridge
+scaling_models = ['OLS', 'Ridge', 'Lasso', 'EN', 'BR', 'LR', 'KNN',
+                  'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+
+# List of models that only work for regression/classification tasks
+only_classification = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
+only_regression = ['OLS', 'Lasso', 'EN', 'BR']
+
+# List of models that don't use the Bayesian Optimization
+no_BO = ['GP', 'GNB', 'OLS']
 
 
 # << ============ Functions ============ >>
@@ -70,7 +99,7 @@ def time_to_string(t_init):
 
     Parameters
     ----------
-    t_init: int
+    t_init: float
         Time to convert (in seconds).
 
     """
@@ -89,7 +118,7 @@ def time_to_string(t_init):
 def to_df(data, columns=None, pca=False):
     """Convert a dataset to pd.Dataframe.
 
-    PARAMETERS
+    Parameters
     ----------
     data: list, tuple or np.array
         Dataset to convert to a dataframe.
@@ -98,7 +127,7 @@ def to_df(data, columns=None, pca=False):
         Name of the columns in the dataset. If None, the names are autofilled.
 
     pca: bool
-        Wether the columns need to be called Features or Components.
+        whether the columns need to be called Features or Components.
 
     """
     if columns is None and not pca:
@@ -111,7 +140,7 @@ def to_df(data, columns=None, pca=False):
 def to_series(data, name=None):
     """Convert a column to pd.Series.
 
-    PARAMETERS
+    Parameters
     ----------
     data: list, tuple or np.array
         Data to convert.
@@ -128,10 +157,25 @@ def merge(X, y):
     return X.merge(y.to_frame(), left_index=True, right_index=True)
 
 
+def check_scaling(X):
+    """Check if the provided data is already scaled."""
+    mean = X.mean(axis=1).mean()
+    std = X.std(axis=1).mean()
+    return True if mean < 0.05 and 0.5 < std < 1.5 else False
+
+
+def variable_return(X, y):
+    """Return one or two arguments depending on if y is None."""
+    if y is None:
+        return X
+    else:
+        return X, y
+
+
 def check_is_fitted(is_fitted):
     """Check if the class has been fitted."""
     if not is_fitted:
-        raise AttributeError('Run the pipeline before calling this method!')
+        raise AttributeError("Run the pipeline before calling this method!")
 
 
 # << ============ Decorators ============ >>
@@ -171,7 +215,7 @@ def crash(f):
 
 
 def params_to_log(f):
-    """Save function's parameters to log file."""
+    """Save function's Parameters to log file."""
     def wrapper(*args, **kwargs):
         log = args[0].T.log if hasattr(args[0], 'T') else args[0].log
         kwargs_list = ['{}={!r}'.format(k, v) for k, v in kwargs.items()]

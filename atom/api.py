@@ -17,7 +17,7 @@ from typing import Optional, Union, Sequence
 
 # Own modules
 from .atom import ATOM
-from .utils import prepare_logger
+from .utils import X_types, y_types, prepare_logger
 
 
 # << ================= Classes ================= >>
@@ -26,17 +26,16 @@ class ATOMClassifier(ATOM):
     """ATOM class for classification tasks."""
 
     @typechecked
-    def __init__(
-            self,
-            X: Union[dict, Sequence[Sequence], np.ndarray, pd.DataFrame],
-            y: Union[None, str, dict, Sequence, np.ndarray, pd.Series] = None,
-            percentage: Union[int, float] = 100,
-            test_size: float = 0.3,
-            log: Optional[str] = None,
-            n_jobs: int = 1,
-            warnings: bool = False,
-            verbose: int = 0,
-            random_state: Optional[int] = None):
+    def __init__(self,
+                 X: X_types,
+                 y: y_types = -1,
+                 percentage: Union[int, float] = 100,
+                 test_size: float = 0.3,
+                 log: Optional[str] = None,
+                 n_jobs: int = 1,
+                 warnings: bool = False,
+                 verbose: int = 0,
+                 random_state: Optional[int] = None):
         """Class initializer.
 
         Parameters
@@ -44,8 +43,8 @@ class ATOMClassifier(ATOM):
         X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, sequence, np.array or pd.Series, optional (default=None)
-            - If None: the last column of X is selected as target column
+        y: int, str, sequence, np.array or pd.Series, optional (default=-1)
+            - If int: index of the column of X which is selected as target
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
 
@@ -68,7 +67,7 @@ class ATOMClassifier(ATOM):
             memory issues for large datasets.
 
         warnings: bool, optional (default=False)
-            Wether to show warnings when fitting the models.
+            whether to show warnings when fitting the models.
 
         verbose: int, optional (default=0)
             Verbosity level of the class. Possible values are:
@@ -97,17 +96,16 @@ class ATOMRegressor(ATOM):
     """ATOM class for regression tasks."""
 
     @typechecked
-    def __init__(
-            self,
-            X: Union[dict, Sequence[Sequence], np.ndarray, pd.DataFrame],
-            y: Union[None, str, dict, Sequence, np.ndarray, pd.Series] = None,
-            percentage: Union[int, float] = 100,
-            test_size: float = 0.3,
-            log: Optional[str] = None,
-            n_jobs: int = 1,
-            warnings: bool = False,
-            verbose: int = 0,
-            random_state: Optional[int] = None):
+    def __init__(self,
+                 X: X_types,
+                 y: y_types = -1,
+                 percentage: Union[int, float] = 100,
+                 test_size: float = 0.3,
+                 n_jobs: int = 1,
+                 warnings: bool = False,
+                 verbose: int = 0,
+                 log: Optional[str] = None,
+                 random_state: Optional[int] = None):
         """Class initializer.
 
         Parameters
@@ -115,8 +113,8 @@ class ATOMRegressor(ATOM):
         X: dict, sequence, np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features)
 
-        y: string, sequence, np.array or pd.Series, optional (default=None)
-            - If None: the last column of X is selected as target column
+        y: int, str, sequence, np.array or pd.Series, optional (default=-1)
+            - If int: index of the column of X which is selected as target
             - If string: name of the target column in X
             - Else: data target column with shape=(n_samples,)
 
@@ -125,10 +123,6 @@ class ATOMRegressor(ATOM):
 
         test_size: float, optional (default=0.3)
             Split fraction of the train and test set.
-
-        log: string or None, optional (default=None)
-            Name of the log file. 'auto' for default name with date and time.
-            None to not save any log.
 
         n_jobs: int, optional (default=1)
             Number of cores to use for parallel processing.
@@ -139,7 +133,7 @@ class ATOMRegressor(ATOM):
             memory issues for large datasets.
 
         warnings: bool, optional (default=False)
-            Wether to show warnings when fitting the models.
+            whether to show warnings when fitting the models.
 
         verbose: int, optional (default=0)
             Verbosity level of the class. Possible values are:
@@ -147,6 +141,10 @@ class ATOMRegressor(ATOM):
                 - 1 to print minimum information
                 - 2 to print average information
                 - 3 to print maximum information
+
+        log: string or None, optional (default=None)
+            Name of the log file. 'auto' for default name with date and time.
+            None to not save any log.
 
         random_state: int or None, optional (default=None)
             Seed used by the random number generator. If None, the random
