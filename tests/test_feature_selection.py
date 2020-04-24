@@ -9,7 +9,8 @@ Description: Unit tests for the feature_selection method of the ATOM class.
 
 # Import packages
 import pytest
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import f_regression
 from sklearn.datasets import load_breast_cancer, load_boston
 from atom import ATOMClassifier, ATOMRegressor
 
@@ -119,8 +120,24 @@ def test_winner_model_solver():
 def test_univariate_strategy():
     """ Assert that the univariate strategy works as intended """
 
+    # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='univariate',
+                           n_features=9,
+                           max_correlation=None)
+    assert len(atom.X.columns) == 9  # Assert number of features
+
+    # For regression tasks
+    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
+    atom.feature_selection(strategy='univariate',
+                           n_features=9,
+                           max_correlation=None)
+    assert len(atom.X.columns) == 9  # Assert number of features
+
+    # For custom solver
+    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
+    atom.feature_selection(strategy='univariate',
+                           solver=f_regression,
                            n_features=9,
                            max_correlation=None)
     assert len(atom.X.columns) == 9  # Assert number of features
@@ -140,9 +157,9 @@ def test_PCA_strategy():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='pca',
-                           n_features=12,
+                           n_features=0.7,
                            max_correlation=None)
-    assert len(atom.X.columns) == 12  # Assert number of features
+    assert len(atom.X.columns) == 21  # Assert number of features
 
 
 def test_PCA_components():

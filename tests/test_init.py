@@ -126,7 +126,7 @@ def test_log_parameter():
     atom.outliers()
     assert 1 == 1
 
-    atom = ATOMClassifier(X_bin, y_bin, log='auto')
+    atom = ATOMClassifier(X_bin, y_bin, log='auto', verbose=3)
     atom.outliers()
     assert 2 == 2
 

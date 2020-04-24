@@ -106,6 +106,10 @@ def test_plot_successive_halving():
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
+    # When the pipeline didn't run with successive_halving
+    atom.pipeline('tree')
+    pytest.raises(AttributeError, atom.plot_successive_halving)
+
     # When model is unknown
     atom.successive_halving(['tree', 'lgb'], 'f1')
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
@@ -128,6 +132,10 @@ def test_plot_learning_curve():
 
     # When fit is not called yet
     atom = ATOMClassifier(X_bin, y_bin)
+    pytest.raises(AttributeError, atom.plot_learning_curve)
+
+    # When the pipeline didn't run with train_sizing
+    atom.pipeline('tree')
     pytest.raises(AttributeError, atom.plot_learning_curve)
 
     # When model is unknown
@@ -378,7 +386,7 @@ def test_plot_lift():
     # When invalid model
     pytest.raises(ValueError, atom.plot_lift, models='unknown')
 
-    # When model with no rpedict_proba method
+    # When model with no predict_proba method
     pytest.raises(ValueError, atom.pa.plot_lift)
 
     # When correct

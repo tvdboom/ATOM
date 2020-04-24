@@ -217,11 +217,12 @@ def test_error_invalid_metric():
     pytest.raises(ValueError, atom.results, 'average_precision')
 
 
-def test_al_tasks():
+def test_all_tasks():
     """ Assert that the method works for all tasks """
 
     # For binary classification
     atom = ATOMClassifier(X_bin, y_bin)
+    pytest.raises(AttributeError, atom.results)
     atom.pipeline(models=['lda', 'lgb'], metric='f1', max_iter=0, bagging=3)
     atom.results()
     atom.results('jaccard')

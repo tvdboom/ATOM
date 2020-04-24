@@ -59,6 +59,14 @@ def test_frac_to_other():
 
 # << ================ Test encoding types ================ >>
 
+def test_raise_missing():
+    """ Assert that an error is raised when missing values in data """
+
+    X = [[np.NaN, 0, 1], ['y', 3, 4], ['n', 2, 7], ['n', 9, 10]]
+    atom = ATOMClassifier(X, y_dim4, test_size=0.25, random_state=1)
+    pytest.raises(ValueError, atom.encode, max_onehot=None)
+
+
 def test_label_encoder():
     """ Assert that the label-encoder works as intended """
 

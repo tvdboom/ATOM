@@ -266,6 +266,7 @@ def test_bagging():
 
     # For metric needs proba
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.pipeline, 'tree', bagging=-1)
     atom.pipeline(models=['tree', 'lgb'], max_iter=1, cv=1, bagging=5)
     assert hasattr(atom.Tree, 'bagging_scores')
 
@@ -305,12 +306,15 @@ def test_transform_method():
     atom.encode(max_onehot=None)
     atom.pipeline('Tree', 'f1')
 
+    # With wrong verbose
+    pytest.raises(ValueError, atom.transform, X, verbose=-1)
+
     # With default arguments
     X_trans = atom.transform(X)
     assert X_trans['Feature 2'].dtype.kind in 'ifu'
 
     # From model
-    X_trans = atom.Tree.transform(X)
+    X_trans = atom.Tree.transform(X, verbose=1)
     assert X_trans['Feature 2'].dtype.kind in 'ifu'
 
     # Changing arguments
