@@ -1,11 +1,11 @@
 # coding: utf-8
 
-'''
+"""
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
 Description: Unit tests for the plot methods in the ATOM and BaseModel classes.
 
-'''
+"""
 
 # Import packages
 import pytest
@@ -24,7 +24,7 @@ X_reg, y_reg = load_boston(return_X_y=True)
 # << ======================= Tests ========================= >>
 
 def test_plot_correlation():
-    ''' Assert that the plot_correlation method work as intended '''
+    """ Assert that the plot_correlation method work as intended """
 
     atom = ATOMClassifier(X_bin, y_bin)
     atom.plot_correlation(display=False)
@@ -32,7 +32,7 @@ def test_plot_correlation():
 
 
 def test_plot_PCA():
-    ''' Assert that the plot_PCA method work as intended '''
+    """ Assert that the plot_PCA method work as intended """
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
@@ -44,7 +44,7 @@ def test_plot_PCA():
 
 
 def test_plot_components():
-    ''' Assert that the plot_components method work as intended '''
+    """ Assert that the plot_components method work as intended """
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_components)
@@ -59,7 +59,7 @@ def test_plot_components():
 
 
 def test_plot_RFECV():
-    ''' Assert that the plot_RFECV method work as intended '''
+    """ Assert that the plot_RFECV method work as intended """
 
     atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_RFECV)  # When no RFECV attribute
@@ -79,7 +79,7 @@ def test_plot_RFECV():
 
 
 def test_plot_bagging():
-    ''' Assert that the plot_bagging method work as intended '''
+    """ Assert that the plot_bagging method work as intended """
 
     # When fit is not called yet
     atom = ATOMClassifier(X_bin, y_bin)
@@ -100,7 +100,7 @@ def test_plot_bagging():
 
 
 def test_plot_successive_halving():
-    ''' Assert that the plot_successive_halving method work as intended '''
+    """ Assert that the plot_successive_halving method work as intended """
 
     # When fit is not called yet
     atom = ATOMClassifier(X_bin, y_bin)
@@ -124,7 +124,7 @@ def test_plot_successive_halving():
 
 
 def test_plot_learning_curve():
-    ''' Assert that the plot_lerning_curve method work as intended '''
+    """ Assert that the plot_lerning_curve method work as intended """
 
     # When fit is not called yet
     atom = ATOMClassifier(X_bin, y_bin)
@@ -148,7 +148,7 @@ def test_plot_learning_curve():
 
 
 def test_plot_ROC():
-    ''' Assert that the plot_ROC method work as intended '''
+    """ Assert that the plot_ROC method work as intended """
 
     # When task is not binary
     atom = ATOMRegressor(X_reg, y_reg)
@@ -169,7 +169,7 @@ def test_plot_ROC():
 
 
 def test_plot_PRC():
-    ''' Assert that the plot_PRC method work as intended '''
+    """ Assert that the plot_PRC method work as intended """
 
     # When task is not binary
     atom = ATOMRegressor(X_reg, y_reg)
@@ -190,7 +190,7 @@ def test_plot_PRC():
 
 
 def test_plot_permutation_importance():
-    ''' Assert that the plot_permutation_importance method work as intended '''
+    """ Assert that the plot_permutation_importance method work as intended """
 
     atom = ATOMClassifier(X_bin, y_bin)
     atom.pipeline(['tree', 'lr'], 'f1', max_iter=0)
@@ -211,7 +211,7 @@ def test_plot_permutation_importance():
 
 
 def test_plot_feature_importance():
-    ''' Assert that the plot_feature_importance method work as intended '''
+    """ Assert that the plot_feature_importance method work as intended """
 
     # When model not a tree-based model
     atom = ATOMRegressor(X_reg, y_reg)
@@ -234,7 +234,7 @@ def test_plot_feature_importance():
 
 
 def test_plot_confusion_matrix():
-    ''' Assert that the plot_confusion_matrix method work as intended '''
+    """ Assert that the plot_confusion_matrix method work as intended """
 
     # When task is not classification
     atom = ATOMRegressor(X_reg, y_reg)
@@ -264,7 +264,7 @@ def test_plot_confusion_matrix():
 
 
 def test_plot_threshold():
-    ''' Assert that the plot_threshold method work as intended '''
+    """ Assert that the plot_threshold method work as intended """
 
     # When task is not binary
     atom = ATOMRegressor(X_reg, y_reg)
@@ -287,7 +287,7 @@ def test_plot_threshold():
 
 
 def test_plot_probabilities():
-    ''' Assert that the plot_probabilities method work as intended '''
+    """ Assert that the plot_probabilities method work as intended """
 
     # When task is not classification
     atom = ATOMRegressor(X_reg, y_reg)
@@ -307,7 +307,7 @@ def test_plot_probabilities():
     atom = ATOMClassifier(X_bin, y)
     atom.pipeline(['lda', 'qda'], 'f1', max_iter=0)
     atom.lda.plot_probabilities(target='a', display=False)
-    atom.plot_probabilities(target='a', display=False)
+    atom.plot_probabilities(target='b', display=False)
     assert 1 == 1
 
     # For target is numerical
@@ -319,7 +319,7 @@ def test_plot_probabilities():
 
 
 def test_plot_calibration():
-    ''' Assert that the plot_calibration method work as intended '''
+    """ Assert that the plot_calibration method work as intended """
 
     # When task is not binary classification
     atom = ATOMRegressor(X_reg, y_reg)
@@ -342,7 +342,7 @@ def test_plot_calibration():
 
 
 def test_plot_gains():
-    ''' Assert that the plot_gains method work as intended '''
+    """ Assert that the plot_gains method work as intended """
 
     # When task is not binary classification
     atom = ATOMRegressor(X_reg, y_reg)
@@ -365,7 +365,7 @@ def test_plot_gains():
 
 
 def test_plot_lift():
-    ''' Assert that the plot_lift method work as intended '''
+    """ Assert that the plot_lift method work as intended """
 
     # When task is not binary classification
     atom = ATOMRegressor(X_reg, y_reg)

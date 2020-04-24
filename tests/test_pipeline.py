@@ -25,15 +25,6 @@ X_bin, y_bin = load_breast_cancer(return_X_y=True)
 X_class, y_class = load_wine(return_X_y=True)
 X_reg, y_reg = load_boston(return_X_y=True)
 
-def load_australian_dataset(nrows=None):
-    """ Load the Australian weather dataset for binary classification """
-
-    X = pd.read_csv('../weatherAUS.csv', nrows=nrows)
-    y = X['RainTomorrow']
-    X = X.drop('RISK_MM', axis=1)  # Feature related to RainTomorrow
-    X = X.drop('Date', axis=1)  # Irrelevant feature
-    X = X.drop('RainTomorrow', axis=1)
-    return X, y
 
 # << ======================= Tests ========================= >>
 
@@ -306,7 +297,9 @@ def test_winner_attribute():
 def test_transform_method():
     """ Assert that the transform method works as intended """
 
-    X, y = load_australian_dataset()
+    X = [[2, 0, 'a'], [2, 3, 'a'], [5, 2, 'b'], [1, 2, 'a'], [1, 2, 'c'],
+         [2, 0, 'd'], [2, 3, 'd'], [5, 2, 'd'], [1, 2, 'a'], [1, 2, 'd']]
+    y = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
     atom = ATOMClassifier(X, y, random_state=1)
     atom.impute(strat_num='median', strat_cat='remove')
     atom.encode(max_onehot=None)
@@ -314,15 +307,15 @@ def test_transform_method():
 
     # With default arguments
     X_trans = atom.transform(X)
-    assert X_trans.Location.dtype.kind in 'ifu'
+    assert X_trans['Feature 2'].dtype.kind in 'ifu'
 
     # From model
     X_trans = atom.Tree.transform(X)
-    assert X_trans.Location.dtype.kind in 'ifu'
+    assert X_trans['Feature 2'].dtype.kind in 'ifu'
 
     # Changing arguments
     X_trans = atom.transform(X, encode=False)
-    assert X_trans.Location.dtype.kind not in 'ifu'
+    assert X_trans['Feature 2'].dtype.kind not in 'ifu'
 
 
 def test_predict_method():

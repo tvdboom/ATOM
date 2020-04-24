@@ -192,18 +192,6 @@ def test_scale():
     assert atom.dataset.iloc[:, 1].std() < 3
 
 
-def test_already_scaled():
-    """ Assert that the scale method does nothing when already scaled """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.scale()
-
-    atom2 = ATOMClassifier(atom.X, atom.y, random_state=1)
-    X_already_scaled = atom2.X.copy()
-    atom2.scale()
-    assert atom2.X.equals(X_already_scaled)
-
-
 # << ================ Test results ================== >>
 
 def test_error_not_fit():

@@ -168,7 +168,9 @@ def plot_components(self, show, title, figsize, filename, display):
         whether to render the plot.
 
     """
-    if not hasattr(self.feature_selector, 'PCA'):
+    condition1 = hasattr(self, 'feature_selector')
+    condition2 = hasattr(self.feature_selector, 'PCA')
+    if not condition1 or not condition2:
         raise AttributeError("This plot is only available if you apply " +
                              "PCA on the dataset through the " +
                              "feature_selection method!")
@@ -232,7 +234,9 @@ def plot_RFECV(self, title, figsize, filename, display):
         whether to render the plot.
 
     """
-    if not hasattr(self.feature_selector, 'RFECV'):
+    condition1 = hasattr(self, 'feature_selector')
+    condition2 = hasattr(self.feature_selector, 'RFECV')
+    if not condition1 or not condition2:
         raise AttributeError("This plot is only available if you apply " +
                              "RFECV on the dataset through the " +
                              "feature_selection method!")
@@ -253,8 +257,8 @@ def plot_RFECV(self, title, figsize, filename, display):
     ax.axvline(xline[np.argmax(RFECV.grid_scores_)],
                ls='--',
                color='k',
-               label=f'Best score: {round(max(self.RFECV.grid_scores_), 3)}')
-    plt.plot(xline, self.RFECV.grid_scores_)
+               label=f'Best score: {round(max(RFECV.grid_scores_), 3)}')
+    plt.plot(xline, RFECV.grid_scores_)
 
     title = "RFE cross-validation scores" if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
@@ -263,7 +267,7 @@ def plot_RFECV(self, title, figsize, filename, display):
     plt.ylabel(ylabel, fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
-    plt.xlim(n_features - 0.5, n_features + len(self.RFECV.grid_scores_) - 0.5)
+    plt.xlim(n_features - 0.5, n_features + len(RFECV.grid_scores_) - 0.5)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
     fig.tight_layout()
     if filename is not None:
