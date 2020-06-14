@@ -16,13 +16,13 @@ ATOM is built on top of several existing Python libraries. The required
 
 * **[numpy](https://numpy.org/)** (>=1.17.2)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
-* **[pandas](https://pandas.pydata.org/)** (>=1.0.1)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.22)
+* **[pandas](https://pandas.pydata.org/)** (>=1.0.3)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.23.1)
+* **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.7.4)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
-* **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
+* **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
-* **[gpyopt](https://sheffieldml.github.io/GPyOpt/)** (>=1.2.5)
 * **[matplotlib](https://matplotlib.org/)** (>=3.1.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
 

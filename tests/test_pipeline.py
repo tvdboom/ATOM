@@ -30,74 +30,8 @@ X_reg, y_reg = load_boston(return_X_y=True)
 
 # << =================== Test parameters =================== >>
 
-def test_models_parameter():
-    """ Assert that the models parameter is set correctly """
-
-    # Raises error when unknown, wrong or duplicate models
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.pipeline, models='test')
-    pytest.raises(ValueError, atom.pipeline, models='OLS')
-    pytest.raises(ValueError, atom.pipeline, models=['lda', 'lda'])
-
-    atom = ATOMRegressor(X_dim4, y_dim4_reg)
-    pytest.raises(ValueError, atom.pipeline, models='lda', metric='r2')
-
-    # Makes it a list
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline('lr', 'precision', max_iter=0)
-    assert isinstance(atom.models, list)
-
-
-def test_metric_parameter():
-    """ Assert that the metric parameter is set correctly """
-
-    # Test default metrics
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline('lr')
-    assert atom.metric.name == 'f1'
-
-    atom = ATOMClassifier(X_class, y_class)
-    atom.pipeline('lr')
-    assert atom.metric.name == 'f1_weighted'
-
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('ols')
-    assert atom.metric.name == 'r2'
-
-    # Test unknown metric
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.pipeline, models='lda', metric='unknown')
-
-    # Test custom metric
-    def metric_func(x, y):
-        return x, y
-    pytest.raises(ValueError, atom.pipeline, models='lda', metric=metric_func)
-
-    atom.pipeline('lr', metric=f1_score)
-    assert 1 == 1
-
-    # Test scoring metric
-    atom = ATOMRegressor(X_dim4, y_dim4_reg)
-    scorer = get_scorer('neg_mean_squared_error')
-    atom.pipeline('ols', metric=scorer)
-    assert 2 == 2
-
-    # Test same metric as last run
-    atom = ATOMRegressor(X_dim4, y_dim4_reg)
-    atom.pipeline('ols', metric='max_error')
-    atom.pipeline('br')
-    assert atom.metric.name == 'max_error'
-
-
-def test_skip_iter_parameter():
-    """ Assert that the skip_iter parameter is set correctly """
-
-    atom = ATOMClassifier(X_dim4, y_dim4_class)
-    pytest.raises(ValueError, atom.successive_halving, 'lda', skip_iter=-2)
-
-
 def test_max_iter_parameter():
-    """ Assert that the max_iter parameter is set correctly """
+    """ Assert that the n_calls parameter is set correctly """
 
     atom = ATOMClassifier(X_dim4, y_dim4_class)
     pytest.raises(ValueError, atom.pipeline, 'lda', 'f1', max_iter=-2)
@@ -386,3 +320,17 @@ def test_decision_function_method():
     # Check if array is 2-dimensional
     assert isinstance(predictions1, np.ndarray)
     assert isinstance(predictions2, np.ndarray)
+
+
+def test_score_method():
+    """ Assert that the score method works as intended """
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=3)
+    atom.pipeline('Tree', 'f1')
+    predictions1 = atom.score(X_bin, y_bin)
+    predictions2 = atom.Tree.score(X_bin, y_bin)
+
+    # Check if output is a number
+    assert isinstance(predictions1, float)
+    assert isinstance(predictions2, float)

@@ -7,7 +7,7 @@ repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ''
 docs_dir: docs_sources/
 site_dir: docs/
-theme: readthedocs
+theme: lumen
 
 markdown_extensions:
   - tables
@@ -19,7 +19,13 @@ copyright: © Copyright 2020, by tvdboom.
 nav:
 - Home: index.md
 - Getting started: getting_started.md
-- API: api.md
+- API:
+  - ATOMClassifier: api.md
+  - ATOMRegressor: api.md
+- Data cleaning: data_cleaning.md
+- Feature selection: feature_selection.md
+- Pipeline: pipeline.md
+- Plots: plots.md
 - Examples: examples.md
 - Dependencies: dependencies.md
 - License: license.md

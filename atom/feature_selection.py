@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the feature selection and insertion estimators.
+Description: Module containing the feature selection and generator estimators.
 
 """
 
@@ -12,11 +12,12 @@ Description: Module containing the feature selection and insertion estimators.
 # Standard packages
 import numpy as np
 import pandas as pd
-from typing import Optional, Union
-from sklearn.base import BaseEstimator
+from typeguard import typechecked
+from typing import Optional, Union, Tuple
 
-# Third party packages
+# Other packages
 from gplearn.genetic import SymbolicTransformer
+from sklearn.base import BaseEstimator
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
@@ -24,21 +25,28 @@ from sklearn.feature_selection import (
     )
 
 # Own modules
-from .models import model_list
-from .data_cleaning import DataCleanerEstimator, Scaler
-from .utils import scalar, variable_return, to_df, check_scaling
+from .models import MODEL_LIST, get_model_name
+from .data_cleaning import BaseCleaner, Scaler
+from .utils import (
+    X_TYPES, Y_TYPES, variable_return, to_df, check_scaling,
+    check_is_fitted, composed, crash
+    )
+from .plots import BasePlotter, plot_pca, plot_components, plot_rfecv
 
 
 # << ================ Classes ================= >>
 
-class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
+class FeatureGenerator(BaseEstimator, BaseCleaner):
     """Create new features using a genetic algorithm."""
 
     def __init__(self,
                  n_features: int = 2,
                  generations: int = 20,
                  population: int = 500,
-                 **kwargs):
+                 n_jobs: int = 1,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,
+                 random_state: Optional[int] = None):
         """Initialize class.
 
         Use a genetic algorithm to create new combinations of existing
@@ -63,11 +71,34 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         population: int, optional (default=500)
             Number of programs in each generation.
 
-        **kwargs
-            Additional parameters for the estimator.
+        n_jobs: int, optional (default=1)
+            Number of cores to use for parallel processing.
+                - If -1, use all available cores
+                - If <-1, use available_cores - 1 + value
+
+            Beware that using multiple processes on the same machine may
+            cause memory issues for large datasets.
+
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
+
+        random_state: int or None, optional (default=None)
+            Seed used by the random number generator. If None, the random
+            number generator is the RandomState instance used by `np.random`.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         logger=logger,
+                         random_state=random_state)
 
         # Check Parameters
         if population < 100:
@@ -92,7 +123,8 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         self.genetic_algorithm = None
         self.genetic_features = None
 
-    def fit(self, X, y):
+    @composed(crash, typechecked)
+    def fit(self, X: X_TYPES, y: Y_TYPES):
         """Fit the individual encoders on each column.
 
         Parameters
@@ -100,15 +132,18 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
         self: FeatureInsertor
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
         function_set = ['add', 'sub', 'mul', 'div', 'sqrt', 'log', 'abs',
                         'neg', 'inv', 'max', 'min', 'sin', 'cos', 'tan']
@@ -127,10 +162,10 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
                                 random_state=self.random_state)
         self.genetic_algorithm.fit(X, y)
 
-        self._is_fitted = True
         return self
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the encoding transformations.
 
         Parameters
@@ -138,7 +173,7 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: None
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
             Does nothing. Only for continuity of API. Is returned unchanged if
             provided.
 
@@ -148,10 +183,10 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
             Dataframe containing the newly generated features.
 
         """
-        self._check_is_fitted()
-        X, y = self.prepare_input(X, y)
+        check_is_fitted(self, ['genetic_algorithm', 'genetic_features'])
+        X, y = self._prepare_input(X, y)
 
-        self._log("Running genetic algorithm...", 1)
+        self.log("Running genetic algorithm...", 1)
 
         new_features = self.genetic_algorithm.transform(X)
 
@@ -180,9 +215,9 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
 
         # Check if any new features remain in the loop
         if len(descript) == 0:
-            self._log("WARNING! The genetic algorithm couldn't find any " +
-                      "improving non-linear features!", 1)
-            return X, y
+            self.log("WARNING! The genetic algorithm couldn't find any " +
+                     "improving non-linear features!", 1)
+            return variable_return(X, y)
 
         # Get indices of the best features
         if len(descript) > self.n_features:
@@ -200,11 +235,11 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         # Create dataframe attribute
         data = {'Name': names, 'Description': descript, 'Fitness': fitness}
         self.genetic_features = pd.DataFrame(data)
-        self._log("---------------------------------------------------" +
-                  "---------------------------------------", 2)
+        self.log("---------------------------------------------------" +
+                 "---------------------------------------", 2)
 
         for feature in descript:
-            self._log(f" --> New feature {feature} added to the dataset.", 1)
+            self.log(f" --> New feature {feature} added to the dataset.", 1)
 
         X = pd.DataFrame(np.hstack((X, new_features)),
                          columns=X.columns.to_list() + names)
@@ -212,15 +247,19 @@ class FeatureGenerator(BaseEstimator, DataCleanerEstimator):
         return variable_return(X, y)
 
 
-class FeatureSelector(BaseEstimator, DataCleanerEstimator):
+class FeatureSelector(BaseEstimator, BaseCleaner, BasePlotter):
     """Apply feature selection techniques."""
 
     def __init__(self,
                  strategy: Optional[str] = None,
                  solver: Optional[Union[str, callable]] = None,
-                 n_features: Optional[scalar] = None,
-                 max_frac_repeated: Optional[scalar] = 1.,
-                 max_correlation: Optional[float] = 0.98,
+                 n_features: Optional[Union[int, float]] = None,
+                 max_frac_repeated: Optional[Union[int, float]] = 1.,
+                 max_correlation: Optional[float] = 1.,
+                 n_jobs: int = 1,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,
+                 random_state: Optional[int] = None,
                  **kwargs):
         """Initialize class.
 
@@ -262,7 +301,7 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
                     + 'mutual_info_regression'
                     + 'chi2'
                     + Any function taking two arrays (X, y), and returning
-                      arrays (scores, pvalues). See the documentation.
+                      arrays (scores, p-values). See the documentation.
                 - for 'PCA', choose from:
                     + 'auto' (default)
                     + 'full'
@@ -295,75 +334,103 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
             variance, i.e. remove the features that have the same value in all
             samples. None to skip this step.
 
-        max_correlation: float or None, optional (default=0.98)
+        max_correlation: float or None, optional (default=1.)
             Minimum value of the Pearson correlation coefficient to identify
             correlated features. A dataframe of the removed features and their
             correlation values can be accessed through the collinear attribute.
             None to skip this step.
 
+        n_jobs: int, optional (default=1)
+            Number of cores to use for parallel processing.
+                - If -1, use all available cores
+                - If <-1, use available_cores - 1 + value
+
+            Beware that using multiple processes on the same machine may
+            cause memory issues for large datasets.
+
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
+
+        random_state: int or None, optional (default=None)
+            Seed used by the random number generator. If None, the random
+            number generator is the RandomState instance used by `np.random`.
+
         **kwargs
-            Additional parameters for the estimator.
+            Additional keyword arguments for the strategy's estimator.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         logger=logger,
+                         random_state=random_state)
 
-        # Check Parameters
-        if strategy is not None:
-            if strategy.lower() == 'univariate':
-                solvers_dct = \
-                    dict(f_classif=f_classif,
-                         f_regression=f_regression,
-                         mutual_info_classif=mutual_info_classif,
-                         mutual_info_regression=mutual_info_regression,
-                         chi2=chi2)
+        # Check parameters
+        strats = ['univariate', 'pca', 'sfm', 'rfe', 'rfecv']
+        if strategy.lower() not in strats:
+            raise ValueError("Invalid value for the strategy parameter. " +
+                             "Choose from: univariate, PCA, SFM, RFE or " +
+                             "RFECV.")
+        if strategy.lower() == 'univariate':
+            solvers_dct = dict(f_classif=f_classif,
+                               f_regression=f_regression,
+                               mutual_info_classif=mutual_info_classif,
+                               mutual_info_regression=mutual_info_regression,
+                               chi2=chi2)
 
-                if solver is None and self.task == 'regression':
-                    solver = f_regression
-                elif solver is None:
-                    solver = f_classif
-                elif solver in solvers_dct.keys():
-                    solver = solvers_dct[solver]
-                elif isinstance(solver, str):
-                    raise ValueError("Unknown solver. Choose from: {}."
-                                     .format(', '.join(solvers_dct.keys())))
+            if solver in solvers_dct:
+                solver = solvers_dct[self.solver]
+            elif isinstance(solver, str):
+                raise ValueError("Unknown solver. Choose from: {}."
+                                 .format(', '.join(solvers_dct)))
 
-            elif strategy.lower() == 'pca':
-                solver = 'auto' if solver is None else solver
+        elif strategy.lower() == 'pca':
+            solver = 'auto' if solver is None else solver
 
-            elif strategy.lower() in ['sfm', 'rfe', 'rfecv']:
-                if solver is None:
-                    if self.winner is None:
-                        raise ValueError("Select a model for the solver!")
-                    else:
-                        solver = self.winner.best_model_fit
+        elif strategy.lower() in ['sfm', 'rfe', 'rfecv']:
+            if not solver:
+                raise ValueError("Select a model for the solver!")
+            elif isinstance(solver, str):
+                # Assign goal depending on solver's ending
+                if solver[-6:] == '_class':
+                    self.goal = 'classification'
+                    solver = solver[:-6]
+                elif solver[-4:] == '_reg':
+                    self.goal = 'regression'
+                    solver = solver[:-4]
+                else:
+                    raise ValueError(
+                        "Invalid value for the solver parameter. The model's" +
+                        "name should be followed by _class or _reg to " +
+                        "indicate a classification or regression task, got " +
+                        f"{solver}.")
 
-                elif isinstance(solver, str):
-                    if solver.lower() not in map(str.lower, model_list.keys()):
-                        raise ValueError("Unknown value for the solver " +
-                                         f"parameter, got {solver}. Try " +
-                                         f"one of {model_list.keys()}.")
-                    else:  # Set to right model name and call estimator
-                        for m in model_list.keys():
-                            if m.lower() == solver.lower():
-                                solver = model_list[m](self).get_model()
-                                break
-
-            else:
-                raise ValueError("Invalid value for the strategy parameter. " +
-                                 "Choose from: univariate, PCA, SFM, " +
-                                 "RFE or RFECV.")
+                if solver.lower() not in map(str.lower, MODEL_LIST.keys()):
+                    raise ValueError("Unknown value for the solver " +
+                                     f"parameter, got {solver}. Try " +
+                                     f"one of {MODEL_LIST.keys()}.")
+                else:  # Set to right model name and call model's method
+                    model_class = MODEL_LIST[get_model_name(solver)]
+                    solver = model_class(self).get_model()
 
         if n_features is not None and n_features <= 0:
             raise ValueError("Invalid value for the n_features parameter." +
                              f"Value should be >0, got {n_features}.")
         if max_frac_repeated is not None and not 0 <= max_frac_repeated <= 1:
-            raise ValueError("Invalid value for the max_frac_repeated param" +
-                             "eter. Value should be between 0 and 1, got {}."
-                             .format(max_frac_repeated))
+            raise ValueError("Invalid value for the max_frac_repeated" +
+                             "parameter. Value should be between 0 and 1, " +
+                             f"got {max_frac_repeated}.")
         if max_correlation is not None and not 0 <= max_correlation <= 1:
-            raise ValueError("Invalid value for the max_correlation param" +
-                             "eter. Value should be between 0 and 1, got {}."
-                             .format(max_correlation))
+            raise ValueError("Invalid value for the max_correlation" +
+                             "parameter. Value should be between 0 and 1, " +
+                             f"got {max_correlation}.")
 
         # Define attributes
         self.strategy = strategy
@@ -371,23 +438,27 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
         self.n_features = n_features
         self.max_frac_repeated = max_frac_repeated
         self.max_correlation = max_correlation
+        self.kwargs = kwargs
 
         self.collinear = None
         self.univariate = None
         self.scaler = None
         self.PCA = None
-        self.PCA2 = None
         self.SFM = None
         self.RFE = None
         self.RFECV = None
+        self._is_fitted = False
 
-    def remove_low_variance(self, X):
+    def _remove_low_variance(self, X, _vb=2):
         """Remove features with too low variance.
 
         Parameters
         ----------
         X: pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
+
+        _vb: int, optional (default=2)
+            Internal parameter to silence the fit method. If default, prints.
 
         Returns
         -------
@@ -400,15 +471,14 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
             for u, c in zip(unique, count):
                 # If count is larger than fraction of total...
                 if c > self.max_frac_repeated * len(X):
-                    self._log(f" --> Feature {col} was removed due to " +
-                              f"low variance. Value {u} repeated in " +
-                              f"{round(c/len(X)*100., 1)}% of rows.",
-                              2)
+                    self.log(f" --> Feature {col} was removed due to " +
+                             f"low variance. Value {u} repeated in " +
+                             f"{round(c/len(X)*100., 1)}% of rows.", _vb)
                     X.drop(col, axis=1, inplace=True)
                     break
         return X
 
-    def remove_collinear(self, X):
+    def _remove_collinear(self, X, _vb=2):
         """Remove collinear features.
 
         Finds pairs of collinear features based on the Pearson
@@ -422,20 +492,23 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
         X: pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
+        _vb: int, optional (default=2)
+            Internal parameter to silence the fit method. If default, prints.
+
         Returns
         -------
         X: pd.DataFrame
             Dataframe with no highly correlated features.
 
         """
-        limit = self.max_correlation
+        max_ = self.max_correlation
         mtx = X.corr()  # Pearson correlation coefficient matrix
 
         # Extract the upper triangle of the correlation matrix
         upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
 
         # Select the features with correlations above the threshold
-        to_drop = [i for i in upper.columns if any(abs(upper[i]) > limit)]
+        to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
 
         # Dataframe to hold correlated pairs
         self.collinear = pd.DataFrame(columns=['drop_feature',
@@ -443,14 +516,13 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
                                                'correlation_value'])
 
         # Iterate to record pairs of correlated features
-        for column in to_drop:
+        for col in to_drop:
             # Find the correlated features
-            corr_features = list(upper.index[abs(upper[column]) > limit])
+            corr_features = list(upper.index[abs(upper[col]) > max_])
 
             # Find the correlated values
-            corr_values = list(round(
-                upper[column][abs(upper[column]) > limit], 5))
-            drop_features = set([column for _ in corr_features])
+            corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
+            drop_features = set([col for _ in corr_features])
 
             # Add to class attribute
             self.collinear = self.collinear.append(
@@ -459,12 +531,13 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
                  'correlation_value': ', '.join(map(str, corr_values))},
                 ignore_index=True)
 
-            self._log(f" --> Feature {column} was removed due to " +
-                      "collinearity with another feature.", 2)
+            self.log(f" --> Feature {col} was removed due to " +
+                     "collinearity with another feature.", _vb)
 
         return X.drop(to_drop, axis=1)
 
-    def fit(self, X, y):
+    @composed(crash, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the data to the selected strategy.
 
         Parameters
@@ -472,60 +545,50 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, np.array, pd.Series or None
-            Target column index, name or array-like, with shape=(n_samples,).
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
         self: FeatureSelector
 
         """
-        X, y = self.prepare_input(X, y)
-        self._is_fitted = True
+        X, y = self._prepare_input(X, y)
 
         # Remove features with too low variance
         if self.max_frac_repeated is not None:
-            X = self.remove_low_variance(X)
+            X = self._remove_low_variance(X, _vb=10)
 
         # Remove features with too high correlation
         if self.max_correlation is not None:
-            X = self.remove_collinear(X)
-
-        # Set n_features as all or fraction of total
-        if self.n_features is None:
-            self.n_features = X.shape[1]
-        elif self.n_features < 1:
-            self.n_features = int(self.n_features * X.shape[1])
+            X = self._remove_collinear(X, _vb=10)
 
         # Perform selection based on strategy
         if self.strategy is None:
+            self._is_fitted = True
             return self  # Exit feature_selection
 
-        if self.strategy.lower() == 'univariate':
+        elif self.strategy.lower() == 'univariate':
             self.univariate = SelectKBest(self.solver, k=self.n_features)
             self.univariate.fit(X, y)
 
         elif self.strategy.lower() == 'pca':
             # Always fit in case the data to transform is not scaled
-            self.scaler = Scaler(verbose=self.verbose).fit(X)
+            self.scaler = Scaler().fit(X)
             if not check_scaling(X):
                 X = self.scaler.transform(X)
 
             # Define PCA
-            self.PCA = PCA(n_components=self.n_features,
+            self.PCA = PCA(n_components=None,
                            svd_solver=self.solver,
                            **self.kwargs)
             self.PCA.fit(X)
-
-            # Another PCA object to get the explained variances for all the
-            # components for the plots
-            self.PCA2 = PCA(n_components=None,
-                            svd_solver=self.solver,
-                            **self.kwargs)
-            self.PCA2.fit(X)
+            self.PCA.n_components_ = self.n_features  # Number of components
 
         elif self.strategy.lower() == 'sfm':
-
             # If any of these attr exists, model is already fitted
             condition1 = hasattr(self.solver, 'coef_')
             condition2 = hasattr(self.solver, 'feature_importances_')
@@ -547,19 +610,17 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
             if self.n_features == X.shape[1]:
                 self.n_features = 1
 
-            # If pipeline ran already, use selected metric
-            if hasattr(self, 'metric') and 'scoring' not in self.kwargs.keys():
-                self.kwargs['scoring'] = self.metric
-
             self.RFECV = RFECV(estimator=self.solver,
                                min_features_to_select=self.n_features,
                                n_jobs=self.n_jobs,
                                **self.kwargs)
             self.RFECV.fit(X, y)
 
+        self._is_fitted = True
         return self
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Transform the data according to the selected strategy.
 
         Parameters
@@ -567,7 +628,7 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: None
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
             Does nothing. Only for continuity of API. Is returned unchanged if
             provided.
 
@@ -577,18 +638,18 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
             Copy of the feature dataset.
 
         """
-        self._check_is_fitted()
-        X, y = self.prepare_input(X, y)
+        check_is_fitted(self, '_is_fitted')
+        X, y = self._prepare_input(X, y)
 
-        self._log("Performing feature selection...", 1)
+        self.log("Performing feature selection...", 1)
 
         # Remove features with too low variance
         if self.max_frac_repeated is not None:
-            X = self.remove_low_variance(X)
+            X = self._remove_low_variance(X)
 
         # Remove features with too high correlation
         if self.max_correlation is not None:
-            X = self.remove_collinear(X)
+            X = self._remove_collinear(X)
 
         # Set n_features as all or fraction of total
         if self.n_features is None:
@@ -603,43 +664,91 @@ class FeatureSelector(BaseEstimator, DataCleanerEstimator):
         elif self.strategy.lower() == 'univariate':
             for n, col in enumerate(X):
                 if not self.univariate.get_support()[n]:
-                    self._log(f" --> Feature {col} was removed after the uni" +
-                              "variate test (score: {:.2f}  p-value: {:.2f})."
-                              .format(self.univariate.scores_[n],
-                                      self.univariate.pvalues_[n]), 2)
+                    self.log(f" --> Feature {col} was removed after the uni" +
+                             "variate test (score: {:.2f}  p-value: {:.2f})."
+                             .format(self.univariate.scores_[n],
+                                     self.univariate.pvalues_[n]), 2)
                     X.drop(col, axis=1, inplace=True)
 
         elif self.strategy.lower() == 'pca':
-            self._log(f" --> Applying Principal Component Analysis...", 2)
+            self.log(f" --> Applying Principal Component Analysis...", 2)
 
             if not check_scaling(X):
+                self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 
-            # Define PCA
-            var = np.array(self.PCA.explained_variance_ratio_)
-            X = to_df(self.PCA.transform(X), pca=True)
-            self._log("   >>> Total explained variance: {}"
-                      .format(round(var.sum(), 3)), 2)
+            # Define PCA, keep in mind that it has all components still
+            n = self.PCA.n_components_
+            var = np.array(self.PCA.explained_variance_ratio_[:n])
+            X = to_df(self.PCA.transform(X)[:, :n], index=X.index, pca=True)
+            self.log("   >>> Total explained variance: {}"
+                     .format(round(var.sum(), 3)), 2)
 
         elif self.strategy.lower() == 'sfm':
             for n, column in enumerate(X):
                 if not self.SFM.get_support()[n]:
-                    self._log(f" --> Feature {column} was removed by the " +
-                              f"{self.solver.__class__.__name__}.", 2)
+                    self.log(f" --> Feature {column} was removed by the " +
+                             f"{self.solver.__class__.__name__}.", 2)
                     X.drop(column, axis=1, inplace=True)
 
         elif self.strategy.lower() == 'rfe':
             for n, column in enumerate(X):
                 if not self.RFE.support_[n]:
-                    self._log(f" --> Feature {column} was removed by the " +
-                              "recursive feature eliminator.", 2)
+                    self.log(f" --> Feature {column} was removed by the " +
+                             "recursive feature eliminator.", 2)
                     X.drop(column, axis=1, inplace=True)
 
         elif self.strategy.lower() == 'rfecv':
             for n, column in enumerate(X):
                 if not self.RFECV.support_[n]:
-                    self._log(f" --> Feature {column} was removed by the " +
-                              "RFECV.", 2)
+                    self.log(f" --> Feature {column} was removed by the " +
+                             "RFECV.", 2)
                     X.drop(column, axis=1, inplace=True)
 
         return variable_return(X, y)
+
+    # << ======================= Plot methods ======================= >>
+
+    @composed(crash, typechecked)
+    def plot_pca(self,
+                 title: Optional[str] = None,
+                 figsize: Optional[Tuple[int, int]] = (10, 6),
+                 filename: Optional[str] = None,
+                 display: bool = True):
+        """Plot the explained variance ratio vs the number of component.
+
+        Only if PCA was applied on the dataset through the feature_selection
+        method.
+
+        """
+        plot_pca(self, title, figsize, filename, display)
+
+    @composed(crash, typechecked)
+    def plot_components(self,
+                        show: Optional[int] = None,
+                        title: Optional[str] = None,
+                        figsize: Optional[Tuple[int, int]] = None,
+                        filename: Optional[str] = None,
+                        display: bool = True):
+        """Plot the explained variance ratio per component.
+
+        Only if PCA was applied on the dataset through the feature_selection
+        method.
+
+        """
+        plot_components(self, show, title, figsize, filename, display)
+
+    @composed(crash, typechecked)
+    def plot_rfecv(self,
+                   title: Optional[str] = None,
+                   figsize: Optional[Tuple[int, int]] = (10, 6),
+                   filename: Optional[str] = None,
+                   display: bool = True):
+        """Plot the RFECV results.
+
+        Plot the scores obtained by the estimator fitted on every subset of
+        the data. Only if RFECV was applied on the dataset through the
+        feature_selection method.
+
+        """
+        plot_rfecv(self, title, figsize, filename, display)

@@ -3,6 +3,10 @@ abalone.csv
 weatherAUS.csv
 run_automl.py
 
+# Exclude everything from tests/files except the .gitkeep file
+tests/files/*
+!tests/files/.gitkeep
+
 # Log, pickle and figures in root directory
 /*.log
 /*.pkl

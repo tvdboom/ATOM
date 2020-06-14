@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the parent class for all model subclasses
+Description: Module containing the parent class for all model subclasses.
 
 """
 
@@ -11,9 +11,9 @@ Description: Module containing the parent class for all model subclasses
 
 # Standard packages
 import numpy as np
-import math
+import pandas as pd
 from time import time
-from collections import deque
+import matplotlib.pyplot as plt
 from typeguard import typechecked
 from typing import Optional, Union, Sequence, Tuple
 
@@ -24,21 +24,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold, StratifiedKFold, cross_val_score
 
 # Others
-from GPyOpt.methods import BayesianOptimization
-
-# Plots
-import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
+from skopt.utils import use_named_args
+from skopt.optimizer import gp_minimize
+from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
 # Own package modules
 from .utils import (
-    cal, X_types, no_BO, composed, crash, params_to_log, time_to_string
+    CAL, composed, crash, params_to_log, attach_methods,
+    save, time_to_string, PlotCallback
     )
 from .plots import (
-        save, plot_bagging, plot_successive_halving, plot_learning_curve,
-        plot_ROC, plot_PRC, plot_permutation_importance,
+        plot_bagging, plot_successive_halving, plot_learning_curve,
+        plot_roc, plot_prc, plot_permutation_importance,
         plot_feature_importance, plot_confusion_matrix, plot_threshold,
-        plot_probabilities, plot_calibration, plot_gains, plot_lift
+        plot_probabilities, plot_calibration, plot_gains, plot_lift, plot_bo
         )
 
 
@@ -53,24 +52,62 @@ class BaseModel(object):
         Parameters
         ----------
         data: dict
-            Dictionary of the data used for this model (train, test and all).
+            Dictionary of the data used for this model (train and test).
 
         T: class
-            ATOM class. To avoid having to pass attributes throw params.
+            Class from which the model is called. To avoid having to pass
+            attributes through params.
 
         """
         # Set attributes from ATOM to the model's parent class
         self.__dict__.update(kwargs)
-        self.error = "No exceptions encountered!"
+        self.name, self.longname = None, None
+
+        # Attach transformation methods to the class
+        methods = ['_pipe', 'predict', 'decision', 'score']
+        attach_methods(self, self.T.__class__, methods)
+
+        # BO attributes
+        self._has_BO = False
+        self._iter = 0
+        self._init_bo = None
+        self._cv = 3  # Default value
+        self.BO = pd.DataFrame(columns=['call', 'params', 'model',
+                                        'score', 'time_iteration', 'time'])
+
+        # BaseModel attributes
+        self.optimizer = None
+        self.best_params = None
+        self.best_model = None
+        self.best_model_fit = None
+        self.time_fit = None
+        self.score_bo = None
+        self.time_bo = None
+        self.predict_train = None
+        self.predict_test = None
+        self.predict_proba_train = None
+        self.predict_proba_test = None
+        self.decision_function_train = None
+        self.decision_function_test = None
+        self.score_train = None
+        self.score_test = None
+        self.score_bagging = []
+        self.mean_bagging = None
+        self.std_bagging = None
+        self.time_bagging = None
+
+        # Metric attributes
+        self.confusion_matrix = None
+        self.lift = None
+        self.tp, self.fp, self.tn, self.fn = None, None, None, None
+        self.fpr, self.tpr, self.sup = None, None, None
 
     @composed(crash, params_to_log, typechecked)
     def bayesian_optimization(self,
-                              max_iter: int = 10,
-                              max_time: Union[int, float] = np.inf,
-                              init_points: int = 5,
-                              cv: int = 3,
-                              plot_bo: bool = False):
-        """Run the bayesian optmization algorithm.
+                              n_calls: int = 15,
+                              n_random_starts: int = 5,
+                              bo_kwargs: dict = {}):
+        """Run the bayesian optimization algorithm.
 
         Search for the best combination of hyperparameters. The function to
         optimize is evaluated either with a K-fold cross-validation on the
@@ -78,127 +115,49 @@ class BaseModel(object):
 
         Parameters
         ----------
-        max_iter: int, list or tuple, optional (default=10)
-            Maximum number of iterations of the BO. If 0, skip the BO and fit
-            the model on its default parameters.
+        n_calls: int or sequence, optional (default=15)
+            Maximum number of iterations of the BO (including `random starts`).
+            If 0, skip the BO and fit the model on its default Parameters.
+            If sequence, the n-th value will apply to the n-th model in the
+            pipeline.
 
-        max_time: int, float, list or tuple, optional (default=np.inf)
-            Maximum time allowed for the BO per model (in seconds). If 0, skip
-            the BO and fit the model on its default parameters.
+        n_random_starts: int or sequence, optional (default=5)
+            Initial number of random tests of the BO before fitting the
+            surrogate function. If equal to `n_calls`, the optimizer will
+            technically be performing a random search. If sequence, the n-th
+            value will apply to the n-th model in the pipeline.
 
-        init_points: int, list or tuple, optional (default=5)
-            Initial number of tests of the BO before fitting the surrogate
-            function.
-
-        cv: int, list or tuple, optional (default=3)
-            Strategy to fit and score the model selected after every step
-            of the BO.
-                - if 1, randomly split into a train and validation set
-                - if >1, perform a k-fold cross validation on the training set
-
-        plot_bo: bool, optional (default=False)
-            whether to plot the BO's progress as it runs. Creates a canvas with
-            two plots: the first plot shows the score of every trial and the
-            second shows the distance between the last consecutive steps. Don't
-            forget to call %matplotlib at the start of the cell if you are
-            using jupyter notebook!
+        bo_kwargs: dict, optional (default={})
+            Dictionary of extra keyword arguments for the BO.
+            These can include:
+                - max_time: int
+                    Maximum allowed time for the BO (in seconds).
+                - delta_x: int or float
+                    Maximum distance between two consecutive points.
+                - delta_y: int or float
+                    Maximum score between two consecutive points.
+                - cv: int
+                    Number of folds for the cross-validation. If 1, the
+                    training set will be randomly split in a subtrain and
+                    validation set.
+                - callback: callable or list of callables
+                    Callbacks for the BO.
+                - dimensions: dict or array
+                    Custom hyperparameter space for the bayesian optimization.
+                    Can be an array (only if there is 1 model in the pipeline)
+                    or a dictionary with the model's name as key.
+                - plot_bo: bool
+                    Whether to plot the BO's progress.
+                - Any other parameter from the skopt gp_minimize function.
 
         """
-        def animate_plot(x, y1, y2, line1, line2, ax1, ax2):
-            """Plot the BO's progress as it runs.
-
-            Creates a canvas with two plots. The first plot shows the score of
-            every trial and the second shows the distance between the last
-            consecutive steps.
+        def optimize(**params):
+            """Optimization function for the bayesian optimization algorithm.
 
             Parameters
             ----------
-            x: list
-                Values of both on the X-axis.
-
-            y1, y2: list
-                Values of the first and second plot on the y-axis.
-
-            line1, line2: callable
-                Line objects (from matplotlib) of the first and second plot.
-
-            ax1, ax2: callable
-                Axes objects (from matplotlib) of the first and second plot.
-
-            """
-            if line1 == []:  # At the start of the plot...
-                # This is the call to matplotlib that allows dynamic plotting
-                plt.ion()
-
-                # Initialize plot
-                fig = plt.figure(figsize=(10, 6))
-                gs = GridSpec(2, 1, height_ratios=[2, 1])
-
-                # First subplot (without xtick labels)
-                ax1 = plt.subplot(gs[0])
-                # Create a variable for the line so we can later update it
-                line1, = ax1.plot(x, y1, '-o', alpha=0.8)
-                ax1.set_title(f"Bayesian Optimization for {self.longname}",
-                              fontsize=self.T.title_fontsize)
-                ax1.set_ylabel(self.T.metric.name,
-                               fontsize=self.T.label_fontsize,
-                               labelpad=12)
-                ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
-
-                # Second subplot
-                ax2 = plt.subplot(gs[1], sharex=ax1)
-                line2, = ax2.plot(x, y2, '-o', alpha=0.8)
-                ax2.set_title("Metric distance between last consecutive steps",
-                              fontsize=self.T.title_fontsize)
-                ax2.set_xlabel('Step',
-                               fontsize=self.T.label_fontsize,
-                               labelpad=12)
-                ax2.set_ylabel('d',
-                               fontsize=self.T.label_fontsize,
-                               labelpad=12)
-                ax2.set_xticks(self.x)
-                ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
-                ax2.set_ylim([-0.05, 0.1])
-
-                plt.setp(ax1.get_xticklabels(), visible=False)
-                plt.subplots_adjust(hspace=.0)
-                plt.xticks(fontsize=self.T.tick_fontsize)
-                plt.yticks(fontsize=self.T.tick_fontsize)
-                fig.tight_layout()
-                plt.show()
-
-            # Update plot
-            line1.set_xdata(x)
-            line1.set_ydata(y1)
-            line2.set_xdata(x)
-            line2.set_ydata(y2)
-            ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
-            ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
-            ax1.set_xticks(self.x)  # Update x-ticks
-            ax2.set_xticks(self.x)  # Update x-ticks
-
-            # Adjust y limits if new data goes beyond bounds
-            lim = line1.axes.get_ylim()
-            if np.nanmin(y1) <= lim[0] or np.nanmax(y1) >= lim[1]:
-                ax1.set_ylim([np.nanmin(y1) - np.nanstd(y1),
-                              np.nanmax(y1) + np.nanstd(y1)])
-            lim = line2.axes.get_ylim()
-            if np.nanmax(y2) >= lim[1]:
-                ax2.set_ylim([-0.05, np.nanmax(y2) + np.nanstd(y2)])
-
-            # Pause the data so the figure/axis can catch up
-            plt.pause(0.01)
-
-            # Return line and axes to update the plot again next iteration
-            return line1, line2, ax1, ax2
-
-        def optimize(x):
-            """Optimization function for the baysisan optimization algorithm.
-
-            Parameters
-            ----------
-            x: dict
-                Dictionary of the model's  hyperparameters.
+            params: dict
+               Model's hyperparameters to be used for this iteration of the BO.
 
             Returns
             -------
@@ -208,31 +167,30 @@ class BaseModel(object):
             """
             t_iter = time()  # Get current time for start of the iteration
 
-            params = self.get_params(x)
-            self.BO['params'].append(params)
-
             # Print iteration and time
             self._iter += 1
-            if self._iter > self.init_points:
-                _iter = self._iter - self.init_points
-                point = 'Iteration'
-            else:
-                _iter = self._iter
-                point = 'Initial point'
+            n = 'Iteration' if self._iter > n_random_starts else 'Random start'
 
-            len_ = '-' * (46 - len(point) - len(str(self._iter)))
-            self.T._log(f"{point}: {_iter} {len_}", 2)
-            self.T._log(f"Parameters --> {params}", 2)
+            len_ = '-' * (46 - len(n) - len(str(self._iter)))
+            self.T.log(f"{n}: {self._iter} {len_}", 2)
+            self.T.log(f"Parameters --> {params}", 2)
 
             algorithm = self.get_model(params)
 
-            if self.cv == 1:
+            # We want same splits for every model, but different
+            # for every iteration of the BO
+            random_state = None
+            if self.T.random_state:  # Is not None
+                random_state = self.T.random_state + self._iter
+
+            if self._cv == 1:
                 # Split each iteration in different train and validation set
                 X_subtrain, X_validation, y_subtrain, y_validation = \
                     train_test_split(self.X_train,
                                      self.y_train,
-                                     test_size=self.T.test_size,
-                                     shuffle=True)
+                                     test_size=self.T._test_size,
+                                     shuffle=True,
+                                     random_state=random_state)
 
                 # Calculate metric on the validation set
                 algorithm.fit(X_subtrain, y_subtrain)
@@ -241,140 +199,152 @@ class BaseModel(object):
             else:  # Use cross validation to get the output of BO
 
                 # Determine number of folds for the cross_val_score
-                if self.T.task != 'regression':
+                if self.T.goal.startswith('class'):
                     # Folds are made preserving the % of samples for each class
-                    # Use same splits for every model
-                    kfold = StratifiedKFold(n_splits=self.cv, random_state=1)
+                    k_fold = StratifiedKFold(n_splits=self._cv,
+                                             shuffle=True,
+                                             random_state=random_state)
                 else:
-                    kfold = KFold(n_splits=self.cv, random_state=1)
+                    k_fold = KFold(n_splits=self._cv,
+                                   shuffle=True,
+                                   random_state=random_state)
 
                 # Run cross-validation (get mean of results)
                 score = cross_val_score(algorithm,
                                         self.X_train,
                                         self.y_train,
-                                        cv=kfold,
+                                        cv=k_fold,
                                         scoring=self.T.metric,
                                         n_jobs=self.T.n_jobs).mean()
 
-            # Save output of the BO and plot progress
-            self.BO['score'].append(score)
-            self.T._log(f"Evaluation --> {self.T.metric.name}: {score:.4f}", 2)
-
+            # Append row to the BO attribute
             t = time_to_string(t_iter)
             t_tot = time_to_string(self._init_bo)
-            self.BO['time'] = t
-            self.BO['total_time'] = t_tot
-            self.T._log(f"Time elapsed: {t}   Total time: {t_tot}", 2)
+            self.BO = self.BO.append({'call': n,
+                                      'params': params,
+                                      'model': algorithm,
+                                      'score': score,
+                                      'time_iteration': t,
+                                      'time': t_tot},
+                                     ignore_index=True)
 
-            if self.plot_bo:
-                # Start to fill NaNs with encountered metric values
-                if np.isnan(self.y1).any():
-                    for i, value in enumerate(self.y1):
-                        if math.isnan(value):
-                            self.y1[i] = score
-                            if i > 0:  # The first value must remain empty
-                                self.y2[i] = abs(self.y1[i] - self.y1[i-1])
-                            break
-                else:  # If no NaNs anymore, continue deque
-                    self.x.append(max(self.x)+1)
-                    self.y1.append(score)
-                    self.y2.append(abs(self.y1[-1] - self.y1[-2]))
+            # Print output of the BO and plot progress
+            self.T.log(f"Evaluation --> Score: {score:.4f}   " +
+                       f"Best score: {max(self.BO.score):.4f}", 2)
+            self.T.log(f"Time iteration: {t}   Total time: {t_tot}", 2)
 
-                self.line1, self.line2, self.ax1, self.ax2 = \
-                    animate_plot(self.x, self.y1, self.y2,
-                                 self.line1, self.line2, self.ax1, self.ax2)
-
-            return score
+            return -score  # Negative since skopt considers minimum as best
 
         # << ================= Running optimization ================= >>
 
         # Check parameters
-        if max_iter < 0:
-            raise ValueError("Invalid value for the max_iter parameter." +
-                             f"Value should be >=0, got {max_iter}.")
-        if max_time < 0:
-            raise ValueError("Invalid value for the max_time parameter." +
-                             f"Value should be >=0, got {max_time}.")
-        if init_points < 1:
-            raise ValueError("Invalid value for the init_points parameter." +
-                             f"Value should be >0, got {init_points}.")
-        if cv < 1:
-            raise ValueError("Invalid value for the cv parameter." +
-                             f"Value should be >0, got {cv}.")
+        if n_random_starts < 1:
+            raise ValueError("Invalid value for the n_random_starts " +
+                             "parameter. Value should be >0, got {}."
+                             .format(n_random_starts))
+        if n_calls < n_random_starts:
+            raise ValueError("Invalid value for the n_calls parameter. " +
+                             "Value should be >n_random_starts, got {}."
+                             .format(n_calls))
 
-        # Update attibutes
-        self._has_BO = True if max_iter > 0 and max_time > 0 else False
-        self.max_iter = max_iter
-        self.max_time = max_time
-        self.init_points = init_points
-        self.cv = cv
-        self.plot_bo = plot_bo
+        self.T.log(f"\n\nRunning BO for {self.longname}...", 1)
 
-        # Skip BO for GNB and GP (no hyperparameter tuning)
-        if self.name not in no_BO and self._has_BO:
-            self.T._log(f"\n\nRunning BO for {self.longname}...", 1)
+        self._init_bo = time()
 
-            # Save dictionary of BO steps
-            self._iter = 0
-            self._init_bo = time()
-            self.BO = {}
-            self.BO['params'] = []
-            self.BO['score'] = []
+        # Prepare callbacks
+        callbacks = []
+        if bo_kwargs.get('callback'):
+            if not isinstance(bo_kwargs['callback'], (list, tuple)):
+                callbacks = [bo_kwargs['callback']]
+            bo_kwargs.pop('callback')
 
-            if self.plot_bo:  # Create plot variables
-                maxlen = 15  # Maximum steps to show at once in the plot
-                self.x = deque(list(range(maxlen)), maxlen=maxlen)
-                self.y1 = deque([np.NaN for _ in self.x], maxlen=maxlen)
-                self.y2 = deque([np.NaN for _ in self.x], maxlen=maxlen)
-                self.line1, self.line2 = [], []  # Plot lines
-                self.ax1, self.ax2 = 0, 0  # Plot axes
+        if bo_kwargs.get('max_time'):
+            if bo_kwargs['max_time'] <= 0:
+                raise ValueError("Invalid value for the max_time " +
+                                 "parameter. Value should be >0, " +
+                                 f"got {bo_kwargs['max_time']}.")
+            callbacks.append(DeadlineStopper(bo_kwargs['max_time']))
+            bo_kwargs.pop('max_time')
 
-            # Default SKlearn or multiple random initial points
-            kwargs = {}
-            if self.init_points > 1:
-                kwargs['initial_design_numdata'] = self.init_points
-            else:
-                kwargs['X'] = self.get_init_values()
-            BO = BayesianOptimization(f=optimize,
-                                      domain=self.get_domain(),
-                                      model_update_interval=1,
-                                      maximize=True,
-                                      initial_design_type='random',
-                                      normalize_Y=False,
-                                      num_cores=self.T.n_jobs,
-                                      **kwargs)
+        if bo_kwargs.get('delta_x'):
+            if bo_kwargs['delta_x'] < 0:
+                raise ValueError("Invalid value for the max_time " +
+                                 "parameter. Value should be >=0, " +
+                                 f"got {bo_kwargs['delta_x']}.")
+            callbacks.append(DeltaXStopper(bo_kwargs['delta_x']))
+            bo_kwargs.pop('delta_x')
 
-            # eps = Minimum distance in hyperparameters between two
-            #       consecutive steps of the BO
-            BO.run_optimization(max_iter=self.max_iter,
-                                max_time=self.max_time,
-                                eps=1e-8,
-                                verbosity=False)
+        if bo_kwargs.get('delta_y'):
+            if bo_kwargs['delta_y'] < 0:
+                raise ValueError("Invalid value for the max_time " +
+                                 "parameter. Value should be >=0, " +
+                                 f"got {bo_kwargs['delta_y']}.")
+            callbacks.append(DeltaYStopper(bo_kwargs['delta_y'], n_best=2))
+            bo_kwargs.pop('delta_y')
 
-            # Optimal score of the BO (neg due to the implementation of GpyOpt)
-            self.score_bo = -BO.fx_opt
+        if bo_kwargs.get('plot_bo'):  # Exists and is True
+            callbacks.append(PlotCallback(self))
+            bo_kwargs.pop('plot_bo')
 
-            if self.plot_bo:
-                plt.close()
+        # Prepare additional arguments
+        if bo_kwargs.get('cv'):
+            if bo_kwargs['cv'] <= 0:
+                raise ValueError("Invalid value for the max_time " +
+                                 "parameter. Value should be >=0, " +
+                                 f"got {bo_kwargs['cv']}.")
+            self._cv = bo_kwargs['cv']
+            bo_kwargs.pop('cv')
 
-            # Set to same shape as GPyOpt (2d-array)
-            self.best_params = self.get_params(np.round([BO.x_opt], 4))
+        # Specify model dimensions
+        def pre_defined_hyperparameters(x):
+            return optimize(**self.get_params(x))
 
-            # Save best model (not yet fitted)
-            self.best_model = self.get_model(self.best_params)
+        dimensions = self.get_domain()
+        func = pre_defined_hyperparameters  # Default optimization func
+        if bo_kwargs.get('dimensions'):
+            if bo_kwargs['dimensions'].get(self.name):
+                dimensions = bo_kwargs.get('dimensions').get(self.name)
 
-            self.time_bo = time_to_string(self._init_bo)  # Get the BO duration
+                @use_named_args(dimensions)
+                def custom_hyperparameters(**x):
+                    return optimize(**x)
+                func = custom_hyperparameters  # Use custom hyperparameters
+            bo_kwargs.pop('dimensions')
 
-            # Print results
-            self.T._log('', 2)  # Print extra line (note verbosity level 2)
-            self.T._log(f"Final results for {self.longname}:{' ':9s}", 1)
-            self.T._log("Bayesian Optimization ---------------------------", 1)
-            self.T._log(f"Best hyperparameters: {self.best_params}", 1)
-            self.T._log(f"Best score on the BO: {self.score_bo:.4f}", 1)
-            self.T._log(f"Time elapsed: {self.time_bo}", 1)
+        if n_random_starts == 1:
+            bo_kwargs['x0'] = self.get_init_values()
 
-        else:
-            self.best_model = self.get_model()
+        self.optimizer = \
+            gp_minimize(func=func,
+                        dimensions=dimensions,
+                        n_calls=n_calls,
+                        n_random_starts=n_random_starts,
+                        callback=callbacks,
+                        n_jobs=self.T.n_jobs,
+                        random_state=self.T.random_state,
+                        **bo_kwargs)
+
+        # Close plot if plot_bo=True
+        if plot_bo:
+            plt.close()
+
+        # Optimal score and params of the BO
+        self.best_params = self.get_params(self.optimizer.x)
+        self.score_bo = -self.optimizer.fun
+
+        # Save best model (not yet fitted)
+        self.best_model = self.get_model(self.best_params)
+
+        # Get the BO duration
+        self.time_bo = time_to_string(self._init_bo)
+
+        # Print results
+        self.T.log('', 2)  # Print extra line (note verbosity level 2)
+        self.T.log(f"Final results for {self.longname}:{' ':9s}", 1)
+        self.T.log("Bayesian Optimization ---------------------------", 1)
+        self.T.log(f"Best hyperparameters: {self.best_params}", 1)
+        self.T.log(f"Best score: {self.score_bo:.4f}", 1)
+        self.T.log(f"Time elapsed: {self.time_bo}", 1)
 
     @composed(crash, params_to_log)
     def fit(self):
@@ -382,7 +352,7 @@ class BaseModel(object):
         t_init = time()
 
         # In case the bayesian_optimization method wasn't called
-        if not hasattr(self, 'best_model'):
+        if self.best_model is None:
             self.best_model = self.get_model()
 
         # Fit the selected model on the complete training set
@@ -393,7 +363,7 @@ class BaseModel(object):
         self.predict_test = self.best_model_fit.predict(self.X_test)
 
         # Save probability predictions
-        if self.T.task != 'regression':
+        if self.T.goal.startswith('class'):
             if hasattr(self.best_model_fit, 'predict_proba'):
                 self.predict_proba_train = \
                     self.best_model_fit.predict_proba(self.X_train)
@@ -412,10 +382,10 @@ class BaseModel(object):
                             self.best_model_fit, self.X_test, self.y_test)
 
         # Calculate custom metrics and attach to attributes
-        if self.T.task != 'regression':
+        if self.T.goal.startswith('class'):
             self.confusion_matrix = confusion_matrix(self.y_test,
                                                      self.predict_test)
-            if self.T.task.startswith('binary'):
+            if self.T.task.startswith('bin'):
                 tn, fp, fn, tp = self.confusion_matrix.ravel()
 
                 # Get metrics (lift, true (false) positive rate and support)
@@ -427,55 +397,55 @@ class BaseModel(object):
                 self.tn, self.fp, self.fn, self.tp = tn, fp, fn, tp
 
         # Calculate all pre-defined metrics on the test set
-        for key in SCORERS.keys():
+        for key, scorer in SCORERS.items():
             try:
-                m = getattr(self.T.metric, key)
-
                 # Some metrics need probabilities and other need predict
-                if type(m).__name__ == '_ThresholdScorer':
-                    if self.T.task == 'regression':
+                if type(scorer).__name__ == '_ThresholdScorer':
+                    if self.T.task.startswith('reg'):
                         y_pred = self.predict_test
-                    elif hasattr(self, 'decision_function_test'):
+                    elif self.decision_function_test is not None:
                         y_pred = self.decision_function_test
                     else:
                         y_pred = self.predict_proba_test
-                        if self.T.task.startswith('binary'):
+                        if self.T.task.startswith('bin'):
                             y_pred = y_pred[:, 1]
-                elif type(m).__name__ == '_ProbaScorer':
-                    if hasattr(self, 'predict_proba_test'):
+                elif type(scorer).__name__ == '_ProbaScorer':
+                    if self.predict_proba_test is not None:
                         y_pred = self.predict_proba_test
-                        if self.T.task.startswith('binary'):
+                        if self.T.task.startswith('bin'):
                             y_pred = y_pred[:, 1]
                     else:
                         y_pred = self.decision_function_test
                 else:
                     y_pred = self.predict_test
-                scr = m._sign * m._score_func(self.y_test, y_pred, **m._kwargs)
-                setattr(self, key, scr)
-            except Exception:
+
+                # Calculate metric on the test set
+                scr = scorer._score_func(self.y_test, y_pred, **scorer._kwargs)
+                setattr(self, key, scorer._sign * scr)
+
+            except (ValueError, TypeError):
                 msg = f"This metric is unavailable for the {self.name} model!"
                 setattr(self, key, msg)
 
         # << ================= Print stats ================= >>
 
         if not self._has_BO:
-            self.T._log('\n', 1)  # Print 2 extra lines
-            self.T._log(f"Final results for {self.longname}:{' ':9s}", 1)
-        if self.name in no_BO and self._has_BO:
-            self.T._log('\n', 1)  # Print 2 extra lines
-            self.T._log(f"Final results for {self.longname}:{' ':9s}", 1)
-        self.T._log("Fitting -----------------------------------------", 1)
-        self.T._log(f"Score on the training set: {self.score_train:.4f}", 1)
-        self.T._log(f"Score on the test set: {self.score_test:.4f}", 1)
+            self.T.log('\n', 1)  # Print 2 extra lines
+            self.T.log(f"Final results for {self.longname}:{' ':9s}", 1)
+        if not hasattr(self, 'get_domain') and self._has_BO:
+            self.T.log('\n', 1)  # Print 2 extra lines
+            self.T.log(f"Final results for {self.longname}:{' ':9s}", 1)
+        self.T.log("Fitting -----------------------------------------", 1)
+        self.T.log(f"Score on the training set: {self.score_train:.4f}", 1)
+        self.T.log(f"Score on the test set: {self.score_test:.4f}", 1)
 
         # Get duration and print to log
-        duration = time_to_string(t_init)
-        self.fit_time = duration
-        self.T._log(f"Time elapsed: {duration}", 1)
+        self.time_fit = time_to_string(t_init)
+        self.T.log(f"Time elapsed: {self.time_fit}", 1)
 
     @composed(crash, params_to_log, typechecked)
     def bagging(self, bagging: Optional[int] = 5):
-        """Peform bagging algorithm.
+        """Perform bagging algorithm.
 
         Take bootstrap samples from the training set and test them on the test
         set to get a distribution of the model's results.
@@ -489,13 +459,10 @@ class BaseModel(object):
         """
         t_init = time()
 
-        if bagging is None or bagging == 0:
-            return None  # Do not perform bagging
-        elif bagging < 0:
+        if bagging < 0:
             raise ValueError("Invalid value for the bagging parameter." +
                              f"Value should be >=0, got {bagging}.")
 
-        self.bagging_scores = []  # List of the scores
         for _ in range(bagging):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.y_train)
@@ -505,77 +472,20 @@ class BaseModel(object):
             score = self.T.metric(algorithm, self.X_test, self.y_test)
 
             # Append metric result to list
-            self.bagging_scores.append(score)
+            self.score_bagging.append(score)
 
         # Numpy array for mean and std
-        self.bagging_scores = np.array(self.bagging_scores)
-        self.T._log("Bagging -----------------------------------------", 1)
-        self.T._log("Mean: {:.4f}   Std: {:.4f}".format(
-                    self.bagging_scores.mean(), self.bagging_scores.std()), 1)
+        self.mean_bagging = np.array(self.score_bagging).mean()
+        self.std_bagging = np.array(self.score_bagging).std()
+        self.T.log("Bagging -----------------------------------------", 1)
+        self.T.log("Mean: {:.4f}   Std: {:.4f}".format(
+                    self.mean_bagging, self.std_bagging), 1)
 
         # Get duration and print to log
-        duration = time_to_string(t_init)
-        self.bs_time = duration
-        self.T._log(f"Time elapsed: {duration}", 1)
+        self.time_bagging = time_to_string(t_init)
+        self.T.log(f"Time elapsed: {self.time_bagging}", 1)
 
-    # << =================== Pipeline methods =================== >>
-
-    def _pipeline_methods(self, X, attribute, **kwargs):
-        """Apply pipeline methods on new data.
-
-        First transform the new data and apply the attribute on the best
-        model. The model has to have the provided attribute.
-
-        Parameters
-        ----------
-        X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
-
-        attribute: str
-            Attribute of the model to be applied.
-
-        **kwargs
-            Additional parameters for the transform method.
-
-        Returns
-        -------
-        np.array
-            Return of the attribute.
-
-        """
-        if not hasattr(self.best_model_fit, attribute):
-            raise AttributeError("The winning model doesn't have a " +
-                                 f"{attribute} attribute!")
-
-        X_transformed = self.T.transform(X, **kwargs)
-        return getattr(self.best_model_fit, attribute)(X_transformed)
-
-    @composed(crash, params_to_log, typechecked)
-    def transform(self, X: X_types, **kwargs):
-        """Apply all data transformations in ATOM to new data."""
-        return self.T.transform(X, **kwargs)
-
-    @composed(crash, params_to_log, typechecked)
-    def predict(self, X: X_types, **kwargs):
-        """Get predictions on new data."""
-        return self._pipeline_methods(X, 'predict', **kwargs)
-
-    @composed(crash, params_to_log, typechecked)
-    def predict_proba(self, X: X_types, **kwargs):
-        """Get probability predictions on new data."""
-        return self._pipeline_methods(X, 'predict_proba', **kwargs)
-
-    @composed(crash, params_to_log, typechecked)
-    def predict_log_proba(self, X: X_types, **kwargs):
-        """Get log probability predictions on new data."""
-        return self._pipeline_methods(X, 'predict_log_proba', **kwargs)
-
-    @composed(crash, params_to_log, typechecked)
-    def decision_function(self, X: X_types, **kwargs):
-        """Get the decision function on new data."""
-        return self._pipeline_methods(X, 'decision_function', **kwargs)
-
-    # << ==================== Plot functions ==================== >>
+    # << ===================== Plot methods ===================== >>
 
     @composed(crash, params_to_log, typechecked)
     def plot_bagging(self,
@@ -608,22 +518,22 @@ class BaseModel(object):
                             title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
-    def plot_ROC(self,
+    def plot_roc(self,
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
         """Plot the Receiver Operating Characteristics curve."""
-        plot_ROC(self.T, self.name, title, figsize, filename, display)
+        plot_roc(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
-    def plot_PRC(self,
+    def plot_prc(self,
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
                  display: bool = True):
         """Plot the precision-recall curve."""
-        plot_PRC(self.T, self.name, title, figsize, filename, display)
+        plot_prc(self.T, self.name, title, figsize, filename, display)
 
     @composed(crash, params_to_log, typechecked)
     def plot_permutation_importance(self,
@@ -666,7 +576,7 @@ class BaseModel(object):
 
     @composed(crash, params_to_log, typechecked)
     def plot_threshold(self,
-                       metric: Optional[Union[cal, Sequence[cal]]] = None,
+                       metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                        steps: int = 100,
                        title: Optional[str] = None,
                        figsize: Tuple[int, int] = (10, 6),
@@ -690,7 +600,6 @@ class BaseModel(object):
     @composed(crash, params_to_log, typechecked)
     def plot_calibration(self,
                          n_bins: int = 10,
-                         models: Union[None, str, Sequence[str]] = None,
                          title: Optional[str] = None,
                          figsize: Tuple[int, int] = (10, 10),
                          filename: Optional[str] = None,
@@ -701,7 +610,6 @@ class BaseModel(object):
 
     @composed(crash, params_to_log, typechecked)
     def plot_gains(self,
-                   models: Union[None, str, Sequence[str]] = None,
                    title: Optional[str] = None,
                    figsize: Tuple[int, int] = (10, 6),
                    filename: Optional[str] = None,
@@ -711,7 +619,6 @@ class BaseModel(object):
 
     @composed(crash, params_to_log, typechecked)
     def plot_lift(self,
-                  models: Union[None, str, Sequence[str]] = None,
                   title: Optional[str] = None,
                   figsize: Tuple[int, int] = (10, 6),
                   filename: Optional[str] = None,
@@ -719,17 +626,26 @@ class BaseModel(object):
         """Plot the lift curve."""
         plot_lift(self.T, self.name, title, figsize, filename, display)
 
-    # << ============ Utility functions ============ >>
-
     @composed(crash, params_to_log, typechecked)
-    def save_model(self, filename: Optional[str] = None):
-        """Save the best found model (fitted) to a pickle file."""
-        save(self.best_model_fit,
-             'model_' + self.name if filename is None else filename)
-        self.T._log(self.longname + " model saved successfully!", 1)
+    def plot_bo(self,
+                title: Optional[str] = None,
+                figsize: Tuple[int, int] = (10, 6),
+                filename: Optional[str] = None,
+                display: bool = True):
+        """Plot the bayesian optimization scoring."""
+        plot_bo(self.T, self.name, title, figsize, filename, display)
+
+    # << ============ Utility functions ============ >>
 
     @composed(crash, params_to_log, typechecked)
     def save(self, filename: Optional[str] = None):
         """Save the class to a pickle file."""
         save(self, 'ATOM_' + self.name if filename is None else filename)
-        self.T._log("ATOM's " + self.name + " class saved successfully!", 1)
+        self.T.log("ATOM's " + self.name + " class saved successfully!", 1)
+
+    @composed(crash, params_to_log, typechecked)
+    def save_model(self, filename: Optional[str] = None):
+        """Save the best found model (fitted) to a pickle file."""
+        filename = 'model_' + self.name if filename is None else filename
+        save(self.best_model_fit, filename)
+        self.T.log(self.longname + " model saved successfully!", 1)

@@ -8,4 +8,4 @@ Description: Version and import module.
 """
 
 from .api import ATOMClassifier, ATOMRegressor
-__version__ = '3.3.0'
+__version__ = '4.0.0'

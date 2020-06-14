@@ -2,14 +2,13 @@
 
 <pre><strong><em>class</em> atom.<strong style="color:#008AB8">ATOM</strong>(X,
                 y=None,
-                percentage=100,
+                n_rows=1,
                 test_size=0.3,
                 log=None,
                 n_jobs=1,
-                warnings=False,
+                warnings=True,
                 verbose=0,
-                random_state=None,
-                verbose=0)</strong><br>
+                random_state=None)</strong><br>
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
 
 Main class of the package. The `ATOM` class is a parent class of the `ATOMClassifier`
@@ -55,9 +54,12 @@ Dataset containing the features, with shape=(n_samples, n_features).
 <li>Else: data target column with shape=(n_samples,)</li>
 </blockquote>
 
-<strong>percentage: int or float, optional (default=100)</strong>
+<strong>n_rows: int or float, optional (default=1)</strong>
 <blockquote>
-Percentage of the provided dataset to use.
+<ul>
+<li>if <=1: fraction of the data to use.</li>
+<li>if >1: number of rows to use.</li>
+</ul>
 </blockquote>
 
 <strong>test_size: float, optional (default=0.3)</strong>
@@ -80,11 +82,6 @@ Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </blockquote>
 
-<strong> warnings: bool, optional (default=False)</strong>
-<blockquote>
-If False, it supresses all warnings.
-</blockquote>
-
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -94,6 +91,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print average information</li>
 <li>3 to print maximum information</li>
 </ul>
+</blockquote>
+
+<strong>warnings: bool, optional (default=True)</strong>
+<blockquote>
+If False, suppresses all warnings. Note that this will change the
+PYTHONWARNINGS environment.
 </blockquote>
 
 <strong>random_state: int or None, optional (default=None)</strong>
@@ -172,16 +175,17 @@ Model subclass that performed best on the test set.
 
 <strong>scores: pd.DataFrame</strong>
 <blockquote>
-Dataframe (or list of dataframes if successive_halving=True) of the results. Columns can include:
+Dataframe (or list of dataframes if the pipeline was called using successive_halving
+ or train_sizing) of the results. Columns can include:
 <ul>
-<li>model: model's name (acronym)</li>
-<li>total_time: time spent on this model</li>
-<li>score_train: metric score on the training set</li>
-<li>score_test: metric score on the test set</li>
-<li>fit_time: time spent fitting and predicting</li>
-<li>bagging_mean: mean score of the bagging's results</li>
-<li>bagging_std: standard deviation score of the bagging's results</li>
-<li>bagging_time: time spent on the bagging algorithm</li>
+<li><b>model:</b> model's name (acronym).</li>
+<li><b>total_time:</b> time spent on this model.</li>
+<li><b>score_train:</b> metric score on the training set.</li>
+<li><b>score_test:</b> metric score on the test set.</li>
+<li><b>fit_time:</b> time spent fitting and predicting.</li>
+<li><b>bagging_mean:</b> mean score of the bagging's results.</li>
+<li><b>bagging_std:</b> standard deviation score of the bagging's results.</li>
+<li><b>bagging_time:</b> time spent on the bagging algorithm.</li>
 </ul>
 </blockquote>
 </td>
@@ -208,11 +212,6 @@ inspect the pipeline.
 </tr>
 
 <tr>
-<td><a href="#atom-update">update</a></td>
-<td>Update all data attributes.</td>
-</tr>
-
-<tr>
 <td><a href="#atom-report">report</a></td>
 <td>Get an extensive profile analysis of the data.</td>
 </tr>
@@ -220,6 +219,11 @@ inspect the pipeline.
 <tr>
 <td><a href="#atom-results">results</a></td>
 <td>Print final results for a specific metric.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#atom-log">log</a></td>
+<td>Save information to the logger.</td>
 </tr>
 
 <tr>
@@ -248,33 +252,8 @@ Scale all the features to mean=1 and std=0.
 <br /><br />
 
 
-<a name="atom-update"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">update</strong>(df='dataset')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L513">[source]</a></div></pre>
-<div style="padding-left:3%" width="100%">
-If you change any of the class' data attributes in between the pipeline, you
- should call this method to change all other data attributes to their correct
-  values. Independent attributes are updated in unison, that is, setting
-   df='X_train' will also update X_test, y_train and y_test, or df='train'
-    will also update the test set, etc... This means that you can change both
-     X_train and y_train and update them with one call of the method.
-<br /><br />
-<table width="100%">
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>df: string, optional(default='dataset')</strong>
-<blockquote>
-Data attribute that has been changed.
-</blockquote>
-</td></tr>
-</table>
-</div>
-<br />
-
-
 <a name="atom-report"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">report</strong>(df='dataset', rows=None, filename=None)
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">report</strong>(df='dataset', n_rows=None, filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L570">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
 Get an extensive profile analysis of the data. The report is rendered
@@ -286,11 +265,11 @@ Dependency: [pandas-profiling](https://pandas-profiling.github.io/pandas-profili
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>df: string, optional(default='dataset')</strong>
+<strong>df: string, optional (default='dataset')</strong>
 <blockquote>
 Name of the data class attribute to get the profile from.
 </blockquote>
-<strong>rows: int or None, optional(default=None)</strong>
+<strong>n_rows: int or None, optional (default=None)</strong>
 <blockquote>
 Number of rows to process (randomly picked). None for all rows.
 </blockquote>
@@ -329,6 +308,31 @@ String of one of sklearn's predefined metrics. If None, the metric
 <br />
 
 
+<a name="atom-log"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Save information to the ATOM logger and print it to stdout.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to save to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+
 <a name="atom-save"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
@@ -336,7 +340,7 @@ String of one of sklearn's predefined metrics. If None, the metric
 Save the ATOM class to a pickle file. This method is also available for the model
  subclasses, e.g. `atom.XGB.save(filename='ATOM_xgboost')`. In this case, the
  model subclass is saved, instead of the ATOM class.
- 
+
 !!! warning
     Remember that the class contains the complete dataset (and variations of
     it). This means the files can become very large for big datasets!
@@ -478,6 +482,7 @@ Type of encoding to use for high cardinality features. Choose from
 <strong>frac_to_other: float, optional (default=0)</strong>
 <blockquote>
 Classes with less instances than n_rows * fraction_to_other are replaced with 'other'.
+</blockquote>
 </tr>
 </table>
 </div>
@@ -497,6 +502,7 @@ Outliers are defined as values that lie further than
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>strategy: int, float or string, optional (default='remove')</strong>
+<blockquote>
 Which strategy to apply on the outliers. Choose from:
 <ul>
 <li>'remove' to drop any row with outliers from the dataset</li>
@@ -632,7 +638,7 @@ Number of programs in each generation.
                                      solver=None,
                                      n_features=None,
                                      max_frac_repeated=1.,
-                                     max_correlation=0.98,
+                                     max_correlation=1.,
                                      **kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1259">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -656,12 +662,12 @@ Feature selection strategy to use. Choose from:
 <ul>
 <li>None: do not perform any feature selection algorithm</li>
 <li>'univariate': perform a univariate F-test, from sklearn [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)</li>
-<li>'PCA': perform a principal component analysis, from sklearn [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</li>
+<li>'pca': perform a principal component analysis, from sklearn [pca](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.pca.html)</li>
 <li>'SFM': select best features from model, from sklearn [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</li>
 <li>'RFE': recursive feature eliminator, from sklearn [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</li>
 <li>'RFECV': RFE with cross-validated selection, from sklearn [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)</li>
 </ul>
-The sklearn objects can be found under the `univariate`, `PCA`, `SFM`,
+The sklearn objects can be found under the `univariate`, `pca`, `SFM`,
  `RFE` or `RFECV` attributes of the class.
 </blockquote>
 <strong>solver: string, callable or None, optional (default=None)</strong>
@@ -679,7 +685,7 @@ Select None for the default option per strategy.
    <li>'chi2'</li>
    <li>Any function taking two arrays (X, y), and returning arrays (scores, pvalues).</li>
    </ul>
-<li>for 'PCA', choose from:
+<li>for 'pca', choose from:
     <ul>
     <li>'auto' (default)</li>
     <li>'full'</li>
@@ -720,16 +726,16 @@ Remove features with the same value in at least this fraction of
  variance, i.e. remove the features that have the same value in all
  samples. None to skip this step.
 </blockquote>
-<strong>max_correlation: float or None, optional (default=0.98)</strong>
+<strong>max_correlation: float or None, optional (default=1.)</strong>
 <blockquote>
-Minimum value of the Pearson correlation cofficient to identify
+Minimum value of the Pearson correlation coefficient to identify
 correlated features. A dataframe of the removed features and their
 correlation values can be accessed through the `collinear` attribute.
 None to skip this step.
 </blockquote>
 <strong>\*\*kwargs</strong>
 <blockquote>
-Any extra parameter for the PCA, SFM, RFE or RFECV. See the sklearn
+Any extra parameter for the pca, SFM, RFE or RFECV. See the sklearn
 documentation for the available options.
 </blockquote>
 </tr>
@@ -745,7 +751,7 @@ The pipeline method is where the models are fitted to the data and their
  performance is evaluated according to the selected metric. For every model, the
  pipeline applies the following steps:
 
-1. The optimal hyperparameters are selectred using a Bayesian Optimization (BO)
+1. The optimal hyperparameters are selected using a Bayesian Optimization (BO)
  algorithm with gaussian process as kernel. The resulting score of each step of
  the BO is either computed by cross-validation on the complete training set or
  by randomly splitting the training set every iteration into a (sub) training
@@ -849,6 +855,11 @@ Like the majority of estimators in scikit-learn, you can use a fitted `ATOM` cla
 <td>Return the decision function of a model on new data.</td>
 </tr>
 
+<tr>
+<td><a href="#atom-score">score</a></td>
+<td>Return the score of a model on new data.</td>
+</tr>
+
 </table>
 <br>
 
@@ -859,11 +870,9 @@ Like the majority of estimators in scikit-learn, you can use a fitted `ATOM` cla
                             greater_is_better=True,
                             needs_proba=False,
                             needs_threshold=False,
-                            max_iter=0,
-                            max_time=np.inf,
-                            init_points=5,
-                            plot_bo=False,
-                            cv=3,
+                            n_calls=10,
+                            n_random_points=5,
+                            bo_kwargs={},
                             bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -876,9 +885,9 @@ Like the majority of estimators in scikit-learn, you can use a fitted `ATOM` cla
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
-<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
-<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GNB' for [Gaussian Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
 <li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
 <li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
 <li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
@@ -938,40 +947,38 @@ Whether the metric function takes a continuous decision certainty. This only
  `decision_function` or `predict_proba` method. Will be ignored if the metric
  is a string or a scorer.
 </blockquote>
-<strong>max_iter: int or sequence, optional (default=0)</strong>
+<strong>n_calls: int or sequence, optional (default=0)</strong>
 <blockquote>
-Maximum number of iterations of the BO. If 0, skip the BO and fit
- the model on its default parameters. If sequence, the n-th value
- will apply to the n-th model in the pipeline.
+Maximum number of iterations of the BO (including `n_random starts`).
+ If 0, skip the BO and fit the model on its default Parameters.
+ If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
+<strong>n_random_starts: int or sequence, optional (default=5)</strong>
 <blockquote>
-Maximum time allowed for the BO per model (in seconds). If 0, skip
- the BO and fit the model on its default parameters. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
+Initial number of random tests of the BO before fitting the
+ surrogate function. If equal to `n_calls`, the optimizer will
+ technically be performing a random search. If sequence, the n-th
+ value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>init_points: int or sequence, optional (default=5)</strong>
+<strong>bo_kwargs: dict, optional (default={})</strong>
 <blockquote>
-Initial number of tests of the BO before fitting the surrogate
- function. If 1, the default models' hyperparameters will be used. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
-</blockquote>
-<strong>cv: int or sequence, optional (default=3)</strong>
-<blockquote>
-Strategy to fit and score the model selected after every step of the BO.
+Dictionary of extra keyword arguments for the BO. These can include:
 <ul>
-<li>if 1, randomly split into a train and validation set</li>
-<li>if >1, perform a k-fold cross validation on the training set</li>
-</ul>
-</blockquote>
-<strong>plot_bo: bool, optional (default=False)</strong>
-<blockquote>
-Whether to plot the BO's progress as it runs. Creates a canvas with
-two plots: the first plot shows the score of every trial and the
-second shows the distance between the last consecutive steps. Don't
-forget to call `%matplotlib` at the start of the cell if you are
-using jupyter notebook!
-</blockquote>
+<li><b>max_time: int</b></br>Maximum allowed time for the BO (in seconds).</li>
+<li><b>delta_x: int or float</b></br>Maximum distance between two consecutive points.</li>
+<li><b>delta_x: int or float</b></br>Maximum score between two consecutive points.</li>
+<li><b>cv: int</b></br>Number of folds for the cross-validation. If 1, the
+ training set will be randomly split in a subtrain and validation set.</li>
+<li><b>callback: callable or list of callables</b></br>Callbacks for the BO.</li>
+<li><b>dimensions: dict or array</b></br>Custom hyperparameter space for the
+ bayesian optimization. Can be an array (only if there is 1 model in the
+ pipeline) or a dictionary with the model's name as key.</li>
+<li><b>plot_bo: bool</b></br>Whether to plot the BO's progress as it runs.
+ Creates a canvas with two plots: the first plot shows the score of every trial
+ and the second shows the distance between the last consecutive steps. Don't
+ forget to call `%matplotlib` at the start of the cell if you are using jupyter
+ notebook!</li>
+<li><b>Any other parameter for the <a href="https://scikit-optimize.github.io/stable/modules/generated/skopt.gp_minimize.html">bayesian optimization function</a>.</b></li>                
 <strong>bagging: int or None, optional (default=None)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in the bagging
@@ -990,11 +997,9 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                       needs_proba=False,
                                       needs_threshold=False,
                                       skip_iter=0,
-                                      max_iter=0,
-                                      max_time=np.inf,
-                                      init_points=5,
-                                      plot_bo=False,
-                                      cv=3,
+                                      n_calls=0,
+                                      n_random_starts=5,
+                                      bo_kwargs={},
                                       bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2172">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -1007,9 +1012,9 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
-<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
-<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GNB' for [Gaussian Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
 <li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
 <li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
 <li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
@@ -1071,43 +1076,40 @@ Whether the metric function takes a continuous decision certainty. This only
 </blockquote>
 <strong>skip_iter: int, optional (default=0)</strong>
 <blockquote>
-Skip last `skip_iter` iterations of the successive halving. Will be ignored if
- successive_halving=False.
+Skip last `skip_iter` iterations of the successive halving.
 </blockquote>
-<strong>max_iter: int or sequence, optional (default=0)</strong>
+<strong>n_calls: int or sequence, optional (default=0)</strong>
 <blockquote>
-Maximum number of iterations of the BO. If 0, skip the BO and fit
- the model on its default parameters. If sequence, the n-th value
- will apply to the n-th model in the pipeline.
+Maximum number of iterations of the BO (including `n_random starts`).
+ If 0, skip the BO and fit the model on its default Parameters.
+ If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
+<strong>n_random_starts: int or sequence, optional (default=5)</strong>
 <blockquote>
-Maximum time allowed for the BO per model (in seconds). If 0, skip
- the BO and fit the model on its default parameters. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
+Initial number of random tests of the BO before fitting the
+ surrogate function. If equal to `n_calls`, the optimizer will
+ technically be performing a random search. If sequence, the n-th
+ value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>init_points: int or sequence, optional (default=5)</strong>
+<strong>bo_kwargs: dict, optional (default={})</strong>
 <blockquote>
-Initial number of tests of the BO before fitting the surrogate
- function. If 1, the default models' hyperparameters will be used. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
-</blockquote>
-<strong>cv: int or sequence, optional (default=3)</strong>
-<blockquote>
-Strategy to fit and score the model selected after every step of the BO.
+Dictionary of extra keyword arguments for the BO. These can include:
 <ul>
-<li>if 1, randomly split into a train and validation set</li>
-<li>if >1, perform a k-fold cross validation on the training set</li>
-</ul>
-</blockquote>
-<strong>plot_bo: bool, optional (default=False)</strong>
-<blockquote>
-Whether to plot the BO's progress as it runs. Creates a canvas with
-two plots: the first plot shows the score of every trial and the
-second shows the distance between the last consecutive steps. Don't
-forget to call `%matplotlib` at the start of the cell if you are
-using jupyter notebook!
-</blockquote>
+<li><b>max_time: int</b></br>Maximum allowed time for the BO (in seconds).</li>
+<li><b>delta_x: int or float</b></br>Maximum distance between two consecutive points.</li>
+<li><b>delta_x: int or float</b></br>Maximum score between two consecutive points.</li>
+<li><b>cv: int</b></br>Number of folds for the cross-validation. If 1, the
+ training set will be randomly split in a subtrain and validation set.</li>
+<li><b>callback: callable or list of callables</b></br>Callbacks for the BO.</li>
+<li><b>dimensions: dict or array</b></br>Custom hyperparameter space for the
+ bayesian optimization. Can be an array (only if there is 1 model in the
+ pipeline) or a dictionary with the model's name as key.</li>
+<li><b>plot_bo: bool</b></br>Whether to plot the BO's progress as it runs.
+ Creates a canvas with two plots: the first plot shows the score of every trial
+ and the second shows the distance between the last consecutive steps. Don't
+ forget to call `%matplotlib` at the start of the cell if you are using jupyter
+ notebook!</li>
+<li><b>Any other parameter for the <a href="https://scikit-optimize.github.io/stable/modules/generated/skopt.gp_minimize.html">bayesian optimization function</a>.</b></li>                
 <strong>bagging: int or None, optional (default=None)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in the bagging
@@ -1125,12 +1127,10 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                 greater_is_better=True,
                                 needs_proba=False,
                                 needs_threshold=False,
-                                train_sizes=np.linspcae(0.1, 1.0, 10),
-                                max_iter=0,
-                                max_time=np.inf,
-                                init_points=5,
-                                plot_bo=False,
-                                cv=3,
+                                train_sizes=np.linspcae(0.2, 1.0, 5),
+                                n_calls=0,
+                                n_random_starts=5,
+                                bo_kwargs={},
                                 bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2201">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
@@ -1143,9 +1143,9 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GNB' for [Gaussian Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
-<li>'MNB' for [Multinomial Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
-<li>'BNB' for [Bernoulli Naïve Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
+<li>'GNB' for [Gaussian Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html)<br>Only for classification tasks. No hyperparameter tuning.</li>
+<li>'MNB' for [Multinomial Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html)<br>Only for classification tasks.</li>
+<li>'BNB' for [Bernoulli Naive Bayes](https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html)<br>Only for classification tasks.</li>
 <li>'GP' for Gaussian Process [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html)<br>No hyperparameter tuning.</li>
 <li>'OLS' for [Ordinary Least Squares](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)<br>Only for regression tasks. No hyperparameter tuning.</li>
 <li>'Ridge' for Ridge Linear [classifier](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html)/[regressor](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)<br>Only for regression tasks.</li>
@@ -1205,47 +1205,45 @@ Whether the metric function takes a continuous decision certainty. This only
  `decision_function` or `predict_proba` method. Will be ignored if the metric
  is a string or a scorer.
 </blockquote>
-<strong>train_sizes: sequence, optional (default=np.linspace(0.1, 1.0, 10))</strong>
+<strong>train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))</strong>
 <blockquote>
 Relative or absolute numbers of training examples that will be used
  to generate the learning curve. If the dtype is float, it is
  regarded as a fraction of the maximum size of the training set.
  Otherwise it is interpreted as absolute sizes of the training sets.
 </blockquote>
-<strong>max_iter: int or sequence, optional (default=0)</strong>
+<strong>n_calls: int or sequence, optional (default=0)</strong>
 <blockquote>
-Maximum number of iterations of the BO. If 0, skip the BO and fit
- the model on its default parameters. If sequence, the n-th value
- will apply to the n-th model in the pipeline.
+Maximum number of iterations of the BO (including `n_random starts`).
+ If 0, skip the BO and fit the model on its default Parameters.
+ If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>max_time: int, float or sequence, optional (default=np.inf)</strong>
+<strong>n_random_starts: int or sequence, optional (default=5)</strong>
 <blockquote>
-Maximum time allowed for the BO per model (in seconds). If 0, skip
- the BO and fit the model on its default parameters. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
+Initial number of random tests of the BO before fitting the
+ surrogate function. If equal to `n_calls`, the optimizer will
+ technically be performing a random search. If sequence, the n-th
+ value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>init_points: int or sequence, optional (default=5)</strong>
+<strong>bo_kwargs: dict, optional (default={})</strong>
 <blockquote>
-Initial number of tests of the BO before fitting the surrogate
- function. If 1, the default models' hyperparameters will be used. If sequence,
- the n-th value will apply to the n-th model in the pipeline.
-</blockquote>
-<strong>cv: int or sequence, optional (default=3)</strong>
-<blockquote>
-Strategy to fit and score the model selected after every step of the BO.
+Dictionary of extra keyword arguments for the BO. These can include:
 <ul>
-<li>if 1, randomly split into a train and validation set</li>
-<li>if >1, perform a k-fold cross validation on the training set</li>
-</ul>
-</blockquote>
-<strong>plot_bo: bool, optional (default=False)</strong>
-<blockquote>
-Whether to plot the BO's progress as it runs. Creates a canvas with
-two plots: the first plot shows the score of every trial and the
-second shows the distance between the last consecutive steps. Don't
-forget to call `%matplotlib` at the start of the cell if you are
-using jupyter notebook!
-</blockquote>
+<li><b>max_time: int</b></br>Maximum allowed time for the BO (in seconds).</li>
+<li><b>delta_x: int or float</b></br>Maximum distance between two consecutive points.</li>
+<li><b>delta_x: int or float</b></br>Maximum score between two consecutive points.</li>
+<li><b>cv: int</b></br>Number of folds for the cross-validation. If 1, the
+ training set will be randomly split in a subtrain and validation set.</li>
+<li><b>callback: callable or list of callables</b></br>Callbacks for the BO.</li>
+<li><b>dimensions: dict or array</b></br>Custom hyperparameter space for the
+ bayesian optimization. Can be an array (only if there is 1 model in the
+ pipeline) or a dictionary with the model's name as key.</li>
+<li><b>plot_bo: bool</b></br>Whether to plot the BO's progress as it runs.
+ Creates a canvas with two plots: the first plot shows the score of every trial
+ and the second shows the distance between the last consecutive steps. Don't
+ forget to call `%matplotlib` at the start of the cell if you are using jupyter
+ notebook!</li>
+<li><b>Any other parameter for the <a href="https://scikit-optimize.github.io/stable/modules/generated/skopt.gp_minimize.html">bayesian optimization function</a>.</b></li>                
 <strong>bagging: int or None, optional (default=None)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in the bagging
@@ -1430,6 +1428,37 @@ Same arguments as the <a href="#atom-transform">transform</a> method to
 
 
 
+<a name="atom-score"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">score</strong>(X, y, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L711">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Transform the data and run the scoring method of the winning model in the pipeline.
+The model has to have a `score` method.
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<blockquote>
+Data containing the features, with shape=(n_samples, n_features).
+</blockquote>
+<strong>y: int, str, dict, sequence, np.array or pd.Series</strong>
+<blockquote>
+Target column corresponding to X, with shape=(n_samples,).
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same arguments as the <a href="#atom-transform">transform</a> method to
+ include/exclude pre-processing steps from the transformer.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+
 
 ## Model subclass
 
@@ -1441,7 +1470,7 @@ After running the pipeline method, a class for every selected model is created a
  
 The majority of the [plots](#plots) can be called directly from the
  subclasses. For example, to plot the ROC for the LightGBM model we could type
- `atom.lgb.plot_ROC()`. You can also save the whole subclass to a pickle file
+ `atom.lgb.plot_roc()`. You can also save the whole subclass to a pickle file
  using the `save` method, e.g. `atom.rf.save('random_forest')`, or only save 
  the best fitted model with the `save_model` method,
  e.g.`atom.rf.save_model('random_forest_model')`.
@@ -1463,14 +1492,15 @@ You can also call for any of the sklearn pre-defined metrics,
 Any exception encountered by the model.
 </blockquote>
 
-<strong>BO: dict</strong>
+<strong>BO: pd.DataFrame</strong>
 <blockquote>
-Dictionary containing the information of every step taken by the BO. Keys include:
+Dataframe containing the information of every step taken by the BO. Columns include:
 <ul>
-<li>'params': Parameters used for the model</li>
-<li>'score': Score of the chosen metric</li>
-<li>'time': Time spent on this iteration</li>
-<li>'total_time': Time spent since the start of the BO</li>
+<li>'params': Parameters used in the model.</li>
+<li>'model': Model used in this iteration (not fitted, unless cv=1).</li>
+<li>'score': Score of the chosen metric.</li>
+<li>'time': Time spent on this iteration.</li>
+<li>'total_time': Time spent since the start of the BO.</li>
 </ul>
 </blockquote>
 
@@ -1561,20 +1591,21 @@ Dictionary of the permutation's results (if `plot_permutation_importance` was us
 The ATOM class provides a variety of plot methods to analyze the results of the
  pipeline. To use the plots to compare the results of multiple models, you can
  call them directly from the main class using the `models` parameter, e.g.
- `atom.plot_PRC(models=['LDA', 'LGB'])`.
+ `atom.plot_prc(models=['LDA', 'LGB'])`.
  
  To call the plot for a single model, you can either fill the model in the `models`
- parameter (e.g. `atom.plot_PRC(models='LDA')`) or call the from the model subclass
- (e.g. `atom.LDA.plot_PRC()`). These two examples will render the same plot.
+ parameter (e.g. `atom.plot_prc(models='LDA')`) or call the from the model subclass
+ (e.g. `atom.LDA.plot_prc()`). These two examples will render the same plot.
  Note that the latter approach is not available for the [`plot_correlation`](#atom-plot-correlation),
- [`plot_PCA`](#atom-plot-pca), [`plot_components`](#atom-plot-components) and 
- [`plot_RFECV`](#atom-plot-RFECV) methods since they are unrelated to the models
+ [`plot_pca`](#atom-plot-pca), [`plot_components`](#atom-plot-components) and 
+ [`plot_RFECV`](#atom-plot-rfecv) methods since they are unrelated to the models
  fitted in the pipeline.
 
 !!! note
-    Remember that if successive halving=True, only the last fitted model is saved
-    in the model subclass. Avoid plotting models from different iterations
-    together since this can lead to misleading insights.
+    Remember that if you used the successive_halving or train_sizing methods,
+    only the last fitted model is saved in the model subclass. Avoid plotting
+    models from different iterations together since this can lead to
+    misleading insights.
 
 The plots aesthetics can be customized using various [classmethods](#atom-plot-customization).
 
@@ -1585,7 +1616,7 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 </tr>
 
 <tr>
-<td><a href="#atom-plot-PCA">plot_PCA</a></td>
+<td><a href="#atom-plot-pca">plot_pca</a></td>
 <td>Plot the explained variance ratio vs the number of components.</td>
 </tr>
 
@@ -1595,7 +1626,7 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 </tr>
 
 <tr>
-<td><a href="#atom-plot-RFECV">plot_RFECV</a></td>
+<td><a href="#atom-plot-rfecv">plot_rfecv</a></td>
 <td>Plot the scores obtained by the estimator on the RFECV.</td>
 </tr>
 
@@ -1615,12 +1646,12 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 </tr>
 
 <tr>
-<td><a href="#atom-plot-ROC">plot_ROC</a></td>
+<td><a href="#atom-plot-roc">plot_roc</a></td>
 <td>Plot the Receiver Operating Characteristics curve.</td>
 </tr>
 
 <tr>
-<td><a href="#atom-plot-PRC">plot_PRC</a></td>
+<td><a href="#atom-plot-prc">plot_prc</a></td>
 <td>Plot the precision-recall curve.</td>
 </tr>
 
@@ -1669,6 +1700,11 @@ The plots aesthetics can be customized using various [classmethods](#atom-plot-c
 <td>Plot the lift curve.</td>
 </tr>
 
+<tr>
+<td><a href="#atom-plot-bo">plot_bo</a></td>
+<td>Plot the bayesian optimization scoring.</td>
+</tr>
+
 </table>
 <br>
 
@@ -1710,18 +1746,18 @@ Whether to render the plot.
 <br />
 
 
-<a name="atom-plot-PCA"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PCA</strong>(title=None,
+<a name="atom-plot-pca"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_pca</strong>(title=None,
                             figsize=(10, 6),
                             filename=None,
                             display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L86">[source]</a></div></pre>
 <div style="padding-left:3%" width="100%">
-Plot the explained variance ratio vs the number of componenets. Only if a Principal Component Analysis
+Plot the explained variance ratio vs the number of components. Only if a Principal Component Analysis
  was applied on the dataset through the [`feature_selection`](#atom-feature-selection) method.
  Can't be called from the model subclasses.
 <br /><br />
-![plot_PCA](img/plots/plot_PCA.png)
+![plot_pca](img/plots/plot_pca.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1793,8 +1829,8 @@ Whether to render the plot.
 <br />
 
 
-<a name="atom-plot-RFECV"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_RFECV</strong>(title=None,
+<a name="atom-plot-rfecv"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_rfecv</strong>(title=None,
                               figsize=(10, 6),
                               filename=None,
                               display=True)
@@ -1805,7 +1841,7 @@ Plot the scores obtained by the estimator fitted on every subset of
  [`feature_selection`](#atom-feature-selection) method. Can't be called from
  the model subclasses.
 <br /><br />
-![plot_RFECV](img/plots/plot_RFECV.png)
+![plot_rfecv](img/plots/plot_rfecv.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -1921,8 +1957,6 @@ Whether to render the plot.
 
 <a name="atom-plot-learning-curve"></a>
 <pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_learning_curve</strong>(models=None,
-                                       train_sizes=np.linspace(0.1, 1.0, 10),
-                                       cv=None, 
                                        title=None,
                                        figsize=(10, 6),
                                        filename=None,
@@ -1964,8 +1998,8 @@ Whether to render the plot.
 <br />
 
 
-<a name="atom-plot-ROC"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_ROC</strong>(models=None,
+<a name="atom-plot-roc"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_roc</strong>(models=None,
                             title=None,
                             figsize=(10, 6)),
                             filename=None,
@@ -1975,7 +2009,7 @@ Whether to render the plot.
 Plot the Receiver Operating Characteristics curve. The legend shows the Area Under the ROC Curve (AUC) score.
  Only for binary classification tasks.
 <br /><br />
-![plot_ROC](img/plots/plot_ROC.png)
+![plot_roc](img/plots/plot_roc.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -2007,8 +2041,8 @@ Whether to render the plot.
 <br />
 
 
-<a name="atom-plot-PRC"></a>
-<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_PRC</strong>(models=None,
+<a name="atom-plot-prc"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_prc</strong>(models=None,
                             title=None,
                             figsize=(10, 6),
                             filename=None,
@@ -2018,7 +2052,7 @@ Whether to render the plot.
 Plot the precision-recall curve. The legend shows the average precision (AP) score.
  Only for binary classification tasks.
 <br /><br />
-![plot_PRC](img/plots/plot_PRC.png)
+![plot_prc](img/plots/plot_prc.png)
 <br /><br />
 <table width="100%">
 <tr>
@@ -2411,6 +2445,51 @@ Whether to render the plot.
 Plot the lift curve. Only for binary classification.
 <br /><br />
 ![plot_lift](img/plots/plot_lift.png)
+<br /><br />
+<table width="100%">
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: string, sequence or None, optional (default=None)</strong>
+<blockquote>
+Name of the models to plot. If None, all the models in the pipeline are selected.
+</blockquote>
+<strong>title: string or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
+<blockquote>
+Figure's size, format as (x, y).
+</blockquote>
+<strong>filename: string or None, optional (default=None)</strong>
+<blockquote>
+Name of the file (to save). If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Whether to render the plot.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+
+<a name="atom-plot-bo"></a>
+<pre><em>function</em> atom.ATOM.<strong style="color:#008AB8">plot_bo</strong>(models=None,
+                           title=None,
+                           figsize=(10, 6),
+                           filename=None,
+                           display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1323">[source]</a></div></pre>
+<div style="padding-left:3%" width="100%">
+Plot the bayesian optimization scoring. Only for models that ran the hyperparameter
+ optimization. This is the same plot as the one produced by `plot_bo=True` while
+ running the BO.
+<br /><br />
+![plot_bo](img/plots/plot_bo.png)
 <br /><br />
 <table width="100%">
 <tr>

@@ -10,15 +10,22 @@ Description: Module containing the data cleaning estimators.
 # << ============ Import Packages ============ >>
 
 # Standard packages
+import os
 import numpy as np
 import pandas as pd
-from scipy.stats import zscore
+import multiprocessing
+import warnings as warn
+from copy import deepcopy
+from typeguard import typechecked
 from typing import Union, Optional, Sequence
+
+# Sklearn
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 
-# Third party packages
+# Other packages
+from scipy.stats import zscore
 from category_encoders.backward_difference import BackwardDifferenceEncoder
 from category_encoders.basen import BaseNEncoder
 from category_encoders.binary import BinaryEncoder
@@ -37,80 +44,97 @@ from imblearn.over_sampling import ADASYN
 from imblearn.under_sampling import NearMiss
 
 # Own modules
-from .utils import scalar, variable_return, to_df, to_series, merge
+from .utils import (
+    X_TYPES, Y_TYPES, prepare_logger, variable_return, to_df, to_series, merge,
+    check_is_fitted, infer_task, composed, crash
+    )
 
 
 # << ================ Classes ================= >>
 
-class DataCleanerEstimator(object):
+class BaseCleaner(object):
     """Base estimator for the data cleaning classes."""
 
     def __init__(self, **kwargs):
-        """Class initializer.
+        """Checks standard parameters and convert to attributes.
 
         Parameters
         ----------
         **kwargs
-            Can contain the ATOM class from which to borrow parameters such
-            as verbose and n_jobs or can contain those parameters directly.
+            Standard keyword arguments for the classes. Can include:
+                - n_jobs: number of cores to use for parallel processing.
+                - verbose: Verbosity level of the output.
+                - warnings: If False, suppresses all warnings.
+                - logger: name of the logging file or Logger object.
+                - random_state: seed used by the random number generator.
 
         """
-        self.kwargs = kwargs
-        self.verbose = 0  # Default verbosity
-        self._is_fitted = False
+        if 'n_jobs' in kwargs:
+            n_jobs = kwargs['n_jobs']
 
-        # List of possible attributes needed by the estimators
-        attributes = ['task', 'mapping', 'metric', 'winner',
-                      'n_jobs', 'verbose', 'random_state']
+            # Check number of cores for multiprocessing
+            n_cores = multiprocessing.cpu_count()
+            if n_jobs > n_cores:
+                self.n_jobs = n_cores
+            elif n_jobs == 0:
+                self.n_jobs = 1
+            else:
+                self.n_jobs = n_cores + 1 + n_jobs if n_jobs < 0 else n_jobs
 
-        # Attach attributes to the class
-        for attr in attributes:
-            if 'atom' in self.kwargs.keys():
-                try:  # Can fail with task
-                    setattr(self, attr, getattr(self.kwargs['atom'], attr))
-                except AttributeError:
-                    pass
+                # Final check for negative input
+                if self.n_jobs < 1:
+                    raise ValueError("Invalid value for the n_jobs " +
+                                     f"parameter, got {n_jobs}.")
 
-            # If the attribute is given directly as parameter, overwrite ATOM
-            if attr in self.kwargs.keys():
-                setattr(self, attr, self.kwargs[attr])
-                del self.kwargs[attr]
+        if 'verbose' in kwargs:
+            self.verbose = kwargs['verbose']
+            if self.verbose < 0 or self.verbose > 2:
+                raise ValueError("Invalid value for the verbose parameter. " +
+                                 "Value should be between 0 and 2, got {}."
+                                 .format(self.verbose))
 
-        # Separate attribute for protected member for logger
-        if 'atom' in self.kwargs.keys():
-            self.log = self.kwargs['atom']._log
-            del self.kwargs['atom']
-        else:
-            self.log = None
+        if not kwargs.get('warnings', True):
+            # Ignore all warnings (changes python environment!)
+            warn.simplefilter('ignore')  # Change the filter in this process
+            os.environ['PYTHONWARNINGS'] = 'ignore'  # Also affect subprocesses
 
-    def _check_is_fitted(self):
-        """Check Whether the class has been fitted."""
-        if not self._is_fitted:
-            raise AttributeError("This instance is not fitted yet. Call " +
-                                 "'fit' with appropriate arguments before " +
-                                 "using this estimator.")
+        if 'logger' in kwargs:
+            self.logger = prepare_logger(logger=kwargs['logger'],
+                                         class_name=self.__class__.__name__)
 
-    def _log(self, string, level=0):
+        if 'random_state' in kwargs:
+            self.random_state = kwargs['random_state']
+            if self.random_state and self.random_state < 0:
+                raise ValueError("Invalid value for the random_state " +
+                                 "parameter. Value should be >0, got {}."
+                                 .format(self.random_state))
+            np.random.seed(self.random_state)  # Set random seed
+
+    @composed(crash, typechecked)
+    def log(self, msg: Union[int, float, str], level: int = 0):
         """Print and save output to log file.
 
         Parameters
         ----------
-        string: string
-            Message to save to log and print to stdout.
+        msg: int, float or str
+            Message to save to the logger and print to stdout.
 
         level: int
-            Minimum verbosity level (of the ATOM object) in order to print the
-            message to the ATOM logger.
+            Minimum verbosity level in order to print the message.
 
         """
-        if self.verbose > level:
-            if callable(self.log):
-                self.log(string, level)
-            else:
-                print(string)
+        if self.verbose >= level:
+            print(msg)
+
+        if self.logger:
+            if isinstance(msg, str):
+                while msg.startswith('\n'):  # Insert empty lines
+                    self.logger.info('')
+                    msg = msg[1:]
+            self.logger.info(str(msg))
 
     @staticmethod
-    def prepare_input(X, y):
+    def _prepare_input(X, y):
         """Prepare the input data.
 
         Copy X and y and convert to pandas. If already in pandas frame, reset
@@ -121,8 +145,11 @@ class DataCleanerEstimator(object):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, dict, sequence, np.array, pd.Series or None
-            Target column index, name or array-like, with shape=(n_samples,).
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -133,16 +160,11 @@ class DataCleanerEstimator(object):
             Copy of the target column corresponding to X.
 
         """
-        X = X.copy()  # Make a copy to not overwrite mutable variables
-        # Convert X to pd.DataFrame
-        if not isinstance(X, pd.DataFrame):
-            X = to_df(X)
-        else:
-            X.reset_index(drop=True, inplace=True)
+        X = to_df(deepcopy(X))  # Copy to not overwrite mutable variables
 
         # Convert array to dataframe and target column to pandas series
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
-            y = y.copy()
+            y = deepcopy(y)
             if len(X) != len(y):
                 raise ValueError("X and y don't have the same number of " +
                                  f"rows: {len(X)}, {len(y)}.")
@@ -156,9 +178,10 @@ class DataCleanerEstimator(object):
                 if y.ndim != 1:
                     raise ValueError("y should be one-dimensional, got " +
                                      f"y.ndim={y.ndim}.")
-                y = to_series(y)
-            else:
-                y.reset_index(drop=True, inplace=True)
+                y = to_series(y, index=X.index)
+
+            elif not X.index.equals(y.index):  # Compare indices
+                raise ValueError("X and y don't have the same indices!")
 
             return X, y
 
@@ -174,7 +197,8 @@ class DataCleanerEstimator(object):
         elif y is None:
             return X, y
 
-    def fit_transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit and transform with (optionally) both X and y parameters.
 
         Parameters
@@ -182,8 +206,11 @@ class DataCleanerEstimator(object):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -194,26 +221,39 @@ class DataCleanerEstimator(object):
             Target column corresponding to X.
 
         """
-        return self.fit(X, y).transform(X, y)
+        try:
+            return self.fit(X, y).transform(X, y)
+        except AttributeError:
+            return self.transform(X, y)
 
 
-class Scaler(BaseEstimator, DataCleanerEstimator):
+class Scaler(BaseEstimator, BaseCleaner):
     """Scale features to mean=0 and std=1."""
 
-    def __init__(self, **kwargs):
+    @typechecked
+    def __init__(self,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None):
         """Initialize class.
 
         Parameters
         ----------
-        **kwargs
-            Additional parameters for the estimator.
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+
+        logger: str or callable, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
 
         """
-        super().__init__(**kwargs)
-        self._cols = None
+        super().__init__(verbose=verbose, logger=logger)
         self.standard_scaler = None
 
-    def fit(self, X, y=None):
+    @composed(crash, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the scaler to the data.
 
         Parameters
@@ -221,23 +261,24 @@ class Scaler(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: None
-            Does nothing. Only for continuity of API.
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            Does nothing. Only for continuity of API. Is returned unchanged if
+            provided.
 
         Returns
         -------
         self: Scaler
 
         """
-        X, y = self.prepare_input(X, y)
-        self._cols = X.columns
+        X, y = self._prepare_input(X, y)
 
         # Check if features are already scaled
         self.standard_scaler = StandardScaler().fit(X)
 
         return self
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Scale the data.
 
         Parameters
@@ -245,8 +286,9 @@ class Scaler(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            Does nothing. Only for continuity of API. Is returned unchanged if
+            provided.
 
         Returns
         -------
@@ -257,33 +299,36 @@ class Scaler(BaseEstimator, DataCleanerEstimator):
             Target column corresponding to X.
 
         """
-        X, y = self.prepare_input(X, y)
+        check_is_fitted(self, 'standard_scaler')
+        X, y = self._prepare_input(X, y)
 
-        self._log("Scaling features...", 1)
-
-        X = to_df(self.standard_scaler.transform(X), self._cols)
+        self.log("Scaling features...", 1)
+        X = to_df(self.standard_scaler.transform(X), X.index, X.columns)
         return variable_return(X, y)
 
 
-class StandardCleaner(BaseEstimator, DataCleanerEstimator):
+class StandardCleaner(BaseEstimator, BaseCleaner):
     """Applies standard data cleaning steps."""
 
     def __init__(self,
+                 prohibited_types: Union[str, Sequence[str]] = [],
                  strip_categorical: bool = True,
-                 missing_target: bool = True,
                  maximum_cardinality: bool = True,
                  minimum_cardinality: bool = True,
-                 prohibited_types: Optional[Union[str, Sequence[str]]] = None,
-                 **kwargs):
+                 missing_target: bool = True,
+                 map_target: Optional[bool] = None,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,):
         """Class initializer.
 
         Parameters
         ----------
+        prohibited_types: str or sequence, optional (default=[])
+            Prohibited data type. Columns with any of these types will be
+            removed from the dataset.
+
         strip_categorical: bool, optional (default=True)
             Whether to strip the spaces from values in the categorical columns.
-
-        missing_target: bool, optional (default=True)
-            Whether to remove rows with missing values in the target column.
 
         maximum_cardinality: bool, optional (default=True)
             Whether to remove categorical columns with maximum cardinality,
@@ -294,45 +339,55 @@ class StandardCleaner(BaseEstimator, DataCleanerEstimator):
             Whether to remove columns with minimum cardinality, i.e. all values
             in the column are the same.
 
-        prohibited_types: str, sequence or None, optional (default=None)
-            Prohibited data type. Columns with any of these types will be
-            removed from the dataset.
+        missing_target: bool, optional (default=True)
+            Whether to remove rows with missing values in the target column.
 
-        **kwargs
-            Additional parameters for the estimator.
+        map_target: bool or None, optional (default=None)
+            Whether to map the target column to numerical values. Should only
+            be used for classification tasks. If None, infer task from the
+            provided target column.
+
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(verbose=verbose, logger=logger)
 
         # Define attributes
-        self.strip_categorical = strip_categorical
-        self.missing_target = missing_target
-        self.maximum_cardinality = maximum_cardinality
-        self.minimum_cardinality = minimum_cardinality
         if isinstance(prohibited_types, str):
             self.prohibited_types = [prohibited_types]
         else:
             self.prohibited_types = prohibited_types
+        self.strip_categorical = strip_categorical
+        self.maximum_cardinality = maximum_cardinality
+        self.minimum_cardinality = minimum_cardinality
+        self.missing_target = missing_target
+        self.map_target = map_target
 
-    def transform(self, X, y=None):
-        """Apply data cleaning steps to the dataset.
+        self.mapping = {}
 
-        These steps include:
-            - Removing columns with prohibited data types.
-            - Strip categorical features from white spaces.
-            - Removing categorical columns with maximal cardinality (the number
-              of unique values is equal to the number of instances. Usually the
-              case for names, IDs, etc...).
-            - Removing columns with minimum cardinality (all values are equal).
-            - Removing rows with missing values in the target column.
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Apply data cleaning steps to the data.
 
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -343,9 +398,9 @@ class StandardCleaner(BaseEstimator, DataCleanerEstimator):
             Target column corresponding to X.
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
-        self._log("Standard data cleaning...", 1)
+        self.log("Standard data cleaning...", 1)
 
         for col in X:
             unique = X[col].unique()
@@ -354,51 +409,62 @@ class StandardCleaner(BaseEstimator, DataCleanerEstimator):
             # Drop features with invalid data type
             dtype = str(X[col].dtype)
             if dtype in self.prohibited_types:
-                self._log(f" --> Dropping feature {col} due to " +
-                          f"unhashable type: {dtype}.", 2)
+                self.log(f" --> Dropping feature {col} due to " +
+                         f"unhashable type: {dtype}.", 2)
                 X.drop(col, axis=1, inplace=True)
                 continue
 
-            elif dtype in ('object', 'category'):
+            elif dtype in ('object', 'category') and self.strip_categorical:
                 # Strip categorical features from blank spaces
-                if self.strip_categorical:
-                    X[col].astype(str).str.strip()
+                X[col] = X[col].astype(str).str.strip()
 
                 # Drop features where all values are different
                 if self.maximum_cardinality and n_unique == len(X):
-                    self._log(f" --> Dropping feature {col} due to " +
-                              "maximum cardinality.", 2)
+                    self.log(f" --> Dropping feature {col} due to " +
+                             "maximum cardinality.", 2)
                     X.drop(col, axis=1, inplace=True)
 
-            # Drop features where all values are the same
+            # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
-                self._log(f" --> Dropping feature {col} due to minimum " +
-                          f"cardinality. Contains only value: {unique[0]}", 2)
+                self.log(f" --> Dropping feature {col} due to minimum " +
+                         f"cardinality. Contains only value: {unique[0]}", 2)
                 X.drop(col, axis=1, inplace=True)
 
-        # Delete rows with NaN in target (if y is provided)
         if y is not None:
-            length = len(y)
-            y.dropna(inplace=True)
-            X = X[X.index.isin(y.index)]  # Select only indices that remain
-            diff = length - len(y)  # Difference in length
-            if diff > 0:
-                self._log(f" --> Dropping {diff} rows with missing values " +
-                          "in target column.", 2)
+            # Delete rows with NaN in target
+            if self.missing_target:
+                length = len(y)
+                y.dropna(inplace=True)
+                X = X[X.index.isin(y.index)]  # Select only indices that remain
+                diff = length - len(y)  # Difference in side
+                if diff > 0:
+                    # Reset indices for the merger
+                    X.reset_index(drop=True, inplace=True)
+                    y.reset_index(drop=True, inplace=True)
+                    self.log(f" --> Dropping {diff} rows with missing " +
+                             "values in target column.", 2)
+
+            task = infer_task(y) if self.map_target is None else 'reg'
+            # Map the target column to numerical values
+            if self.map_target or not task.startswith('reg'):
+                le = LabelEncoder()
+                y = to_series(le.fit_transform(y), index=y.index, name=y.name)
+                self.mapping = {str(v): i for i, v in enumerate(le.classes_)}
 
         return variable_return(X, y)
 
 
-class Imputer(BaseEstimator, DataCleanerEstimator):
+class Imputer(BaseEstimator, BaseCleaner):
     """Handle missing values in the dataset."""
 
     def __init__(self,
-                 strat_num: Union[scalar, str] = 'remove',
+                 strat_num: Union[int, float, str] = 'remove',
                  strat_cat: str = 'remove',
                  min_frac_rows: float = 0.5,
                  min_frac_cols: float = 0.5,
-                 missing: Optional[Union[scalar, str, list]] = None,
-                 **kwargs):
+                 missing: Optional[Union[int, float, str, list]] = None,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,):
         """Initialize class.
 
         Parameters
@@ -430,11 +496,19 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
             List of values to impute. None for default list: [None, np.NaN,
             np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
 
-        **kwargs
-            Additional parameters for the estimator.
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(verbose=verbose, logger=logger)
 
         # Check input Parameters
         strats = ['remove', 'mean', 'median', 'knn', 'most_frequent']
@@ -469,8 +543,10 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
         self.missing = missing
 
         self._imputers = {}
+        self._is_fitted = False
 
-    def fit(self, X, y=None):
+    @composed(crash, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the individual imputers on each column.
 
         Parameters
@@ -478,15 +554,16 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: None
-            Does nothing. Only for continuity of API.
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            Does nothing. Only for continuity of API. Is returned unchanged if
+            provided.
 
         Returns
         -------
         self: Imputer
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
         # Replace missing values with NaN
         X.fillna(value=np.NaN, inplace=True)  # Replace None first
@@ -522,7 +599,8 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
         self._is_fitted = True
         return self
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the missing values transformations.
 
         Impute or remove missing values according to the selected strategy.
@@ -533,8 +611,11 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -545,10 +626,10 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
             Target column corresponding to X.
 
         """
-        self._check_is_fitted()
-        X, y = self.prepare_input(X, y)
+        check_is_fitted(self, '_is_fitted')
+        X, y = self._prepare_input(X, y)
 
-        self._log("Imputing missing values...", 1)
+        self.log("Imputing missing values...", 1)
 
         # Replace missing values with NaN
         X.fillna(value=np.NaN, inplace=True)  # Replace None first
@@ -563,8 +644,8 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
             y = y[y.index.isin(X.index)]  # Select only indices that remain
         diff = length - len(X)
         if diff > 0:
-            self._log(f" --> Removing {diff} rows for containing less than " +
-                      f"{int(self.min_frac_rows*100)}% non-missing values.", 2)
+            self.log(f" --> Removing {diff} rows for containing less than " +
+                     f"{int(self.min_frac_rows*100)}% non-missing values.", 2)
 
         # Loop over all columns to apply strategy dependent on type
         for col in X:
@@ -574,65 +655,67 @@ class Imputer(BaseEstimator, DataCleanerEstimator):
             nans = X[col].isna().sum()  # Number of missing values in column
             pnans = int(nans/len(X) * 100)  # Percentage of NaNs
             if (len(X) - nans)/len(X) < self.min_frac_cols:
-                self._log(f" --> Removing feature {col} for containing " +
-                          f"{nans} ({pnans}%) missing values.", 2)
+                self.log(f" --> Removing feature {col} for containing " +
+                         f"{nans} ({pnans}%) missing values.", 2)
                 X.drop(col, axis=1, inplace=True)
-                continue  # Skip to next column
+                continue  # Skip to side column
 
             # Column is numerical and contains missing values
             if X[col].dtype.kind in 'ifu' and nans > 0:
                 if not isinstance(self.strat_num, str):
-                    self._log(f" --> Imputing {nans} missing values with " +
-                              f"number {str(self.strat_num)} in feature " +
-                              f"{col}.", 2)
+                    self.log(f" --> Imputing {nans} missing values with " +
+                             f"number {str(self.strat_num)} in feature " +
+                             f"{col}.", 2)
                     X[col].replace(np.NaN, self.strat_num, inplace=True)
 
                 elif self.strat_num.lower() == 'remove':
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self._log(f" --> Removing {nans} rows due to missing " +
-                              f"values in feature {col}.", 2)
+                    self.log(f" --> Removing {nans} rows due to missing " +
+                             f"values in feature {col}.", 2)
 
                 elif self.strat_num.lower() == 'knn':
-                    self._log(f" --> Imputing {nans} missing values using " +
-                              f"the KNN imputer in feature {col}.", 2)
+                    self.log(f" --> Imputing {nans} missing values using " +
+                             f"the KNN imputer in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
                 else:  # Strategies: mean, median or most_frequent.
-                    self._log(f" --> Imputing {nans} missing values with " +
-                              f"{self.strat_num.lower()} in feature {col}.", 2)
+                    self.log(f" --> Imputing {nans} missing values with " +
+                             f"{self.strat_num.lower()} in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
             # Column is categorical and contains missing values
             elif nans > 0:
                 if self.strat_cat.lower() not in ['remove', 'most_frequent']:
-                    self._log(f" --> Imputing {nans} missing values with " +
-                              f"{self.strat_cat} in feature {col}.", 2)
+                    self.log(f" --> Imputing {nans} missing values with " +
+                             f"{self.strat_cat} in feature {col}.", 2)
                     X[col].replace(np.NaN, self.strat_cat, inplace=True)
 
                 elif self.strat_cat.lower() == 'remove':
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self._log(f" --> Removing {nans} rows due to missing " +
-                              f"values in feature {col}.", 2)
+                    self.log(f" --> Removing {nans} rows due to missing " +
+                             f"values in feature {col}.", 2)
 
                 elif self.strat_cat.lower() == 'most_frequent':
-                    self._log(f" --> Imputing {nans} missing values with" +
-                              f"most_frequent in feature {col}", 2)
+                    self.log(f" --> Imputing {nans} missing values with " +
+                             f"most_frequent in feature {col}", 2)
                     X[col] = self._imputers[col].transform(values)
 
         return variable_return(X, y)
 
 
-class Encoder(BaseEstimator, DataCleanerEstimator):
+class Encoder(BaseEstimator, BaseCleaner):
     """Encode categorical features."""
 
     def __init__(self,
                  max_onehot: Optional[int] = 10,
                  encode_type: str = 'Target',
                  frac_to_other: float = 0,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,
                  **kwargs):
         """Initialize class.
 
@@ -658,11 +741,23 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
             Classes with less instances than n_rows * fraction_to_other
             are replaced with 'other'.
 
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
+
         **kwargs
-            Additional parameters for the estimator.
+            Additional keyword arguments for the encoder selected by
+            the `encoder_type` parameter.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(verbose=verbose, logger=logger)
 
         types = dict(BackwardDifference=BackwardDifferenceEncoder,
                      BaseN=BaseNEncoder,
@@ -686,27 +781,30 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
         elif max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
             raise ValueError("Invalid value for the max_onehot parameter." +
                              f"Value should be >= 0, got {max_onehot}.")
-        if encode_type.lower() not in [x.lower() for x in types.keys()]:
+        if encode_type.lower() not in [x.lower() for x in types]:
             raise ValueError("Invalid value for the encode_type parameter." +
-                             f"Choose from: {', '.join(types.keys())}.")
+                             f"Choose from: {', '.join(types)}.")
         if frac_to_other < 0 or frac_to_other > 1:
             raise ValueError("Invalid value for the frac_to_other parameter." +
                              "Value should be between 0 and 1, got {}."
                              .format(frac_to_other))
 
         self.max_onehot = max_onehot
-        for key in types.keys():
+        for key, value in types.items():
             if key.lower() == encode_type.lower():
                 self.encode_type = key
-                self._rest_encoder = types[key]
+                self._rest_encoder = value
                 break
         self.frac_to_other = frac_to_other
+        self.kwargs = kwargs
 
         self._to_other = {}
         self._col_to_type = {}
         self._encoders = {}
+        self._is_fitted = False
 
-    def fit(self, X, y=None):
+    @composed(crash, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the individual encoders on each column.
 
         Parameters
@@ -714,15 +812,18 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array or pd.Series, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
         self: Encoder
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
         for col in X:
             self._to_other[col] = []
@@ -766,7 +867,8 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
         self._is_fitted = True
         return self
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the encoding transformations.
 
         Parameters
@@ -774,7 +876,7 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: None
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
             Does nothing. Only for continuity of API. Is returned unchanged if
             provided.
 
@@ -784,10 +886,10 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
             Imputed dataframe.
 
         """
-        self._check_is_fitted()
-        X, y = self.prepare_input(X, y)
+        check_is_fitted(self, '_is_fitted')
+        X, y = self._prepare_input(X, y)
 
-        self._log("Encoding categorical features...", 1)
+        self.log("Encoding categorical features...", 1)
 
         for col in X:
             if X[col].dtype.kind not in 'ifu':  # If column is categorical
@@ -812,13 +914,13 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
 
                 # Perform encoding type dependent on number of unique values
                 if self._col_to_type[col] == 'Ordinal':
-                    self._log(f" --> Label-encoding feature {col}. " +
-                              f"Contains {n_unique} unique categories.", 2)
+                    self.log(f" --> Label-encoding feature {col}. " +
+                             f"Contains {n_unique} unique categories.", 2)
                     X[col] = self._encoders[col].transform(values)
 
                 elif self._col_to_type[col] == 'One-hot':
-                    self._log(f" --> One-hot-encoding feature {col}. " +
-                              f"Contains {n_unique} unique categories.", 2)
+                    self.log(f" --> One-hot-encoding feature {col}. " +
+                             f"Contains {n_unique} unique categories.", 2)
                     onehot_cols = self._encoders[col].transform(values)
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
@@ -827,12 +929,11 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
                     X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
                 else:
-                    self._log(f" --> {self.encode_type}-encoding feature " +
-                              f"{col}. Contains {n_unique} unique categories.",
-                              2)
+                    self.log(f" --> {self.encode_type}-encoding feature " +
+                             f"{col}. Contains {n_unique} unique categories.",
+                             2)
                     rest_cols = self._encoders[col].transform(values)
-                    # Drop the original column
-                    X = X.drop(col, axis=1)
+                    X = X.drop(col, axis=1)  # Drop the original column
                     # Insert the new columns at old location
                     for i, column in enumerate(rest_cols):
                         X.insert(idx+i, column, rest_cols[column])
@@ -840,13 +941,15 @@ class Encoder(BaseEstimator, DataCleanerEstimator):
         return variable_return(X, y)
 
 
-class Outliers(BaseEstimator, DataCleanerEstimator):
+class Outliers(BaseEstimator, BaseCleaner):
     """Remove or replace outliers in the dataset."""
 
     def __init__(self,
-                 strategy: Union[scalar, str] = 'remove',
-                 max_sigma: scalar = 3,
-                 **kwargs):
+                 strategy: Union[int, float, str] = 'remove',
+                 max_sigma: Union[int, float] = 3,
+                 include_target: bool = False,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None):
         """Class initializer.
 
         Outliers are defined as values that lie further than
@@ -863,11 +966,23 @@ class Outliers(BaseEstimator, DataCleanerEstimator):
         max_sigma: int or float, optional (default=3)
             Maximum allowed standard deviations from the mean.
 
-        **kwargs
-            Additional parameters for the estimator.
+        include_target: bool, optional (default=False)
+            Whether to include the target column when searching for outliers.
+            Can be useful for regression tasks.
+
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
 
         """
-        super().__init__(**kwargs)
+        super().__init__(verbose=verbose, logger=logger)
 
         # Check Parameters
         if isinstance(strategy, str):
@@ -881,8 +996,10 @@ class Outliers(BaseEstimator, DataCleanerEstimator):
         # Define attributes
         self.strategy = strategy
         self.max_sigma = max_sigma
+        self.include_target = include_target
 
-    def transform(self, X, y=None):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the transformations on the data.
 
         If y is provided, it will include the target column in the search
@@ -893,8 +1010,11 @@ class Outliers(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array, pd.Series or None, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+            - If None, y is not used in the estimator
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -905,20 +1025,20 @@ class Outliers(BaseEstimator, DataCleanerEstimator):
             Target column corresponding to X.
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
-        self._log('Handling outliers...', 1)
+        self.log('Handling outliers...', 1)
 
         # Get z-scores
-        objective = X if y is None else merge(X, y)
+        objective = merge(X, y) if self.include_target and y is not None else X
         z_scores = zscore(objective, nan_policy='propagate')
 
         if not isinstance(self.strategy, str):
             cond = np.abs(z_scores) > self.max_sigma
             objective.mask(cond, self.strategy, inplace=True)
             if cond.sum() > 0:
-                self._log(f" --> Replacing {cond.sum()} outliers with " +
-                          f"value {self.strategy}.", 2)
+                self.log(f" --> Replacing {cond.sum()} outliers with " +
+                         f"value {self.strategy}.", 2)
 
         elif self.strategy.lower() == 'min_max':
             counts = 0
@@ -938,32 +1058,40 @@ class Outliers(BaseEstimator, DataCleanerEstimator):
                 counts += cond1.sum() + cond2.sum()
 
             if counts > 0:
-                self._log(f" --> Replacing {counts} outliers with the min " +
-                          "or max of the column.", 2)
+                self.log(f" --> Replacing {counts} outliers with the min " +
+                         "or max of the column.", 2)
 
         elif self.strategy.lower() == 'remove':
             ix = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
             delete = len(ix) - ix.sum()  # Number of False values in index
             if delete > 0:
-                self._log(f" --> Dropping {delete} rows due to outliers.", 2)
+                self.log(f" --> Dropping {delete} rows due to outliers.", 2)
 
             # Remove rows based on index
             objective = objective[ix]
+            if y is not None:
+                y = y[ix]
 
-        if y is None:
-            return objective
+        if y is not None:
+            if self.include_target:
+                return objective.drop(y.name, axis=1), objective[y.name]
+            else:
+                return objective, y
         else:
-            return objective.drop(y.name, axis=1), objective[y.name]
+            return objective
 
 
-class Balancer(BaseEstimator, DataCleanerEstimator):
+class Balancer(BaseEstimator, BaseCleaner):
     """Balance the classes in a dataset."""
 
     def __init__(self,
-                 oversample: Optional[Union[scalar, str]] = None,
-                 undersample: Optional[Union[scalar, str]] = None,
+                 oversample: Optional[Union[int, float, str]] = None,
+                 undersample: Optional[Union[int, float, str]] = None,
                  n_neighbors: int = 5,
-                 **kwargs):
+                 n_jobs: int = 1,
+                 verbose: int = 0,
+                 logger: Optional[Union[str, callable]] = None,
+                 random_state: Optional[int] = None):
         """Initialize class.
 
         Balance the number of instances per target class in the training set.
@@ -994,64 +1122,70 @@ class Balancer(BaseEstimator, DataCleanerEstimator):
         n_neighbors: int, optional (default=5)
             Number of nearest neighbors used for any of the algorithms.
 
-        **kwargs
-            Additional parameters for the estimator.
+        n_jobs: int, optional (default=1)
+            Number of cores to use for parallel processing.
+                - If -1, use all available cores
+                - If <-1, use available_cores - 1 + value
+
+            Beware that using multiple processes on the same machine may
+            cause memory issues for large datasets.
+
+        verbose: int, optional (default=0)
+            Verbosity level of the class. Possible values are:
+                - 0 to not print anything.
+                - 1 to print basic information.
+                - 2 to print extended information.
+
+        logger: str, callable or None, optional (default=None)
+            - If string: name of the logging file. 'auto' for default name
+                         with timestamp. None to not save any log.
+            - If callable: python Logger object.
+
+        random_state: int or None, optional (default=None)
+            Seed used by the random number generator. If None, the random
+            number generator is the RandomState instance used by `np.random`.
 
         """
-        def check_params(name, value):
-            """Check the oversample and undersample parameters.
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         logger=logger,
+                         random_state=random_state)
 
-            Parameters
-            ----------
-            name: string
-                Name of the parameter.
-
-            value: float or string
-                Value of the parameter.
-
-            """
-            # List of admitted string values
-            strategies = ['majority', 'minority',
-                          'not majority', 'not minority', 'all']
-            if isinstance(value, str) and value not in strategies:
-                raise ValueError(f"Unknown value for the {name} parameter," +
-                                 " got {}. Choose from: {}."
-                                 .format(value, ', '.join(strategies)))
-            elif isinstance(value, float) or value == 1:
-                if not self.task.startswith('binary'):
-                    raise TypeError(f"Invalid type for the {name} param" +
-                                    "eter, got {}. Choose from: {}."
-                                    .format(value, ', '.join(strategies)))
-                elif value <= 0 or value > 1:
-                    raise ValueError(f"Invalid value for the {name} param" +
-                                     "eter. Value should be between 0 and 1," +
-                                     f" got {value}.")
-
-        super().__init__(**kwargs)
-
-        if self.task == 'regression':
-            raise ValueError("This method is only available for " +
-                             "classification tasks!")
-
-        # Check Parameters
-        check_params('oversample', oversample)
-        check_params('undersample', undersample)
-        if n_neighbors <= 0:
-            raise ValueError("Invalid value for the n_neighbors parameter." +
-                             "Value should be >0, got {percentage}.")
+        # Not both strategies can be applied at the same time
+        if oversample and undersample:
+            raise ValueError("Oversample and undersample cannot be " +
+                             "applied both at the same time!")
 
         # At least one of the two strategies needs to be applied
-        if oversample is None and undersample is None:
+        if not oversample and not undersample:
             raise ValueError("Oversample and undersample cannot be both None!")
+
+        # List of admitted string values
+        strats = ['not majority', 'not minority', 'all', 'auto']
+        strat_under = strats + ['majority']
+        strat_over = strats + ['minority']
+        if isinstance(oversample, str) and oversample not in strat_over:
+            raise ValueError(f"Unknown value for the oversample parameter," +
+                             " got {}. Choose from: {}."
+                             .format(oversample, ', '.join(strat_over)))
+        if isinstance(undersample, str) and undersample not in strat_under:
+            raise ValueError(f"Unknown value for the undersample parameter," +
+                             " got {}. Choose from: {}."
+                             .format(undersample, ', '.join(strat_under)))
+        if n_neighbors <= 0:
+            raise ValueError("Invalid value for the n_neighbors parameter." +
+                             f"Value should be >0, got {n_neighbors}.")
 
         # Define attributes
         self.oversample = oversample
         self.undersample = undersample
         self.n_neighbors = n_neighbors
 
+        self.mapping = {}
         self._cols = None
 
-    def transform(self, X, y):
+    @composed(crash, typechecked)
+    def transform(self, X: X_TYPES, y: Y_TYPES = -1):
         """Apply the transformations on the data.
 
         Parameters
@@ -1059,8 +1193,10 @@ class Balancer(BaseEstimator, DataCleanerEstimator):
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: sequence, np.array, pd.Series or None, optional (default=None)
-            Data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series, optional (default=-1)
+            - If int: index of the column of X which is selected as target
+            - If string: name of the target column in X
+            - Else: data target column with shape=(n_samples,)
 
         Returns
         -------
@@ -1071,44 +1207,47 @@ class Balancer(BaseEstimator, DataCleanerEstimator):
             Target column corresponding to X.
 
         """
-        X, y = self.prepare_input(X, y)
+        X, y = self._prepare_input(X, y)
 
-        # Save name columns for later
-        col_names = X.columns
-        target_name = y.name
+        # Save index and columns for later
+        index = X.index
+        columns = X.columns
+        name = y.name
 
-        # Save number of instances per target class for counting
+        # Create dict of category counts in y
         counts = {}
+        if not self.mapping:
+            self.mapping = {str(i): v for i, v in enumerate(y.unique())}
         for key, value in self.mapping.items():
-            counts[key] = (y == value).sum()
+            counts[key] = np.sum(y == value)
 
-        # Oversample the minority class with SMOTE
+        # Oversampling using ADASYN
         if self.oversample is not None:
-            self._log("Performing oversampling...", 1)
+            self.log("Performing oversampling...", 1)
             adasyn = ADASYN(sampling_strategy=self.oversample,
                             n_neighbors=self.n_neighbors,
                             n_jobs=self.n_jobs,
                             random_state=self.random_state)
             X, y = adasyn.fit_resample(X, y)
 
-            # Print changes
-            for key, value in self.mapping.items():
-                diff = (y == value).sum() - counts[key]
-                if diff > 0:
-                    self._log(f" --> Adding {diff} rows to class {key}.", 2)
-
-        # Apply undersampling of majority class
+        # Undersampling using NearMiss
         if self.undersample is not None:
-            self._log("Performing undersampling...", 1)
+            self.log("Performing undersampling...", 1)
             NM = NearMiss(sampling_strategy=self.undersample,
                           n_neighbors=self.n_neighbors,
                           n_jobs=self.n_jobs)
             X, y = NM.fit_resample(X, y)
 
-            # Print changes
-            for k, value in self.mapping.items():
-                diff = counts[key] - (y == value).sum()
-                if diff < 0:  # diff is negative since it removes
-                    self._log(f" --> Removing {-diff} rows from class {k}.", 2)
+        # Print changes
+        for key, value in self.mapping.items():
+            diff = counts[key] - np.sum(y == value)
+            if diff > 0:
+                self.log(f" --> Removing {diff} rows from category: {key}.", 2)
+            elif diff < 0:
+                # Add new indices to the total index
+                index = list(index) + list(np.arange(len(index) + diff))
+                self.log(f" --> Adding {-diff} rows to category: {key}.", 2)
 
-        return to_df(X, columns=col_names), to_series(y, name=target_name)
+        X = to_df(X, index=index, columns=columns)
+        y = to_series(y, index=index, name=name)
+        return X, y

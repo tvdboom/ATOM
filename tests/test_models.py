@@ -3,77 +3,58 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
-Description: Unit tests for the models and pre-set metrics available.
+Description: Unit tests for models.py
 
 """
 
 # Import packages
-from sklearn.datasets import load_breast_cancer, load_wine, load_boston
 from atom import ATOMClassifier, ATOMRegressor
+from atom.models import MODEL_LIST
+from atom.utils import ONLY_CLASSIFICATION, ONLY_REGRESSION
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
-# << ====================== Variables ====================== >>
-
-# List of all the available models
-model_list = ['BNB', 'GNB', 'MNB', 'GP', 'OLS', 'Ridge', 'Lasso', 'EN',
-              'BR', 'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET',
-              'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM',
-              'PA', 'SGD', 'MLP']
-
-# List of models that only work for regression/classification tasks
-only_classification = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
-only_regression = ['OLS', 'Lasso', 'EN', 'BR']
-
-X_bin, y_bin = load_breast_cancer(return_X_y=True)
-X_class, y_class = load_wine(return_X_y=True)
-X_reg, y_reg = load_boston(return_X_y=True)
-
-
-# << ======================= Tests ========================= >>
+# << ================= Tests ================ >>
 
 def test_models_attributes():
-    """ Assert that model subclasses have the right attributes """
-
+    """Assert that model subclasses have the right attributes."""
     atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(models='lr', metric='f1', max_iter=0)
+    atom.pipeline(models='lr', metric='f1')
     assert atom.lr.name == 'LR'
     assert atom.lr.longname == 'Logistic Regression'
 
 
 def test_models_binary():
-    """ Assert that the fit method works with all models for binary """
-
-    for model in [m for m in model_list if m not in only_regression]:
-        atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    """Assert that the fit method works with all models for binary."""
+    for model in [m for m in MODEL_LIST.keys() if m not in ONLY_REGRESSION]:
+        atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
         atom.pipeline(models=model,
                       metric='f1',
-                      max_iter=1,
-                      init_points=1,
-                      cv=1)
-    assert 1 == 1  # Assert that all models ran without errors
+                      n_calls=2,
+                      n_random_points=1,
+                      bo_kwargs={'cv': 1})
+        assert not atom.errors  # Assert that the model ran without errors
 
 
 def test_models_multiclass():
-    """ Assert that the fit method works with all models for multiclass"""
-
-    for model in [m for m in model_list if m not in only_regression]:
-        atom = ATOMClassifier(X_class, y_class, random_state=1)
+    """Assert that the fit method works with all models for multiclass."""
+    for model in [m for m in MODEL_LIST.keys() if m not in ONLY_REGRESSION]:
+        atom = ATOMClassifier(X_class, y_class, test_size=0.24, random_state=1)
         atom.pipeline(models=model,
                       metric='f1_micro',
-                      max_iter=1,
-                      init_points=1,
-                      cv=1)
-    assert 3 == 3
+                      n_calls=2,
+                      n_random_points=1,
+                      bo_kwargs={'cv': 1})
+        assert not atom.errors
 
 
 def test_models_regression():
-    """ Assert that the fit method works with all models for regression """
-
-    for model in [m for m in model_list if m not in only_classification]:
-        atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    """Assert that the fit method works with all models for regression."""
+    for model in [m for m in MODEL_LIST.keys() if m not in ONLY_CLASSIFICATION]:
+        atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
         atom.pipeline(models=model,
                       metric='neg_mean_absolute_error',
-                      max_iter=1,
-                      init_points=1,
-                      cv=1)
-    assert 5 == 5
+                      n_calls=2,
+                      n_random_points=1,
+                      bo_kwargs={'cv': 1})
+        assert not atom.errors

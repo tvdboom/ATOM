@@ -3,244 +3,238 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
-Description: Unit tests for the feature_selection method of the ATOM class.
+Description: Unit tests for feature_selection.py
 
 """
 
 # Import packages
 import pytest
-from sklearn.ensemble import RandomForestClassifier
+import pandas as pd
+from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import f_regression
-from sklearn.datasets import load_breast_cancer, load_boston
-from atom import ATOMClassifier, ATOMRegressor
+
+# Own modules
+from atom import ATOMClassifier
+from atom.feature_selection import FeatureGenerator, FeatureSelector
+from atom.utils import check_scaling
+from .utils import X_bin, y_bin, X_reg, y_reg
 
 
-# << ====================== Variables ====================== >>
+# << ================= Test FeatureGenerator ================ >>
 
-X_bin, y_bin = load_breast_cancer(return_X_y=True)
-X_reg, y_reg = load_boston(return_X_y=True)
+def test_population_parameter():
+    """Assert that an error is raised when population is invalid."""
+    pytest.raises(ValueError, FeatureGenerator, population=30)
 
 
-# << ======================= Tests ========================= >>
+def test_generations_parameter():
+    """Assert that an error is raised when generations is invalid."""
+    pytest.raises(ValueError, FeatureGenerator, generations=0)
 
-# << =================== Test parameters =================== >>
+
+def test_n_features_parameter_negative():
+    """Assert that an error is raised when n_features is negative."""
+    with pytest.raises(ValueError, match=r".*value for the n_features.*"):
+        FeatureGenerator(n_features=-2)
+
+
+def test_n_features_parameter_not_one_percent():
+    """Assert that the n_features parameter is within 1% of population."""
+    with pytest.raises(ValueError, match=r".*should be <1%.*"):
+        FeatureGenerator(n_features=23, population=200)
+
+
+def test_attribute_genetic_features():
+    """Assert that the genetic_features attribute is created."""
+    generator = FeatureGenerator(generations=3, population=200, random_state=1)
+    _, _ = generator.fit_transform(X_bin, y_bin)
+    assert isinstance(generator.genetic_features, pd.DataFrame)
+
+
+def test_updated_dataset():
+    """Assert that data has the new non-linear features."""
+    generator = FeatureGenerator(n_features=3,
+                                 generations=3,
+                                 population=300,
+                                 random_state=1)
+    X, y = generator.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == X_bin.shape[1] + 3
+
+
+# << ================= Test FeatureSelector ================ >>
 
 def test_strategy_parameter():
-    """ Assert that the strategy parameter is set correctly """
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(ValueError, atom.feature_selection, strategy='test')
+    """Assert that an error is raised when strategy is unknown."""
+    pytest.raises(ValueError, FeatureSelector, strategy='test')
 
 
-def test_solver_parameter():
-    """ Assert that solver raises an error """
+def test_solver_parameter_empty_univariate():
+    """Assert that an error is raised when solver is None for univariate."""
+    pytest.raises(ValueError,  FeatureSelector, strategy='univariate')
 
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
-    # When left empty
-    pytest.raises(ValueError,  atom.feature_selection, strategy='sfm')
+def test_solver_parameter_empty_SFM():
+    """Assert that an error is raised when solver is None for SFM strategy."""
+    pytest.raises(ValueError,  FeatureSelector, strategy='SFM')
 
-    # When invalid value
-    pytest.raises(ValueError,
-                  atom.feature_selection,
-                  strategy='rfe',
-                  solver='invalid')
+
+def test_raise_unknown_solver():
+    """Assert that an error is raised when the solver is unknown."""
+    pytest.raises(ValueError, FeatureSelector, 'univariate', solver='test')
+
+
+def test_solver_parameter_invalid_value():
+    """Assert that an error is raised when solver is unknown."""
+    pytest.raises(ValueError, FeatureSelector, strategy='rfe', solver='test')
 
 
 def test_n_features_parameter():
-    """ Assert that the n_features parameter is set correctly """
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(ValueError, atom.feature_selection, n_features=0)
+    """Assert that an error is raised when n_features is invalid."""
+    pytest.raises(ValueError, FeatureSelector, n_features=0)
 
 
 def test_max_frac_repeated_parameter():
-    """ Assert that the max_frac_repeated parameter is set correctly """
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(ValueError, atom.feature_selection, max_frac_repeated=1.1)
+    """Assert that an error is raised when max_frac_repeated is invalid."""
+    pytest.raises(ValueError, FeatureSelector, max_frac_repeated=1.1)
 
 
 def test_max_correlation_parameter():
-    """ Assert that the max_correlation parameter is set correctly """
+    """Assert that an error is raised when max_correlation is invalid."""
+    pytest.raises(ValueError, FeatureSelector, max_correlation=-0.2)
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(ValueError, atom.feature_selection, max_correlation=-0.2)
-
-
-# << ==================== Test functions =================== >>
 
 def test_remove_low_variance():
-    """ Assert that the remove_low_variance function works as intended """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.X['test'] = 3  # Add column with minimum variance
-    atom.update('X')
-    atom.feature_selection(max_frac_repeated=0.98, max_correlation=None)
-    assert len(atom.X.columns) == X_bin.shape[1]
+    """Assert that the remove_low_variance function works as intended."""
+    X = X_bin.copy()
+    X['test'] = 3  # Add column with minimum variance
+    fs = FeatureSelector(max_frac_repeated=0.98)
+    X = fs.fit_transform(X)
+    assert X.shape[1] == X_bin.shape[1]
 
 
 def test_collinear_attribute():
-    """ Assert that the collinear attribute is created """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(max_correlation=0.6)
-    assert hasattr(atom, 'collinear')
+    """Assert that the collinear attribute is created."""
+    fs = FeatureSelector(max_correlation=0.6)
+    assert hasattr(fs, 'collinear')
 
 
 def test_remove_collinear():
-    """ Assert that the remove_collinear function works as intended """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(max_correlation=0.9)
-    assert len(atom.X.columns) == 20  # Originally 30
-
-
-# << ==================== Test strategies ================== >>
-
-def test_raise_unknown_solver():
-    """ Assert that an error is raised when the solver is unknown """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError,
-                  atom.feature_selection,
-                  strategy='univariate',
-                  solver='test')
+    """Assert that the remove_collinear function works as intended."""
+    fs = FeatureSelector(max_correlation=0.9)
+    X = fs.fit_transform(X_bin)
+    assert X.shape[1] == 20  # Originally 30
 
 
 def test_winner_model_solver():
-    """ Assert that the solver uses the winner model if it exists """
-
+    """Assert that the solver uses the winner model if it exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.pipeline(['lr', 'bnb'])
     atom.feature_selection('SFM', solver=None, n_features=12)
     assert atom.feature_selector.solver is atom.winner.best_model_fit
 
 
-def test_univariate_strategy():
-    """ Assert that the univariate strategy works as intended """
+def test_univariate_strategy_classification():
+    """Assert that the univariate strategy works for classification tasks."""
+    fs = FeatureSelector('univariate', n_features=9, task='binary')
+    X, y = fs.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 9
 
-    # For classification tasks
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='univariate',
-                           n_features=9,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 9  # Assert number of features
 
-    # For regression tasks
-    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
-    atom.feature_selection(strategy='univariate',
-                           n_features=9,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 9  # Assert number of features
+def test_univariate_strategy_regression():
+    """Assert that the univariate strategy works for regression tasks."""
+    fs = FeatureSelector('univariate', n_features=9, task='regression')
+    X, y = fs.fit_transform(X_reg, y_reg)
+    assert X.shape[1] == 9
 
-    # For custom solver
-    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
-    atom.feature_selection(strategy='univariate',
-                           solver=f_regression,
-                           n_features=9,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 9  # Assert number of features
+
+def test_univariate_strategy_custom_solver():
+    """Assert that the univariate strategy works for a custom solver."""
+    fs = FeatureSelector('univariate', solver=f_regression, n_features=9)
+    X, _ = fs.fit_transform(X_reg, y_reg)
+    assert X.shape[1] == 9
 
 
 def test_PCA_strategy_normalization():
-    """ Assert that the PCA strategy normalizes the features """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='pca', max_correlation=None)
-    assert atom.dataset.iloc[:, 1].mean() < 0.05  # Not exactly 0
-    assert atom.dataset.iloc[:, 1].std() < 3
+    """Assert that the PCA strategy normalizes the features."""
+    fs = FeatureSelector(strategy='PCA')
+    X, _ = fs.fit_transform(X_bin, y_bin)
+    assert check_scaling(X)
 
 
 def test_PCA_strategy():
-    """ Assert that the PCA strategy works as intended """
-
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='pca',
-                           n_features=0.7,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 21  # Assert number of features
+    """Assert that the PCA strategy works as intended."""
+    fs = FeatureSelector(strategy='PCA', n_features=0.7)
+    X = fs.fit_transform(X_bin)
+    assert X.shape[1] == 21
 
 
 def test_PCA_components():
-    """ Assert that the PCA strategy creates components instead of features """
+    """Assert that the PCA strategy creates components instead of features."""
+    fs = FeatureSelector(strategy='PCA')
+    X = fs.fit_transform(X_bin)
+    assert 'Component 0' in X.columns
 
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='pca', max_correlation=None)
-    assert 'Component 0' in atom.X.columns
+
+def test_SFM_strategy_fitted_solver():
+    """Assert that the SFM strategy works when the solver is already fitted."""
+    rf = ExtraTreesClassifier().fit(X_bin, y_bin)
+    fs = FeatureSelector('SFM', solver=rf, n_features=7)
+    X = fs.fit_transform(X_bin)
+    assert X.shape[1] == 7
 
 
-def test_SFM_strategy():
-    """ Assert that the SFM strategy works as intended """
-
-    # For fitted solver
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    rf = RandomForestClassifier().fit(atom.X_test, atom.y_test)
-    atom.feature_selection(strategy='sfm',
-                           solver=rf,
-                           n_features=7,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 7  # Assert number of features
-
-    # For unfitted solver
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='sfm',
-                           solver=RandomForestClassifier(),
-                           n_features=5,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 5  # Assert number of features
+def test_SFM_strategy_not_fitted_solver():
+    """Assert that the SFM strategy works when the solver is not fitted."""
+    fs = FeatureSelector('SFM', solver=ExtraTreesClassifier(), n_features=5)
+    X, _ = fs.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 5
 
 
 def test_RFE_strategy():
-    """ Assert that the RFE strategy works as intended """
+    """Assert that the RFE strategy works as intended."""
+    fs = FeatureSelector('RFE', solver=ExtraTreesClassifier(), n_features=13)
+    X, _ = fs.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 13
 
+
+def test_RFECV_strategy_before_pipeline_classification():
+    """Assert that the RFECV strategy works before a fitted pipeline."""
+    fs = FeatureSelector('RFECV', solver='LGB_class', n_features=16)
+    X, _ = fs.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 20
+
+
+def test_RFECV_strategy_before_pipeline_regression():
+    """Assert that the RFECV strategy works before a fitted pipeline."""
+    fs = FeatureSelector('RFECV', solver='LGB_reg', n_features=16)
+    X, _ = fs.fit_transform(X_reg, y_reg)
+    assert X.shape[1] == 10
+
+
+def test_RFECV_strategy_after_pipeline():
+    """Assert that the RFECV strategy uses metric after fitted pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='rfe',
-                           solver=RandomForestClassifier(),
-                           n_features=13,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 13  # Assert number of features
-
-
-def test_RFECV_strategy():
-    """ Assert that the RFECV strategy works as intended """
-
-    # Before pipeline
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='rfecv',
-                           solver='lgb',
-                           n_features=16,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 23
-
-    # After pipeline (uses selected metric)
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline('lgb', metric='accuracy')
-    atom.feature_selection(strategy='rfecv',
-                           solver='lgb',
-                           n_features=16,
-                           max_correlation=None)
+    atom.pipeline('LGB', metric='accuracy')
+    atom.feature_selection(strategy='RFECV', solver='LGB', n_features=16)
     params = atom.feature_selector.RFECV.get_params()
     assert params['scoring'].name == 'accuracy'
 
 
-def test_kwargs_parameter():
-    """ Assert that the kwargs parameter works as intended """
+def test_kwargs_parameter_threshold():
+    """Assert that the kwargs parameter works as intended (add threshold)."""
+    fs = FeatureSelector(strategy='SFM',
+                         solver=ExtraTreesClassifier(random_state=1),
+                         n_features=21,
+                         threshold='mean')
+    X, _ = fs.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 10
 
-    # Add the threshold parameter to the SFM strategy
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='sfm',
-                           solver=RandomForestClassifier(),
-                           n_features=11,
-                           max_correlation=None,
-                           threshold=0.1,)
-    assert len(atom.X.columns) == 4  # Assert number of features
 
-    # Add tol parameter to PCA strategy
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy='pca',
-                           solver='arpack',
-                           tol=0.001,
-                           n_features=12,
-                           max_correlation=None)
-    assert len(atom.X.columns) == 12
+def test_kwargs_parameter_tol():
+    """Assert that the kwargs parameter works as intended (add tol)."""
+    fs = FeatureSelector(strategy='PCA',
+                         solver='arpack',
+                         tol=0.001,
+                         n_features=12)
+    X = fs.fit_transform(X_bin)
+    assert X.shape[1] == 12

@@ -3,205 +3,215 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
-Description: Unit tests for the plot methods in the ATOM and BaseModel classes.
+Description: Unit tests for plots.py
 
 """
 
 # Import packages
+import glob
 import pytest
 from sklearn.metrics import f1_score, recall_score, get_scorer
-from sklearn.datasets import load_breast_cancer, load_wine, load_boston
+
+# Own modules
 from atom import ATOMClassifier, ATOMRegressor
-
-
-# << ====================== Variables ====================== >>
-
-X_bin, y_bin = load_breast_cancer(return_X_y=True)
-X_class, y_class = load_wine(return_X_y=True)
-X_reg, y_reg = load_boston(return_X_y=True)
+from .utils import (
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg
+    )
 
 
 # << ======================= Tests ========================= >>
 
 def test_plot_correlation():
-    """ Assert that the plot_correlation method work as intended """
+    """Assert that the plot_correlation method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.plot_correlation(filename=FILE_DIR + 'correlation', display=False)
+    assert glob.glob(FILE_DIR + 'correlation.png')
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.plot_correlation(display=False)
-    assert 1 == 1
 
+def test_plot_pca():
+    """Assert that the plot_pca method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
-def test_plot_PCA():
-    """ Assert that the plot_PCA method work as intended """
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(AttributeError, atom.plot_PCA)  # When no PCA attribute
-    atom.feature_selection(strategy='pca', n_features=10)
+    # When no PCA attribute
+    pytest.raises(AttributeError, atom.plot_pca)
 
     # When correct
-    atom.plot_PCA(display=False)
-    assert 1 == 1
+    atom.feature_selection(strategy='PCA', n_features=10)
+    atom.plot_pca(filename=FILE_DIR + 'pca', display=False)
+    assert glob.glob(FILE_DIR + 'pca.png')
 
 
 def test_plot_components():
-    """ Assert that the plot_components method work as intended """
+    """Assert that the plot_components method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
-    atom = ATOMClassifier(X_bin, y_bin)
+    # When no PCA attribute
     pytest.raises(AttributeError, atom.plot_components)
-    atom.feature_selection(strategy='pca', n_features=10)
+    atom.feature_selection(strategy='PCA', n_features=10)
 
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_components, -2)
 
-    # When correct (test if show is converted to maximum number of components)
-    atom.plot_components(show=100, display=False)
-    assert 1 == 1
+    # When correct (test if show is converted to max components)
+    atom.plot_components(show=100,
+                         filename=FILE_DIR + 'components',
+                         display=False)
+    assert glob.glob(FILE_DIR + 'components.png')
 
 
-def test_plot_RFECV():
-    """ Assert that the plot_RFECV method work as intended """
+def test_plot_rfecv():
+    """Assert that the plot_rfecv method work as intended """
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(AttributeError, atom.plot_RFECV)  # When no RFECV attribute
+    # When no RFECV attribute
+    pytest.raises(AttributeError, atom.plot_rfecv)
 
     # When scoring is unspecified
     atom.feature_selection(strategy='rfecv', solver='lgb', n_features=27)
-    atom.plot_RFECV(display=False)
-    assert 1 == 1
+    atom.plot_rfecv(filename=FILE_DIR + 'rfecv1', display=False)
+    assert glob.glob(FILE_DIR + 'rfecv1.png')
 
     # When scoring is specified
     atom.feature_selection(strategy='rfecv',
                            solver='lgb',
                            scoring='recall',
                            n_features=27)
-    atom.plot_RFECV(display=False)
-    assert 2 == 2
+    atom.plot_rfecv(filename=FILE_DIR + 'rfecv2', display=False)
+    assert glob.glob(FILE_DIR + 'rfecv2.png')
 
 
 def test_plot_bagging():
-    """ Assert that the plot_bagging method work as intended """
+    """Assert that the plot_bagging method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # When fit is not called yet
-    atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_bagging)
 
     # When fit is called without bagging
-    atom.pipeline('tree', 'f1', max_iter=2, bagging=0)
+    atom.pipeline('Tree', 'f1', n_calls=2, n_random_starts=1)
     pytest.raises(AttributeError, atom.plot_bagging)
 
     # When model is unknown
-    atom.pipeline('tree', 'f1', max_iter=2, bagging=3)
+    atom.pipeline('Tree', 'f1', n_calls=2, n_random_starts=1, bagging=5)
     pytest.raises(ValueError, atom.plot_bagging, models='unknown')
 
     # Without successive_halving
-    atom.plot_bagging(display=False)
-    atom.tree.plot_bagging(display=False)
-    assert 1 == 1
+    atom.plot_bagging(filename=FILE_DIR + 'bagging1', display=False)
+    atom.tree.plot_bagging(filename=FILE_DIR + 'bagging2', display=False)
+    assert glob.glob(FILE_DIR + 'bagging1.png')
+    assert glob.glob(FILE_DIR + 'bagging2.png')
 
 
 def test_plot_successive_halving():
-    """ Assert that the plot_successive_halving method work as intended """
+    """Assert that the plot_successive_halving method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # When fit is not called yet
-    atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When the pipeline didn't run with successive_halving
-    atom.pipeline('tree')
+    atom.pipeline('Tree', 'f1', n_calls=2, n_random_starts=1)
     pytest.raises(AttributeError, atom.plot_successive_halving)
 
     # When model is unknown
-    atom.successive_halving(['tree', 'lgb'], 'f1')
+    atom.successive_halving(['Tree', 'LGB'], n_calls=2, n_random_starts=1)
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
 
     # When correct (without bagging)
-    atom.successive_halving(['tree', 'lgb'], 'f1', max_iter=3)
-    atom.plot_successive_halving(display=False)
-    atom.tree.plot_successive_halving(display=False)
-    assert 1 == 1
+    atom.successive_halving(['Tree', 'LGB'], n_calls=2, n_random_starts=1)
+    atom.plot_successive_halving(filename=FILE_DIR + 'sh1', display=False)
+    atom.tree.plot_successive_halving(filename=FILE_DIR + 'sh2', display=False)
+    assert glob.glob(FILE_DIR + 'sh1.png')
+    assert glob.glob(FILE_DIR + 'sh2.png')
 
     # When correct (with bagging)
-    atom.successive_halving(['tree', 'lgb'], 'f1', bagging=3)
-    atom.plot_successive_halving(display=False)
-    atom.tree.plot_successive_halving(display=False)
-    assert 2 == 2
+    atom.successive_halving(['tree', 'lgb'], bagging=3)
+    atom.plot_successive_halving(filename=FILE_DIR + 'sh3', display=False)
+    atom.tree.plot_successive_halving(filename=FILE_DIR + 'sh4', display=False)
+    assert glob.glob(FILE_DIR + 'sh3.png')
+    assert glob.glob(FILE_DIR + 'sh4.png')
 
 
 def test_plot_learning_curve():
-    """ Assert that the plot_lerning_curve method work as intended """
+    """Assert that the plot_learning_curve method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
     # When fit is not called yet
-    atom = ATOMClassifier(X_bin, y_bin)
     pytest.raises(AttributeError, atom.plot_learning_curve)
 
     # When the pipeline didn't run with train_sizing
-    atom.pipeline('tree')
+    atom.pipeline('Tree')
     pytest.raises(AttributeError, atom.plot_learning_curve)
 
     # When model is unknown
-    atom.train_sizing(['tree', 'lgb'], 'f1')
+    atom.train_sizing(['Tree', 'LGB'], 'f1')
     pytest.raises(ValueError, atom.plot_learning_curve, models='unknown')
 
     # When correct (without bagging)
-    atom.train_sizing(['tree', 'lgb'], 'f1', max_iter=3)
-    atom.plot_learning_curve(display=False)
-    atom.tree.plot_learning_curve(display=False)
-    assert 1 == 1
+    atom.train_sizing(['Tree', 'LGB'], 'f1', n_calls=2, n_random_starts=1)
+    atom.plot_learning_curve(filename=FILE_DIR + 'lc1', display=False)
+    atom.tree.plot_learning_curve(filename=FILE_DIR + 'lc2', display=False)
+    assert glob.glob(FILE_DIR + 'lc1.png')
+    assert glob.glob(FILE_DIR + 'lc2.png')
 
     # When correct (with bagging)
-    atom.train_sizing(['tree', 'lgb'], 'f1', bagging=3)
-    atom.plot_learning_curve(display=False)
-    atom.tree.plot_learning_curve(display=False)
-    assert 2 == 2
+    atom.train_sizing(['Tree', 'LGB'], n_calls=2, n_random_starts=1, bagging=3)
+    atom.plot_learning_curve(filename=FILE_DIR + 'lc3', display=False)
+    atom.tree.plot_learning_curve(filename=FILE_DIR + 'lc4', display=False)
+    assert glob.glob(FILE_DIR + 'lc3.png')
+    assert glob.glob(FILE_DIR + 'lc4.png')
 
 
-def test_plot_ROC():
-    """ Assert that the plot_ROC method work as intended """
-
+def test_plot_roc():
+    """Assert that the plot_roc method work as intended."""
     # When task is not binary
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.plot_ROC)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.plot_roc)
 
+    # When task is binary
     atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(AttributeError, atom.plot_ROC)  # When fit is not called yet
-    atom.pipeline(['tree', 'lda'], 'r2', max_iter=0)
+
+    # When fit is not called yet
+    pytest.raises(AttributeError, atom.plot_roc)
 
     # When model is unknown
-    pytest.raises(ValueError, atom.plot_ROC, 'unknown')
+    atom.pipeline(['Tree', 'LDA'], 'r2')
+    pytest.raises(ValueError, atom.plot_roc, 'unknown')
 
     # When correct
-    atom.plot_ROC(display=False)
-    atom.tree.plot_ROC(display=False)
-    assert 1 == 1
+    atom.plot_roc(filename=FILE_DIR + 'roc1', display=False)
+    atom.tree.plot_roc(filename=FILE_DIR + 'roc2', display=False)
+    assert glob.glob(FILE_DIR + 'roc1.png')
+    assert glob.glob(FILE_DIR + 'roc2.png')
 
 
-def test_plot_PRC():
-    """ Assert that the plot_PRC method work as intended """
-
+def test_plot_prc():
+    """Assert that the plot_prc method work as intended."""
     # When task is not binary
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.plot_PRC)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.plot_prc)
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    pytest.raises(AttributeError, atom.plot_PRC)  # When fit is not called yet
-    atom.pipeline(['tree', 'lda'], 'r2', max_iter=0)
+    # When task is binary
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(AttributeError, atom.plot_prc)  # When fit is not called yet
+    atom.pipeline(['Tree', 'LDA'], 'r2')
 
     # When model is unknown
-    pytest.raises(ValueError, atom.plot_PRC, 'unknown')
+    pytest.raises(ValueError, atom.plot_prc, 'unknown')
 
     # When correct
-    atom.plot_PRC(display=False)
-    atom.tree.plot_PRC(display=False)
-    assert 1 == 1
+    atom.plot_prc(filename=FILE_DIR + 'prc1', display=False)
+    atom.tree.plot_prc(filename=FILE_DIR + 'prc2', display=False)
+    assert glob.glob(FILE_DIR + 'prc1.png')
+    assert glob.glob(FILE_DIR + 'prc2.png')
 
 
 def test_plot_permutation_importance():
-    """ Assert that the plot_permutation_importance method work as intended """
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'lr'], 'f1', max_iter=0)
+    """Assert that the plot_permutation_importance method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['Tree', 'LR'], 'f1')
 
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_permutation_importance, show=-2)
@@ -213,21 +223,23 @@ def test_plot_permutation_importance():
     pytest.raises(ValueError, atom.plot_permutation_importance, 'unknown')
 
     # When correct
-    atom.plot_permutation_importance(display=False)
-    atom.tree.plot_permutation_importance(display=False)
-    assert 1 == 1
+    atom.plot_permutation_importance(filename=FILE_DIR + 'permutation1',
+                                     display=False)
+    atom.tree.plot_permutation_importance(filename=FILE_DIR + 'permutation2',
+                                          display=False)
+    assert glob.glob(FILE_DIR + 'permutation1.png')
+    assert glob.glob(FILE_DIR + 'permutation2.png')
 
 
 def test_plot_feature_importance():
-    """ Assert that the plot_feature_importance method work as intended """
-
+    """Assert that the plot_feature_importance method work as intended."""
     # When model not a tree-based model
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('pa', 'r2', max_iter=0)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('PA', 'r2')
     pytest.raises(AttributeError, atom.pa.plot_feature_importance)
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'bag'], 'f1', max_iter=0)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['Tree', 'Bag'], 'f1')
 
     # When show is invalid value
     pytest.raises(ValueError, atom.plot_feature_importance, show=-2)
@@ -236,76 +248,89 @@ def test_plot_feature_importance():
     pytest.raises(ValueError, atom.plot_feature_importance, 'unknown')
 
     # When correct
-    atom.plot_feature_importance(display=False)
-    atom.bag.plot_feature_importance(display=False)
-    assert 1 == 1
+    atom.plot_feature_importance(filename=FILE_DIR + 'feature1',
+                                 display=False)
+    atom.Bag.plot_feature_importance(filename=FILE_DIR + 'feature2',
+                                     display=False)
+    assert glob.glob(FILE_DIR + 'feature1.png')
+    assert glob.glob(FILE_DIR + 'feature2.png')
 
 
 def test_plot_confusion_matrix():
-    """ Assert that the plot_confusion_matrix method work as intended """
-
+    """Assert that the plot_confusion_matrix method work as intended."""
     # When task is not classification
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('ols', 'r2', max_iter=2, init_points=2)
-    pytest.raises(AttributeError, atom.ols.plot_confusion_matrix)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('OLS', 'r2')
+    pytest.raises(AttributeError, atom.OLS.plot_confusion_matrix)
 
     # For binary classification tasks
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['lda', 'et'], max_iter=2, init_points=2)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['LDA', 'ET'])
 
     # When model is unknown
     pytest.raises(ValueError, atom.plot_confusion_matrix, 'unknown')
 
     # When correct
-    atom.plot_confusion_matrix(normalize=True, display=False)
-    atom.lda.plot_confusion_matrix(normalize=False, display=False)
-    assert 1 == 1
+    atom.plot_confusion_matrix(normalize=True,
+                               filename=FILE_DIR + 'cm1',
+                               display=False)
+    atom.LDA.plot_confusion_matrix(normalize=False,
+                                   filename=FILE_DIR + 'cm2',
+                                   display=False)
+    assert glob.glob(FILE_DIR + 'cm1.png')
+    assert glob.glob(FILE_DIR + 'cm2.png')
 
     # For multiclass classification tasks
-    atom = ATOMClassifier(X_class, y_class)
-    atom.pipeline(['lda', 'et'], max_iter=2, init_points=2)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.pipeline(['LDA', 'ET'])
 
     # Multiclass and multiple models not supported
     pytest.raises(NotImplementedError, atom.plot_confusion_matrix)
-    atom.lda.plot_confusion_matrix(normalize=True, display=False)
-    assert 2 == 2
+    atom.LDA.plot_confusion_matrix(normalize=True,
+                                   filename=FILE_DIR + 'cm3',
+                                   display=False)
+    assert glob.glob(FILE_DIR + 'cm3.png')
 
 
 def test_plot_threshold():
-    """ Assert that the plot_threshold method work as intended """
-
+    """Assert that the plot_threshold method work as intended."""
     # When task is not binary
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.tree.plot_threshold)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.Tree.plot_threshold)
 
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['lda', 'et'], 'f1', max_iter=0)
+    # When task is binary
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['LDA', 'ET'], 'f1')
 
     # When invalid model or metric
     pytest.raises(ValueError, atom.plot_threshold, 'unknown')
-    pytest.raises(ValueError, atom.plot_threshold, 'lda', 'unknown')
+    pytest.raises(ValueError, atom.plot_threshold, 'LDA', 'unknown')
 
     # For metric is None, functions or scorers
     scorer = get_scorer('f1_macro')
-    atom.lda.plot_threshold(display=False)
-    atom.plot_threshold(metric=[f1_score, recall_score, 'r2'], display=False)
-    atom.lda.plot_threshold([scorer, 'precision'], display=False)
-    assert 1 == 1
+    atom.LDA.plot_threshold(display=False)
+    atom.plot_threshold(metric=[f1_score, recall_score, 'r2'],
+                        filename=FILE_DIR + 'threshold1',
+                        display=False)
+    atom.LDA.plot_threshold([scorer, 'precision'],
+                            filename=FILE_DIR + 'threshold2',
+                            display=False)
+    assert glob.glob(FILE_DIR + 'threshold1.png')
+    assert glob.glob(FILE_DIR + 'threshold2.png')
 
 
 def test_plot_probabilities():
-    """ Assert that the plot_probabilities method work as intended """
-
+    """Assert that the plot_probabilities method work as intended."""
     # When task is not classification
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.tree.plot_probabilities)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.Tree.plot_probabilities)
 
     # When model hasn't the predict_proba method
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline('pa', 'r2', max_iter=0)
-    pytest.raises(ValueError, atom.pa.plot_probabilities)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline('PA', 'r2')
+    pytest.raises(ValueError, atom.PA.plot_probabilities)
 
     # When invalid model
     pytest.raises(ValueError, atom.plot_probabilities, models='unknown')
@@ -313,29 +338,39 @@ def test_plot_probabilities():
     # For target is string
     y = ['a' if i == 0 else 'b' for i in y_bin]
     atom = ATOMClassifier(X_bin, y)
-    atom.pipeline(['lda', 'qda'], 'f1', max_iter=0)
-    atom.lda.plot_probabilities(target='a', display=False)
-    atom.plot_probabilities(target='b', display=False)
-    assert 1 == 1
+    atom.pipeline(['LDA', 'QDA'], 'f1')
+    atom.LDA.plot_probabilities(target='a',
+                                filename=FILE_DIR + 'probabilities1',
+                                display=False)
+    atom.plot_probabilities(target='b',
+                            filename=FILE_DIR + 'probabilities2',
+                            display=False)
+    assert glob.glob(FILE_DIR + 'probabilities1.png')
+    assert glob.glob(FILE_DIR + 'probabilities2.png')
 
     # For target is numerical
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['lda', 'qda'], 'f1', max_iter=0)
-    atom.lda.plot_probabilities(target=0, display=False)
-    atom.plot_probabilities(target=1, display=False)
-    assert 2 == 2
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['LDA', 'QDA'], 'f1')
+    atom.LDA.plot_probabilities(target=0,
+                                filename=FILE_DIR + 'probabilities3',
+                                display=False)
+    atom.plot_probabilities(target=1,
+                            filename=FILE_DIR + 'probabilities4',
+                            display=False)
+    assert glob.glob(FILE_DIR + 'probabilities3.png')
+    assert glob.glob(FILE_DIR + 'probabilities4.png')
 
 
 def test_plot_calibration():
-    """ Assert that the plot_calibration method work as intended """
+    """Assert that the plot_calibration method work as intended."""
+    # When task is not binary
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.Tree.plot_calibration)
 
-    # When task is not binary classification
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.tree.plot_calibration)
-
+    # When task is binary
     atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'pa'], 'f1', max_iter=0)
+    atom.pipeline(['Tree', 'pa'], 'f1')
 
     # When invalid model
     pytest.raises(ValueError, atom.plot_calibration, models='unknown')
@@ -344,52 +379,58 @@ def test_plot_calibration():
     pytest.raises(ValueError, atom.plot_calibration, n_bins=3)
 
     # When correct
-    atom.tree.plot_calibration(display=False)
-    atom.plot_calibration(display=False)
-    assert 1 == 1
+    atom.Tree.plot_calibration(filename=FILE_DIR + 'calibration1',
+                               display=False)
+    atom.plot_calibration(filename=FILE_DIR + 'calibration2',
+                          display=False)
+    assert glob.glob(FILE_DIR + 'calibration1.png')
+    assert glob.glob(FILE_DIR + 'calibration2.png')
 
 
 def test_plot_gains():
-    """ Assert that the plot_gains method work as intended """
+    """Assert that the plot_gains method work as intended."""
+    # When task is not binary
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.Tree.plot_gains)
 
-    # When task is not binary classification
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.tree.plot_gains)
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'lgb', 'pa'], 'f1', max_iter=0)
+    # When task is binary
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['Tree', 'LGB', 'PA'], 'f1')
 
     # When invalid model
     pytest.raises(ValueError, atom.plot_gains, models='unknown')
 
     # When model with no predict_proba method
-    pytest.raises(ValueError, atom.pa.plot_gains)
+    pytest.raises(ValueError, atom.PA.plot_gains)
 
     # When correct
-    atom.tree.plot_gains(display=False)
-    atom.plot_gains(['tree', 'lgb'], display=False)
-    assert 1 == 1
+    atom.Tree.plot_gains(filename=FILE_DIR + 'gains1', display=False)
+    atom.plot_gains(['Tree', 'LGB'],
+                    filename=FILE_DIR + 'gains2',
+                    display=False)
+    assert glob.glob(FILE_DIR + 'gains1.png')
+    assert glob.glob(FILE_DIR + 'gains2.png')
 
 
 def test_plot_lift():
-    """ Assert that the plot_lift method work as intended """
+    """Assert that the plot_lift method work as intended."""
+    # When task is not binary
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.pipeline('Tree', 'r2')
+    pytest.raises(AttributeError, atom.Tree.plot_lift)
 
-    # When task is not binary classification
-    atom = ATOMRegressor(X_reg, y_reg)
-    atom.pipeline('tree', 'r2', max_iter=0)
-    pytest.raises(AttributeError, atom.tree.plot_lift)
-
-    atom = ATOMClassifier(X_bin, y_bin)
-    atom.pipeline(['tree', 'lgb', 'pa'], 'f1', max_iter=0)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.pipeline(['Tree', 'LGB', 'PA'], 'f1')
 
     # When invalid model
     pytest.raises(ValueError, atom.plot_lift, models='unknown')
 
     # When model with no predict_proba method
-    pytest.raises(ValueError, atom.pa.plot_lift)
+    pytest.raises(ValueError, atom.PA.plot_lift)
 
     # When correct
-    atom.tree.plot_lift(display=False)
-    atom.plot_lift(['tree', 'lgb'], display=False)
-    assert 1 == 1
+    atom.Tree.plot_lift(filename=FILE_DIR + 'lift1', display=False)
+    atom.plot_lift(['Tree', 'LGB'], filename=FILE_DIR + 'lift2', display=False)
+    assert glob.glob(FILE_DIR + 'lift1.png')
+    assert glob.glob(FILE_DIR + 'lift2.png')
