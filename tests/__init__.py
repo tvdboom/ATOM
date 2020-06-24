@@ -3,7 +3,8 @@
 """
 Automated Tool for Optimized Modelling (ATOM)
 Author: tvdboom
-Description: File to run before starting the unit tests.
+Description: Run before starting the unit tests. Removes all
+             existing testing files (in 'files' directory).
 
 """
 # Import packages

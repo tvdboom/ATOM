@@ -7,20 +7,19 @@ Description: Unit tests for feature_selection.py
 
 """
 
-# Import packages
+# Standard packages
 import pytest
 import pandas as pd
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import f_regression
 
 # Own modules
-from atom import ATOMClassifier
 from atom.feature_selection import FeatureGenerator, FeatureSelector
 from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_reg, y_reg
 
 
-# << ================= Test FeatureGenerator ================ >>
+# Test FeatureGenerator ===================================================== >>
 
 def test_population_parameter():
     """Assert that an error is raised when population is invalid."""
@@ -61,9 +60,9 @@ def test_updated_dataset():
     assert X.shape[1] == X_bin.shape[1] + 3
 
 
-# << ================= Test FeatureSelector ================ >>
+# Test FeatureSelector ====================================================== >>
 
-def test_strategy_parameter():
+def test_unknown_strategy_parameter():
     """Assert that an error is raised when strategy is unknown."""
     pytest.raises(ValueError, FeatureSelector, strategy='test')
 
@@ -73,14 +72,31 @@ def test_solver_parameter_empty_univariate():
     pytest.raises(ValueError,  FeatureSelector, strategy='univariate')
 
 
+def test_raise_unknown_solver_univariate():
+    """Assert that an error is raised when the solver is unknown."""
+    pytest.raises(ValueError, FeatureSelector, 'univariate', solver='test')
+
+
+def test_solver_auto_PCA():
+    """Assert that the solver is set to 'auto' when None."""
+    fs = FeatureSelector(strategy='PCA', solver=None)
+    assert fs.solver == 'auto'
+
+
 def test_solver_parameter_empty_SFM():
     """Assert that an error is raised when solver is None for SFM strategy."""
     pytest.raises(ValueError,  FeatureSelector, strategy='SFM')
 
 
-def test_raise_unknown_solver():
-    """Assert that an error is raised when the solver is unknown."""
-    pytest.raises(ValueError, FeatureSelector, 'univariate', solver='test')
+def test_goal_attribute():
+    """Assert that the goal is deduced from the model's name."""
+    # For classification tasks
+    fs = FeatureSelector(strategy='SFM', solver='LGB_class')
+    assert fs.goal == 'classification'
+
+    # For regression tasks
+    fs = FeatureSelector(strategy='SFM', solver='LGB_reg')
+    assert fs.goal == 'regression'
 
 
 def test_solver_parameter_invalid_value():
@@ -123,28 +139,6 @@ def test_remove_collinear():
     fs = FeatureSelector(max_correlation=0.9)
     X = fs.fit_transform(X_bin)
     assert X.shape[1] == 20  # Originally 30
-
-
-def test_winner_model_solver():
-    """Assert that the solver uses the winner model if it exists."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline(['lr', 'bnb'])
-    atom.feature_selection('SFM', solver=None, n_features=12)
-    assert atom.feature_selector.solver is atom.winner.best_model_fit
-
-
-def test_univariate_strategy_classification():
-    """Assert that the univariate strategy works for classification tasks."""
-    fs = FeatureSelector('univariate', n_features=9, task='binary')
-    X, y = fs.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 9
-
-
-def test_univariate_strategy_regression():
-    """Assert that the univariate strategy works for regression tasks."""
-    fs = FeatureSelector('univariate', n_features=9, task='regression')
-    X, y = fs.fit_transform(X_reg, y_reg)
-    assert X.shape[1] == 9
 
 
 def test_univariate_strategy_custom_solver():
@@ -209,15 +203,6 @@ def test_RFECV_strategy_before_pipeline_regression():
     fs = FeatureSelector('RFECV', solver='LGB_reg', n_features=16)
     X, _ = fs.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
-
-
-def test_RFECV_strategy_after_pipeline():
-    """Assert that the RFECV strategy uses metric after fitted pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.pipeline('LGB', metric='accuracy')
-    atom.feature_selection(strategy='RFECV', solver='LGB', n_features=16)
-    params = atom.feature_selector.RFECV.get_params()
-    assert params['scoring'].name == 'accuracy'
 
 
 def test_kwargs_parameter_threshold():

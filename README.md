@@ -1,8 +1,10 @@
-<p align="center">
+<center>
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="600" height="180"/>
-</p>
+</center>
 
-# Automated Tool for Optimized Modelling
+Automated Tool for Optimized Modelling
+-----------------
+
 Author: tvdboom  
 Email: m.524687@gmail.com
 
@@ -14,15 +16,22 @@ Email: m.524687@gmail.com
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
 
+<br><br>
 
 Description  
-------------------------  
-Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast exploration and experimentation of supervised machine learning tasks. With just a few lines of code, you can perform basic data cleaning steps, feature selection and compare the performance of multiple models on a given dataset. ATOM should be able to provide quick insights on which algorithms perform best for the task at hand and provide an indication of the feasibility of the ML solution. This package supports binary classification, multiclass classification, and regression tasks.
+-----------------
 
-| NOTE: A data scientist with domain knowledge can outperform ATOM if he applies usecase-specific feature engineering or data cleaning steps! |
-| --- |
+Automated Tool for Optimized Modelling (ATOM) is a python package designed for fast
+ exploration and experimentation of supervised machine learning tasks. With just a
+ few lines of code, you can perform basic data cleaning steps, select relevant
+ features and compare the performance of multiple models on a given dataset. ATOM
+ should be able to provide quick insights on which algorithms perform best for the
+ task at hand and provide an indication of the feasibility of the ML solution. This
+ package supports binary classification, multiclass classification, and regression
+ tasks.
 
-Possible steps taken by the ATOM pipeline:
+
+Possible steps taken by ATOM's pipeline:
 1. Data Cleaning
 	* Handle missing values
 	* Encode categorical features
@@ -32,61 +41,74 @@ Possible steps taken by the ATOM pipeline:
 	* Remove features with too high collinearity
 	* Remove features with too low variance
 	* Select best features according to a chosen strategy
-3. Fit all selected models (either direct or via successive halving)
+3. Train and validate models
 	* Select hyperparameters using a Bayesian Optimization approach
-	* Perform bagging to assess the robustness of the model
-4. Analyze the results using the provided plotting functions!
+	* Train and test the models on the provided data
+	* Perform bagging to assess the robustness of the models
+4. Analyze the results
 
 <br/><br/>
 
-<p align="center">
+<center>
 	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="900" height="300" />
-</p>
+</center>
 
+<br><br>
 
 Installation
-------------------------  
-Intall ATOM easily using `pip`.
-	    
-| NOTE: Since atom was already taken, the name of the package in pypi is `atom-ml`! |
-| --- |
+-----------------
 
+Intall ATOM's newest release easily via `pip`:
 
 ```Python
-	pip install atom-ml
+	$ pip install -U atom-ml
 ```
 
+or via `conda`:
 
-Usage
-------------------------  
+```Python
+	$ conda install -c conda-forge atom-ml
+```
+
+!!! note
+    Since atom was already taken, download the package under the name `atom-ml`!
+
+<br><br>
+
+Usage  
+-----------------
+
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
-    from sklearn.datasets import load_breast_cancer  
-    from atom import ATOMClassifier 
+    from sklearn.datasets import load_breast_cancer
+    from atom import ATOMClassifier
     
     X, y = load_breast_cancer(return_X_y)
-    atom = ATOMClassifier(X, y, log='auto', n_jobs=2, verbose=2)
+    atom = ATOMClassifier(X, y, logger='auto', n_jobs=2, verbose=2)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-    atom.impute(strat_num='knn', strat_cat='most_frequent',  min_frac_rows=0.7)  
+    atom.impute(strat_num='knn', strat_cat='most_frequent',  min_frac_rows=0.1)  
     atom.encode(max_onehot=10, frac_to_other=0.05)  
     atom.feature_selection(strategy='PCA', n_features=12)
 
-Run the pipeline with different models:
+Run the pipeline with the models you want to compare:
 
-    atom.pipeline(models=['LR', 'LDA', 'XGB', 'lSVM'],
-	              metric='f1',
-	              n_calls=25,
-	              n_random_starts=10,
-	              bagging=4)  
+    atom.run(models=['LR', 'LDA', 'XGB', 'lSVM'],
+             metric='f1',
+             n_calls=25,
+             n_random_starts=10,
+             bagging=4)
 
-Make plots and analyze results: 
+Make plots to analyze the results: 
 
 	atom.plot_bagging(figsize=(9, 6), filename='bagging_results.png')  
-    atom.LDA.plot_confusion_matrix(normalize=True, filename='cm.png')
+	atom.LDA.plot_confusion_matrix(normalize=True, filename='cm.png')
+
+<br><br>
 
 
 Documentation
-------------------------  
-For further information about ATOM, please see the project [documentation](https://tvdboom.github.io/ATOM).
+-----------------
+  
+For further information about ATOM, please see the project's [documentation](https://tvdboom.github.io/ATOM).

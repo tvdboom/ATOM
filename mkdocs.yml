@@ -17,15 +17,55 @@ markdown_extensions:
 copyright: © Copyright 2020, by tvdboom.
 
 nav:
-- Home: index.md
 - Getting started: getting_started.md
 - API:
-  - ATOMClassifier: api.md
-  - ATOMRegressor: api.md
-- Data cleaning: data_cleaning.md
-- Feature selection: feature_selection.md
-- Pipeline: pipeline.md
-- Plots: plots.md
-- Examples: examples.md
+    - ATOM:
+        - ATOMClassifier: API/ATOM/atomclassifier.md
+        - ATOMRegressor: API/ATOM/atomregressor.md
+    - Data cleaning:
+         - Scaler: API/data_cleaning/scaler.md
+         - StandardCleaner: API/data_cleaning/standard_cleaner.md
+         - Imputer: API/data_cleaning/imputer.md
+         - Encoder: API/data_cleaning/encoder.md
+         - Outliers: API/data_cleaning/outliers.md
+         - Balancer: API/data_cleaning/balancer.md
+    - Feature selection:
+        - FetaureGenerator: API/feature_selection/feature_generator.md
+        - FetaureSelector: API/feature_selection/feature_selector.md
+    - Training:
+        - Trainer:
+           - TrainerClassifier: API/training/trainer_classifier.md
+           - TrainerRegressor: API/training/trainer_regressor.md
+        - SuccessiveHalving:
+            - SuccessiveHalvingClassifier: API/training/successive_halving_classifier.md
+            - SuccessiveHalvingClassifier: API/training/successive_halving_regressor.md
+        - TrainSizing:
+            - TrainSizingClassifier: API/training/train_sizing_classifier.md
+            - TrainSizingRegressor: API/training/train_sizing_regressor.md
+    - Plots:
+        - plot_correlation: API/plots/plot_correlation.md
+        - plot_pca: API/plots/plot_pca.md
+        - plot_components: API/plots/plot_components.md
+        - plot_rfecv: API/plots/plot_rfecv.md
+        - plot_successive_halving: API/plots/plot_successive_halving.md
+        - plot_learning_curve: API/plots/plot_learning_curve.md
+        - plot_bagging: API/plots/plot_bagging.md
+        - plot_bo: API/plots/plot_bo.md
+        - plot_roc: API/plots/plot_roc.md
+        - plot_prc: API/plots/plot_prc.md
+        - plot_permutation_importance: API/plots/plot_permutation_importance.md
+        - plot_feature_importance: API/plots/plot_feature_importance.md
+        - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
+        - plot_threshold: API/plots/plot_threshold.md
+        - plot_probabilities: API/plots/plot_probabilities.md
+        - plot_calibration: API/plots/plot_calibration.md
+        - plot_gains: API/plots/plot_gains.md
+        - plot_lift: API/plots/plot_lift.md
+- Examples:
+    - Binary classification: examples/binary_classification.md
+    - Multiclass_classification: examples/multiclass_classification.md
+    - Regression: examples/regression.md
+    - Successive halving: examples/successive_halving.md
+    - Train sizing: examples/train_sizing.md
 - Dependencies: dependencies.md
 - License: license.md

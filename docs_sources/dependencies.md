@@ -1,11 +1,16 @@
 # Python
+-----------------
 
 As of the moment, ATOM supports Python
 [3.6](https://www.python.org/downloads/release/python-360/),
 [3.7](https://www.python.org/downloads/release/python-370/) and
 [3.8](https://www.python.org/downloads/release/python-380/).
 
+<br><br>
+
+
 # Packages
+-----------------
 
 ATOM is built on top of several existing Python libraries. The required
  packages are necessary for it's correct functioning. Additionnaly, you can

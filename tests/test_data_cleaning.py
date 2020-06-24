@@ -1,22 +1,25 @@
 # coding: utf-8
 
-"""
-Automated Tool for Optimized Modelling (ATOM)
+"""Automated Tool for Optimized Modelling (ATOM)
+
 Author: tvdboom
 Description: Unit tests for data_cleaning.py
 
 """
 
-# Import packages
+# Import Packages =========================================================== >>
+
+# Standard packages
 import pytest
 import numpy as np
 import pandas as pd
+import multiprocessing
 
 # Own modules
 from atom import ATOMClassifier
 from atom.utils import NotFittedError, check_scaling
 from atom.data_cleaning import (
-    BaseCleaner, Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
+    BaseTransformer, Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
     )
 from .utils import (
     X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array,
@@ -24,83 +27,7 @@ from .utils import (
     )
 
 
-# << ================== Test BaseCleaner ================== >>
-
-def test_kwargs_to_attributes():
-    """Assert that kwargs are attached as attributes of the class."""
-    estimator = BaseCleaner(verbose=2)
-    assert estimator.verbose == 2
-
-
-def test_atom_parameters_to_attributes():
-    """Assert that atom attributes are (in second place) attached as attrs."""
-    atom = ATOMClassifier(X_bin, y_bin, verbose=1)
-    estimator = BaseCleaner(verbose=3, atom=atom)
-    assert estimator.verbose == 3
-    assert atom.task.startswith('binary')
-
-
-def test_removal_atom_kwarg():
-    """Assert that the atom kwarg is removed from the kwargs attribute."""
-    atom = ATOMClassifier(X_bin, y_bin)
-    estimator = BaseCleaner(atom=atom)
-    assert not estimator.kwargs.get('atom')
-
-
-def test_copy_input_data():
-    """Assert that the prepare_input method uses copies of the data."""
-    X, y = BaseCleaner()._prepare_input(X_bin, y_bin)
-    assert X is not X_bin
-    assert y is not y_bin
-
-
-def test_to_pandas():
-    """Assert that the data provided is converted to pandas objects."""
-    X, y = BaseCleaner._prepare_input(X_bin_array, y_bin_array)
-    assert isinstance(X, pd.DataFrame)
-    assert isinstance(y, pd.Series)
-
-
-def test_equal_length():
-    """Assert that an error is raised when X and y don't have equal size."""
-    pytest.raises(ValueError, BaseCleaner._prepare_input, X10, [0, 1, 1])
-
-
-def test_y_is1dimensional():
-    """Assert that an error is raised when y is not 1-dimensional."""
-    y = [[0, 0], [1, 1], [0, 1], [1, 0], [0, 0],
-         [1, 1], [1, 0], [0, 1], [1, 1], [1, 0]]
-    pytest.raises(ValueError, BaseCleaner._prepare_input, X10, y)
-
-
-def test_equal_index():
-    """Assert that an error is raised when X and y don't have same indices."""
-    y = pd.Series(y_bin_array, index=range(10, len(y_bin_array)+10))
-    pytest.raises(ValueError, BaseCleaner._prepare_input, X_bin, y)
-
-
-def test_target_is_string():
-    """Assert that the target column is assigned correctly for a string."""
-    _, y = BaseCleaner._prepare_input(X_bin, y='mean radius')
-    assert y.name == 'mean radius'
-
-
-def test_target_not_in_dataset():
-    """Assert that the target column given by y is in X."""
-    pytest.raises(ValueError, BaseCleaner._prepare_input, X_bin, 'X')
-
-
-def test_target_is_int():
-    """Assert that target column is assigned correctly for an integer."""
-    _, y = BaseCleaner._prepare_input(X_bin, y=0)
-    assert y.name == 'mean radius'
-
-
-def test_target_is_none():
-    """Assert that target column stays None when empty input."""
-    _, y = BaseCleaner._prepare_input(X_bin, y=None)
-    assert y is None
-
+# Test BaseCleaner ========================================================== >>
 
 def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
@@ -118,7 +45,7 @@ def test_fit_transform_no_fit():
     assert X_1.equals(X_2)
 
 
-# << ================= Test Scaler ================ >>
+# Test Scaler =============================================================== >>
 
 def test_check_is_fitted():
     """Assert that an error is raised when not fitted."""
@@ -155,7 +82,7 @@ def test_return_scaled_dataset():
     assert check_scaling(X)
 
 
-# << ================= Test StandardCleaner ================ >>
+# Test StandardCleaner ====================================================== >>
 
 def test_remove_invalid_column_type():
     """Assert that invalid columns types are removed for string input."""
@@ -229,7 +156,7 @@ def test_target_mapping():
     assert cleaner.mapping == {'0': 0, '1': 1, '2': 2}
 
 
-# << ================= Test Imputer ================ >>
+# Test Imputer ============================================================== >>
 
 def test_strat_num_parameter():
     """Assert that the strat_num parameter is set correctly."""
@@ -384,7 +311,7 @@ def test_imputing_non_numeric_most_frequent():
     assert X.isna().sum().sum() == 0
 
 
-# << ================= Test Encoder ================ >>
+# Test Encoder ============================================================== >>
 
 def test_max_onehot_parameter():
     """Assert that the max_onehot parameter is set correctly."""
@@ -460,7 +387,7 @@ def test_kwargs_parameters():
     assert encoder._encoders['Feature 2'].get_params()['sigma'] == 0.5
 
 
-# << ================= Test Outliers ================ >>
+# Test Outliers ============================================================= >>
 
 def test_invalid_strategy_parameter():
     """Assert that the strategy parameter is set correctly."""
@@ -507,12 +434,7 @@ def test_remove_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-# << ================= Test Balancer ================ >>
-
-def test_not_classification_task():
-    """Assert that error is raised when task==regression."""
-    pytest.raises(ValueError, Balancer, task='regression')
-
+# Test Balancer ============================================================= >>
 
 def test_oversample_and_undersample_same_time():
     """Assert that error is raised when over and undersample are both set."""
@@ -525,23 +447,13 @@ def test_None_both_parameter():
 
 
 def test_oversample_parameter():
-    """Assert that the oversample parameter is set correctly."""
-    # Binary classification tasks
-    pytest.raises(ValueError, Balancer, task='binary', oversample=-2.1)
-    pytest.raises(ValueError, Balancer, task='binary', oversample='test')
-
-    # Multiclass classification tasks
-    pytest.raises(TypeError, Balancer, task='multiclass', undersample=1.0)
+    """Assert that an error is raised when oversample is unknown."""
+    pytest.raises(ValueError, Balancer, oversample='test')
 
 
 def test_undersample_parameter():
-    """Assert that the undersample parameter is set correctly."""
-    # Binary classification tasks
-    pytest.raises(ValueError, Balancer, task='binary', undersample=-3.)
-    pytest.raises(ValueError, Balancer, task='binary', undersample='test')
-
-    # Multiclass classification tasks
-    pytest.raises(TypeError, Balancer, task='multiclass', undersample=0.8)
+    """Assert that an error is raised when undersample is unknown."""
+    pytest.raises(ValueError, Balancer, undersample='test')
 
 
 def test_n_neighbors_parameter():

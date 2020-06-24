@@ -434,3 +434,45 @@ def test_plot_lift():
     atom.plot_lift(['Tree', 'LGB'], filename=FILE_DIR + 'lift2', display=False)
     assert glob.glob(FILE_DIR + 'lift1.png')
     assert glob.glob(FILE_DIR + 'lift2.png')
+
+
+# << ================== Test BasePlotter ================== >>
+
+def test_set_style():
+    """Assert that the set_style classmethod works as intended."""
+    style = 'white'
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.set_style(style)
+    assert ATOMClassifier.style == style
+
+
+def test_set_palette():
+    """Assert that the set_palette classmethod works as intended."""
+    palette = 'Blues'
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.set_palette(palette)
+    assert ATOMClassifier.palette == palette
+
+
+def test_set_title_fontsize():
+    """Assert that the set_title_fontsize classmethod works as intended."""
+    title_fontsize = 21
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.set_title_fontsize(title_fontsize)
+    assert ATOMClassifier.title_fontsize == title_fontsize
+
+
+def test_set_label_fontsize():
+    """Assert that the set_label_fontsize classmethod works as intended."""
+    label_fontsize = 4
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.set_label_fontsize(label_fontsize)
+    assert ATOMClassifier.label_fontsize == label_fontsize
+
+
+def test_set_tick_fontsize():
+    """Assert that the set_tick_fontsize classmethod works as intended."""
+    tick_fontsize = 13
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.set_tick_fontsize(tick_fontsize)
+    assert ATOMClassifier.tick_fontsize == tick_fontsize

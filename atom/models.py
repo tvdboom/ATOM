@@ -111,12 +111,10 @@ from sklearn.linear_model import (
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Own modules
-from .data_cleaning import Scaler
 from .basemodel import BaseModel
-from .utils import check_scaling
 
 
-# << ============ Functions ============ >>
+# Functions ================================================================= >>
 
 def get_model_name(model):
     """Get the right model acronym.
@@ -134,7 +132,7 @@ def get_model_name(model):
     """
     # Compare strings case insensitive
     if model.lower() not in map(str.lower, MODEL_LIST):
-        raise ValueError("Unknown model: {}! Choose from: {}"
+        raise ValueError("Unknown model: {}! Choose from: {}."
                          .format(model, ', '.join(MODEL_LIST)))
     else:
         for name in MODEL_LIST:
@@ -142,59 +140,14 @@ def get_model_name(model):
                 return name
 
 
-def set_init(self, train=None, test=None, scale=False):
-    """Prepare BaseModel's (class) parameters. Scale features if necessary.
-
-    Parameters
-    ----------
-    self: class
-        Class from which the model is initiated.
-
-    train: pd.DataFrame, optional (default=None)
-        Training set used for this model.
-
-    test: pd.DataFrame, optional (default=None)
-        Test set used for this model.
-
-    scale: bool, optional (default=False)
-        whether the model needs the features to be scale.
-
-    Returns
-    -------
-    params: dict
-        Dictionary of the keyword arguments passed to the BaseModel class.
-
-    """
-    params = {'T': self}
-    try:  # Can fail if called from feature_selection
-        X_train = train.iloc[:, :-1]
-        X_test = test.iloc[:, :-1]
-        if scale and not check_scaling(train):
-            # Scale features to mean=0 and std=1
-            scaler = Scaler().fit(X_train)
-            params['X_train'] = scaler.transform(X_train)
-            params['X_test'] = scaler.transform(X_test)
-        else:
-            params['X_train'] = X_train
-            params['X_test'] = X_test
-
-        params['y_train'] = train.iloc[:, -1]
-        params['y_test'] = test.iloc[:, -1]
-
-    except AttributeError:
-        pass
-
-    return params
-
-
-# << ============ Classes ============ >>
+# Classes =================================================================== >>
 
 class GaussianProcess(BaseModel):
     """Gaussian process model."""
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'GP', 'Gaussian Process'
 
     def get_model(self, params={}):
@@ -213,7 +166,7 @@ class GaussianNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'GNB', 'Gaussian Naive Bayes'
 
     @staticmethod
@@ -227,7 +180,7 @@ class MultinomialNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'MNB', 'Multinomial Naive Bayes'
 
     @staticmethod
@@ -259,7 +212,7 @@ class BernoulliNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'BNB', 'Bernoulli Naive Bayes'
 
     @staticmethod
@@ -291,7 +244,7 @@ class OrdinaryLeastSquares(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
 
     def get_model(self, params={}):
@@ -304,7 +257,7 @@ class Ridge(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name = 'Ridge'
         if self.T.goal.startswith('class'):
             self.longname = 'Ridge Classification'
@@ -342,7 +295,7 @@ class Lasso(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'Lasso', 'Lasso Regression'
 
     @staticmethod
@@ -373,7 +326,7 @@ class ElasticNet(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'EN', 'ElasticNet Regression'
 
     @staticmethod
@@ -406,7 +359,7 @@ class BayesianRegression(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'BR', 'Bayesian Regression'
 
     @staticmethod
@@ -435,7 +388,7 @@ class LogisticRegression(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'LR', 'Logistic Regression'
 
     @staticmethod
@@ -490,7 +443,7 @@ class LinearDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'LDA', 'Linear Discriminant Analysis'
 
     @staticmethod
@@ -524,7 +477,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'QDA', 'Quadratic Discriminant Analysis'
 
     @staticmethod
@@ -553,7 +506,7 @@ class KNearestNeighbors(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
 
     @staticmethod
@@ -591,7 +544,7 @@ class DecisionTree(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'Tree', 'Decision Tree'
 
     @staticmethod
@@ -640,7 +593,7 @@ class Bagging(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name = 'Bag'
         if self.T.goal.startswith('class'):
             self.longname = 'Bagging Classifier'
@@ -688,7 +641,7 @@ class ExtraTrees(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'ET', 'Extra-Trees'
 
     @staticmethod
@@ -746,7 +699,7 @@ class RandomForest(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'RF', 'Random Forest'
 
     @staticmethod
@@ -804,7 +757,7 @@ class AdaBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'AdaB', 'AdaBoost'
 
     @staticmethod
@@ -840,7 +793,7 @@ class GradientBoostingMachine(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=False))
+        super().__init__(T=args[0], scale=False)
         self.name, self.longname = 'GBM', 'Gradient Boosting Machine'
 
     @staticmethod
@@ -890,7 +843,7 @@ class XGBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'XGB', 'XGBoost'
 
     @staticmethod
@@ -950,7 +903,7 @@ class LightGBM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'LGB', 'LightGBM'
 
     @staticmethod
@@ -1005,7 +958,7 @@ class CatBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'CatB', 'CatBoost'
 
     @staticmethod
@@ -1059,7 +1012,7 @@ class LinearSVM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'lSVM', 'Linear SVM'
 
     def get_params(self, x):
@@ -1106,7 +1059,7 @@ class KernelSVM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'kSVM', 'Kernel SVM'
 
     @staticmethod
@@ -1155,7 +1108,7 @@ class PassiveAggressive(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'PA', 'Passive Aggressive'
 
     @staticmethod
@@ -1200,7 +1153,7 @@ class StochasticGradientDescent(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
 
     @staticmethod
@@ -1264,7 +1217,7 @@ class MultilayerPerceptron(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(**set_init(*args, scale=True))
+        super().__init__(T=args[0], scale=True)
         self.name, self.longname = 'MLP', 'Multilayer Perceptron'
 
     @staticmethod

@@ -7,9 +7,6 @@ Description: Module containing utility constants, functions and classes.
 
 """
 
-
-# << ============ Import Packages ============ >>
-
 # Standard packages
 import math
 import pickle
@@ -21,15 +18,13 @@ from time import time
 from datetime import datetime
 from collections import deque
 from typing import Union, Sequence
-
-# Sklearn
 from sklearn.metrics import SCORERS, get_scorer, make_scorer
 
 # Plotting
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-# << ============ Global constants ============ >>
+# Global constants ========================================================== >>
 
 # Variable types
 CAL = Union[str, callable]
@@ -50,60 +45,55 @@ ONLY_REGRESSION = ['OLS', 'Lasso', 'EN', 'BR']
 TREE_MODELS = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 
 
-# << ============ Functions ============ >>
+# Functions ================================================================= >>
 
-def prepare_logger(logger, class_name):
-    """Prepare logging file.
+def merge(X, y):
+    """Merge a pd.DataFrame and pd.Series into one dataframe."""
+    return X.merge(y.to_frame(), left_index=True, right_index=True)
+
+
+def catch_return(args):
+    """Returns always two arguments independent of length args."""
+    if not isinstance(args, tuple):
+        return args, None
+    else:
+        return args[0], args[1]
+
+
+def variable_return(X, y):
+    """Return one or two arguments depending on if y is None."""
+    if y is None:
+        return X
+    else:
+        return X, y
+
+
+def check_scaling(X):
+    """Check if the provided data is scaled to mean=0 and std=1."""
+    mean = X.mean(axis=1).mean()
+    std = X.std(axis=1).mean()
+    return True if mean < 0.05 and 0.5 < std < 1.5 else False
+
+
+def get_best_score(row):
+    """Returns the bagging score or test score of a model.
 
     Parameters
     ----------
-    logger: str or callable
-        - If string: name of the logging file. 'auto' for default name with
-                     timestamp. None to not save any log.
-        - If callable: python Logger object.
-
-    class_name: str
-        Name of the class from which the function is called.
-        Used for automatic name creation when log='auto'.
-
-    Returns
-    -------
-    logger: class
-        Logger object.
+    row: pd.Series
+        A row of the results dataframe.
 
     """
-    if not logger:  # Empty string
-        return None
-    elif callable(logger):  # Should be python Logger object
-        return logger
-
-    # Prepare the FileHandler's name
-    if not logger.endswith('.log'):
-        logger += '.log'
-    if logger == 'auto.log' or logger.endswith('/auto.log'):
-        current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
-        logger = logger.replace('auto', class_name + '_logger_' + current)
-
-    # Define file handler and set formatter
-    file_handler = logging.FileHandler(logger)
-    formatter = logging.Formatter('%(asctime)s: %(message)s')
-    file_handler.setFormatter(formatter)
-
-    # Define logger
-    logger = logging.getLogger(class_name + '_logger')
-    logger.setLevel(logging.DEBUG)
-    logger.propagate = False
-    if logger.hasHandlers():  # Remove existing handlers
-        logger.handlers.clear()
-    logger.addHandler(file_handler)  # Add file handler to logger
-
-    return logger
+    if 'mean_bagging' in row and row.mean_bagging and not np.isnan(row.mean_bagging):
+        return row.mean_bagging
+    else:
+        return row.score_test
 
 
 def time_to_string(t_init):
     """Convert time integer to string.
 
-    Convert a time duration to a neat string in format 00h:00m:00s
+    Convert a time duration to a string of format 00h:00m:00s
     or 1.000s if under 1 min.
 
     Parameters
@@ -183,17 +173,62 @@ def to_series(data, index=None, name='target'):
         return pd.Series(data, index=index, name=name)
 
 
-def merge(X, y):
-    """Merge pd.DataFrame and pd.Series into one dataframe."""
-    return X.merge(y.to_frame(), left_index=True, right_index=True)
+def prepare_logger(logger, class_name):
+    """Prepare logging file.
 
+    Parameters
+    ----------
+    logger: bool, str, class or None
+        - If None: No logger.
+        - If bool: True for logging file with default name, False for no logger.
+        - If string: name of the logging file. 'auto' for default name.
+        - If class: python Logger object.
 
-def get_best_score(row):
-    """Returns the bagging score if available, else the test score."""
-    if 'mean_bagging' in row and row.mean_bagging:
-        return row.mean_bagging
-    else:
-        return row.score_test
+        The default name created by ATOM contains the class name followed by the
+        timestamp  of the logger's creation, e.g. ATOMClassifier_
+
+    class_name: str
+        Name of the class from which the function is called.
+        Used for default name creation when log='auto'.
+
+    Returns
+    -------
+    logger: class
+        Logger object.
+
+    """
+    if logger is True:
+        logger = 'auto'
+
+    if not logger:  # Empty string, False or None
+        return
+
+    elif isinstance(logger, str):
+        # Prepare the FileHandler's name
+        if not logger.endswith('.log'):
+            logger += '.log'
+        if logger == 'auto.log' or logger.endswith('/auto.log'):
+            current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
+            logger = logger.replace('auto', class_name + '_logger_' + current)
+
+        # Define file handler and set formatter
+        file_handler = logging.FileHandler(logger)
+        formatter = logging.Formatter('%(asctime)s: %(message)s')
+        file_handler.setFormatter(formatter)
+
+        # Define logger
+        logger = logging.getLogger(class_name + '_logger')
+        logger.setLevel(logging.DEBUG)
+        logger.propagate = False
+        if logger.hasHandlers():  # Remove existing handlers
+            logger.handlers.clear()
+        logger.addHandler(file_handler)  # Add file handler to logger
+
+    elif type(logger) != logging.Logger:  # Should be python Logger object
+        raise TypeError("Invalid value for the logger parameter. Should be a " +
+                        f"python logging.Logger object, got {type(logger)}!")
+
+    return logger
 
 
 def check_property(value, value_name,
@@ -235,56 +270,33 @@ def check_property(value, value_name,
 
     if side_name:  # Check for equal number of rows
         if len(value) != len(side):
-            raise ValueError(f"The {value_name} and {side_name} properties " +
-                             "need to have the same number of rows, got " +
-                             f"{len(value)} != {len(side)}.")
+            raise ValueError(
+                f"The {value_name} and {side_name} properties need to have the " +
+                f"same number of rows, got {len(value)} != {len(side)}.")
         if not value.index.equals(side.index):
-            raise ValueError(f"The {value_name} and {side_name} properties " +
-                             "need to have the same indices, got " +
-                             f"{value.index} != {side.index}.")
+            raise ValueError(
+                f"The {value_name} and {side_name} properties need to have the " +
+                f"same indices, got {value.index} != {side.index}.")
 
     if under_name:  # Check they have the same columns
         if 'y' in value_name:
             if value.name != under.name:
-                raise ValueError(f"The {value_name} and {under_name} " +
-                                 "properties need to have the same name" +
-                                 f", got {value.name} != {under.name}.")
+                raise ValueError(
+                    f"The {value_name} and {under_name} properties need to have " +
+                    f"the same name, got {value.name} != {under.name}.")
         else:
             if value.shape[1] != under.shape[1]:
-                raise ValueError(f"The {value_name} and {under_name}" +
-                                 "properties need to have the same number " +
-                                 "of columns, got {} != {}."
-                                 .format(value.shape[1], under.shape[1]))
+                raise ValueError(
+                    f"The {value_name} and {under_name} properties need to have " +
+                    f"the same number of columns, got {value.shape[1]} != " +
+                    f"{under.shape[1]}.")
 
             if list(value.columns) != list(under.columns):
-                raise ValueError(f"The {value_name} and {under_name} " +
-                                 "properties need to have the same columns " +
-                                 f", got {value.columns} != {under.columns}.")
+                raise ValueError(
+                    f"The {value_name} and {under_name} properties need to have " +
+                    f"the same columns , got {value.columns} != {under.columns}.")
 
     return value
-
-
-def check_scaling(X):
-    """Check if the provided data is already scaled."""
-    mean = X.mean(axis=1).mean()
-    std = X.std(axis=1).mean()
-    return True if mean < 0.05 and 0.5 < std < 1.5 else False
-
-
-def catch_return(args):
-    """Returns always two arguments independent of length args."""
-    if not isinstance(args, tuple):
-        return args, None
-    else:
-        return args[0], args[1]
-
-
-def variable_return(X, y):
-    """Return one or two arguments depending on if y is None."""
-    if y is None:
-        return X
-    else:
-        return X, y
 
 
 def check_is_fitted(estimator, attributes=None, msg=None):
@@ -392,6 +404,23 @@ def get_metric_name(scorer):
     return scorer._score_func.__name__
 
 
+def get_default_metric(task):
+    """Return the default metric for each task.
+
+    Parameters
+    ----------
+    task: str
+        One of binary classification, multiclass classification or regression.
+
+    """
+    if task.startswith('bin'):
+        return get_metric('f1', True, False, False)
+    elif task.startswith('multi'):
+        return get_metric('f1_weighted', True, False, False)
+    else:
+        return get_metric('r2', True, False, False)
+
+
 def infer_task(y, goal=''):
     """Infer the task corresponding to a target column.
 
@@ -429,7 +458,9 @@ def infer_task(y, goal=''):
             return 'multiclass classification'
 
     if not goal:
-        if len(unique) < 0.1 * len(y) and len(unique) < 30 and not goal:
+        if len(unique) == 2:
+            return 'binary classification'
+        elif len(unique) < 0.1 * len(y) and len(unique) < 30:
             return 'multiclass classification'
         else:
             return 'regression'
@@ -485,7 +516,7 @@ def attach_methods(self, class_, names):
         names = [names]
 
     items = dict(class_.__dict__)  # __dict__ has mappingproxy type
-    # Add all parent's methods to the items dict
+    # Add all parent's methods to the items dictionary
     for parent in inspect.getmro(class_):
         items.update(**parent.__dict__)
 
@@ -494,7 +525,7 @@ def attach_methods(self, class_, names):
             setattr(self, key, getattr(class_, key).__get__(self))
 
 
-# << ============ Functions shared by classes ============ >>
+# Functions shared by classes =============================================== >>
 
 def clear(self, models):
     """Clear models from the trainer.
@@ -516,23 +547,27 @@ def clear(self, models):
             raise ValueError(f"Model {model} not found in pipeline!")
         else:
             self.models.remove(model)
+            if isinstance(self._results.index, pd.MultiIndex):
+                self._results = self._results.iloc[
+                    ~self._results.index.get_level_values(1).str.contains(model)]
+            else:
+                self._results.drop(model, axis=0, inplace=True, errors='ignore')
 
-            # Update the scores attribute
-            if isinstance(self.results, list):
-                for df in self.results:
-                    if model in df.index:
-                        df.drop(model, axis=0, inplace=True)
-            elif model in self.results.index:
-                self.results.drop(model, axis=0, inplace=True)
-
-            if self.results.empty:  # No more models in the pipeline
+            if not self.models:  # No more models in the pipeline
                 self.winner = None
                 self.metric = None
 
-            # Assign new winner model (if it changed)
-            elif self.winner is getattr(self, model, ''):
-                best = self.results.apply(lambda row: get_best_score(row), axis=1)
-                self.winner = getattr(self, str(best.idxmax()))
+            else:
+                # Assign new winning model (if it changed)
+                if self.winner is getattr(self, model, ''):
+                    # Make a df of the scores for all remaining models
+                    scores = pd.DataFrame(columns=['score_test', 'mean_bagging'])
+                    for m in self.models:
+                        scores.loc[m] = [getattr(self, m).score_test,
+                                         getattr(self, m).mean_bagging]
+
+                    best = scores.apply(lambda row: get_best_score(row), axis=1)
+                    self.winner = getattr(self, str(best.idxmax()))
 
             # Delete model subclasses
             delattr(self, model)
@@ -555,7 +590,7 @@ def save(self, filename):
     pickle.dump(self, open(filename, 'wb'))
 
 
-# << ============ Decorators ============ >>
+# Decorators ================================================================ >>
 
 def composed(*decs):
     """Add multiple decorators in one line.
@@ -576,14 +611,15 @@ def composed(*decs):
 def crash(f):
     """Save program crashes to log file."""
     def wrapper(*args, **kwargs):
-        log = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
-        if type(log) == logging.Logger:
+        logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
+
+        if logger is not None:
             try:  # Run the function
                 return f(*args, **kwargs)
 
             except Exception as exception:
                 # Write exception to log and raise it
-                log.exception("Exception encountered:")
+                logger.exception("Exception encountered:")
                 raise eval(type(exception).__name__)(exception)
         else:
             return f(*args, **kwargs)
@@ -594,18 +630,26 @@ def crash(f):
 def params_to_log(f):
     """Save function's Parameters to log file."""
     def wrapper(*args, **kwargs):
-        log = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
+        logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
         kwargs_list = ['{}={!r}'.format(k, v) for k, v in kwargs.items()]
         args_list = [str(i) for i in args[1:]]
         args_list = args_list + [''] if len(kwargs_list) != 0 else args_list
-        if log is not None:
+
+        if logger is not None:
+            # For the __init__ method, call extra arguments from api.py
             if f.__name__ == '__init__':
-                log.info(f"Method: {args[0].__class__.__name__}.{f.__name__}" +
-                         f"(X, y, {', '.join(kwargs_list)})")
+                extra_kwargs = dict(n_jobs=args[0].n_jobs,
+                                    warnings=args[0].warnings,
+                                    verbose=args[0].verbose,
+                                    logger=args[0].logger.handlers[-1].baseFilename,
+                                    random_state=args[0].random_state)
+                kwargs_2 = ['{}={!r}'.format(k, v) for k, v in extra_kwargs.items()]
+                logger.info(f"{args[0].__class__.__name__}.{f.__name__}" +
+                            f"(X, y, {', '.join(kwargs_list + kwargs_2)})")
             else:
-                log.info('')  # Empty line first
-                log.info(f"Method: {args[0].__class__.__name__}.{f.__name__}" +
-                         f"({', '.join(args_list)}{', '.join(kwargs_list)})")
+                logger.info('')  # Empty line first
+                logger.info(f"{args[0].__class__.__name__}.{f.__name__}" +
+                            f"({', '.join(args_list)}{', '.join(kwargs_list)})")
 
         result = f(*args, **kwargs)
         return result
@@ -613,15 +657,15 @@ def params_to_log(f):
     return wrapper
 
 
-# << ============ Classes ============ >>
+# Classes =================================================================== >>
 
 class NotFittedError(ValueError, AttributeError):
-    """Exception for when the instance is not yet fitted."""
+    """Exception called when the instance is not yet fitted."""
     pass
 
 
 class PlotCallback(object):
-    """Callback to plot the BO progress."""
+    """Callback to plot the BO's progress as it runs."""
 
     def __init__(self, model):
         """Initialize class.

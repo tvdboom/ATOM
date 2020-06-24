@@ -108,16 +108,16 @@ def plot_pca(self, title, figsize, filename, display):
         whether to render the plot.
 
     """
-    if not self.PCA:
-        raise AttributeError("This plot is only available if you applied " +
+    if not self.pca:
+        raise RuntimeError("This plot is only available if you applied " +
                              "PCA on the data!")
 
-    n = self.PCA.n_components_  # Number of chosen components
-    var = np.array(self.PCA.explained_variance_ratio_[:n])
-    var_all = np.array(self.PCA.explained_variance_ratio_)
+    n = self.pca.n_components_  # Number of chosen components
+    var = np.array(self.pca.explained_variance_ratio_[:n])
+    var_all = np.array(self.pca.explained_variance_ratio_)
 
     fig, ax = plt.subplots(figsize=figsize)
-    plt.scatter(self.PCA.n_components_ - 1,
+    plt.scatter(self.pca.n_components_ - 1,
                 var.sum(),
                 marker='*',
                 s=130,
@@ -125,7 +125,7 @@ def plot_pca(self, title, figsize, filename, display):
                 edgecolors='b',
                 zorder=3,
                 label=f"Total variance retained: {round(var.sum(), 3)}")
-    plt.plot(range(0, self.PCA.n_features_), np.cumsum(var_all), marker='o')
+    plt.plot(range(0, self.pca.n_features_), np.cumsum(var_all), marker='o')
     plt.axhline(var.sum(), ls='--', color='k')
 
     title = "PCA explained variances" if title is None else title
@@ -173,22 +173,22 @@ def plot_components(self, show, title, figsize, filename, display):
         whether to render the plot.
 
     """
-    if not self.PCA:
-        raise AttributeError("This plot is only available if you apply " +
+    if not self.pca:
+        raise RuntimeError("This plot is only available if you applied " +
                              "PCA on the data!")
 
     # Set parameters
     if show is None:
-        show = self.PCA.n_components_
-    elif show > self.PCA.n_features_:
-        show = self.PCA.n_features_
+        show = self.pca.n_components_
+    elif show > self.pca.n_features_:
+        show = self.pca.n_features_
     elif show < 1:
         raise ValueError("Invalid value for the show parameter." +
                          f"Value should be >0, got {show}.")
     if figsize is None:  # Default figsize depends on features shown
         figsize = (10, int(4 + show/2))
 
-    var = np.array(self.PCA.explained_variance_ratio_)[:show]
+    var = np.array(self.pca.explained_variance_ratio_)[:show]
     indices = ['Component ' + str(i) for i in range(len(var))]
     scr = pd.Series(var, index=indices).sort_values()
 
@@ -239,25 +239,25 @@ def plot_rfecv(self, title, figsize, filename, display):
         whether to render the plot.
 
     """
-    if not self.RFECV:
-        raise AttributeError("This plot is only available if you apply " +
+    if not self.rfecv:
+        raise RuntimeError("This plot is only available if you applied " +
                              "RFECV on the data!")
 
     try:  # Define the y-label for the plot
-        ylabel = self.RFECV.get_params()['scoring'].name
+        ylabel = self.rfecv.get_params()['scoring'].name
     except AttributeError:
         ylabel = 'score'
-        if self.RFECV.get_params()['scoring']:
-            ylabel = str(self.RFECV.get_params()['scoring'])
+        if self.rfecv.get_params()['scoring']:
+            ylabel = str(self.rfecv.get_params()['scoring'])
 
     fig, ax = plt.subplots(figsize=figsize)
-    n_features = self.RFECV.get_params()['min_features_to_select']
-    xline = range(n_features,  n_features + len(self.RFECV.grid_scores_))
-    ax.axvline(xline[int(np.argmax(self.RFECV.grid_scores_))],
+    n_features = self.rfecv.get_params()['min_features_to_select']
+    xline = range(n_features,  n_features + len(self.rfecv.grid_scores_))
+    ax.axvline(xline[int(np.argmax(self.rfecv.grid_scores_))],
                ls='--',
                color='k',
-               label=f'Best score: {round(max(self.RFECV.grid_scores_), 3)}')
-    plt.plot(xline, self.RFECV.grid_scores_)
+               label=f'Best score: {round(max(self.rfecv.grid_scores_), 3)}')
+    plt.plot(xline, self.rfecv.grid_scores_)
 
     title = "RFE cross-validation scores" if title is None else title
     plt.title(title, fontsize=self.title_fontsize, pad=12)
@@ -266,7 +266,7 @@ def plot_rfecv(self, title, figsize, filename, display):
     plt.ylabel(ylabel, fontsize=self.label_fontsize, labelpad=12)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
-    plt.xlim(n_features - 0.5, n_features + len(self.RFECV.grid_scores_) - 0.5)
+    plt.xlim(n_features - 0.5, n_features + len(self.rfecv.grid_scores_) - 0.5)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
     fig.tight_layout()
     if filename is not None:
@@ -306,7 +306,7 @@ def plot_successive_halving(self, models, title, figsize, filename, display):
           "calling the plot_successive_halving method!"
     check_is_fitted(self, 'winner', msg)
     if not self._has_sh:
-        raise AttributeError(msg)
+        raise RuntimeError(msg)
 
     if models is None:
         models = self.scores[0].index  # List of models in first iteration
@@ -503,6 +503,86 @@ def plot_bagging(self, models, title, figsize, filename, display):
     ax.set_xticklabels(names)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
+    fig.tight_layout()
+    if filename is not None:
+        plt.savefig(filename)
+    plt.show() if display else plt.close()
+
+
+def plot_bo(self, models, title, figsize, filename, display):
+    """Plot the bayesian optimization scoring.
+
+    Only for models that ran the hyperparameter optimization. This is the same
+    plot as the one produced by `plot_bo=True` while running the BO.
+
+    Parameters
+    ----------
+    self: class
+        Class from which the plot is called.
+
+    models: string, list, tuple or None, optional (default=None)
+        Name of the models to plot. If None, all the models in the
+        pipeline are selected.
+
+    title: string or None, optional (default=None)
+        Plot's title. If None, the default option is used.
+
+    figsize: tuple, optional (default=(10, 6))
+        Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+    filename: string or None, optional (default=None)
+        Name of the file (to save). If None, the figure is not saved.
+
+    display: bool, optional (default=True)
+        whether to render the plot.
+
+    """
+    # Set parameters
+    check_is_fitted(self, 'winner')
+    if models is None:
+        models = self.models
+    elif isinstance(models, str):
+        models = [models]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    gs = GridSpec(2, 1, height_ratios=[2, 1])
+    ax1 = plt.subplot(gs[0])
+    ax2 = plt.subplot(gs[1], sharex=ax1)
+    for model in models:
+        if hasattr(self, model.lower()):
+            m = getattr(self, model.lower())
+            if m.bo.empty:
+                raise ValueError("The plot_bo method is only available" +
+                                 "for models that ran the bayesian" +
+                                 "optimization hyperparameter tuning!")
+
+            y = m.bo['score']
+            if len(models) == 1:
+                label = f"Score={round(m.score_bo, 3)}"
+            else:
+                label = f"{m.name} (Score={round(m.score_bo, 3)})"
+
+            # Draw bullets onm all markers except the maximum
+            markers = [i for i in range(len(m.bo))]
+            markers.remove(int(np.argmax(y)))
+            ax1.plot(range(1, len(y)+1), y, '-o', markevery=markers, label=label)
+            ax2.plot(range(2, len(y)+1), np.abs(np.diff(y)), '-o')
+            ax1.scatter(np.argmax(y)+1, max(y), zorder=10, s=100, marker='*')
+        else:
+            raise ValueError(f"Model {model} not found in pipeline!")
+
+    title = "Bayesian optimization scoring" if title is None else title
+    ax1.set_title(title, fontsize=self.title_fontsize, pad=12)
+    ax1.legend(loc='lower right', fontsize=self.label_fontsize)
+    ax2.set_title("Distance between last consecutive iterations",
+                  fontsize=self.title_fontsize)
+    ax2.set_xlabel('Iteration', fontsize=self.label_fontsize, labelpad=12)
+    ax1.set_ylabel(self.metric.name, fontsize=self.label_fontsize, labelpad=12)
+    ax2.set_ylabel('d', fontsize=self.label_fontsize, labelpad=12)
+    plt.xticks(fontsize=self.tick_fontsize)
+    plt.yticks(fontsize=self.tick_fontsize)
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    plt.subplots_adjust(hspace=.0)
     fig.tight_layout()
     if filename is not None:
         plt.savefig(filename)
@@ -1338,7 +1418,7 @@ def plot_gains(self, models, title, figsize, filename, display):
             # Get sorted indices and correct for the test set
             sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
             sorted_indices = [i + len(m.y_train) for i in sorted_indices]
-            gains = np.cumsum(y_true[sorted_indices])/float(np.sum(y_true))
+            gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
 
             x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
             plt.plot(x, gains, lw=2, label=f'{m.name}')
@@ -1416,7 +1496,7 @@ def plot_lift(self, models, title, figsize, filename, display):
 
             sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
             sorted_indices = [i + len(m.y_train) for i in sorted_indices]
-            gains = np.cumsum(y_true[sorted_indices])/float(np.sum(y_true))
+            gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
 
             if len(models) == 1:
                 label = f"Lift={round(m.lift, 3)}"
@@ -1437,86 +1517,6 @@ def plot_lift(self, models, title, figsize, filename, display):
     plt.xlim(0, 1)
     plt.xticks(fontsize=self.tick_fontsize)
     plt.yticks(fontsize=self.tick_fontsize)
-    fig.tight_layout()
-    if filename is not None:
-        plt.savefig(filename)
-    plt.show() if display else plt.close()
-
-
-def plot_bo(self, models, title, figsize, filename, display):
-    """Plot the bayesian optimization scoring.
-
-    Only for models that ran the hyperparameter optimization. This is the same
-    plot as the one produced by `plot_bo=True` while running the BO.
-
-    Parameters
-    ----------
-    self: class
-        Class from which the plot is called.
-
-    models: string, list, tuple or None, optional (default=None)
-        Name of the models to plot. If None, all the models in the
-        pipeline are selected.
-
-    title: string or None, optional (default=None)
-        Plot's title. If None, the default option is used.
-
-    figsize: tuple, optional (default=(10, 6))
-        Figure's size, format as (x, y). If None, adapts size to `show` param.
-
-    filename: string or None, optional (default=None)
-        Name of the file (to save). If None, the figure is not saved.
-
-    display: bool, optional (default=True)
-        whether to render the plot.
-
-    """
-    # Set parameters
-    check_is_fitted(self, 'winner')
-    if models is None:
-        models = self.models
-    elif isinstance(models, str):
-        models = [models]
-
-    fig, ax = plt.subplots(figsize=figsize)
-    gs = GridSpec(2, 1, height_ratios=[2, 1])
-    ax1 = plt.subplot(gs[0])
-    ax2 = plt.subplot(gs[1], sharex=ax1)
-    for model in models:
-        if hasattr(self, model.lower()):
-            m = getattr(self, model.lower())
-            if m.BO is None:
-                raise ValueError("The plot_bo method is only available" +
-                                 "for models that ran the bayesian" +
-                                 "optimization hyperparameter tuning!")
-
-            y = m.BO['score']
-            if len(models) == 1:
-                label = f"Score={round(m.score_bo, 3)}"
-            else:
-                label = f"{m.name} (Score={round(m.score_bo, 3)})"
-
-            # Draw bullets onm all markers except the maximum
-            markers = [i for i in range(len(m.BO))]
-            markers.remove(int(np.argmax(y)))
-            ax1.plot(range(1, len(y)+1), y, '-o', markevery=markers, label=label)
-            ax2.plot(range(2, len(y)+1), np.abs(np.diff(y)), '-o')
-            ax1.scatter(np.argmax(y)+1, max(y), zorder=10, s=100, marker='*')
-        else:
-            raise ValueError(f"Model {model} not found in pipeline!")
-
-    title = "Bayesian optimization scoring" if title is None else title
-    ax1.set_title(title, fontsize=self.title_fontsize, pad=12)
-    ax1.legend(loc='lower right', fontsize=self.label_fontsize)
-    ax2.set_title("Distance between last consecutive iterations",
-                  fontsize=self.title_fontsize)
-    ax2.set_xlabel('Iteration', fontsize=self.label_fontsize, labelpad=12)
-    ax1.set_ylabel(self.metric.name, fontsize=self.label_fontsize, labelpad=12)
-    ax2.set_ylabel('d', fontsize=self.label_fontsize, labelpad=12)
-    plt.xticks(fontsize=self.tick_fontsize)
-    plt.yticks(fontsize=self.tick_fontsize)
-    plt.setp(ax1.get_xticklabels(), visible=False)
-    plt.subplots_adjust(hspace=.0)
     fig.tight_layout()
     if filename is not None:
         plt.savefig(filename)

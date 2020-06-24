@@ -18,47 +18,84 @@ from typing import Optional, Union, Sequence, Tuple
 from sklearn.metrics import SCORERS
 
 # Own modules
-from .data_cleaning import BaseCleaner
+from .data_cleaning import BaseTransformer, Scaler
 from .models import MODEL_LIST, get_model_name
 from .utils import (
     CAL, X_TYPES, Y_TYPES, OPTIONAL_PACKAGES, ONLY_CLASSIFICATION,
     ONLY_REGRESSION, to_df, time_to_string, check_is_fitted, catch_return,
-    get_best_score, get_metric, get_metric_name, infer_task, clear,
+    check_scaling, get_best_score, get_metric, get_metric_name, infer_task, clear,
     composed, crash
     )
 from .plots import (
-    plot_roc, plot_prc, plot_bagging, plot_permutation_importance,
+    BasePlotter, plot_roc, plot_prc, plot_bagging, plot_permutation_importance,
     plot_feature_importance, plot_confusion_matrix, plot_threshold,
     plot_probabilities, plot_calibration, plot_gains, plot_lift, plot_bo
     )
 
 
-# << ================ Classes ================= >>
+class BaseTrainer(BaseTransformer, BasePlotter):
+    """Base estimator for the training classes.
 
-class BaseTrainer(BaseCleaner):
-    """Base estimator for the training classes."""
+    The BaseTrainer class is where the models are fitted to the data and
+    their performance is evaluated according to the selected metric. For
+    every model, the pipeline applies the following steps:
+
+        1. The optimal hyperParameters are selected using a Bayesian
+           Optimization (BO) algorithm with gaussian process as kernel.
+           The resulting score of each step of the BO is either computed
+           by cross-validation on the complete training set or by randomly
+           splitting the training set every iteration into a (sub) training
+           set and a validation set. This process can create some data
+           leakage but ensures a maximal use of the provided data. The test
+           set, however, does not contain any leakage and will be used to
+           determine the final score of every model. Note that, if the
+           dataset is relatively small, the best score on the BO can
+           consistently be lower than the final score on the test set
+           (despite the leakage) due to the considerable fewer instances on
+           which it is trained.
+
+        2. Once the best hyperParameters are found, the model is trained
+           again, now using the complete training set. After this,
+           predictions are made on the test set.
+
+        3. You can choose to evaluate the robustness of each model's
+        applying a bagging algorithm, i.e. the model will be trained
+        multiple times on a bootstrapped training set, returning a
+        distribution of its performance on the test set.
+
+    A couple of things to take into account:
+        - The metric implementation follows sklearn's API. This means that
+          the implementation always tries to maximize the scorer, i.e. loss
+          functions will be made negative.
+        - If an exception is encountered while fitting a model, the
+          pipeline will automatically jump to the side model and save the
+          exception in the `errors` attribute.
+        - When showing the final results, a `!!` indicates the highest
+          score and a `~` indicates that the model is possibly overfitting
+          (training set has a score at least 20% higher than the test set).
+        - The winning model subclass will be attached to the `winner`
+          attribute.
+
+    """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, n_calls, n_random_starts, bo_kwargs,
+                 needs_threshold, n_calls, n_random_starts, bo_params,
                  bagging, n_jobs, verbose, warnings, logger, random_state):
-        """Initialize class.
-
-        Check parameters and prepare them for the run.
-
-        """
         super().__init__(n_jobs=n_jobs,
                          verbose=verbose,
-                         logger=logger,
                          warnings=warnings,
+                         logger=logger,
                          random_state=random_state)
 
         # Model attributes
         self.models = []
         self.errors = {}
         self.winner = None
-        self._results = []
+        self._results = pd.DataFrame(
+            columns=['name', 'score_train', 'score_test', 'time_fit',
+                     'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
 
-        # << =================== Check validity models ================== >>
+        # Check validity models ============================================= >>
 
         if isinstance(models, str):
             models = [models]
@@ -90,7 +127,7 @@ class BaseTrainer(BaseCleaner):
                     raise ValueError(f"The {m} model can't perform " +
                                      "regression tasks!")
 
-        # << ================= Check validity parameters ================ >>
+        # Check validity parameters ========================================= >>
 
         # Check Parameters
         if isinstance(n_calls, (list, tuple)):
@@ -124,27 +161,26 @@ class BaseTrainer(BaseCleaner):
         else:
             self.bagging = [bagging for _ in self.models]
 
-        # << ================= Check dimensions kwargs ================== >>
+        # Check dimensions params =========================================== >>
 
-        self.bo_kwargs = bo_kwargs
-        if self.bo_kwargs.get('dimensions'):
+        self.bo_params = bo_params
+        if self.bo_params.get('dimensions'):
             # Dimensions can be array for one model or dict if more
-            if not isinstance(self.bo_kwargs.get('dimensions'), dict):
+            if not isinstance(self.bo_params.get('dimensions'), dict):
                 if len(self.models) != 1:
-                    raise TypeError("Invalid type for the dimensions " +
-                                    "parameter. For multiple models it has " +
-                                    "to be a dictionary with the model's " +
-                                    "name as key!")
+                    raise TypeError(
+                        "Invalid type for the dimensions parameter. For >1 models," +
+                        " a dictionary is expected, with the model names as keys!")
                 else:
-                    self.bo_kwargs['dimensions'] = \
-                        {self.models[0]: self.bo_kwargs['dimensions']}
+                    self.bo_params['dimensions'] = \
+                        {self.models[0]: self.bo_params['dimensions']}
 
             # Assign proper model name to key of dimensions dict
-            for key in self.bo_kwargs.get('dimensions', []):
-                self.bo_kwargs['dimensions'][get_model_name(key)] = \
-                    self.bo_kwargs['dimensions'].pop(key)
+            for key in self.bo_params['dimensions']:
+                self.bo_params['dimensions'][get_model_name(key)] = \
+                    self.bo_params['dimensions'].pop(key)
 
-        # << ================== Check validity metric =================== >>
+        # Check validity metric ============================================= >>
 
         self.metric = get_metric(
             metric, greater_is_better, needs_proba, needs_threshold)
@@ -154,11 +190,8 @@ class BaseTrainer(BaseCleaner):
 
     @property
     def results(self):
-        # Return df without bagging cols if all are empty
-        if len(self._results) == 1:
-            return self._results[0].dropna(axis=1, how='all')
-        else:
-            return [df.dropna(axis=1, how='all') for df in self._results]
+        """Return df without bagging cols if all are empty."""
+        return self._results.dropna(axis=1, how='all')
 
     def _run(self, train, test):
         """Core iteration.
@@ -181,10 +214,22 @@ class BaseTrainer(BaseCleaner):
         if not isinstance(train, pd.DataFrame):
             train = to_df(deepcopy(train))
         if not isinstance(test, pd.DataFrame):
-            train = to_df(deepcopy(test))
+            test = to_df(deepcopy(test))
+
+        X_train, y_train = train.iloc[:, :-1], train.iloc[:, -1]
+        X_test, y_test = test.iloc[:, :-1], test.iloc[:, -1]
+
+        # Scale data if necessary
+        if not check_scaling(X_train):
+            scaler = Scaler().fit(X_train)
+            X_train_scaled = scaler.transform(X_train)
+            X_test_scaled = scaler.transform(X_test)
+        else:
+            X_train_scaled = X_train
+            X_test_scaled = X_test
 
         # Assign algorithm's task
-        self.task = infer_task(train.iloc[:, -1], goal=self.goal)
+        self.task = infer_task(y_train, goal=self.goal)
 
         t_init = time()  # To measure the time the whole pipeline takes
 
@@ -202,20 +247,28 @@ class BaseTrainer(BaseCleaner):
             model_time = time()
 
             # Define model class
-            setattr(self, m, MODEL_LIST[m](self, train, test))
+            setattr(self, m, MODEL_LIST[m](self))
             subclass = getattr(self, m)
             setattr(self, m.lower(), subclass)  # Lowercase as well
 
-            try:  # If errors occurs, just skip the model
+            # Use scaled data or not depending on the needs of the model
+            if subclass.scale:
+                args = (X_train_scaled, X_test_scaled, y_train, y_test)
+            else:
+                args = (X_train, X_test, y_train, y_test)
+
+            try:  # If errors occurs, skip the model
                 # Run Bayesian Optimization
                 # Use copy of kwargs to not delete original in method
-                # Shallow copy is enough since we only delete keys
+                # Shallow copy is enough since we only delete entries
                 if hasattr(subclass, 'get_domain') and n_calls > 0:
                     subclass.bayesian_optimization(
-                        n_calls, n_random_starts, self.bo_kwargs.copy())
-                subclass.fit()
+                        n_calls, n_random_starts, self.bo_params.copy(), *args)
+
+                subclass.fit(*args)
+
                 if bagging:
-                    subclass.bagging(bagging)
+                    subclass.bagging(bagging, *args)
 
                 # Get the total time spend on this model
                 total_time = time_to_string(model_time)
@@ -245,7 +298,7 @@ class BaseTrainer(BaseCleaner):
         if not self.models:
             raise ValueError('It appears all models failed to run...')
 
-        # << =================== Print final results ================== >>
+        # Print final results =============================================== >>
 
         # Create dataframe with final results
         results = pd.DataFrame(
@@ -253,22 +306,22 @@ class BaseTrainer(BaseCleaner):
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
 
         # Print final results
-        self.log("\n\nFinal results ================>>")
-        self.log(f"Duration: {time_to_string(t_init)}")
-        self.log(f"Metric: {self.metric.name}")
-        self.log("--------------------------------")
+        self.log("\n\nFinal results ==========================>>", 1)
+        self.log(f"Duration: {time_to_string(t_init)}", 1)
+        self.log(f"Metric: {self.metric.name}", 1)
+        self.log('-' * 42, 1)
 
         # Create a df to get maxlen of name and best_scores
-        all_ = pd.DataFrame(columns=['name', 'score_test', 'mean_bagging'])
+        scores = pd.DataFrame(columns=['name', 'score_test', 'mean_bagging'])
         for model in self.models:
             m = getattr(self, model)
-            all_.loc[model] = [m.longname, m.score_test, m.mean_bagging]
+            scores.loc[model] = [m.longname, m.score_test, m.mean_bagging]
 
         # Get max length of the models' names
-        maxlen = max(all_['name'].apply(lambda x: len(x)))
+        maxlen = max(scores['name'].apply(lambda x: len(x)))
 
         # List of scores the test set
-        best_score = all_.apply(lambda row: get_best_score(row), axis=1)
+        best_score = scores.apply(lambda row: get_best_score(row), axis=1)
 
         for m in self.models:
             name = getattr(self, m).name
@@ -282,14 +335,8 @@ class BaseTrainer(BaseCleaner):
             total_time = getattr(self, m).time
 
             # Append model row to results
-            results.loc[name] = [longname,
-                                 score_train,
-                                 score_test,
-                                 time_fit,
-                                 mean_bagging,
-                                 std_bagging,
-                                 time_bagging,
-                                 total_time]
+            results.loc[name] = [longname, score_train, score_test, time_fit,
+                                 mean_bagging, std_bagging, time_bagging, total_time]
 
             if not mean_bagging:
                 # Create string of the score
@@ -317,7 +364,7 @@ class BaseTrainer(BaseCleaner):
             if score_train - 0.2 * score_train > score_test:
                 print_ += ' ~'
 
-            self.log(print_)  # Print the score
+            self.log(print_, 1)  # Print the score
 
         return results
 
@@ -340,11 +387,11 @@ class BaseTrainer(BaseCleaner):
             keyword = 'Pipeline'
             models = self.models.copy()
         elif isinstance(models, str):
-            keyword = 'Model'
             models = [get_model_name(models)]
+            keyword = 'Model ' + models[0]
         else:
-            keyword = 'Models'
             models = [get_model_name(m) for m in models]
+            keyword = 'Models ' + ', '.join(models) + ' were'
 
         clear(self, models)
 
@@ -431,7 +478,7 @@ class BaseTrainer(BaseCleaner):
 
             self.log(print_, -2)  # Always print
 
-    # << ================== Transformation methods ================== >>
+    # Transformation methods ================================================ >>
 
     def _pipeline_methods(self, X, y=None, method='predict', **kwargs):
         """Apply pipeline methods on new data.
@@ -509,7 +556,7 @@ class BaseTrainer(BaseCleaner):
         """Get the score function on new data."""
         return self._pipeline_methods(X, y, method='score')
 
-    # << ======================= Plot methods ======================= >>
+    # Plot methods ========================================================== >>
 
     @composed(crash, typechecked)
     def plot_bagging(self,
