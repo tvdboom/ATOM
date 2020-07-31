@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/examples/feature_engineering/feature_engineering/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>Feature engineering - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/color-brewer.min.css">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+</li>
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/trainer_classifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/trainer_regressor.md" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/successive_halving_classifier.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/successive_halving_regressor.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/train_sizing_classifier.md" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/train_sizing_regressor.md" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../../train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../../calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../train_sizing/train_sizing/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../multi_metric/multi_metric/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#feature-engineering" class="nav-link">Feature engineering</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#load-the-data" class="nav-link">Load the data</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#run-the-pipeline" class="nav-link">Run the pipeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="feature-engineering">Feature engineering</h1>
+<hr />
+<p>This example shows how to use automated feature generation to improve your model's performance.</p>
+<p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target <code>RainTomorrow</code>.</p>
+<h2 id="load-the-data">Load the data</h2>
+<pre><code class="python"># Import packages
+import pandas as pd
+from atom import ATOMClassifier
+</code></pre>
+
+<pre><code class="python"># Load data
+X = pd.read_csv('./datasets/weatherAUS.csv')
+
+# Let's have a look at a subset of the data
+X.sample(frac=1).iloc[:5, :8]
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Location</th>
+      <th>MinTemp</th>
+      <th>MaxTemp</th>
+      <th>Rainfall</th>
+      <th>Evaporation</th>
+      <th>Sunshine</th>
+      <th>WindGustDir</th>
+      <th>WindGustSpeed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>118244</th>
+      <td>Perth</td>
+      <td>20.9</td>
+      <td>35.5</td>
+      <td>0.0</td>
+      <td>11.0</td>
+      <td>13.1</td>
+      <td>SW</td>
+      <td>31.0</td>
+    </tr>
+    <tr>
+      <th>17985</th>
+      <td>NorahHead</td>
+      <td>19.1</td>
+      <td>21.0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>S</td>
+      <td>44.0</td>
+    </tr>
+    <tr>
+      <th>96569</th>
+      <td>Adelaide</td>
+      <td>7.6</td>
+      <td>16.1</td>
+      <td>1.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>SW</td>
+      <td>35.0</td>
+    </tr>
+    <tr>
+      <th>63982</th>
+      <td>MelbourneAirport</td>
+      <td>5.8</td>
+      <td>11.9</td>
+      <td>3.6</td>
+      <td>1.8</td>
+      <td>6.6</td>
+      <td>N</td>
+      <td>52.0</td>
+    </tr>
+    <tr>
+      <th>97093</th>
+      <td>MountGambier</td>
+      <td>6.2</td>
+      <td>11.7</td>
+      <td>10.8</td>
+      <td>1.8</td>
+      <td>0.8</td>
+      <td>WNW</td>
+      <td>31.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="run-the-pipeline">Run the pipeline</h2>
+<pre><code class="python"># Initiate ATOM and apply data cleaning
+atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
+atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.encode(max_onehot=10, frac_to_other=0.04)
+
+# Let's see how a LightGBM model performs without adding additional features
+atom.run('LGB', metric='auc')
+atom.scoring()
+</code></pre>
+
+<pre><code>Results ===================== &gt;&gt;
+LightGBM --&gt; roc_auc: 0.945
+</code></pre>
+<pre><code class="python"># What are the most important fetaures?
+atom.plot_feature_importance(show=10)
+</code></pre>
+
+<p><img alt="png" src="../output_6_0.png" /></p>
+<p><strong>Now let's create some new fetaures using Deep Feature Synthesis</strong></p>
+<pre><code class="python">atom.verbose = 2  # Increase verbosity to see the output
+
+# Create 100 new features using DFS
+atom.feature_generation(strategy='dfs', n_features=100)
+
+# Select the best 50 features using RFECV
+atom.feature_selection(strategy='RFECV', solver='lgb', n_features=30, scoring='auc')
+</code></pre>
+
+<pre><code>Fitting FeatureGenerator...
+Creating new features...
+ --&gt; 100 new features were added to the dataset.
+Fitting FeatureSelector...
+
+
+C:\Users\Mavs\AppData\Roaming\Python\Python37\site-packages\pandas\core\series.py:679: RuntimeWarning: divide by zero encountered in log
+  result = getattr(ufunc, method)(*inputs, **kwargs)
+
+
+Performing feature selection ...
+ --&gt; Feature Location was removed due to low variance. Value 0.21025 repeated in 100.0% of rows.
+ --&gt; Feature WindDir3pm + WindSpeed9am was removed due to collinearity with another feature.
+ --&gt; Feature Pressure9am + RainToday_Yes was removed due to collinearity with another feature.
+ --&gt; Feature Cloud9am + Humidity9am was removed due to collinearity with another feature.
+ --&gt; Feature MaxTemp + WindGustDir was removed due to collinearity with another feature.
+ --&gt; Feature Location + Pressure3pm was removed due to collinearity with another feature.
+ --&gt; Feature Location + Rainfall was removed due to collinearity with another feature.
+ --&gt; Feature RainToday_Yes + Temp9am was removed due to collinearity with another feature.
+ --&gt; Feature Evaporation + Location was removed due to collinearity with another feature.
+ --&gt; Feature Location + MaxTemp was removed due to collinearity with another feature.
+ --&gt; Feature Location - RainToday_Yes was removed due to collinearity with another feature.
+ --&gt; Feature Cloud3pm - RainToday_Yes was removed due to collinearity with another feature.
+ --&gt; Feature Humidity3pm - WindDir9am was removed due to collinearity with another feature.
+ --&gt; Feature Sunshine - WindDir3pm was removed due to collinearity with another feature.
+ --&gt; Feature WindDir9am - WindSpeed3pm was removed due to collinearity with another feature.
+ --&gt; Feature Humidity9am * Pressure9am was removed due to collinearity with another feature.
+ --&gt; Feature MinTemp * Pressure9am was removed due to collinearity with another feature.
+ --&gt; Feature Location * WindGustDir was removed due to collinearity with another feature.
+ --&gt; Feature MaxTemp * Pressure3pm was removed due to collinearity with another feature.
+ --&gt; Feature Pressure9am * WindSpeed9am was removed due to collinearity with another feature.
+ --&gt; Feature Cloud3pm * Pressure3pm was removed due to collinearity with another feature.
+ --&gt; Feature Temp3pm * WindSpeed3pm was removed due to collinearity with another feature.
+ --&gt; Feature Location * Pressure3pm was removed due to collinearity with another feature.
+ --&gt; Feature Pressure9am * Temp9am was removed due to collinearity with another feature.
+ --&gt; Feature Humidity9am / Pressure3pm was removed due to collinearity with another feature.
+ --&gt; Feature RainToday_No / Location was removed due to collinearity with another feature.
+ --&gt; Feature WindSpeed9am / RainToday_No was removed due to collinearity with another feature.
+ --&gt; Feature Pressure3pm / Location was removed due to collinearity with another feature.
+ --&gt; Feature WindDir9am / Pressure9am was removed due to collinearity with another feature.
+ --&gt; Feature Evaporation / RainToday_Yes was removed due to collinearity with another feature.
+ --&gt; Feature SQRT(WindGustDir) was removed due to collinearity with another feature.
+ --&gt; Feature SQRT(Pressure9am) was removed due to collinearity with another feature.
+ --&gt; Feature WindSpeed9am was removed by the RFECV.
+ --&gt; Feature WindSpeed3pm was removed by the RFECV.
+ --&gt; Feature Cloud3pm was removed by the RFECV.
+ --&gt; Feature RainToday_Yes was removed by the RFECV.
+ --&gt; Feature RainToday_No was removed by the RFECV.
+ --&gt; Feature Rainfall * RainToday_No was removed by the RFECV.
+ --&gt; Feature Location / RainToday_Yes was removed by the RFECV.
+ --&gt; Feature LOG(Rainfall) was removed by the RFECV.
+</code></pre>
+<pre><code class="python"># The collineart attribute shows what features
+# were removed due to collinearity
+atom.collinear
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>drop_feature</th>
+      <th>correlated_feature</th>
+      <th>correlation_value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>WindDir3pm + WindSpeed9am</td>
+      <td>WindSpeed9am</td>
+      <td>0.99999</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Pressure9am + RainToday_Yes</td>
+      <td>Pressure9am</td>
+      <td>0.99832</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Cloud9am + Humidity9am</td>
+      <td>Humidity9am</td>
+      <td>0.99422</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>MaxTemp + WindGustDir</td>
+      <td>MaxTemp</td>
+      <td>0.99998</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Location + Pressure3pm</td>
+      <td>Pressure3pm</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Location + Rainfall</td>
+      <td>Rainfall</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>RainToday_Yes + Temp9am</td>
+      <td>Temp9am</td>
+      <td>0.99794</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Evaporation + Location</td>
+      <td>Evaporation</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Location + MaxTemp</td>
+      <td>MaxTemp, MaxTemp + WindGustDir</td>
+      <td>1.0, 0.99998</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Location - RainToday_Yes</td>
+      <td>RainToday_Yes, RainToday_No</td>
+      <td>-1.0, 0.98441</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>Cloud3pm - RainToday_Yes</td>
+      <td>Cloud3pm</td>
+      <td>0.98149</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>Humidity3pm - WindDir9am</td>
+      <td>Humidity3pm</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>Sunshine - WindDir3pm</td>
+      <td>Sunshine</td>
+      <td>0.99987</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>WindDir9am - WindSpeed3pm</td>
+      <td>WindSpeed3pm, RainToday_No - WindSpeed3pm</td>
+      <td>-0.99998, 0.99879</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>Humidity9am * Pressure9am</td>
+      <td>Humidity9am, Cloud9am + Humidity9am</td>
+      <td>0.99965, 0.99341</td>
+    </tr>
+    <tr>
+      <th>15</th>
+      <td>MinTemp * Pressure9am</td>
+      <td>MinTemp</td>
+      <td>0.99992</td>
+    </tr>
+    <tr>
+      <th>16</th>
+      <td>Location * WindGustDir</td>
+      <td>WindGustDir</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>17</th>
+      <td>MaxTemp * Pressure3pm</td>
+      <td>MaxTemp, MaxTemp + WindGustDir, Location + Max...</td>
+      <td>0.9998, 0.99974, 0.9998</td>
+    </tr>
+    <tr>
+      <th>18</th>
+      <td>Pressure9am * WindSpeed9am</td>
+      <td>WindSpeed9am, WindDir3pm + WindSpeed9am, WindD...</td>
+      <td>0.99991, 0.99989, -0.99991</td>
+    </tr>
+    <tr>
+      <th>19</th>
+      <td>Cloud3pm * Pressure3pm</td>
+      <td>Cloud3pm, Cloud3pm - RainToday_Yes</td>
+      <td>0.99986, 0.98165</td>
+    </tr>
+    <tr>
+      <th>20</th>
+      <td>Temp3pm * WindSpeed3pm</td>
+      <td>MaxTemp * WindSpeed3pm</td>
+      <td>0.99029</td>
+    </tr>
+    <tr>
+      <th>21</th>
+      <td>Location * Pressure3pm</td>
+      <td>Pressure3pm, Location + Pressure3pm</td>
+      <td>1.0, 1.0</td>
+    </tr>
+    <tr>
+      <th>22</th>
+      <td>Pressure9am * Temp9am</td>
+      <td>Temp9am, RainToday_Yes + Temp9am</td>
+      <td>0.99987, 0.9976</td>
+    </tr>
+    <tr>
+      <th>23</th>
+      <td>Humidity9am / Pressure3pm</td>
+      <td>Humidity9am, Cloud9am + Humidity9am, Humidity9...</td>
+      <td>0.99965, 0.99422, 0.99863</td>
+    </tr>
+    <tr>
+      <th>24</th>
+      <td>RainToday_No / Location</td>
+      <td>RainToday_Yes, RainToday_No, Location - RainTo...</td>
+      <td>-0.98441, 1.0, 0.98441</td>
+    </tr>
+    <tr>
+      <th>25</th>
+      <td>WindSpeed9am / RainToday_No</td>
+      <td>WindSpeed9am, WindDir3pm + WindSpeed9am, WindD...</td>
+      <td>1.0, 0.99999, -0.99998, 0.99993</td>
+    </tr>
+    <tr>
+      <th>26</th>
+      <td>Pressure3pm / Location</td>
+      <td>Pressure3pm, Location + Pressure3pm, Location ...</td>
+      <td>1.0, 1.0, 1.0</td>
+    </tr>
+    <tr>
+      <th>27</th>
+      <td>WindDir9am / Pressure9am</td>
+      <td>WindDir9am, Location - WindDir9am</td>
+      <td>0.99958, -0.99958</td>
+    </tr>
+    <tr>
+      <th>28</th>
+      <td>Evaporation / RainToday_Yes</td>
+      <td>Evaporation, Evaporation + Location</td>
+      <td>1.0, 1.0</td>
+    </tr>
+    <tr>
+      <th>29</th>
+      <td>SQRT(WindGustDir)</td>
+      <td>WindGustDir, Location * WindGustDir</td>
+      <td>0.9979, 0.9979</td>
+    </tr>
+    <tr>
+      <th>30</th>
+      <td>SQRT(Pressure9am)</td>
+      <td>Pressure9am, Pressure9am + RainToday_Yes</td>
+      <td>1.0, 0.99831</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># After applying RFECV, we can plot the score per number of features
+atom.plot_rfecv()
+</code></pre>
+
+<p><img alt="png" src="../output_10_0.png" /></p>
+<pre><code class="python"># Since the new features apply divisions, we can have inf values in the dataset
+atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+</code></pre>
+
+<pre><code>Fitting Imputer...
+Imputing missing values...
+ --&gt; Imputing 4 missing values using the KNN imputer in feature Temp9am / MinTemp.
+ --&gt; Dropping feature WindSpeed3pm / Rainfall for containing 5766 (64%) missing values.
+ --&gt; Imputing 33 missing values using the KNN imputer in feature Evaporation / WindSpeed3pm.
+ --&gt; Imputing 17 missing values using the KNN imputer in feature RainToday_No / Evaporation.
+ --&gt; Imputing 4 missing values using the KNN imputer in feature Cloud9am / MinTemp.
+ --&gt; Imputing 290 missing values using the KNN imputer in feature Pressure9am / Cloud3pm.
+ --&gt; Imputing 33 missing values using the KNN imputer in feature Pressure9am / WindSpeed3pm.
+ --&gt; Imputing 17 missing values using the KNN imputer in feature MinTemp / Evaporation.
+ --&gt; Imputing 4 missing values using the KNN imputer in feature Cloud3pm / MinTemp.
+ --&gt; Imputing 4 missing values using the KNN imputer in feature Rainfall / MinTemp.
+ --&gt; Imputing 17 missing values using the KNN imputer in feature WindSpeed9am / Evaporation.
+ --&gt; Imputing 33 missing values using the KNN imputer in feature WindSpeed9am / WindSpeed3pm.
+ --&gt; Imputing 33 missing values using the KNN imputer in feature Rainfall / WindSpeed3pm.
+</code></pre>
+<pre><code class="python"># Let's see how the model performs now
+atom.run('LGB')
+</code></pre>
+
+<pre><code>Running pipeline ============================= &gt;&gt;
+Models in pipeline: LGB
+Metric: roc_auc
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; roc_auc: 0.9955
+Score on the test set  --&gt; roc_auc: 0.9502
+Time elapsed: 1.409s
+-------------------------------------------------
+Total time: 1.428s
+
+
+Final results ========================= &gt;&gt;
+Duration: 1.430s
+------------------------------------------
+LightGBM --&gt; roc_auc: 0.950
+</code></pre>
+<pre><code class="python"># Did the feature importance change?
+atom.plot_feature_importance(show=10)
+</code></pre>
+
+<p><img alt="png" src="../output_13_0.png" /></p>
+<p><strong>Lets try the same using Genetic Feature Generation</strong></p>
+<pre><code class="python">atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
+atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.encode(max_onehot=10, frac_to_other=0.04)
+
+atom.verbose = 2  # Increase verbosity to see the steps
+
+# Create new features using Genetic Programming
+atom.feature_generation(strategy='genetic', n_features=10, generations=20, population=1000)
+</code></pre>
+
+<pre><code>Fitting FeatureGenerator...
+    |   Population Average    |             Best Individual              |
+---- ------------------------- ------------------------------------------ ----------
+ Gen   Length          Fitness   Length          Fitness      OOB Fitness  Time Left
+   0     3.13         0.135435        3         0.503097              N/A     11.11s
+   1     3.18         0.348074        7         0.506413              N/A     10.95s
+   2     3.23         0.437331        5         0.513643              N/A      9.99s
+   3     3.44         0.457825        5         0.513643              N/A      9.33s
+   4     4.50         0.449698        9         0.522278              N/A      8.81s
+   5     5.65          0.45053       13         0.527538              N/A      9.66s
+   6     7.76         0.472921       17         0.528579              N/A      7.96s
+   7     9.36          0.49098       15         0.529782              N/A      7.43s
+   8     9.83         0.488757       15         0.529782              N/A      6.76s
+   9    10.63         0.488877       15         0.529782              N/A      6.18s
+  10    11.03         0.485024       13         0.528901              N/A      5.61s
+  11    11.31          0.48378       11         0.527328              N/A      5.04s
+  12    10.61         0.482128       11         0.527328              N/A      4.35s
+  13    10.99         0.486747       11         0.527328              N/A      3.78s
+  14    10.81         0.487697       11         0.527328              N/A      3.11s
+  15    11.03         0.487411       11         0.527328              N/A      2.49s
+  16    10.89         0.490537       11         0.527328              N/A      1.86s
+  17    10.98         0.484706       11         0.546642              N/A      1.24s
+  18    10.90         0.481711       11         0.546642              N/A      0.62s
+  19    10.96         0.486717       13         0.555663              N/A      0.00s
+Creating new features...
+-------------------------------------------------
+ --&gt; 10 new features were added to the dataset.
+</code></pre>
+<pre><code class="python"># We can see the feature's fitness and description through the genetic_features attribute
+atom.genetic_features
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>description</th>
+      <th>fitness</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Feature 23</td>
+      <td>mul(Humidity3pm, mul(add(WindGustSpeed, WindDi...</td>
+      <td>0.542663</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Feature 24</td>
+      <td>mul(sub(add(WindGustSpeed, WindDir9am), Sunshi...</td>
+      <td>0.539049</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Feature 25</td>
+      <td>mul(Humidity3pm, mul(sub(Humidity3pm, Sunshine...</td>
+      <td>0.533669</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Feature 26</td>
+      <td>mul(Humidity3pm, mul(Humidity3pm, mul(Humidity...</td>
+      <td>0.530592</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>Feature 27</td>
+      <td>mul(Humidity3pm, mul(Humidity3pm, add(WindGust...</td>
+      <td>0.532912</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>Feature 28</td>
+      <td>mul(sub(sub(add(WindGustSpeed, WindDir9am), Su...</td>
+      <td>0.522363</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>Feature 29</td>
+      <td>mul(Humidity3pm, mul(Humidity3pm, sub(sub(sub(...</td>
+      <td>0.518317</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>Feature 30</td>
+      <td>mul(mul(Humidity3pm, sub(sub(add(WindGustSpeed...</td>
+      <td>0.511776</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>Feature 31</td>
+      <td>mul(Humidity3pm, mul(Humidity3pm, mul(Humidity...</td>
+      <td>0.514151</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>Feature 32</td>
+      <td>mul(Humidity3pm, mul(Humidity3pm, sub(sub(sub(...</td>
+      <td>0.516328</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># And fit the model again
+atom.run('LGB', metric='auc')
+</code></pre>
+
+<pre><code>Running pipeline ============================= &gt;&gt;
+Models in pipeline: LGB
+Metric: roc_auc
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; roc_auc: 0.9879
+Score on the test set  --&gt; roc_auc: 0.9459
+Time elapsed: 0.545s
+-------------------------------------------------
+Total time: 0.557s
+
+
+Final results ========================= &gt;&gt;
+Duration: 0.559s
+------------------------------------------
+LightGBM --&gt; roc_auc: 0.946
+</code></pre>
+<pre><code class="python"># And show the feature importance
+atom.plot_feature_importance(show=10)
+</code></pre>
+
+<p><img alt="png" src="../output_18_0.png" /></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

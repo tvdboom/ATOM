@@ -29,6 +29,10 @@ Description: Module containing all the available models for the fit method
         get_model(self, params={}):
             Return the model object with unpacked parameters.
 
+        custom_fit(model, train, validation):
+            If the direct fit method of the model is not enough and you desire to
+            customize it a bit, make a custom_fit method. It will run instead.
+
         get_domain(self):
             Return a list of the bounds for the hyperparameters.
 
@@ -73,9 +77,8 @@ List of available models:
 
 """
 
-# << ============ Import Packages ============ >>
-
 # Standard packages
+import random
 import numpy as np
 
 # Others
@@ -114,32 +117,6 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 from .basemodel import BaseModel
 
 
-# Functions ================================================================= >>
-
-def get_model_name(model):
-    """Get the right model acronym.
-
-    Parameters
-    ----------
-    model: str
-        Acronym of the model, case insensitive.
-
-    Returns
-    -------
-    name: str
-        Correct model name acronym as present in the MODEL_LIST constant.
-
-    """
-    # Compare strings case insensitive
-    if model.lower() not in map(str.lower, MODEL_LIST):
-        raise ValueError("Unknown model: {}! Choose from: {}."
-                         .format(model, ', '.join(MODEL_LIST)))
-    else:
-        for name in MODEL_LIST:
-            if model.lower() == name.lower():
-                return name
-
-
 # Classes =================================================================== >>
 
 class GaussianProcess(BaseModel):
@@ -147,7 +124,7 @@ class GaussianProcess(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GP', 'Gaussian Process'
 
     def get_model(self, params={}):
@@ -166,7 +143,7 @@ class GaussianNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GNB', 'Gaussian Naive Bayes'
 
     @staticmethod
@@ -180,7 +157,7 @@ class MultinomialNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'MNB', 'Multinomial Naive Bayes'
 
     @staticmethod
@@ -212,7 +189,7 @@ class BernoulliNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'BNB', 'Bernoulli Naive Bayes'
 
     @staticmethod
@@ -244,7 +221,7 @@ class OrdinaryLeastSquares(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
 
     def get_model(self, params={}):
@@ -257,7 +234,7 @@ class Ridge(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name = 'Ridge'
         if self.T.goal.startswith('class'):
             self.longname = 'Ridge Classification'
@@ -295,7 +272,7 @@ class Lasso(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'Lasso', 'Lasso Regression'
 
     @staticmethod
@@ -326,7 +303,7 @@ class ElasticNet(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'EN', 'ElasticNet Regression'
 
     @staticmethod
@@ -359,7 +336,7 @@ class BayesianRegression(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'BR', 'Bayesian Regression'
 
     @staticmethod
@@ -368,7 +345,8 @@ class BayesianRegression(BaseModel):
         params = {'n_iter': x[0]}
         return params
 
-    def get_model(self, params={}):
+    @staticmethod
+    def get_model(params={}):
         """Call the model object."""
         return BayesianRidge(**params)
 
@@ -388,7 +366,7 @@ class LogisticRegression(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'LR', 'Logistic Regression'
 
     @staticmethod
@@ -443,7 +421,7 @@ class LinearDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'LDA', 'Linear Discriminant Analysis'
 
     @staticmethod
@@ -456,7 +434,8 @@ class LinearDiscriminantAnalysis(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    @staticmethod
+    def get_model(params={}):
         """Call the model object."""
         return LDA(**params)
 
@@ -477,7 +456,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'QDA', 'Quadratic Discriminant Analysis'
 
     @staticmethod
@@ -486,7 +465,8 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         params = {'reg_param': round(x[0], 1)}
         return params
 
-    def get_model(self, params={}):
+    @staticmethod
+    def get_model(params={}):
         """Call the model object."""
         return QDA(**params)
 
@@ -506,7 +486,7 @@ class KNearestNeighbors(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
 
     @staticmethod
@@ -544,7 +524,7 @@ class DecisionTree(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'Tree', 'Decision Tree'
 
     @staticmethod
@@ -593,7 +573,7 @@ class Bagging(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name = 'Bag'
         if self.T.goal.startswith('class'):
             self.longname = 'Bagging Classifier'
@@ -641,7 +621,7 @@ class ExtraTrees(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'ET', 'Extra-Trees'
 
     @staticmethod
@@ -699,7 +679,7 @@ class RandomForest(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'RF', 'Random Forest'
 
     @staticmethod
@@ -757,7 +737,7 @@ class AdaBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'AdaB', 'AdaBoost'
 
     @staticmethod
@@ -793,7 +773,7 @@ class GradientBoostingMachine(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=False)
+        super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GBM', 'Gradient Boosting Machine'
 
     @staticmethod
@@ -843,7 +823,7 @@ class XGBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'XGB', 'XGBoost'
 
     @staticmethod
@@ -865,7 +845,7 @@ class XGBoost(BaseModel):
         from xgboost import XGBClassifier, XGBRegressor
         # XGBoost can't handle random_state to be None
         if self.T.random_state is None:
-            random_state = np.randint(np.iinfo(np.int16).max)
+            random_state = random.randint(0, np.iinfo(np.int16).max)
         else:
             random_state = self.T.random_state
         if self.T.goal.startswith('class'):
@@ -878,6 +858,31 @@ class XGBoost(BaseModel):
                                 random_state=random_state,
                                 verbosity=0,
                                 **params)
+
+    def custom_fit(self, model, train, validation):
+        """Fit the model using early stopping and update evals attr."""
+        # Determine early stopping rounds
+        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+            rounds = self._early_stopping
+        elif self._early_stopping < 1:
+            rounds = int(model.get_params()['n_estimators'] * self._early_stopping)
+
+        # Fit the model
+        model.fit(train[0], train[1],
+                  eval_set=[train, validation],
+                  early_stopping_rounds=rounds,
+                  verbose=False)
+
+        # Create evals attribute with train and validation scores
+        # Invert sign since XGBoost minimizes the metric
+        metric_name = list(model.evals_result()['validation_0'])[0]
+        self.evals = {'metric': metric_name,
+                      'train': model.evals_result()['validation_0'][metric_name],
+                      'test': model.evals_result()['validation_1'][metric_name]}
+
+        iters = len(self.evals['train'])  # Iterations reached
+        tot = int(model.get_params()['n_estimators'])  # Total iterations in params
+        self._stopped = (iters, tot) if iters < tot else None
 
     @staticmethod
     def get_domain():
@@ -903,7 +908,7 @@ class LightGBM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'LGB', 'LightGBM'
 
     @staticmethod
@@ -933,6 +938,30 @@ class LightGBM(BaseModel):
                                  random_state=self.T.random_state,
                                  **params)
 
+    def custom_fit(self, model, train, validation):
+        """Fit the model using early stopping and update evals attr."""
+        # Determine early stopping rounds
+        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+            rounds = self._early_stopping
+        elif self._early_stopping < 1:
+            rounds = int(model.get_params()['n_estimators'] * self._early_stopping)
+
+        # Fit the model
+        model.fit(train[0], train[1],
+                  eval_set=[train, validation],
+                  early_stopping_rounds=rounds,
+                  verbose=False)
+
+        # Create evals attribute with train and validation scores
+        metric_name = list(model.evals_result_['training'])[0]  # Get first key
+        self.evals = {'metric': metric_name,
+                      'train': model.evals_result_['training'][metric_name],
+                      'test': model.evals_result_['valid_1'][metric_name]}
+
+        iters = len(self.evals['train'])  # Iterations reached
+        tot = int(model.get_params()['n_estimators'])  # Total iterations in params
+        self._stopped = (iters, tot) if iters < tot else None
+
     @staticmethod
     def get_domain():
         """Return a list of the bounds for the hyperparameters."""
@@ -958,7 +987,7 @@ class CatBoost(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'CatB', 'CatBoost'
 
     @staticmethod
@@ -984,11 +1013,35 @@ class CatBoost(BaseModel):
                                       verbose=False,
                                       **params)
         else:
-            return CatBoostRegressor(train_dir='',
+            return CatBoostRegressor(bootstrap_type='Bernoulli',
+                                     train_dir='',
                                      allow_writing_files=False,
                                      random_state=self.T.random_state,
                                      verbose=False,
                                      **params)
+
+    def custom_fit(self, model, train, validation):
+        """Fit the model using early stopping and update evals attr."""
+        # Determine early stopping rounds
+        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+            rounds = self._early_stopping
+        elif self._early_stopping < 1:
+            rounds = int(model.get_params()['n_estimators'] * self._early_stopping)
+
+        # Fit the model
+        model.fit(train[0], train[1],
+                  eval_set=validation,
+                  early_stopping_rounds=rounds)
+
+        # Create evals attribute with train and validation scores
+        metric_name = list(model.evals_result_['learn'])[0]  # Get first key
+        self.evals = {'metric': metric_name,
+                      'train': model.evals_result_['learn'][metric_name],
+                      'test': model.evals_result_['validation'][metric_name]}
+
+        iters = len(self.evals['train'])  # Iterations reached
+        tot = int(model.get_all_params()['iterations'])  # Total iterations in params
+        self._stopped = (iters, tot) if iters < tot else None
 
     @staticmethod
     def get_domain():
@@ -1012,7 +1065,7 @@ class LinearSVM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'lSVM', 'Linear SVM'
 
     def get_params(self, x):
@@ -1059,13 +1112,12 @@ class KernelSVM(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'kSVM', 'Kernel SVM'
 
     @staticmethod
     def get_params(x):
         """Return a dictionary of the model´s hyperparameters."""
-        print(x)
         params = {'C': round(x[0], 3),
                   'kernel': x[1],
                   'gamma': x[3],
@@ -1108,7 +1160,7 @@ class PassiveAggressive(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'PA', 'Passive Aggressive'
 
     @staticmethod
@@ -1153,7 +1205,7 @@ class StochasticGradientDescent(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
 
     @staticmethod
@@ -1217,7 +1269,7 @@ class MultilayerPerceptron(BaseModel):
 
     def __init__(self, *args):
         """Class initializer."""
-        super().__init__(T=args[0], scale=True)
+        super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'MLP', 'Multilayer Perceptron'
 
     @staticmethod
@@ -1263,7 +1315,7 @@ class MultilayerPerceptron(BaseModel):
         return [20, 0, 0, 1e-4, 1e-3, 200, 32]
 
 
-# << ============ Global constants ============ >>
+# Global constants ========================================================== >>
 
 # List of all the available models
 MODEL_LIST = dict(GP=GaussianProcess,

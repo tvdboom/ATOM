@@ -41,16 +41,16 @@ from imblearn.under_sampling import NearMiss
 from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, Y_TYPES, variable_return, to_df, to_series, merge,
-    check_is_fitted, infer_task, composed, crash
+    check_is_fitted, infer_task, composed, crash, method_to_log
     )
 
 
 # Classes =================================================================== >>
 
 class BaseCleaner(object):
-    """Base class for the data_cleaning and feature_selection methods."""
+    """Base class for the data_cleaning and feature_engineering methods."""
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit and transform with (optionally) both X and y parameters.
 
@@ -61,7 +61,7 @@ class BaseCleaner(object):
 
         y: int, str, sequence, np.array or pd.Series
             - If None: y is not used in the estimator.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -71,7 +71,7 @@ class BaseCleaner(object):
             Transformed dataframe.
 
         y: pd.Series
-            Target column corresponding to X.
+            Target column corresponding to X. Only returned if provided.
 
         """
         try:
@@ -91,7 +91,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -105,7 +105,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         super().__init__(verbose=verbose, logger=logger)
         self.standard_scaler = None
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the scaler to the data.
 
@@ -115,8 +115,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            Does nothing. Only for continuity of API. Is returned unchanged if
-            provided.
+            Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -126,11 +125,12 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         X, y = self._prepare_input(X, y)
 
         # Check if features are already scaled
+        self.log("Fitting scaler...", 1)
         self.standard_scaler = StandardScaler().fit(X)
 
         return self
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Scale the data.
 
@@ -140,34 +140,28 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            Does nothing. Only for continuity of API. Is returned unchanged if
-            provided.
+            Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         X: pd.DataFrame
             Scaled dataframe.
 
-        y: pd.Series
-            Target column corresponding to X.
-
         """
         check_is_fitted(self, 'standard_scaler')
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
-        X = to_df(self.standard_scaler.transform(X), X.index, X.columns)
-        return variable_return(X, y)
+        return to_df(self.standard_scaler.transform(X), X.index, X.columns)
 
 
 class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
-    """Applies standard data cleaning steps.
+    """Applies standard data cleaning steps on a dataset.
 
     Parameters
     ----------
     prohibited_types: str or sequence, optional (default=[])
-        Prohibited data type. Columns with any of these types will be
-        removed from the dataset.
+        Columns with any of these types will be removed from the dataset.
 
     strip_categorical: bool, optional (default=True)
         Whether to strip the spaces from values in the categorical columns.
@@ -183,11 +177,13 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     missing_target: bool, optional (default=True)
         Whether to remove rows with missing values in the target column.
+        Ignored if y is not provided.
 
     map_target: bool or None, optional (default=None)
         Whether to map the target column to numerical values. Should only
         be used for classification tasks. If None, infer task from the
-        provided target column.
+        provided target column. Ignored if y is not provided or if it already
+        consists of ordered integers.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -196,7 +192,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -227,7 +223,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
         self.mapping = {}
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply data cleaning steps to the data.
 
@@ -238,7 +234,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
         y: int, str, sequence, np.array or pd.Series
             - If None: y is not used in the estimator.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -248,7 +244,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             Feature dataframe.
 
         y: pd.Series
-            Target column corresponding to X.
+            Target column corresponding to X. Only returned if provided.
 
         """
         X, y = self._prepare_input(X, y)
@@ -273,14 +269,14 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 # Drop features where all values are different
                 if self.maximum_cardinality and n_unique == len(X):
-                    self.log(f" --> Dropping feature {col} due to " +
-                             "maximum cardinality.", 2)
+                    self.log(f" --> Dropping feature {col} due " +
+                             "to maximum cardinality.", 2)
                     X.drop(col, axis=1, inplace=True)
 
             # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
                 self.log(f" --> Dropping feature {col} due to minimum " +
-                         f"cardinality. Contains only value: {unique[0]}", 2)
+                         f"cardinality. Contains only 1 value: {unique[0]}.", 2)
                 X.drop(col, axis=1, inplace=True)
 
         if y is not None:
@@ -294,8 +290,8 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     # Reset indices for the merger
                     X.reset_index(drop=True, inplace=True)
                     y.reset_index(drop=True, inplace=True)
-                    self.log(f" --> Dropping {diff} rows with missing " +
-                             "values in target column.", 2)
+                    self.log(f" --> Dropping {diff} rows with " +
+                             "missing values in target column.", 2)
 
             task = infer_task(y) if self.map_target is None else 'reg'
             # Map the target column to numerical values
@@ -340,7 +336,9 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     missing: int, float or list, optional (default=None)
         List of values to treat as 'missing'. None to use the default
-        values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
+        values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'].
+        Note that np.NaN, None, np.inf and -np.inf will always be imputed because
+        of the incompatibility with the models.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -349,7 +347,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -398,7 +396,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         self._imputers = {}
         self._is_fitted = False
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the individual imputers on each column.
 
@@ -408,8 +406,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            Does nothing. Only for continuity of API. Is returned unchanged if
-            provided.
+            Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
@@ -418,7 +415,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
-        self.log("Fitting imputer...", 1)
+        self.log("Fitting Imputer...", 1)
 
         # Replace missing values with NaN
         X.fillna(value=np.NaN, inplace=True)  # Replace None first
@@ -454,12 +451,9 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         self._is_fitted = True
         return self
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the missing values transformations.
-
-        Impute or remove missing values according to the selected strategy.
-        Also removes rows and columns with too many missing values.
 
         Parameters
         ----------
@@ -467,8 +461,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Index of the target column in X.
+            - If None: y is not used in the transformation.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -483,6 +477,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         check_is_fitted(self, '_is_fitted')
         X, y = self._prepare_input(X, y)
+
+        self.log("Imputing missing values...", 1)
 
         # Replace missing values with NaN
         X.fillna(value=np.NaN, inplace=True)  # Replace None first
@@ -516,9 +512,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             # Column is numerical and contains missing values
             if X[col].dtype.kind in 'ifu' and nans > 0:
                 if not isinstance(self.strat_num, str):
-                    self.log(f" --> Imputing {nans} missing values with " +
-                             f"number {str(self.strat_num)} in feature " +
-                             f"{col}.", 2)
+                    self.log(f" --> Imputing {nans} missing values with number " +
+                             f"{str(self.strat_num)} in feature {col}.", 2)
                     X[col].replace(np.NaN, self.strat_num, inplace=True)
 
                 elif self.strat_num.lower() == 'drop':
@@ -554,7 +549,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 elif self.strat_cat.lower() == 'most_frequent':
                     self.log(f" --> Imputing {nans} missing values with " +
-                             f"most_frequent in feature {col}", 2)
+                             f"most_frequent in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
         return variable_return(X, y)
@@ -568,7 +563,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         - If 2 < n_unique <= max_onehot, use one-hot-encoding.
         - If n_unique > max_onehot, use 'encode_type'.
 
-    Also replaces classes with low occurrences with the value 'other' in
+    Note that the Also replaces classes with low occurrences with the value 'other' in
     order to prevent too high cardinality. Categorical features are defined as
     all columns whose dtype.kind not in 'ifu'.
 
@@ -582,9 +577,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         Type of encoding to use for high cardinality features. Choose from
         one of the encoders available in the category_encoders package.
 
-    frac_to_other: float, optional (default=0)
+    frac_to_other: float, optional (default=None)
         Categories with less rows than n_rows * fraction_to_other are replaced
-        with the string 'other'.
+        with the string 'other'. If None, this skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -593,7 +588,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -607,7 +602,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
     def __init__(self,
                  max_onehot: Optional[int] = 10,
                  encode_type: str = 'Target',
-                 frac_to_other: float = 0,
+                 frac_to_other: Optional[float] = None,
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None,
                  **kwargs):
@@ -638,10 +633,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         if encode_type.lower() not in [x.lower() for x in types]:
             raise ValueError("Invalid value for the encode_type parameter." +
                              f"Choose from: {', '.join(types)}.")
-        if frac_to_other < 0 or frac_to_other > 1:
-            raise ValueError("Invalid value for the frac_to_other parameter." +
-                             "Value should be between 0 and 1, got {}."
-                             .format(frac_to_other))
+        if frac_to_other and (frac_to_other <= 0 or frac_to_other >= 1):
+            raise ValueError("Invalid value for the frac_to_other parameter. Value" +
+                             f" should be between 0 and 1, got {frac_to_other}.")
 
         self.max_onehot = max_onehot
         for key, value in types.items():
@@ -657,8 +651,8 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         self._encoders = {}
         self._is_fitted = False
 
-    @composed(crash, typechecked)
-    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Y_TYPES):
         """Fit the individual encoders on each column.
 
         Parameters
@@ -667,8 +661,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -679,16 +672,17 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
-        self.log("Fitting encoder...", 1)
+        self.log("Fitting Encoder...", 1)
 
         for col in X:
             self._to_other[col] = []
             if X[col].dtype.kind not in 'ifu':  # If column is categorical
                 # Group uncommon categories into 'other'
-                for category, count in X[col].value_counts().items():
-                    if count < self.frac_to_other * len(X[col]):
-                        self._to_other[col].append(category)
-                        X[col].replace(category, 'other', inplace=True)
+                if self.frac_to_other:
+                    for category, count in X[col].value_counts().items():
+                        if count < self.frac_to_other * len(X[col]):
+                            self._to_other[col].append(category)
+                            X[col].replace(category, 'other', inplace=True)
 
                 # Check column on missing values
                 if X[col].isna().any():
@@ -705,25 +699,23 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
                     self._col_to_type[col] = 'Ordinal'
-                    self._encoders[col] = \
-                        OrdinalEncoder(handle_unknown='error').fit(values)
+                    self._encoders[col] = OrdinalEncoder(
+                        handle_unknown='error').fit(values)
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._col_to_type[col] = 'One-hot'
-                    self._encoders[col] = \
-                        OneHotEncoder(handle_unknown='error',
-                                      use_cat_names=True).fit(values)
+                    self._encoders[col] = OneHotEncoder(
+                            handle_unknown='error', use_cat_names=True).fit(values)
 
                 else:
                     self._col_to_type[col] = self.encode_type
-                    self._encoders[col] = \
-                        self._rest_encoder(handle_unknown='error',
-                                           **self.kwargs).fit(values, y)
+                    self._encoders[col] = self._rest_encoder(
+                        handle_unknown='error', **self.kwargs).fit(values, y)
 
         self._is_fitted = True
         return self
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the encoding transformations.
 
@@ -733,17 +725,18 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            Does nothing. Only for continuity of API. Is returned unchanged if
-            provided.
+            Does nothing. Implemented for continuity of the API.
 
         Returns
         -------
         X: pd.DataFrame
-            Imputed dataframe.
+            Encoded dataframe.
 
         """
         check_is_fitted(self, '_is_fitted')
         X, y = self._prepare_input(X, y)
+
+        self.log("Encoding categorical columns...", 1)
 
         for col in X:
             if X[col].dtype.kind not in 'ifu':  # If column is categorical
@@ -753,9 +746,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 # Check column on missing values
                 if X[col].isna().any():
-                    raise ValueError(f"The column {col} encountered missing " +
-                                     "values. Impute them using the impute " +
-                                     "method before encoding!")
+                    raise ValueError(
+                        f"The column {col} encountered missing values. " +
+                        "Impute them using the impute method before encoding!")
 
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
@@ -784,15 +777,14 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 else:
                     self.log(f" --> {self.encode_type}-encoding feature " +
-                             f"{col}. Contains {n_unique} unique categories.",
-                             2)
+                             f"{col}. Contains {n_unique} unique categories.", 2)
                     rest_cols = self._encoders[col].transform(values)
                     X = X.drop(col, axis=1)  # Drop the original column
                     # Insert the new columns at old location
                     for i, column in enumerate(rest_cols):
                         X.insert(idx+i, column, rest_cols[column])
 
-        return variable_return(X, y)
+        return X
 
 
 class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
@@ -814,8 +806,8 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         If more, it is considered an outlier.
 
     include_target: bool, optional (default=False)
-        Whether to include the target column in the transformation. Can be
-        useful for regression tasks.
+        Whether to include the target column in the transformation. This can
+        be useful for regression tasks.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -824,7 +816,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -853,12 +845,9 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         self.max_sigma = max_sigma
         self.include_target = include_target
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Apply the transformations on the data.
-
-        If y is provided, it will include the target column in the search
-        for outliers.
 
         Parameters
         ----------
@@ -867,7 +856,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         y: int, str, sequence, np.array or pd.Series
             - If None: y is not used in the estimator.
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -941,7 +930,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Balance the number of instances per target category. Using oversample and
     undersample at the same time or not using any will raise an exception.
-    Use only for classification tasks. Dependency: imbalanced-learn.
+    Use only for classification tasks.
 
     Parameters
     ----------
@@ -982,7 +971,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: No logger.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name, False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
@@ -1039,7 +1028,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         self.mapping = {}
         self._cols = None
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Y_TYPES = -1):
         """Apply the transformations on the data.
 
@@ -1049,7 +1038,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If int: Index of the target column in X.
+            - If int: Position of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 

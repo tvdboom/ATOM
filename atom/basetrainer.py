@@ -11,70 +11,107 @@ Description: Module containing the parent class for all training classes.
 import importlib
 import pandas as pd
 from time import time
-from tqdm import tqdm
-from copy import deepcopy
-from typeguard import typechecked
-from typing import Optional, Union, Sequence, Tuple
-from sklearn.metrics import SCORERS
 
 # Own modules
+from .models import MODEL_LIST
+from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
-from .models import MODEL_LIST, get_model_name
 from .utils import (
-    CAL, X_TYPES, Y_TYPES, OPTIONAL_PACKAGES, ONLY_CLASSIFICATION,
-    ONLY_REGRESSION, to_df, time_to_string, check_is_fitted, catch_return,
-    check_scaling, get_best_score, get_metric, get_metric_name, infer_task, clear,
-    composed, crash
-    )
-from .plots import (
-    BasePlotter, plot_roc, plot_prc, plot_bagging, plot_permutation_importance,
-    plot_feature_importance, plot_confusion_matrix, plot_threshold,
-    plot_probabilities, plot_calibration, plot_gains, plot_lift, plot_bo
+    OPTIONAL_PACKAGES, ONLY_CLASSIFICATION, ONLY_REGRESSION, merge, to_df,
+    to_series, get_best_score, time_to_string, get_model_name, get_metric, clear
     )
 
 
-class BaseTrainer(BaseTransformer, BasePlotter):
+class BaseTrainer(BaseTransformer, BasePredictor):
     """Base estimator for the training classes.
 
-    The BaseTrainer class is where the models are fitted to the data and
-    their performance is evaluated according to the selected metric. For
-    every model, the pipeline applies the following steps:
+    Parameters
+    ----------
+    models: string or sequence
+        List of models to fit on the data. Use the predefined acronyms
+        in MODEL_NAMES.
 
-        1. The optimal hyperParameters are selected using a Bayesian
-           Optimization (BO) algorithm with gaussian process as kernel.
-           The resulting score of each step of the BO is either computed
-           by cross-validation on the complete training set or by randomly
-           splitting the training set every iteration into a (sub) training
-           set and a validation set. This process can create some data
-           leakage but ensures a maximal use of the provided data. The test
-           set, however, does not contain any leakage and will be used to
-           determine the final score of every model. Note that, if the
-           dataset is relatively small, the best score on the BO can
-           consistently be lower than the final score on the test set
-           (despite the leakage) due to the considerable fewer instances on
-           which it is trained.
+    metric: str, callable or sequence, optional (default=None)
+        Metric(s) on which the pipeline fits the models. Choose from any of
+        the string scorers predefined by sklearn, use a score (or loss)
+        function with signature metric(y, y_pred, **kwargs) or use a
+        scorer object. If multiple metrics are selected, only the first will
+        be used to optimize the BO. If None, a default metric is selected:
+            - 'f1' for binary classification
+            - 'f1_weighted' for multiclass classification
+            - 'r2' for regression
 
-        2. Once the best hyperParameters are found, the model is trained
-           again, now using the complete training set. After this,
-           predictions are made on the test set.
+    greater_is_better: bool or sequence, optional (default=True)
+        Whether the metric is a score function or a loss function,
+        i.e. if True, a higher score is better and if False, lower is
+        better. Will be ignored if the metric is a string or a scorer.
+        If sequence, the n-th value will apply to the n-th metric in the
+        pipeline.
 
-        3. You can choose to evaluate the robustness of each model's
-        applying a bagging algorithm, i.e. the model will be trained
-        multiple times on a bootstrapped training set, returning a
-        distribution of its performance on the test set.
+    needs_proba: bool or sequence, optional (default=False)
+        Whether the metric function requires probability estimates out of a
+        classifier. If True, make sure that every model in the pipeline has
+        a `predict_proba` method. Will be ignored if the metric is a string
+        or a scorer. If sequence, the n-th value will apply to the n-th metric
+        in the pipeline.
 
-    A couple of things to take into account:
-        - The metric implementation follows sklearn's API. This means that
-          the implementation always tries to maximize the scorer, i.e. loss
-          functions will be made negative.
-        - If an exception is encountered while fitting a model, the
-          pipeline will automatically jump to the side model and save the
-          exception in the `errors` attribute.
-        - When showing the final results, a `!!` indicates the highest
-          score and a `~` indicates that the model is possibly overfitting
-          (training set has a score at least 20% higher than the test set).
-        - The winning model subclass will be attached to the `winner`
-          attribute.
+    needs_threshold: bool or sequence, optional (default=False)
+        Whether the metric function takes a continuous decision certainty.
+        This only works for binary classification using estimators that
+        have either a `decision_function` or `predict_proba` method. Will
+        be ignored if the metric is a string or a scorer. If sequence, the
+        n-th value will apply to the n-th metric in the pipeline.
+
+    n_calls: int or sequence, optional (default=0)
+        Maximum number of iterations of the BO (including `random starts`).
+        If 0, skip the BO and fit the model on its default Parameters.
+        If sequence, the n-th value will apply to the n-th model in the
+        pipeline.
+
+    n_random_starts: int or sequence, optional (default=5)
+        Initial number of random tests of the BO before fitting the
+        surrogate function. If equal to `n_calls`, the optimizer will
+        technically be performing a random search. If sequence, the n-th
+        value will apply to the n-th model in the pipeline.
+
+    bo_params: dict, optional (default={})
+        Dictionary of extra keyword arguments for the BO. See bayesian_optimization
+        in basemodel.py for the available options.
+
+    bagging: int, sequence or None, optional (default=None)
+        Number of data sets (bootstrapped from the training set) to use in
+        the bagging algorithm. If None or 0, no bagging is performed.
+        If sequence, the n-th value will apply to the n-th model in the
+        pipeline.
+
+    n_jobs: int, optional (default=1)
+        Number of cores to use for parallel processing.
+            - If >0: Number of cores to use.
+            - If -1: Use all available cores.
+            - If <-1: Use number of cores - 1 - n_jobs.
+
+        Beware that using multiple processes on the same machine may
+        cause memory issues for large datasets.
+
+    verbose: int, optional (default=0)
+        Verbosity level of the class. Possible values are:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print extended information.
+
+    warnings: bool, optional (default=True)
+        If False, suppresses all warnings. Note that this will change
+        the `PYTHONWARNINGS` environment.
+
+    logger: bool, str, class or None, optional (default=None)
+        - If None: Doesn't save a logging file.
+        - If bool: True for logging file with default name, False for no logger.
+        - If string: name of the logging file. 'auto' for default name.
+        - If class: python Logger object.
+
+    random_state: int or None, optional (default=None)
+        Seed used by the random number generator. If None, the random
+        number generator is the RandomState instance used by `np.random`.
 
     """
 
@@ -87,12 +124,18 @@ class BaseTrainer(BaseTransformer, BasePlotter):
                          logger=logger,
                          random_state=random_state)
 
+        # Data attribute
+        self._data = None
+        self._idx = [None, None]
+        self.scaler = None
+        self.task = None
+
         # Model attributes
         self.models = []
         self.errors = {}
-        self.winner = None
         self._results = pd.DataFrame(
-            columns=['name', 'score_train', 'score_test', 'time_fit',
+            columns=['name', 'score_bo', 'time_bo',
+                     'score_train', 'score_test', 'time_fit',
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
 
         # Check validity models ============================================= >>
@@ -105,7 +148,7 @@ class BaseTrainer(BaseTransformer, BasePlotter):
 
         # Check for duplicates
         if len(self.models) != len(set(self.models)):
-            raise ValueError("Duplicate models found in pipeline!")
+            raise ValueError("There are duplicate values in the models parameter!")
 
         # Check if packages for not-sklearn models are available
         for m, package in OPTIONAL_PACKAGES:
@@ -119,13 +162,13 @@ class BaseTrainer(BaseTransformer, BasePlotter):
         if self.goal.startswith('class'):
             for m in ONLY_REGRESSION:
                 if m in self.models:
-                    raise ValueError(f"The {m} model can't perform " +
-                                     "classification tasks!")
+                    raise ValueError(
+                        f"The {m} model can't perform classification tasks!")
         else:
             for m in ONLY_CLASSIFICATION:
                 if m in self.models:
-                    raise ValueError(f"The {m} model can't perform " +
-                                     "regression tasks!")
+                    raise ValueError(
+                        f"The {m} model can't perform regression tasks!")
 
         # Check validity parameters ========================================= >>
 
@@ -133,31 +176,29 @@ class BaseTrainer(BaseTransformer, BasePlotter):
         if isinstance(n_calls, (list, tuple)):
             self.n_calls = n_calls
             if len(self.n_calls) != len(self.models):
-                raise ValueError("Invalid value for the n_calls parameter. " +
-                                 "Length should be equal to the number of " +
-                                 "models, got len(models)=" +
-                                 f"{len(self.models)} and len(n_calls)=" +
-                                 f"{len(self.n_calls)}.")
+                raise ValueError(
+                    "Invalid value for the n_calls parameter. Length should " +
+                    "be equal to the number of models, got len(models)=" +
+                    f"{len(self.models)} and len(n_calls)={len(self.n_calls)}.")
         else:
             self.n_calls = [n_calls for _ in self.models]
         if isinstance(n_random_starts, (list, tuple)):
             self.n_random_starts = n_random_starts
             if len(self.n_random_starts) != len(self.models):
-                raise ValueError("Invalid value for the n_random_starts " +
-                                 "parameter. Length should be equal to the " +
-                                 "number of models, got len(models)=" +
-                                 f"{len(self.models)} and len(n_random_" +
-                                 f"starts)={len(self.n_random_starts)}.")
+                raise ValueError(
+                    "Invalid value for the n_random_starts parameter. Length " +
+                    "should be equal to the number of models, got len(models)=" +
+                    f"{len(self.models)} and len(n_random_starts)=" +
+                    f"{len(self.n_random_starts)}.")
         else:
             self.n_random_starts = [n_random_starts for _ in self.models]
         if isinstance(bagging, (list, tuple)):
             self.bagging = bagging
             if len(self.bagging) != len(self.models):
-                raise ValueError("Invalid value for the bagging parameter. " +
-                                 "Length should be equal to the number of " +
-                                 "models, got len(models)=" +
-                                 f"{len(self.models)} and len(bagging)" +
-                                 f"{len(self.bagging)}.")
+                raise ValueError(
+                    "Invalid value for the bagging parameter. Length should " +
+                    "be equal to the number of models, got len(models)=" +
+                    f"{len(self.models)} and len(bagging)={len(self.bagging)}.")
         else:
             self.bagging = [bagging for _ in self.models]
 
@@ -169,8 +210,8 @@ class BaseTrainer(BaseTransformer, BasePlotter):
             if not isinstance(self.bo_params.get('dimensions'), dict):
                 if len(self.models) != 1:
                     raise TypeError(
-                        "Invalid type for the dimensions parameter. For >1 models," +
-                        " a dictionary is expected, with the model names as keys!")
+                        "Invalid type for the dimensions parameter. For >1 " +
+                        "models, use a dictionary with the model names as keys!")
                 else:
                     self.bo_params['dimensions'] = \
                         {self.models[0]: self.bo_params['dimensions']}
@@ -182,27 +223,78 @@ class BaseTrainer(BaseTransformer, BasePlotter):
 
         # Check validity metric ============================================= >>
 
-        self.metric = get_metric(
+        self.metric = self._prepare_metric(
             metric, greater_is_better, needs_proba, needs_threshold)
 
-        # Assign the name corresponding to the scorer
-        self.metric.name = get_metric_name(self.metric)
+    @staticmethod
+    def _prepare_metric(metric, gib, needs_proba, needs_threshold):
+        """Return a metric scorer given the parameters."""
+        if not isinstance(metric, (list, tuple)):
+            metric = [metric]
+        elif len(metric) > 3:
+            raise ValueError("A maximum of 3 metrics are allowed!")
 
-    @property
-    def results(self):
-        """Return df without bagging cols if all are empty."""
-        return self._results.dropna(axis=1, how='all')
+        # Check metric parameters
+        if isinstance(gib, (list, tuple)):
+            if len(gib) != len(metric):
+                raise ValueError("Invalid value for the greater_is_better " +
+                                 "parameter. Length should be equal to the number " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"and len(greater_is_better)={len(gib)}.")
+        else:
+            gib = [gib for _ in metric]
 
-    def _run(self, train, test):
+        if not isinstance(metric, (list, tuple)):
+            metric = [metric]
+
+        if isinstance(needs_proba, (list, tuple)):
+            if len(needs_proba) != len(metric):
+                raise ValueError("Invalid value for the needs_proba " +
+                                 "parameter. Length should be equal to the number " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"and len(needs_proba)={len(needs_proba)}.")
+        else:
+            needs_proba = [needs_proba for _ in metric]
+
+        if isinstance(needs_threshold, (list, tuple)):
+            if len(needs_threshold) != len(metric):
+                raise ValueError("Invalid value for the needs_threshold " +
+                                 "parameter. Length should be equal to the number " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"and len(needs_threshold)={len(needs_threshold)}.")
+        else:
+            needs_threshold = [needs_threshold for _ in metric]
+
+        metric_list = []
+        for i, j, m, n in zip(metric, gib, needs_proba, needs_threshold):
+            metric_list.append(get_metric(i, j, m, n))
+
+        return metric_list
+
+    def _params_to_attr(self, *args):
+        """Attach the provided data as attributes of the class."""
+        # Data can be already in attrs
+        if len(args) == 0 and self._data is not None:
+            return
+        if len(args) == 2:
+            train, test = to_df(args[0]), to_df(args[1])
+        elif len(args) == 4:
+            train = merge(to_df(args[0]), to_series(args[2]))
+            test = merge(to_df(args[1]), to_series(args[3]))
+        else:
+            raise ValueError(
+                "Invalid parameters. Must be either of the form (train, " +
+                "test) or (X_train, X_test, y_train, y_test).")
+
+        # Update the data attributes
+        self._data = pd.concat([train, test]).reset_index(drop=True)
+        self._idx = [len(train), len(test)]
+
+        # Reset data scaler in case of a rerun with new data
+        self.scaler = None
+
+    def _run(self):
         """Core iteration.
-
-        Parameters
-        ----------
-        train: pd.DataFrame
-            Training set used for this iteration.
-
-        test: pd.DataFrame
-            Test set used for this iteration.
 
         Returns
         -------
@@ -210,39 +302,17 @@ class BaseTrainer(BaseTransformer, BasePlotter):
             Dataframe of the results for this iteration.
 
         """
-        # Prepare input
-        if not isinstance(train, pd.DataFrame):
-            train = to_df(deepcopy(train))
-        if not isinstance(test, pd.DataFrame):
-            test = to_df(deepcopy(test))
-
-        X_train, y_train = train.iloc[:, :-1], train.iloc[:, -1]
-        X_test, y_test = test.iloc[:, :-1], test.iloc[:, -1]
-
-        # Scale data if necessary
-        if not check_scaling(X_train):
-            scaler = Scaler().fit(X_train)
-            X_train_scaled = scaler.transform(X_train)
-            X_test_scaled = scaler.transform(X_test)
-        else:
-            X_train_scaled = X_train
-            X_test_scaled = X_test
-
-        # Assign algorithm's task
-        self.task = infer_task(y_train, goal=self.goal)
-
         t_init = time()  # To measure the time the whole pipeline takes
-
-        # If verbose=1, use tqdm to evaluate process
-        loop = self.models
-        if self.verbose == 1:
-            loop = tqdm(self.models, desc='Processing')
-            loop.clear()  # Prevent starting a progress bar before the loop
 
         # Loop over every independent model
         to_remove = []
         for m, n_calls, n_random_starts, bagging in zip(
-                loop, self.n_calls, self.n_random_starts, self.bagging):
+                self.models, self.n_calls, self.n_random_starts, self.bagging):
+
+            # Check n_calls parameter
+            if n_calls < 0:
+                raise ValueError("Invalid value for the n_calls parameter. " +
+                                 f"Value should be >=0, got {n_calls}.")
 
             model_time = time()
 
@@ -251,24 +321,22 @@ class BaseTrainer(BaseTransformer, BasePlotter):
             subclass = getattr(self, m)
             setattr(self, m.lower(), subclass)  # Lowercase as well
 
-            # Use scaled data or not depending on the needs of the model
-            if subclass.scale:
-                args = (X_train_scaled, X_test_scaled, y_train, y_test)
-            else:
-                args = (X_train, X_test, y_train, y_test)
+            # Create scaler if model needs scaling and data not already scaled
+            if subclass.need_scaling and not self.scaler:
+                self.scaler = Scaler().fit(self.X_train)
 
             try:  # If errors occurs, skip the model
                 # Run Bayesian Optimization
                 # Use copy of kwargs to not delete original in method
-                # Shallow copy is enough since we only delete entries
+                # Shallow copy is enough since we only delete entries in basemodel
                 if hasattr(subclass, 'get_domain') and n_calls > 0:
                     subclass.bayesian_optimization(
-                        n_calls, n_random_starts, self.bo_params.copy(), *args)
+                        n_calls, n_random_starts, self.bo_params.copy())
 
-                subclass.fit(*args)
+                subclass.fit()
 
                 if bagging:
-                    subclass.bagging(bagging, *args)
+                    subclass.bagging(bagging)
 
                 # Get the total time spend on this model
                 total_time = time_to_string(model_time)
@@ -283,9 +351,8 @@ class BaseTrainer(BaseTransformer, BasePlotter):
                          + f"{m} model. Removing model from "
                          + f"pipeline. \n{type(ex).__name__}: {ex}", 1)
 
-                # Append exception to ATOM errors dictionary
-                exception = type(ex).__name__ + ': ' + str(ex)
-                self.errors[m] = exception
+                # Append exception to errors dictionary
+                self.errors[m] = ex
 
                 # Add model to "garbage collector"
                 # Cannot remove at once to maintain iteration order
@@ -296,404 +363,37 @@ class BaseTrainer(BaseTransformer, BasePlotter):
 
         # Check if all models failed (self.models is empty)
         if not self.models:
-            raise ValueError('It appears all models failed to run...')
+            raise RuntimeError('It appears all models failed to run...')
 
         # Print final results =============================================== >>
 
         # Create dataframe with final results
-        results = pd.DataFrame(
-            columns=['name', 'score_train', 'score_test', 'time_fit',
-                     'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
+        results = pd.DataFrame(columns=self._results.columns)
 
         # Print final results
-        self.log("\n\nFinal results ==========================>>", 1)
+        self.log("\n\nFinal results ========================= >>", 1)
         self.log(f"Duration: {time_to_string(t_init)}", 1)
-        self.log(f"Metric: {self.metric.name}", 1)
         self.log('-' * 42, 1)
 
-        # Create a df to get maxlen of name and best_scores
-        scores = pd.DataFrame(columns=['name', 'score_test', 'mean_bagging'])
-        for model in self.models:
-            m = getattr(self, model)
-            scores.loc[model] = [m.longname, m.score_test, m.mean_bagging]
+        # Get max length of the model names
+        maxlen = max([len(m.longname) for m in self.models_])
 
-        # Get max length of the models' names
-        maxlen = max(scores['name'].apply(lambda x: len(x)))
+        # Get best score of all the models
+        best_score = max([get_best_score(m) for m in self.models_])
 
-        # List of scores the test set
-        best_score = scores.apply(lambda row: get_best_score(row), axis=1)
-
-        for m in self.models:
-            name = getattr(self, m).name
-            longname = getattr(self, m).longname
-            score_train = getattr(self, m).score_train
-            score_test = getattr(self, m).score_test
-            time_fit = getattr(self, m).time_fit
-            mean_bagging = getattr(self, m).mean_bagging
-            std_bagging = getattr(self, m).std_bagging
-            time_bagging = getattr(self, m).time_bagging
-            total_time = getattr(self, m).time
-
+        for m in self.models_:
             # Append model row to results
-            results.loc[name] = [longname, score_train, score_test, time_fit,
-                                 mean_bagging, std_bagging, time_bagging, total_time]
+            values = [m.longname, m.score_bo, m.time_bo,
+                      m.score_train, m.score_test, m.time_fit,
+                      m.mean_bagging, m.std_bagging, m.time_bagging, m.time]
+            m._results.loc[m.name] = values
+            results.loc[m.name] = values
 
-            if not mean_bagging:
-                # Create string of the score
-                print_ = f"{longname:{maxlen}s} --> {score_test:.3f}"
+            # Get the model's final output and highlight best score
+            out = f"{m.longname:{maxlen}s} --> {m._final_output()}"
+            if get_best_score(m) == best_score and len(self.models) > 1:
+                out += ' !'
 
-                # Highlight best score and assign winner attribute
-                if score_test == max(best_score):
-                    self.winner = getattr(self, m)
-                    if len(self.models) > 1:
-                        print_ += ' !'
-
-            else:
-                # Create string of the score
-                print1 = f"{longname:{maxlen}s} --> {mean_bagging:.3f}"
-                print2 = f"{std_bagging:.3f}"
-                print_ = print1 + u" \u00B1 " + print2
-
-                # Highlight best score and assign winner attribute
-                if mean_bagging == max(best_score):
-                    self.winner = getattr(self, m)
-                    if len(self.models) > 1:
-                        print_ += ' !'
-
-            # Annotate if model overfitted when train 20% > test
-            if score_train - 0.2 * score_train > score_test:
-                print_ += ' ~'
-
-            self.log(print_, 1)  # Print the score
+            self.log(out, 1)  # Print the score
 
         return results
-
-    @composed(crash, typechecked)
-    def clear(self, models: Union[str, Sequence[str]] = 'all'):
-        """Clear models from the trainer.
-
-        If the winning model is removed. The next best model (through
-        score_test or mean_bagging if available) is selected as winner.
-
-        Parameters
-        ----------
-        models: str, or sequence, optional (default='all')
-            Name of the models to clear from the pipeline. If 'all', clear
-            all models.
-
-        """
-        # Prepare the models parameter
-        if models == 'all':
-            keyword = 'Pipeline'
-            models = self.models.copy()
-        elif isinstance(models, str):
-            models = [get_model_name(models)]
-            keyword = 'Model ' + models[0]
-        else:
-            models = [get_model_name(m) for m in models]
-            keyword = 'Models ' + ', '.join(models) + ' were'
-
-        clear(self, models)
-
-        self.log(keyword + " cleared successfully!", 1)
-
-    @composed(crash, typechecked)
-    def outcome(self, metric: Optional[str] = None):
-        """Print the trainer's final outcome for a specific metric.
-
-        If a model shows a `XXX`, it means the metric failed for that specific
-        model. This can happen if either the metric is unavailable for the task
-        or if the model does not have a `predict_proba` method while the metric
-        requires it.
-
-        Parameters
-        ----------
-        metric: string or None, optional (default=None)
-            String of one of sklearn's predefined scorers. If None, the metric
-            used to fit the trainer is selected and the bagging results will
-            be showed (if used).
-
-        """
-        check_is_fitted(self, 'winner')
-
-        # Prepare parameters
-        if metric is None:
-            metric = self.metric.name
-        elif metric not in SCORERS:
-            raise ValueError("Unknown value for the metric parameter, " +
-                             f"got {metric}. Try one of {', '.join(SCORERS)}.")
-
-        # Get max side of the models' names
-        max_len = max([len(getattr(self, m).longname) for m in self.models])
-
-        # Get list of scores
-        all_scores = []
-        for model in self.models:
-            m = getattr(self, model)
-            if metric == self.metric.name:
-                score = m.mean_bagging if m.mean_bagging else m.score_test
-                all_scores.append(score)
-
-            # If invalid metric, don't append to scores
-            elif not isinstance(getattr(m, metric), str):
-                all_scores.append(getattr(m, metric))
-
-        if len(all_scores) == 0:  # All metrics failed
-            raise ValueError("Invalid metric selected!")
-
-        self.log("Results ======================>>", -2)
-        self.log(f"Metric: {metric}", -2)
-        self.log("--------------------------------", -2)
-
-        for model in self.models:
-            m = getattr(self, model)
-
-            if metric == self.metric.name and m.mean_bagging:
-                score = m.mean_bagging
-
-                # Create string of the score
-                print1 = f"{m.longname:{max_len}s} --> {score:.3f}"
-                print2 = f"{m.std_bagging:.3f}"
-                print_ = print1 + u" \u00B1 " + print2
-            else:
-                if metric == self.metric.name:
-                    score = m.score_test
-                else:
-                    score = getattr(m, metric)
-
-                # Create string of the score (if wrong metric for model -> XXX)
-                if isinstance(score, str):
-                    print_ = f"{m.longname:{max_len}s} --> XXX"
-                else:
-                    print_ = f"{m.longname:{max_len}s} --> {score:.3f}"
-
-            # Highlight best score (if more than one model in pipeline)
-            if score == max(all_scores) and len(self.models) > 1:
-                print_ += ' !'
-
-            # Annotate if model overfitted when train 20% > test
-            if metric == self.metric.name:
-                if m.score_train - 0.2 * m.score_train > m.score_test:
-                    print_ += ' ~'
-
-            self.log(print_, -2)  # Always print
-
-    # Transformation methods ================================================ >>
-
-    def _pipeline_methods(self, X, y=None, method='predict', **kwargs):
-        """Apply pipeline methods on new data.
-
-        First transform the new data and apply the attribute on the winning
-        model. The model has to have the provided attribute.
-
-        Parameters
-        ----------
-        self: class
-            Class from which we call the method.
-
-        X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
-
-        y: int, str, sequence, np.array, pd.Series, optional (default=None)
-            - If None, the target column is not used in the attribute
-            - If int: index of the column of X which is selected as target
-            - If string: name of the target column in X
-            - Else: data target column with shape=(n_samples,)
-
-        method: str, optional (default='predict')
-            Method of the model to be applied.
-
-        **kwargs
-            Additional parameters for the transform method.
-
-        Returns
-        -------
-        np.array
-            Return of the attribute.
-
-        """
-        if hasattr(self, 'winner'):
-            check_is_fitted(self, 'winner')
-            model = self.winner
-        else:
-            model = self
-
-        if not hasattr(model.best_model_fit, method):
-            raise AttributeError(f"The {model.name} model doesn't have a " +
-                                 f"{method} method!")
-
-        # When called from the ATOM class, apply all data transformations first
-        if hasattr(self, 'transform'):
-            X, y = catch_return(self.transform(X, y, **kwargs))
-
-        if y is None:
-            return getattr(model.best_model_fit, method)(X)
-        else:
-            return getattr(model.best_model_fit, method)(X, y)
-
-    @composed(crash, typechecked)
-    def predict(self, X: X_TYPES):
-        """Get predictions on new data."""
-        return self._pipeline_methods(X, method='predict')
-
-    @composed(crash, typechecked)
-    def predict_proba(self, X: X_TYPES):
-        """Get probability predictions on new data."""
-        return self._pipeline_methods(X, method='predict_proba')
-
-    @composed(crash, typechecked)
-    def predict_log_proba(self, X: X_TYPES):
-        """Get log probability predictions on new data."""
-        return self._pipeline_methods(X, method='predict_log_proba')
-
-    @composed(crash, typechecked)
-    def decision_function(self, X: X_TYPES):
-        """Get the decision function on new data."""
-        return self._pipeline_methods(X, method='decision_function')
-
-    @composed(crash, typechecked)
-    def score(self, X: X_TYPES, y: Y_TYPES):
-        """Get the score function on new data."""
-        return self._pipeline_methods(X, y, method='score')
-
-    # Plot methods ========================================================== >>
-
-    @composed(crash, typechecked)
-    def plot_bagging(self,
-                     models: Union[None, str, Sequence[str]] = None,
-                     title: Optional[str] = None,
-                     figsize: Optional[Tuple[int, int]] = None,
-                     filename: Optional[str] = None,
-                     display: bool = True):
-        """Boxplot of the bagging's results."""
-        plot_bagging(self, models, title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_roc(self,
-                 models: Union[None, str, Sequence[str]] = None,
-                 title: Optional[str] = None,
-                 figsize: Tuple[int, int] = (10, 6),
-                 filename: Optional[str] = None,
-                 display: bool = True):
-        """Plot the Receiver Operating Characteristics curve."""
-        plot_roc(self, models, title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_prc(self,
-                 models: Union[None, str, Sequence[str]] = None,
-                 title: Optional[str] = None,
-                 figsize: Tuple[int, int] = (10, 6),
-                 filename: Optional[str] = None,
-                 display: bool = True):
-        """Plot the precision-recall curve."""
-        plot_prc(self, models, title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_permutation_importance(
-            self,
-            models: Union[None, str, Sequence[str]] = None,
-            show: Optional[int] = None,
-            n_repeats: int = 10,
-            title: Optional[str] = None,
-            figsize: Optional[Tuple[int, int]] = None,
-            filename: Optional[str] = None,
-            display: bool = True):
-        """Plot the feature permutation importance of models."""
-        plot_permutation_importance(self, models, show, n_repeats,
-                                    title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_feature_importance(self,
-                                models: Union[None, str, Sequence[str]] = None,
-                                show: Optional[int] = None,
-                                title: Optional[str] = None,
-                                figsize: Optional[Tuple[int, int]] = None,
-                                filename: Optional[str] = None,
-                                display: bool = True):
-        """Plot a tree-based model's normalized feature importances."""
-        plot_feature_importance(self, models, show,
-                                title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_confusion_matrix(self,
-                              models: Union[None, str, Sequence[str]] = None,
-                              normalize: bool = False,
-                              title: Optional[str] = None,
-                              figsize: Tuple[int, int] = (8, 8),
-                              filename: Optional[str] = None,
-                              display: bool = True):
-        """Plot the confusion matrix.
-
-        For 1 model: plot it's confusion matrix in a heatmap.
-        For >1 models: compare TP, FP, FN and TN in a barplot.
-
-        """
-        plot_confusion_matrix(self, models, normalize,
-                              title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_threshold(self,
-                       models: Union[None, str, Sequence[str]] = None,
-                       metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                       steps: int = 100,
-                       title: Optional[str] = None,
-                       figsize: Tuple[int, int] = (10, 6),
-                       filename: Optional[str] = None,
-                       display: bool = True):
-        """Plot performance metric(s) against threshold values."""
-        plot_threshold(self, models, metric, steps,
-                       title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_probabilities(self,
-                           models: Union[None, str, Sequence[str]] = None,
-                           target: Union[int, str] = 1,
-                           title: Optional[str] = None,
-                           figsize: Tuple[int, int] = (10, 6),
-                           filename: Optional[str] = None,
-                           display: bool = True):
-        """Plot the distribution of predicted probabilities."""
-        plot_probabilities(self, models, target,
-                           title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_calibration(self,
-                         n_bins: int = 10,
-                         models: Union[None, str, Sequence[str]] = None,
-                         title: Optional[str] = None,
-                         figsize: Tuple[int, int] = (10, 10),
-                         filename: Optional[str] = None,
-                         display: bool = True):
-        """Plot the calibration curve for a binary classifier."""
-        plot_calibration(self, models, n_bins,
-                         title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_gains(self,
-                   models: Union[None, str, Sequence[str]] = None,
-                   title: Optional[str] = None,
-                   figsize: Tuple[int, int] = (10, 6),
-                   filename: Optional[str] = None,
-                   display: bool = True):
-        """Plot the cumulative gains curve."""
-        plot_gains(self, models, title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_lift(self,
-                  models: Union[None, str, Sequence[str]] = None,
-                  title: Optional[str] = None,
-                  figsize: Tuple[int, int] = (10, 6),
-                  filename: Optional[str] = None,
-                  display: bool = True):
-        """Plot the lift curve."""
-        plot_lift(self, models, title, figsize, filename, display)
-
-    @composed(crash, typechecked)
-    def plot_bo(self,
-                models: Union[None, str, Sequence[str]] = None,
-                title: Optional[str] = None,
-                figsize: Tuple[int, int] = (10, 6),
-                filename: Optional[str] = None,
-                display: bool = True):
-        """Plot the bayesian optimization scoring."""
-        plot_bo(self, models, title, figsize, filename, display)

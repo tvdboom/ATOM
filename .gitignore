@@ -1,6 +1,4 @@
 # Files
-abalone.csv
-weatherAUS.csv
 run_automl.py
 
 # Exclude everything from tests/files except the .gitkeep file

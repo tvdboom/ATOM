@@ -14,11 +14,15 @@ import pandas as pd
 import multiprocessing
 
 # Own modules
+from atom import ATOMClassifier
+from atom.training import TrainerClassifier
 from atom.basetransformer import BaseTransformer
-from .utils import FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, X10
+from .utils import (
+    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, X10, bin_train, bin_test
+    )
 
 
-# Tests ===================================================================== >>
+# Test properties =========================================================== >>
 
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
@@ -105,6 +109,8 @@ def test_random_state_setter():
     pytest.raises(ValueError, BaseTransformer, random_state=-1)
 
 
+# Test _prepare_input ======================================================= >>
+
 def test_copy_input_data():
     """Assert that the prepare_input method uses copies of the data."""
     X, y = BaseTransformer()._prepare_input(X_bin, y_bin)
@@ -158,3 +164,28 @@ def test_target_is_none():
     """Assert that target column stays None when empty input."""
     _, y = BaseTransformer._prepare_input(X_bin, y=None)
     assert y is None
+
+
+# Test save ================================================================= >>
+
+def test_file_is_saved():
+    """Assert that the pickle file is created."""
+    base = BaseTransformer(logger=None, verbose=0)
+    base.save(FILE_DIR + 'base_transformer')
+    assert glob.glob(FILE_DIR + 'base_transformer.pkl')
+
+
+def test_ignore_data():
+    """Assert that the pickle file is created."""
+    # From ATOM
+    atom = ATOMClassifier(X_bin, y_bin)
+    dataset = atom.dataset.copy()
+    atom.save(filename=FILE_DIR + 'atom', ignore_index=True)
+    assert atom.dataset.equals(dataset)
+
+    # From a trainer
+    trainer = TrainerClassifier('LR')
+    trainer.run(bin_train, bin_test)
+    dataset = trainer.dataset.copy()
+    trainer.save(filename=FILE_DIR + 'trainer', ignore_index=True)
+    assert trainer.dataset.equals(dataset)

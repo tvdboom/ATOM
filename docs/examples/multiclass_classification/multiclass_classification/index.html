@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/examples/multiclass_classification/multiclass_classification/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>Multiclass_classification - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/color-brewer.min.css">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+</li>
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/trainer_classifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/trainer_regressor.md" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/successive_halving_classifier.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/successive_halving_regressor.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/train_sizing_classifier.md" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/train_sizing_regressor.md" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../../train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../../feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../../calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../binary_classification/binary_classification/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../regression/regression/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#multiclass-classification" class="nav-link">Multiclass classification</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#load-the-data" class="nav-link">Load the data</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#run-the-pipeline" class="nav-link">Run the pipeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#analyze-the-results" class="nav-link">Analyze the results</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="multiclass-classification">Multiclass classification</h1>
+<hr />
+<p>This example shows how to compare the performance of three models on a multiclass classification task.</p>
+<p>Import the wine dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#breast-cancer-wisconsin-diagnostic-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict wines into three groups (which cultivator it's from) using features based on the results of chemical analysis.</p>
+<h2 id="load-the-data">Load the data</h2>
+<pre><code class="python"># Import packages
+from sklearn.datasets import load_wine
+from atom import ATOMClassifier
+</code></pre>
+
+<pre><code class="python"># Load the dataset's features and targets
+X, y = load_wine(return_X_y=True, as_frame=True)
+
+# Let's have a look at a subsample of the data
+X.sample(frac=1).iloc[:5, :8]
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>alcohol</th>
+      <th>malic_acid</th>
+      <th>ash</th>
+      <th>alcalinity_of_ash</th>
+      <th>magnesium</th>
+      <th>total_phenols</th>
+      <th>flavanoids</th>
+      <th>nonflavanoid_phenols</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>62</th>
+      <td>13.67</td>
+      <td>1.25</td>
+      <td>1.92</td>
+      <td>18.0</td>
+      <td>94.0</td>
+      <td>2.10</td>
+      <td>1.79</td>
+      <td>0.32</td>
+    </tr>
+    <tr>
+      <th>46</th>
+      <td>14.38</td>
+      <td>3.59</td>
+      <td>2.28</td>
+      <td>16.0</td>
+      <td>102.0</td>
+      <td>3.25</td>
+      <td>3.17</td>
+      <td>0.27</td>
+    </tr>
+    <tr>
+      <th>30</th>
+      <td>13.73</td>
+      <td>1.50</td>
+      <td>2.70</td>
+      <td>22.5</td>
+      <td>101.0</td>
+      <td>3.00</td>
+      <td>3.25</td>
+      <td>0.29</td>
+    </tr>
+    <tr>
+      <th>54</th>
+      <td>13.74</td>
+      <td>1.67</td>
+      <td>2.25</td>
+      <td>16.4</td>
+      <td>118.0</td>
+      <td>2.60</td>
+      <td>2.90</td>
+      <td>0.21</td>
+    </tr>
+    <tr>
+      <th>146</th>
+      <td>13.88</td>
+      <td>5.04</td>
+      <td>2.23</td>
+      <td>20.0</td>
+      <td>80.0</td>
+      <td>0.98</td>
+      <td>0.34</td>
+      <td>0.40</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="run-the-pipeline">Run the pipeline</h2>
+<pre><code class="python">atom = ATOMClassifier(X, y, n_jobs=-1, warnings='ignore', verbose=2, random_state=1)
+
+# Fit the pipeline with the selected models
+atom.run(models=['LR','LDA', 'RF'],
+         metric='roc_auc_ovr',
+         n_calls=4,
+         n_random_starts=3,
+         bo_params={'base_estimator': 'rf', 'max_time': 100},
+         bagging=5)
+</code></pre>
+
+<pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
+Algorithm task: multiclass classification.
+Parallel processing with 16 cores.
+Applying data cleaning...
+
+Dataset stats ================= &gt;&gt;
+Shape: (178, 14)
+Scaled: False
+----------------------------------
+Size of training set: 143
+Size of test set: 35
+----------------------------------
+Class balance: 0:1:2 &lt;==&gt; 1.2:1.5:1.0
+Instances in target per class:
+|    |    total |    train_set |    test_set |
+|---:|---------:|-------------:|------------:|
+|  0 |       59 |           50 |           9 |
+|  1 |       71 |           58 |          13 |
+|  2 |       48 |           35 |          13 |
+
+
+Running pipeline ============================= &gt;&gt;
+Models in pipeline: LR, LDA, RF
+Metric: roc_auc_ovr
+
+
+Running BO for Logistic Regression...
+Random start 1 ----------------------------------
+Parameters --&gt; {'max_iter': 335, 'solver': 'sag', 'class_weight': None, 'penalty': 'l2', 'C': 0.001}
+Evaluation --&gt; roc_auc_ovr: 0.9970  Best roc_auc_ovr: 0.9970
+Time iteration: 3.490s   Total time: 3.494s
+Random start 2 ----------------------------------
+Parameters --&gt; {'max_iter': 683, 'solver': 'lbfgs', 'class_weight': 'balanced', 'penalty': 'l2', 'C': 0.096}
+Evaluation --&gt; roc_auc_ovr: 0.9996  Best roc_auc_ovr: 0.9996
+Time iteration: 3.023s   Total time: 6.523s
+Random start 3 ----------------------------------
+Parameters --&gt; {'max_iter': 352, 'solver': 'saga', 'class_weight': 'balanced', 'penalty': 'l2', 'C': 0.001}
+Evaluation --&gt; roc_auc_ovr: 0.9950  Best roc_auc_ovr: 0.9996
+Time iteration: 3.125s   Total time: 9.652s
+Iteration 4 -------------------------------------
+Parameters --&gt; {'max_iter': 603, 'solver': 'liblinear', 'class_weight': None, 'penalty': 'l2', 'C': 0.061}
+Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
+Time iteration: 2.405s   Total time: 12.267s
+
+Results for Logistic Regression:         
+Bayesian Optimization ---------------------------
+Best parameters --&gt; {'max_iter': 603, 'solver': 'liblinear', 'class_weight': None, 'penalty': 'l2', 'C': 0.061}
+Best evaluation --&gt; roc_auc_ovr: 1.0000
+Time elapsed: 12.464s
+Fitting -----------------------------------------
+Score on the train set --&gt; roc_auc_ovr: 1.0000
+Score on the test set  --&gt; roc_auc_ovr: 0.9977
+Time elapsed: 0.018s
+Bagging -----------------------------------------
+Score --&gt; roc_auc_ovr: 0.9981 ± 0.0009
+Time elapsed: 0.046s
+-------------------------------------------------
+Total time: 12.535s
+
+
+Running BO for Linear Discriminant Analysis...
+Random start 1 ----------------------------------
+Parameters --&gt; {'solver': 'eigen', 'shrinkage': 1.0}
+Evaluation --&gt; roc_auc_ovr: 0.8975  Best roc_auc_ovr: 0.8975
+Time iteration: 0.033s   Total time: 0.034s
+Random start 2 ----------------------------------
+Parameters --&gt; {'solver': 'svd'}
+Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
+Time iteration: 0.033s   Total time: 0.070s
+Random start 3 ----------------------------------
+Parameters --&gt; {'solver': 'svd'}
+Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
+Time iteration: 0.032s   Total time: 0.106s
+Iteration 4 -------------------------------------
+Parameters --&gt; {'solver': 'lsqr', 'shrinkage': 0.7}
+Evaluation --&gt; roc_auc_ovr: 0.8996  Best roc_auc_ovr: 1.0000
+Time iteration: 0.033s   Total time: 0.297s
+
+Results for Linear Discriminant Analysis:         
+Bayesian Optimization ---------------------------
+Best parameters --&gt; {'solver': 'svd'}
+Best evaluation --&gt; roc_auc_ovr: 1.0000
+Time elapsed: 0.531s
+Fitting -----------------------------------------
+Score on the train set --&gt; roc_auc_ovr: 1.0000
+Score on the test set  --&gt; roc_auc_ovr: 1.0000
+Time elapsed: 0.012s
+Bagging -----------------------------------------
+Score --&gt; roc_auc_ovr: 0.9998 ± 0.0005
+Time elapsed: 0.034s
+-------------------------------------------------
+Total time: 0.583s
+
+
+Running BO for Random Forest...
+Random start 1 ----------------------------------
+Parameters --&gt; {'n_estimators': 245, 'max_depth': 7, 'max_features': 1.0, 'criterion': 'gini', 'min_samples_split': 7, 'min_samples_leaf': 16, 'ccp_alpha': 0.008, 'bootstrap': True, 'max_samples': 0.6}
+Evaluation --&gt; roc_auc_ovr: 0.9853  Best roc_auc_ovr: 0.9853
+Time iteration: 0.559s   Total time: 0.564s
+Random start 2 ----------------------------------
+Parameters --&gt; {'n_estimators': 400, 'max_depth': 4, 'max_features': 0.8, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 12, 'ccp_alpha': 0.016, 'bootstrap': True, 'max_samples': 0.7}
+Evaluation --&gt; roc_auc_ovr: 0.9937  Best roc_auc_ovr: 0.9937
+Time iteration: 0.671s   Total time: 1.239s
+Random start 3 ----------------------------------
+Parameters --&gt; {'n_estimators': 78, 'max_depth': 10, 'max_features': 0.7, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 14, 'ccp_alpha': 0.025, 'bootstrap': False}
+Evaluation --&gt; roc_auc_ovr: 0.9865  Best roc_auc_ovr: 0.9937
+Time iteration: 0.271s   Total time: 1.515s
+Iteration 4 -------------------------------------
+Parameters --&gt; {'n_estimators': 323, 'max_depth': 7, 'max_features': 1.0, 'criterion': 'gini', 'min_samples_split': 16, 'min_samples_leaf': 1, 'ccp_alpha': 0.007, 'bootstrap': False}
+Evaluation --&gt; roc_auc_ovr: 0.9315  Best roc_auc_ovr: 0.9937
+Time iteration: 0.545s   Total time: 2.257s
+
+Results for Random Forest:         
+Bayesian Optimization ---------------------------
+Best parameters --&gt; {'n_estimators': 400, 'max_depth': 4, 'max_features': 0.8, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 12, 'ccp_alpha': 0.016, 'bootstrap': True, 'max_samples': 0.7}
+Best evaluation --&gt; roc_auc_ovr: 0.9937
+Time elapsed: 2.452s
+Fitting -----------------------------------------
+Score on the train set --&gt; roc_auc_ovr: 0.9997
+Score on the test set  --&gt; roc_auc_ovr: 0.9825
+Time elapsed: 0.753s
+Bagging -----------------------------------------
+Score --&gt; roc_auc_ovr: 0.9737 ± 0.0116
+Time elapsed: 3.200s
+-------------------------------------------------
+Total time: 6.411s
+
+
+Final results ========================= &gt;&gt;
+Duration: 19.530s
+------------------------------------------
+Logistic Regression          --&gt; roc_auc_ovr: 0.998 ± 0.001
+Linear Discriminant Analysis --&gt; roc_auc_ovr: 1.000 ± 0.000 !
+Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.012
+</code></pre>
+<h2 id="analyze-the-results">Analyze the results</h2>
+<pre><code class="python"># We can access the pipeline's results via the results attribute
+atom.results
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>name</th>
+      <th>score_bo</th>
+      <th>time_bo</th>
+      <th>score_train</th>
+      <th>score_test</th>
+      <th>time_fit</th>
+      <th>mean_bagging</th>
+      <th>std_bagging</th>
+      <th>time_bagging</th>
+      <th>time</th>
+    </tr>
+    <tr>
+      <th>model</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>LR</th>
+      <td>Logistic Regression</td>
+      <td>1.000000</td>
+      <td>12.464s</td>
+      <td>1.000000</td>
+      <td>0.997669</td>
+      <td>0.018s</td>
+      <td>0.998135</td>
+      <td>0.000932</td>
+      <td>0.046s</td>
+      <td>12.535s</td>
+    </tr>
+    <tr>
+      <th>LDA</th>
+      <td>Linear Discriminant Analysis</td>
+      <td>1.000000</td>
+      <td>0.531s</td>
+      <td>1.000000</td>
+      <td>1.000000</td>
+      <td>0.012s</td>
+      <td>0.999767</td>
+      <td>0.000466</td>
+      <td>0.034s</td>
+      <td>0.583s</td>
+    </tr>
+    <tr>
+      <th>RF</th>
+      <td>Random Forest</td>
+      <td>0.993712</td>
+      <td>2.452s</td>
+      <td>0.999725</td>
+      <td>0.982517</td>
+      <td>0.753s</td>
+      <td>0.973686</td>
+      <td>0.011577</td>
+      <td>3.200s</td>
+      <td>6.411s</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># Show the scoring for a different metric than the one we trained on
+atom.scoring('precision_macro')
+</code></pre>
+
+<pre><code>Results ===================== &gt;&gt;
+Logistic Regression          --&gt; precision_macro: 0.976
+Linear Discriminant Analysis --&gt; precision_macro: 0.976
+Random Forest                --&gt; precision_macro: 0.9
+</code></pre>
+<p><strong>Let's have a closer look at the Random Forest</strong></p>
+<pre><code class="python"># Get the results on some other metrics
+print('Jaccard score:', atom.rf.scoring('jaccard_weighted'))
+print('Recall score:', atom.rf.scoring('recall_macro'))
+</code></pre>
+
+<pre><code>Jaccard score: 0.7957142857142857
+Recall score: 0.8974358974358975
+</code></pre>
+<pre><code class="python"># Plot the confusion matrix
+atom.RF.plot_confusion_matrix(figsize=(9, 9))
+</code></pre>
+
+<p><img alt="png" src="../output_11_0.png" /></p>
+<pre><code class="python"># Save the model as a pickle file
+atom.RF.save_model('Random_Forest_model')
+</code></pre>
+
+<pre><code>Random Forest model saved successfully!
+</code></pre></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

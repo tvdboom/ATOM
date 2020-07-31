@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-'''
-Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+"""Automated Tool for Optimized Modelling (ATOM).
 
-'''
+Author: tvdboom
+Description: Package's setup code.
+
+"""
 
 import setuptools
 
@@ -30,21 +31,27 @@ setuptools.setup(
          "Operating System :: OS Independent",
       ],
       install_requires=[
-          'numpy>=1.17.2',
-          'scipy>=1.4.1',
-          'pandas>=1.0.1',
-          'scikit-learn>=0.22',
-          'tabulate>=0.8.6',
-          'tqdm>=4.35.0',
-          'typeguard>=2.7.1',
-          'gpyopt>=1.2.5',
-          'matplotlib>=3.1.0',
-          'seaborn>=0.10.0',
+          'numpy >= 1.17.2',
+          'scipy >= 1.4.1',
+          'pandas >= 1.0.3',
+          'tqdm >= 4.35.0',
+          'joblib >= 0.16.0',
+          'typeguard >= 2.7.1',
+          'tabulate >= 0.8.6',
+          'scikit-learn >= 0.23.1',
+          'scikit-optimize >= 0.7.4',
+          'category-encoders >= 2.1.0',
+          'imbalanced-learn >= 0.5.0',
+          'pandas-profiling >= 2.3.0',
+          'featuretools >= 0.17.0',
+          'gplearn >= 0.4.1',
+          'matplotlib >= 3.1.0',
+          'seaborn >= 0.10.0',
+          'xgboost >= 0.90',
+          'lightgbm >= 2.3.0',
+          'catboost >= 0.19.1'
       ],
       extras_require={
-          'pandas-profiling': ['pandas-profiling>=2.3.0'],
-          'imbalanced-learn': ['imbalanced-learn>=0.5.0'],
-          'gplearn': ['gplearn>=0.4.1'],
           'xgboost': ['xgboost>=0.90'],
           'lightgbm': ['lightgbm>=2.3.0'],
           'catboost': ['catboost>=0.19.1'],

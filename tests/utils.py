@@ -10,23 +10,39 @@ Description: Utility variables for the tests.
 # Import packages
 import os
 import numpy as np
-from sklearn.datasets import load_breast_cancer, load_wine, load_diabetes
+from sklearn.model_selection import train_test_split
+from sklearn.datasets import (
+    load_breast_cancer, load_wine,  load_digits, load_diabetes
+    )
 
 
-# << ====================== Variables ===================== >>
+# Functions ================================================================= >>
+
+def merge(X, y):
+    """Merge a pd.DataFrame and pd.Series into one dataframe."""
+    return X.merge(y.to_frame(), left_index=True, right_index=True)
+
+
+# Variables ================================================================= >>
 
 # Directory for storing all files created by the tests
 FILE_DIR = os.path.dirname(os.path.abspath(__file__)) + '/files/'
 
 # Sklearn datasets for all three tasks as np.array
 X_bin_array, y_bin_array = load_breast_cancer(return_X_y=True)
-X_class_array, y_class_array = load_wine(return_X_y=True)
+X_class_array, y_class_array = load_digits(return_X_y=True)
 X_reg_array, y_reg_array = load_diabetes(return_X_y=True)
 
 # Sklearn datasets for all three tasks as pd.DataFrame
 X_bin, y_bin = load_breast_cancer(return_X_y=True, as_frame=True)
 X_class, y_class = load_wine(return_X_y=True, as_frame=True)
+X_class2, y_class2 = load_digits(return_X_y=True, as_frame=True)
 X_reg, y_reg = load_diabetes(return_X_y=True, as_frame=True)
+
+# Train and test sets for all three tasks
+bin_train, bin_test = train_test_split(merge(X_bin, y_bin), test_size=0.3)
+class_train, class_test = train_test_split(merge(X_class, y_class), test_size=0.3)
+reg_train, reg_test = train_test_split(merge(X_reg, y_reg), test_size=0.3)
 
 # Small dimensional dataset
 X10 = [[0.2, 2, 1], [0.2, 2, 1], [0.2, 2, 2], [0.24, 2, 1], [0.23, 2, 2],

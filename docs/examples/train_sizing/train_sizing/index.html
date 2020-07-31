@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/examples/train_sizing/train_sizing/">
+        <link rel="shortcut icon" href="../../../img/favicon.ico">
+        <title>Train sizing - ATOM</title>
+        <link href="../../../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../../../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../../../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/color-brewer.min.css">
+
+        <script src="../../../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../../../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="../../..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../../../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../user_guide/" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../../../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+</li>
+            
+<li>
+    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/trainer_classifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/trainer_regressor.md" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/successive_halving_classifier.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/successive_halving_regressor.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/training/train_sizing_classifier.md" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../../../API/training/train_sizing_regressor.md" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown active">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../../binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../../regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../../successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="./" class="dropdown-item active">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../../feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../../calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../../../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../../successive_halving/successive_halving/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../../feature_engineering/feature_engineering/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#train-sizing" class="nav-link">Train sizing</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#load-the-data" class="nav-link">Load the data</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#run-the-pipeline" class="nav-link">Run the pipeline</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#analyze-the-results" class="nav-link">Analyze the results</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="train-sizing">Train sizing</h1>
+<hr />
+<p>This example shows how to asses a model's performance based on the size of the training set.</p>
+<p>The data used is a variation on the Australian weather dataset from https://www.kaggle.com/jsphyg/weather-dataset-rattle-package. The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target RainTomorrow.</p>
+<h2 id="load-the-data">Load the data</h2>
+<pre><code class="python"># Import packages
+import numpy as np
+import pandas as pd
+from atom import ATOMClassifier
+</code></pre>
+
+<pre><code class="python"># Load the Australian weather dataset
+X = pd.read_csv('./datasets/weatherAUS.csv')
+
+# Let's have a look at a subset of the data
+X.sample(frac=1).iloc[:5, :8]
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Location</th>
+      <th>MinTemp</th>
+      <th>MaxTemp</th>
+      <th>Rainfall</th>
+      <th>Evaporation</th>
+      <th>Sunshine</th>
+      <th>WindGustDir</th>
+      <th>WindGustSpeed</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>3118</th>
+      <td>BadgerysCreek</td>
+      <td>11.7</td>
+      <td>23.2</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>SW</td>
+      <td>28.0</td>
+    </tr>
+    <tr>
+      <th>18965</th>
+      <td>NorahHead</td>
+      <td>10.2</td>
+      <td>19.4</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>SSE</td>
+      <td>30.0</td>
+    </tr>
+    <tr>
+      <th>11196</th>
+      <td>CoffsHarbour</td>
+      <td>9.7</td>
+      <td>21.2</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NW</td>
+      <td>26.0</td>
+    </tr>
+    <tr>
+      <th>62283</th>
+      <td>Sale</td>
+      <td>8.4</td>
+      <td>21.7</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WSW</td>
+      <td>41.0</td>
+    </tr>
+    <tr>
+      <th>92461</th>
+      <td>Townsville</td>
+      <td>11.1</td>
+      <td>27.1</td>
+      <td>0.0</td>
+      <td>7.6</td>
+      <td>10.7</td>
+      <td>ENE</td>
+      <td>37.0</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="run-the-pipeline">Run the pipeline</h2>
+<pre><code class="python"># Initialize ATOM and prepare the data
+atom = ATOMClassifier(X, verbose=2, random_state=1)
+atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.8)
+atom.encode()
+</code></pre>
+
+<pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
+Algorithm task: binary classification.
+Applying data cleaning...
+
+Dataset stats ================= &gt;&gt;
+Shape: (142193, 22)
+Missing values: 292032
+Categorical columns: 5
+Scaled: False
+----------------------------------
+Size of training set: 113755
+Size of test set: 28438
+----------------------------------
+Class balance: No:Yes &lt;==&gt; 3.5:1.0
+Instances in RainTomorrow per class:
+|        |    total |    train_set |    test_set |
+|:-------|---------:|-------------:|------------:|
+| 0: No  |   110316 |        88263 |       22053 |
+| 1: Yes |    31877 |        25492 |        6385 |
+
+Fitting Imputer...
+Imputing missing values...
+ --&gt; Dropping 15182 rows for containing less than 80% non-missing values.
+ --&gt; Imputing 100 missing values with median in feature MinTemp.
+ --&gt; Imputing 57 missing values with median in feature MaxTemp.
+ --&gt; Imputing 640 missing values with median in feature Rainfall.
+ --&gt; Imputing 46535 missing values with median in feature Evaporation.
+ --&gt; Imputing 53034 missing values with median in feature Sunshine.
+ --&gt; Imputing 4381 missing values with most_frequent in feature WindGustDir.
+ --&gt; Imputing 4359 missing values with median in feature WindGustSpeed.
+ --&gt; Imputing 6624 missing values with most_frequent in feature WindDir9am.
+ --&gt; Imputing 612 missing values with most_frequent in feature WindDir3pm.
+ --&gt; Imputing 80 missing values with median in feature WindSpeed9am.
+ --&gt; Imputing 49 missing values with median in feature WindSpeed3pm.
+ --&gt; Imputing 532 missing values with median in feature Humidity9am.
+ --&gt; Imputing 1168 missing values with median in feature Humidity3pm.
+ --&gt; Imputing 1028 missing values with median in feature Pressure9am.
+ --&gt; Imputing 972 missing values with median in feature Pressure3pm.
+ --&gt; Imputing 42172 missing values with median in feature Cloud9am.
+ --&gt; Imputing 44251 missing values with median in feature Cloud3pm.
+ --&gt; Imputing 98 missing values with median in feature Temp9am.
+ --&gt; Imputing 702 missing values with median in feature Temp3pm.
+ --&gt; Imputing 640 missing values with most_frequent in feature RainToday.
+Fitting Encoder...
+Encoding categorical columns...
+ --&gt; Target-encoding feature Location. Contains 45 unique categories.
+ --&gt; Target-encoding feature WindGustDir. Contains 16 unique categories.
+ --&gt; Target-encoding feature WindDir9am. Contains 16 unique categories.
+ --&gt; Target-encoding feature WindDir3pm. Contains 16 unique categories.
+ --&gt; Label-encoding feature RainToday. Contains 2 unique categories.
+</code></pre>
+<pre><code class="python"># We can analyze the impact of the training set's size on a LightGBM model
+atom.train_sizing('lgb', train_sizes=np.linspace(0.1, 1, 9), bagging=4)
+</code></pre>
+
+<pre><code>Running pipeline ============================= &gt;&gt;
+Models in pipeline: LGB
+Metric: f1
+
+
+Run 0 (10% of set) ============================&gt;&gt;
+Size of training set: 11375
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.8029
+Score on the test set  --&gt; f1: 0.6086
+Time elapsed: 0.998s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.5945 ± 0.0073
+Time elapsed: 2.229s
+-------------------------------------------------
+Total time: 3.242s
+
+
+Final results ========================= &gt;&gt;
+Duration: 3.244s
+------------------------------------------
+LightGBM --&gt; f1: 0.594 ± 0.007 ~
+
+
+Run 1 (21% of set) ============================&gt;&gt;
+Size of training set: 24172
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.7292
+Score on the test set  --&gt; f1: 0.6273
+Time elapsed: 1.244s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6166 ± 0.0053
+Time elapsed: 2.879s
+-------------------------------------------------
+Total time: 4.129s
+
+
+Final results ========================= &gt;&gt;
+Duration: 4.131s
+------------------------------------------
+LightGBM --&gt; f1: 0.617 ± 0.005
+
+
+Run 2 (32% of set) ============================&gt;&gt;
+Size of training set: 36970
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6955
+Score on the test set  --&gt; f1: 0.6325
+Time elapsed: 1.533s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6199 ± 0.0038
+Time elapsed: 3.502s
+-------------------------------------------------
+Total time: 5.039s
+
+
+Final results ========================= &gt;&gt;
+Duration: 5.042s
+------------------------------------------
+LightGBM --&gt; f1: 0.620 ± 0.004
+
+
+Run 3 (44% of set) ============================&gt;&gt;
+Size of training set: 49767
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6832
+Score on the test set  --&gt; f1: 0.6386
+Time elapsed: 1.825s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6256 ± 0.0036
+Time elapsed: 4.148s
+-------------------------------------------------
+Total time: 5.979s
+
+
+Final results ========================= &gt;&gt;
+Duration: 5.981s
+------------------------------------------
+LightGBM --&gt; f1: 0.626 ± 0.004
+
+
+Run 4 (55% of set) ============================&gt;&gt;
+Size of training set: 62565
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6818
+Score on the test set  --&gt; f1: 0.6391
+Time elapsed: 2.152s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6271 ± 0.0025
+Time elapsed: 4.838s
+-------------------------------------------------
+Total time: 6.996s
+
+
+Final results ========================= &gt;&gt;
+Duration: 6.998s
+------------------------------------------
+LightGBM --&gt; f1: 0.627 ± 0.002
+
+
+Run 5 (66% of set) ============================&gt;&gt;
+Size of training set: 75362
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6767
+Score on the test set  --&gt; f1: 0.6399
+Time elapsed: 2.418s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6346 ± 0.0021
+Time elapsed: 5.622s
+-------------------------------------------------
+Total time: 8.045s
+
+
+Final results ========================= &gt;&gt;
+Duration: 8.047s
+------------------------------------------
+LightGBM --&gt; f1: 0.635 ± 0.002
+
+
+Run 6 (77% of set) ============================&gt;&gt;
+Size of training set: 88160
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6665
+Score on the test set  --&gt; f1: 0.6384
+Time elapsed: 2.810s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6342 ± 0.0021
+Time elapsed: 6.240s
+-------------------------------------------------
+Total time: 9.058s
+
+
+Final results ========================= &gt;&gt;
+Duration: 9.060s
+------------------------------------------
+LightGBM --&gt; f1: 0.634 ± 0.002
+
+
+Run 7 (89% of set) ============================&gt;&gt;
+Size of training set: 100957
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6651
+Score on the test set  --&gt; f1: 0.6432
+Time elapsed: 3.063s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6372 ± 0.0025
+Time elapsed: 6.888s
+-------------------------------------------------
+Total time: 9.958s
+
+
+Final results ========================= &gt;&gt;
+Duration: 9.960s
+------------------------------------------
+LightGBM --&gt; f1: 0.637 ± 0.003
+
+
+Run 8 (100% of set) ===========================&gt;&gt;
+Size of training set: 113755
+Size of test set: 28438
+
+
+Results for LightGBM:         
+Fitting -----------------------------------------
+Score on the train set --&gt; f1: 0.6650
+Score on the test set  --&gt; f1: 0.6549
+Time elapsed: 3.379s
+Bagging -----------------------------------------
+Score --&gt; f1: 0.6508 ± 0.0026
+Time elapsed: 7.621s
+-------------------------------------------------
+Total time: 11.009s
+
+
+Final results ========================= &gt;&gt;
+Duration: 11.012s
+------------------------------------------
+LightGBM --&gt; f1: 0.651 ± 0.003
+</code></pre>
+<h2 id="analyze-the-results">Analyze the results</h2>
+<pre><code class="python"># Note that the results dataframe now is multi-index
+atom.results
+</code></pre>
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th></th>
+      <th>name</th>
+      <th>score_train</th>
+      <th>score_test</th>
+      <th>time_fit</th>
+      <th>mean_bagging</th>
+      <th>std_bagging</th>
+      <th>time_bagging</th>
+      <th>time</th>
+    </tr>
+    <tr>
+      <th>run</th>
+      <th>model</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.802859</td>
+      <td>0.608590</td>
+      <td>0.998s</td>
+      <td>0.594472</td>
+      <td>0.007341</td>
+      <td>2.229s</td>
+      <td>3.242s</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.729212</td>
+      <td>0.627277</td>
+      <td>1.244s</td>
+      <td>0.616583</td>
+      <td>0.005321</td>
+      <td>2.879s</td>
+      <td>4.129s</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.695463</td>
+      <td>0.632544</td>
+      <td>1.533s</td>
+      <td>0.619899</td>
+      <td>0.003822</td>
+      <td>3.502s</td>
+      <td>5.039s</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.683228</td>
+      <td>0.638575</td>
+      <td>1.825s</td>
+      <td>0.625589</td>
+      <td>0.003608</td>
+      <td>4.148s</td>
+      <td>5.979s</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.681811</td>
+      <td>0.639062</td>
+      <td>2.152s</td>
+      <td>0.627105</td>
+      <td>0.002460</td>
+      <td>4.838s</td>
+      <td>6.996s</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.676747</td>
+      <td>0.639897</td>
+      <td>2.418s</td>
+      <td>0.634642</td>
+      <td>0.002138</td>
+      <td>5.622s</td>
+      <td>8.045s</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.666471</td>
+      <td>0.638376</td>
+      <td>2.810s</td>
+      <td>0.634245</td>
+      <td>0.002098</td>
+      <td>6.240s</td>
+      <td>9.058s</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.665065</td>
+      <td>0.643197</td>
+      <td>3.063s</td>
+      <td>0.637232</td>
+      <td>0.002537</td>
+      <td>6.888s</td>
+      <td>9.958s</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <th>LGB</th>
+      <td>LightGBM</td>
+      <td>0.665018</td>
+      <td>0.654904</td>
+      <td>3.379s</td>
+      <td>0.650772</td>
+      <td>0.002577</td>
+      <td>7.621s</td>
+      <td>11.009s</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<pre><code class="python"># Plot the train sizing's results
+atom.plot_learning_curve()
+</code></pre>
+
+<p><img alt="png" src="../output_9_0.png" /></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "../../..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../../../js/base.js" defer></script>
+        <script src="../../../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

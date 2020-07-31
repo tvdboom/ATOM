@@ -14,7 +14,7 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import X_TYPES, Y_TYPES, infer_task
+from .utils import X_TYPES, Y_TYPES
 
 
 # Classes =================================================================== >>
@@ -28,7 +28,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Dataset containing the features, with shape=(n_samples, n_features)
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
-        - If int: Index of the target column in X.
+        - If int: Position of the target column in X.
         - If str: Name of the target column in X.
         - Else: Data target column with shape=(n_samples,).
 
@@ -36,14 +36,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If <=1: Fraction of the data to use.
         - If >1: Number of rows to use.
 
-    test_size: float, optional (default=0.3)
+    test_size: float, optional (default=0.2)
         Split fraction for the training and test set.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - value.
+            - If <-1: Use number of cores - 1 - n_jobs.
 
         Beware that using multiple processes on the same machine may
         cause memory issues for large datasets.
@@ -62,10 +62,16 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Note that changing this parameter will affect the `PYTHONWARNINGS`
         environment.
 
-    logger: str, class or None, optional (default=None)
+        Note that ATOM can't manage warnings that go directly from C++ code
+        to the stdout/stderr.
+
+    logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. 'auto' to create an automatic name.
+        - If bool: True for logging file with default name, False for no logger.
+        - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
+
+        Note that warnings will not be saved to the logger in any case.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -78,7 +84,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
                  X: X_TYPES,
                  y: Y_TYPES = -1,
                  n_rows: Union[int, float] = 1,
-                 test_size: float = 0.3,
+                 test_size: float = 0.2,
                  logger: Optional[Union[str, callable]] = None,
                  n_jobs: int = 1,
                  warnings: Union[bool, str] = True,
@@ -104,7 +110,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Dataset containing the features, with shape=(n_samples, n_features)
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
-        - If int: Index of the target column in X.
+        - If int: Position of the target column in X.
         - If str: Name of the target column in X.
         - Else: Data target column with shape=(n_samples,).
 
@@ -112,14 +118,14 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If <=1: Fraction of the data to use.
         - If >1: Number of rows to use.
 
-    test_size: float, optional (default=0.3)
+    test_size: float, optional (default=0.2)
         Split fraction for the training and test set.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - value.
+            - If <-1: Use number of cores - 1 - n_jobs.
 
         Beware that using multiple processes on the same machine may
         cause memory issues for large datasets.
@@ -138,10 +144,16 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Note that changing this parameter will affect the `PYTHONWARNINGS`
         environment.
 
-    logger: str, class or None, optional (default=None)
+        Note that ATOM can't manage warnings that go directly from C++ code
+        to the stdout/stderr.
+
+    logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. 'auto' to create an automatic name.
+        - If bool: True for logging file with default name, False for no logger.
+        - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
+
+        Note that warnings will not be saved to the logger in any case.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -154,7 +166,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
                  X: X_TYPES,
                  y: Y_TYPES = -1,
                  n_rows: Union[int, float] = 1,
-                 test_size: float = 0.3,
+                 test_size: float = 0.2,
                  n_jobs: int = 1,
                  warnings: Union[bool, str] = True,
                  verbose: int = 0,

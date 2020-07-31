@@ -9,9 +9,7 @@ Description: Module containing utility constants, functions and classes.
 
 # Standard packages
 import math
-import pickle
 import logging
-import inspect
 import numpy as np
 import pandas as pd
 from time import time
@@ -23,6 +21,7 @@ from sklearn.metrics import SCORERS, get_scorer, make_scorer
 # Plotting
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+
 
 # Global constants ========================================================== >>
 
@@ -44,8 +43,48 @@ ONLY_REGRESSION = ['OLS', 'Lasso', 'EN', 'BR']
 # List of tree-based models
 TREE_MODELS = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
 
+# List of all the model acronyms
+MODEL_NAMES = ['GP', 'GNB', 'MNB', 'BNB', 'OLS', 'Ridge', 'Lasso', 'EN', 'BR',
+               'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
+               'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
+
+METRIC_ACRONYMS = dict(ap='average_precision',
+                       AP='average_precision',
+                       ba='balanced_accuracy',
+                       BA='balanced_accuracy',
+                       auc='roc_auc',
+                       AUC='roc_auc',
+                       ev='explained_variance',
+                       EV='explained_variance',
+                       me='max_error',
+                       ME='max_error',
+                       mae='neg_mean_absolute_error',
+                       MAE='neg_mean_absolute_error',
+                       mse='neg_mean_squared_error',
+                       MSE='neg_mean_squared_error',
+                       rmse='neg_root_mean_squared_error',
+                       RMSE='neg_root_mean_squared_error',
+                       msle='neg_mean_squared_log_error',
+                       MSLE='neg_mean_squared_log_error',
+                       medae='neg_median_absolute_error',
+                       MEDAE='neg_median_absolute_error',
+                       poisson='neg_mean_poisson_deviance',
+                       POISSON='neg_mean_poisson_deviance',
+                       gamma='neg_mean_gamma_deviance',
+                       GAMMA='neg_mean_gamma_deviance')
+
 
 # Functions ================================================================= >>
+
+def flt(item):
+    """Return value if item is list of length 1."""
+    return item[0] if isinstance(item, list) and len(item) == 1 else item
+
+
+def lst(item):
+    """Return list if item is not a list."""
+    return [item] if not isinstance(item, list) else item
+
 
 def merge(X, y):
     """Merge a pd.DataFrame and pd.Series into one dataframe."""
@@ -75,19 +114,22 @@ def check_scaling(X):
     return True if mean < 0.05 and 0.5 < std < 1.5 else False
 
 
-def get_best_score(row):
-    """Returns the bagging score or test score of a model.
+def get_best_score(item, metric=0):
+    """Returns the bagging or test score of a model.
 
     Parameters
     ----------
-    row: pd.Series
-        A row of the results dataframe.
+    item: model subclass or pd.Series
+        Model subclass instance or row from the results dataframe.
+
+    metric: int, optional (default=0)
+        Index of the metric to use.
 
     """
-    if 'mean_bagging' in row and row.mean_bagging and not np.isnan(row.mean_bagging):
-        return row.mean_bagging
+    if item.mean_bagging:
+        return lst(item.mean_bagging)[metric]
     else:
-        return row.score_test
+        return lst(item.score_test)[metric]
 
 
 def time_to_string(t_init):
@@ -107,11 +149,11 @@ def time_to_string(t_init):
     m = int(t/60.) - h*60
     s = t - h*3600 - m*60
     if h < 1 and m < 1:  # Only seconds
-        return f'{s:.3f}s'
+        return f"{s:.3f}s"
     elif h < 1:  # Also minutes
-        return f'{m}m:{int(s):02}s'
+        return f"{m}m:{int(s):02}s"
     else:  # Also hours
-        return f'{h}h:{m:02}m:{int(s):02}s'
+        return f"{h}h:{m:02}m:{int(s):02}s"
 
 
 def to_df(data, index=None, columns=None, pca=False):
@@ -320,6 +362,13 @@ def check_is_fitted(estimator, attributes=None, msg=None):
         Default error message.
 
     """
+    def check_attr(attr):
+        """Return empty pandas or None/empty sequence."""
+        if isinstance(getattr(estimator, attr), (pd.DataFrame, pd.Series)):
+            return getattr(estimator, attr).empty
+        else:
+            return not getattr(estimator, attr)
+
     if msg is None:
         msg = (f"This {type(estimator).__name__} instance is not fitted " +
                "yet. Call 'fit' with appropriate arguments before using " +
@@ -328,7 +377,7 @@ def check_is_fitted(estimator, attributes=None, msg=None):
     if attributes is not None:
         if not isinstance(attributes, (list, tuple)):
             attributes = [attributes]
-        attrs = [not getattr(estimator, attr) for attr in attributes]
+        attrs = [check_attr(attr) for attr in attributes]
     else:
         attrs = []
         for key, value in vars(estimator).items():
@@ -339,12 +388,36 @@ def check_is_fitted(estimator, attributes=None, msg=None):
         raise NotFittedError(msg)
 
 
+def get_model_name(model):
+    """Get the right model acronym.
+
+    Parameters
+    ----------
+    model: str
+        Acronym of the model, case insensitive.
+
+    Returns
+    -------
+    name: str
+        Correct model name acronym as present in the MODEL_LIST constant.
+
+    """
+    # Compare strings case insensitive
+    if model.lower() not in map(str.lower, MODEL_NAMES):
+        raise ValueError(
+            f"Unknown model: {model}! Choose from: {', '.join(MODEL_NAMES)}.")
+    else:
+        for name in MODEL_NAMES:
+            if model.lower() == name.lower():
+                return name
+
+
 def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
     """Get the right metric depending on input type.
 
     Parameters
     ----------
-    metric: str or callable
+    metric: str, callable or None
         Metric as a string, function or scorer.
 
     greater_is_better: bool
@@ -366,42 +439,34 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         Scorer object.
 
     """
-    if isinstance(metric, str):
-        if metric not in SCORERS:
+    def get_scorer_name(scorer):
+        """Return the name of the provided scorer."""
+        for key, value in SCORERS.items():
+            if scorer.__dict__ == value.__dict__:
+                return key
+
+    if metric is None:
+        return
+    elif isinstance(metric, str):
+        if metric in METRIC_ACRONYMS:
+            metric = METRIC_ACRONYMS[metric]
+        elif metric not in SCORERS:
             raise ValueError("Unknown value for the metric parameter, got " +
                              f"{metric}. Try one of: {', '.join(SCORERS)}.")
-        return get_scorer(metric)
+        metric = get_scorer(metric)
+        metric.name = get_scorer_name(metric)
 
     elif hasattr(metric, '_score_func'):  # Provided metric is scoring
-        return metric
+        metric.name = get_scorer_name(metric)
 
     else:  # Metric is a function with signature metric(y, y_pred)
-        return make_scorer(metric, greater_is_better,
-                           needs_proba, needs_threshold)
+        metric = make_scorer(metric,
+                             greater_is_better=greater_is_better,
+                             needs_proba=needs_proba,
+                             needs_threshold=needs_threshold)
+        metric.name = metric._score_func.__name__
 
-
-def get_metric_name(scorer):
-    """Get the metric name given a scorer.
-
-    Assign the key of the SCORERS constant which value corresponds with the
-    provided scorer. If none matches, assign the function's name.
-
-    Parameters
-    ----------
-    scorer: callable
-        SCorer object from which we want to retrieve the name.
-
-    Returns
-    -------
-    name: str
-        Name of the metric.
-
-    """
-    for key, value in SCORERS.items():
-        if scorer.__dict__ == value.__dict__:
-            return key
-
-    return scorer._score_func.__name__
+    return metric
 
 
 def get_default_metric(task):
@@ -466,65 +531,6 @@ def infer_task(y, goal=''):
             return 'regression'
 
 
-def get_train_test(*arrays):
-    """Converts a list of input data into a train and test set.
-
-    Parameters
-    ----------
-    arrays: array-like
-        Either a train and test set or X_train, X_test, y_train, y_test.
-
-    Returns
-    -------
-    train: pd.DataFrame
-        Training set for the BaseTrainer.
-
-    test: pd.DataFrame
-        Test set for the BaseTrainer.
-
-    """
-    if len(arrays) == 2:
-        train, test = to_df(arrays[0]), to_df(arrays[1])
-    elif len(arrays) == 4:
-        train = merge(to_df(arrays[0]), to_series(arrays[2]))
-        test = merge(to_df(arrays[1]), to_series(arrays[3]))
-    else:
-        raise ValueError(
-            "Invalid parameters. Must be either of the form (train, " +
-            "test) or (X_train, X_test, y_train, y_test).")
-
-    return train, test
-
-
-def attach_methods(self, class_, names):
-    """Attach methods from one class to the other.
-
-    Search for methods in class_ and all parent classes of class_ whose name
-    start with names and attach them to self.
-
-    self: class
-        Class to attach methods.
-
-    class_: class
-        Class from which the methods come.
-
-    names: str or sequence
-        Names with which the methods to transfer start.
-
-    """
-    if isinstance(names, str):
-        names = [names]
-
-    items = dict(class_.__dict__)  # __dict__ has mappingproxy type
-    # Add all parent's methods to the items dictionary
-    for parent in inspect.getmro(class_):
-        items.update(**parent.__dict__)
-
-    for key, value in items.items():
-        if any([key.startswith(name) for name in names]):
-            setattr(self, key, getattr(class_, key).__get__(self))
-
-
 # Functions shared by classes =============================================== >>
 
 def clear(self, models):
@@ -554,40 +560,11 @@ def clear(self, models):
                 self._results.drop(model, axis=0, inplace=True, errors='ignore')
 
             if not self.models:  # No more models in the pipeline
-                self.winner = None
                 self.metric = None
-
-            else:
-                # Assign new winning model (if it changed)
-                if self.winner is getattr(self, model, ''):
-                    # Make a df of the scores for all remaining models
-                    scores = pd.DataFrame(columns=['score_test', 'mean_bagging'])
-                    for m in self.models:
-                        scores.loc[m] = [getattr(self, m).score_test,
-                                         getattr(self, m).mean_bagging]
-
-                    best = scores.apply(lambda row: get_best_score(row), axis=1)
-                    self.winner = getattr(self, str(best.idxmax()))
 
             # Delete model subclasses
             delattr(self, model)
             delattr(self, model.lower())
-
-
-def save(self, filename):
-    """Save class to a pickle file.
-
-    Parameters
-    ----------
-    self: class
-        Class from which the function is called.
-
-    filename: str or None, optional (default=None)
-        Name of the file when saved (as .html). None to not save anything.
-
-    """
-    filename = filename if filename.endswith('.pkl') else filename + '.pkl'
-    pickle.dump(self, open(filename, 'wb'))
 
 
 # Decorators ================================================================ >>
@@ -608,8 +585,14 @@ def composed(*decs):
     return decorator
 
 
-def crash(f):
-    """Save program crashes to log file."""
+def crash(f, cache={'last_exception': None}):
+    """Save program crashes to log file.
+
+    We use a mutable argument to cache the last exception raised. If the current
+    exception is the same (happens when there is an error catch or multiple calls
+    to crash), its not written again to the logger.
+
+    """
     def wrapper(*args, **kwargs):
         logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
 
@@ -618,40 +601,43 @@ def crash(f):
                 return f(*args, **kwargs)
 
             except Exception as exception:
-                # Write exception to log and raise it
-                logger.exception("Exception encountered:")
-                raise eval(type(exception).__name__)(exception)
+                # If exception is not same as last, write to log
+                if exception is not cache['last_exception']:
+                    cache['last_exception'] = exception
+                    logger.exception("Exception encountered:")
+
+                raise exception  # Always raise it
         else:
             return f(*args, **kwargs)
 
     return wrapper
 
 
-def params_to_log(f):
+def method_to_log(f):
     """Save function's Parameters to log file."""
     def wrapper(*args, **kwargs):
+        # Get logger (for model subclasses called from BasePredictor)
         logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
-        kwargs_list = ['{}={!r}'.format(k, v) for k, v in kwargs.items()]
-        args_list = [str(i) for i in args[1:]]
-        args_list = args_list + [''] if len(kwargs_list) != 0 else args_list
 
         if logger is not None:
             # For the __init__ method, call extra arguments from api.py
-            if f.__name__ == '__init__':
-                extra_kwargs = dict(n_jobs=args[0].n_jobs,
-                                    warnings=args[0].warnings,
-                                    verbose=args[0].verbose,
-                                    logger=args[0].logger.handlers[-1].baseFilename,
-                                    random_state=args[0].random_state)
-                kwargs_2 = ['{}={!r}'.format(k, v) for k, v in extra_kwargs.items()]
-                logger.info(f"{args[0].__class__.__name__}.{f.__name__}" +
-                            f"(X, y, {', '.join(kwargs_list + kwargs_2)})")
-            else:
-                logger.info('')  # Empty line first
-                logger.info(f"{args[0].__class__.__name__}.{f.__name__}" +
-                            f"({', '.join(args_list)}{', '.join(kwargs_list)})")
+            if f.__name__ != '__init__':
+                logger.info('')
+            logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
         result = f(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+def plot_from_model(f):
+    """If a plot is called from a model, adapt the models parameter."""
+    def wrapper(*args, **kwargs):
+        if hasattr(args[0], 'T'):
+            result = f(args[0].T, args[0].name, *args[1:], **kwargs)
+        else:
+            result = f(*args, **kwargs)
         return result
 
     return wrapper
@@ -722,7 +708,7 @@ class PlotCallback(object):
         line1, = ax1.plot(self.x, self.y1, '-o', alpha=0.8)
         ax1.set_title(f"Bayesian Optimization for {self.M.longname}",
                       fontsize=self.M.T.title_fontsize)
-        ax1.set_ylabel(self.M.T.metric.name,
+        ax1.set_ylabel(self.M.T.metric[0].name,
                        fontsize=self.M.T.label_fontsize,
                        labelpad=12)
         ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)

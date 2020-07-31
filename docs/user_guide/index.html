@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="author" content="tvdboom">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/user_guide/">
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>User guide - ATOM</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/color-brewer.min.css">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">ATOM</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href="../getting_started/" class="nav-link">Getting started</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">User guide</a>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">ATOM</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Data cleaning</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+</li>
+            
+<li>
+    <a href="../API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Feature engineering</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+</li>
+            
+<li>
+    <a href="../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+</li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Training</a>
+    <ul class="dropdown-menu">
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Trainer</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/trainer_classifier/" class="dropdown-item">TrainerClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/trainer_regressor.md" class="dropdown-item">TrainerRegressor</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">SuccessiveHalving</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/successive_halving_classifier.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/successive_halving_regressor.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+</li>
+    </ul>
+  </li>
+            
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">TrainSizing</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/training/train_sizing_classifier.md" class="dropdown-item">TrainSizingClassifier</a>
+</li>
+            
+<li>
+    <a href="../API/training/train_sizing_regressor.md" class="dropdown-item">TrainSizingRegressor</a>
+</li>
+    </ul>
+  </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Plots</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_components/" class="dropdown-item">plot_components</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
+</li>
+            
+<li>
+    <a href="../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+    </ul>
+  </li>
+                                </ul>
+                            </li>
+                            <li class="dropdown">
+                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
+                                <ul class="dropdown-menu">
+                                    
+<li>
+    <a href="../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+</li>
+                                    
+<li>
+    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+</li>
+                                    
+<li>
+    <a href="../examples/regression/regression/" class="dropdown-item">Regression</a>
+</li>
+                                    
+<li>
+    <a href="../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+</li>
+                                    
+<li>
+    <a href="../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+</li>
+                                    
+<li>
+    <a href="../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+</li>
+                                </ul>
+                            </li>
+                            <li class="navitem">
+                                <a href="../dependencies/" class="nav-link">Dependencies</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../license/" class="nav-link">License</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../getting_started/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../API/ATOM/atomclassifier/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#introduction" class="nav-link">Introduction</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#first-steps" class="nav-link">First steps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#data-cleaning" class="nav-link">Data cleaning</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#feature-engineering" class="nav-link">Feature engineering</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#model-fitting-and-evaluation" class="nav-link">Model fitting and evaluation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#model-subclasses" class="nav-link">Model subclasses</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#handle-new-data-streams" class="nav-link">Handle new data streams</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-level="1"><a href="#plotting" class="nav-link">Plotting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="introduction">Introduction</h1>
+<hr />
+<p>There is no magic formula in data science that can tell us which type of machine
+ learning algorithm will perform best for a specific use-case. Best practices tell
+ us to start with a simple model (e.g. linear regression) and build up to more
+ complicated models (e.g. logistic regression -&gt; random forest -&gt; multilayer perceptron)
+ if you are not satisfied with the results. Unfortunately, different models require
+ different data cleaning steps, tuning a new set of hyperparameters, etc. Refactoring
+ the code for all these steps can be very time consuming. This result in many data
+ scientists just using the model best known to them and fine-tuning this particular
+ model without ever trying out other ones. This can result in poor performance (because
+ the model is just not the right one for the task) or in poor time management (because you
+ could have achieved a similar performance with a simpler/faster model).  </p>
+<p>ATOM is here to help us solve these issues. With just a few lines of code, you can
+ perform basic data cleaning steps, select relevant features and compare the
+ performance of multiple models on a given dataset. ATOM should be able to provide
+ quick insights on which algorithms perform best for the task at hand and provide an
+ indication of the feasibility of the ML solution.</p>
+<p>It is important to realize that ATOM is not here to replace all the work a data
+ scientist has to before getting his model into production. ATOM doesn't spit out
+ production-ready models just by tuning some parameters in its API. After helping you
+ to determine the right model, you will most probably need to fine-tune it using
+ use-case specific features and data cleaning steps in order to achieve the maximum
+ performance.</p>
+<p>So, this sounds a bit like AutoML, how is ATOM different than 
+ <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or
+ <a href="http://epistasislab.github.io/tpot/">TPOT</a>? Well, ATOM does AutoML in the sense
+ that it helps you find the best model for a specific task, but contrary to the
+ aforementioned packages, it does not actively search for the best model. It just
+ runs all of them and let you pick the one that you think suites the best.
+ AutoML packages are usually black boxes to which you provide data, and magically,
+ a good model comes out. Although it works great, they often produce complicated
+ pipelines with low explainability, hard to sell to the business. In this, ATOM excels.
+ Every step of the pipeline is accounted for, and using the provided plotting methods,
+ its easy to convince others why a model is better/worse than the other. </p>
+<p><br></p>
+<h1 id="first-steps">First steps</h1>
+<hr />
+<p>You can quickly install atom via <code>pip</code>, see the <a href="../getting_started/#installation">intallation guide</a>.
+ The easiest way to use ATOM is using the <a href="../API/ATOM/atomclassifier">ATOMClassifier</a>
+ or <a href="../API/ATOM/atomregressor">ATOMRegressor</a> wrapper. Contrary to sklearn's API,
+ the ATOM instance contains the data you want to manipulate. Calling a method will
+ apply all transformations on the data it contains.</p>
+<p>First, create an ATOM instance and provide the data you want to use.</p>
+<pre><code>atom = ATOMClassifier(X, y)
+</code></pre>
+<p>Apply data cleaning methods through the class. For example, calling the
+<a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> will impute all missing values in the dataset.</p>
+<pre><code>atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
+</code></pre>
+<p>Fit the models you want to compare to the data.</p>
+<pre><code>atom.run(['GNB', 'ET', 'MLP], metric='average_precision', n_calls=25, n_random_starts=10)
+</code></pre>
+<p>Analyze the results:</p>
+<pre><code>atom.ET.feature_importances(show=10, filename='feature_importance_plot')
+atom.plot_prc(title='Precision-recall curve comparison plot')
+</code></pre>
+<p><br></p>
+<h1 id="data-cleaning">Data cleaning</h1>
+<hr />
+<h1 id="feature-engineering">Feature engineering</h1>
+<hr />
+<p><cite>
+<center>
+"Applied machine learning" is basically feature engineering. ~ Andrew Ng.
+</center>
+</cite></p>
+<p><br>
+Feature engineering is the process of creating new features from the existing ones,
+ in order to capture relationships with the target column that the first set of
+ features didn't had on their own. This process is very important to improve the
+ performance of machine learning algorithms. Although feature engineering works best
+ when the data scientist applies use-case specific transformations, there are ways to
+ do this in an automated manner, without prior domain knowledge. One of the problems
+ of creating new features without human expert intervention, is that many of the newly
+ created features can be useless, i.e. they do not help the algorithm to make better
+ predictions. Even worse, having useless features can drop your performance. To avoid
+ this, we perform feature selection, a process in which we select the relevant features 
+ in the dataset.
+<br><br></p>
+<h3 id="generating-new-features">Generating new features</h3>
+<p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
+ new non-linear features based on the original feature set. It can be accessed from
+ an ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-generation">feature_generation</a>
+ method. You can choose between two strategies: Deep Feature Synthesis and Genetic
+ Feature Generation.</p>
+<p><strong>Deep Feature Synthesis</strong></p>
+<p>Deep feature synthesis (DFS) applies the selected operators on the features in
+ the dataset. For example, if the operator is 'log', it will create the new feature
+ <code>LOG(old_feature)</code> and if the operator is 'mul', it will create the new feature
+ <code>old_feature_1 x old_feature_2</code>. DFS can create many new features. The operators
+ can be chosen through the <code>operators</code> parameter. Available options are:
+<ul>
+<li><b>add: </b>Sum two features together.</li>
+<li><b>sub: </b>Subtract two features from each other.</li>
+<li><b>mul: </b>Multiply two features with each other.</li>
+<li><b>div: </b>Divide two features with each other.</li>
+<li><b>srqt: </b>Take the square root of a feature.</li>
+<li><b>log: </b>Take the logarithm of a feature.</li>
+<li><b>sin: </b>Calculate the sine of a feature.</li>
+<li><b>cos: </b>Calculate the cosine of a feature.</li>
+<li><b>tan: </b>Calculate the tangent of a feature.</li>
+</ul></p>
+<p>ATOM's implementation of DFS uses the <a href="https://www.featuretools.com/">featuretools</a> package.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>DFS can create many new features and not all of them will be useful. Use the
+<a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class
+to reduce the number of features!</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>When using DFS with n_jobs&gt;1, make sure to protect your code with a if
+__name__ == "__main__". Featuretools uses dask, which uses python multiprocessing
+for parallelization. The spawn method on multiprocessing starts a new python
+process, which requires it to import the __main__ module before it can do
+its task.</p>
+</div>
+<p><br>
+<strong>Genetic Feature Generation</strong></p>
+<p>Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
+ a branch of evolutionary programming, to determine which features are successful and
+ create new ones based on those. Where DFS' method can be seen as some kind of "brute force"
+ for feature engineering, GFG tries to improve its features with every generation of
+ the algorithm. GFG uses the same operators as DFS, but instead of only applying the
+ transformations once, it evolves them further, creating complicated non-linear
+ combinations of features with many transformations. The new features are given the
+ name <code>Feature N</code> for the N-th feature. You can access the genetic feature's fitness
+ and description (how they are calculated) through the <code>genetic_features</code> attribute.</p>
+<p>ATOM uses the
+ <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
+ class from the <a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a> package
+ for the genetic algorithm. Read more about this implementation
+ <a href="https://gplearn.readthedocs.io/en/stable/intro.html#transformer">here</a>.</p>
+<p><br></p>
+<h3 id="selecting-useful-features">Selecting useful features</h3>
+<p>The <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class provides
+ multiple strategies to select the relevant features from a dataset. It can be
+ accessed from an ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
+ method.</p>
+<p><br><br></p>
+<h1 id="model-fitting-and-evaluation">Model fitting and evaluation</h1>
+<hr />
+<h3 id="multi-metric-runs">Multi-metric runs</h3>
+<h3 id="hyperparameter-tuning">Hyperparameter tuning</h3>
+<h3 id="bagging">Bagging</h3>
+<h3 id="early-stopping">Early stopping</h3>
+<h1 id="model-subclasses">Model subclasses</h1>
+<hr />
+<h1 id="handle-new-data-streams">Handle new data streams</h1>
+<hr />
+<p>It is possible, that after running the whole ATOM pipeline, you would like to apply
+ the same data transformations and maybe make predictions on a new dataset. This is
+ possible using ATOM's <a href="">prediction methods</a>.</p>
+<h1 id="plotting">Plotting</h1>
+<hr />
+<p>After fitting the models to the data, it's time to analyze the results. ATOM provides
+ many plotting methods to compare the model performances. Click <a href="../API/ATOM/atomclassifier/#plots">here</a>
+ for a list of the available plots. The plot descriptions and examples can be find in
+ the API section. ATOM uses the <a href="https://matplotlib.org/">matplotlib</a> and 
+ <a href="https://seaborn.pydata.org/">seaborn</a> packages for plotting.</p>
+<p>The plot methods can be called from the ATOM instance directly, e.g. <code>atom.plot_roc()</code>,
+ or from one of the model subclasses, <code>e.g. atom.LGB.plot_roc()</code>. If called from ATOM,
+ it will make the plot for all models in the pipeline. This can be useful to compare 
+ the results of multiple models. If called from the model subclass, it will only make
+ the plot for that model. Use this option if you want information just for a specific
+ model or to make the plot a bit less crowded.</p>
+<p>Apart from the plot-specific parameters they may have, all plots have four parameters in common:
+<ul>
+<li>The <code>title</code> parameter allows you to add a custom title to the plot.
+<li>The <code>figsize</code> parameter allows you to adjust the plot's size.
+<li>The <code>filename</code> parameter is used to save the plot as a .png file.
+<li>The <code>display</code> parameter determines whether the plot is rendered.</li>
+ </ul></p>
+<p>You can customize the following plot aesthetics using the <a href="../API/ATOM/atomclassifier/#plotting-properties">plotting properties</a>:
+<ul>
+<li>Seaborn style</li>
+<li>Color palette</li>
+<li>Title fontsize</li>
+<li>Label and legend fontsize</li>
+<li>Tick fontsize</li>
+</ul></p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+                <p>© Copyright 2020, by tvdboom.</p>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

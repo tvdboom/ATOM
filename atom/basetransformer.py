@@ -9,6 +9,7 @@ Description: Module containing the BaseTransformer class.
 
 # Standard packages
 import os
+import pickle
 import numpy as np
 import pandas as pd
 import multiprocessing
@@ -18,7 +19,7 @@ from typeguard import typechecked
 from typing import Union, Optional
 
 # Own modules
-from .utils import prepare_logger, to_df, to_series, composed, crash
+from .utils import prepare_logger, to_df, to_series, composed, method_to_log, crash
 
 
 class BaseTransformer(object):
@@ -123,29 +124,6 @@ class BaseTransformer(object):
 
     # Methods =============================================================== >>
 
-    @composed(crash, typechecked)
-    def log(self, msg: Union[int, float, str], level: int = 0):
-        """Print and save output to log file.
-
-        Parameters
-        ----------
-        msg: int, float or str
-            Message to save to the logger and print to stdout.
-
-        level: int
-            Minimum verbosity level in order to print the message.
-
-        """
-        if self.verbose >= level:
-            print(msg)
-
-        if self.logger:
-            if isinstance(msg, str):
-                while msg.startswith('\n'):  # Insert empty lines
-                    self.logger.info('')
-                    msg = msg[1:]
-            self.logger.info(str(msg))
-
     @staticmethod
     def _prepare_input(X, y):
         """Prepare the input data.
@@ -209,3 +187,58 @@ class BaseTransformer(object):
 
         elif y is None:
             return X, y
+
+    @composed(crash, typechecked)
+    def log(self, msg: Union[int, float, str], level: int = 0):
+        """Print and save output to log file.
+
+        Parameters
+        ----------
+        msg: int, float or str
+            Message to save to the logger and print to stdout.
+
+        level: int
+            Minimum verbosity level in order to print the message.
+            If 42, don't save to log.
+
+        """
+        if self.verbose >= level:
+            print(msg)
+
+        if self.logger is not None and level != 42:
+            if isinstance(msg, str):
+                while msg.startswith('\n'):  # Insert empty lines
+                    self.logger.info('')
+                    msg = msg[1:]
+            self.logger.info(str(msg))
+
+    @composed(crash, method_to_log, typechecked)
+    def save(self, filename: Optional[str] = None, **kwargs):
+        """Save the class to a pickle file.
+
+        Parameters
+        ----------
+        filename: str or None, optional (default=None)
+            Name to save the file with. None to save with classes' name.
+
+        **kwargs
+            Additional keyword arguments. Can contain:
+                - 'save_data': Whether to save the dataset with the instance.
+                               Only for ATOM or a training class.
+
+        """
+        if kwargs.get('save_data') is False and hasattr(self, 'dataset'):
+            data = self.dataset.copy()  # Store the data to reattach later
+            self.dataset = None  # Use @setter to update the trainer as well
+
+        if filename is None:
+            filename = self.__class__.__name__ + '.pkl'
+
+        filename = filename if filename.endswith('.pkl') else filename + '.pkl'
+        with open(filename, 'wb') as file:
+            pickle.dump(self, file)
+
+        if kwargs.get('save_data') is False and hasattr(self, 'dataset'):
+            self.dataset = data
+
+        self.log(self.__class__.__name__ + " saved successfully!", 1)

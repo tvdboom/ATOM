@@ -54,8 +54,9 @@ def test_check_is_fitted():
 
 def test_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
-    X, y = Scaler().fit_transform(X_bin, y_bin)
-    assert y.equals(y_bin)
+    X = Scaler().fit_transform(X_bin, y_bin)
+    X_2 = Scaler().fit_transform(X_bin)
+    assert X.equals(X_2)
 
 
 def test_return_df():
@@ -84,16 +85,16 @@ def test_return_scaled_dataset():
 
 # Test StandardCleaner ====================================================== >>
 
-def test_remove_invalid_column_type():
-    """Assert that invalid columns types are removed for string input."""
+def test_drop_invalid_column_type():
+    """Assert that invalid columns types are dropd for string input."""
     X = X_bin.copy()
     X['datetime_col'] = pd.to_datetime(X['mean radius'])  # Datetime column
     X = StandardCleaner(prohibited_types='datetime64[ns]').transform(X)
     assert 'datetime_col' not in X.columns
 
 
-def test_remove_invalid_column_list_types():
-    """Assert that invalid columns types are removed for list input."""
+def test_drop_invalid_column_list_types():
+    """Assert that invalid columns types are dropd for list input."""
     X = X_bin.copy()
     X['datetime_col'] = pd.to_datetime(X['mean radius'])  # Datetime column
     X['string_col'] = [str(i) for i in range(len(X))]  # String column
@@ -111,8 +112,8 @@ def test_strip_categorical_features():
     assert X['string_col'].equals(pd.Series([str(i) for i in range(len(X))]))
 
 
-def test_remove_maximum_cardinality():
-    """Assert that categorical columns with maximum cardinality are removed."""
+def test_drop_maximum_cardinality():
+    """Assert that categorical columns with maximum cardinality are dropd."""
     X = X_bin.copy()
     # Create column with all different values
     X['invalid_column'] = [str(i) for i in range(len(X))]
@@ -120,16 +121,16 @@ def test_remove_maximum_cardinality():
     assert 'invalid_column' not in X.columns
 
 
-def test_remove_minimum_cardinality():
-    """Assert that columns with minimum cardinality are removed."""
+def test_drop_minimum_cardinality():
+    """Assert that columns with minimum cardinality are dropd."""
     X = X_bin.copy()
     X['invalid_column'] = 2.3  # Create column with only one value
     X = StandardCleaner().transform(X)
     assert 'invalid_column' not in X.columns
 
 
-def test_remove_rows_nan_target():
-    """Assert that self.dataset removes rows with NaN in target column."""
+def test_drop_rows_nan_target():
+    """Assert that self.dataset drops rows with NaN in target column."""
     y = y_bin.copy()
     length = len(X_bin)  # Save number of rows
     y[0], y[21] = np.NaN, np.NaN  # Set NaN to target column for 2 rows
@@ -176,34 +177,37 @@ def test_min_frac_cols_parameter():
 def test_missing_parameter_is_string():
     """Assert that the missing parameter works when it's a string."""
     X = [[4, 1, 2], [3, 1, 2], ['r', 'a', 'b'], [2, 1, 1]]
-    imputer = Imputer(strat_num='remove', strat_cat='remove', missing='a')
-    X = imputer.fit_transform(X)
+    y = [1, 0, 0, 1]
+    imputer = Imputer(strat_num='drop', strat_cat='drop', missing='a')
+    X, y = imputer.fit_transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
 def test_missing_parameter_adds_extra_values():
     """Assert that the missing parameter adds obligatory values."""
     X = [[1, 1, 2], [None, 1, 2], ['a', 'a', 'b'], [2, np.inf, 1]]
-    impute = Imputer(strat_num='remove',
-                     strat_cat='remove',
+    y = [1, 1, 0, 0]
+    impute = Imputer(strat_num='drop',
+                     strat_cat='drop',
                      missing=['O', 'N'],
                      min_frac_rows=0.1,
                      min_frac_cols=0.1)
-    X = impute.fit_transform(X)
+    X, y = impute.fit_transform(X, y)
     assert X.isna().sum().sum() == 0
 
 
 def test_is_fitted():
     """Assert that an error is raised if class is not fitted."""
-    pytest.raises(NotFittedError, Imputer().transform, X_bin)
+    pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
 
 
 def test_imputing_all_missing_values_numeric():
     """Assert that all missing values are imputed in numeric columns."""
     for v in [None, np.NaN, np.inf, -np.inf]:
         X = [[v, 1, 1], [2, 5, 2], [4, v, 1], [2, 1, 1]]
+        y = [1, 1, 0, 0]
         imputer = Imputer(strat_num='mean')
-        X = imputer.fit_transform(X)
+        X, y = imputer.fit_transform(X, y)
         assert X.isna().sum().sum() == 0
 
 
@@ -211,8 +215,9 @@ def test_imputing_all_missing_values_categorical():
     """Assert that all missing values are imputed in categorical columns."""
     for v in ['', '?', 'NA', 'nan', 'inf']:
         X = [[v, '1', '1'], ['2', '5', v], ['2', '1', '3'], ['3', '1', '1']]
+        y = [1, 1, 0, 0]
         imputer = Imputer(strat_cat='most_frequent')
-        X = imputer.fit_transform(X)
+        X, y = imputer.fit_transform(X, y)
         assert X.isna().sum().sum() == 0
 
 
@@ -234,14 +239,14 @@ def test_cols_too_many_nans():
     for i in range(5):  # Add 5 cols with all NaN values
         X['col ' + str(i)] = [np.nan for _ in range(X.shape[0])]
     impute = Imputer(strat_num='mean', strat_cat='most_frequent')
-    X = impute.fit_transform(X)
+    X, y = impute.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
 
 
-def test_imputing_numeric_remove():
-    """Assert that imputing remove for numerical values works."""
-    imputer = Imputer(strat_num='remove')
+def test_imputing_numeric_drop():
+    """Assert that imputing drop for numerical values works."""
+    imputer = Imputer(strat_num='drop')
     X, y = imputer.fit_transform(X10_nan, y10)
     assert len(X) == 9
     assert X.isna().sum().sum() == 0
@@ -295,9 +300,9 @@ def test_imputing_non_numeric_string():
     assert X.isna().sum().sum() == 0
 
 
-def test_imputing_non_numeric_remove():
-    """Assert that the remove strategy for non-numerical works."""
-    imputer = Imputer(strat_cat='remove')
+def test_imputing_non_numeric_drop():
+    """Assert that the drop strategy for non-numerical works."""
+    imputer = Imputer(strat_cat='drop')
     X, y = imputer.fit_transform(X10_sn, y10)
     assert len(X) == 9
     assert X.isna().sum().sum() == 0
@@ -331,27 +336,27 @@ def test_frac_to_other_parameter():
 def test_frac_to_other():
     """Assert that the other values are created when encoding."""
     encoder = Encoder(max_onehot=5, frac_to_other=0.3)
-    X = encoder.fit_transform(X10_str)
+    X = encoder.fit_transform(X10_str, y10)
     assert 'Feature 2_other' in X.columns
 
 
 def test_raise_missing():
     """Assert that an error is raised when there are missing values."""
     encoder = Encoder(max_onehot=None)
-    pytest.raises(ValueError, encoder.fit_transform, X10_sn)
+    pytest.raises(ValueError, encoder.fit_transform, X10_sn, y10)
 
 
 def test_label_encoder():
     """Assert that the label-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
-    X = encoder.fit_transform(X10_str2)
+    X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X['Feature 2'] == 1) | (X['Feature 2'] == 2))
 
 
 def test_one_hot_encoder():
     """Assert that the one-hot-encoder works as intended."""
     encoder = Encoder(max_onehot=4)
-    X = encoder.fit_transform(X10_str)
+    X = encoder.fit_transform(X10_str, y10)
     assert 'Feature 2_c' in X.columns
 
 
@@ -375,7 +380,7 @@ def test_all_encoder_types():
 
     for encoder in encode_types:
         encoder = Encoder(max_onehot=None, encode_type=encoder)
-        X, y = encoder.fit_transform(X10_str, y10)
+        X = encoder.fit_transform(X10_str, y10)
         for col in X:
             assert X[col].dtype.kind in 'ifu'
 
@@ -401,16 +406,16 @@ def test_max_sigma_parameter():
 
 def test_max_sigma_functionality():
     """Assert that the max_sigma parameter works as intended."""
-    # Test 3 different values for sigma and number of rows they remove
+    # Test 3 different values for sigma and number of rows they drop
     X_1 = Outliers(max_sigma=1).fit_transform(X_bin)
     X_2 = Outliers(max_sigma=4).fit_transform(X_bin)
     X_3 = Outliers(max_sigma=8).fit_transform(X_bin)
     assert len(X_1) < len(X_2) < len(X_3)
 
 
-def test_remove_outliers():
-    """Assert that rows with outliers are dropped when strategy='remove'."""
-    X = Outliers(strategy='remove', max_sigma=2).transform(X10)
+def test_drop_outliers():
+    """Assert that rows with outliers are dropped when strategy='drop'."""
+    X = Outliers(strategy='drop', max_sigma=2).transform(X10)
     assert len(X) + 2 == len(X10)
 
 
@@ -428,7 +433,7 @@ def test_value_outliers():
     assert X.iloc[5, 1] == -99
 
 
-def test_remove_outlier_in_target():
+def test_drop_outlier_in_target():
     """Assert that method works as intended for target columns as well."""
     X, y = Outliers(max_sigma=2, include_target=True).transform(X10, y10)
     assert len(y) + 2 == len(y10)

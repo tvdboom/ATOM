@@ -18,6 +18,7 @@ copyright: © Copyright 2020, by tvdboom.
 
 nav:
 - Getting started: getting_started.md
+- User guide: user_guide.md
 - API:
     - ATOM:
         - ATOMClassifier: API/ATOM/atomclassifier.md
@@ -29,9 +30,9 @@ nav:
          - Encoder: API/data_cleaning/encoder.md
          - Outliers: API/data_cleaning/outliers.md
          - Balancer: API/data_cleaning/balancer.md
-    - Feature selection:
-        - FetaureGenerator: API/feature_selection/feature_generator.md
-        - FetaureSelector: API/feature_selection/feature_selector.md
+    - Feature engineering:
+        - FetaureGenerator: API/feature_engineering/feature_generator.md
+        - FetaureSelector: API/feature_engineering/feature_selector.md
     - Training:
         - Trainer:
            - TrainerClassifier: API/training/trainer_classifier.md
@@ -51,6 +52,7 @@ nav:
         - plot_learning_curve: API/plots/plot_learning_curve.md
         - plot_bagging: API/plots/plot_bagging.md
         - plot_bo: API/plots/plot_bo.md
+        - plot_evals: API/plots/plot_evals.md
         - plot_roc: API/plots/plot_roc.md
         - plot_prc: API/plots/plot_prc.md
         - plot_permutation_importance: API/plots/plot_permutation_importance.md
@@ -62,10 +64,13 @@ nav:
         - plot_gains: API/plots/plot_gains.md
         - plot_lift: API/plots/plot_lift.md
 - Examples:
-    - Binary classification: examples/binary_classification.md
-    - Multiclass_classification: examples/multiclass_classification.md
-    - Regression: examples/regression.md
-    - Successive halving: examples/successive_halving.md
-    - Train sizing: examples/train_sizing.md
+    - Binary classification: examples/binary_classification/binary_classification.md
+    - Multiclass_classification: examples/multiclass_classification/multiclass_classification.md
+    - Regression: examples/regression/regression.md
+    - Successive halving: examples/successive_halving/successive_halving.md
+    - Train sizing: examples/train_sizing/train_sizing.md
+    - Feature engineering: examples/feature_engineering/feature_engineering.md
+    - Multi-metric: examples/multi_metric/multi_metric.md
+    - Calibration: examples/calibration/calibration.md
 - Dependencies: dependencies.md
 - License: license.md
