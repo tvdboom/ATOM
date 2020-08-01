@@ -45,11 +45,8 @@ setuptools.setup(
           'pandas-profiling >= 2.3.0',
           'featuretools >= 0.17.0',
           'gplearn >= 0.4.1',
-          'matplotlib >= 3.1.0',
+          'matplotlib >= 3.3.0',
           'seaborn >= 0.10.0',
-          'xgboost >= 0.90',
-          'lightgbm >= 2.3.0',
-          'catboost >= 0.19.1'
       ],
       extras_require={
           'xgboost': ['xgboost>=0.90'],

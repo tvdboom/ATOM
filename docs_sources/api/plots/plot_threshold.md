@@ -59,4 +59,4 @@ atom = ATOMClassifier(X, y)
 atom.run('KNN')
 atom.plot_threshold(metric=['accuracy', 'f1', recall_score])
 ```
-![plot_threshold](../../img/plots/plot_threshold.png)
+![plot_threshold](./img/plot_threshold.png)

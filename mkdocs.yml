@@ -35,14 +35,14 @@ nav:
         - FetaureSelector: API/feature_engineering/feature_selector.md
     - Training:
         - Trainer:
-           - TrainerClassifier: API/training/trainer_classifier.md
-           - TrainerRegressor: API/training/trainer_regressor.md
+           - TrainerClassifier: API/training/trainerclassifier.md
+           - TrainerRegressor: API/training/trainerregressor.md
         - SuccessiveHalving:
-            - SuccessiveHalvingClassifier: API/training/successive_halving_classifier.md
-            - SuccessiveHalvingClassifier: API/training/successive_halving_regressor.md
+            - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
+            - SuccessiveHalvingClassifier: API/training/successivehalvingregressor.md
         - TrainSizing:
-            - TrainSizingClassifier: API/training/train_sizing_classifier.md
-            - TrainSizingRegressor: API/training/train_sizing_regressor.md
+            - TrainSizingClassifier: API/training/trainsizingclassifier.md
+            - TrainSizingRegressor: API/training/trainsizingregressor.md
     - Plots:
         - plot_correlation: API/plots/plot_correlation.md
         - plot_pca: API/plots/plot_pca.md
@@ -71,6 +71,7 @@ nav:
     - Train sizing: examples/train_sizing/train_sizing.md
     - Feature engineering: examples/feature_engineering/feature_engineering.md
     - Multi-metric: examples/multi_metric/multi_metric.md
+    - Early stopping: examples/early_stopping/early_stopping.md
     - Calibration: examples/calibration/calibration.md
 - Dependencies: dependencies.md
 - License: license.md

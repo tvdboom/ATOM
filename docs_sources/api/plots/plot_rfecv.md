@@ -47,4 +47,4 @@ atom = ATOMRegressor(X, y)
 atom.feature_selection(strategy='RFECV', solver='LGB_reg', n_features=23)
 atom.plot_rfecv()
 ```
-![plot_correlation](../../img/plots/plot_rfecv.png)
+![plot_correlation](./img/plot_rfecv.png)

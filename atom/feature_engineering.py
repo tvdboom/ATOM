@@ -443,9 +443,9 @@ class FeatureSelector(BaseEstimator,
 
     max_correlation: float or None, optional (default=1.)
         Minimum value of the Pearson correlation coefficient to identify
-        correlated features. The value of 1 removes equal columns. A dataframe
-        of the removed features and their correlation values can be accessed
-        through the collinear attribute. None to skip this step.
+        correlated features. A value of 1 removes one of 2 equal columns.
+        A dataframe of the removed features and their correlation values
+        can be accessed through the collinear attribute. None to skip this step.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -841,15 +841,13 @@ class FeatureSelector(BaseEstimator,
         elif self.strategy.lower() == 'rfe':
             for n, column in enumerate(X):
                 if not self.rfe.support_[n]:
-                    self.log(f" --> Feature {column} was removed by the " +
-                             "recursive feature eliminator.", 2)
+                    self.log(f" --> Feature {column} was removed by the RFE.", 2)
                     X.drop(column, axis=1, inplace=True)
 
         elif self.strategy.lower() == 'rfecv':
             for n, column in enumerate(X):
                 if not self.rfecv.support_[n]:
-                    self.log(f" --> Feature {column} was removed by the " +
-                             "RFECV.", 2)
+                    self.log(f" --> Feature {column} was removed by the RFECV.", 2)
                     X.drop(column, axis=1, inplace=True)
 
         return X

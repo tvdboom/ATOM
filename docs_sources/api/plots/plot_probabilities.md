@@ -51,4 +51,4 @@ atom = ATOMClassifier(X, y='RainTomorrow')
 atom.run('rf')
 atom.plot_probabilities(target='Yes', filenmae='probabilities_category_yes')
 ```
-![plot_probabilities](../../img/plots/plot_probabilities.png)
+![plot_probabilities](./img/plot_probabilities.png)

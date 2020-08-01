@@ -23,14 +23,12 @@ Remove features according to the selected strategy. Ties between
 Feature selection strategy to use. Choose from:
 <ul>
 <li>None: Do not perform any feature selection algorithm.</li>
-<li>'univariate': Perform a univariate F-test.</li>
+<li>'univariate': Select best features according to a univariate F-test.</li>
 <li>'PCA': Perform principal component analysis.</li>
-<li>'SFM': Select best features from model.</li>
-<li>'RFE': Recursive feature eliminator.</li>
-<li>'RFECV': RFE with cross-validated selection.</li>
+<li>'SFM': Select best features according to a model.</li>
+<li>'RFE': Perform recursive feature elimination.</li>
+<li>'RFECV': Perform RFE with cross-validated selection.</li>
 </ul>
-Note that the RFE and RFECV strategies don't work when the solver is a
-CatBoost model due to incompatibility of the APIs.
 </blockquote>
 
 <strong>solver: string, callable or None, optional (default=None)</strong>
@@ -48,7 +46,7 @@ for SFM, RFE and RFECV).
     <li>'mutual_info_regression'</li>
     <li>'chi2'</li>
     <li>Any function taking two arrays (X, y), and returning
-        arrays (scores, pvalues). See the sklearn documentation.</li>
+        arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
     </ul></li>
 <li>for 'PCA', choose from:
     <ul>
@@ -57,19 +55,12 @@ for SFM, RFE and RFECV).
     <li>'arpack'</li>
     <li>'randomized'</li>
     </ul></li>
-<li>for 'SFM':<br>Choose a base estimator from which the
-             transformer is built. The estimator must have
-             either a feature_importances_ or coef_ attribute
-             after fitting. No default option. You can use a
-             model from the ATOM package. No default option.</li>
-<li>for 'RFE':<br>Choose a supervised learning estimator. The
-                 estimator must have either a feature_importances_
-                 or coef_ attribute after fitting. You can use a
-                 model from the ATOM package. No default option.</li>
-<li>for 'RFECV':<br>Choose a supervised learning estimator. The
-                   estimator must have either feature_importances_
-                   or coef_ attribute after fitting. You can use a
-                   model from the ATOM package. No default option.</li>
+<li>for 'SFM', 'RFE' and 'RFECV:<br>
+Choose a supervised learning model. The estimator must have either feature_importances_
+ or coef_ attribute after fitting. You can use a model from the ATOM package (add _class
+ or _reg after the model name to specify a classification or regression task respectively,
+ e.g. solver='LGB_reg'). No default option. Note that the RFE and RFECV strategies don't
+ work when the solver is a CatBoost model due to incompatibility of the APIs.</li>
 </ul>
 </blockquote>
 
@@ -97,7 +88,7 @@ Remove features with the same value in at least this fraction of
 <strong>max_correlation: float or None, optional (default=1.)</strong>
 <blockquote>
 Minimum value of the Pearson correlation coefficient to identify
- correlated features. A value of 1 removes equal columns. A dataframe
+ correlated features. A value of 1 removes on of 2 equal columns. A dataframe
  of the removed features and their correlation values can be accessed
  through the collinear attribute. None to skip this step.
 </blockquote>

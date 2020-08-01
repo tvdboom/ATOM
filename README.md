@@ -58,7 +58,7 @@ Possible steps taken by ATOM's pipeline:
 Installation
 -----------------
 
-Intall ATOM's newest release easily via `pip`:
+Install ATOM's newest release easily via `pip`:
 
 ```Python
 	$ pip install -U atom-ml
@@ -70,8 +70,12 @@ or via `conda`:
 	$ conda install -c conda-forge atom-ml
 ```
 
-!!! note
-    Since atom was already taken, download the package under the name `atom-ml`!
+---
+**NOTE**
+
+Since atom was already taken, download the package under the name `atom-ml`!
+
+---
 
 <br><br>
 

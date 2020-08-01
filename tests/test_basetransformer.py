@@ -45,8 +45,8 @@ def test_negative_n_jobs():
     base = BaseTransformer(n_jobs=-1)
     assert base.n_jobs == multiprocessing.cpu_count()
 
-    base = BaseTransformer(n_jobs=-3)
-    assert base.n_jobs == multiprocessing.cpu_count() - 2
+    base = BaseTransformer(n_jobs=-2)
+    assert base.n_jobs == multiprocessing.cpu_count() - 1
 
 
 def test_verbose_parameter():

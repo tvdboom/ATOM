@@ -624,7 +624,7 @@ See [FeatureSelector](../feature_engineering/feature_selector.md) for a descript
     <li>When strategy='univariate' and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
         will be used as default solver.</li>
     <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and the solver is one of 
-        ATOM's models, the algorithm will automatically select the classifier.</li>
+        ATOM's models, the algorithm will automatically select the classifier (no need to add `_class` to the solver).</li>
     <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and solver=None, ATOM will
          use the winning model (if it exists) as solver.</li>
     <li>When strategy='RFECV', ATOM will use the metric in the pipeline (if it exists)
@@ -670,7 +670,7 @@ The training methods are where the models are fitted to the data and their
                             needs_threshold=False, n_calls=10, n_random_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [TrainerClassifier](../training/trainingclassifier.md) instance.
+Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
  Using this class through ATOMClassifier allows subsequent runs with different models
  without losing previous information (only the model subclasses are overwritten if the
  same model is rerun).

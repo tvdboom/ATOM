@@ -56,4 +56,4 @@ atom = ATOMClassifier(X, y)
 atom.train_sizing(['GNB', 'LDA'], metric='accuracy', bagging=5)
 atom.plot_learning_curve()
 ```
-![plot_learning_curve](../../img/plots/plot_learning_curve.png)
+![plot_learning_curve](./img/plot_learning_curve.png)

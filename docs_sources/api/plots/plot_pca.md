@@ -46,4 +46,4 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy='PCA', n_features=11)
 atom.plot_pca()
 ```
-![plot_correlation](../../img/plots/plot_pca.png)
+![plot_correlation](./img/plot_pca.png)

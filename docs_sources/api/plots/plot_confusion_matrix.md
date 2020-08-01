@@ -53,8 +53,8 @@ atom = ATOMClassifier(X, y)
 atom.run(['Tree', 'Bag'])
 atom.Tree.plot_confusion_matrix(normalize=True)
 ```
-![plot_confusion_matrix_1](../../img/plots/plot_confusion_matrix_1.png)
+![plot_confusion_matrix_1](./img/plot_confusion_matrix_1.png)
 ```python
 atom.plot_confusion_matrix()
 ```
-![plot_confusion_matrix_2](../../img/plots/plot_confusion_matrix_2.png)
+![plot_confusion_matrix_2](./img/plot_confusion_matrix_2.png)

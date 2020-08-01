@@ -51,4 +51,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LR', 'Tree', 'LGB', 'MLP'], metric='accuracy', bagging=5)
 atom.plot_bagging()
 ```
-![plot_bagging](../../img/plots/plot_bagging.png)
+![plot_bagging](./img/plot_bagging.png)

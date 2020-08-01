@@ -47,4 +47,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LR', 'RF', 'LGB'], metric='roc_auc')
 atom.plot_roc(filename='roc_curve.png')
 ```
-![plot_roc](../../img/plots/plot_roc.png)
+![plot_roc](./img/plot_roc.png)

@@ -48,4 +48,4 @@ atom = ATOMRegressor(X, y)
 atom.run('XGB')
 atom.XGB.plot_evals()
 ```
-![plot_evals](../../img/plots/plot_evals.png)
+![plot_evals](./img/plot_evals.png)

@@ -48,4 +48,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LR', 'RF', 'LGB'], metric='average_precision')
 atom.plot_prc()
 ```
-![plot_prc](../../img/plots/plot_prc.png)
+![plot_prc](./img/plot_prc.png)

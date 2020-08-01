@@ -53,4 +53,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LR', 'RF'], metric='recall_weighted')
 atom.RF.plot_feature_importance(show=10, filename='random_forest_importance.png')
 ```
-![plot_feature_importance](../../img/plots/plot_feature_importance.png)
+![plot_feature_importance](./img/plot_feature_importance.png)

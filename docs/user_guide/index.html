@@ -110,11 +110,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/training/trainer_classifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../API/training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
 </li>
             
 <li>
-    <a href="../API/training/trainer_regressor.md" class="dropdown-item">TrainerRegressor</a>
+    <a href="../API/training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
 </li>
     </ul>
   </li>
@@ -124,11 +124,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/training/successive_halving_classifier.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../API/training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
 </li>
             
 <li>
-    <a href="../API/training/successive_halving_regressor.md" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
 </li>
     </ul>
   </li>
@@ -138,11 +138,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/training/train_sizing_classifier.md" class="dropdown-item">TrainSizingClassifier</a>
+    <a href="../API/training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
 </li>
             
 <li>
-    <a href="../API/training/train_sizing_regressor.md" class="dropdown-item">TrainSizingRegressor</a>
+    <a href="../API/training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
 </li>
     </ul>
   </li>
@@ -262,6 +262,10 @@
                                     
 <li>
     <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+</li>
+                                    
+<li>
+    <a href="../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
@@ -393,7 +397,7 @@
  pipelines with low explainability, hard to sell to the business. In this, ATOM excels.
  Every step of the pipeline is accounted for, and using the provided plotting methods,
  its easy to convince others why a model is better/worse than the other. </p>
-<p><br></p>
+<p><br><br></p>
 <h1 id="first-steps">First steps</h1>
 <hr />
 <p>You can quickly install atom via <code>pip</code>, see the <a href="../getting_started/#installation">intallation guide</a>.
@@ -415,9 +419,10 @@
 <pre><code>atom.ET.feature_importances(show=10, filename='feature_importance_plot')
 atom.plot_prc(title='Precision-recall curve comparison plot')
 </code></pre>
-<p><br></p>
+<p><br><br></p>
 <h1 id="data-cleaning">Data cleaning</h1>
 <hr />
+<p><br><br></p>
 <h1 id="feature-engineering">Feature engineering</h1>
 <hr />
 <p><cite>
@@ -436,8 +441,8 @@ Feature engineering is the process of creating new features from the existing on
  created features can be useless, i.e. they do not help the algorithm to make better
  predictions. Even worse, having useless features can drop your performance. To avoid
  this, we perform feature selection, a process in which we select the relevant features 
- in the dataset.
-<br><br></p>
+ in the dataset. Click <a href="../examples/feature_engineering/feature_engineering/">here</a> for an example.</p>
+<p><br></p>
 <h3 id="generating-new-features">Generating new features</h3>
 <p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
  new non-linear features based on the original feature set. It can be accessed from
@@ -462,8 +467,8 @@ Feature engineering is the process of creating new features from the existing on
 <li><b>tan: </b>Calculate the tangent of a feature.</li>
 </ul></p>
 <p>ATOM's implementation of DFS uses the <a href="https://www.featuretools.com/">featuretools</a> package.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
 <p>DFS can create many new features and not all of them will be useful. Use the
 <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class
 to reduce the number of features!</p>
@@ -495,23 +500,82 @@ its task.</p>
 <p><br></p>
 <h3 id="selecting-useful-features">Selecting useful features</h3>
 <p>The <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class provides
- multiple strategies to select the relevant features from a dataset. It can be
- accessed from an ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
- method.</p>
+ tooling to select the relevant features from a dataset. It can be accessed from an
+ ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
+ method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_feature_importance/">plot_feature_importance</a> method to
+examine how much a specific feature contributes to the fianl predictions. If the
+model doesn't have a <code>feature_importances_</code> attribute, use 
+<a href="../API/plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
+</div>
+<p><strong>Univariate</strong></p>
+<p>Univariate feature selection works by selecting the best features based on univariate statistical F-test.
+ The test is provided via the <code>solver</code> parameter. It takes any function taking two arrays (X, y),
+ and returning arrays (scores, p-values).
+ Read more in the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
+<p><strong>Principal Components Analysis</strong></p>
+<p>Applying PCA will reduce the dimensionality of the dataset by maximizing the variance of each dimension.
+ The new features will be called Component 0, Component 1, etc... The dataset will be
+ scaled before applying the transformation (if it wasn't already).</p>
+<p><strong>Selection from model</strong></p>
+<p>SFM uses a supervised machine learning model with <code>feature_importances_</code> or <code>coef_</code>
+ attributes to select the best features in a dataset based on importance weights.
+ The model is provided through the <code>solver</code> parameter and can be already fitted.
+ ATOM allows you to input one of the pre-defined models, e.g. <code>solver='RF'</code>. If you
+ called the FeatureSelector class without using the ATOM wrapper, don't forget to
+ indicate the task adding <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a
+ random forest classifier.</p>
+<p><strong>Recursive feature elimination</strong></p>
+<p>Select features by recursively considering smaller and smaller sets of features.
+ First, the estimator is trained on the initial set of features and the importance
+ of each feature is obtained either through a <code>coef_</code> attribute or through a
+ <code>feature_importances_</code> attribute. Then, the least important features are pruned from
+ current set of features. That procedure is recursively repeated on the pruned set
+ until the desired number of features to select is eventually reached. Note that, since
+ RFE needs to fit the model again every iteration, this method can be fairly slow.</p>
+<p>RFECV applies the same algorithm as RFE but uses a cross-validated metric (under the
+ scoring parameter, see <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html#sklearn.feature_selection.RFECV">RFECV</a>)
+ to assess every step's performance. Also, where RFE returns the number of features selected
+ by <code>n_features</code>, RFECV returns the number of features that achieved the optimal score
+ on the specified metric. Note that this is not always equal to the amount specified
+ by <code>n_features</code>.</p>
+<p><strong>Removing features with low variance</strong></p>
+<p>Variance is the expectation of the squared deviation of a random variable from its mean.
+ Features with low variance have many values repeated, which means the model will not
+ learn a lot from them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
+ removes all features where the same value is repeated in at least <code>max_frac_repeated</code>
+ fraction of the rows. The default option is to remove a feature if all values in it
+ are the same. </p>
+<p><strong>Removing features with multi-collinearity</strong></p>
+<p>Two features that are highly correlated are redundant. Two will not contribute more
+ than only one of them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
+ will remove one of two features that have a Pearson correlation coefficient larger 
+ than <code>max_correlation</code>. The default option is to remove one of 2 equal columns.
+ A dataframe of the removed features and their correlation values can be accessed
+ through the <code>collinear</code> attribute.</p>
 <p><br><br></p>
 <h1 id="model-fitting-and-evaluation">Model fitting and evaluation</h1>
 <hr />
+<p><br></p>
 <h3 id="multi-metric-runs">Multi-metric runs</h3>
+<p><br></p>
 <h3 id="hyperparameter-tuning">Hyperparameter tuning</h3>
+<p><br></p>
 <h3 id="bagging">Bagging</h3>
+<p><br></p>
 <h3 id="early-stopping">Early stopping</h3>
+<p><br><br></p>
 <h1 id="model-subclasses">Model subclasses</h1>
 <hr />
+<p><br><br></p>
 <h1 id="handle-new-data-streams">Handle new data streams</h1>
 <hr />
 <p>It is possible, that after running the whole ATOM pipeline, you would like to apply
  the same data transformations and maybe make predictions on a new dataset. This is
  possible using ATOM's <a href="">prediction methods</a>.</p>
+<p><br><br></p>
 <h1 id="plotting">Plotting</h1>
 <hr />
 <p>After fitting the models to the data, it's time to analyze the results. ATOM provides

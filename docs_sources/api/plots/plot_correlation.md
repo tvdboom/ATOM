@@ -44,4 +44,4 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.plot_correlation()
 ```
-![plot_correlation](../../img/plots/plot_correlation.png)
+![plot_correlation](./img/plot_correlation.png)

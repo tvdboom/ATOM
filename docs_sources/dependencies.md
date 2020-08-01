@@ -33,7 +33,7 @@ ATOM is built on top of several existing Python libraries. The required
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.5.0)
 * **[featuretools](https://www.featuretools.com/)** (>=0.17.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
-* **[matplotlib](https://matplotlib.org/)** (>=3.1.0)
+* **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
 
 **Optional**

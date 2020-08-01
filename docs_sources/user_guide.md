@@ -38,10 +38,9 @@ So, this sounds a bit like AutoML, how is ATOM different than
  Every step of the pipeline is accounted for, and using the provided plotting methods,
  its easy to convince others why a model is better/worse than the other. 
 
-<br>
- 
 
 
+<br><br>
 # First steps
 -------------
 
@@ -69,15 +68,14 @@ Analyze the results:
     atom.ET.feature_importances(show=10, filename='feature_importance_plot')
     atom.plot_prc(title='Precision-recall curve comparison plot')
 
-<br>
 
-
+<br><br>
 # Data cleaning
 ---------------
 
 
 
-
+<br><br>
 # Feature engineering
 ---------------------
 
@@ -99,9 +97,10 @@ Feature engineering is the process of creating new features from the existing on
  created features can be useless, i.e. they do not help the algorithm to make better
  predictions. Even worse, having useless features can drop your performance. To avoid
  this, we perform feature selection, a process in which we select the relevant features 
- in the dataset.
-<br><br>
+ in the dataset. Click [here](examples/feature_engineering/feature_engineering.md) for an example.
 
+
+<br>
 
 ### Generating new features
 
@@ -132,7 +131,7 @@ Deep feature synthesis (DFS) applies the selected operators on the features in
 
 ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.com/) package.
 
-!!! note
+!!! tip
     DFS can create many new features and not all of them will be useful. Use the
     [FeatureSelector](./API/feature_engineering/feature_selector.md) class
     to reduce the number of features!
@@ -165,39 +164,113 @@ ATOM uses the
 
 <br>
 
-
 ### Selecting useful features
 
 The [FeatureSelector](API/feature_engineering/feature_selector.md) class provides
- multiple strategies to select the relevant features from a dataset. It can be
- accessed from an ATOM instance through the [feature_selection](../API/ATOM/atomclassifier/#atomclassifier-feature-selection)
- method.
+ tooling to select the relevant features from a dataset. It can be accessed from an
+ ATOM instance through the [feature_selection](../API/ATOM/atomclassifier/#atomclassifier-feature-selection)
+ method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.
+
+!!! tip
+
+    Use the [plot_feature_importance](API/plots/plot_feature_importance.md) method to
+    examine how much a specific feature contributes to the fianl predictions. If the
+    model doesn't have a `feature_importances_` attribute, use 
+    [plot_permutation_importance](API/plots/plot_permutation_importance.md) instead.
+
+**Univariate**
+
+Univariate feature selection works by selecting the best features based on univariate statistical F-test.
+ The test is provided via the `solver` parameter. It takes any function taking two arrays (X, y),
+ and returning arrays (scores, p-values).
+ Read more in the sklearn [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection).
+
+**Principal Components Analysis**
+
+Applying PCA will reduce the dimensionality of the dataset by maximizing the variance of each dimension.
+ The new features will be called Component 0, Component 1, etc... The dataset will be
+ scaled before applying the transformation (if it wasn't already).
+
+**Selection from model**
+
+SFM uses a supervised machine learning model with `feature_importances_` or `coef_`
+ attributes to select the best features in a dataset based on importance weights.
+ The model is provided through the `solver` parameter and can be already fitted.
+ ATOM allows you to input one of the pre-defined models, e.g. `solver='RF'`. If you
+ called the FeatureSelector class without using the ATOM wrapper, don't forget to
+ indicate the task adding `_class` or `_reg` after the name, e.g. `RF_class` to use a
+ random forest classifier.
+
+
+**Recursive feature elimination**
+
+Select features by recursively considering smaller and smaller sets of features.
+ First, the estimator is trained on the initial set of features and the importance
+ of each feature is obtained either through a `coef_` attribute or through a
+ `feature_importances_` attribute. Then, the least important features are pruned from
+ current set of features. That procedure is recursively repeated on the pruned set
+ until the desired number of features to select is eventually reached. Note that, since
+ RFE needs to fit the model again every iteration, this method can be fairly slow.
+  
+RFECV applies the same algorithm as RFE but uses a cross-validated metric (under the
+ scoring parameter, see [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html#sklearn.feature_selection.RFECV))
+ to assess every step's performance. Also, where RFE returns the number of features selected
+ by `n_features`, RFECV returns the number of features that achieved the optimal score
+ on the specified metric. Note that this is not always equal to the amount specified
+ by `n_features`.
+
+**Removing features with low variance**
+
+Variance is the expectation of the squared deviation of a random variable from its mean.
+ Features with low variance have many values repeated, which means the model will not
+ learn a lot from them. [FeatureSelector](API/feature_engineering/feature_selector.md)
+ removes all features where the same value is repeated in at least `max_frac_repeated`
+ fraction of the rows. The default option is to remove a feature if all values in it
+ are the same. 
+
+
+**Removing features with multi-collinearity**
+
+Two features that are highly correlated are redundant. Two will not contribute more
+ than only one of them. [FeatureSelector](API/feature_engineering/feature_selector.md)
+ will remove one of two features that have a Pearson correlation coefficient larger 
+ than `max_correlation`. The default option is to remove one of 2 equal columns.
+ A dataframe of the removed features and their correlation values can be accessed
+ through the `collinear` attribute.
 
 
 <br><br>
-
-
 # Model fitting and evaluation
 ------------------------------
 
+<br>
 
 ### Multi-metric runs
 
+
+<br>
+
 ### Hyperparameter tuning
 
+
+<br>
+
 ### Bagging
+
+
+<br>
 
 ### Early stopping
 
 
 
-
+<br><br>
 # Model subclasses
 ------------------
 
 
 
-
+<br><br>
 # Handle new data streams
 -------------------------
 
@@ -207,7 +280,7 @@ It is possible, that after running the whole ATOM pipeline, you would like to ap
 
 
 
-
+<br><br>
 # Plotting
 ----------
 

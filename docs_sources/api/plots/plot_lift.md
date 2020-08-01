@@ -47,4 +47,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['GNB', 'RF', 'LGB'], metric='roc_auc')
 atom.plot_lift(filename='lift_curve.png')
 ```
-![plot_lift](../../img/plots/plot_lift.png)
+![plot_lift](./img/plot_lift.png)

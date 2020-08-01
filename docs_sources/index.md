@@ -1,5 +1,5 @@
 <center>
-    <img src="/img/logo.png" height="150" width="600"/>
+    <img src="./img/logo.png" height="150" width="600"/>
 </center>
 <br><br>
 
@@ -38,5 +38,5 @@ Possible steps taken by ATOM's pipeline:
 <br/><br/>
 
 <center>
-    <img src="/img/diagram.png" height="300" width="1000"/>
+    <img src="./img/diagram.png" height="300" width="1000"/>
 </center>

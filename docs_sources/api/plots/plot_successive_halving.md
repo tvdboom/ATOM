@@ -57,4 +57,4 @@ atom = ATOMRegressor(X, y)
 atom successive_halving(['tree', 'bag', 'et', 'rf', 'gbm', 'lgb'], metric='neg_mean_squared_error')
 atom.plot_successive_halving()
 ```
-![plot_successive_halving](../../img/plots/plot_successive_halving.png)
+![plot_successive_halving](./img/plot_successive_halving.png)

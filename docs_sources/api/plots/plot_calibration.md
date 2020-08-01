@@ -62,4 +62,4 @@ atom = ATOMClassifier(X)
 atom.run(['GNB', 'LR', 'LGB'], metric='average_precision')
 atom.plot_calibration()
 ```
-![plot_calibration](../../img/plots/plot_calibration.png)
+![plot_calibration](./img/plot_calibration.png)

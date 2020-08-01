@@ -59,4 +59,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LR', 'LDA'], metric='average_precision')
 atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
 ```
-![plot_permutation_importance](../../img/plots/plot_permutation_importance.png)
+![plot_permutation_importance](./img/plot_permutation_importance.png)

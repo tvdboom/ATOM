@@ -53,4 +53,4 @@ atom = ATOMClassifier(X, y)
 atom.run(['LDA', 'LGB'], metric='f1', n_calls=24, n_random_starts=10)
 atom.plot_bo()
 ```
-![plot_bo](../../img/plots/plot_bo.png)
+![plot_bo](./img/plot_bo.png)
