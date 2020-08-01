@@ -217,9 +217,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         {self.models[0]: self.bo_params['dimensions']}
 
             # Assign proper model name to key of dimensions dict
+            dimensions = {}
             for key in self.bo_params['dimensions']:
-                self.bo_params['dimensions'][get_model_name(key)] = \
-                    self.bo_params['dimensions'].pop(key)
+                dimensions[get_model_name(key)] = self.bo_params['dimensions'][key]
+            self.bo_params['dimensions'] = dimensions
 
         # Check validity metric ============================================= >>
 

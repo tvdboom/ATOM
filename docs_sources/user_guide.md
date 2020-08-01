@@ -9,7 +9,7 @@ There is no magic formula in data science that can tell us which type of machine
  different data cleaning steps, tuning a new set of hyperparameters, etc. Refactoring
  the code for all these steps can be very time consuming. This result in many data
  scientists just using the model best known to them and fine-tuning this particular
- model without ever trying out other ones. This can result in poor performance (because
+ model without ever trying other ones. This can result in poor performance (because
  the model is just not the right one for the task) or in poor time management (because you
  could have achieved a similar performance with a simpler/faster model).  
  
@@ -20,10 +20,10 @@ ATOM is here to help us solve these issues. With just a few lines of code, you c
  indication of the feasibility of the ML solution.
    
 It is important to realize that ATOM is not here to replace all the work a data
- scientist has to before getting his model into production. ATOM doesn't spit out
+ scientist has to do before getting his model into production. ATOM doesn't spit out
  production-ready models just by tuning some parameters in its API. After helping you
  to determine the right model, you will most probably need to fine-tune it using
- use-case specific features and data cleaning steps in order to achieve the maximum
+ use-case specific features and data cleaning steps in order to achieve maximum
  performance.
 
 So, this sounds a bit like AutoML, how is ATOM different than 
@@ -32,11 +32,11 @@ So, this sounds a bit like AutoML, how is ATOM different than
  that it helps you find the best model for a specific task, but contrary to the
  aforementioned packages, it does not actively search for the best model. It just
  runs all of them and let you pick the one that you think suites the best.
- AutoML packages are usually black boxes to which you provide data, and magically,
+ AutoML packages are often black boxes to which you provide data, and magically,
  a good model comes out. Although it works great, they often produce complicated
  pipelines with low explainability, hard to sell to the business. In this, ATOM excels.
  Every step of the pipeline is accounted for, and using the provided plotting methods,
- its easy to convince others why a model is better/worse than the other. 
+ its easy to demonstrate why a model is better/worse than the other.
 
 
 
@@ -44,9 +44,10 @@ So, this sounds a bit like AutoML, how is ATOM different than
 # First steps
 -------------
 
-You can quickly install atom via `pip`, see the [intallation guide](../getting_started/#installation).
- The easiest way to use ATOM is using the [ATOMClassifier](../API/ATOM/atomclassifier)
- or [ATOMRegressor](../API/ATOM/atomregressor) wrapper. Contrary to sklearn's API,
+You can quickly install atom via `pip` or `conda`, see the [intallation guide](../getting_started/#installation).
+ The easiest way to use ATOM is through [ATOMClassifier](../API/ATOM/atomclassifier)
+ or [ATOMRegressor](../API/ATOM/atomregressor). These classes are wrappers for all
+ other data cleaning, training and plotting methods. Contrary to sklearn's API,
  the ATOM instance contains the data you want to manipulate. Calling a method will
  apply all transformations on the data it contains.
  
@@ -55,7 +56,8 @@ First, create an ATOM instance and provide the data you want to use.
     atom = ATOMClassifier(X, y)
 
 Apply data cleaning methods through the class. For example, calling the
-[impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will impute all missing values in the dataset.
+[impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will impute all missing
+ values in the dataset.
 
     atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
 
