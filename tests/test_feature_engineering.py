@@ -72,8 +72,19 @@ def test_attribute_genetic_features():
     assert isinstance(generator.genetic_features, pd.DataFrame)
 
 
+def test_genetic_maximum_features():
+    """Assert that the features are 1% of the population for n_features=None."""
+    generator = FeatureGenerator(strategy='gfg',
+                                 n_features=None,
+                                 generations=4,
+                                 population=400,
+                                 random_state=1)
+    X = generator.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == X_bin.shape[1] + 4
+
+
 def test_updated_dataset():
-    """Assert that data contains the new features."""
+    """Assert that the feature set contains the new features."""
     generator = FeatureGenerator(strategy='gfg',
                                  n_features=4,
                                  generations=4,
@@ -236,7 +247,7 @@ def test_RFE_strategy():
 
 def test_RFECV_strategy_before_pipeline_classification():
     """Assert that the RFECV strategy works before a fitted pipeline."""
-    fs = FeatureSelector('RFECV', solver='LGB_class', n_features=16)
+    fs = FeatureSelector('RFECV', solver='LGB_class', n_features=None)
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 20
 

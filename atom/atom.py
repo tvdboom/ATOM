@@ -484,7 +484,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def feature_generation(self,
                            strategy: str = 'DFS',
-                           n_features: Optional[int] = 2,
+                           n_features: Optional[int] = None,
                            generations: int = 20,
                            population: int = 500,
                            operators: Optional[Union[str, Sequence[str]]] = None):
@@ -603,9 +603,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.trainer._idx = self._idx
             self.trainer.run()
         except ValueError as exception:
-            # Catch errors and pass them to ATOM's attribute
-            for model, error in self.trainer.errors.items():
-                self.errors[model] = error
             raise exception
         else:
             # Attach mapping from ATOM to the trainer instance (for plots)
@@ -631,6 +628,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                 setattr(getattr(self, model), 'transform', self.transform)
                 setattr(getattr(self, model.lower()), 'transform', self.transform)
 
+        finally:
+            # Catch errors and pass them to ATOM's attribute
             for model, error in self.trainer.errors.items():
                 self.errors[model] = error
 

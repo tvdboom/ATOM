@@ -18,7 +18,7 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge, check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_bin_array, y_bin_array, X10_nan, X10_str, y10
+    X_bin_array, y_bin_array, X10_nan, X10_str, y10, y10_str
     )
 
 
@@ -31,7 +31,7 @@ def test_n_rows_parameter():
 
 def test_n_rows_parameter_too_large():
     """Assert that when n_rows is too large, whole X is selected."""
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=1e5, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=1e5, n_jobs=2, random_state=1)
     assert len(atom.dataset) == len(X_bin)
 
 
@@ -135,7 +135,7 @@ def test_creates_report():
 
 def test_transform_method():
     """ Assert that the transform method works as intended """
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom = ATOMClassifier(X10_str, y10_str, random_state=1)
     atom.encode(max_onehot=None)
     atom.run('Tree')
 

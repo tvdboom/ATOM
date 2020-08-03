@@ -22,8 +22,8 @@ Strategy to crate new features. Choose from:
 </blockquote>
 <strong>n_features: int or None, optional (default=None)</strong>
 <blockquote>
-Maximum number of newly generated features. If None, use all. If strategy='genetic',
- n_features can not be larger than 1% of the population.
+Number of newly generated features to add to the dataset (if strategy='genetic', no
+ more than 1% of the population). If None, select all created.
 </blockquote>
 <strong>generations: int, optional (default=20)</strong>
 <blockquote>

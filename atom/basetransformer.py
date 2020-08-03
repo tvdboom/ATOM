@@ -219,7 +219,7 @@ class BaseTransformer(object):
         Parameters
         ----------
         filename: str or None, optional (default=None)
-            Name to save the file with. None to save with classes' name.
+            Name to save the file with. None or 'auto' to save with default name.
 
         **kwargs
             Additional keyword arguments. Can contain:
@@ -231,10 +231,11 @@ class BaseTransformer(object):
             data = self.dataset.copy()  # Store the data to reattach later
             self.dataset = None  # Use @setter to update the trainer as well
 
-        if filename is None:
-            filename = self.__class__.__name__ + '.pkl'
+        if not filename:
+            filename = self.__class__.__name__
+        elif filename == 'auto' or filename.endswith('/auto'):
+            filename = filename.replace('auto', self.__class__.__name__)
 
-        filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         with open(filename, 'wb') as file:
             pickle.dump(self, file)
 

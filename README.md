@@ -60,7 +60,7 @@ So, this sounds a bit like AutoML, how is ATOM different than
  Every step of the pipeline is accounted for, and using the provided plotting methods,
  its easy to demonstrate why a model is better/worse than the other. 
 
-
+<br>
 Possible steps taken by ATOM's pipeline:
 1. Data Cleaning
 	* Handle missing values
@@ -88,7 +88,8 @@ Possible steps taken by ATOM's pipeline:
 
 Installation
 -----------------
-| NOTE: Download the package under the name `atom-ml`! |
+
+| NOTE: Since atom was already taken, download the package under the name `atom-ml`! |
 | --- |
 
 

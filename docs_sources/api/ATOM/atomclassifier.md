@@ -86,7 +86,7 @@ Note that changing this parameter will affect the PYTHONWARNINGS environment.<br
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name, False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. 'auto' for default name.</li>
 <li>If class: python Logger object.</li>
 </ul>
 Note that warnings will not be saved to the logger in any case.
@@ -449,7 +449,7 @@ Save the instance to a pickle file. Remember that the class contains the complet
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name (ATOMClassifier.pkl).
+Name to save the file with. If None or 'auto', use default name (ATOMClassifier).
 </blockquote>
 <strong>save_data: bool, optional (default=True)</strong>
 <blockquote>
@@ -949,7 +949,7 @@ If string, choose from any of sklearn's [SCORERS](https://scikit-learn.org/stabl
 <pre><em>function</em> BaseModel.<strong style="color:#008AB8">save_model</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
 <div style="padding-left:3%">
-Save the model (fitted on the complete training set) to a pickle file.
+Save the model (fitted to the complete training set) to a pickle file.
 <br /><br />
 <table>
 <tr>
@@ -957,7 +957,7 @@ Save the model (fitted on the complete training set) to a pickle file.
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None, a default name of the form <name\>_model.pkl will be used.
+Name of the file to save. If None or 'auto', use default name (<name\>_model).
 </blockquote>
 </tr>
 </table>

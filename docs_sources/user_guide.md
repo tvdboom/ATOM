@@ -75,6 +75,35 @@ Analyze the results:
 # Data cleaning
 ---------------
 
+ATOM provides four classes that can help you perform standard data cleaning steps:
+
+<br>
+
+### Standard data cleaning steps
+
+<br>
+
+### Scaling the features
+
+<br>
+
+### Handling missing values
+
+<br>
+
+### Encoding categorical features
+
+<br>
+
+### Handling outliers in the training set
+
+<br>
+
+### Balancing the data
+
+
+
+
 
 
 <br><br>

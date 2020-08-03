@@ -340,10 +340,17 @@ def test_frac_to_other():
     assert 'Feature 2_other' in X.columns
 
 
-def test_raise_missing():
-    """Assert that an error is raised when there are missing values."""
+def test_raise_missing_fit():
+    """Assert that an error is raised when there are missing values during fit."""
     encoder = Encoder(max_onehot=None)
     pytest.raises(ValueError, encoder.fit_transform, X10_sn, y10)
+
+
+def test_raise_missing_transform():
+    """Assert that an error is raised when there are missing values during trans."""
+    encoder = Encoder(max_onehot=None)
+    encoder.fit(X10_str, y10)
+    pytest.raises(ValueError, encoder.transform, X10_sn, y10)
 
 
 def test_label_encoder():
@@ -463,7 +470,7 @@ def test_undersample_parameter():
 
 def test_n_neighbors_parameter():
     """Assert that an error is raised for an invalid value of n_neighbors."""
-    pytest.raises(ValueError, Balancer, n_neighbors=0)
+    pytest.raises(ValueError, Balancer, oversample=0.8, n_neighbors=0)
 
 
 def test_oversampling_method_binary():

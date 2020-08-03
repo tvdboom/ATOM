@@ -14,6 +14,5 @@ from .utils import FILE_DIR
 
 
 # Remove previously created files
-files = glob.glob(FILE_DIR + '*')
-for f in files:
+for f in glob.glob(FILE_DIR + '*'):
     os.remove(f)

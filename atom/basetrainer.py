@@ -245,9 +245,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         else:
             gib = [gib for _ in metric]
 
-        if not isinstance(metric, (list, tuple)):
-            metric = [metric]
-
         if isinstance(needs_proba, (list, tuple)):
             if len(needs_proba) != len(metric):
                 raise ValueError("Invalid value for the needs_proba " +

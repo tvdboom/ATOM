@@ -210,6 +210,13 @@ def test_models_is_all():
     assert atom.results.empty
 
 
+def test_invalid_model():
+    """Assert that an error is raised when model is not in pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(['LR', 'LDA'])
+    pytest.raises(ValueError, atom.clear, 'GNB')
+
+
 def test_models_is_str():
     """Assert that a single model is cleared."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

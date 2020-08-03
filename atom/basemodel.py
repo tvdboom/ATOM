@@ -454,9 +454,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if self.bo.empty:
             self.T.log('\n', 1)  # Print 2 extra lines
             self.T.log(f"Results for {self.longname}:{' ':9s}", 1)
-        if not hasattr(self, 'get_domain') and not self.bo.empty:
-            self.T.log('\n', 1)  # Print 2 extra lines
-            self.T.log(f"Results for {self.longname}:{' ':9s}", 1)
         self.T.log("Fitting -----------------------------------------", 1)
         if self._stopped:
             self.T.log("Early stop at iteration {} of {}."
@@ -855,13 +852,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         Parameters
         ----------
         filename: str, optional (default=None)
-            Name of the file to save. If None, a default name will be used.
+            Name of the file to save. If None or 'auto', a default name will be used.
 
         """
-        if filename is None:
-            filename = self.name + '_model.pkl'
+        if not filename:
+            filename = self.name + '_model'
+        elif filename == 'auto' or filename.endswith('/auto'):
+            filename = filename.replace('auto', self.name + '_model')
 
-        filename = filename if filename.endswith('.pkl') else filename + '.pkl'
         with open(filename, 'wb') as file:
             pickle.dump(self.model, file)
         self.T.log(self.longname + " model saved successfully!", 1)

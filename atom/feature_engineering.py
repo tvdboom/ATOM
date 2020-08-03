@@ -81,9 +81,10 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             - 'DFS' to use Deep Feature Synthesis.
             - 'GFG' or 'genetic' to use Genetic Feature Generation.
 
-    n_features: int, optional (default=2)
-        Maximum number of newly generated features (if strategy='genetic', no
-        more than 1% of the population).
+    n_features: int, optional (default=None)
+        Number of newly generated features to add to the dataset (if
+        strategy='genetic', no more than 1% of the population). If None,
+        select all created.
 
     generations: int, optional (default=20)
         Number of generations to evolve. Only if strategy='genetic'.
@@ -124,7 +125,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     def __init__(self,
                  strategy: str = 'DFS',
-                 n_features: Optional[int] = 2,
+                 n_features: Optional[int] = None,
                  generations: int = 20,
                  population: int = 500,
                  operators: Optional[Union[str, Sequence[str]]] = None,
@@ -342,7 +343,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 return X
 
             # Get indices of the best features
-            if not self.n_features and len(descript) > self.n_features:
+            if self.n_features and len(descript) > self.n_features:
                 index = np.argpartition(fitness, -self.n_features)[-self.n_features:]
             else:
                 index = range(len(descript))

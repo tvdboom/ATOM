@@ -1,6 +1,11 @@
 
 # Installation
 -----------------
+<br>
+
+!!! note
+    Since atom was already taken, download the package under the name `atom-ml`!
+
 
 Intall ATOM's newest release easily via `pip`:
 
@@ -13,9 +18,6 @@ or via `conda`:
 ```Python
 	$ conda install -c conda-forge atom-ml
 ```
-
-!!! note
-    Since atom was already taken, download the package under the name `atom-ml`!
 
 <br><br>
 

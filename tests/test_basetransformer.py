@@ -99,9 +99,15 @@ def test_log_file_named_auto():
     assert glob.glob(FILE_DIR + 'BaseTransformer_logger_*')
 
 
-def test_log_file_invalid_class():
-    """Assert that when log='auto', an automatic logging file is created."""
+def test_logger_invalid_class():
+    """Assert that an error is raised when logger is of invalid class."""
     pytest.raises(TypeError, BaseTransformer, logger=BaseTransformer)
+
+
+def test_crash_with_logger():
+    """Assert that the crash decorator works with a logger."""
+    atom = ATOMClassifier(X_bin, y_bin, logger=FILE_DIR + 'logger')
+    pytest.raises(ValueError, atom.run, ['LR', 'LDA'], n_calls=-1)
 
 
 def test_random_state_setter():
@@ -166,26 +172,34 @@ def test_target_is_none():
     assert y is None
 
 
+# Test log ================================================================== >>
+
+def test_log():
+    """Assert the log method works."""
+    atom = ATOMClassifier(X_bin, y_bin, verbose=2, logger=FILE_DIR + 'auto')
+    atom.log('test', 1)
+
+
 # Test save ================================================================= >>
 
 def test_file_is_saved():
     """Assert that the pickle file is created."""
-    base = BaseTransformer(logger=None, verbose=0)
-    base.save(FILE_DIR + 'base_transformer')
-    assert glob.glob(FILE_DIR + 'base_transformer.pkl')
+    atom = ATOMClassifier(X_bin, y_bin)
+    atom.save(FILE_DIR + 'auto')
+    assert glob.glob(FILE_DIR + 'ATOMClassifier')
 
 
-def test_ignore_data():
-    """Assert that the pickle file is created."""
+def test_save_data():
+    """Assert that the pickle file is created for save_data=False."""
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin)
     dataset = atom.dataset.copy()
-    atom.save(filename=FILE_DIR + 'atom', ignore_index=True)
+    atom.save(filename=FILE_DIR + 'atom', save_data=False)
     assert atom.dataset.equals(dataset)
 
     # From a trainer
     trainer = TrainerClassifier('LR')
     trainer.run(bin_train, bin_test)
     dataset = trainer.dataset.copy()
-    trainer.save(filename=FILE_DIR + 'trainer', ignore_index=True)
+    trainer.save(filename=FILE_DIR + 'trainer', save_data=False)
     assert trainer.dataset.equals(dataset)

@@ -11,7 +11,9 @@ Description: Unit tests for basemodel.py
 import glob
 import pytest
 import numpy as np
+from sklearn.metrics import SCORERS
 from sklearn.calibration import CalibratedClassifierCV
+from skopt.learning import GaussianProcessRegressor
 from skopt.callbacks import TimerCallback
 from skopt.space.space import Integer
 
@@ -51,6 +53,13 @@ def test_callbacks_sequence():
     assert not atom.errors
 
 
+def test_all_callbacks():
+    """Assert that all callbacks pre-defined callbacks work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR', n_calls=5, bo_params={'max_time': 50, 'delta_x': 5, 'delta_y': 5})
+    assert not atom.errors
+
+
 def test_invalid_max_time():
     """Assert than an error is raised when max_time<0."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -73,7 +82,7 @@ def test_invalid_delta_y():
 def test_plot_bo():
     """Assert than plot_bo runs without errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'LDA'], n_calls=5, bo_params={'plot_bo': True})
+    atom.run(['LR', 'LDA'], n_calls=25, bo_params={'plot_bo': True})
     assert not atom.errors
 
 
@@ -102,9 +111,16 @@ def test_custom_dimensions():
 def test_all_base_estimators():
     """Assert that the pipeline works for all base estimators."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    for estimator in ('GP', 'ET', 'RF', 'GBRT'):
+    for estimator in ('GP', 'ET', 'RF', 'GBRT', GaussianProcessRegressor()):
         atom.run('LR', n_calls=5, bo_params={'base_estimator': estimator})
         assert not atom.errors
+
+
+def test_estimator_kwargs():
+    """Assert that the kwargs provided are correctly passed to the estimator."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR', n_calls=5, bo_params={'acq_func': 'EI'})
+    assert not atom.errors
 
 
 def test_invalid_base_estimator():
@@ -117,7 +133,8 @@ def test_invalid_base_estimator():
 def test_early_stopping():
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['XGB', 'LGB', 'CatB'], n_calls=5, bo_params={'early_stopping': 0.1})
+    atom.run(['XGB', 'LGB', 'CatB'], n_calls=5, bo_params={'early_stopping': 0.1,
+                                                           'cv': 1})
     for model in atom.models_:
         assert isinstance(model.evals, dict)
 
@@ -127,6 +144,13 @@ def test_verbose_is_1():
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.run('LR', n_calls=5)
     assert atom.lr._pbar is not None
+
+
+def test_bagging_is_negative():
+    """Assert that an error is raised when bagging<0."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(['LR', 'LDA'], bagging=(2, -1))
+    assert atom.errors.get('LDA')
 
 
 def test_bagging_attribute_types():
@@ -204,8 +228,8 @@ def test_test_property():
     """Assert that the test property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(['MNB', 'LR'])
-    assert atom.train.equals(atom.mnb.train)
-    assert check_scaling(atom.lr.train)
+    assert atom.test.equals(atom.mnb.test)
+    assert check_scaling(atom.lr.test)
 
 
 def test_X_property():
@@ -301,12 +325,28 @@ def test_scoring_metric_None():
     assert isinstance(atom.mnb.scoring(), str)
 
 
-def test_scoring_metric():
-    """Assert that the scoring methods works."""
+def test_unknown_metric():
+    """Assert that an error is raised when metric is unknown."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run('OLS')
+    pytest.raises(ValueError, atom.ols.scoring, 'unknown')
+
+
+def test_scoring_metric_acronym():
+    """Assert that the scoring methods works for metric acronyms."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
+    assert isinstance(atom.mnb.scoring('ap'), float)
     assert isinstance(atom.mnb.scoring('auc'), float)
-    assert isinstance(atom.mnb.scoring('roc_auc'), float)
+
+
+def test_scoring_all_scorers():
+    """Assert that the scoring methods works for all sklearn scorers."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(['MNB', 'PA'])
+    for metric in SCORERS:
+        assert isinstance(atom.mnb.scoring(metric), (np.int64, float, str))
+        assert isinstance(atom.pa.scoring(metric), (np.int64, float, str))
 
 
 def test_scoring_custom_metrics():
@@ -332,5 +372,5 @@ def test_save_model():
     """Assert that the save_model saves a pickle file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
-    atom.mnb.save_model(FILE_DIR + 'MNB_model')
-    assert glob.glob(FILE_DIR + 'MNB_model.pkl')
+    atom.mnb.save_model(FILE_DIR + 'auto')
+    assert glob.glob(FILE_DIR + 'MNB_model')

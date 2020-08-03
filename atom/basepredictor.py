@@ -171,10 +171,6 @@ class BasePredictor(object):
                 else:
                     out = f"{m.longname:{maxlen}s} --> {metric}: {round(score, 3)}"
 
-            # Highlight best score (if more than one model in pipeline)
-            if get_best_score(m) == max(all_scores) and len(self.models) > 1:
-                out += ' !'
-
             self.log(out, -2)  # Always print
 
     @composed(crash, method_to_log, typechecked)

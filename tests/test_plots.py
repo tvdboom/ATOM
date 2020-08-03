@@ -130,9 +130,12 @@ def test_plot_components():
     fs = FeatureSelector()
     pytest.raises(PermissionError, fs.plot_components)
 
-    # When correct (test if show is converted to max components)
+    # When show is invalid
     fs = FeatureSelector('PCA', n_features=12)
     fs.fit_transform(X_bin, y_bin)
+    pytest.raises(ValueError, fs.plot_components, show=0)
+
+    # When correct (test if show is converted to max components)
     fs.plot_components(show=100, filename=FILE_DIR + 'components1', display=False)
     assert glob.glob(FILE_DIR + 'components1.png')
 
@@ -171,12 +174,13 @@ def test_plot_successive_halving():
     pytest.raises(PermissionError, trainer.ols.plot_successive_halving)
 
     # When its not fitted
-    sh = SuccessiveHalvingRegressor(['ols', 'ridge'], metric='max_error')
+    sh = SuccessiveHalvingRegressor(['ols', 'ridge'], metric='max_error', bagging=4)
     pytest.raises(NotFittedError, sh.plot_successive_halving)
 
-    # When model is unknown
+    # When model is unknown or not in pipeline
     sh.run(reg_train, reg_test)
     pytest.raises(ValueError, sh.plot_successive_halving, models='unknown')
+    pytest.raises(ValueError, sh.plot_successive_halving, models='BR')
 
     # When metric is invalid, unknown or not in pipeline
     pytest.raises(ValueError, sh.plot_successive_halving, metric='unknown')
@@ -185,7 +189,10 @@ def test_plot_successive_halving():
     pytest.raises(ValueError, sh.plot_successive_halving, metric='roc_auc')
 
     # When correct
-    sh.plot_successive_halving(metric='me', filename=FILE_DIR + 'sh1', display=False)
+    sh.plot_successive_halving(models=['OLS', 'Ridge'],
+                               metric='me',
+                               filename=FILE_DIR + 'sh1',
+                               display=False)
     sh.ols.plot_successive_halving(filename=FILE_DIR + 'sh2', display=False)
     assert glob.glob(FILE_DIR + 'sh1.png')
     assert glob.glob(FILE_DIR + 'sh2.png')
@@ -206,7 +213,7 @@ def test_plot_learning_curve():
     trainer.run(reg_train, reg_test)
     pytest.raises(PermissionError, trainer.ols.plot_learning_curve)
 
-    ts = TrainSizingRegressor(['ols', 'ridge'], metric='r2')
+    ts = TrainSizingRegressor(['ols', 'ridge'], metric='r2', bagging=4)
     pytest.raises(NotFittedError, ts.plot_learning_curve)
     ts.run(reg_train, reg_test)
     ts.plot_learning_curve(filename=FILE_DIR + 'ts1', display=False)
@@ -388,13 +395,13 @@ def test_plot_feature_importance():
     pytest.raises(PermissionError, trainer.ols.plot_feature_importance)
 
     # When invalid parameters
-    trainer = TrainerRegressor(['tree', 'lgb'], metric='r2')
+    trainer = TrainerRegressor(['Bag', 'lgb'], metric='r2')
     trainer.run(reg_train, reg_test)
     pytest.raises(ValueError, trainer.plot_feature_importance, show=0)
 
     # When correct
     trainer.plot_feature_importance(filename=FILE_DIR + 'f1', display=False)
-    trainer.tree.plot_feature_importance(filename=FILE_DIR + 'f2', display=False)
+    trainer.bag.plot_feature_importance(filename=FILE_DIR + 'f2', display=False)
     assert glob.glob(FILE_DIR + 'f1.png')
     assert glob.glob(FILE_DIR + 'f2.png')
 
@@ -510,8 +517,8 @@ def test_plot_calibration():
 
     trainer = TrainerClassifier(['LDA', 'kSVM'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_calibration)
-    pytest.raises(ValueError, trainer.plot_calibration, n_bins=4)
     trainer.run(bin_train, bin_test)
+    pytest.raises(ValueError, trainer.plot_calibration, n_bins=4)
     trainer.plot_calibration(filename=FILE_DIR + 'calibration1', display=False)
     trainer.lda.plot_calibration(filename=FILE_DIR + 'calibration2', display=False)
     assert glob.glob(FILE_DIR + 'calibration1.png')
@@ -519,9 +526,9 @@ def test_plot_calibration():
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LDA', 'kSVM'], metric='f1')
+    atom.run(['tree', 'kSVM'], metric='f1')
     atom.plot_calibration(filename=FILE_DIR + 'calibration3', display=False)
-    atom.lda.plot_calibration(filename=FILE_DIR + 'calibration4', display=False)
+    atom.tree.plot_calibration(filename=FILE_DIR + 'calibration4', display=False)
     assert glob.glob(FILE_DIR + 'calibration3.png')
     assert glob.glob(FILE_DIR + 'calibration4.png')
 

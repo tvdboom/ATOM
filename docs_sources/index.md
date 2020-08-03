@@ -4,7 +4,7 @@
 <br><br>
 
 # Automated Tool for Optimized Modelling
------------------
+----------------------------------------
 
 There is no magic formula in data science that can tell us which type of machine
  learning algorithm will perform best for a specific use-case. Best practices tell
@@ -47,6 +47,7 @@ So, this sounds a bit like AutoML, how is ATOM different than
     A data scientist with domain knowledge can outperform ATOM if he applies
     usecase-specific feature engineering or data cleaning steps! 
 
+<br>
 Possible steps taken by ATOM's pipeline:
 
 1. Data Cleaning
