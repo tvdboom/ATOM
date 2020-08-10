@@ -38,18 +38,18 @@ def test_infer_task():
 
 
 def test_default_metric():
-    """Assert that a default metric is assigned depending on the task."""
+    """Assert that a default metric_ is assigned depending on the task."""
     trainer = TrainerClassifier('LR')
     trainer.run(bin_train, bin_test)
-    assert trainer.metric[0].name == 'f1'
+    assert trainer.metric == 'f1'
 
     trainer = TrainerClassifier('LR')
     trainer.run(class_train, class_test)
-    assert trainer.metric[0].name == 'f1_weighted'
+    assert trainer.metric == 'f1_weighted'
 
     trainer = TrainerRegressor('OLS')
     trainer.run(reg_train, reg_test)
-    assert trainer.metric[0].name == 'r2'
+    assert trainer.metric == 'r2'
 
 
 # Test SuccessiveHalving ==================================================== >>

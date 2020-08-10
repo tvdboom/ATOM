@@ -1,7 +1,6 @@
 # plot_threshold
 ----------------
 
-<a name="atom-plot-threshold"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, steps=100,
                                    title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>

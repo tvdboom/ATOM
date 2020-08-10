@@ -1,7 +1,6 @@
 
 # Installation
 -----------------
-<br>
 
 !!! note
     Since atom was already taken, download the package under the name `atom-ml`!

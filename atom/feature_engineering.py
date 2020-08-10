@@ -562,7 +562,9 @@ class FeatureSelector(BaseEstimator,
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-        self.collinear = None
+        self._low_variance = {}
+        self.collinear = pd.DataFrame(
+            columns=['drop_feature', 'correlated_feature', 'correlation_value'])
         self.univariate = None
         self.scaler = None
         self.pca = None
@@ -571,39 +573,7 @@ class FeatureSelector(BaseEstimator,
         self.rfecv = None
         self._is_fitted = False
 
-    def _remove_low_variance(self, X, max_, _vb=2):
-        """Remove features with too low variance.
-
-        Parameters
-        ----------
-        X: pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
-
-        max_: float
-            Maximum fraction of repeated values.
-
-        _vb: int, optional (default=2)
-            Internal parameter to silence the fit method. If default, prints.
-
-        Returns
-        -------
-        X: pd.DataFrame
-            Dataframe with no low variance columns.
-
-        """
-        for n, col in enumerate(X):
-            unique, count = np.unique(X[col], return_counts=True)
-            for u, c in zip(unique, count):
-                # If count is larger than fraction of total...
-                if c >= max_ * len(X):
-                    self.log(f" --> Feature {col} was removed due to " +
-                             f"low variance. Value {u} repeated in " +
-                             f"{round(c/len(X)*100., 1)}% of rows.", _vb)
-                    X.drop(col, axis=1, inplace=True)
-                    break
-        return X
-
-    def _remove_collinear(self, X, max_, _vb=2):
+    def _remove_collinear(self, X, max_):
         """Remove collinear features.
 
         Finds pairs of collinear features based on the Pearson correlation
@@ -620,9 +590,6 @@ class FeatureSelector(BaseEstimator,
         max_: float
             Maximum correlation allowed before removing one of the columns.
 
-        _vb: int, optional (default=2)
-            Internal parameter to silence the fit method. If default, prints.
-
         Returns
         -------
         X: pd.DataFrame
@@ -637,29 +604,15 @@ class FeatureSelector(BaseEstimator,
         # Select the features with correlations above the threshold
         to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
 
-        # Dataframe to hold correlated pairs
-        self.collinear = pd.DataFrame(columns=['drop_feature',
-                                               'correlated_feature',
-                                               'correlation_value'])
-
         # Iterate to record pairs of correlated features
         for col in to_drop:
-            # Find the correlated features
-            corr_features = list(upper.index[abs(upper[col]) > max_])
+            # Find the correlated features and corresponding values
+            corr_features = ', '.join(upper.index[abs(upper[col]) > max_])
+            corr_values = ', '.join(map(str, upper[col][abs(upper[col]) > max_]))
 
-            # Find the correlated values
-            corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
-            drop_features = set([col for _ in corr_features])
-
-            # Add to class attribute
+            # Update dataframe
             self.collinear = self.collinear.append(
-                {'drop_feature': ', '.join(drop_features),
-                 'correlated_feature': ', '.join(corr_features),
-                 'correlation_value': ', '.join(map(str, corr_values))},
-                ignore_index=True)
-
-            self.log(f" --> Feature {col} was removed due to " +
-                     "collinearity with another feature.", _vb)
+                [col, corr_features, corr_values], ignore_index=True)
 
         return X.drop(to_drop, axis=1)
 
@@ -698,11 +651,40 @@ class FeatureSelector(BaseEstimator,
 
         # Remove features with too low variance
         if self.max_frac_repeated is not None:
-            X = self._remove_low_variance(X, self.max_frac_repeated, _vb=42)
+            for n, col in enumerate(X):
+                unique, count = np.unique(X[col], return_counts=True)
+                for u, c in zip(unique, count):
+                    # If count is larger than fraction of total...
+                    if c >= self.max_frac_repeated * len(X):
+                        self._low_variance[col] = [u, int(c/len(X) * 100)]
+                        X.drop(col, axis=1, inplace=True)
+                        break
 
         # Remove features with too high correlation
-        if self.max_correlation is not None:
-            X = self._remove_collinear(X, self.max_correlation, _vb=42)
+        if self.max_correlation:
+            max_ = self.max_correlation
+            mtx = X.corr()  # Pearson correlation coefficient matrix
+
+            # Extract the upper triangle of the correlation matrix
+            upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
+
+            # Select the features with correlations above the threshold
+            to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
+
+            # Iterate to record pairs of correlated features
+            for col in to_drop:
+                # Find the correlated features and corresponding values
+                corr_features = list(upper.index[abs(upper[col]) > max_])
+                corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
+
+                # Update dataframe
+                self.collinear = self.collinear.append(
+                    {'drop_feature': col,
+                     'correlated_feature': ', '.join(corr_features),
+                     'correlation_value': ', '.join(map(str, corr_values))},
+                    ignore_index=True)
+
+            X.drop(to_drop, axis=1, inplace=True)
 
         # Set n_features as all or fraction of total
         if self.n_features is None:
@@ -730,6 +712,7 @@ class FeatureSelector(BaseEstimator,
             self.pca = PCA(n_components=None,
                            svd_solver=self.solver,
                            **self.kwargs)
+
             self.pca.fit(X)
             self.pca.n_components_ = self.n_features  # Number of components
 
@@ -762,8 +745,10 @@ class FeatureSelector(BaseEstimator,
             if self.n_features == X.shape[1]:
                 self.n_features = 1
 
-            if self.kwargs.get('scoring') in METRIC_ACRONYMS:
-                self.kwargs['scoring'] = METRIC_ACRONYMS[self.kwargs['scoring']]
+            if isinstance(self.kwargs.get('scoring'), str):
+                if self.kwargs.get('scoring', '').lower() in METRIC_ACRONYMS:
+                    self.kwargs['scoring'] = \
+                        METRIC_ACRONYMS[self.kwargs['scoring'].lower()]
 
             self.rfecv = RFECV(estimator=self.solver,
                                min_features_to_select=self.n_features,
@@ -798,12 +783,16 @@ class FeatureSelector(BaseEstimator,
         self.log("Performing feature selection ...", 1)
 
         # Remove features with too low variance
-        if self.max_frac_repeated is not None:
-            X = self._remove_low_variance(X, self.max_frac_repeated)
+        for key, value in self._low_variance.items():
+            self.log(f" --> Feature {key} was removed due to low variance. Value " +
+                     f"{value[0]} repeated in {value[1]}% of the rows.", 2)
+            X.drop(key, axis=1, inplace=True)
 
         # Remove features with too high correlation
-        if self.max_correlation is not None:
-            X = self._remove_collinear(X, self.max_correlation)
+        for col in self.collinear['drop_feature']:
+            self.log(f" --> Feature {col} was removed due to " +
+                     "collinearity with another feature.", 2)
+            X.drop(col, axis=1, inplace=True)
 
         # Perform selection based on strategy
         if self.strategy is None:
@@ -829,8 +818,7 @@ class FeatureSelector(BaseEstimator,
             n = self.pca.n_components_
             var = np.array(self.pca.explained_variance_ratio_[:n])
             X = to_df(self.pca.transform(X)[:, :n], index=X.index, pca=True)
-            self.log("   >>> Total explained variance: {}"
-                     .format(round(var.sum(), 3)), 2)
+            self.log(f"   >>> Total explained variance: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == 'sfm':
             for n, column in enumerate(X):

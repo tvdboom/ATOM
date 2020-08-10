@@ -1,13 +1,13 @@
 # plot_pca
 ------------------
 
-<a name="plot-pca"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L86">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the explained variance ratio vs the number of components. Can only be called from
- an [ATOMClassifier](../ATOM/atomclassifier.md)/[ATOMRegressor](../ATOM/atomregressor.md)
- or [FeatureSelector](../feature_engineering/feature_selector.md) instance that
+Plot the explained variance ratio vs the number of components. Can only be
+ called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
+ <a href="../../ATOM/atomregressor">ATOMRegressor</a> or 
+ <a href="../../feature_engineering/feature_selector">FeatureSelector</a> instance that
  applied PCA on the dataset. Can't be called from the model subclasses.
 <br /><br />
 <table width="100%">

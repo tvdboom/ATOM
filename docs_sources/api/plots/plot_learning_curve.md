@@ -1,13 +1,13 @@
 # plot_learning_curve
 ---------------------
 
-<a name="atom-plot-learning-curve"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_learning_curve</strong>(models=None, metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the model's learning curve: score vs number of training samples. Only
  available if the models were fitted with a
- [TrainSizingClassifier](../training/trainsizingclassifier.md)/[TrainSizingRegressor](../training/trainsizingregressor.md)
+ <a href="../../training/trainsizingclassifier">TrainSizingClassifier</a>/
+ <a href="../../training/trainsizingregressor">TrainSizingRegressor</a>
  instance.
 <br /><br />
 <table width="100%">

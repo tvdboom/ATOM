@@ -57,59 +57,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>85885</th>
-      <td>Cairns</td>
-      <td>21.5</td>
-      <td>30.4</td>
-      <td>0.0</td>
-      <td>6.8</td>
-      <td>11.1</td>
-      <td>ENE</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>27014</th>
-      <td>Richmond</td>
-      <td>16.2</td>
-      <td>22.0</td>
-      <td>5.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>ESE</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>124422</th>
-      <td>Walpole</td>
-      <td>7.3</td>
-      <td>13.1</td>
-      <td>11.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
+      <th>65083</th>
+      <td>MelbourneAirport</td>
+      <td>9.3</td>
+      <td>13.9</td>
+      <td>3.8</td>
+      <td>2.4</td>
+      <td>3.3</td>
       <td>S</td>
-      <td>43.0</td>
+      <td>48.0</td>
     </tr>
     <tr>
-      <th>114777</th>
-      <td>PerthAirport</td>
-      <td>10.9</td>
-      <td>24.0</td>
-      <td>2.0</td>
-      <td>3.2</td>
-      <td>10.1</td>
-      <td>WSW</td>
-      <td>33.0</td>
-    </tr>
-    <tr>
-      <th>139885</th>
-      <td>Katherine</td>
-      <td>22.7</td>
-      <td>35.8</td>
+      <th>105643</th>
+      <td>Woomera</td>
+      <td>5.7</td>
+      <td>17.4</td>
       <td>0.0</td>
-      <td>6.8</td>
+      <td>2.2</td>
       <td>NaN</td>
-      <td>E</td>
-      <td>39.0</td>
+      <td>W</td>
+      <td>54.0</td>
+    </tr>
+    <tr>
+      <th>98697</th>
+      <td>MountGambier</td>
+      <td>6.7</td>
+      <td>20.9</td>
+      <td>0.0</td>
+      <td>6.4</td>
+      <td>10.9</td>
+      <td>S</td>
+      <td>31.0</td>
+    </tr>
+    <tr>
+      <th>106637</th>
+      <td>Albany</td>
+      <td>14.4</td>
+      <td>20.2</td>
+      <td>0.0</td>
+      <td>4.2</td>
+      <td>11.2</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>69629</th>
+      <td>Mildura</td>
+      <td>10.7</td>
+      <td>27.9</td>
+      <td>0.0</td>
+      <td>5.8</td>
+      <td>11.3</td>
+      <td>SE</td>
+      <td>30.0</td>
     </tr>
   </tbody>
 </table>
@@ -210,7 +210,7 @@ atom.encode(max_onehot=10, frac_to_other=0.04)
 
 ```python
 # Perform undersampling of the majority class
-atom.balance(undersample=0.9)
+atom.balance(oversample=None, undersample=0.9)
 atom.stats()  # Note the balanced training set
 ```
 
@@ -235,21 +235,54 @@ atom.stats()  # Note the balanced training set
 
 
 ```python
-# Change the verbosity to avoid printing
-atom.verbose = 0
-
-# Define a custom metric
+# Define a custom metric_
 def f2_score(y_true, y_pred):
     return fbeta_score(y_true, y_pred, beta=2)
 
 # Fit the EXtra-Trees and Random Forest to the data
 atom.run(models=['et', 'rf'],
          metric=f2_score,
-         n_calls=5,
-         n_random_starts=2,
-         bo_params={'cv': 1},
-         bagging=5)
+         n_calls=0,
+         bagging=5,
+         verbose=1)
 ```
+
+    
+    Running pipeline ============================= >>
+    Models in pipeline: ET, RF
+    Metric: f2_score
+    
+    
+    Results for Extra-Trees:         
+    Fitting -----------------------------------------
+    Score on the train set --> f2_score: 1.0000
+    Score on the test set  --> f2_score: 0.7509
+    Time elapsed: 0.345s
+    Bagging -----------------------------------------
+    Score --> f2_score: 0.7165 ± 0.0036
+    Time elapsed: 1.209s
+    -------------------------------------------------
+    Total time: 1.559s
+    
+    
+    Results for Random Forest:         
+    Fitting -----------------------------------------
+    Score on the train set --> f2_score: 1.0000
+    Score on the test set  --> f2_score: 0.7194
+    Time elapsed: 0.449s
+    Bagging -----------------------------------------
+    Score --> f2_score: 0.6933 ± 0.0088
+    Time elapsed: 1.718s
+    -------------------------------------------------
+    Total time: 2.172s
+    
+    
+    Final results ========================= >>
+    Duration: 3.733s
+    ------------------------------------------
+    Extra-Trees   --> f2_score: 0.717 ± 0.004 ~ !
+    Random Forest --> f2_score: 0.693 ± 0.009 ~
+    
 
 ## Analyze the results
 
@@ -259,19 +292,21 @@ atom.run(models=['et', 'rf'],
 atom.scoring()
 
 # The winning model is indicated with a ! and can be accessed through the winner attribute
+# The ~ indicates that the model is probably overfitting. If we look at the train and test
+# score we see a difference of more than 20%
 print(f'\n\nAnd the winner is the {atom.winner.longname} model!!')
 print('Score on the training set: ', atom.winner.score_train)
 print('Score on the test set: ', atom.winner.score_test)
 ```
 
     Results ===================== >>
-    Extra-Trees   --> f2_score: 0.670 ± 0.004
-    Random Forest --> f2_score: 0.644 ± 0.022
+    Extra-Trees   --> f2_score: 0.717 ± 0.004 ~
+    Random Forest --> f2_score: 0.693 ± 0.009 ~
     
     
     And the winner is the Extra-Trees model!!
-    Score on the training set:  0.748396895038812
-    Score on the test set:  0.6670709520921769
+    Score on the training set:  1.0
+    Score on the test set:  0.7508630609896432
     
 
 **We can make many plots to check the performance of the models**

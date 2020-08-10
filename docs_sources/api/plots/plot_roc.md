@@ -1,7 +1,6 @@
 # plot_roc
 -------------------------
 
-<a name="atom-plot-roc"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_roc</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">

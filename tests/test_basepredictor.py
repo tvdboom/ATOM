@@ -13,12 +13,18 @@ import numpy as np
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import TrainerClassifier
 from atom.utils import NotFittedError
 from .utils import X_bin, y_bin, X_reg, y_reg
 
 
 # Test properties =========================================================== >>
+
+def test_metric_property():
+    """Assert that the metric property returns the metric names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('lr', metric='f1')
+    assert atom.metric == 'f1'
+
 
 def test_models_property():
     """Assert that the models_ property returns the model subclasses."""
@@ -51,13 +57,6 @@ def test_dataset_property():
     """Assert that the dataset property returns the _data attribute."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dataset is atom._data
-
-
-def test_dataset_setter_property():
-    """Assert that the dataset setter works for the training classes."""
-    trainer = TrainerClassifier('LR')
-    trainer.dataset = X_bin
-    assert trainer.dataset.shape == X_bin.shape
 
 
 def test_train_property():
@@ -176,14 +175,14 @@ def test_not_fitted():
 
 
 def test_invalid_metric():
-    """Assert that an error is raised when an invalid metric is selected."""
+    """Assert that an error is raised when an invalid metric_ is selected."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(['ols', 'br'])
     pytest.raises(ValueError, atom.scoring, metric='f1')
 
 
 def test_metric_is_none():
-    """Assert that it works for metric=None."""
+    """Assert that it works for metric_=None."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(['ols', 'br'])
     atom.run('lgb', bagging=5)  # Test with and without bagging
@@ -192,7 +191,7 @@ def test_metric_is_none():
 
 
 def test_metric_is_given():
-    """Assert that it works for a specified metric."""
+    """Assert that it works for a specified metric_."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(['LDA', 'PA'])
     atom.scoring('auc')

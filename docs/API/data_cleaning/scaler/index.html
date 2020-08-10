@@ -54,6 +54,10 @@
 <li>
     <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/load/" class="dropdown-item">load</a>
+</li>
     </ul>
   </li>
                                     
@@ -146,6 +150,36 @@
 </li>
     </ul>
   </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Prediction methods</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/score.md" class="dropdown-item">score</a>
+</li>
     </ul>
   </li>
                                     
@@ -288,7 +322,7 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../../ATOM/atomregressor/" class="nav-link">
+                                <a rel="prev" href="../../ATOM/load/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
@@ -343,7 +377,9 @@
 <p>Scales data to mean=0 and std=1. Standardization of a dataset is a common requirement
  for many machine learning estimators: they might behave badly if the individual
  features do not more or less look like standard normally distributed data (e.g.
- Gaussian with 0 mean and unit variance).</p>
+ Gaussian with 0 mean and unit variance). This method is equal to sklearn's
+ <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">StandardScaler</a>
+ except that it returns a pd.DataFrame when provided.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

@@ -1,7 +1,6 @@
 # plot_calibration
 -------------------
 
-<a name="atom-plot-calibration"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">

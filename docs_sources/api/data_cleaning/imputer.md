@@ -48,9 +48,9 @@ Minimum fraction of non-missing values in a column. If less, the column is remov
 <strong>missing: int, float or list, optional (default=None)</strong>
 <blockquote>
 List of values to treat as 'missing'. None to use the default values:
- [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']. Note that np.NaN,
- None, np.inf and -np.inf will always be imputed because of the
- incompatibility with the models. 
+ [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']. Note that
+ np.NaN, None, np.inf and -np.inf will always be imputed since they are incompatible
+ with most models. 
 </blockquote>
 
 <strong>verbose: int, optional (default=0)</strong>

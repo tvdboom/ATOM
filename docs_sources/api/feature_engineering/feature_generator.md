@@ -37,7 +37,6 @@ Number of programs in each generation. Only if strategy='genetic'.
 <blockquote>
 Name of the operators to be used on the features (for both strategies). None to use all.
  Valid options are: 'add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan'.
-
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>

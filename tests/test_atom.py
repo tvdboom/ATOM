@@ -69,7 +69,7 @@ def test_task_assigning():
 def test_mapping_assignment():
     """Assert that ATOM adopts mapping from the StandardCleaner class."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.mapping is atom.standard_cleaner.mapping
+    assert atom.mapping is atom.pipeline[0].mapping
 
 
 def test_n_rows_fraction():
@@ -162,7 +162,7 @@ def test_verbose_in_transform():
     """Assert that the verbosity of the transformed classes is changed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     _ = atom.transform(X_bin, verbose=2)
-    assert atom.standard_cleaner.verbose == 2
+    assert atom.pipeline[0].verbose == 2
 
 
 def test_parameters_are_obeyed():
@@ -182,6 +182,20 @@ def test_transform_with_y():
 
 
 # Test data cleaning methods ================================================ >>
+
+def test_ATOM_params_to_method():
+    """Assert that the ATOM parameters are passed to the method."""
+    atom = ATOMClassifier(X_bin, y_bin, verbose=1)
+    atom.scale()
+    assert atom.pipeline[1].verbose == 1
+
+
+def test_custom_params_to_method():
+    """Assert that a custom parameter is passed to the method."""
+    atom = ATOMClassifier(X_bin, y_bin, verbose=1)
+    atom.scale(verbose=2)
+    assert atom.pipeline[1].verbose == 2
+
 
 def test_scale():
     """Assert that the scale method normalizes the features."""
@@ -221,16 +235,16 @@ def test_balance_wrong_task():
 def test_balance():
     """Assert that the balance method balances the training set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    length = (atom.y_train == 1).sum()
-    atom.balance(undersample=0.8)
-    assert (atom.y_train == 1).sum() != length
+    length = (atom.y_train == 0).sum()
+    atom.balance()
+    assert (atom.y_train == 0).sum() != length
 
 
 def test_balance_mapping():
     """Assert that the balance method gets the mapping attribute from ATOM."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.balance(undersample=0.8)
-    assert atom.balancer.mapping == atom.mapping
+    atom.balance()
+    assert atom.pipeline[1].mapping == atom.mapping
 
 
 # Test feature engineering methods ========================================== >>
@@ -264,12 +278,12 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='univariate', solver=None, n_features=8)
-    assert atom.feature_selector.solver.__name__ == 'f_classif'
+    assert atom.pipeline[1].solver.__name__ == 'f_classif'
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy='univariate', solver=None, n_features=8)
-    assert atom.feature_selector.solver.__name__ == 'f_regression'
+    assert atom.pipeline[1].solver.__name__ == 'f_regression'
 
 
 def test_winner_solver_after_run():
@@ -277,7 +291,7 @@ def test_winner_solver_after_run():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr')
     atom.feature_selection(strategy='sfm', solver=None, n_features=8)
-    assert atom.feature_selector.solver is atom.winner.model
+    assert atom.pipeline[1].solver is atom.winner.model
 
 
 def test_default_solver_from_task():
@@ -285,20 +299,20 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='rfe', solver='lgb', n_features=8)
-    assert type(atom.feature_selector.solver).__name__ == 'LGBMClassifier'
+    assert type(atom.pipeline[1].solver).__name__ == 'LGBMClassifier'
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy='rfe', solver='lgb', n_features=8)
-    assert type(atom.feature_selector.solver).__name__ == 'LGBMRegressor'
+    assert type(atom.pipeline[1].solver).__name__ == 'LGBMRegressor'
 
 
 def test_default_scoring_RFECV():
-    """Assert that the scoring for RFECV is ATOM's metric when exists."""
+    """Assert that the scoring for RFECV is ATOM's metric_ when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr', metric='recall')
     atom.feature_selection(strategy='rfecv', solver='lgb', n_features=8)
-    assert atom.feature_selector.kwargs['scoring'].name == 'recall'
+    assert atom.pipeline[1].kwargs['scoring'].name == 'recall'
 
 
 def test_plot_methods_attached():
@@ -325,11 +339,11 @@ def test_mapping_is_passed_to_trainer():
 
 
 def test_models_and_metric_are_updated():
-    """Assert that the models and metric attributes are updated correctly."""
+    """Assert that the models and metric_ attributes are updated correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(['LGB', 'CatB'], metric='max_error')
     assert atom.models == ['LGB', 'CatB']
-    assert atom.metric[0].name == 'max_error'
+    assert atom.metric == 'max_error'
 
 
 def test_results_are_replaced():
@@ -390,15 +404,15 @@ def test_run_clear_results():
 
 
 def test_assign_existing_metric():
-    """Assert that the existing metric is assigned if rerun."""
+    """Assert that the existing metric_ is assigned if rerun."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr', metric='recall')
     atom.run('lda')
-    assert atom.metric[0].name == 'recall'
+    assert atom.metric == 'recall'
 
 
 def test_raises_invalid_metric_consecutive_runs():
-    """Assert that an error is raised for a different metric."""
+    """Assert that an error is raised for a different metric_."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr', metric='recall')
     pytest.raises(ValueError, atom.run, 'lda', metric='f1')

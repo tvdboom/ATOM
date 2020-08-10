@@ -62,6 +62,7 @@ So, this sounds a bit like AutoML, how is ATOM different than
 
 <br>
 Possible steps taken by ATOM's pipeline:
+
 1. Data Cleaning
 	* Handle missing values
 	* Encode categorical features

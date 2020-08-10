@@ -1,13 +1,13 @@
 # plot_correlation
 ------------------
 
-<a name="plot-correlation"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_correlation</strong>(title=None, figsize=(10, 10), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L41">[source]</a></div></pre>
 <div style="padding-left:3%">
 Correlation matrix plot of the dataset. Ignores non-numeric columns. Can only be
- called from an [ATOMClassifier](../ATOM/atomclassifier.md)/[ATOMRegressor](../ATOM/atomregressor.md)
- instance. Can't be called from the model subclasses.
+ called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
+ <a href="../../ATOM/atomregressor">ATOMRegressor</a> instance. Can't be called
+ from the model subclasses.
 <br /><br />
 <table width="100%">
 <tr>

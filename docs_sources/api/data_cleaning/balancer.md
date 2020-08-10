@@ -1,19 +1,19 @@
 # Balancer
 ----------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(oversample=None, undersample=None, n_neighbors=5,
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(oversample='not majority', undersample=None, n_neighbors=5,
                                   n_jobs=1, verbose=0, logger=None, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
 
-Balance the number of instances per target category. Using oversample and
+Balance the number of rows per target category. Using oversample and
  undersample at the same time or not using any will raise an exception.
- Use only for classification tasks. Dependency: [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/).
+ Use only for classification tasks.
 
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>oversample: float, string or None, optional (default=None)</strong>
+<strong>oversample: float, string or None, optional (default='not majority')</strong>
 <blockquote>
 Oversampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html">ADASYN</a>.
  Choose from:

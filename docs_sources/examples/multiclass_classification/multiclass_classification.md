@@ -369,7 +369,7 @@ atom.results
 
 
 ```python
-# Show the scoring for a different metric than the one we trained on
+# Show the scoring for a different metric_ than the one we trained on
 atom.scoring('precision_macro')
 ```
 

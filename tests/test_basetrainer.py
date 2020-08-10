@@ -90,9 +90,9 @@ def test_dimensions_proper_naming():
 # Test _prepare_metric ====================================================== >>
 
 def test_metric_to_list():
-    """Assert that the metric attribute is always a list."""
+    """Assert that the metric_ attribute is always a list."""
     trainer = TrainerClassifier('LR', metric='f1')
-    assert isinstance(trainer.metric, list)
+    assert isinstance(trainer.metric_, list)
 
 
 def test_max_3_metrics():
@@ -118,9 +118,9 @@ def test_needs_threshold_parameter():
 
 
 def test_metric_acronym():
-    """"Assert that using the metric acronyms work."""
+    """"Assert that using the metric_ acronyms work."""
     trainer = TrainerClassifier('LR', metric='auc')
-    assert trainer.metric[0].name == 'roc_auc'
+    assert trainer.metric == 'roc_auc'
 
 
 def test_invalid_scorer_name():
@@ -129,15 +129,15 @@ def test_invalid_scorer_name():
 
 
 def test_function_metric_parameter():
-    """Assert that a function metric works."""
+    """Assert that a function metric_ works."""
     trainer = TrainerClassifier('LR', metric=f1_score)
-    assert trainer.metric[0].name == 'f1_score'
+    assert trainer.metric == 'f1_score'
 
 
 def test_scorer_metric_parameter():
-    """Assert that a scorer metric works."""
+    """Assert that a scorer metric_ works."""
     trainer = TrainerClassifier('LR', metric=get_scorer(f1_score))
-    assert trainer.metric[0].name == 'f1_score'
+    assert trainer.metric == 'f1_score'
 
 
 # Test _params_to_attr ====================================================== >>

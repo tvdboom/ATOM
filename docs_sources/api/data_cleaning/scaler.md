@@ -6,7 +6,9 @@
 Scales data to mean=0 and std=1. Standardization of a dataset is a common requirement
  for many machine learning estimators: they might behave badly if the individual
  features do not more or less look like standard normally distributed data (e.g.
- Gaussian with 0 mean and unit variance).
+ Gaussian with 0 mean and unit variance). This method is equal to sklearn's
+ [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
+ except that it returns a pd.DataFrame when provided.
 
 <table>
 <tr>

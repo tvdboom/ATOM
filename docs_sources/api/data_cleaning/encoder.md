@@ -13,8 +13,9 @@ Perform encoding of categorical features. The encoding type depends on the numbe
 - If n_unique > max_onehot, use `encode_type`.
 
 Also replaces classes with low occurrences with the value 'other' in
-order to prevent too high cardinality. Categorical features are defined as
-all columns whose dtype.kind not in 'ifu'.
+ order to prevent too high cardinality. Categorical features are defined as
+ all columns whose dtype.kind not in 'ifu'. Will raise an error if it encounters
+ missing values or unknown categories while transforming.
 
 <table>
 <tr>
@@ -29,8 +30,8 @@ Maximum number of unique values in a feature to perform one-hot-encoding.
 <strong>encode_type: str, optional (default='Target')</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
- encoders available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category_encoders</a> package
- (only HashingEncoder is excluded).
+ encoders available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+ package (except for OneHotEncoder and HashingEncoder).
 </blockquote>
 
 <strong>frac_to_other: float, optional (default=None)</strong>

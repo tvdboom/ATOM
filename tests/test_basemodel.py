@@ -155,13 +155,13 @@ def test_bagging_is_negative():
 
 def test_bagging_attribute_types():
     """Assert that the bagging attributes have python types (not numpy)."""
-    # For single-metric
+    # For single-metric_
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('LR', bagging=5)
     assert isinstance(atom.lr.score_bagging, list)
     assert isinstance(atom.lr.mean_bagging, float)
 
-    # For multi-metric
+    # For multi-metric_
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('LR', metric=('f1', 'auc', 'recall'), bagging=5)
     assert isinstance(atom.lr.score_bagging, list)
@@ -319,21 +319,21 @@ def test_reset_predict_properties():
 
 
 def test_scoring_metric_None():
-    """Assert that the scoring methods works when metric is empty."""
+    """Assert that the scoring methods works when metric_ is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     assert isinstance(atom.mnb.scoring(), str)
 
 
 def test_unknown_metric():
-    """Assert that an error is raised when metric is unknown."""
+    """Assert that an error is raised when metric_ is unknown."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('OLS')
     pytest.raises(ValueError, atom.ols.scoring, 'unknown')
 
 
 def test_scoring_metric_acronym():
-    """Assert that the scoring methods works for metric acronyms."""
+    """Assert that the scoring methods works for metric_ acronyms."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     assert isinstance(atom.mnb.scoring('ap'), float)

@@ -29,7 +29,7 @@ from .training import (
     )
 from .plots import ATOMPlotter
 from .utils import (
-    CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, composed, crash, method_to_log, merge,
+    CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, composed, crash, method_to_log, merge,
     check_property, check_scaling, infer_task, catch_return, variable_return, clear
     )
 
@@ -66,22 +66,16 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Prepares input, runs StandardCleaner and splits in train and test sets."""
         # Data attributes
         self._idx = [None, None]  # Train and test set sizes
-        self._sizes = None
+        self._sizes = None  # Number of samples per iteration of train_sizing
 
-        # Method attributes
+        # Pipeline attributes
         self.profile = None
-        self.scaler = None
-        self.imputer = None
-        self.encoder = None
-        self.outlier = None
-        self.balancer = None
-        self.feature_generator = None
-        self.feature_selector = None
+        self.pipeline = pd.Series()
 
         # Training attributes
         self.trainer = None
         self.models = []
-        self.metric = None
+        self.metric_ = []
         self.errors = {}
         self._results = pd.DataFrame(
             columns=['name', 'score_bo', 'time_bo',
@@ -120,13 +114,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         map_target = False if self.goal.startswith('reg') else True
 
         # Apply the standard cleaning steps
-        self.standard_cleaner = \
-            StandardCleaner(prohibited_types=prohibited_types,
-                            map_target=map_target,
-                            verbose=self.verbose,
-                            logger=self.logger)
-        X_y = merge(*self.standard_cleaner.transform(X, y))
-        self.mapping = self.standard_cleaner.mapping
+        standard_cleaner = StandardCleaner(prohibited_types=prohibited_types,
+                                           map_target=map_target,
+                                           verbose=self.verbose,
+                                           logger=self.logger)
+        X_y = merge(*standard_cleaner.transform(X, y))
+        self.pipeline = self.pipeline.append(pd.Series([standard_cleaner]), ignore_index=True)
+
+        # Add mapping attr to ATOM
+        self.mapping = standard_cleaner.mapping
 
         # Get number of rows, shuffle the dataset and reset indices
         kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
@@ -135,6 +131,30 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._idx[1] = int(self._test_size * len(self.dataset))
         self._idx[0] = len(self.dataset) - self._idx[1]
         self.stats(1)  # Print data stats
+
+    # Utility properties ==================================================== >>
+
+    @property
+    def missing(self):
+        """Returns an overview of the missing values in the dataset."""
+        nans = self.dataset.isna().sum().sum()
+        cols = self.columns[self.dataset.isna().any()]
+        if not nans:
+            return 0
+        elif len(cols) == 1:
+            return f"{nans} in column {cols[0]}"
+        else:
+            return f"{nans} in {len(cols)} columns"
+
+    @property
+    def categorical(self):
+        """Returns the number of categorical columns in the dataset."""
+        return list(self.X.select_dtypes(include=['category', 'object']).columns)
+
+    @property
+    def scaled(self):
+        """Returns whether the dataset is scaled."""
+        return check_scaling(self.dataset)
 
     # Utility methods ======================================================= >>
 
@@ -151,17 +171,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("\nDataset stats ================= >>", _vb)
         self.log(f"Shape: {self.dataset.shape}", _vb)
 
-        nans = self.dataset.isna().sum().sum()
-        if nans > 0:
-            self.log(f"Missing values: {nans}", _vb)
-        categorical = self.X.select_dtypes(include=['category', 'object']).shape[1]
-        if categorical > 0:
-            self.log(f"Categorical columns: {categorical}", _vb)
+        if self.missing:
+            self.log(f"Missing values: {self.missing}", _vb)
+        if len(self.categorical):
+            self.log(f"Categorical columns: {len(self.categorical)}", _vb)
 
-        self.log(f"Scaled: {check_scaling(self.X)}", _vb)
+        self.log(f"Scaled: {self.scaled}", _vb)
         self.log("----------------------------------", _vb)
-        self.log(f"Size of training set: {len(self.train)}", _vb)
-        self.log(f"Size of test set: {len(self.test)}", _vb)
+        self.log(f"Train set size: {len(self.train)}", _vb)
+        self.log(f"Test set size: {len(self.test)}", _vb)
 
         # Print count of target classes
         if self.task != 'regression':
@@ -182,7 +200,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Count number of occurrences in all sets
             uq_train, c_train = np.unique(self.y_train, return_counts=True)
             uq_test, c_test = np.unique(self.y_test, return_counts=True)
-            keys, values = '', []
+            keys = ''
+            train_val, test_val = [], []
             for key, value in self.mapping.items():
                 # If set has 0 instances of that class the array is empty
                 idx_train = np.where(uq_train == value)[0]
@@ -194,18 +213,24 @@ class ATOM(BasePredictor, ATOMPlotter):
                                       ' test_set': test}, ignore_index=True)
 
                 keys += key + ':'
-                values.append(train + test)
+                train_val.append(train)
+                test_val.append(test)
 
             stats.set_index(pd.Index(index), inplace=True)
 
-            string = ''  # Class balance string for values
-            for i in values:
-                string += str(round(i/(train+test), 1)) + ':'
+            if len(self.mapping) <= 5:  # Gets ugly for too many classes
+                train_str = test_str = ''  # Class balance string for values
+                for i, j in zip(train_val, test_val):
+                    train_str += str(round(i / train, 1)) + ':'
+                    test_str += str(round(j / test, 1)) + ':'
+
+                # [-1] to remove last colon
+                keys, train_str, test_str = keys[:-1], train_str[:-1], test_str[:-1]
+                self.log("----------------------------------", _vb + 1)
+                self.log(f"Train set balance: {keys} <==> {train_str}", _vb + 1)
+                self.log(f"Test set balance: {keys} <==> {test_str}", _vb + 1)
 
             self.log("----------------------------------", _vb + 1)
-            if len(self.mapping) < 5:  # Gets ugly for too many classes
-                # [-1] to remove last colon
-                self.log(f"Class balance: {keys[:-1]} <==> {string[:-1]}", _vb + 1)
             self.log(f"Instances in {self.target} per class:", _vb + 1)
             self.log(stats.to_markdown(), _vb + 1)
 
@@ -255,15 +280,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     def transform(self,
                   X: X_TYPES,
                   y: Y_TYPES = None,
-                  standard_cleaner: bool = True,
-                  scale: bool = True,
-                  impute: bool = True,
-                  encode: bool = True,
-                  outliers: bool = False,
-                  balance: bool = False,
-                  feature_generation: bool = True,
-                  feature_selection: bool = True,
-                  verbose: int = None):
+                  verbose: int = None,
+                  **kwargs):
         """Apply all data transformations in ATOM's pipeline to new data.
 
         Outliers and balance are False by default since they should only be used for
@@ -280,32 +298,21 @@ class ATOM(BasePredictor, ATOMPlotter):
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
-        standard_cleaner: bool, optional (default=True)
-            Whether to apply the standard cleaning step in the transformer.
-
-        scale: bool, optional (default=True)
-            Whether to apply the scaler step in the transformer.
-
-        impute: bool, optional (default=True)
-            Whether to apply the imputer step in the transformer.
-
-        encode: bool, optional (default=True)
-            Whether to apply the encoder step in the transformer.
-
-        outliers: bool, optional (default=False)
-            Whether to apply the outlier step in the transformer.
-
-        balance: bool, optional (default=False)
-            Whether to apply the balancer step in the transformer.
-
-        feature_generation: bool, optional (default=True)
-            Whether to apply the feature generator step in the transformer.
-
-        feature_selection: bool, optional (default=True)
-            Whether to apply the feature selector step in the transformer.
-
         verbose: int, optional (default=None)
             Verbosity level of the output. If None, it uses ATOM's verbosity.
+
+        **kwargs
+            Additional keyword arguments to customize which methods to apply.
+
+            Available options are:
+             - standard_cleaner: bool, optional (default=True)
+             - scale: bool, optional (default=True)
+             - impute: bool, optional (default=True)
+             - encode: bool, optional (default=True)
+             - outliers: bool, optional (default=False)
+             - balance: bool, optional (default=False)
+             - feature_generation: bool, optional (default=True)
+             - feature_selection: bool, optional (default=True)
 
         Returns
         -------
@@ -316,48 +323,66 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        # Dict of all data cleaning and feature selection classes and their
-        # respective attributes in the ATOM class
-        steps = dict(standard_cleaner='standard_cleaner',
-                     scale='scaler',
-                     impute='imputer',
-                     encode='encoder',
-                     outliers='outlier',
-                     balance='balancer',
-                     feature_generation='feature_generator',
-                     feature_selection='feature_selector')
-
         # Check verbose parameter
         if verbose is not None and (verbose < 0 or verbose > 2):
             raise ValueError("Invalid value for the verbose parameter." +
                              f"Value should be between 0 and 2, got {verbose}.")
 
-        for key, value in steps.items():
-            if eval(key) and getattr(self, value, None):
+        # All data cleaning and feature selection methods and their classes
+        steps = dict(standard_cleaner='StandardCleaner',
+                     scale='Scaler',
+                     impute='Imputer',
+                     encode='Encoder',
+                     outliers='Outliers',
+                     balance='Balancer',
+                     feature_generation='FeatureGenerator',
+                     feature_selection='FeatureSelector')
+
+        # Set default values if pipeline is not provided
+        if not kwargs.get('pipeline'):
+            for key, value in steps.items():
+                if key not in kwargs:
+                    kwargs[value] = False if key in ['outliers', 'balance'] else True
+                else:
+                    kwargs[value] = kwargs.pop(key)
+
+        for idx, estimator in self.pipeline.iteritems():
+            class_name = estimator.__class__.__name__
+            if idx in kwargs.get('pipeline', []) or kwargs.get(class_name):
                 # If verbose is specified, change the class verbosity
                 if verbose is not None:
-                    getattr(self, value).verbose = verbose
+                    estimator.verbose = verbose
 
                 # Some transformers return no y, but we need the original
-                X, y_returned = catch_return(getattr(self, value).transform(X, y))
+                X, y_returned = catch_return(estimator.transform(X, y))
                 y = y if y_returned is None else y_returned
 
         return variable_return(X, y)
 
     # Data cleaning methods ================================================= >>
 
+    def _prepare_kwargs(self, kwargs, params=None):
+        """Return kwargs with ATOM values if not specified."""
+        for attr in ['n_jobs', 'verbose', 'warnings', 'logger', 'random_state']:
+            if (not params or attr in params) and attr not in kwargs:
+                kwargs[attr] = getattr(self, attr)
+
+        return kwargs
+
     @composed(crash, method_to_log)
-    def scale(self):
+    def scale(self, **kwargs):
         """Scale the features.
 
         Scale the features in the dataset to mean=0 and std=1. The scaler is
         fitted only on the training set to avoid data leakage.
 
         """
-        self.scaler = Scaler(verbose=self.verbose, logger=self.logger)
-        self.scaler.fit(self.X_train)
+        kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
+        scaler = Scaler(**kwargs).fit(self.X_train)
 
-        self.X = self.scaler.transform(self.X)
+        self.X = scaler.transform(self.X)
+        self.pipeline = self.pipeline.append(
+            pd.Series([scaler]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
     def impute(self,
@@ -365,7 +390,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                strat_cat: str = 'drop',
                min_frac_rows: float = 0.5,
                min_frac_cols: float = 0.5,
-               missing: Optional[Union[int, float, str, list]] = None):
+               missing: Optional[Union[int, float, str, list]] = None,
+               **kwargs):
         """Handle missing values in the dataset.
 
         Impute or remove missing values according to the selected strategy.
@@ -375,18 +401,22 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        self.imputer = Imputer(strat_num=strat_num,
-                               strat_cat=strat_cat,
-                               min_frac_rows=min_frac_rows,
-                               min_frac_cols=min_frac_cols,
-                               missing=missing,
-                               verbose=self.verbose,
-                               logger=self.logger)
-        self.imputer.fit(self.X_train, self.y_train)
+        kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
+        imputer = Imputer(strat_num=strat_num,
+                          strat_cat=strat_cat,
+                          min_frac_rows=min_frac_rows,
+                          min_frac_cols=min_frac_cols,
+                          missing=missing,
+                          **kwargs).fit(self.X_train, self.y_train)
 
-        X, y = self.imputer.transform(self.X, self.y)
-        self.dataset = merge(X, y)
-        self.dataset.reset_index(drop=True, inplace=True)
+        X, y = imputer.transform(self.X, self.y)
+        self.dataset = merge(X, y).reset_index(drop=True)
+        self.pipeline = self.pipeline.append(
+            pd.Series([imputer]), ignore_index=True)
+
+        # Since Imputer removes from train and test set, reset indices
+        self._idx[1] = int(self._test_size * len(self.dataset))
+        self._idx[0] = len(self.dataset) - self._idx[1]
 
     @composed(crash, method_to_log, typechecked)
     def encode(self,
@@ -409,21 +439,22 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        self.encoder = Encoder(max_onehot=max_onehot,
-                               encode_type=encode_type,
-                               frac_to_other=frac_to_other,
-                               verbose=self.verbose,
-                               logger=self.logger,
-                               **kwargs)
-        self.encoder.fit(self.X_train, self.y_train)
+        kwargs = self._prepare_kwargs(kwargs, Encoder().get_params())
+        encoder = Encoder(max_onehot=max_onehot,
+                          encode_type=encode_type,
+                          frac_to_other=frac_to_other,
+                          **kwargs).fit(self.X_train, self.y_train)
 
-        self.X = self.encoder.transform(self.X)
+        self.X = encoder.transform(self.X)
+        self.pipeline = self.pipeline.append(
+            pd.Series([encoder]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
     def outliers(self,
                  strategy: Union[int, float, str] = 'drop',
                  max_sigma: Union[int, float] = 3,
-                 include_target: bool = False):
+                 include_target: bool = False,
+                 **kwargs):
         """Remove or replace outliers in the training set.
 
         Outliers are defined as values that lie further than
@@ -434,21 +465,24 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        self.outlier = Outliers(strategy=strategy,
-                                max_sigma=max_sigma,
-                                include_target=include_target,
-                                verbose=self.verbose,
-                                logger=self.logger)
+        kwargs = self._prepare_kwargs(kwargs, Outliers().get_params())
+        outliers = Outliers(strategy=strategy,
+                            max_sigma=max_sigma,
+                            include_target=include_target,
+                            **kwargs)
 
-        X_train, y_train = self.outlier.transform(self.X_train, self.y_train)
+        X_train, y_train = outliers.transform(self.X_train, self.y_train)
         self.train = merge(X_train, y_train)
         self.dataset.reset_index(drop=True, inplace=True)
+        self.pipeline = self.pipeline.append(
+            pd.Series([outliers]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
     def balance(self,
-                oversample: Optional[Union[int, float, str]] = None,
+                oversample: Optional[Union[int, float, str]] = 'not majority',
                 undersample: Optional[Union[int, float, str]] = None,
-                n_neighbors: int = 5):
+                n_neighbors: int = 5,
+                **kwargs):
         """Balance the target categories in the training set.
 
         Balance the number of instances per target category in the training set.
@@ -464,20 +498,20 @@ class ATOM(BasePredictor, ATOMPlotter):
             raise PermissionError(
                 "The balance method is only available for classification tasks!")
 
-        self.balancer = Balancer(oversample=oversample,
-                                 undersample=undersample,
-                                 n_neighbors=n_neighbors,
-                                 n_jobs=self.n_jobs,
-                                 verbose=self.verbose,
-                                 logger=self.logger,
-                                 random_state=self.random_state)
+        kwargs = self._prepare_kwargs(kwargs, Balancer().get_params())
+        balancer = Balancer(oversample=oversample,
+                            undersample=undersample,
+                            n_neighbors=n_neighbors,
+                            **kwargs)
 
         # Add mapping from ATOM to balancer for cleaner printing
-        self.balancer.mapping = self.mapping
+        balancer.mapping = self.mapping
 
-        X_train, y_train = self.balancer.transform(self.X_train, self.y_train)
+        X_train, y_train = balancer.transform(self.X_train, self.y_train)
         self.train = merge(X_train, y_train)
         self.dataset.reset_index(drop=True, inplace=True)
+        self.pipeline = self.pipeline.append(
+            pd.Series([balancer]), ignore_index=True)
 
     # Feature engineering methods =========================================== >>
 
@@ -487,7 +521,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                            n_features: Optional[int] = None,
                            generations: int = 20,
                            population: int = 500,
-                           operators: Optional[Union[str, Sequence[str]]] = None):
+                           operators: Optional[Union[str, Sequence[str]]] = None,
+                           **kwargs):
         """Create new non-linear features.
 
         Use Deep feature Synthesis or a genetic algorithm to create new combinations
@@ -497,24 +532,23 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the feature_engineering.py module for a description of the parameters.
 
         """
-        self.feature_generator = \
-            FeatureGenerator(strategy=strategy,
-                             n_features=n_features,
-                             generations=generations,
-                             population=population,
-                             operators=operators,
-                             n_jobs=self.n_jobs,
-                             verbose=self.verbose,
-                             logger=self.logger,
-                             random_state=self.random_state)
-        self.feature_generator.fit(self.X_train, self.y_train)
+        kwargs = self._prepare_kwargs(kwargs, FeatureGenerator().get_params())
+        feature_generator = FeatureGenerator(strategy=strategy,
+                                             n_features=n_features,
+                                             generations=generations,
+                                             population=population,
+                                             operators=operators,
+                                             **kwargs)
+        feature_generator.fit(self.X_train, self.y_train)
 
-        self.X = self.feature_generator.transform(self.X)
+        self.X = feature_generator.transform(self.X)
+        self.pipeline = self.pipeline.append(
+            pd.Series([feature_generator]), ignore_index=True)
 
         # Attach attributes to the ATOM class
         if strategy.lower() in ('gfg', 'genetic'):
             for attr in ['symbolic_transformer', 'genetic_features']:
-                setattr(self, attr, getattr(self.feature_generator, attr))
+                setattr(self, attr, getattr(feature_generator, attr))
 
     @composed(crash, method_to_log, typechecked)
     def feature_selection(self,
@@ -536,7 +570,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Note that the RFE and RFECV strategies don't work when the solver is a
         CatBoost model due to incompatibility of the APIs. If the run method has
         already been called before running RFECV, the scoring parameter will be set
-        to the selected metric (if not explicitly provided).
+        to the selected metric_ (if not explicitly provided).
 
         The sklearn objects are attached as attributes to the ATOM instance under
         the names: univariate, pca, sfm, rfe and rfecv.
@@ -561,31 +595,28 @@ class ATOM(BasePredictor, ATOMPlotter):
                     if not solver.endswith('_class') and not solver.endswith('_reg'):
                         solver += '_reg' if self.task.startswith('reg') else '_class'
 
-            # If the run method was called before, use the main metric for RFECV
+            # If the run method was called before, use the main metric_ for RFECV
             if strategy.lower() == 'rfecv':
-                if self.metric and 'scoring' not in kwargs:
-                    kwargs['scoring'] = self.metric[0]
+                if self.metric_ and 'scoring' not in kwargs:
+                    kwargs['scoring'] = self.metric_[0]
 
-        self.feature_selector = \
-            FeatureSelector(strategy=strategy,
-                            solver=solver,
-                            n_features=n_features,
-                            max_frac_repeated=max_frac_repeated,
-                            max_correlation=max_correlation,
-                            n_jobs=self.n_jobs,
-                            verbose=self.verbose,
-                            logger=self.logger,
-                            random_state=self.random_state,
-                            **kwargs)
-        self.feature_selector.fit(self.X_train, self.y_train)
+        kwargs = self._prepare_kwargs(kwargs, FeatureSelector().get_params())
+        feature_selector = FeatureSelector(strategy=strategy,
+                                           solver=solver,
+                                           n_features=n_features,
+                                           max_frac_repeated=max_frac_repeated,
+                                           max_correlation=max_correlation,
+                                           **kwargs)
+        feature_selector.fit(self.X_train, self.y_train)
+
+        self.X = feature_selector.transform(self.X)
+        self.pipeline = self.pipeline.append(
+            pd.Series([feature_selector]), ignore_index=True)
 
         # Attach used attributes to the ATOM class
-        attrs = ['collinear', 'univariate', 'pca', 'sfm', 'rfe', 'rfecv']
-        for attr in attrs:
-            if getattr(self.feature_selector, attr) is not None:
-                setattr(self, attr, getattr(self.feature_selector, attr))
-
-        self.X = self.feature_selector.transform(self.X)
+        for attr in ['collinear', 'univariate', 'pca', 'sfm', 'rfe', 'rfecv']:
+            if getattr(feature_selector, attr) is not None:
+                setattr(self, attr, getattr(feature_selector, attr))
 
     # Training methods ====================================================== >>
 
@@ -610,7 +641,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             # Update attributes
             self.models += [m for m in self.trainer.models if m not in self.models]
-            self.metric = self.trainer.metric
+            self.metric_ = self.trainer.metric_
 
             # If SuccessiveHalving or TrainSizing, replace the results
             if isinstance(self.trainer.results.index, pd.MultiIndex):
@@ -643,7 +674,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             n_calls: Union[int, Sequence[int]] = 0,
             n_random_starts: Union[int, Sequence[int]] = 5,
             bo_params: dict = {},
-            bagging: Optional[Union[int, Sequence[int]]] = None):
+            bagging: Optional[Union[int, Sequence[int]]] = None,
+            **kwargs):
         """Fit the models to the dataset in a direct fashion.
 
         Contrary to the Trainer class in training.py, this method allows
@@ -657,28 +689,27 @@ class ATOM(BasePredictor, ATOMPlotter):
         if not type(self.trainer).__name__.startswith('Trainer'):
             clear(self, self.models[:])
 
-        elif metric is None:  # Assign the existing metric
-            metric = self.metric
+        elif metric is None:  # Assign the existing metric_
+            metric = self.metric_
 
-        else:  # Check that the selected metric is the same as previous run
-            metric = BaseTrainer._prepare_metric(
+        else:  # Check that the selected metric_ is the same as previous run
+            metric_ = BaseTrainer._prepare_metric(
                 metric, greater_is_better, needs_proba, needs_threshold)
 
-            for metric1, metric2 in zip(metric, self.metric):
-                if metric1.name != metric2.name:
-                    raise ValueError(
-                        f"Invalid metric parameter! Metric {metric2.name} " +
-                        f"is already in use, got {metric1.name}. Use the clear " +
-                        "method before selecting a new metric.")
+            metric_name = flt([m.name for m in metric_])
+            if metric_name != self.metric:
+                raise ValueError("Invalid value for the metric parameter! Value " +
+                                 "should be the same as previous run. Expected " +
+                                 f"{self.metric}, got {metric_name}.")
 
         params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  n_calls, n_random_starts, bo_params, bagging, self.n_jobs,
-                  self.verbose, self.warnings, self.logger, self.random_state)
+                  n_calls, n_random_starts, bo_params, bagging)
 
+        kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
-            self.trainer = TrainerClassifier(*params)
+            self.trainer = TrainerClassifier(*params, **kwargs)
         else:
-            self.trainer = TrainerRegressor(*params)
+            self.trainer = TrainerRegressor(*params, **kwargs)
 
         self._run()
 
@@ -694,7 +725,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             n_calls: Union[int, Sequence[int]] = 0,
             n_random_starts: Union[int, Sequence[int]] = 5,
             bo_params: dict = {},
-            bagging: Optional[Union[int, Sequence[int]]] = None):
+            bagging: Optional[Union[int, Sequence[int]]] = None,
+            **kwargs):
         """Fit the models to the dataset in a successive halving fashion.
 
         If you want to compare similar models, you can choose to use a successive
@@ -712,14 +744,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         clear(self, self.models[:])
 
         params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  skip_iter, n_calls, n_random_starts, bo_params, bagging,
-                  self.n_jobs, self.verbose, self.warnings, self.logger,
-                  self.random_state)
+                  skip_iter, n_calls, n_random_starts, bo_params, bagging)
 
+        kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
-            self.trainer = SuccessiveHalvingClassifier(*params)
+            self.trainer = SuccessiveHalvingClassifier(*params, **kwargs)
         else:
-            self.trainer = SuccessiveHalvingRegressor(*params)
+            self.trainer = SuccessiveHalvingRegressor(*params, **kwargs)
 
         self._run()
 
@@ -734,7 +765,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                      n_calls: Union[int, Sequence[int]] = 0,
                      n_random_starts: Union[int, Sequence[int]] = 5,
                      bo_params: dict = {},
-                     bagging: Optional[Union[int, Sequence[int]]] = None):
+                     bagging: Optional[Union[int, Sequence[int]]] = None,
+                     **kwargs):
         """Fit the models to the dataset in a training sizing fashion.
 
         If you want to compare how different models perform when training on
@@ -748,19 +780,18 @@ class ATOM(BasePredictor, ATOMPlotter):
         clear(self, self.models[:])
 
         params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  train_sizes, n_calls, n_random_starts, bo_params, bagging,
-                  self.n_jobs, self.verbose, self.warnings, self.logger,
-                  self.random_state)
+                  train_sizes, n_calls, n_random_starts, bo_params, bagging)
 
+        kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
-            self.trainer = TrainSizingClassifier(*params)
+            self.trainer = TrainSizingClassifier(*params, **kwargs)
         else:
-            self.trainer = TrainSizingRegressor(*params)
+            self.trainer = TrainSizingRegressor(*params, **kwargs)
 
         self._run()
         self._sizes = self.trainer._sizes
 
-    # Properties ============================================================ >>
+    # Data properties ======================================================= >>
 
     def _update_trainer(self):
         """Update the trainer's data when changing data properties from ATOM."""

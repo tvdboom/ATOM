@@ -1,7 +1,6 @@
 # plot_evals
 ------------
 
-<a name="atom-plot-evals"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_evals</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -44,6 +43,7 @@ Whether to render the plot.
 ----------
 ```python
 from atom import ATOMRegressor
+
 atom = ATOMRegressor(X, y)
 atom.run('XGB')
 atom.XGB.plot_evals()

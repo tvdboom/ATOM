@@ -13,17 +13,15 @@ Description: Unit tests for data_cleaning.py
 import pytest
 import numpy as np
 import pandas as pd
-import multiprocessing
 
 # Own modules
-from atom import ATOMClassifier
 from atom.utils import NotFittedError, check_scaling
 from atom.data_cleaning import (
-    BaseTransformer, Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
+    Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
     )
 from .utils import (
-    X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array,
-    X10, X10_nan, X10_str, X10_str2, X10_sn, y10, y10_str
+    X_bin, y_bin, X_class, y_class, X10, X10_nan, X10_str, X10_str2,
+    X10_sn, y10, y10_str
     )
 
 
@@ -94,7 +92,7 @@ def test_drop_invalid_column_type():
 
 
 def test_drop_invalid_column_list_types():
-    """Assert that invalid columns types are dropd for list input."""
+    """Assert that invalid columns types are dropped for list input."""
     X = X_bin.copy()
     X['datetime_col'] = pd.to_datetime(X['mean radius'])  # Datetime column
     X['string_col'] = [str(i) for i in range(len(X))]  # String column
@@ -110,6 +108,12 @@ def test_strip_categorical_features():
     X['string_col'] = [' ' + str(i) + ' ' for i in range(len(X))]
     X = StandardCleaner(maximum_cardinality=False).transform(X)
     assert X['string_col'].equals(pd.Series([str(i) for i in range(len(X))]))
+
+
+def test_strip_ignores_nan():
+    """Assert that the stripping ignores missing values."""
+    X = StandardCleaner(maximum_cardinality=False).transform(X10_sn)
+    assert X.isna().sum().sum() == 1
 
 
 def test_drop_maximum_cardinality():
@@ -440,6 +444,13 @@ def test_value_outliers():
     assert X.iloc[5, 1] == -99
 
 
+def test_categorical_cols_are_ignores():
+    """Assert that categorical columns are returned untouched."""
+    Feature_2 = np.array(X10_str)[:, 2]
+    X, y = Outliers(strategy='min_max', max_sigma=2).transform(X10_str, y10)
+    assert [i == j for i, j in zip(X['Feature 2'], Feature_2)]
+
+
 def test_drop_outlier_in_target():
     """Assert that method works as intended for target columns as well."""
     X, y = Outliers(max_sigma=2, include_target=True).transform(X10, y10)
@@ -493,7 +504,8 @@ def test_undersampling_method_binary():
     """Assert that the undersampling method works for binary tasks."""
     strats = [1.0, 0.7, 'majority', 'not minority', 'all']
     for strat in strats:
-        X, y = Balancer(undersample=strat).transform(X_bin, y_bin)
+        balancer = Balancer(oversample=None, undersample=strat)
+        X, y = balancer.transform(X_bin, y_bin)
         assert (y == 1).sum() != (y_bin == 1).sum()
 
 
@@ -501,5 +513,6 @@ def test_undersampling_method_multiclass():
     """Assert that the undersampling method works for multiclass tasks."""
     strats = ['majority', 'not minority', 'all']
     for strat in strats:
-        X, y = Balancer(undersample=strat).transform(X_class, y_class)
+        balancer = Balancer(oversample=None, undersample=strat)
+        X, y = balancer.transform(X_class, y_class)
         assert (y == 1).sum() != (y_class == 1).sum()

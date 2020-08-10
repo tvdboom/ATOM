@@ -54,6 +54,10 @@
 <li>
     <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/load/" class="dropdown-item">load</a>
+</li>
     </ul>
   </li>
                                     
@@ -146,6 +150,36 @@
 </li>
     </ul>
   </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Prediction methods</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/score.md" class="dropdown-item">score</a>
+</li>
     </ul>
   </li>
                                     
@@ -349,8 +383,9 @@
 <li>If n_unique &gt; max_onehot, use <code>encode_type</code>.</li>
 </ul>
 <p>Also replaces classes with low occurrences with the value 'other' in
-order to prevent too high cardinality. Categorical features are defined as
-all columns whose dtype.kind not in 'ifu'.</p>
+ order to prevent too high cardinality. Categorical features are defined as
+ all columns whose dtype.kind not in 'ifu'. Will raise an error if it encounters
+ missing values or unknown categories while transforming.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -364,8 +399,8 @@ Maximum number of unique values in a feature to perform one-hot-encoding.
 <strong>encode_type: str, optional (default='Target')</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
- encoders available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category_encoders</a> package
- (only HashingEncoder is excluded).
+ encoders available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+ package (except for OneHotEncoder and HashingEncoder).
 </blockquote>
 
 <strong>frac_to_other: float, optional (default=None)</strong>

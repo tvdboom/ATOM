@@ -204,7 +204,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     model.fit(X_subtrain, y_subtrain)
 
                 # Calculate metrics on the validation set
-                return [metric(model, X_val, y_val) for metric in self.T.metric]
+                return [metric(model, X_val, y_val) for metric in self.T.metric_]
 
             t_iter = time()  # Get current time for start of the iteration
 
@@ -269,7 +269,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Print output of the BO
             out = [f"{m.name}: {scores[i]:.4f}  Best {m.name}: " +
                    f"{max([lst(s)[i] for s in self.bo.score]):.4f}"
-                   for i, m in enumerate(self.T.metric)]
+                   for i, m in enumerate(self.T.metric_)]
             self.T.log(f"Evaluation --> {'   '.join(out)}", 2)
             self.T.log(f"Time iteration: {t}   Total time: {t_tot}", 2)
 
@@ -423,7 +423,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log("Bayesian Optimization ---------------------------", 1)
         self.T.log(f"Best parameters --> {self.best_params}", 1)
         out = [f"{m.name}: {lst(self.score_bo)[i]:.4f}"
-               for i, m in enumerate(self.T.metric)]
+               for i, m in enumerate(self.T.metric_)]
         self.T.log(f"Best evaluation --> {'   '.join(out)}", 1)
         self.T.log(f"Time elapsed: {self.time_bo}", 1)
 
@@ -445,9 +445,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Save scores on complete training and test set
         self.score_train = flt([metric(self.model, self.X_train, self.y_train)
-                                for metric in self.T.metric])
+                                for metric in self.T.metric_])
         self.score_test = flt([metric(self.model, self.X_test, self.y_test)
-                               for metric in self.T.metric])
+                               for metric in self.T.metric_])
 
         # Print stats ======================================================= >>
 
@@ -460,10 +460,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                        .format(self._stopped[0], self._stopped[1]), 1)
         self.T.log("Score on the train set --> {}"
                    .format('   '.join([f"{m.name}: {lst(self.score_train)[i]:.4f}"
-                                       for i, m in enumerate(self.T.metric)])), 1)
+                                       for i, m in enumerate(self.T.metric_)])), 1)
         self.T.log("Score on the test set  --> {}"
                    .format('   '.join([f"{m.name}: {lst(self.score_test)[i]:.4f}"
-                                       for i, m in enumerate(self.T.metric)])), 1)
+                                       for i, m in enumerate(self.T.metric_)])), 1)
 
         # Get duration and print to log
         self.time_fit = time_to_string(t_init)
@@ -497,14 +497,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Fit on bootstrapped set and predict on the independent test set
             algorithm = self.model.fit(sample_x, sample_y)
             scores = flt([metric(algorithm, self.X_test, self.y_test)
-                          for metric in self.T.metric])
+                          for metric in self.T.metric_])
 
-            # Append metric result to list
+            # Append metric_ result to list
             self.score_bagging.append(scores)
 
         # Numpy array for mean and std
-        # Separate for multi-metric to transform numpy types in python types
-        if len(self.T.metric) == 1:
+        # Separate for multi-metric_ to transform numpy types in python types
+        if len(self.T.metric_) == 1:
             self.mean_bagging = np.mean(self.score_bagging, axis=0).item()
             self.std_bagging = np.std(self.score_bagging, axis=0).item()
         else:
@@ -514,7 +514,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log("Bagging -----------------------------------------", 1)
         out = [u"{}: {:.4f} \u00B1 {:.4f}"
                .format(m.name, lst(self.mean_bagging)[i], lst(self.std_bagging)[i])
-               for i, m in enumerate(self.T.metric)]
+               for i, m in enumerate(self.T.metric_)]
         self.T.log("Score --> " + '   '.join(out), 1)
 
         # Get duration and print to log
@@ -723,11 +723,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             out = '   '.join([f"{m.name}: {lst(self.mean_bagging)[i]:.3f}" +
                               u" \u00B1 " +
                               f"{lst(self.std_bagging)[i]:.3f}"
-                              for i, m in enumerate(self.T.metric)])
+                              for i, m in enumerate(self.T.metric_)])
 
         else:
             out = '   '.join([f"{m.name}: {lst(self.score_test)[i]:.3f}"
-                              for i, m, in enumerate(self.T.metric)])
+                              for i, m, in enumerate(self.T.metric_)])
 
         # Annotate if model overfitted when train 20% > test
         score_train = lst(self.score_train)
@@ -770,28 +770,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @composed(crash, typechecked)
     def scoring(self, metric: Optional[str] = None):
-        """Get the scoring of a specific metric on the test set.
+        """Get the scoring of a specific metric_ on the test set.
 
         Parameters
         ----------
         metric: str, optional (default=None)
-            Name of the metric to calculate. Choose from any of sklearn's SCORERS or
+            Name of the metric_ to calculate. Choose from any of sklearn's SCORERS or
             one of the following custom metrics: 'cm', 'tn', 'fp', 'fn', 'tp',
-            'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric(s) used for
+            'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric_(s) used for
             fitting.
 
         """
-        # If a metric acronym is used, assign the correct name
-        if metric in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric]
-
         metric_opts = list(SCORERS) + ['cm', 'confusion_matrix', 'tn', 'fp',
                                        'fn', 'tp', 'lift', 'fpr', 'tpr', 'sup']
 
         if metric is None:
             return self._final_output()
+        elif metric.lower() in METRIC_ACRONYMS:
+            metric = METRIC_ACRONYMS[metric.lower()]
         elif metric.lower() not in metric_opts:
-            raise ValueError("Unknown value for the metric parameter, " +
+            raise ValueError("Unknown value for the metric_ parameter, " +
                              f"got {metric}. Try one of {', '.join(metric_opts)}.")
 
         try:
@@ -838,12 +836,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             else:
                 y_pred = self.predict_test
 
-            # Calculate metric on the test set
+            # Calculate metric_ on the test set
             return SCORERS[metric]._sign * SCORERS[metric]._score_func(
                 self.y_test, y_pred, **SCORERS[metric]._kwargs)
 
         except (ValueError, TypeError):
-            return f"Invalid metric for a {self.name} model with {self.T.task} task!"
+            return f"Invalid metric_ for a {self.name} model with {self.T.task} task!"
 
     @composed(crash, method_to_log, typechecked)
     def save_model(self, filename: Optional[str] = None):

@@ -874,9 +874,9 @@ class XGBoost(BaseModel):
                   verbose=False)
 
         # Create evals attribute with train and validation scores
-        # Invert sign since XGBoost minimizes the metric
+        # Invert sign since XGBoost minimizes the metric_
         metric_name = list(model.evals_result()['validation_0'])[0]
-        self.evals = {'metric': metric_name,
+        self.evals = {'metric_': metric_name,
                       'train': model.evals_result()['validation_0'][metric_name],
                       'test': model.evals_result()['validation_1'][metric_name]}
 
@@ -954,7 +954,7 @@ class LightGBM(BaseModel):
 
         # Create evals attribute with train and validation scores
         metric_name = list(model.evals_result_['training'])[0]  # Get first key
-        self.evals = {'metric': metric_name,
+        self.evals = {'metric_': metric_name,
                       'train': model.evals_result_['training'][metric_name],
                       'test': model.evals_result_['valid_1'][metric_name]}
 
@@ -1035,7 +1035,7 @@ class CatBoost(BaseModel):
 
         # Create evals attribute with train and validation scores
         metric_name = list(model.evals_result_['learn'])[0]  # Get first key
-        self.evals = {'metric': metric_name,
+        self.evals = {'metric_': metric_name,
                       'train': model.evals_result_['learn'][metric_name],
                       'test': model.evals_result_['validation'][metric_name]}
 

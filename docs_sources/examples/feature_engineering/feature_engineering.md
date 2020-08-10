@@ -514,10 +514,8 @@ atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
 atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
-atom.verbose = 2  # Increase verbosity to see the steps
-
 # Create new features using Genetic Programming
-atom.feature_generation(strategy='genetic', n_features=10, generations=20, population=1000)
+atom.feature_generation(strategy='genetic', n_features=10, generations=20, population=1000, verbose=2)
 ```
 
     Fitting FeatureGenerator...

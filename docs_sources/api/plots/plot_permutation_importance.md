@@ -1,7 +1,7 @@
 # plot_permutation_importance
--------------------------
+-----------------------------
 
-<a name="atom-plot-permutation-importance"></a>
+<a name="atomclassifier-impute"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
                                                 title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>

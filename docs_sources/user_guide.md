@@ -55,15 +55,15 @@ First, create an ATOM instance and provide the data you want to use.
 
     atom = ATOMClassifier(X, y)
 
-Apply data cleaning methods through the class. For example, calling the
-[impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will impute all missing
+Apply data cleaning methods through the class. For example, calling
+[impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will handle all missing
  values in the dataset.
 
     atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
 
 Fit the models you want to compare to the data.
 
-    atom.run(['GNB', 'ET', 'MLP], metric='average_precision', n_calls=25, n_random_starts=10)
+    atom.run(['GNB', 'ET', 'MLP'], metric='average_precision', n_calls=25, n_random_starts=10)
 
 Analyze the results:
 
@@ -75,35 +75,30 @@ Analyze the results:
 # Data cleaning
 ---------------
 
-ATOM provides four classes that can help you perform standard data cleaning steps:
+More often than not, you need to do some data cleaning before fitting your dataset
+ to a model.  Usually, this involves importing different libraries and writing many
+ lines of code. Since ATOM is all about fast exploration and experimentation, it
+ provides various data cleaning classes to apply the most common transformations fast
+ and easy.
 
-<br>
+This example will encode all categorical columns in the dataset:
+ 
+    encoder = Encoder(max_onehot=5, encode_type='LeaveOneOut')
+    encoder.fit(X_train, y_train)
+    encoded_X = encoder.transform(X)
 
-### Standard data cleaning steps
+The same can be achieved from an ATOM instance with just one line of code!
+ 
+    atom.encode(max_onehot=5, encode_type='LeaveOneOut')
 
-<br>
+The available data cleaning classes are:
 
-### Scaling the features
-
-<br>
-
-### Handling missing values
-
-<br>
-
-### Encoding categorical features
-
-<br>
-
-### Handling outliers in the training set
-
-<br>
-
-### Balancing the data
-
-
-
-
+* [Scaler](../API/data_cleaning/scaler/)
+* [StandardCleaner](../API/data_cleaning/standard_cleaner/)
+* [Imputer](../API/data_cleaning/imputer/)
+* [Encoder](../API/data_cleaning/encoder/)
+* [Outliers](../API/data_cleaning/outliers/)
+* [Balancer](../API/data_cleaning/balancer/)
 
 
 <br><br>
@@ -254,7 +249,7 @@ RFECV applies the same algorithm as RFE but uses a cross-validated metric (under
 
 Variance is the expectation of the squared deviation of a random variable from its mean.
  Features with low variance have many values repeated, which means the model will not
- learn a lot from them. [FeatureSelector](API/feature_engineering/feature_selector.md)
+ learn much from them. [FeatureSelector](API/feature_engineering/feature_selector.md)
  removes all features where the same value is repeated in at least `max_frac_repeated`
  fraction of the rows. The default option is to remove a feature if all values in it
  are the same. 
@@ -262,21 +257,57 @@ Variance is the expectation of the squared deviation of a random variable from i
 
 **Removing features with multi-collinearity**
 
-Two features that are highly correlated are redundant. Two will not contribute more
- than only one of them. [FeatureSelector](API/feature_engineering/feature_selector.md)
- will remove one of two features that have a Pearson correlation coefficient larger 
- than `max_correlation`. The default option is to remove one of 2 equal columns.
- A dataframe of the removed features and their correlation values can be accessed
- through the `collinear` attribute.
+Two features that are highly correlated are redundant, i.e. two will not contribute more
+ to the model than only one of them. [FeatureSelector](API/feature_engineering/feature_selector.md)
+ will a features that have a Pearson correlation coefficient larger  than
+ `max_correlation` with another feature. A correlation of 1 means the two columns
+ are equal. A dataframe of the removed features and their correlation values can
+ be accessed through the `collinear` attribute.
+
 
 
 <br><br>
 # Model fitting and evaluation
 ------------------------------
 
+
+A couple of things to take into account:
+
+* The metric implementation follows [sklearn's API](https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values).
+  This means that the implementation always tries to maximize the scorer, i.e.
+  loss functions will be made negative.
+* If an exception is encountered while fitting a model, the
+  pipeline will automatically jump to the next model and save the
+  exception in the `errors` attribute.
+* When showing the final results, a `!!` indicates the highest
+  score and a `~` indicates that the model is possibly overfitting
+  (training set has a score at least 20% higher than the test set).
+* The winning model subclass will be attached to the `winner` attribute.
+
+
+1. The optimal hyperparameters are selected using a Bayesian Optimization (BO)
+ algorithm. The resulting score of each step of the BO is either computed by
+ cross-validation on the complete training set or by randomly splitting the training set every iteration into a (sub) training
+ set and a validation set. This process can create some data leakage but
+ ensures a maximal use of the provided data. The test set, however, does not
+ contain any leakage and will be used to determine the final score of every model.
+ Note that, if the dataset is relatively small, the best score on the BO can
+ consistently be lower than the final score on the test set (despite the
+ leakage) due to the considerable fewer instances on which it is trained.
+<div></div>
+ 
+2. Once the best hyperparameters are found, the model is trained again, now
+ using the complete training set. After this, predictions are made on the test set.
+<div></div>
+
+3. You can choose to evaluate the robustness of each model's applying a bagging
+ algorithm, i.e. the model will be trained multiple times on a bootstrapped
+ training set, returning a distribution of its performance on the test set.
+
+
 <br>
 
-### Multi-metric runs
+### Metric
 
 
 <br>
@@ -301,13 +332,35 @@ Two features that are highly correlated are redundant. Two will not contribute m
 
 
 
-<br><br>
-# Handle new data streams
--------------------------
 
-It is possible, that after running the whole ATOM pipeline, you would like to apply
- the same data transformations and maybe make predictions on a new dataset. This is
- possible using ATOM's [prediction methods]().
+
+<br><br>
+# Prediction  methods
+---------------------
+
+After running a succesful pipeline, it is possible you would like to apply all
+used transformations onto new data, or make predictions using one of the trained
+models. Just like a sklearn estimator, you can call the prediction
+methods from a fitted ATOM instance, e.g. `atom.predict(X)`. Calling the method
+directly from ATOM will use the winning model in the pipeline (under attribute
+`winner`). To use a different model, simply call the method from the model
+subclass, e.g. `atom.KNN.predict(X)`.
+
+The methods will all call the [transform](../API/ATOM/atomclassifier/#atomclassifier-transform)
+method, that is, all data pre-processing transformation taken by ATOM will be first
+applied on the provided data before making predictions. By default, this excludes
+outlier handling and balancing the dataset since these steps should only be applied
+on the training set. Use the method's parameters to select which transformations to
+use in every call.
+
+The available methods are a selection of the most common methods in sklearn's API:
+
+* [transform](../API/ATOM/atomclassifier/#atomclassifier-transform)
+* [predict](../API/ATOM/atomclassifier/#atomclassifier-predict)
+* [predict_proba](../API/ATOM/atomclassifier/#atomclassifier-predict-proba)
+* [predict_log_proba](../API/ATOM/atomclassifier/#atomclassifier-predict-log-proba)
+* [decision_function](../API/ATOM/atomclassifier/#atomclassifier-decision_function)
+* [score](../API/ATOM/atomclassifier/#atomclassifier-score)
 
 
 
@@ -328,20 +381,79 @@ The plot methods can be called from the ATOM instance directly, e.g. `atom.plot_
  the plot for that model. Use this option if you want information just for a specific
  model or to make the plot a bit less crowded.
 
-Apart from the plot-specific parameters they may have, all plots have four parameters in common:
-<ul>
-<li>The `title` parameter allows you to add a custom title to the plot.
-<li>The `figsize` parameter allows you to adjust the plot's size.
-<li>The `filename` parameter is used to save the plot as a .png file.
-<li>The `display` parameter determines whether the plot is rendered.</li>
- </ul>
- 
+<br>
 
-You can customize the following plot aesthetics using the [plotting properties](../API/ATOM/atomclassifier/#plotting-properties):
-<ul>
-<li>Seaborn style</li>
-<li>Color palette</li>
-<li>Title fontsize</li>
-<li>Label and legend fontsize</li>
-<li>Tick fontsize</li>
-</ul>
+### Parameters
+
+Apart from the plot-specific parameters they may have, all plots have four parameters in common:
+
+* The `title` parameter allows you to add a custom title to the plot.
+* The `figsize` parameter allows you to adjust the plot's size.
+* The `filename` parameter is used to save the plot as a .png file.
+* The `display` parameter determines whether the plot is rendered.
+
+<br>
+
+### Aesthetics
+
+The plot aesthetics can be customized using the properties described hereunder, e.g.
+ `atom.style = 'white'`.
+
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Properties:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Seaborn plotting style. See the <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+
+<strong>palette: str</strong>
+<blockquote>
+Seaborn color palette. See the <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for plot titles.
+</blockquote>
+
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for ticks.
+</blockquote>
+
+</td></tr>
+</table>
+<br>
+
+
+### Available plots
+
+A list of available plots can be find hereunder. Note that not all all plots can be
+ used for all tasks.
+
+* [plot_correlation](../API/plots/plot_correlation)
+* [plot_pca](../API/plots/plot_pca)
+* [plot_components](../API/plots/plot_components)
+* [plot_rfecv](../API/plots/plot_rfecv)
+* [plot_successive_halving](../API/plots/plot_successive_halving)
+* [plot_learning_curve](../API/plots/plot_learning_curve)
+* [plot_bagging](../API/plots/plot_bagging)
+* [plot_bo](../API/plots/plot_bo)
+* [plot_evals](../API/plots/plot_evals)
+* [plot_roc](../API/plots/plot_roc)
+* [plot_prc](../API/plots/plot_prc)
+* [plot_permutation_importance](../API/plots/plot_permutation_importance)
+* [plot_feature_importance](../API/plots/plot_feature_importance)
+* [plot_confusion_matrix](../API/plots/plot_confusion_matrix)
+* [plot_threshold](../API/plots/plot_threshold)
+* [plot_probabilities](../API/plots/plot_probabilities)
+* [plot_calibration](../API/plots/plot_calibration)
+* [plot_gain](../API/plots/plot_gain)
+* [plot_lift](../API/plots/plot_lift)

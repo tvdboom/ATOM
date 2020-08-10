@@ -127,7 +127,7 @@ atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_random_starts=1, 
 
 ```python
 # Note that some columns in the results dataframe now contain a list of scores,
-# one for each metric, in the same order as you called them
+# one for each metric_, in the same order as you called them
 atom.results[['score_bo', 'score_train', 'score_test']]
 ```
 
@@ -184,7 +184,7 @@ atom.results[['score_bo', 'score_train', 'score_test']]
 
 
 ```python
-# Some plots allow us to choose the metric we want to show
+# Some plots allow us to choose the metric_ we want to show
 atom.plot_bagging(metric='recall')
 ```
 

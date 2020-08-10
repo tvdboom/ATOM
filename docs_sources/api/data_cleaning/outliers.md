@@ -6,6 +6,7 @@
 
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
+ Ignores categorical columns.
 
 <table>
 <tr>

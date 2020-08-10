@@ -54,6 +54,10 @@
 <li>
     <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/load/" class="dropdown-item">load</a>
+</li>
     </ul>
   </li>
                                     
@@ -146,6 +150,36 @@
 </li>
     </ul>
   </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Prediction methods</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/score.md" class="dropdown-item">score</a>
+</li>
     </ul>
   </li>
                                     
@@ -341,7 +375,8 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
 
 <p>Remove or replace outliers in the data. Outliers are defined as values that lie
- further than <code>max_sigma</code> * standard_deviation away from the mean of the column.</p>
+ further than <code>max_sigma</code> * standard_deviation away from the mean of the column.
+ Ignores categorical columns.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

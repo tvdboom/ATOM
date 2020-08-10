@@ -158,31 +158,31 @@ class BasePlotter(object):
         return [m for m in self.models_ if m.name in models]
 
     def _check_metric(self, metric):
-        """Check the provided input metric.
+        """Check the provided input metric_.
 
         Parameters
         ----------
         metric: int or str
-            Metric provided by the metric parameter.
+            Metric provided by the metric_ parameter.
 
         """
         def _raise():
             raise ValueError(
-                "Invalid value for the metric parameter. Value should be the " +
-                f"index or name of a metric used to run the pipeline, got {metric}.")
+                "Invalid value for the metric_ parameter. Value should be the " +
+                f"index or name of a metric_ used to run the pipeline, got {metric}.")
 
         # If it's a str, return the corresponding idx
         if isinstance(metric, str):
             if metric.lower() in METRIC_ACRONYMS:
                 metric = METRIC_ACRONYMS[metric]
 
-            for i, m in enumerate(self.metric):
+            for i, m in enumerate(self.metric_):
                 if metric.lower() == m.name:
                     return i
             _raise()  # If no match was found, raise an exception
 
         # If index not in available metrics, raise an exception
-        elif metric < 0 or metric > len(self.metric) - 1:
+        elif metric < 0 or metric > len(self.metric_) - 1:
             _raise()
 
         return metric
@@ -419,7 +419,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline that used bagging are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric_ to plot. Only for multi-metric_ runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, adapts size to the number of models.
@@ -446,7 +446,10 @@ class BaseModelPlotter(BasePlotter):
         results, names = [], []
         for m in models:
             if m.score_bagging:
-                results.append(lst(m.score_bagging)[metric])
+                if len(self.metric_) > 1:  # Is list of lists
+                    results.append(lst(m.score_bagging)[metric])
+                else:  # Is single list
+                    results.append(m.score_bagging)
                 names.append(m.name)
 
         if figsize is None:  # Default figsize depends on number of models
@@ -458,7 +461,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(title="Bagging results" if title is None else title,
                    xlabel='Model',
-                   ylabel=self.metric[metric].name,
+                   ylabel=self.metric_[metric].name,
                    filename=filename,
                    display=display)
 
@@ -485,7 +488,7 @@ class BaseModelPlotter(BasePlotter):
             used bayesian optimization are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric_ to plot. Only for multi-metric_ runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -534,7 +537,7 @@ class BaseModelPlotter(BasePlotter):
         ax2.set_title("Distance between last consecutive iterations",
                       fontsize=self.title_fontsize)
         ax2.set_xlabel('Iteration', fontsize=self.label_fontsize, labelpad=12)
-        ax1.set_ylabel(self.metric[metric].name, fontsize=self.label_fontsize, labelpad=12)
+        ax1.set_ylabel(self.metric_[metric].name, fontsize=self.label_fontsize, labelpad=12)
         ax2.set_ylabel('d', fontsize=self.label_fontsize, labelpad=12)
         plt.setp(ax1.get_xticklabels(), visible=False)
         plt.subplots_adjust(hspace=.0)
@@ -593,7 +596,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(title="Evaluation curves" if title is None else title,
                    legend='best',
                    xlabel=m.get_domain()[0].name,  # First param is always the iter
-                   ylabel=m.evals['metric'],
+                   ylabel=m.evals['metric_'],
                    filename=filename,
                    display=display)
 
@@ -787,7 +790,7 @@ class BaseModelPlotter(BasePlotter):
                     permutation_importance(m.model,
                                            m.X_test,
                                            m.y_test,
-                                           scoring=self.metric[0],
+                                           scoring=self.metric_[0],
                                            n_repeats=n_repeats,
                                            n_jobs=self.n_jobs,
                                            random_state=self.random_state)
@@ -1035,7 +1038,7 @@ class BaseModelPlotter(BasePlotter):
                        figsize: Tuple[int, int] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-        """Plot performance metric(s) against multiple threshold values.
+        """Plot performance metric_(s) against multiple threshold values.
 
         Parameters
         ----------
@@ -1045,8 +1048,8 @@ class BaseModelPlotter(BasePlotter):
 
         metric: string, callable, list, tuple or None, optional (default=None)
             Metric(s) to plot. These can be one of the pre-defined sklearn scorers
-            as string, a metric function or a sklearn scorer object. If None, the
-            metric used to run the pipeline is used.
+            as string, a metric_ function or a sklearn scorer object. If None, the
+            metric_ used to run the pipeline is used.
 
         steps: int, optional (default=100)
             Number of thresholds measured.
@@ -1079,7 +1082,7 @@ class BaseModelPlotter(BasePlotter):
                     f"for models with a predict_proba method, got {m}.")
 
         if metric is None:
-            metric = self.metric
+            metric = self.metric_
         elif not isinstance(metric, list):
             metric = [metric]
 
@@ -1091,12 +1094,12 @@ class BaseModelPlotter(BasePlotter):
                     met = METRIC_ACRONYMS[met]
 
                 if met not in SCORERS:
-                    raise ValueError("Unknown value for the metric parameter, " +
+                    raise ValueError("Unknown value for the metric_ parameter, " +
                                      f"got {met}. Try one of {list(SCORERS)}.")
                 metric_list.append(SCORERS[met]._score_func)
             elif hasattr(met, '_score_func'):  # It is a scorer
                 metric_list.append(met._score_func)
-            else:  # It is a metric function
+            else:  # It is a metric_ function
                 metric_list.append(met)
 
         plt.subplots(figsize=figsize)
@@ -1108,7 +1111,7 @@ class BaseModelPlotter(BasePlotter):
                     predictions = (m.predict_proba_test[:, 1] >= step).astype(bool)
                     results.append(met(m.y_test, predictions))
 
-                # Draw the line for each metric
+                # Draw the line for each metric_
                 if len(models) == 1:
                     label = met.__name__
                 else:
@@ -1117,7 +1120,7 @@ class BaseModelPlotter(BasePlotter):
 
         if title is None:
             temp = '' if len(metric) == 1 else 's'
-            title = f"Performance metric{temp} against threshold value"
+            title = f"Performance metric_{temp} against threshold value"
         self._plot(title=title,
                    legend='best',
                    xlabel='Threshold',
@@ -1466,7 +1469,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric_ to plot. Only for multi-metric_ runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1509,7 +1512,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         self._plot(title="Successive halving results" if title is None else title,
                    legend='lower right',
                    xlabel='Iteration',
-                   ylabel=self.metric[metric].name,
+                   ylabel=self.metric_[metric].name,
                    filename=filename,
                    display=display)
 
@@ -1536,7 +1539,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric_ to plot. Only for multi-metric_ runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1578,7 +1581,7 @@ class TrainSizingPlotter(BaseModelPlotter):
         self._plot(title="Learning curve" if title is None else title,
                    legend='lower right',
                    xlabel='Number of training samples',
-                   ylabel=self.metric[metric].name,
+                   ylabel=self.metric_[metric].name,
                    filename=filename,
                    display=display)
 

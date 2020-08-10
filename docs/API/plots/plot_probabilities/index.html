@@ -54,6 +54,10 @@
 <li>
     <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/load/" class="dropdown-item">load</a>
+</li>
     </ul>
   </li>
                                     
@@ -146,6 +150,36 @@
 </li>
     </ul>
   </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Prediction methods</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/score.md" class="dropdown-item">score</a>
+</li>
     </ul>
   </li>
                                     
@@ -333,9 +367,9 @@
 
 <h1 id="plot_probabilities">plot_probabilities</h1>
 <hr />
-<p><a name="atom-plot-probabilities"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_probabilities</strong>(models=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+
 <div style="padding-left:3%">
 Plot performance metric(s) against multiple threshold values.
 <br /><br />
@@ -370,7 +404,8 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-<br /></p>
+
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMClassifier

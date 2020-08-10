@@ -33,34 +33,34 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     metric: str, callable or sequence, optional (default=None)
         Metric(s) on which the pipeline fits the models. Choose from any of
-        the string scorers predefined by sklearn, use a score (or loss)
-        function with signature metric(y, y_pred, **kwargs) or use a
-        scorer object. If multiple metrics are selected, only the first will
-        be used to optimize the BO. If None, a default metric is selected:
+        the scorers predefined by sklearn, use a score (or loss) function with
+        signature metric_(y, y_pred, **kwargs) or use a scorer object.
+        If multiple metrics are selected, only the first will be used to
+        optimize the BO. If None, a default metric_ is selected:
             - 'f1' for binary classification
             - 'f1_weighted' for multiclass classification
             - 'r2' for regression
 
     greater_is_better: bool or sequence, optional (default=True)
-        Whether the metric is a score function or a loss function,
+        Whether the metric_ is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric is a string or a scorer.
-        If sequence, the n-th value will apply to the n-th metric in the
+        better. Will be ignored if the metric_ is a string or a scorer.
+        If sequence, the n-th value will apply to the n-th metric_ in the
         pipeline.
 
     needs_proba: bool or sequence, optional (default=False)
-        Whether the metric function requires probability estimates out of a
+        Whether the metric_ function requires probability estimates out of a
         classifier. If True, make sure that every model in the pipeline has
-        a `predict_proba` method. Will be ignored if the metric is a string
-        or a scorer. If sequence, the n-th value will apply to the n-th metric
+        a `predict_proba` method. Will be ignored if the metric_ is a string
+        or a scorer. If sequence, the n-th value will apply to the n-th metric_
         in the pipeline.
 
     needs_threshold: bool or sequence, optional (default=False)
-        Whether the metric function takes a continuous decision certainty.
+        Whether the metric_ function takes a continuous decision certainty.
         This only works for binary classification using estimators that
         have either a `decision_function` or `predict_proba` method. Will
-        be ignored if the metric is a string or a scorer. If sequence, the
-        n-th value will apply to the n-th metric in the pipeline.
+        be ignored if the metric_ is a string or a scorer. If sequence, the
+        n-th value will apply to the n-th metric_ in the pipeline.
 
     n_calls: int or sequence, optional (default=0)
         Maximum number of iterations of the BO (including `random starts`).
@@ -222,25 +222,25 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 dimensions[get_model_name(key)] = self.bo_params['dimensions'][key]
             self.bo_params['dimensions'] = dimensions
 
-        # Check validity metric ============================================= >>
+        # Check validity metric_ ============================================= >>
 
-        self.metric = self._prepare_metric(
+        self.metric_ = self._prepare_metric(
             metric, greater_is_better, needs_proba, needs_threshold)
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
-        """Return a metric scorer given the parameters."""
+        """Return a metric_ scorer given the parameters."""
         if not isinstance(metric, (list, tuple)):
             metric = [metric]
         elif len(metric) > 3:
             raise ValueError("A maximum of 3 metrics are allowed!")
 
-        # Check metric parameters
+        # Check metric_ parameters
         if isinstance(gib, (list, tuple)):
             if len(gib) != len(metric):
                 raise ValueError("Invalid value for the greater_is_better " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"of metrics, got len(metric_)={len(metric)} " +
                                  f"and len(greater_is_better)={len(gib)}.")
         else:
             gib = [gib for _ in metric]
@@ -249,7 +249,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if len(needs_proba) != len(metric):
                 raise ValueError("Invalid value for the needs_proba " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"of metrics, got len(metric_)={len(metric)} " +
                                  f"and len(needs_proba)={len(needs_proba)}.")
         else:
             needs_proba = [needs_proba for _ in metric]
@@ -258,7 +258,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if len(needs_threshold) != len(metric):
                 raise ValueError("Invalid value for the needs_threshold " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 f"of metrics, got len(metric_)={len(metric)} " +
                                  f"and len(needs_threshold)={len(needs_threshold)}.")
         else:
             needs_threshold = [needs_threshold for _ in metric]

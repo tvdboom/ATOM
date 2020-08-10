@@ -118,7 +118,7 @@ atom.run('LGB', metric='ap', n_calls=7, n_random_starts=3, bo_params={'early_sto
 
 ```python
 # For these models, we can plot the evaluation on the train and test set during training
-# Note that the metric is provided by the model's library, not ATOM!
+# Note that the metric_ is provided by the model's library, not ATOM!
 atom.lgb.plot_evals(title="LightGBM's evaluation curve", figsize=(11, 9))
 ```
 

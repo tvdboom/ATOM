@@ -8,13 +8,92 @@ Description: Module containing the API classes.
 """
 
 # Standard packages
+import pickle
+import pandas as pd
 from typeguard import typechecked
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import X_TYPES, Y_TYPES
+from .utils import X_TYPES, Y_TYPES, merge
+
+
+# Functions ================================================================= >>
+
+@typechecked
+def ATOMLoader(filename: str,
+               data: Optional[Union[X_TYPES, Tuple]] = None,
+               transform_data: bool = True,
+               verbose: int = 0):
+    """Load a class from a pickle file.
+
+    If its a training instance, you can load new data.
+    If its an ATOM instance, you can load new data and apply all data
+    transformations in the pipeline.
+
+    Parameters
+    ----------
+    filename: str
+        Name of the pickle file to load.
+
+    data: dict, sequence, np.array, pd.DataFrame or tuple, optional (default=None)
+        Dataset containing the features, with shape=(n_samples, n_features) or
+        tuple of the form (X, y).
+
+    transform_data: bool, optional (default=True)
+        Only if the loaded file is an ATOM instance.
+
+    verbose: int, optional (default=0)
+        Verbosity level of the transformations applied on the new data.
+
+    """
+    # Check verbose parameter
+    if verbose < 0 or verbose > 2:
+        raise ValueError("Invalid value for the verbose parameter." +
+                         f"Value should be between 0 and 2, got {verbose}.")
+
+    with open(filename, 'rb') as f:
+        cls_ = pickle.load(f)
+
+    if data is not None:
+        if not hasattr(cls_, '_data'):
+            raise TypeError("Data is provided but the class is not an ATOM nor " +
+                            f"training instance, got {cls_.__class__.__name__}.")
+
+        elif cls_._data is not None:
+            raise ValueError("The loaded {} instance already contains data!"
+                             .format(cls_.__class__.__name__))
+
+        # Get X and y from data
+        if isinstance(data, (list, tuple)):
+            X, y = data[0], data[1]
+        else:
+            X, y = data, None
+
+        X, y = BaseTransformer._prepare_input(X, y)
+        cls_._data = X if y is None else merge(X, y)
+
+        if hasattr(cls_, 'pipeline') and transform_data:
+            # Transform the data through all steps in the pipeline
+            for estimator in cls_.pipeline:
+                estimator.set_params(verbose=verbose)
+
+                # Some transformations are only applied on the training set
+                if estimator.__class__.__name__ in ['Outliers', 'Balancer']:
+                    X_train, y_train = estimator.transform(cls_.X_train, cls_.y_train)
+                    cls_._data = pd.concat([merge(X_train, y_train), cls_.test])
+                    cls_._data.reset_index(drop=True, inplace=True)
+                else:
+                    X = estimator.transform(cls_.X, cls_.y)
+                    if isinstance(X, tuple):  # Estimator returned X, y
+                        X = merge(*X)
+                    cls_._data = X.reset_index(drop=True)
+
+        if getattr(cls_, 'trainer', None):
+            cls_.trainer._data = cls_._data
+
+    return cls_
 
 
 # Classes =================================================================== >>

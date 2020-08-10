@@ -182,7 +182,7 @@ def test_plot_successive_halving():
     pytest.raises(ValueError, sh.plot_successive_halving, models='unknown')
     pytest.raises(ValueError, sh.plot_successive_halving, models='BR')
 
-    # When metric is invalid, unknown or not in pipeline
+    # When metric_ is invalid, unknown or not in pipeline
     pytest.raises(ValueError, sh.plot_successive_halving, metric='unknown')
     pytest.raises(ValueError, sh.plot_successive_halving, metric=-1)
     pytest.raises(ValueError, sh.plot_successive_halving, metric=1)
@@ -250,8 +250,8 @@ def test_plot_bagging():
 
     # From ATOM
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run('ols', metric='max_error', bagging=3)
-    atom.plot_bagging(filename=FILE_DIR + 'bagging3', display=False)
+    atom.run('ols', metric=['me', 'r2'], bagging=3)
+    atom.plot_bagging(metric='me', filename=FILE_DIR + 'bagging3', display=False)
     atom.ols.plot_bagging(filename=FILE_DIR + 'bagging4', display=False)
     assert glob.glob(FILE_DIR + 'bagging3.png')
     assert glob.glob(FILE_DIR + 'bagging4.png')

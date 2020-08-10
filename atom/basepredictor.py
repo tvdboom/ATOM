@@ -14,8 +14,8 @@ from typeguard import typechecked
 
 # Own modules
 from .utils import (
-    X_TYPES, Y_TYPES, METRIC_ACRONYMS, check_is_fitted, get_best_score,
-    get_model_name, check_property, clear, method_to_log, composed, crash
+    X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted, get_best_score,
+    get_model_name, clear, method_to_log, composed, crash
     )
 
 
@@ -23,6 +23,11 @@ class BasePredictor(object):
     """Data properties and shared methods fot he ATOm and training classes."""
 
     # Properties ============================================================ >>
+
+    @property
+    def metric(self):
+        """Return a list of the model subclasses."""
+        return flt([metric.name for metric in self.metric_])
 
     @property
     def models_(self):
@@ -41,18 +46,20 @@ class BasePredictor(object):
             return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
 
     @property
+    def shape(self):
+        return self.dataset.shape
+
+    @property
+    def columns(self):
+        return self.dataset.columns
+
+    @property
     def target(self):
         return self._data.columns[-1]
 
     @property
     def dataset(self):
         return self._data
-
-    @dataset.setter
-    @typechecked
-    def dataset(self, dataset: Optional[X_TYPES]):
-        # Setter exists because of the save method (also allows None)
-        self._data = None if dataset is None else check_property(dataset, 'dataset')
 
     @property
     def train(self):
@@ -126,26 +133,26 @@ class BasePredictor(object):
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None):
-        """Print the trainer's final scoring for a specific metric.
+        """Print the trainer's final scoring for a specific metric_.
 
-        If a model shows a `XXX`, it means the metric failed for that specific
-        model. This can happen if either the metric is unavailable for the task
-        or if the model does not have a `predict_proba` method while the metric
+        If a model shows a `XXX`, it means the metric_ failed for that specific
+        model. This can happen if either the metric_ is unavailable for the task
+        or if the model does not have a `predict_proba` method while the metric_
         requires it.
 
         Parameters
         ----------
         metric: string or None, optional (default=None)
-            String of one of sklearn's predefined scorers. If None, the metric(s)
+            String of one of sklearn's predefined scorers. If None, the metric_(s)
             used to fit the trainer is selected and the bagging results will be
             showed (if used).
 
         """
         check_is_fitted(self, 'results')
 
-        # If a metric acronym is used, assign the correct name
-        if metric in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric]
+        # If a metric_ acronym is used, assign the correct name
+        if metric and metric.lower() in METRIC_ACRONYMS:
+            metric = METRIC_ACRONYMS[metric.lower()]
 
         # Get max length of the model names
         maxlen = max([len(m.longname) for m in self.models_])
@@ -153,9 +160,9 @@ class BasePredictor(object):
         # Get list of scores
         all_scores = [m.scoring(metric) for m in self.models_]
 
-        # Raise an error if the metric was invalid for all models
+        # Raise an error if the metric_ was invalid for all models
         if metric and all([isinstance(score, str) for score in all_scores]):
-            raise ValueError("Invalid metric selected!")
+            raise ValueError("Invalid metric_ selected!")
 
         self.log("Results ===================== >>", -2)
 
@@ -165,7 +172,7 @@ class BasePredictor(object):
             else:
                 score = m.scoring(metric)
 
-                # Create string of the score (if wrong metric for model -> XXX)
+                # Create string of the score (if wrong metric_ for model -> XXX)
                 if isinstance(score, str):
                     out = f"{m.longname:{maxlen}s} --> XXX"
                 else:
@@ -177,10 +184,10 @@ class BasePredictor(object):
     def clear(self, models: Union[str, Sequence[str]] = 'all'):
         """Clear models from the trainer.
 
-        This method removes all traces of a model in the trainer's pipeline (except
-        for the errors attribute). This includes the models and results attributes,
-        and the model subclass. If all models in the pipeline are removed, the
-        metric attribute is reset.
+        Removes all traces of a model in the trainer's pipeline (except for the
+        errors attribute). This includes the models and results attributes, and
+        the model subclass. If all models in the pipeline are removed, the
+        metric is reset.
 
         Parameters
         ----------
@@ -204,7 +211,7 @@ class BasePredictor(object):
 
         # If called from atom, clear also all traces from the trainer
         if hasattr(self, 'trainer'):
-            clear(self.trainer, models)
+            clear(self.trainer, [m for m in models if m in self.trainer.models])
             if not self.models:
                 self.trainer = None
 

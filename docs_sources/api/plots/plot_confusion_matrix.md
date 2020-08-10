@@ -1,7 +1,6 @@
 # plot_confusion_matrix
 -------------------------
 
-<a name="atom-plot-confusion-matrix"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, normalize=False, title=None,
                                           figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>

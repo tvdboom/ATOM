@@ -49,29 +49,17 @@ MODEL_NAMES = ['GP', 'GNB', 'MNB', 'BNB', 'OLS', 'Ridge', 'Lasso', 'EN', 'BR',
                'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
 METRIC_ACRONYMS = dict(ap='average_precision',
-                       AP='average_precision',
                        ba='balanced_accuracy',
-                       BA='balanced_accuracy',
                        auc='roc_auc',
-                       AUC='roc_auc',
                        ev='explained_variance',
-                       EV='explained_variance',
                        me='max_error',
-                       ME='max_error',
                        mae='neg_mean_absolute_error',
-                       MAE='neg_mean_absolute_error',
                        mse='neg_mean_squared_error',
-                       MSE='neg_mean_squared_error',
                        rmse='neg_root_mean_squared_error',
-                       RMSE='neg_root_mean_squared_error',
                        msle='neg_mean_squared_log_error',
-                       MSLE='neg_mean_squared_log_error',
                        medae='neg_median_absolute_error',
-                       MEDAE='neg_median_absolute_error',
                        poisson='neg_mean_poisson_deviance',
-                       POISSON='neg_mean_poisson_deviance',
-                       gamma='neg_mean_gamma_deviance',
-                       GAMMA='neg_mean_gamma_deviance')
+                       gamma='neg_mean_gamma_deviance')
 
 
 # Functions ================================================================= >>
@@ -123,7 +111,7 @@ def get_best_score(item, metric=0):
         Model subclass instance or row from the results dataframe.
 
     metric: int, optional (default=0)
-        Index of the metric to use.
+        Index of the metric_ to use.
 
     """
     if item.mean_bagging:
@@ -413,7 +401,7 @@ def get_model_name(model):
 
 
 def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
-    """Get the right metric depending on input type.
+    """Get the right metric_ depending on input type.
 
     Parameters
     ----------
@@ -421,17 +409,17 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         Metric as a string, function or scorer.
 
     greater_is_better: bool
-        whether the metric is a score function or a loss function,
+        whether the metric_ is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric is a string or a scorer.
+        better. Will be ignored if the metric_ is a string or a scorer.
 
     needs_proba: bool
-        Whether the metric function requires probability estimates out of a
-        classifier. Will be ignored if the metric is a string or a scorer.
+        Whether the metric_ function requires probability estimates out of a
+        classifier. Will be ignored if the metric_ is a string or a scorer.
 
     needs_threshold: bool
-        Whether the metric function takes a continuous decision certainty.
-        Will be ignored if the metric is a string or a scorer.
+        Whether the metric_ function takes a continuous decision certainty.
+        Will be ignored if the metric_ is a string or a scorer.
 
     Returns
     -------
@@ -451,15 +439,15 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         if metric in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric]
         elif metric not in SCORERS:
-            raise ValueError("Unknown value for the metric parameter, got " +
+            raise ValueError("Unknown value for the metric_ parameter, got " +
                              f"{metric}. Try one of: {', '.join(SCORERS)}.")
         metric = get_scorer(metric)
         metric.name = get_scorer_name(metric)
 
-    elif hasattr(metric, '_score_func'):  # Provided metric is scoring
+    elif hasattr(metric, '_score_func'):  # Provided metric_ is scoring
         metric.name = get_scorer_name(metric)
 
-    else:  # Metric is a function with signature metric(y, y_pred)
+    else:  # Metric is a function with signature metric_(y, y_pred)
         metric = make_scorer(metric,
                              greater_is_better=greater_is_better,
                              needs_proba=needs_proba,
@@ -470,7 +458,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
 
 
 def get_default_metric(task):
-    """Return the default metric for each task.
+    """Return the default metric_ for each task.
 
     Parameters
     ----------
@@ -560,7 +548,7 @@ def clear(self, models):
                 self._results.drop(model, axis=0, inplace=True, errors='ignore')
 
             if not self.models:  # No more models in the pipeline
-                self.metric = None
+                self.metric_ = []
 
             # Delete model subclasses
             delattr(self, model)
@@ -671,7 +659,7 @@ class PlotCallback(object):
         self.y2 = deque([np.NaN for _ in self.x], maxlen=max_len)
 
     def __call__(self, result):
-        # Start to fill NaNs with encountered metric values
+        # Start to fill NaNs with encountered metric_ values
         if np.isnan(self.y1).any():
             for i, value in enumerate(self.y1):
                 if math.isnan(value):
@@ -708,7 +696,7 @@ class PlotCallback(object):
         line1, = ax1.plot(self.x, self.y1, '-o', alpha=0.8)
         ax1.set_title(f"Bayesian Optimization for {self.M.longname}",
                       fontsize=self.M.T.title_fontsize)
-        ax1.set_ylabel(self.M.T.metric[0].name,
+        ax1.set_ylabel(self.M.T.metric_[0].name,
                        fontsize=self.M.T.label_fontsize,
                        labelpad=12)
         ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)

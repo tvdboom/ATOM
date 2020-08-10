@@ -23,6 +23,7 @@ nav:
     - ATOM:
         - ATOMClassifier: API/ATOM/atomclassifier.md
         - ATOMRegressor: API/ATOM/atomregressor.md
+        - load: API/ATOM/load.md
     - Data cleaning:
          - Scaler: API/data_cleaning/scaler.md
          - StandardCleaner: API/data_cleaning/standard_cleaner.md
@@ -43,6 +44,13 @@ nav:
         - TrainSizing:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
+    - Prediction methods:
+          - transform: API/prediction_methods/transform.md
+          - predict: API/prediction_methods/predict.md
+          - predict_proba: API/prediction_methods/predict_proba.md
+          - predict_log_proba: API/prediction_methods/predict_log_proba.md
+          - decision_function: API/prediction_methods/decision_function.md
+          - score: API/prediction_methods/score.md
     - Plots:
         - plot_correlation: API/plots/plot_correlation.md
         - plot_pca: API/plots/plot_pca.md

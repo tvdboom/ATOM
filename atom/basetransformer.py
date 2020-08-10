@@ -227,9 +227,11 @@ class BaseTransformer(object):
                                Only for ATOM or a training class.
 
         """
-        if kwargs.get('save_data') is False and hasattr(self, 'dataset'):
-            data = self.dataset.copy()  # Store the data to reattach later
-            self.dataset = None  # Use @setter to update the trainer as well
+        if kwargs.get('save_data') is False and hasattr(self, '_data'):
+            data = self._data.copy()  # Store the data to reattach later
+            self._data = None
+            if getattr(self, 'trainer', None):
+                self.trainer._data = None
 
         if not filename:
             filename = self.__class__.__name__
@@ -239,7 +241,7 @@ class BaseTransformer(object):
         with open(filename, 'wb') as file:
             pickle.dump(self, file)
 
-        if kwargs.get('save_data') is False and hasattr(self, 'dataset'):
-            self.dataset = data
+        if kwargs.get('save_data') is False and hasattr(self, '_data'):
+            self._data = data
 
         self.log(self.__class__.__name__ + " saved successfully!", 1)

@@ -15,6 +15,8 @@ Performs standard data cleaning steps on a dataset. These steps can include:
   * Removing rows with missing values in the target column.
   * Label-encode the target column.
 
+This class will be called automatically from the \__init\__ method of an ATOM instance.
+
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

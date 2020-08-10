@@ -258,19 +258,21 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             # Drop features with invalid data type
             dtype = str(X[col].dtype)
             if dtype in self.prohibited_types:
-                self.log(f" --> Dropping feature {col} due to " +
-                         f"unhashable type: {dtype}.", 2)
+                self.log(f" --> Dropping feature {col} for having a " +
+                         f"prohibited type: {dtype}.", 2)
                 X.drop(col, axis=1, inplace=True)
                 continue
 
-            elif dtype in ('object', 'category') and self.strip_categorical:
-                # Strip categorical features from blank spaces
-                X[col] = X[col].astype(str).str.strip()
+            elif dtype in ('object', 'category'):  # If non-numerical feature...
+                if self.strip_categorical:
+                    # Strip strings from blank spaces
+                    X[col] = X[col].apply(
+                        lambda val: val.strip() if isinstance(val, str) else val)
 
                 # Drop features where all values are different
                 if self.maximum_cardinality and n_unique == len(X):
-                    self.log(f" --> Dropping feature {col} due " +
-                             "to maximum cardinality.", 2)
+                    self.log(f" --> Dropping feature {col} " +
+                             "due to maximum cardinality.", 2)
                     X.drop(col, axis=1, inplace=True)
 
             # Drop features with minimum cardinality (all values are the same)
@@ -336,9 +338,9 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     missing: int, float or list, optional (default=None)
         List of values to treat as 'missing'. None to use the default
-        values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf'].
-        Note that np.NaN, None, np.inf and -np.inf will always be imputed because
-        of the incompatibility with the models.
+        values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf'].
+        Note that np.NaN, None, np.inf and -np.inf will always be imputed since they
+        are incompatible with most models.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -378,7 +380,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         # Set default missing list
         if missing is None:
-            missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'inf']
+            missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']
         elif not isinstance(missing, list):
             missing = [missing]  # Has to be an iterable for loop
 
@@ -563,9 +565,10 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         - If 2 < n_unique <= max_onehot, use one-hot-encoding.
         - If n_unique > max_onehot, use 'encode_type'.
 
-    Note that the Also replaces classes with low occurrences with the value 'other' in
-    order to prevent too high cardinality. Categorical features are defined as
-    all columns whose dtype.kind not in 'ifu'.
+    Also replaces classes with low occurrences with the value 'other' in order to
+    prevent too high cardinality. Categorical features are defined as all columns
+    whose dtype.kind not in 'ifu'. Will raise an error if it encounters missing
+    values or unknown categories while transforming.
 
     Parameters
     ----------
@@ -575,7 +578,8 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     encode_type: str, optional (default='Target')
         Type of encoding to use for high cardinality features. Choose from
-        one of the encoders available in the category_encoders package.
+        one of the encoders available in the category_encoders package (except
+        for OneHotEncoder and HashingEncoder).
 
     frac_to_other: float, optional (default=None)
         Categories with less rows than n_rows * fraction_to_other are replaced
@@ -684,12 +688,6 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                             self._to_other[col].append(category)
                             X[col].replace(category, 'other', inplace=True)
 
-                # Check column on missing values
-                if X[col].isna().any():
-                    raise ValueError(f"The column {col} encountered missing " +
-                                     "values. Impute them using the impute " +
-                                     "method before encoding!")
-
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
 
@@ -699,18 +697,23 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
                     self._col_to_type[col] = 'Ordinal'
-                    self._encoders[col] = OrdinalEncoder(
-                        handle_unknown='error').fit(values)
+                    self._encoders[col] = OrdinalEncoder(handle_missing='error',
+                                                         handle_unknown='error')
+                    self._encoders[col].fit(values)
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._col_to_type[col] = 'One-hot'
-                    self._encoders[col] = OneHotEncoder(
-                            handle_unknown='error', use_cat_names=True).fit(values)
+                    self._encoders[col] = OneHotEncoder(handle_missing='error',
+                                                        handle_unknown='error',
+                                                        use_cat_names=True)
+                    self._encoders[col].fit(values)
 
                 else:
                     self._col_to_type[col] = self.encode_type
-                    self._encoders[col] = self._rest_encoder(
-                        handle_unknown='error', **self.kwargs).fit(values, y)
+                    self._encoders[col] = self._rest_encoder(handle_missing='error',
+                                                             handle_unknown='error',
+                                                             **self.kwargs)
+                    self._encoders[col].fit(values, y)
 
         self._is_fitted = True
         return self
@@ -744,12 +747,6 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 for category in self._to_other[col]:
                     X[col].replace(category, 'other', inplace=True)
 
-                # Check column on missing values
-                if X[col].isna().any():
-                    raise ValueError(
-                        f"The column {col} encountered missing values. " +
-                        "Impute them using the impute method before encoding!")
-
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
 
@@ -772,7 +769,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
                         X.insert(idx + i, column, onehot_cols[column])
-                    # Drop the original and _nan column
+                    # Drop the original and _nan columns
                     X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
                 else:
@@ -792,6 +789,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Outliers are defined as values that lie further than
     `max_sigma` * standard_deviation away from the mean of the column.
+    Ignores categorical columns.
 
     Parameters
     ----------
@@ -873,8 +871,11 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         self.log('Handling outliers...', 1)
 
-        # Get z-scores
+        # Prepare dataset (merge with y and exclude categorical columns)
         objective = merge(X, y) if self.include_target and y is not None else X
+        objective = objective.select_dtypes(exclude=['category', 'object'])
+
+        # Get z-scores
         z_scores = zscore(objective, nan_policy='propagate')
 
         if not isinstance(self.strategy, str):
@@ -911,18 +912,24 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             if delete > 0:
                 self.log(f" --> Dropping {delete} rows due to outliers.", 2)
 
-            # Remove rows based on index
+            # Drop rows based on index
             objective = objective[ix]
+            X = X[ix]
             if y is not None:
                 y = y[ix]
 
+        # Replace the numerical columns in X with the new values from objective
+        for col in objective:
+            if y is None or col != y.name:
+                X[col] = objective[col]
+
         if y is not None:
             if self.include_target:
-                return objective.drop(y.name, axis=1), objective[y.name]
+                return X, objective[y.name]
             else:
-                return objective, y
+                return X, y
         else:
-            return objective
+            return X
 
 
 class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
@@ -934,7 +941,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    oversample: float, string or None, optional (default=None)
+    oversample: float, string or None, optional (default='not majority')
         Oversampling strategy using ADASYN. Choose from:
             - None: Don't oversample.
             - float: Fraction minority/majority (only for binary classification).
@@ -983,7 +990,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
     """
 
     def __init__(self,
-                 oversample: Optional[Union[int, float, str]] = None,
+                 oversample: Optional[Union[int, float, str]] = 'not majority',
                  undersample: Optional[Union[int, float, str]] = None,
                  n_neighbors: int = 5,
                  n_jobs: int = 1,

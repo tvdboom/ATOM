@@ -54,6 +54,10 @@
 <li>
     <a href="../atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
+            
+<li>
+    <a href="../load/" class="dropdown-item">load</a>
+</li>
     </ul>
   </li>
                                     
@@ -146,6 +150,36 @@
 </li>
     </ul>
   </li>
+    </ul>
+  </li>
+                                    
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Prediction methods</a>
+    <ul class="dropdown-menu">
+            
+<li>
+    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+</li>
+            
+<li>
+    <a href="../../prediction_methods/score.md" class="dropdown-item">score</a>
+</li>
     </ul>
   </li>
                                     
@@ -336,7 +370,7 @@
               <ul class="nav flex-column">
               </ul>
             </li>
-            <li class="nav-item" data-level="2"><a href="#feature-selection" class="nav-link">Feature selection</a>
+            <li class="nav-item" data-level="2"><a href="#feature-engineering" class="nav-link">Feature engineering</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -470,7 +504,6 @@ Seed used by the random number generator. If None, the random number
 <p><br></p>
 <h2 id="properties">Properties</h2>
 <hr />
-<h4 id="data-properties">Data properties</h4>
 <p>The dataset within ATOM's pipeline can be accessed at any time through multiple
  properties, e.g. calling <code>atom.train</code> will return the training set. The data can also
  be changed through these properties, e.g. <code>atom.test = atom.test.drop(0)</code> will
@@ -527,42 +560,6 @@ Test target.
 </table>
 
 <p><br></p>
-<h4 id="plotting-properties">Plotting properties</h4>
-<p>The plot aesthetics can be customized using the properties described hereunder, e.g.
- <code>atom.style = 'white'</code>.</p>
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Plotting properties:</strong></td>
-<td width="75%" style="background:white;">
-<strong>style: str</strong>
-<blockquote>
-Seaborn plotting style. See the <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
-</blockquote>
-
-<strong>palette: str</strong>
-<blockquote>
-Seaborn color palette. See the <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
-</blockquote>
-
-<strong>title_fontsize: int</strong>
-<blockquote>
-Fontsize for plot titles.
-</blockquote>
-
-<strong>label_fontsize: int</strong>
-<blockquote>
-Fontsize for labels and legends.
-</blockquote>
-
-<strong>tick_fontsize: int</strong>
-<blockquote>
-Fontsize for ticks.
-</blockquote>
-
-</td></tr>
-</table>
-
-<p><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
 <table>
@@ -602,6 +599,16 @@ Dataframe of the collinear features removed by the <a href="#atomclassifier-feat
 </ul>
 </blockquote>
 
+<strong>models: list</strong>
+<blockquote>
+List of models in the pipeline.
+</blockquote>
+
+<strong>metric: str or list</strong>
+<blockquote>
+Metric(s) used to fit the models in the pipeline.
+</blockquote>
+
 <strong>errors: dict</strong>
 <blockquote>
 Dictionary of the encountered exceptions (if any) after calling any of the training methods.
@@ -615,7 +622,7 @@ Model subclass that performed best on the test set. If multi-metric,
 
 <strong>results: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the training results with model's acronym as index. For <a href="#atomclassifier-successive-halving">successive_halving</a>
+Dataframe of the training results with the model acronyms as index. For <a href="#atomclassifier-successive-halving">successive_halving</a>
  and <a href="#atomclassifier-train-sizing">train_sizing</a>, an extra index level is added to indicate the different runs.
  Columns can include:
 <ul>
@@ -642,8 +649,13 @@ Dataframe of the training results with model's acronym as index. For <a href="#a
 inspect the pipeline.</p>
 <table>
 <tr>
-<td width="15%"><a href="#atomclassifier-stats">stats</a></td>
-<td>Print out a list of basic statistics on the dataset.</td>
+<td><a href="#atomclassifier-calibrate">calibrate</a></td>
+<td>Calibrate the winning model.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#atomclassifier-clear">clear</a></td>
+<td>Remove a model from the pipeline.</td>
 </tr>
 
 <tr>
@@ -656,9 +668,10 @@ inspect the pipeline.</p>
 <td>Get an extensive profile analysis of the data.</td>
 </tr>
 
+
 <tr>
-<td><a href="#atomclassifier-calibrate">calibrate</a></td>
-<td>Calibrate the winning model.</td>
+<td><a href="#atomclassifier-save">save</a></td>
+<td>Save the ATOMClassifier instance to a pickle file.</td>
 </tr>
 
 <tr>
@@ -666,21 +679,60 @@ inspect the pipeline.</p>
 <td>Print the scoring of the models for a specific metric.</td>
 </tr>
 
-
 <tr>
-<td><a href="#atomclassifier-save">save</a></td>
-<td>Save the ATOMClassifier instance to a pickle file.</td>
+<td width="15%"><a href="#atomclassifier-stats">stats</a></td>
+<td>Print out a list of basic statistics on the dataset.</td>
 </tr>
+
 </table>
 
 <p><br></p>
-<p><a name="atomclassifier-stats"></a>
-<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">stats</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L414">[source]</a></div></pre>
+<p><a name="atomclassifier-calibrate"></a>
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">calibrate</strong>(**kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
 <div style="padding-left:3%">
-Print out a list of basic information on the dataset.
+Applies probability calibration on the winning model. The calibration is done with the
+ <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
+ class from sklearn. The model will be trained via cross-validation on a subset
+ of the training data, using the rest to fit the calibrator. The new classifier will
+ replace the <code>model</code> attribute.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments for the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
+ instance. Using cv='prefit' will use the trained model and fit the calibrator on the
+ test set. Note that doing this will result in data leakage in the test set. Use this
+ only if you have another, independent set for testing.
+</blockquote>
+</tr>
+</table>
 </div>
-<br /><br /></p>
+<br /></p>
+<p><a name="atomclassifier-clear"></a>
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">clear</strong>(models='all')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L570">[source]</a></div></pre>
+<div style="padding-left:3%">
+Removes all traces of a model in the pipeline (except for the errors attribute).
+ This includes the models and results attributes, and the model subclass.
+ If all models in the pipeline are removed, the metric is reset. Use this method 
+ to remove unwanted models from the pipeline or to clear memory before saving. 
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>models: str, or sequence, optional (default='all')</strong>
+<blockquote>
+Name of the models to clear from the pipeline. If 'all', clear all models.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
 <p><a name="atomclassifier-log"></a>
 <pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
@@ -731,53 +783,6 @@ Name of the file when saved (as .html). None to not save anything.
 </table>
 </div>
 <br /></p>
-<p><a name="atomclassifier-scoring"></a>
-<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">scoring</strong>(metric=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
-<div style="padding-left:3%">
-Print the scoring of the models for a specific metric. If a model
- shows a <code>XXX</code>, it means the metric failed for that specific model. This
- can happen if either the metric is unavailable for classification tasks or if the
- model does not have a <code>predict_proba</code> method while the metric requires it.
-<br /><br />
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>metric: str or None, optional (default=None)</strong>
-<blockquote>
-String of one of sklearn's predefined metrics (see <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values">documentation</a>).
- If None, the metric used to run the pipeline is selected.
-</blockquote>
-</tr>
-</table>
-</div>
-<br /></p>
-<p><a name="atomclassifier-calibrate"></a>
-<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
-<div style="padding-left:3%">
-Applies probability calibration on the winning model. The calibration is done with the
- <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
- class from sklearn. The model will be trained via cross-validation on a subset
- of the training data, using the rest to fit the calibrator. The new classifier will
- replace the <code>model</code> attribute.
-<br /><br />
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>**kwargs</strong>
-<blockquote>
-Additional keyword arguments for the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
- instance. Using cv='prefit' will use the trained model and fit the calibrator on the
- test set. Note that doing this will result in data leakage in the test set. Use this
- only if you have another, independent set for testing.
-</blockquote>
-</tr>
-</table>
-</div>
-<br /></p>
 <p><a name="atomclassifier-save"></a>
 <pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
@@ -803,10 +808,49 @@ Whether to save the data as an attribute of the instance. If False, remember to
 
 <p></div>
 <br></p>
+<p><a name="atomclassifier-scoring"></a>
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">scoring</strong>(metric=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
+<div style="padding-left:3%">
+Print the scoring of the models for a specific metric. If a model
+ shows a <code>XXX</code>, it means the metric failed for that specific model. This
+ can happen if either the metric is unavailable for classification tasks or if the
+ model does not have a <code>predict_proba</code> method while the metric requires it.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>metric: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the metric to calculate. If None, returns the metric used to fit the pipeline.
+If string, choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
+ or one of the following custom metrics:
+<ul>
+<li>'cm' or 'confusion_matrix' for an array of the confusion matrix.</li>
+<li>'tn' for true negatives.</li>
+<li>'fp' for false positives.</li>
+<li>'fn' for false negatives.</li>
+<li>'lift' for the lift metric.</li>
+<li>'fpr' for the false positive rate.</li>
+<li>'tpr' for true positive rate.</li>
+<li>'sup' for the support metric.</li>
+</ul>
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
+<p><a name="atomclassifier-stats"></a>
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">stats</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L414">[source]</a></div></pre>
+<div style="padding-left:3%">
+Print out a list of basic information on the dataset.
+</div>
+<br /><br /></p>
 <h2 id="data-cleaning">Data cleaning</h2>
 <hr />
-<p>Usually, before throwing your data in a model, you need to apply some data
-cleaning steps. ATOM provides four data cleaning methods to handle missing values,
+<p>ATOM provides five data cleaning methods to scale your features and handle missing values,
  categorical columns, outliers and unbalanced datasets. Calling on one of them
  will automatically apply the method on the dataset in the pipeline.</p>
 <div class="admonition tip">
@@ -857,7 +901,8 @@ Scale the feature set to mean=1 and std=0. This method calls the <a href="#../da
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
  to avoid data leakage. See <a href="../../data_cleaning/imputer/">Imputer</a> for a description
- of the parameters.
+ of the parameters. Note that since the Imputer can remove rows from both train and
+ test set, the set's sizes may change to keep ATOM's <code>test_size</code> ratio.
 </div>
 <br /></p>
 <p><a name="atomclassifier-encode"></a>
@@ -888,7 +933,7 @@ Remove or replace outliers in the training set. Outliers are defined as values t
 </div>
 <br /></p>
 <p><a name="atomclassifier-balance"></a>
-<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">balance</strong>(oversample=None, undersample=None, n_neighbors=5) 
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">balance</strong>(oversample='not majority', undersample=None, n_neighbors=5) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1000">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of instances per target category in the training set.
@@ -898,15 +943,15 @@ Balance the number of instances per target category in the training set.
  See <a href="../../data_cleaning/balancer/">Balancer</a> for a description of the parameters.
 </div>
 <br></p>
-<h2 id="feature-selection">Feature selection</h2>
+<h2 id="feature-engineering">Feature engineering</h2>
 <hr />
-<p>To further pre-process the data you can create new non-linear features using a
- genetic algorithm or, if your dataset is too large, remove features using one
+<p>To further pre-process the data you can create new non-linear features transforming
+ the existing ones or, if your dataset is too large, remove features using one
  of the provided strategies.</p>
 <table>
 <tr>
 <td><a href="#atomclassifier-feature-generation">feature_generation</a></td>
-<td>Use a genetic algorithm to create new combinations of existing features.</td>
+<td>Create new features from combinations of existing ones.</td>
 </tr>
 
 <tr>
@@ -985,8 +1030,7 @@ See <a href="../../feature_engineering/feature_selector/">FeatureSelector</a> fo
 <div style="padding-left:3%">
 Calls a <a href="../../training/trainerclassifier/">TrainerClassifier</a> instance.
  Using this class through ATOMClassifier allows subsequent runs with different models
- without losing previous information (only the model subclasses are overwritten if the
- same model is rerun).
+ without losing previous information.
 </div>
 <br /></p>
 <p><a name="atomclassifier-successive-halving"></a>
@@ -1223,7 +1267,7 @@ Name of the metric to calculate. If None, return mean_bagging if exists, else sc
 If string, choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
  or one of the following custom metrics:
 <ul>
-<li>'cm' or 'confusion_matrix' for a (2x2)-array of the confusion matrix.</li>
+<li>'cm' or 'confusion_matrix' for an array of the confusion matrix.</li>
 <li>'tn' for true negatives.</li>
 <li>'fp' for false positives.</li>
 <li>'fn' for false negatives.</li>
@@ -1484,10 +1528,10 @@ Same arguments as the <a href="#atomclassifier-transform">transform</a> method t
 <br /></p>
 <h2 id="plots">Plots</h2>
 <hr />
-<p>Just like the prediction methods, the plots from the training class can be called
- directly from the instance, e.g. <code>atom.plot_prc()</code>, or from the model
+<p>Plots can be called directly from the instance, e.g. <code>atom.plot_prc()</code>, or from the model
  subclasses, e.g. <code>atom.LDA.plot_prc()</code>. The plots aesthetics can be customized using
- the <a href="#plotting-properties">plotting properties</a>. Available plots are:</p>
+ the <a href="../../../../user_guide/#aesthetics">plotting properties</a>. Read more in the
+ <a href="../../../../user_guide/#plotting">user guide</a>. Available plots are:</p>
 <table>
 <tr>
 <td><a href="../../plots/plot_correlation/">plot_correlation</a></td>
