@@ -16,7 +16,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Probability of being that category (as index or name).
+Probability of being that category in the target column as index or name.
+ Only for multiclass classification.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>

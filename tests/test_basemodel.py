@@ -155,16 +155,16 @@ def test_bagging_is_negative():
 
 def test_bagging_attribute_types():
     """Assert that the bagging attributes have python types (not numpy)."""
-    # For single-metric_
+    # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('LR', bagging=5)
-    assert isinstance(atom.lr.score_bagging, list)
+    assert isinstance(atom.lr.metric_bagging, list)
     assert isinstance(atom.lr.mean_bagging, float)
 
-    # For multi-metric_
+    # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('LR', metric=('f1', 'auc', 'recall'), bagging=5)
-    assert isinstance(atom.lr.score_bagging, list)
+    assert isinstance(atom.lr.metric_bagging, list)
     assert isinstance(atom.lr.mean_bagging, list)
 
 
@@ -199,6 +199,8 @@ def test_all_prediction_properties():
     assert atom.lr.predict_log_proba_test is atom.lr._predict_log_proba_test
     assert atom.sgd.decision_function_train is atom.sgd._decision_func_train
     assert atom.sgd.decision_function_test is atom.sgd._decision_func_test
+    assert atom.sgd.score_train is atom.sgd._score_train
+    assert atom.sgd.score_test is atom.sgd._score_test
 
 
 def test_results_property():
@@ -206,6 +208,27 @@ def test_results_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr')
     assert 'mean_bagging' not in atom.lr.results
+
+
+def test_shape_property():
+    """Assert that the shape property returns the shape of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.shape == atom.shape
+
+
+def test_columns_property():
+    """Assert that the columns property returns the columns of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
+
+
+def test_target_property():
+    """Assert that the target property returns the last column in the dataset."""
+    atom = ATOMClassifier(X_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.target == atom.target
 
 
 def test_dataset_property():
@@ -278,13 +301,6 @@ def test_y_test_property():
     atom.run(['MNB', 'LR'])
     assert atom.y_test.equals(atom.mnb.y_test)
     assert atom.y_test.equals(atom.lr.y_test)
-
-
-def test_target_property():
-    """Assert that the target property returns the original target."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('MNB')
-    assert atom.target == atom.mnb.target
 
 
 # Test utility methods ====================================================== >>

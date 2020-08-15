@@ -16,7 +16,13 @@ from time import time
 from datetime import datetime
 from collections import deque
 from typing import Union, Sequence
+
+# Sklearn
 from sklearn.metrics import SCORERS, get_scorer, make_scorer
+from sklearn.utils import _safe_indexing
+from sklearn.inspection._partial_dependence import (
+    _grid_from_X, _partial_dependence_brute
+    )
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -42,11 +48,6 @@ ONLY_REGRESSION = ['OLS', 'Lasso', 'EN', 'BR']
 
 # List of tree-based models
 TREE_MODELS = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
-
-# List of all the model acronyms
-MODEL_NAMES = ['GP', 'GNB', 'MNB', 'BNB', 'OLS', 'Ridge', 'Lasso', 'EN', 'BR',
-               'LR', 'LDA', 'QDA', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM',
-               'XGB', 'LGB', 'CatB', 'lSVM', 'kSVM', 'PA', 'SGD', 'MLP']
 
 METRIC_ACRONYMS = dict(ap='average_precision',
                        ba='balanced_accuracy',
@@ -117,7 +118,7 @@ def get_best_score(item, metric=0):
     if item.mean_bagging:
         return lst(item.mean_bagging)[metric]
     else:
-        return lst(item.score_test)[metric]
+        return lst(item.metric_test)[metric]
 
 
 def time_to_string(t_init):
@@ -390,12 +391,15 @@ def get_model_name(model):
         Correct model name acronym as present in the MODEL_LIST constant.
 
     """
+    # Not imported on top of file because of module interconnection
+    from .models import MODEL_LIST
+
     # Compare strings case insensitive
-    if model.lower() not in map(str.lower, MODEL_NAMES):
+    if model.lower() not in map(str.lower, MODEL_LIST):
         raise ValueError(
-            f"Unknown model: {model}! Choose from: {', '.join(MODEL_NAMES)}.")
+            f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}.")
     else:
-        for name in MODEL_NAMES:
+        for name in MODEL_LIST:
             if model.lower() == name.lower():
                 return name
 
@@ -436,8 +440,8 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
     if metric is None:
         return
     elif isinstance(metric, str):
-        if metric in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric]
+        if metric.lower() in METRIC_ACRONYMS:
+            metric = METRIC_ACRONYMS[metric.lower()]
         elif metric not in SCORERS:
             raise ValueError("Unknown value for the metric_ parameter, got " +
                              f"{metric}. Try one of: {', '.join(SCORERS)}.")
@@ -519,13 +523,58 @@ def infer_task(y, goal=''):
             return 'regression'
 
 
+def partial_dependence(estimator, X, features):
+    """Calculate the partial dependence of features.
+
+    Partial dependence of a feature (or a set of features) corresponds to the
+    average response of an estimator for each possible value of the feature.
+    Code from sklearn's _partial_dependence.py.
+    Note that this implementation always uses method='brute', grid_resolution=100
+    and percentiles=(0.05, 0.95).
+
+    Parameters
+    ----------
+    estimator : class
+        Model estimator to use.
+
+    X : pd.DataFrame
+        Feature set used to generate a grid of values for the target features
+        (where the partial dependence will be evaluated), and also to generate
+        values for the complement features.
+
+    features : int, str or sequence
+        The feature or pair of interacting features for which the partial
+        dependency should be computed.
+
+    Returns
+    -------
+    averaged_predictions: np.ndarray
+        Average of the predictions.
+
+    values: list
+        Values used for the predictions.
+
+    """
+    grid, values = _grid_from_X(
+        _safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
+
+    averaged_predictions = _partial_dependence_brute(
+        estimator, grid, features, X, 'auto')
+
+    # Reshape averaged_predictions to (n_outputs, n_values_feature_0, ...)
+    averaged_predictions = averaged_predictions.reshape(
+        -1, *[val.shape[0] for val in values])
+
+    return averaged_predictions, values
+
+
 # Functions shared by classes =============================================== >>
 
 def clear(self, models):
     """Clear models from the trainer.
 
     If the winning model is removed. The next best model (through
-    score_test or mean_bagging if available) is selected as winner.
+    metric_test or mean_bagging if available) is selected as winner.
 
     Parameters
     ----------

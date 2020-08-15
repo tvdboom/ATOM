@@ -70,7 +70,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Pipeline attributes
         self.profile = None
-        self.pipeline = pd.Series()
+        self.pipeline = pd.Series(dtype='object')
 
         # Training attributes
         self.trainer = None
@@ -78,8 +78,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.metric_ = []
         self.errors = {}
         self._results = pd.DataFrame(
-            columns=['name', 'score_bo', 'time_bo',
-                     'score_train', 'score_test', 'time_fit',
+            columns=['name', 'metric_bo', 'time_bo',
+                     'metric_train', 'metric_test', 'time_fit',
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
         self._results.index.name = 'model'
 
@@ -136,20 +136,24 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @property
     def missing(self):
-        """Returns an overview of the missing values in the dataset."""
-        nans = self.dataset.isna().sum().sum()
-        cols = self.columns[self.dataset.isna().any()]
-        if not nans:
-            return 0
-        elif len(cols) == 1:
-            return f"{nans} in column {cols[0]}"
-        else:
-            return f"{nans} in {len(cols)} columns"
+        """Returns columns with missing + inf values."""
+        missing = self.dataset.replace([-np.inf, np.inf], np.NaN).isna().sum()
+        return missing[missing > 0]
+
+    @property
+    def n_missing(self):
+        """Returns the total number of missing values in the dataset."""
+        return self.missing.sum()
 
     @property
     def categorical(self):
-        """Returns the number of categorical columns in the dataset."""
+        """Returns the names of categorical columns in the dataset."""
         return list(self.X.select_dtypes(include=['category', 'object']).columns)
+
+    @property
+    def n_categorical(self):
+        """Returns the number of categorical columns in the dataset."""
+        return len(self.categorical)
 
     @property
     def scaled(self):
@@ -171,10 +175,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("\nDataset stats ================= >>", _vb)
         self.log(f"Shape: {self.dataset.shape}", _vb)
 
-        if self.missing:
-            self.log(f"Missing values: {self.missing}", _vb)
-        if len(self.categorical):
-            self.log(f"Categorical columns: {len(self.categorical)}", _vb)
+        if self.n_missing:
+            self.log(f"Missing values: {self.n_missing}", _vb)
+        if self.n_categorical:
+            self.log(f"Categorical columns: {self.n_categorical}", _vb)
 
         self.log(f"Scaled: {self.scaled}", _vb)
         self.log("----------------------------------", _vb)
@@ -227,8 +231,11 @@ class ATOM(BasePredictor, ATOMPlotter):
                 # [-1] to remove last colon
                 keys, train_str, test_str = keys[:-1], train_str[:-1], test_str[:-1]
                 self.log("----------------------------------", _vb + 1)
-                self.log(f"Train set balance: {keys} <==> {train_str}", _vb + 1)
-                self.log(f"Test set balance: {keys} <==> {test_str}", _vb + 1)
+                if train_str == test_str:
+                    self.log(f"Dataset balance: {keys} <==> {train_str}", _vb + 1)
+                else:
+                    self.log(f"Train set balance: {keys} <==> {train_str}", _vb + 1)
+                    self.log(f"Test set balance: {keys} <==> {test_str}", _vb + 1)
 
             self.log("----------------------------------", _vb + 1)
             self.log(f"Instances in {self.target} per class:", _vb + 1)
@@ -346,9 +353,11 @@ class ATOM(BasePredictor, ATOMPlotter):
                 else:
                     kwargs[value] = kwargs.pop(key)
 
-        for idx, estimator in self.pipeline.iteritems():
+        # Loop over classes in pipeline with a transform method (exclude trainers)
+        transformers = [est for est in self.pipeline if hasattr(est, 'transform')]
+        for i, estimator in enumerate(transformers):
             class_name = estimator.__class__.__name__
-            if idx in kwargs.get('pipeline', []) or kwargs.get(class_name):
+            if i in kwargs.get('pipeline', []) or kwargs.get(class_name):
                 # If verbose is specified, change the class verbosity
                 if verbose is not None:
                     estimator.verbose = verbose
@@ -658,6 +667,18 @@ class ATOM(BasePredictor, ATOMPlotter):
                 # Add transform method to model subclasses
                 setattr(getattr(self, model), 'transform', self.transform)
                 setattr(getattr(self, model.lower()), 'transform', self.transform)
+
+            # Remove SuccessiveHalving and TrainSizing from the pipeline
+            self.pipeline = self.pipeline[
+                ~self.pipeline.astype(str).str.startswith(('Success', 'TrainSiz'))]
+
+            # If the last class in pipeline is a trainer, remove it as well
+            if self.pipeline.iloc[-1].__class__.__name__.startswith('Trainer'):
+                self.pipeline = self.pipeline.iloc[:-1]
+
+            # Add trainer to tje pipeline
+            self.pipeline = self.pipeline.append(
+                pd.Series([self.trainer]), ignore_index=True)
 
         finally:
             # Catch errors and pass them to ATOM's attribute

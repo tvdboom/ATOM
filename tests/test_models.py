@@ -9,7 +9,8 @@ Description: Unit tests for models.py
 
 # Import packages
 from atom import ATOMClassifier, ATOMRegressor
-from atom.utils import MODEL_NAMES, ONLY_CLASSIFICATION, ONLY_REGRESSION
+from atom.models import MODEL_LIST
+from atom.utils import ONLY_CLASSIFICATION, ONLY_REGRESSION
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 
@@ -17,7 +18,7 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 def test_models_binary():
     """Assert that the fit method works with all models for binary."""
-    for model in [m for m in MODEL_NAMES if m not in ONLY_REGRESSION]:
+    for model in [m for m in MODEL_LIST if m not in ONLY_REGRESSION]:
         atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
         atom.run(models=model,
                  metric='auc',
@@ -30,7 +31,7 @@ def test_models_binary():
 
 def test_models_multiclass():
     """Assert that the fit method works with all models for multiclass."""
-    for model in [m for m in MODEL_NAMES if m not in ONLY_REGRESSION]:
+    for model in [m for m in MODEL_LIST if m not in ONLY_REGRESSION]:
         if model == 'CatB':
             continue  # CatBoost fails with a weird error
         atom = ATOMClassifier(X_class2, y_class2, test_size=0.24, random_state=1)
@@ -45,7 +46,7 @@ def test_models_multiclass():
 
 def test_models_regression():
     """Assert that the fit method works with all models for regression."""
-    for model in [m for m in MODEL_NAMES if m not in ONLY_CLASSIFICATION]:
+    for model in [m for m in MODEL_LIST if m not in ONLY_CLASSIFICATION]:
         atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
         atom.run(models=model,
                  metric='neg_mean_absolute_error',

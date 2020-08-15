@@ -121,6 +121,40 @@ def test_train_test_split():
     assert len(atom.test) == round(test_size * len(X_bin)) - 1
 
 
+# Test utility properties ================================================== >>
+
+def test_missing():
+    """Assert that missing returns a series of missing values."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    assert atom.missing.sum() == 1
+
+
+def test_n_missing():
+    """Assert that n_missing returns the number of missing values."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    assert atom.n_missing == 1
+
+
+def test_categorical():
+    """Assert that categorical returns a list of categorical columns."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.categorical == ['Feature 2']
+
+
+def test_n_categorical():
+    """Assert that n_categorical returns the number of categorical columns."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.categorical == ['Feature 2']
+
+
+def test_scaled():
+    """Assert that scaled returns if the dataset is scaled."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.scaled
+    atom.scale()
+    assert atom.scaled
+
+
 # Test report =============================================================== >>
 
 def test_creates_report():
@@ -165,12 +199,28 @@ def test_verbose_in_transform():
     assert atom.pipeline[0].verbose == 2
 
 
+def test_pipeline_parameter():
+    """Assert that the pipeline parameter is obeyed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers(max_sigma=1)
+    X = atom.transform(X_bin, pipeline=[0])  # Only use StandardCleaner
+    assert len(X) == len(X_bin)
+
+
+def test_default_parameters():
+    """Assert that outliers and balance are False by default."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance()
+    X = atom.transform(X_bin)
+    assert len(X) == len(X_bin)
+
+
 def test_parameters_are_obeyed():
     """Assert that only the transformations for the selected parameters are done."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.outliers(max_sigma=1)
-    X = atom.transform(X_bin, outliers=False)
-    assert len(X) == len(X_bin)
+    X = atom.transform(X_bin, outliers=True)
+    assert len(X) != len(X_bin)
 
 
 def test_transform_with_y():
@@ -291,7 +341,7 @@ def test_winner_solver_after_run():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr')
     atom.feature_selection(strategy='sfm', solver=None, n_features=8)
-    assert atom.pipeline[1].solver is atom.winner.model
+    assert atom.pipeline[2].solver is atom.winner.model
 
 
 def test_default_solver_from_task():
@@ -312,7 +362,7 @@ def test_default_scoring_RFECV():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr', metric='recall')
     atom.feature_selection(strategy='rfecv', solver='lgb', n_features=8)
-    assert atom.pipeline[1].kwargs['scoring'].name == 'recall'
+    assert atom.pipeline[2].kwargs['scoring'].name == 'recall'
 
 
 def test_plot_methods_attached():
@@ -328,7 +378,7 @@ def test_errors_are_passed_to_ATOM():
     """Assert that the errors found in models are passed to ATOM."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(['LR', 'LGB'], n_calls=5, n_random_starts=(2, -1))
-    assert 'LGB' in atom.errors
+    assert atom.errors.get('LGB')
 
 
 def test_mapping_is_passed_to_trainer():

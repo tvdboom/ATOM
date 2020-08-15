@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="./" class="dropdown-item active">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -327,7 +343,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../plot_confusion_matrix/" class="nav-link">
+                                <a rel="next" href="../plot_partial_dependence/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -373,7 +389,8 @@
 
 <div style="padding-left:3%">
 Plot a tree-based model's feature importance. The importances are normalized in order
- to be able to compare them between models.
+ to be able to compare them between models. The `best_features` attribute is created,
+ which stores the showed features in order of importance.
 <br /><br />
 <table width="100%">
 <tr>

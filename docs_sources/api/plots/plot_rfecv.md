@@ -5,7 +5,7 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L213">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the scores obtained by the estimator fitted on every subset of
- the data. Can only be
+ the dataset. Can only be
  called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
  <a href="../../ATOM/atomregressor">ATOMRegressor</a> or 
  <a href="../../feature_engineering/feature_selector">FeatureSelector</a> instance
@@ -44,7 +44,7 @@ Whether to render the plot.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.feature_selection(strategy='RFECV', solver='LGB_reg', n_features=23)
+atom.feature_selection(strategy='RFECV', solver='LGB_reg', scoring='MAE')
 atom.plot_rfecv()
 ```
 ![plot_correlation](./img/plot_rfecv.png)

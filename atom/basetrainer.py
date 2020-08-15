@@ -99,9 +99,16 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             - 1 to print basic information.
             - 2 to print extended information.
 
-    warnings: bool, optional (default=True)
-        If False, suppresses all warnings. Note that this will change
-        the `PYTHONWARNINGS` environment.
+    warnings: bool or str, optional (default=True)
+        - If True: Default warning action (equal to 'default' when string).
+        - If False: Suppress all warnings (equal to 'ignore' when string).
+        - If str: One of the possible actions in python's warnings environment.
+
+        Note that changing this parameter will affect the `PYTHONWARNINGS`
+        environment.
+
+        Note that ATOM can't manage warnings that go directly from C/C++ code
+        to the stdout/stderr.
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
@@ -134,8 +141,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.models = []
         self.errors = {}
         self._results = pd.DataFrame(
-            columns=['name', 'score_bo', 'time_bo',
-                     'score_train', 'score_test', 'time_fit',
+            columns=['name', 'metric_bo', 'time_bo',
+                     'metric_train', 'metric_test', 'time_fit',
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
 
         # Check validity models ============================================= >>
@@ -224,12 +231,18 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Check validity metric_ ============================================= >>
 
+        # Set parameters as attributes for get_params()
+        self.greater_is_better = greater_is_better
+        self.needs_proba = needs_proba
+        self.needs_threshold = needs_threshold
+
+        # Get the metric scorer(s)
         self.metric_ = self._prepare_metric(
             metric, greater_is_better, needs_proba, needs_threshold)
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
-        """Return a metric_ scorer given the parameters."""
+        """Return a list of metric scorers given the parameters."""
         if not isinstance(metric, (list, tuple)):
             metric = [metric]
         elif len(metric) > 3:
@@ -381,8 +394,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         for m in self.models_:
             # Append model row to results
-            values = [m.longname, m.score_bo, m.time_bo,
-                      m.score_train, m.score_test, m.time_fit,
+            values = [m.longname, m.metric_bo, m.time_bo,
+                      m.metric_train, m.metric_test, m.time_fit,
                       m.mean_bagging, m.std_bagging, m.time_bagging, m.time]
             m._results.loc[m.name] = values
             results.loc[m.name] = values

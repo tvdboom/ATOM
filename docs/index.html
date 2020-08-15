@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="API/plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="API/plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="API/plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -362,62 +378,66 @@
  us to start with a simple model (e.g. linear regression) and build up to more
  complicated models (e.g. logistic regression -&gt; random forest -&gt; multilayer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
- different data cleaning steps, tuning a new set of hyperparameters, etc. Refactoring
- the code for all these steps can be very time consuming. This result in many data
- scientists just using the model best known to them and fine-tuning this particular
- model without ever trying other ones. This can result in poor performance (because
- the model is just not the right one for the task) or in poor time management (because you
- could have achieved a similar performance with a simpler/faster model).  </p>
+ different data cleaning steps, different type/amount of features, tuning a new set
+ of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
+ and time consuming. Because of this, many data scientists end up just using the model
+ best known to them and fine-tuning this particular model without ever trying different
+ ones. This can result in poor performance (because the model is just not the right one
+ for the task) or in poor time management (because you could have achieved a similar
+ performance with a simpler/faster model).</p>
 <p>ATOM is here to help us solve these issues. With just a few lines of code, you can
- perform basic data cleaning steps, select relevant features and compare the
- performance of multiple models on a given dataset. ATOM should be able to provide
- quick insights on which algorithms perform best for the task at hand and provide an
- indication of the feasibility of the ML solution.</p>
+ perform basic data cleaning steps, select relevant features and compare the performance
+ of multiple models on a given dataset. ATOM should be able to provide quick insights
+ on which algorithms perform best for the task at hand and provide an indication of
+ the feasibility of the ML solution.</p>
 <p>It is important to realize that ATOM is not here to replace all the work a data
  scientist has to do before getting his model into production. ATOM doesn't spit out
  production-ready models just by tuning some parameters in its API. After helping you
  to determine the right model, you will most probably need to fine-tune it using
- use-case specific features and data cleaning steps in order to achieve maximum
- performance.</p>
+ use-case specific features and data cleaning steps in order to achieve maximum performance.</p>
 <p>So, this sounds a bit like AutoML, how is ATOM different than 
- <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or
- <a href="http://epistasislab.github.io/tpot/">TPOT</a>? Well, ATOM does AutoML in the sense
- that it helps you find the best model for a specific task, but contrary to the
- aforementioned packages, it does not actively search for the best model. It just
- runs all of them and let you pick the one that you think suites the best.
- AutoML packages are often black boxes to which you provide data, and magically,
- a good model comes out. Although it works great, they often produce complicated
- pipelines with low explainability, hard to sell to the business. In this, ATOM excels.
- Every step of the pipeline is accounted for, and using the provided plotting methods,
- its easy to demonstrate why a model is better/worse than the other. </p>
+ <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or <a href="http://epistasislab.github.io/tpot/">TPOT</a>?
+ Well, ATOM does AutoML in the sense that it helps you find the best model for a
+ specific task, but contrary to the aforementioned packages, it does not actively
+ search for the best model. It simply runs all of them and let you pick the one that
+ you think suites you best. AutoML packages are often black boxes: if you provide
+ data, it will magically return a working model. Although it works great, they often
+ produce complicated pipelines with low explainability, hard to sell to the business.
+ In this, ATOM excels. Every step of the pipeline is accounted for, and using the
+ provided plotting methods, it’s easy to demonstrate why a model is better/worse than
+ the other.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>A data scientist with domain knowledge can outperform ATOM if he applies
 usecase-specific feature engineering or data cleaning steps! </p>
 </div>
-<p><br>
-Possible steps taken by ATOM's pipeline:</p>
+<p>Example steps taken by ATOM's pipeline:</p>
 <ol>
 <li>Data Cleaning<ul>
 <li>Handle missing values</li>
 <li>Encode categorical features</li>
-<li>Balance the dataset</li>
 <li>Remove outliers</li>
+<li>Balance the dataset</li>
 </ul>
 </li>
-<li>Perform feature selection<ul>
-<li>Remove features with too high collinearity</li>
+<li>Feature engineering<ul>
+<li>Create new non-linear features</li>
+<li>Remove multi-collinear features</li>
 <li>Remove features with too low variance</li>
-<li>Select best features according to a chosen strategy</li>
+<li>Select the most promising features based on a statistical test</li>
 </ul>
 </li>
-<li>Train and validate models<ul>
+<li>Train and validate multiple models<ul>
 <li>Select hyperparameters using a Bayesian Optimization approach</li>
 <li>Train and test the models on the provided data</li>
-<li>Perform bagging to assess the robustness of the models</li>
+<li>Perform bagging to assess the robustness of the output</li>
 </ul>
 </li>
-<li>Analyze the results</li>
+<li>Analyze the results<ul>
+<li>Get the model scores on various metrics</li>
+<li>Make plots to compare the model performances</li>
+</ul>
+</li>
 </ol>
 <p><br/><br/></p>
 <p><center>
@@ -507,5 +527,5 @@ Possible steps taken by ATOM's pipeline:</p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-08-10 18:21:44.755088+00:00
+Build Date UTC : 2020-08-15 15:20:43.622152+00:00
 -->

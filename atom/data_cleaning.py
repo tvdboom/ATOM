@@ -504,10 +504,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Drop columns with too many NaN values
             nans = X[col].isna().sum()  # Number of missing values in column
-            pnans = int(nans/len(X) * 100)  # Percentage of NaNs
+            p_nans = int(nans/len(X) * 100)  # Percentage of NaNs
             if (len(X) - nans)/len(X) < self.min_frac_cols:
                 self.log(f" --> Dropping feature {col} for containing " +
-                         f"{nans} ({pnans}%) missing values.", 2)
+                         f"{nans} ({p_nans}%) missing values.", 2)
                 X.drop(col, axis=1, inplace=True)
                 continue  # Skip to side column
 

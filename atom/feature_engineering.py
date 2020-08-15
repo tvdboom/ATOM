@@ -237,6 +237,16 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                                        features_only=True,
                                        trans_primitives=trans_primitives)
 
+            # Since dfs doesn't return a specific order in the features and we need
+            # an order for the selection to be deterministic, order by name
+            new_dfs = []
+            for feature in sorted(map(str, self.dfs_features)):
+                for fx in self.dfs_features:
+                    if feature == str(fx):
+                        new_dfs.append(fx)
+                        break
+            self.dfs_features = new_dfs
+
             # Make sure there are enough features (-1 because X has an index column)
             max_features = len(self.dfs_features) - X.shape[1] - 1
             if not self.n_features or self.n_features > max_features:
@@ -333,8 +343,6 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             new_features = new_features[:, ix]
             descript = [descript[i] for i in range(len(descript)) if i in ix]
             fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
-
-            self.log("-" * 49, 2)
 
             # Check if any new features remain in the loop
             if len(descript) == 0:

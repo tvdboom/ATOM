@@ -4,8 +4,10 @@
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_evals</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot evaluation curves for the train and test set. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). Only allows plotting of one model at a time.
+Plot evaluation curves for the train and test set. The metric is provided by the model's
+ package and is different for every model and every task. Only for models that allow
+ in-training evaluation (XGB, LGB, CatB). Only allows plotting one model at a time
+ because of the different evaluation metric for each.
 <br /><br />
 <table width="100%">
 <tr>

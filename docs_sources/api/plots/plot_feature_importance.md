@@ -6,7 +6,8 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot a tree-based model's feature importance. The importances are normalized in order
- to be able to compare them between models.
+ to be able to compare them between models. The `best_features` attribute is created,
+ which stores the showed features in order of importance.
 <br /><br />
 <table width="100%">
 <tr>

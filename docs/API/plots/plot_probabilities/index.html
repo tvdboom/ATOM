@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -383,7 +399,8 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Probability of being that category (as index or name).
+Probability of being that category in the target column as index or name.
+ Only for multiclass classification.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>

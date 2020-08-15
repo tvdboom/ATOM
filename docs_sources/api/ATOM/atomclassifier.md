@@ -106,6 +106,9 @@ Seed used by the random number generator. If None, the random number
 ## Properties
 -------------------
 
+
+### Data properties
+
 The dataset within ATOM's pipeline can be accessed at any time through multiple
  properties, e.g. calling `atom.train` will return the training set. The data can also
  be changed through these properties, e.g. `atom.test = atom.test.drop(0)` will
@@ -164,7 +167,26 @@ Test target.
 <br>
 
 
+### Utility properties
 
+<strong>models: list</strong>
+<blockquote>
+List of models in the pipeline.
+</blockquote>
+
+<strong>metric: str or list</strong>
+<blockquote>
+Metric(s) used to fit the models in the pipeline.
+</blockquote>
+
+
+### Plotting properties
+
+
+
+
+
+<br>
 
 ## Attributes
 -------------
@@ -204,16 +226,6 @@ Dataframe of the collinear features removed by the <a href="#atomclassifier-feat
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
 <li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
 </ul>
-</blockquote>
-
-<strong>models: list</strong>
-<blockquote>
-List of models in the pipeline.
-</blockquote>
-
-<strong>metric: str or list</strong>
-<blockquote>
-Metric(s) used to fit the models in the pipeline.
 </blockquote>
 
 <strong>errors: dict</strong>

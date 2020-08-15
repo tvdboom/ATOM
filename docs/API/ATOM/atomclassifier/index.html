@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../../plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../../plots/plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../../plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../../plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -504,6 +520,7 @@ Seed used by the random number generator. If None, the random number
 <p><br></p>
 <h2 id="properties">Properties</h2>
 <hr />
+<h3 id="data-properties">Data properties</h3>
 <p>The dataset within ATOM's pipeline can be accessed at any time through multiple
  properties, e.g. calling <code>atom.train</code> will return the training set. The data can also
  be changed through these properties, e.g. <code>atom.test = atom.test.drop(0)</code> will
@@ -560,6 +577,17 @@ Test target.
 </table>
 
 <p><br></p>
+<h3 id="utility-properties">Utility properties</h3>
+<p><strong>models: list</strong>
+<blockquote>
+List of models in the pipeline.
+</blockquote></p>
+<p><strong>metric: str or list</strong>
+<blockquote>
+Metric(s) used to fit the models in the pipeline.
+</blockquote></p>
+<h3 id="plotting-properties">Plotting properties</h3>
+<p><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
 <table>
@@ -597,16 +625,6 @@ Dataframe of the collinear features removed by the <a href="#atomclassifier-feat
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
 <li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
 </ul>
-</blockquote>
-
-<strong>models: list</strong>
-<blockquote>
-List of models in the pipeline.
-</blockquote>
-
-<strong>metric: str or list</strong>
-<blockquote>
-Metric(s) used to fit the models in the pipeline.
 </blockquote>
 
 <strong>errors: dict</strong>

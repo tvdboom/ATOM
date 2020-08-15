@@ -20,9 +20,9 @@ from .utils import (
 
 
 class BasePredictor(object):
-    """Data properties and shared methods fot he ATOm and training classes."""
+    """Data properties and shared methods fot he ATOM and training classes."""
 
-    # Properties ============================================================ >>
+    # Utility properties ==================================================== >>
 
     @property
     def metric(self):
@@ -47,15 +47,17 @@ class BasePredictor(object):
 
     @property
     def shape(self):
-        return self.dataset.shape
+        return self._data.shape
 
     @property
     def columns(self):
-        return self.dataset.columns
+        return self._data.columns
 
     @property
     def target(self):
         return self._data.columns[-1]
+
+    # Data properties=== ==================================================== >>
 
     @property
     def dataset(self):

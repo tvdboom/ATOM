@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -372,7 +388,7 @@
 
 <div style="padding-left:3%">
 Plot the scores obtained by the estimator fitted on every subset of
- the data. Can only be
+ the dataset. Can only be
  called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
  <a href="../../ATOM/atomregressor">ATOMRegressor</a> or 
  <a href="../../feature_engineering/feature_selector">FeatureSelector</a> instance
@@ -408,7 +424,7 @@ Whether to render the plot.
 <pre><code class="python">from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.feature_selection(strategy='RFECV', solver='LGB_reg', n_features=23)
+atom.feature_selection(strategy='RFECV', solver='LGB_reg', scoring='MAE')
 atom.plot_rfecv()
 </code></pre>
 

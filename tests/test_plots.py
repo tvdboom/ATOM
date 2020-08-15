@@ -105,6 +105,17 @@ def test_plot_correlation():
     assert glob.glob(FILE_DIR + 'correlation.png')
 
 
+def test_plot_pipeline():
+    """Assert that the plot_pipeline method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.impute()
+    atom.outliers()
+    atom.plot_pipeline(True, filename=FILE_DIR + 'pipeline1', display=False)
+    atom.plot_pipeline(False, filename=FILE_DIR + 'pipeline2', display=False)
+    assert glob.glob(FILE_DIR + 'pipeline1.png')
+    assert glob.glob(FILE_DIR + 'pipeline2.png')
+
+
 def test_plot_pca():
     """Assert that the plot_pca method work as intended."""
     # When no PCA was run
@@ -412,6 +423,97 @@ def test_plot_feature_importance():
     atom.tree.plot_feature_importance(filename=FILE_DIR + 'f4', display=False)
     assert glob.glob(FILE_DIR + 'f2.png')
     assert glob.glob(FILE_DIR + 'f4.png')
+
+
+def test_plot_partial_dependence():
+    """Assert that the plot_partial_dependence method work as intended."""
+    trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
+    pytest.raises(NotFittedError, trainer.plot_partial_dependence)
+
+    # When invalid parameters
+    trainer.run(reg_train, reg_test)
+
+    # More than 3 features
+    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[0, 1, 2, 3])
+
+    # Triple feature
+    pytest.raises(
+        ValueError, trainer.ols.plot_partial_dependence, features=[(0, 1, 2), 2])
+
+    # Pair for multi-model
+    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[(0, 2), 2])
+
+    # Unknown feature
+    pytest.raises(ValueError, trainer.plot_partial_dependence, features=['test', 2])
+
+    # Invalid index
+    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[120, 2])
+
+    # When correct
+    trainer.plot_permutation_importance(display=False)  # Assign best_features
+    trainer.plot_partial_dependence(filename=FILE_DIR + 'pd1', display=False)
+    trainer.ols.plot_partial_dependence(filename=FILE_DIR + 'pd2', display=False)
+    assert glob.glob(FILE_DIR + 'pd1.png')
+    assert glob.glob(FILE_DIR + 'pd2.png')
+
+    # From ATOM (test multiclass)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run('lda', metric='f1_macro')
+    atom.plot_partial_dependence(target=0, filename=FILE_DIR + 'pd3', display=False)
+    atom.lda.plot_partial_dependence(features=[('alcohol', 'ash')],
+                                     target=2,
+                                     filename=FILE_DIR + 'pd4',
+                                     display=False)
+    assert glob.glob(FILE_DIR + 'pd3.png')
+    assert glob.glob(FILE_DIR + 'pd4.png')
+
+
+def test_plot_errors():
+    """Assert that the plot_errors method work as intended."""
+    # When task is not regression
+    trainer = TrainerClassifier('Tree', metric='f1')
+    trainer.run(bin_train, bin_test)
+    pytest.raises(PermissionError, trainer.plot_errors)
+
+    trainer = TrainerRegressor(['OLS', 'LGB'], metric='MAE')
+    pytest.raises(NotFittedError, trainer.plot_errors, models='OLS')
+    trainer.run(bin_train, bin_test)
+    trainer.plot_errors(filename=FILE_DIR + 'errors1', display=False)
+    trainer.ols.plot_errors(filename=FILE_DIR + 'errors2', display=False)
+    assert glob.glob(FILE_DIR + 'errors1.png')
+    assert glob.glob(FILE_DIR + 'errors2.png')
+
+    # From ATOM
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(['Lasso', 'BR'], metric='MSE')
+    atom.plot_errors(filename=FILE_DIR + 'errors3', display=False)
+    atom.br.plot_errors(filename=FILE_DIR + 'errors4', display=False)
+    assert glob.glob(FILE_DIR + 'errors3.png')
+    assert glob.glob(FILE_DIR + 'errors4.png')
+
+
+def test_plot_residuals():
+    """Assert that the plot_residuals method work as intended."""
+    # When task is not regression
+    trainer = TrainerClassifier('Tree', metric='f1')
+    trainer.run(bin_train, bin_test)
+    pytest.raises(PermissionError, trainer.plot_residuals)
+
+    trainer = TrainerRegressor(['OLS', 'LGB'], metric='MAE')
+    pytest.raises(NotFittedError, trainer.plot_residuals, models='OLS')
+    trainer.run(bin_train, bin_test)
+    trainer.plot_residuals(filename=FILE_DIR + 'residuals1', display=False)
+    trainer.ols.plot_residuals(filename=FILE_DIR + 'residuals2', display=False)
+    assert glob.glob(FILE_DIR + 'residuals1.png')
+    assert glob.glob(FILE_DIR + 'residuals2.png')
+
+    # From ATOM
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(['Lasso', 'BR'], metric='MSE')
+    atom.plot_residuals(filename=FILE_DIR + 'residuals3', display=False)
+    atom.br.plot_residuals(filename=FILE_DIR + 'residuals4', display=False)
+    assert glob.glob(FILE_DIR + 'residuals3.png')
+    assert glob.glob(FILE_DIR + 'residuals4.png')
 
 
 def test_plot_confusion_matrix():

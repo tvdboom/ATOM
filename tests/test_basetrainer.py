@@ -188,11 +188,12 @@ def test_sequence_parameters():
     trainer = TrainerClassifier(['LR', 'LDA', 'LGB'],
                                 n_calls=(2, 3, 4),
                                 n_random_starts=(1, 2, 3),
-                                bagging=[2, 5, 7])
+                                bagging=[2, 5, 7],
+                                random_state=1)
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
     assert sum(trainer.LDA.bo.index.str.startswith('Random')) == 2
-    assert len(trainer.lgb.score_bagging) == 7
+    assert len(trainer.lgb.metric_bagging) == 7
 
 
 def test_invalid_n_calls_parameter():

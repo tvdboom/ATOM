@@ -53,6 +53,7 @@ nav:
           - score: API/prediction_methods/score.md
     - Plots:
         - plot_correlation: API/plots/plot_correlation.md
+        - plot_pipeline: API/plots/plot_pipeline.md
         - plot_pca: API/plots/plot_pca.md
         - plot_components: API/plots/plot_components.md
         - plot_rfecv: API/plots/plot_rfecv.md
@@ -65,6 +66,9 @@ nav:
         - plot_prc: API/plots/plot_prc.md
         - plot_permutation_importance: API/plots/plot_permutation_importance.md
         - plot_feature_importance: API/plots/plot_feature_importance.md
+        - plot_partial_dependence: API/plots/plot_partial_dependence.md
+        - plot_errors: API/plots/plot_errors.md
+        - plot_residuals: API/plots/plot_residuals.md
         - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
         - plot_threshold: API/plots/plot_threshold.md
         - plot_probabilities: API/plots/plot_probabilities.md

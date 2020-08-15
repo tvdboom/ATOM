@@ -40,9 +40,11 @@ class BaseTransformer(object):
 
     """
 
+    attrs = ['n_jobs', 'verbose', 'warnings', 'logger', 'random_state']
+
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
-        for attr in ['n_jobs', 'verbose', 'warnings', 'logger', 'random_state']:
+        for attr in self.attrs:
             if attr in kwargs:
                 setattr(self, attr, kwargs[attr])
 

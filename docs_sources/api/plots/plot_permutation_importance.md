@@ -1,7 +1,7 @@
 # plot_permutation_importance
 -----------------------------
 
-<a name="atomclassifier-impute"></a>
+<a name="atomclassifier-plot"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
                                                 title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
@@ -10,6 +10,8 @@ Plot the feature permutation importance of models. Calculating all permutations 
 be time consuming, especially if `n_repeats` is high. They are stored under
 the attribute `permutations`. This means that if a plot is repeated for
  the same model with the same `n_repeats`, it will be considerably faster.
+ The `best_features` attribute is created, which stores the showed features in order
+ of importance.
 <br /><br />
 <table width="100%">
 <tr>

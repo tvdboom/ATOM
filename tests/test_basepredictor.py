@@ -17,7 +17,7 @@ from atom.utils import NotFittedError
 from .utils import X_bin, y_bin, X_reg, y_reg
 
 
-# Test properties =========================================================== >>
+# Test utility properties =================================================== >>
 
 def test_metric_property():
     """Assert that the metric property returns the metric names."""
@@ -47,11 +47,25 @@ def test_winner_property():
     assert atom.winner.name == 'LGB'
 
 
+def test_shape_property():
+    """Assert that the shape property returns the shape of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.shape == (len(X_bin), X_bin.shape[1] + 1)
+
+
+def test_columns_property():
+    """Assert that the columns property returns the columns of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert len(atom.columns) == len(X_bin.columns) + 1
+
+
 def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
     atom = ATOMClassifier(X_bin, 'mean radius', random_state=1)
-    assert atom.dataset.columns[-1] == 'mean radius'
+    assert atom.target == 'mean radius'
 
+
+# Data properties =========================================================== >>
 
 def test_dataset_property():
     """Assert that the dataset property returns the _data attribute."""

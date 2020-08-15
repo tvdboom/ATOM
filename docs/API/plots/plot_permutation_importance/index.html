@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -367,7 +383,7 @@
 
 <h1 id="plot_permutation_importance">plot_permutation_importance</h1>
 <hr />
-<p><a name="atomclassifier-impute"></a>
+<p><a name="atomclassifier-plot"></a>
 <pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
                                                 title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
@@ -376,6 +392,8 @@ Plot the feature permutation importance of models. Calculating all permutations 
 be time consuming, especially if <code>n_repeats</code> is high. They are stored under
 the attribute <code>permutations</code>. This means that if a plot is repeated for
  the same model with the same <code>n_repeats</code>, it will be considerably faster.
+ The <code>best_features</code> attribute is created, which stores the showed features in order
+ of importance.
 <br /><br />
 <table width="100%">
 <tr>

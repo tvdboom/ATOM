@@ -295,8 +295,8 @@ atom.scoring()
 # The ~ indicates that the model is probably overfitting. If we look at the train and test
 # score we see a difference of more than 20%
 print(f'\n\nAnd the winner is the {atom.winner.longname} model!!')
-print('Score on the training set: ', atom.winner.score_train)
-print('Score on the test set: ', atom.winner.score_test)
+print('Score on the training set: ', atom.winner.metric_train)
+print('Score on the test set: ', atom.winner.metric_test)
 ```
 
     Results ===================== >>

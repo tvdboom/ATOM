@@ -66,7 +66,7 @@ def ATOMLoader(filename: str,
                              .format(cls_.__class__.__name__))
 
         # Get X and y from data
-        if isinstance(data, (list, tuple)):
+        if isinstance(data, tuple):
             X, y = data[0], data[1]
         else:
             X, y = data, None
@@ -75,8 +75,8 @@ def ATOMLoader(filename: str,
         cls_._data = X if y is None else merge(X, y)
 
         if hasattr(cls_, 'pipeline') and transform_data:
-            # Transform the data through all steps in the pipeline
-            for estimator in cls_.pipeline:
+            # Transform the data through all transformers in the pipeline
+            for estimator in [i for i in cls_.pipeline if hasattr(i, 'transform')]:
                 estimator.set_params(verbose=verbose)
 
                 # Some transformations are only applied on the training set
@@ -141,7 +141,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Note that changing this parameter will affect the `PYTHONWARNINGS`
         environment.
 
-        Note that ATOM can't manage warnings that go directly from C++ code
+        Note that ATOM can't manage warnings that go directly from C/C++ code
         to the stdout/stderr.
 
     logger: bool, str, class or None, optional (default=None)
@@ -223,7 +223,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Note that changing this parameter will affect the `PYTHONWARNINGS`
         environment.
 
-        Note that ATOM can't manage warnings that go directly from C++ code
+        Note that ATOM can't manage warnings that go directly from C/C++ code
         to the stdout/stderr.
 
     logger: bool, str, class or None, optional (default=None)

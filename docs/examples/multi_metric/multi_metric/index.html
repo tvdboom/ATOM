@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../../../API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../../../API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../../../API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../../../API/plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -488,7 +504,7 @@ Quadratic Discriminant Analysis --&gt; f1: 0.961 ± 0.008   recall: 0.985 ± 0.0
 <h2 id="analyze-the-results">Analyze the results</h2>
 <pre><code class="python"># Note that some columns in the results dataframe now contain a list of scores,
 # one for each metric_, in the same order as you called them
-atom.results[['score_bo', 'score_train', 'score_test']]
+atom.results[['metric_bo', 'metric_train', 'metric_test']]
 </code></pre>
 
 <div>

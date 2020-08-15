@@ -26,7 +26,7 @@ Index or name of the metric to plot. Only for multi-metric runs.
 <blockquote>
 Plot's title. If None, the default option is used.
 </blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
+<strong>figsize: tuple, optional (default=(10, 6))</strong>
 <blockquote>
 Figure's size, format as (x, y). If None, adapts size the to number of models.
 </blockquote>

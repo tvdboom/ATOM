@@ -192,6 +192,10 @@
 </li>
             
 <li>
+    <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
+</li>
+            
+<li>
     <a href="../plot_pca/" class="dropdown-item">plot_pca</a>
 </li>
             
@@ -237,6 +241,18 @@
             
 <li>
     <a href="../plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
+</li>
+            
+<li>
+    <a href="../plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
+</li>
+            
+<li>
+    <a href="../plot_errors/" class="dropdown-item">plot_errors</a>
+</li>
+            
+<li>
+    <a href="../plot_residuals/" class="dropdown-item">plot_residuals</a>
 </li>
             
 <li>
@@ -367,9 +383,9 @@
 
 <h1 id="plot_bagging">plot_bagging</h1>
 <hr />
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_bagging</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
+<p><a name="plot-bagging"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_bagging</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
-
 <div style="padding-left:3%">
 Plot a boxplot of the bagging's results. Only available for models fitted using bagging.
 <br /><br />
@@ -404,8 +420,7 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-
-<p><br /></p>
+<br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMClassifier

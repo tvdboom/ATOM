@@ -77,11 +77,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.best_params = None
         self.model = None
         self.time_fit = None
-        self.score_bo = None
+        self.metric_bo = None
         self.time_bo = None
-        self.score_train = None
-        self.score_test = None
-        self.score_bagging = []
+        self.metric_train = None
+        self.metric_test = None
+        self.metric_bagging = []
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
@@ -89,8 +89,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Results
         self._results = pd.DataFrame(
-            columns=['name', 'score_bo', 'time_bo',
-                     'score_train', 'score_test', 'time_fit',
+            columns=['name', 'metric_bo', 'time_bo',
+                     'metric_train', 'metric_test', 'time_fit',
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
         self._results.index.name = 'model'
 
@@ -410,7 +410,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.best_params = get_custom_params(optimizer.x)
 
         # Optimal score found by the BO
-        self.score_bo = self.bo.score.max(axis=0)
+        self.metric_bo = self.bo.score.max(axis=0)
 
         # Save best model (not yet fitted)
         self.model = self.get_model(self.best_params)
@@ -422,7 +422,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log(f"\nResults for {self.longname}:{' ':9s}", 1)
         self.T.log("Bayesian Optimization ---------------------------", 1)
         self.T.log(f"Best parameters --> {self.best_params}", 1)
-        out = [f"{m.name}: {lst(self.score_bo)[i]:.4f}"
+        out = [f"{m.name}: {lst(self.metric_bo)[i]:.4f}"
                for i, m in enumerate(self.T.metric_)]
         self.T.log(f"Best evaluation --> {'   '.join(out)}", 1)
         self.T.log(f"Time elapsed: {self.time_bo}", 1)
@@ -443,11 +443,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:
             self.model.fit(self.X_train, self.y_train)
 
-        # Save scores on complete training and test set
-        self.score_train = flt([metric(self.model, self.X_train, self.y_train)
+        # Save metric scores on complete training and test set
+        self.metric_train = flt([metric(self.model, self.X_train, self.y_train)
+                                 for metric in self.T.metric_])
+        self.metric_test = flt([metric(self.model, self.X_test, self.y_test)
                                 for metric in self.T.metric_])
-        self.score_test = flt([metric(self.model, self.X_test, self.y_test)
-                               for metric in self.T.metric_])
 
         # Print stats ======================================================= >>
 
@@ -459,10 +459,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log("Early stop at iteration {} of {}."
                        .format(self._stopped[0], self._stopped[1]), 1)
         self.T.log("Score on the train set --> {}"
-                   .format('   '.join([f"{m.name}: {lst(self.score_train)[i]:.4f}"
+                   .format('   '.join([f"{m.name}: {lst(self.metric_train)[i]:.4f}"
                                        for i, m in enumerate(self.T.metric_)])), 1)
         self.T.log("Score on the test set  --> {}"
-                   .format('   '.join([f"{m.name}: {lst(self.score_test)[i]:.4f}"
+                   .format('   '.join([f"{m.name}: {lst(self.metric_test)[i]:.4f}"
                                        for i, m in enumerate(self.T.metric_)])), 1)
 
         # Get duration and print to log
@@ -489,7 +489,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             raise ValueError("Invalid value for the bagging parameter." +
                              f"Value should be >=0, got {bagging}.")
 
-        self.score_bagging = []
+        self.metric_bagging = []
         for _ in range(bagging):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.y_train)
@@ -500,16 +500,16 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                           for metric in self.T.metric_])
 
             # Append metric_ result to list
-            self.score_bagging.append(scores)
+            self.metric_bagging.append(scores)
 
         # Numpy array for mean and std
         # Separate for multi-metric_ to transform numpy types in python types
         if len(self.T.metric_) == 1:
-            self.mean_bagging = np.mean(self.score_bagging, axis=0).item()
-            self.std_bagging = np.std(self.score_bagging, axis=0).item()
+            self.mean_bagging = np.mean(self.metric_bagging, axis=0).item()
+            self.std_bagging = np.std(self.metric_bagging, axis=0).item()
         else:
-            self.mean_bagging = np.mean(self.score_bagging, axis=0).tolist()
-            self.std_bagging = np.std(self.score_bagging, axis=0).tolist()
+            self.mean_bagging = np.mean(self.metric_bagging, axis=0).tolist()
+            self.std_bagging = np.std(self.metric_bagging, axis=0).tolist()
 
         self.T.log("Bagging -----------------------------------------", 1)
         out = [u"{}: {:.4f} \u00B1 {:.4f}"
@@ -560,6 +560,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if hasattr(self, 'transform'):
             X, y = catch_return(self.transform(X, y, **kwargs))
 
+        # Scale the data if needed
+        if self.need_scaling and not check_scaling(X):
+            X = self.T.scaler.transform(X)
+
         if y is None:
             return getattr(self.model, method)(X)
         else:
@@ -598,6 +602,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._predict_proba_train, self._predict_proba_test = None, None
         self._predict_log_proba_train, self._predict_log_proba_test = None, None
         self._decision_func_train, self._decision_func_test = None, None
+        self._score_train, self._score_test = None, None
 
     @property
     def predict_train(self):
@@ -647,12 +652,36 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self._decision_func_test = self.model.decision_function(self.X_test)
         return self._decision_func_test
 
+    @property
+    def score_train(self):
+        if self._score_train is None:
+            self._score_train = self.model.score(self.X_train, self.y_train)
+        return self._score_train
+
+    @property
+    def score_test(self):
+        if self._score_test is None:
+            self._score_test = self.model.score(self.X_test, self.y_test)
+        return self._score_test
+
     # Utility properties ==================================================== >>
 
     @property
     def results(self):
         """Return results without empty columns."""
         return self._results.dropna(axis=1, how='all')
+
+    @property
+    def shape(self):
+        return self.T.shape
+
+    @property
+    def columns(self):
+        return self.T.columns
+
+    @property
+    def target(self):
+        return self.T.target
 
     # Data properties ======================================================= >>
 
@@ -710,10 +739,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def y_test(self):
         return self.T.y_test
 
-    @property
-    def target(self):
-        return self.T.target
-
     # Utility methods ======================================================= >>
 
     def _final_output(self):
@@ -726,13 +751,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                               for i, m in enumerate(self.T.metric_)])
 
         else:
-            out = '   '.join([f"{m.name}: {lst(self.score_test)[i]:.3f}"
+            out = '   '.join([f"{m.name}: {lst(self.metric_test)[i]:.3f}"
                               for i, m, in enumerate(self.T.metric_)])
 
         # Annotate if model overfitted when train 20% > test
-        score_train = lst(self.score_train)
-        score_test = lst(self.score_test)
-        if score_train[0] - 0.2 * score_train[0] > score_test[0]:
+        metric_train = lst(self.metric_train)
+        metric_test = lst(self.metric_test)
+        if metric_train[0] - 0.2 * metric_train[0] > metric_test[0]:
             out += ' ~'
 
         return out

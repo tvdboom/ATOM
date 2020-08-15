@@ -56,6 +56,27 @@ def test_load_not_atom():
     pytest.raises(TypeError, ATOMLoader, FILE_DIR + 'imputer', X_bin)
 
 
+def test_data_is_tuple():
+    """Assert that the method works when data is a tuple."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.save(FILE_DIR + 'atom', save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(atom.X, atom.y))
+    assert atom2.dataset.equals(atom.dataset)
+
+
+def test_transform_data():
+    """Assert that the data is transformed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance()
+    atom.feature_selection(strategy='pca', n_features=10)
+    atom.save(FILE_DIR + 'atom', save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin))
+    assert len(atom2.dataset) != len(X_bin)
+    assert atom2.shape[1] == 10
+
+
 # Test ATOMClassifier ======================================================= >>
 
 def test_goal_ATOMClassifier():
