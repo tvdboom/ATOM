@@ -336,38 +336,38 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if subclass.need_scaling and not self.scaler:
                 self.scaler = Scaler().fit(self.X_train)
 
-            try:  # If errors occurs, skip the model
-                # Run Bayesian Optimization
-                # Use copy of kwargs to not delete original in method
-                # Shallow copy is enough since we only delete entries in basemodel
-                if hasattr(subclass, 'get_domain') and n_calls > 0:
-                    subclass.bayesian_optimization(
-                        n_calls, n_random_starts, self.bo_params.copy())
+            # try:  # If errors occurs, skip the model
+            # Run Bayesian Optimization
+            # Use copy of kwargs to not delete original in method
+            # Shallow copy is enough since we only delete entries in basemodel
+            if hasattr(subclass, 'get_domain') and n_calls > 0:
+                subclass.bayesian_optimization(
+                    n_calls, n_random_starts, self.bo_params.copy())
 
-                subclass.fit()
+            subclass.fit()
 
-                if bagging:
-                    subclass.bagging(bagging)
+            if bagging:
+                subclass.bagging(bagging)
 
-                # Get the total time spend on this model
-                total_time = time_to_string(model_time)
-                setattr(subclass, 'time', total_time)
-                self.log('-' * 49, 1)
-                self.log(f'Total time: {total_time}', 1)
+            # Get the total time spend on this model
+            total_time = time_to_string(model_time)
+            setattr(subclass, 'time', total_time)
+            self.log('-' * 49, 1)
+            self.log(f'Total time: {total_time}', 1)
 
-            except Exception as ex:
-                if hasattr(subclass, 'get_domain') and n_calls > 0:
-                    self.log('', 1)  # Add extra line
-                self.log("Exception encountered while running the "
-                         + f"{m} model. Removing model from "
-                         + f"pipeline. \n{type(ex).__name__}: {ex}", 1)
-
-                # Append exception to errors dictionary
-                self.errors[m] = ex
-
-                # Add model to "garbage collector"
-                # Cannot remove at once to maintain iteration order
-                to_remove.append(m)
+            # except Exception as ex:
+            #     if hasattr(subclass, 'get_domain') and n_calls > 0:
+            #         self.log('', 1)  # Add extra line
+            #     self.log("Exception encountered while running the "
+            #              + f"{m} model. Removing model from "
+            #              + f"pipeline. \n{type(ex).__name__}: {ex}", 1)
+            #
+            #     # Append exception to errors dictionary
+            #     self.errors[m] = ex
+            #
+            #     # Add model to "garbage collector"
+            #     # Cannot remove at once to maintain iteration order
+            #     to_remove.append(m)
 
         # Remove faulty models
         clear(self, to_remove)
