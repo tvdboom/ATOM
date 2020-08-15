@@ -11,7 +11,6 @@ before_install:
   - pip install codecov
 install:  # Install dependencies
   - pip install -r requirements.txt
-  - pip install matplotlib==3.2.0  # Because of error with plot_bagging
 # Command to run tests
 # travis_wait because some tests take longer than 10min
 script: travis_wait 50 coverage run -m pytest  # Max 50min run
