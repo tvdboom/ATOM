@@ -43,8 +43,8 @@ OPTIONAL_PACKAGES = (('XGB', 'xgboost'),
                      ('CatB', 'catboost'))
 
 # List of models that only work for regression/classification tasks
-ONLY_CLASSIFICATION = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
-ONLY_REGRESSION = ['OLS', 'Lasso', 'EN', 'BR']
+ONLY_CLASS = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
+ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR']
 
 # List of tree-based models
 TREE_MODELS = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']

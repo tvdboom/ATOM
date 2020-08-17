@@ -17,7 +17,7 @@ from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASSIFICATION, ONLY_REGRESSION, merge, to_df,
+    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, merge, to_df,
     to_series, get_best_score, time_to_string, get_model_name, get_metric, clear
     )
 
@@ -167,12 +167,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Remove regression/classification-only models from pipeline
         if self.goal.startswith('class'):
-            for m in ONLY_REGRESSION:
+            for m in ONLY_REG:
                 if m in self.models:
                     raise ValueError(
                         f"The {m} model can't perform classification tasks!")
         else:
-            for m in ONLY_CLASSIFICATION:
+            for m in ONLY_CLASS:
                 if m in self.models:
                     raise ValueError(
                         f"The {m} model can't perform regression tasks!")
@@ -245,8 +245,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         """Return a list of metric scorers given the parameters."""
         if not isinstance(metric, (list, tuple)):
             metric = [metric]
-        elif len(metric) > 3:
-            raise ValueError("A maximum of 3 metrics are allowed!")
 
         # Check metric_ parameters
         if isinstance(gib, (list, tuple)):

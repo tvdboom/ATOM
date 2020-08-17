@@ -66,15 +66,17 @@ def test_data_is_tuple():
 
 
 def test_transform_data():
-    """Assert that the data is transformed."""
+    """Assert that the data is transformed or not depending on the parameter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
     atom.feature_selection(strategy='pca', n_features=10)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
-    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin))
-    assert len(atom2.dataset) != len(X_bin)
-    assert atom2.shape[1] == 10
+    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin), transform_data=True)
+    assert atom2.shape[0] != X_bin.shape[0] and atom2.shape[1] != X_bin.shape[1] + 1
+
+    atom3 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin), transform_data=False)
+    assert atom3.shape[0] == X_bin.shape[0] and atom3.shape[1] == X_bin.shape[1] + 1
 
 
 # Test ATOMClassifier ======================================================= >>

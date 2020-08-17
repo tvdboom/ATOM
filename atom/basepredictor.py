@@ -134,7 +134,7 @@ class BasePredictor(object):
         return self.winner.score(X, y, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None):
+    def scoring(self, metric: Optional[str] = None, set: str = 'test'):
         """Print the trainer's final scoring for a specific metric_.
 
         If a model shows a `XXX`, it means the metric_ failed for that specific
@@ -149,6 +149,9 @@ class BasePredictor(object):
             used to fit the trainer is selected and the bagging results will be
             showed (if used).
 
+        set: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train' or 'test'.
+
         """
         check_is_fitted(self, 'results')
 
@@ -160,7 +163,7 @@ class BasePredictor(object):
         maxlen = max([len(m.longname) for m in self.models_])
 
         # Get list of scores
-        all_scores = [m.scoring(metric) for m in self.models_]
+        all_scores = [m.scoring(metric, set=set) for m in self.models_]
 
         # Raise an error if the metric_ was invalid for all models
         if metric and all([isinstance(score, str) for score in all_scores]):
@@ -172,7 +175,7 @@ class BasePredictor(object):
             if not metric:
                 out = f"{m.longname:{maxlen}s} --> {m._final_output()}"
             else:
-                score = m.scoring(metric)
+                score = m.scoring(metric, set=set)
 
                 # Create string of the score (if wrong metric_ for model -> XXX)
                 if isinstance(score, str):

@@ -95,12 +95,6 @@ def test_metric_to_list():
     assert isinstance(trainer.metric_, list)
 
 
-def test_max_3_metrics():
-    """Assert that an error is raised when more than 3 metrics."""
-    metrics = ['f1', 'recall', 'precision', 'average_precision']
-    pytest.raises(ValueError, TrainerClassifier, 'LR', metric=metrics)
-
-
 def test_greater_is_better_parameter():
     """Assert that an error is raised if invalid length for greater_is_better."""
     pytest.raises(

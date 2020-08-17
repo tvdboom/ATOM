@@ -507,7 +507,7 @@ def test_call_TrainSizing():
     assert type(atom.trainer).__name__ == 'TrainSizingRegressor'
 
 
-# Test property getter ====================================================== >>
+# Test property getters ===================================================== >>
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""

@@ -56,7 +56,7 @@
 </li>
             
 <li>
-    <a href="../load/" class="dropdown-item">load</a>
+    <a href="../atomloader/" class="dropdown-item">load</a>
 </li>
     </ul>
   </li>
@@ -827,7 +827,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <p></div>
 <br></p>
 <p><a name="atomclassifier-scoring"></a>
-<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">scoring</strong>(metric=None)
+<pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">scoring</strong>(metric=None, set='test')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
 <div style="padding-left:3%">
 Print the scoring of the models for a specific metric. If a model
@@ -854,6 +854,10 @@ If string, choose from any of sklearn's <a href="https://scikit-learn.org/stable
 <li>'tpr' for true positive rate.</li>
 <li>'sup' for the support metric.</li>
 </ul>
+</blockquote>
+<strong>set: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train' or 'test'.
 </blockquote>
 </tr>
 </table>

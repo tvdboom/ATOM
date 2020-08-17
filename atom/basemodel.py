@@ -794,7 +794,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._reset_predict_properties()
 
     @composed(crash, typechecked)
-    def scoring(self, metric: Optional[str] = None):
+    def scoring(self, metric: Optional[str] = None, set: str = 'test'):
         """Get the scoring of a specific metric_ on the test set.
 
         Parameters
@@ -802,13 +802,17 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         metric: str, optional (default=None)
             Name of the metric_ to calculate. Choose from any of sklearn's SCORERS or
             one of the following custom metrics: 'cm', 'tn', 'fp', 'fn', 'tp',
-            'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric_(s) used for
-            fitting.
+            'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric score used for
+            fitting (on the test set).
+
+        set: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train' or 'test'.
 
         """
-        metric_opts = list(SCORERS) + ['cm', 'confusion_matrix', 'tn', 'fp',
-                                       'fn', 'tp', 'lift', 'fpr', 'tpr', 'sup']
+        metric_opts = ['cm', 'confusion_matrix', 'tn', 'fp', 'fn',
+                       'tp', 'lift', 'fpr', 'tpr', 'sup'] + list(SCORERS)
 
+        # Check metric parameter
         if metric is None:
             return self._final_output()
         elif metric.lower() in METRIC_ACRONYMS:
@@ -817,9 +821,16 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             raise ValueError("Unknown value for the metric_ parameter, " +
                              f"got {metric}. Try one of {', '.join(metric_opts)}.")
 
+        # Check set parameter
+        set = set.lower()
+        if set not in ('train', 'test'):
+            raise ValueError("Unknown value for the set parameter. " +
+                             "Choose between 'train' or 'test'.")
+
         try:
             if metric.lower() in ('cm', 'confusion_matrix'):
-                return confusion_matrix(self.y_test, self.predict_test)
+                return confusion_matrix(getattr(self, f'y_{set}'),
+                                        getattr(self, f'predict_{set}'))
             elif metric.lower() == 'tn':
                 return int(self.scoring('confusion_matrix').ravel()[0])
             elif metric.lower() == 'fp':
@@ -844,26 +855,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Calculate the scorer via _score_func to use the prediction properties
             if type(SCORERS[metric]).__name__ == '_ThresholdScorer':
                 if self.T.task.startswith('reg'):
-                    y_pred = self.predict_test
+                    y_pred = getattr(self, f'predict_{set}')
                 elif hasattr(self.model, 'decision_function'):
-                    y_pred = self.decision_function_test
+                    y_pred = getattr(self, f'decision_function_{set}')
                 else:
-                    y_pred = self.predict_proba_test
+                    y_pred = getattr(self, f'predict_proba_{set}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
             elif type(SCORERS[metric]).__name__ == '_ProbaScorer':
                 if hasattr(self.model, 'predict_proba'):
-                    y_pred = self.predict_proba_test
+                    y_pred = getattr(self, f'predict_proba_{set}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
                 else:
-                    y_pred = self.decision_function_test
+                    y_pred = getattr(self, f'decision_function_{set}')
             else:
-                y_pred = self.predict_test
+                y_pred = getattr(self, f'predict_{set}')
 
             # Calculate metric_ on the test set
             return SCORERS[metric]._sign * SCORERS[metric]._score_func(
-                self.y_test, y_pred, **SCORERS[metric]._kwargs)
+                getattr(self, f'y_{set}'), y_pred, **SCORERS[metric]._kwargs)
 
         except (ValueError, TypeError):
             return f"Invalid metric_ for a {self.name} model with {self.T.task} task!"

@@ -25,7 +25,7 @@ from .utils import X_TYPES, Y_TYPES, merge
 def ATOMLoader(filename: str,
                data: Optional[Union[X_TYPES, Tuple]] = None,
                transform_data: bool = True,
-               verbose: int = 0):
+               verbose: Optional[int] = None):
     """Load a class from a pickle file.
 
     If its a training instance, you can load new data.
@@ -38,18 +38,24 @@ def ATOMLoader(filename: str,
         Name of the pickle file to load.
 
     data: dict, sequence, np.array, pd.DataFrame or tuple, optional (default=None)
-        Dataset containing the features, with shape=(n_samples, n_features) or
-        tuple of the form (X, y).
+        If not tuple, dataset containing the features, with shape=(n_samples,
+        n_features + 1). The last column will be used as target column. If tuple,
+        it should be of the form (X, y), where X is the feature set and y the
+        corresponding target column as array-like, index or name. Only use this
+        parameter if the file is an ATOM or training instance that was saved using
+        save_data=False. See the save method in basetransformer.py.
 
     transform_data: bool, optional (default=True)
-        Only if the loaded file is an ATOM instance.
+        Whether to transform the provided data through all the steps in the
+        instance's pipeline. Only if the loaded file is an ATOM instance.
 
-    verbose: int, optional (default=0)
-        Verbosity level of the transformations applied on the new data.
+    verbose: int or None, optional (default=None)
+        Verbosity level of the transformations applied on the new data. If None,
+        use the verbosity from the loaded instance.
 
     """
     # Check verbose parameter
-    if verbose < 0 or verbose > 2:
+    if verbose and (verbose < 0 or verbose > 2):
         raise ValueError("Invalid value for the verbose parameter." +
                          f"Value should be between 0 and 2, got {verbose}.")
 
@@ -77,7 +83,9 @@ def ATOMLoader(filename: str,
         if hasattr(cls_, 'pipeline') and transform_data:
             # Transform the data through all transformers in the pipeline
             for estimator in [i for i in cls_.pipeline if hasattr(i, 'transform')]:
-                estimator.set_params(verbose=verbose)
+                if verbose is not None:
+                    vb = estimator.get_params()['verbose']  # Save original verbosity
+                    estimator.set_params(verbose=verbose)
 
                 # Some transformations are only applied on the training set
                 if estimator.__class__.__name__ in ['Outliers', 'Balancer']:
@@ -89,6 +97,9 @@ def ATOMLoader(filename: str,
                     if isinstance(X, tuple):  # Estimator returned X, y
                         X = merge(*X)
                     cls_._data = X.reset_index(drop=True)
+
+                if verbose is not None:
+                    estimator.verbose = vb  # Reset the original verbosity
 
         if getattr(cls_, 'trainer', None):
             cls_.trainer._data = cls_._data

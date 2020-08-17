@@ -356,25 +356,27 @@ def test_scoring_metric_acronym():
     assert isinstance(atom.mnb.scoring('auc'), float)
 
 
-def test_scoring_all_scorers():
+@pytest.mark.parametrize('set', ['train', 'test'])
+def test_scoring_all_scorers(set):
     """Assert that the scoring methods works for all sklearn scorers."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(['MNB', 'PA'])
     for metric in SCORERS:
-        assert isinstance(atom.mnb.scoring(metric), (np.int64, float, str))
-        assert isinstance(atom.pa.scoring(metric), (np.int64, float, str))
+        assert isinstance(atom.mnb.scoring(metric, set=set), (np.int64, float, str))
+        assert isinstance(atom.pa.scoring(metric, set=set), (np.int64, float, str))
 
 
-def test_scoring_custom_metrics():
+@pytest.mark.parametrize('set', ['train', 'test'])
+def test_scoring_custom_metrics(set):
     """Assert that the scoring methods works for custom metrics."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     for metric in ['cm', 'confusion_matrix']:
-        assert isinstance(atom.mnb.scoring(metric), np.ndarray)
+        assert isinstance(atom.mnb.scoring(metric, set=set), np.ndarray)
     for metric in ['tn', 'fp', 'fn', 'tp']:
-        assert isinstance(atom.mnb.scoring(metric), int)
+        assert isinstance(atom.mnb.scoring(metric, set=set), int)
     for metric in ['lift', 'fpr', 'tpr', 'sup']:
-        assert isinstance(atom.mnb.scoring(metric), float)
+        assert isinstance(atom.mnb.scoring(metric, set=set), float)
 
 
 def test_invalid_metric():
