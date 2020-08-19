@@ -56,12 +56,12 @@ def test_load_not_atom():
     pytest.raises(TypeError, ATOMLoader, FILE_DIR + 'imputer', X_bin)
 
 
-def test_data_is_tuple():
-    """Assert that the method works when data is a tuple."""
+def test_data_is_X_y():
+    """Assert that the method works when data contains y."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
-    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(atom.X, atom.y))
+    atom2 = ATOMLoader(FILE_DIR + 'atom', atom.X, atom.y)
     assert atom2.dataset.equals(atom.dataset)
 
 
@@ -72,11 +72,31 @@ def test_transform_data():
     atom.feature_selection(strategy='pca', n_features=10)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
-    atom2 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin), transform_data=True)
+    atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin, transform_data=True)
     assert atom2.shape[0] != X_bin.shape[0] and atom2.shape[1] != X_bin.shape[1] + 1
 
-    atom3 = ATOMLoader(FILE_DIR + 'atom', data=(X_bin, y_bin), transform_data=False)
+    atom3 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin, transform_data=False)
     assert atom3.shape[0] == X_bin.shape[0] and atom3.shape[1] == X_bin.shape[1] + 1
+
+
+def test_verbose_is_reset():
+    """Assert that the verbosity of the estimator is reset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers()
+    atom.save(FILE_DIR + 'atom', save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin, verbose=2)
+    assert atom2.pipeline[1].get_params()['verbose'] == 0
+
+
+def test_trainer_gets_data():
+    """Assert that the trainer gets ATOM'S data."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    atom.save(FILE_DIR + 'atom', save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin)
+    assert atom2.trainer._data is atom2._data
 
 
 # Test ATOMClassifier ======================================================= >>

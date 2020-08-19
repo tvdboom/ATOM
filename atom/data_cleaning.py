@@ -123,9 +123,6 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
-
-        # Check if features are already scaled
-        self.log("Fitting scaler...", 1)
         self.standard_scaler = StandardScaler().fit(X)
 
         return self

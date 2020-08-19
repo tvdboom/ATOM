@@ -159,7 +159,7 @@ def test_scaled():
 
 def test_creates_report():
     """Assert that the report attribute and file are created."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
     atom.report(n_rows=10, filename=FILE_DIR + 'report')
     assert hasattr(atom, 'report')
     assert glob.glob(FILE_DIR + 'report.html')
@@ -175,10 +175,6 @@ def test_transform_method():
 
     # With default arguments
     X_trans = atom.transform(X10_str)
-    assert X_trans['Feature 2'].dtype.kind in 'ifu'
-
-    # From model
-    X_trans = atom.Tree.transform(X10_str, verbose=1)
     assert X_trans['Feature 2'].dtype.kind in 'ifu'
 
     # Changing arguments
@@ -318,9 +314,7 @@ def test_feature_selection_attrs():
     """Assert that the feature_engineering attaches only used attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='pca', n_features=8, max_correlation=0.8)
-    assert hasattr(atom, 'collinear')
-    assert hasattr(atom, 'pca')
-    assert not hasattr(atom, 'rfe')
+    assert hasattr(atom, 'collinear') and hasattr(atom, 'pca')
 
 
 def test_default_solver_univariate():
@@ -421,20 +415,27 @@ def test_errors_are_removed():
     assert not atom.errors  # Errors should be empty
 
 
+def test_getattr_for_model_subclasses():
+    """Assert that the model subclasses can be called through ATOM."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run('OLS')
+    assert atom.ols is atom.trainer.ols
+    assert atom.OLS is atom.trainer.OLS
+
+
 def test_model_subclasses_are_attached():
     """Assert that the model subclasses are attached to ATOM."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('OLS')
-    assert hasattr(atom, 'OLS')
-    assert hasattr(atom, 'ols')
+    assert hasattr(atom, 'OLS') and hasattr(atom, 'ols')
 
 
-def test_transform_method_is_attached():
+def test_pipeline_attr_is_attached():
     """Assert that the transform method is attached to the model subclasses."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('OLS')
-    assert hasattr(atom.OLS, 'transform')
-    assert hasattr(atom.ols, 'transform')
+    assert hasattr(atom.OLS, 'pipeline')
+    assert hasattr(atom.ols, 'pipeline')
 
 
 def test_errors_are_updated():

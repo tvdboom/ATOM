@@ -49,10 +49,10 @@ def test_negative_n_jobs():
     assert base.n_jobs == multiprocessing.cpu_count() - 1
 
 
-def test_verbose_parameter():
+@pytest.mark.parametrize('verbose', [-2, 3])
+def test_verbose_parameter(verbose):
     """Assert that the verbose parameter is in correct range."""
-    for vb in [-2, 4]:
-        pytest.raises(ValueError, BaseTransformer, verbose=vb)
+    pytest.raises(ValueError, BaseTransformer, verbose=verbose)
 
 
 def test_warnings_parameter_bool():
@@ -120,15 +120,13 @@ def test_random_state_setter():
 def test_copy_input_data():
     """Assert that the prepare_input method uses copies of the data."""
     X, y = BaseTransformer()._prepare_input(X_bin, y_bin)
-    assert X is not X_bin
-    assert y is not y_bin
+    assert X is not X_bin and y is not y_bin
 
 
 def test_to_pandas():
     """Assert that the data provided is converted to pandas objects."""
     X, y = BaseTransformer._prepare_input(X_bin_array, y_bin_array)
-    assert isinstance(X, pd.DataFrame)
-    assert isinstance(y, pd.Series)
+    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
 def test_equal_length():

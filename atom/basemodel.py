@@ -35,7 +35,8 @@ from skopt.optimizer import (
 # Own package modules
 from .utils import (
     X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst, merge, check_scaling,
-    time_to_string, catch_return, composed, crash, method_to_log, PlotCallback
+    time_to_string, catch_return, transform, composed, crash,
+    method_to_log, PlotCallback
     )
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 
@@ -71,7 +72,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.bo = pd.DataFrame(
             columns=['params', 'model', 'score', 'time_iteration', 'time'])
         self.bo.index.name = 'call'
-        self.evals = {}
 
         # BaseModel attributes
         self.best_params = None
@@ -321,12 +321,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             callbacks.append(DeltaYStopper(bo_params['delta_y'], n_best=5))
             bo_params.pop('delta_y')
 
-        if bo_params.get('plot_bo'):  # Exists and is True
-            plot_bo = True
-            callbacks.append(PlotCallback(self))
+        if 'plot_bo' in bo_params:
+            if bo_params['plot_bo']:
+                callbacks.append(PlotCallback(self))
             bo_params.pop('plot_bo')
-        else:
-            plot_bo = False
 
         # Prepare additional arguments
         if bo_params.get('cv'):
@@ -395,8 +393,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         if self._pbar:
             self._pbar.close()
-        if plot_bo:
-            plt.close()
+        # if plot_bo:
+        #     plt.close()
 
         # Optimal parameters found by the BO
         # Return from skopt wrapper to get dict of custom hyperparameter space
@@ -557,8 +555,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 f"The {self.name} model doesn't have a {method} method!")
 
         # When called from the ATOM class, apply all data transformations first
-        if hasattr(self, 'transform'):
-            X, y = catch_return(self.transform(X, y, **kwargs))
+        if hasattr(self, 'pipeline'):
+            if kwargs.get('verbose') is None:
+                kwargs['verbose'] = self.T.verbose
+            X, y = catch_return(transform(self.pipeline, X, y, **kwargs))
 
         # Scale the data if needed
         if self.need_scaling and not check_scaling(X):
@@ -794,7 +794,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._reset_predict_properties()
 
     @composed(crash, typechecked)
-    def scoring(self, metric: Optional[str] = None, set: str = 'test'):
+    def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
         """Get the scoring of a specific metric_ on the test set.
 
         Parameters
@@ -805,7 +805,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric score used for
             fitting (on the test set).
 
-        set: str, optional (default='test')
+        dataset: str, optional (default='test')
             Data set on which to calculate the metric. Options are 'train' or 'test'.
 
         """
@@ -822,15 +822,15 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                              f"got {metric}. Try one of {', '.join(metric_opts)}.")
 
         # Check set parameter
-        set = set.lower()
+        set = dataset.lower()
         if set not in ('train', 'test'):
             raise ValueError("Unknown value for the set parameter. " +
                              "Choose between 'train' or 'test'.")
 
         try:
             if metric.lower() in ('cm', 'confusion_matrix'):
-                return confusion_matrix(getattr(self, f'y_{set}'),
-                                        getattr(self, f'predict_{set}'))
+                return confusion_matrix(getattr(self, f'y_{dataset}'),
+                                        getattr(self, f'predict_{dataset}'))
             elif metric.lower() == 'tn':
                 return int(self.scoring('confusion_matrix').ravel()[0])
             elif metric.lower() == 'fp':
@@ -855,26 +855,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Calculate the scorer via _score_func to use the prediction properties
             if type(SCORERS[metric]).__name__ == '_ThresholdScorer':
                 if self.T.task.startswith('reg'):
-                    y_pred = getattr(self, f'predict_{set}')
+                    y_pred = getattr(self, f'predict_{dataset}')
                 elif hasattr(self.model, 'decision_function'):
-                    y_pred = getattr(self, f'decision_function_{set}')
+                    y_pred = getattr(self, f'decision_function_{dataset}')
                 else:
-                    y_pred = getattr(self, f'predict_proba_{set}')
+                    y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
             elif type(SCORERS[metric]).__name__ == '_ProbaScorer':
                 if hasattr(self.model, 'predict_proba'):
-                    y_pred = getattr(self, f'predict_proba_{set}')
+                    y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
                 else:
-                    y_pred = getattr(self, f'decision_function_{set}')
+                    y_pred = getattr(self, f'decision_function_{dataset}')
             else:
-                y_pred = getattr(self, f'predict_{set}')
+                y_pred = getattr(self, f'predict_{dataset}')
 
             # Calculate metric_ on the test set
             return SCORERS[metric]._sign * SCORERS[metric]._score_func(
-                getattr(self, f'y_{set}'), y_pred, **SCORERS[metric]._kwargs)
+                getattr(self, f'y_{dataset}'), y_pred, **SCORERS[metric]._kwargs)
 
         except (ValueError, TypeError):
             return f"Invalid metric_ for a {self.name} model with {self.T.task} task!"

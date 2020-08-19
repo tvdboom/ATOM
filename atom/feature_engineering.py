@@ -719,6 +719,7 @@ class FeatureSelector(BaseEstimator,
             # Define PCA
             self.pca = PCA(n_components=None,
                            svd_solver=self.solver,
+                           random_state=self.random_state,
                            **self.kwargs)
 
             self.pca.fit(X)

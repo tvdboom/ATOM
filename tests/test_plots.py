@@ -323,7 +323,8 @@ def test_plot_evals():
     assert glob.glob(FILE_DIR + 'evals4.png')
 
 
-def test_plot_roc():
+@pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
+def test_plot_roc(dataset):
     """Assert that the plot_roc method work as intended."""
     # When task is not binary
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -333,16 +334,16 @@ def test_plot_roc():
     trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_roc, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_roc(filename=FILE_DIR + 'roc1', display=False)
-    trainer.lda.plot_roc(filename=FILE_DIR + 'roc2', display=False)
+    trainer.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc1', display=False)
+    trainer.lda.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc2', display=False)
     assert glob.glob(FILE_DIR + 'roc1.png')
     assert glob.glob(FILE_DIR + 'roc2.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_roc(filename=FILE_DIR + 'roc3', display=False)
-    atom.lda.plot_roc(filename=FILE_DIR + 'roc4', display=False)
+    atom.run('lr', metric='f1')
+    atom.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc3', display=False)
+    atom.lr.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc4', display=False)
     assert glob.glob(FILE_DIR + 'roc3.png')
     assert glob.glob(FILE_DIR + 'roc4.png')
 

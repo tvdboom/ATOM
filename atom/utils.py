@@ -46,9 +46,6 @@ OPTIONAL_PACKAGES = (('XGB', 'xgboost'),
 ONLY_CLASS = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
 ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR']
 
-# List of tree-based models
-TREE_MODELS = ['Tree', 'Bag', 'ET', 'RF', 'AdaB', 'GBM', 'XGB', 'LGB', 'CatB']
-
 METRIC_ACRONYMS = dict(ap='average_precision',
                        ba='balanced_accuracy',
                        auc='roc_auc',
@@ -570,6 +567,83 @@ def partial_dependence(estimator, X, features):
 
 # Functions shared by classes =============================================== >>
 
+def transform(pl, X, y, verbose, **kwargs):
+    """Apply all data transformations in ATOM's pipeline to new data.
+
+    The default option is to not use the outliers and balance transformers
+    since they should only be used on the training set.
+
+    Parameters
+    ----------
+    pl: pd.Series
+        Pipeline of the ATOM instance.
+
+    X: dict, sequence, np.array or pd.DataFrame
+        Data containing the features, with shape=(n_samples, n_features).
+
+    y: int, str, sequence, np.array, pd.Series or None
+        - If None: y is not used in the transformation.
+        - If int: Index of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Target column with shape=(n_samples,).
+
+    verbose: int
+        Verbosity level of the transformers.
+
+    **kwargs
+        Additional keyword arguments to customize which transforming methods to
+        apply. You can either select them via the index in the pipeline, e.g.
+        pipeline = [0, 1, 4] or via every individual transformer, e.g.
+        impute=True, feature_selection=False.
+
+    Returns
+    -------
+    X: pd.DataFrame
+        Transformed dataset.
+
+    y: pd.Series
+        Transformed target column. Only returned if provided.
+
+    """
+    # Check verbose parameter
+    if verbose < 0 or verbose > 2:
+        raise ValueError("Invalid value for the verbose parameter." +
+                         f"Value should be between 0 and 2, got {verbose}.")
+
+    # All data cleaning and feature selection methods and their classes
+    steps = dict(standard_cleaner='StandardCleaner',
+                 scale='Scaler',
+                 impute='Imputer',
+                 encode='Encoder',
+                 outliers='Outliers',
+                 balance='Balancer',
+                 feature_generation='FeatureGenerator',
+                 feature_selection='FeatureSelector')
+
+    # Set default values if pipeline is not provided
+    if not kwargs.get('pipeline'):
+        for key, value in steps.items():
+            if key not in kwargs:
+                kwargs[value] = False if key in ['outliers', 'balance'] else True
+            else:
+                kwargs[value] = kwargs.pop(key)
+
+    # Loop over classes in pipeline with a transform method (exclude trainers)
+    transformers = [est for est in pl if hasattr(est, 'transform')]
+    for i, estimator in enumerate(transformers):
+        class_name = estimator.__class__.__name__
+        if i in kwargs.get('pipeline', []) or kwargs.get(class_name):
+            # If verbose is specified, change the class verbosity
+            if verbose is not None:
+                estimator.verbose = verbose
+
+            # Some transformers return no y, but we need the original
+            X, y_returned = catch_return(estimator.transform(X, y))
+            y = y if y_returned is None else y_returned
+
+    return variable_return(X, y)
+
+
 def clear(self, models):
     """Clear models from the trainer.
 
@@ -590,6 +664,7 @@ def clear(self, models):
             raise ValueError(f"Model {model} not found in pipeline!")
         else:
             self.models.remove(model)
+
             if isinstance(self._results.index, pd.MultiIndex):
                 self._results = self._results.iloc[
                     ~self._results.index.get_level_values(1).str.contains(model)]
@@ -599,9 +674,8 @@ def clear(self, models):
             if not self.models:  # No more models in the pipeline
                 self.metric_ = []
 
-            # Delete model subclasses
-            delattr(self, model)
-            delattr(self, model.lower())
+        delattr(self, model)
+        delattr(self, model.lower())
 
 
 # Decorators ================================================================ >>
@@ -627,11 +701,11 @@ def crash(f, cache={'last_exception': None}):
 
     We use a mutable argument to cache the last exception raised. If the current
     exception is the same (happens when there is an error catch or multiple calls
-    to crash), its not written again to the logger.
+    to crash), its not re-written in the logger.
 
     """
     def wrapper(*args, **kwargs):
-        logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
+        logger = args[0].logger if hasattr(args[0], 'logger') else args[0].T.logger
 
         if logger is not None:
             try:  # Run the function
@@ -651,10 +725,10 @@ def crash(f, cache={'last_exception': None}):
 
 
 def method_to_log(f):
-    """Save function's Parameters to log file."""
+    """Save function's parameters to log file."""
     def wrapper(*args, **kwargs):
         # Get logger (for model subclasses called from BasePredictor)
-        logger = args[0].T.logger if hasattr(args[0], 'T') else args[0].logger
+        logger = args[0].logger if hasattr(args[0], 'logger') else args[0].T.logger
 
         if logger is not None:
             # For the __init__ method, call extra arguments from api.py
@@ -669,7 +743,7 @@ def method_to_log(f):
 
 
 def plot_from_model(f):
-    """If a plot is called from a model, adapt the models parameter."""
+    """If a plot is called from a model subclass, adapt the models parameter."""
     def wrapper(*args, **kwargs):
         if hasattr(args[0], 'T'):
             result = f(args[0].T, args[0].name, *args[1:], **kwargs)

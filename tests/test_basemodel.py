@@ -82,7 +82,7 @@ def test_invalid_delta_y():
 def test_plot_bo():
     """Assert than plot_bo runs without errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'LDA'], n_calls=25, bo_params={'plot_bo': True})
+    atom.run(['LR', 'GNB'], n_calls=25, bo_params={'plot_bo': True})
     assert not atom.errors
 
 
@@ -356,27 +356,27 @@ def test_scoring_metric_acronym():
     assert isinstance(atom.mnb.scoring('auc'), float)
 
 
-@pytest.mark.parametrize('set', ['train', 'test'])
-def test_scoring_all_scorers(set):
+@pytest.mark.parametrize('on_set', ['train', 'test'])
+def test_scoring_all_scorers(on_set):
     """Assert that the scoring methods works for all sklearn scorers."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(['MNB', 'PA'])
     for metric in SCORERS:
-        assert isinstance(atom.mnb.scoring(metric, set=set), (np.int64, float, str))
-        assert isinstance(atom.pa.scoring(metric, set=set), (np.int64, float, str))
+        assert isinstance(atom.mnb.scoring(metric, on_set), (np.int64, float, str))
+        assert isinstance(atom.pa.scoring(metric, on_set), (np.int64, float, str))
 
 
-@pytest.mark.parametrize('set', ['train', 'test'])
-def test_scoring_custom_metrics(set):
+@pytest.mark.parametrize('on_set', ['train', 'test'])
+def test_scoring_custom_metrics(on_set):
     """Assert that the scoring methods works for custom metrics."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     for metric in ['cm', 'confusion_matrix']:
-        assert isinstance(atom.mnb.scoring(metric, set=set), np.ndarray)
+        assert isinstance(atom.mnb.scoring(metric, on_set), np.ndarray)
     for metric in ['tn', 'fp', 'fn', 'tp']:
-        assert isinstance(atom.mnb.scoring(metric, set=set), int)
+        assert isinstance(atom.mnb.scoring(metric, on_set), int)
     for metric in ['lift', 'fpr', 'tpr', 'sup']:
-        assert isinstance(atom.mnb.scoring(metric, set=set), float)
+        assert isinstance(atom.mnb.scoring(metric, on_set), float)
 
 
 def test_invalid_metric():

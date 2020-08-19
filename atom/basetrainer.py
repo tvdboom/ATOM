@@ -11,6 +11,7 @@ Description: Module containing the parent class for all training classes.
 import importlib
 import pandas as pd
 from time import time
+import matplotlib.pyplot as plt
 
 # Own modules
 from .models import MODEL_LIST
@@ -366,6 +367,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Add model to "garbage collector"
                 # Cannot remove at once to maintain iteration order
                 to_remove.append(m)
+
+        # Close the BO plot if there was one
+        if self.bo_params.get('plot_bo'):
+            plt.close()
 
         # Remove faulty models
         clear(self, to_remove)

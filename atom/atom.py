@@ -30,7 +30,7 @@ from .training import (
 from .plots import ATOMPlotter
 from .utils import (
     CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, composed, crash, method_to_log, merge,
-    check_property, check_scaling, infer_task, catch_return, variable_return, clear
+    check_property, check_scaling, infer_task, transform, clear
     )
 
 
@@ -287,12 +287,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     def transform(self,
                   X: X_TYPES,
                   y: Y_TYPES = None,
-                  verbose: int = None,
+                  verbose: Optional[int] = None,
                   **kwargs):
         """Apply all data transformations in ATOM's pipeline to new data.
 
-        Outliers and balance are False by default since they should only be used for
-        the training set.
+        The default option is to not use the outliers and balance transformers
+        since they should only be used on the training set.
 
         Parameters
         ----------
@@ -301,25 +301,18 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         y: int, str, sequence, np.array or pd.Series, optional (default=None)
             - If None: y is not used in the transformation.
-            - If int: Index of the column of X which is selected as target.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         verbose: int, optional (default=None)
-            Verbosity level of the output. If None, it uses ATOM's verbosity.
+            Verbosity level of the transformers. If None, it uses ATOM's verbosity.
 
         **kwargs
-            Additional keyword arguments to customize which methods to apply.
-
-            Available options are:
-             - standard_cleaner: bool, optional (default=True)
-             - scale: bool, optional (default=True)
-             - impute: bool, optional (default=True)
-             - encode: bool, optional (default=True)
-             - outliers: bool, optional (default=False)
-             - balance: bool, optional (default=False)
-             - feature_generation: bool, optional (default=True)
-             - feature_selection: bool, optional (default=True)
+            Additional keyword arguments to customize which transforming methods to
+            apply. You can either select them via the index in the pipeline, e.g.
+            pipeline = [0, 1, 4] or via every individual transformer, e.g.
+            impute=True, feature_selection=False.
 
         Returns
         -------
@@ -330,43 +323,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        # Check verbose parameter
-        if verbose is not None and (verbose < 0 or verbose > 2):
-            raise ValueError("Invalid value for the verbose parameter." +
-                             f"Value should be between 0 and 2, got {verbose}.")
-
-        # All data cleaning and feature selection methods and their classes
-        steps = dict(standard_cleaner='StandardCleaner',
-                     scale='Scaler',
-                     impute='Imputer',
-                     encode='Encoder',
-                     outliers='Outliers',
-                     balance='Balancer',
-                     feature_generation='FeatureGenerator',
-                     feature_selection='FeatureSelector')
-
-        # Set default values if pipeline is not provided
-        if not kwargs.get('pipeline'):
-            for key, value in steps.items():
-                if key not in kwargs:
-                    kwargs[value] = False if key in ['outliers', 'balance'] else True
-                else:
-                    kwargs[value] = kwargs.pop(key)
-
-        # Loop over classes in pipeline with a transform method (exclude trainers)
-        transformers = [est for est in self.pipeline if hasattr(est, 'transform')]
-        for i, estimator in enumerate(transformers):
-            class_name = estimator.__class__.__name__
-            if i in kwargs.get('pipeline', []) or kwargs.get(class_name):
-                # If verbose is specified, change the class verbosity
-                if verbose is not None:
-                    estimator.verbose = verbose
-
-                # Some transformers return no y, but we need the original
-                X, y_returned = catch_return(estimator.transform(X, y))
-                y = y if y_returned is None else y_returned
-
-        return variable_return(X, y)
+        if verbose is None:
+            verbose = self.verbose
+        return transform(self.pipeline, X, y, verbose, **kwargs)
 
     # Data cleaning methods ================================================= >>
 
@@ -642,8 +601,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.trainer._data = self._data
             self.trainer._idx = self._idx
             self.trainer.run()
-        except ValueError as exception:
-            raise exception
+        except ValueError:
+            raise
         else:
             # Attach mapping from ATOM to the trainer instance (for plots)
             self.trainer.mapping = self.mapping
@@ -661,12 +620,13 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             for model in self.trainer.models:
                 self.errors.pop(model, None)  # Remove model from errors if there
+
+                # Attach model subclasses to ATOM
                 setattr(self, model, getattr(self.trainer, model))
                 setattr(self, model.lower(), getattr(self.trainer, model.lower()))
 
-                # Add transform method to model subclasses
-                setattr(getattr(self, model), 'transform', self.transform)
-                setattr(getattr(self, model.lower()), 'transform', self.transform)
+                # Add pipeline to model subclasses for transform method
+                setattr(getattr(self, model), 'pipeline', self.pipeline)
 
             # Remove SuccessiveHalving and TrainSizing from the pipeline
             self.pipeline = self.pipeline[

@@ -11,7 +11,7 @@ Description: Module containing the API classes.
 import pickle
 import pandas as pd
 from typeguard import typechecked
-from typing import Optional, Union, Tuple
+from typing import Optional, Union
 
 # Own modules
 from .atom import ATOM
@@ -23,7 +23,8 @@ from .utils import X_TYPES, Y_TYPES, merge
 
 @typechecked
 def ATOMLoader(filename: str,
-               data: Optional[Union[X_TYPES, Tuple]] = None,
+               X: Optional[X_TYPES] = None,
+               y: Y_TYPES = -1,
                transform_data: bool = True,
                verbose: Optional[int] = None):
     """Load a class from a pickle file.
@@ -37,13 +38,16 @@ def ATOMLoader(filename: str,
     filename: str
         Name of the pickle file to load.
 
-    data: dict, sequence, np.array, pd.DataFrame or tuple, optional (default=None)
-        If not tuple, dataset containing the features, with shape=(n_samples,
-        n_features + 1). The last column will be used as target column. If tuple,
-        it should be of the form (X, y), where X is the feature set and y the
-        corresponding target column as array-like, index or name. Only use this
-        parameter if the file is an ATOM or training instance that was saved using
-        save_data=False. See the save method in basetransformer.py.
+    X: dict, sequence, np.array or pd.DataFrame
+        Data containing the features, with shape=(n_samples, n_features).
+        Only use this parameter if the file is an ATOM or training instance that
+        was saved using save_data=False. See the save method in basetransformer.py
+
+    y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        - If None: y is not used in the transformation.
+        - If int: Index of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Target column with shape=(n_samples,).
 
     transform_data: bool, optional (default=True)
         Whether to transform the provided data through all the steps in the
@@ -62,20 +66,14 @@ def ATOMLoader(filename: str,
     with open(filename, 'rb') as f:
         cls_ = pickle.load(f)
 
-    if data is not None:
+    if X is not None:
         if not hasattr(cls_, '_data'):
-            raise TypeError("Data is provided but the class is not an ATOM nor " +
+            raise TypeError("X is provided but the class is not an ATOM nor " +
                             f"training instance, got {cls_.__class__.__name__}.")
 
         elif cls_._data is not None:
             raise ValueError("The loaded {} instance already contains data!"
                              .format(cls_.__class__.__name__))
-
-        # Get X and y from data
-        if isinstance(data, tuple):
-            X, y = data[0], data[1]
-        else:
-            X, y = data, None
 
         X, y = BaseTransformer._prepare_input(X, y)
         cls_._data = X if y is None else merge(X, y)
@@ -104,6 +102,8 @@ def ATOMLoader(filename: str,
         if getattr(cls_, 'trainer', None):
             cls_.trainer._data = cls_._data
 
+    cls_.log(f"{cls_.__class__.__name__} loaded successfully!")
+
     return cls_
 
 
@@ -118,9 +118,9 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Dataset containing the features, with shape=(n_samples, n_features)
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
-        - If int: Position of the target column in X.
+        - If int: Index of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Data target column with shape=(n_samples,).
+        - Else: Target column with shape=(n_samples,).
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the data to use.
@@ -200,9 +200,9 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Dataset containing the features, with shape=(n_samples, n_features)
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
-        - If int: Position of the target column in X.
+        - If int: Index of the target column in X.
         - If str: Name of the target column in X.
-        - Else: Data target column with shape=(n_samples,).
+        - Else: Target column with shape=(n_samples,).
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the data to use.

@@ -203,7 +203,6 @@ def test_PCA_strategy():
     """Assert that the PCA strategy works as intended."""
     fs = FeatureSelector(strategy='PCA', n_features=0.7)
     X = fs.fit_transform(X_bin)
-    print(dir(fs.pca))
     assert X.shape[1] == 21
 
 

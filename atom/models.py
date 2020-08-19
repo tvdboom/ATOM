@@ -12,11 +12,18 @@ Description: Module containing all the available models for the fit method
 
         Attributes
         ----------
-        name: string
+        name: str
             Short acronym of the model's longname for calling.
 
-        longname: string
-            Name of the model.
+        longname: str
+            Complete name of the model.
+
+        type: str
+            Model type (to use in plots). Choose from: linear, tree, kernel.
+
+        evals: dict
+            Evaluation metric and scores. Only for models that allow
+            in-train evaluation.
 
         Methods
         -------
@@ -123,9 +130,9 @@ class GaussianProcess(BaseModel):
     """Gaussian process model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GP', 'Gaussian Process'
+        self.type = 'kernel'
 
     def get_model(self, params={}):
         """Return the model object with unpacked parameters."""
@@ -142,9 +149,9 @@ class GaussianNaiveBayes(BaseModel):
     """Gaussian Naive Bayes model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GNB', 'Gaussian Naive Bayes'
+        self.type = 'kernel'
 
     @staticmethod
     def get_model(params={}):
@@ -156,9 +163,9 @@ class MultinomialNaiveBayes(BaseModel):
     """Multinomial Naive Bayes model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'MNB', 'Multinomial Naive Bayes'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -188,9 +195,9 @@ class BernoulliNaiveBayes(BaseModel):
     """Bernoulli Naive Bayes model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'BNB', 'Bernoulli Naive Bayes'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -220,9 +227,9 @@ class OrdinaryLeastSquares(BaseModel):
     """Linear Regression without regularization (OLS)."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
+        self.type = 'linear'
 
     def get_model(self, params={}):
         """Call the model object."""
@@ -233,13 +240,13 @@ class Ridge(BaseModel):
     """Linear Regression/Classification with ridge regularization."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name = 'Ridge'
         if self.T.goal.startswith('class'):
             self.longname = 'Ridge Classification'
         else:
             self.longname = 'Ridge Regression'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -271,9 +278,9 @@ class Lasso(BaseModel):
     """Linear Regression with lasso regularization."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'Lasso', 'Lasso Regression'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -302,9 +309,9 @@ class ElasticNet(BaseModel):
     """Linear Regression with both lasso and ridge regularization."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'EN', 'ElasticNet Regression'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -335,9 +342,9 @@ class BayesianRegression(BaseModel):
     """Linear Bayesian Regression model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'BR', 'Bayesian Regression'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -365,9 +372,9 @@ class LogisticRegression(BaseModel):
     """Logistic Regression model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'LR', 'Logistic Regression'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -420,9 +427,9 @@ class LinearDiscriminantAnalysis(BaseModel):
     """Linear Discriminant Analysis model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'LDA', 'Linear Discriminant Analysis'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -455,9 +462,9 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     """Quadratic Discriminant Analysis model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'QDA', 'Quadratic Discriminant Analysis'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -485,9 +492,9 @@ class KNearestNeighbors(BaseModel):
     """K-Nearest Neighbors model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -523,9 +530,9 @@ class DecisionTree(BaseModel):
     """Single Decision Tree."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'Tree', 'Decision Tree'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -572,13 +579,13 @@ class Bagging(BaseModel):
     """Bagging model (with decision tree as base estimator)."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name = 'Bag'
         if self.T.goal.startswith('class'):
             self.longname = 'Bagging Classifier'
         else:
             self.longname = 'Bagging Regressor'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -620,9 +627,9 @@ class ExtraTrees(BaseModel):
     """Extremely Randomized Trees."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'ET', 'Extra-Trees'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -678,9 +685,9 @@ class RandomForest(BaseModel):
     """Random Forest model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'RF', 'Random Forest'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -736,9 +743,9 @@ class AdaBoost(BaseModel):
     """Adaptive Boosting (with decision tree as base estimator)."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'AdaB', 'AdaBoost'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -772,9 +779,9 @@ class GradientBoostingMachine(BaseModel):
     """Gradient Boosting Machine model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=False)
         self.name, self.longname = 'GBM', 'Gradient Boosting Machine'
+        self.type = 'tree'
 
     @staticmethod
     def get_params(x):
@@ -822,9 +829,10 @@ class XGBoost(BaseModel):
     """Extreme Gradient Boosting."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'XGB', 'XGBoost'
+        self.type = 'tree'
+        self.evals = {}
 
     @staticmethod
     def get_params(x):
@@ -907,9 +915,10 @@ class LightGBM(BaseModel):
     """Light Gradient Boosting Machine."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'LGB', 'LightGBM'
+        self.type = 'tree'
+        self.evals = {}
 
     @staticmethod
     def get_params(x):
@@ -986,9 +995,10 @@ class CatBoost(BaseModel):
     """Categorical Boosting Machine."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'CatB', 'CatBoost'
+        self.type = 'tree'
+        self.evals = {}
 
     @staticmethod
     def get_params(x):
@@ -1064,9 +1074,9 @@ class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'lSVM', 'Linear SVM'
+        self.type = 'kernel'
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1111,9 +1121,9 @@ class KernelSVM(BaseModel):
     """Kernel (non-linear) Support Vector Machine."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'kSVM', 'Kernel SVM'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):
@@ -1159,9 +1169,9 @@ class PassiveAggressive(BaseModel):
     """Passive Aggressive model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'PA', 'Passive Aggressive'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -1204,9 +1214,9 @@ class StochasticGradientDescent(BaseModel):
     """Stochastic Gradient Descent model."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
+        self.type = 'linear'
 
     @staticmethod
     def get_params(x):
@@ -1268,9 +1278,9 @@ class MultilayerPerceptron(BaseModel):
     """Multilayer Perceptron with 1 to 3 hidden layers."""
 
     def __init__(self, *args):
-        """Class initializer."""
         super().__init__(T=args[0], need_scaling=True)
         self.name, self.longname = 'MLP', 'Multilayer Perceptron'
+        self.type = 'kernel'
 
     @staticmethod
     def get_params(x):

@@ -35,7 +35,7 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    CAL, TREE_MODELS, METRIC_ACRONYMS, lst, check_is_fitted, get_best_score,
+    CAL, METRIC_ACRONYMS, lst, check_is_fitted, get_best_score,
     get_model_name, partial_dependence, composed, crash, plot_from_model
     )
 
@@ -195,6 +195,24 @@ class BasePlotter(object):
 
         return metric
 
+    @staticmethod
+    def _check_set(dataset):
+        """Check the provided input metric_.
+
+        Parameters
+        ----------
+        dataset: str
+            Metric provided by the metric_ parameter.
+
+        """
+        if dataset.lower() == 'both':
+            return ['train', 'test']
+        elif dataset.lower() in ('train', 'test'):
+            return [dataset.lower()]
+        else:
+            raise ValueError("Invalid value for the on_set parameter. " +
+                             "Choose between 'train', 'test' or 'both'.")
+
     def _plot(self, **kwargs):
         """Make the plot.
 
@@ -261,9 +279,9 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not self.pca:
-            raise PermissionError(
-                "This plot is only available if you applied PCA on the data!")
+        if not hasattr(self, 'pca') or not self.pca:
+            raise PermissionError("The plot_pca method is only available " +
+                                  "if you applied PCA on the data!")
 
         n = self.pca.n_components_  # Number of chosen components
         var = np.array(self.pca.explained_variance_ratio_[:n])
@@ -278,7 +296,7 @@ class FeatureSelectorPlotter(BasePlotter):
                     edgecolors='b',
                     zorder=3,
                     label=f"Total variance retained: {round(var.sum(), 3)}")
-        plt.plot(range(0, self.pca.n_features_), np.cumsum(var_all), marker='o')
+        plt.plot(range(self.pca.n_features_), np.cumsum(var_all), marker='o')
         plt.axhline(var.sum(), ls='--', color='k')
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
@@ -317,9 +335,9 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not self.pca:
-            raise PermissionError(
-                "This plot is only available if you applied PCA on the data!")
+        if not hasattr(self, 'pca') or not self.pca:
+            raise PermissionError("The plot_components method is only available " +
+                                  "if you applied PCA on the data!")
 
         # Set parameters
         if show is None:
@@ -377,9 +395,9 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not self.rfecv:
-            raise PermissionError(
-                "This plot is only available if you applied RFECV on the data!")
+        if not hasattr(self, 'rfecv') or not self.rfecv:
+            raise PermissionError("The plot_rfecv method is only available " +
+                                  "if you applied RFECV on the data!")
 
         try:  # Define the y-label for the plot
             ylabel = self.rfecv.get_params()['scoring'].name
@@ -459,8 +477,8 @@ class BaseModelPlotter(BasePlotter):
 
         # Check there is at least one model with bagging
         if all([not m.metric_bagging for m in models]):
-            raise PermissionError("You need to run the pipeline using bagging>0 " +
-                                  "to use the plot_bagging method!")
+            raise PermissionError("The plot_bagging method is only available " +
+                                  "you run the pipeline using bagging>0!")
 
         results, names = [], []
         for m in models:
@@ -624,6 +642,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(self,
                  models: Union[None, str, Sequence[str]] = None,
+                 dataset: str = 'test',
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
@@ -638,6 +657,10 @@ class BaseModelPlotter(BasePlotter):
         models: str, list, tuple or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
+
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -654,24 +677,29 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_ROC method is only available " +
+            raise PermissionError("The plot_roc method is only available " +
                                   "for binary classification tasks!")
 
         plt.subplots(figsize=figsize)
         for m in models:
-            # Get False (True) Positive Rate as arrays
-            fpr, tpr, _ = roc_curve(m.y_test, m.predict_proba_test[:, 1])
+            for set_ in dataset:
+                # Get False (True) Positive Rate as arrays
+                fpr, tpr, _ = roc_curve(getattr(m, f'y_{set_}'),
+                                        getattr(m, f'predict_proba_{set_}')[:, 1])
 
-            # Draw line
-            if len(models) == 1:
-                label = f"AUC={m.scoring('roc_auc'):.3f}"
-            else:
-                label = f"{m.name} (AUC={m.scoring('roc_auc'):.3f})"
-            plt.plot(fpr, tpr, lw=2, label=label)
+                # Draw line
+                if len(models) == 1:
+                    l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                    label = f"{l_set} AUC={m.scoring('roc_auc', set_):.3f}"
+                else:
+                    l_set = f' - {set_} ' if len(dataset) > 1 else ''
+                    label = f"{m.name}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
+                plt.plot(fpr, tpr, lw=2, label=label)
 
-        plt.plot([0, 1], [0, 1], lw=2, color='black', linestyle='--')
+        plt.plot([0, 1], [0, 1], lw=2, color='black', alpha=0.7, linestyle='--')
 
         self._plot(title="ROC curve" if not title else title,
                    legend='lower right',
@@ -715,7 +743,7 @@ class BaseModelPlotter(BasePlotter):
         models = self._check_models(models)
 
         if not self.task.startswith('binary'):
-            raise PermissionError("The plot_PRC method is only available for " +
+            raise PermissionError("The plot_prc method is only available for " +
                                   "binary classification tasks!")
 
         plt.subplots(figsize=figsize)
@@ -898,7 +926,7 @@ class BaseModelPlotter(BasePlotter):
         df = pd.DataFrame(index=self.X.columns)
 
         for m in models:
-            if m.name not in TREE_MODELS:
+            if m.type != 'tree':
                 raise PermissionError(
                     "The plot_feature_importance method is only available for " +
                     f"tree-based models, got {m.longname}!")
@@ -1558,7 +1586,7 @@ class BaseModelPlotter(BasePlotter):
                              label=label)
 
         if not title:
-            title = f"Predicted probabilities for {m.y_test.name}={target_str}"
+            title = f"Predicted probabilities for {m.y.name}={target_str}"
         self._plot(title=title,
                    legend='best',
                    xlabel='Probability',
