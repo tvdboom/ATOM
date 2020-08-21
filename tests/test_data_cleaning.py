@@ -84,7 +84,7 @@ def test_return_scaled_dataset():
 # Test StandardCleaner ====================================================== >>
 
 def test_drop_invalid_column_type():
-    """Assert that invalid columns types are dropd for string input."""
+    """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X['datetime_col'] = pd.to_datetime(X['mean radius'])  # Datetime column
     X = StandardCleaner(prohibited_types='datetime64[ns]').transform(X)
@@ -117,7 +117,7 @@ def test_strip_ignores_nan():
 
 
 def test_drop_maximum_cardinality():
-    """Assert that categorical columns with maximum cardinality are dropd."""
+    """Assert that categorical columns with maximum cardinality are dropped."""
     X = X_bin.copy()
     # Create column with all different values
     X['invalid_column'] = [str(i) for i in range(len(X))]
@@ -126,7 +126,7 @@ def test_drop_maximum_cardinality():
 
 
 def test_drop_minimum_cardinality():
-    """Assert that columns with minimum cardinality are dropd."""
+    """Assert that columns with minimum cardinality are dropped."""
     X = X_bin.copy()
     X['invalid_column'] = 2.3  # Create column with only one value
     X = StandardCleaner().transform(X)
@@ -471,12 +471,12 @@ def test_None_both_parameter():
 
 def test_oversample_parameter():
     """Assert that an error is raised when oversample is unknown."""
-    pytest.raises(ValueError, Balancer, oversample='test')
+    pytest.raises(ValueError, Balancer, oversample='test', undersample=None)
 
 
 def test_undersample_parameter():
     """Assert that an error is raised when undersample is unknown."""
-    pytest.raises(ValueError, Balancer, undersample='test')
+    pytest.raises(ValueError, Balancer, oversample=None, undersample='test')
 
 
 def test_n_neighbors_parameter():

@@ -42,7 +42,7 @@ from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, Y_TYPES, variable_return, to_df, to_series, merge,
     check_is_fitted, infer_task, composed, crash, method_to_log
-    )
+)
 
 
 # Classes =================================================================== >>
@@ -230,10 +230,10 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Position of the target column in X.
+            - If None, y is not used in the estimator.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -460,10 +460,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the transformation.
-            - If int: Position of the target column in X.
+            - If None, y is not used in the estimator.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -662,9 +662,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If int: Position of the target column in X.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -850,10 +850,10 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Position of the target column in X.
+            - If None, y is not used in the estimator.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -1042,9 +1042,9 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If int: Position of the target column in X.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------

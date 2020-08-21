@@ -22,7 +22,7 @@ from sklearn.metrics import SCORERS, get_scorer, make_scorer
 from sklearn.utils import _safe_indexing
 from sklearn.inspection._partial_dependence import (
     _grid_from_X, _partial_dependence_brute
-    )
+)
 
 # Plotting
 import matplotlib.pyplot as plt
@@ -109,7 +109,7 @@ def get_best_score(item, metric=0):
         Model subclass instance or row from the results dataframe.
 
     metric: int, optional (default=0)
-        Index of the metric_ to use.
+        Index of the metric to use.
 
     """
     if item.mean_bagging:
@@ -332,7 +332,6 @@ def check_is_fitted(estimator, attributes=None, msg=None):
 
     Checks if the estimator is fitted by verifying the presence of fitted
     attributes (not None or empty) and otherwise raises a NotFittedError.
-    This is a variation on sklearn's function.
 
     Parameters
     ----------
@@ -360,17 +359,10 @@ def check_is_fitted(estimator, attributes=None, msg=None):
                "yet. Call 'fit' with appropriate arguments before using " +
                "this estimator.")
 
-    if attributes is not None:
-        if not isinstance(attributes, (list, tuple)):
-            attributes = [attributes]
-        attrs = [check_attr(attr) for attr in attributes]
-    else:
-        attrs = []
-        for key, value in vars(estimator).items():
-            if key.endswith("_") and not key.startswith("__"):
-                attrs.append(not value)
+    if not isinstance(attributes, (list, tuple)):
+        attributes = [attributes]
 
-    if all(attrs):
+    if all([check_attr(attr) for attr in attributes]):
         raise NotFittedError(msg)
 
 
@@ -402,7 +394,7 @@ def get_model_name(model):
 
 
 def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
-    """Get the right metric_ depending on input type.
+    """Get the right metric depending on input type.
 
     Parameters
     ----------
@@ -410,17 +402,17 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         Metric as a string, function or scorer.
 
     greater_is_better: bool
-        whether the metric_ is a score function or a loss function,
+        whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric_ is a string or a scorer.
+        better. Will be ignored if the metric is a string or a scorer.
 
     needs_proba: bool
-        Whether the metric_ function requires probability estimates out of a
-        classifier. Will be ignored if the metric_ is a string or a scorer.
+        Whether the metric function requires probability estimates out of a
+        classifier. Will be ignored if the metric is a string or a scorer.
 
     needs_threshold: bool
-        Whether the metric_ function takes a continuous decision certainty.
-        Will be ignored if the metric_ is a string or a scorer.
+        Whether the metric function takes a continuous decision certainty.
+        Will be ignored if the metric is a string or a scorer.
 
     Returns
     -------
@@ -440,15 +432,15 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         if metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
         elif metric not in SCORERS:
-            raise ValueError("Unknown value for the metric_ parameter, got " +
+            raise ValueError("Unknown value for the metric parameter, got " +
                              f"{metric}. Try one of: {', '.join(SCORERS)}.")
         metric = get_scorer(metric)
         metric.name = get_scorer_name(metric)
 
-    elif hasattr(metric, '_score_func'):  # Provided metric_ is scoring
+    elif hasattr(metric, '_score_func'):  # Provided metric is scoring
         metric.name = get_scorer_name(metric)
 
-    else:  # Metric is a function with signature metric_(y, y_pred)
+    else:  # Metric is a function with signature metric(y, y_pred)
         metric = make_scorer(metric,
                              greater_is_better=greater_is_better,
                              needs_proba=needs_proba,
@@ -459,7 +451,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
 
 
 def get_default_metric(task):
-    """Return the default metric_ for each task.
+    """Return the default metric for each task.
 
     Parameters
     ----------
@@ -782,7 +774,7 @@ class PlotCallback(object):
         self.y2 = deque([np.NaN for _ in self.x], maxlen=max_len)
 
     def __call__(self, result):
-        # Start to fill NaNs with encountered metric_ values
+        # Start to fill NaNs with encountered metric values
         if np.isnan(self.y1).any():
             for i, value in enumerate(self.y1):
                 if math.isnan(value):

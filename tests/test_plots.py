@@ -110,6 +110,7 @@ def test_plot_pipeline():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.outliers()
+    atom.successive_halving(['Tree', 'AdaB'])
     atom.plot_pipeline(True, filename=FILE_DIR + 'pipeline1', display=False)
     atom.plot_pipeline(False, filename=FILE_DIR + 'pipeline2', display=False)
     assert glob.glob(FILE_DIR + 'pipeline1.png')
@@ -331,45 +332,81 @@ def test_plot_roc(dataset):
     trainer.run(reg_train, reg_test)
     pytest.raises(PermissionError, trainer.plot_roc)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    # When correct
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_roc, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc1', display=False)
-    trainer.lda.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc2', display=False)
-    assert glob.glob(FILE_DIR + 'roc1.png')
-    assert glob.glob(FILE_DIR + 'roc2.png')
+    pytest.raises(ValueError, trainer.plot_roc, models='LDA', dataset='invalid')
+    trainer.plot_roc(
+        dataset=dataset,
+        filename=FILE_DIR + f'roc1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_roc(
+        dataset=dataset,
+        filename=FILE_DIR + f'roc2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'roc1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'roc2_{dataset}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lr', metric='f1')
-    atom.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc3', display=False)
-    atom.lr.plot_roc(dataset=dataset, filename=FILE_DIR + 'roc4', display=False)
-    assert glob.glob(FILE_DIR + 'roc3.png')
-    assert glob.glob(FILE_DIR + 'roc4.png')
+    atom.run('lgb', metric='f1')
+    atom.plot_roc(
+        dataset=dataset,
+        filename=FILE_DIR + f'roc3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_roc(
+        dataset=dataset,
+        filename=FILE_DIR + f'roc4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'roc3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'roc4_{dataset}.png')
 
 
-def test_plot_prc():
+@pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
+def test_plot_prc(dataset):
     """Assert that the plot_prc method work as intended."""
     # When task is not binary
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
     trainer.run(reg_train, reg_test)
     pytest.raises(PermissionError, trainer.plot_prc)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    # When correct
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_prc, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_prc(filename=FILE_DIR + 'prc1', display=False)
-    trainer.lda.plot_prc(filename=FILE_DIR + 'prc2', display=False)
-    assert glob.glob(FILE_DIR + 'prc1.png')
-    assert glob.glob(FILE_DIR + 'prc2.png')
+    trainer.plot_prc(
+        dataset=dataset,
+        filename=FILE_DIR + f'prc1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_prc(
+        dataset=dataset,
+        filename=FILE_DIR + f'prc2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'prc1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'prc2_{dataset}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_prc(filename=FILE_DIR + 'prc3', display=False)
-    atom.lda.plot_prc(filename=FILE_DIR + 'prc4', display=False)
-    assert glob.glob(FILE_DIR + 'prc3.png')
-    assert glob.glob(FILE_DIR + 'prc4.png')
+    atom.run('lgb', metric='f1')
+    atom.plot_prc(
+        dataset=dataset,
+        filename=FILE_DIR + f'prc3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_prc(
+        dataset=dataset,
+        filename=FILE_DIR + f'prc4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'prc3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'prc4_{dataset}.png')
 
 
 def test_plot_permutation_importance():
@@ -435,24 +472,32 @@ def test_plot_partial_dependence():
     trainer.run(reg_train, reg_test)
 
     # More than 3 features
-    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[0, 1, 2, 3])
+    with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
+        trainer.plot_partial_dependence(features=[0, 1, 2, 3])
 
     # Triple feature
-    pytest.raises(
-        ValueError, trainer.ols.plot_partial_dependence, features=[(0, 1, 2), 2])
+    with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
+        trainer.ols.plot_partial_dependence(features=[(0, 1, 2), 2])
 
     # Pair for multi-model
-    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[(0, 2), 2])
+    with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
+        trainer.plot_partial_dependence(features=[(0, 2), 2])
 
     # Unknown feature
-    pytest.raises(ValueError, trainer.plot_partial_dependence, features=['test', 2])
+    with pytest.raises(ValueError, match=r".*Unknown column.*"):
+        trainer.plot_partial_dependence(features=['test', 2])
 
     # Invalid index
-    pytest.raises(ValueError, trainer.plot_partial_dependence, features=[120, 2])
+    with pytest.raises(ValueError, match=r".*got index.*"):
+        trainer.plot_partial_dependence(features=[120, 2])
 
     # When correct
     trainer.plot_permutation_importance(display=False)  # Assign best_features
-    trainer.plot_partial_dependence(filename=FILE_DIR + 'pd1', display=False)
+    trainer.plot_partial_dependence(
+        features=2,
+        filename=FILE_DIR + 'pd1',
+        display=False
+    )
     trainer.ols.plot_partial_dependence(filename=FILE_DIR + 'pd2', display=False)
     assert glob.glob(FILE_DIR + 'pd1.png')
     assert glob.glob(FILE_DIR + 'pd2.png')
@@ -461,63 +506,101 @@ def test_plot_partial_dependence():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run('lda', metric='f1_macro')
     atom.plot_partial_dependence(target=0, filename=FILE_DIR + 'pd3', display=False)
-    atom.lda.plot_partial_dependence(features=[('alcohol', 'ash')],
-                                     target=2,
-                                     filename=FILE_DIR + 'pd4',
-                                     display=False)
+    atom.lda.plot_partial_dependence(
+        features=[('alcohol', 'ash')],
+        target=2,
+        filename=FILE_DIR + 'pd4',
+        display=False
+    )
     assert glob.glob(FILE_DIR + 'pd3.png')
     assert glob.glob(FILE_DIR + 'pd4.png')
 
 
-def test_plot_errors():
+@pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
+def test_plot_errors(dataset):
     """Assert that the plot_errors method work as intended."""
     # When task is not regression
     trainer = TrainerClassifier('Tree', metric='f1')
     trainer.run(bin_train, bin_test)
     pytest.raises(PermissionError, trainer.plot_errors)
 
-    trainer = TrainerRegressor(['OLS', 'LGB'], metric='MAE')
+    trainer = TrainerRegressor(['RF', 'LGB'], metric='MAE')
     pytest.raises(NotFittedError, trainer.plot_errors, models='OLS')
     trainer.run(bin_train, bin_test)
-    trainer.plot_errors(filename=FILE_DIR + 'errors1', display=False)
-    trainer.ols.plot_errors(filename=FILE_DIR + 'errors2', display=False)
-    assert glob.glob(FILE_DIR + 'errors1.png')
-    assert glob.glob(FILE_DIR + 'errors2.png')
+    trainer.plot_errors(
+        dataset=dataset,
+        filename=FILE_DIR + f'errors1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_errors(
+        dataset=dataset,
+        filename=FILE_DIR + f'errors2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'errors1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'errors2_{dataset}.png')
 
     # From ATOM
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(['Lasso', 'BR'], metric='MSE')
-    atom.plot_errors(filename=FILE_DIR + 'errors3', display=False)
-    atom.br.plot_errors(filename=FILE_DIR + 'errors4', display=False)
-    assert glob.glob(FILE_DIR + 'errors3.png')
-    assert glob.glob(FILE_DIR + 'errors4.png')
+    atom.plot_errors(
+        dataset=dataset,
+        filename=FILE_DIR + f'errors3_{dataset}',
+        display=False
+    )
+    atom.br.plot_errors(
+        dataset=dataset,
+        filename=FILE_DIR + f'errors4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'errors3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'errors4_{dataset}.png')
 
 
-def test_plot_residuals():
+@pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
+def test_plot_residuals(dataset):
     """Assert that the plot_residuals method work as intended."""
     # When task is not regression
     trainer = TrainerClassifier('Tree', metric='f1')
     trainer.run(bin_train, bin_test)
     pytest.raises(PermissionError, trainer.plot_residuals)
 
-    trainer = TrainerRegressor(['OLS', 'LGB'], metric='MAE')
+    trainer = TrainerRegressor(['rf', 'LGB'], metric='MAE')
     pytest.raises(NotFittedError, trainer.plot_residuals, models='OLS')
     trainer.run(bin_train, bin_test)
-    trainer.plot_residuals(filename=FILE_DIR + 'residuals1', display=False)
-    trainer.ols.plot_residuals(filename=FILE_DIR + 'residuals2', display=False)
-    assert glob.glob(FILE_DIR + 'residuals1.png')
-    assert glob.glob(FILE_DIR + 'residuals2.png')
+    trainer.plot_residuals(
+        dataset=dataset,
+        filename=FILE_DIR + f'residuals1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_residuals(
+        dataset=dataset,
+        filename=FILE_DIR + f'residuals2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'residuals1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'residuals2_{dataset}.png')
 
     # From ATOM
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(['Lasso', 'BR'], metric='MSE')
-    atom.plot_residuals(filename=FILE_DIR + 'residuals3', display=False)
-    atom.br.plot_residuals(filename=FILE_DIR + 'residuals4', display=False)
-    assert glob.glob(FILE_DIR + 'residuals3.png')
-    assert glob.glob(FILE_DIR + 'residuals4.png')
+    atom.run(['Lasso', 'LGB'], metric='MSE')
+    atom.plot_residuals(
+        dataset=dataset,
+        filename=FILE_DIR + f'residuals3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_residuals(
+        dataset=dataset,
+        filename=FILE_DIR + f'residuals4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'residuals3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'residuals4_{dataset}.png')
 
 
-def test_plot_confusion_matrix():
+@pytest.mark.parametrize('dataset', ['train', 'test'])
+@pytest.mark.parametrize('normalize', [True, False])
+def test_plot_confusion_matrix(dataset, normalize):
     """Assert that the plot_confusion_matrix method work as intended."""
     # When task is not classification
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -525,32 +608,58 @@ def test_plot_confusion_matrix():
     pytest.raises(PermissionError, trainer.plot_confusion_matrix)
 
     # For binary classification tasks
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_confusion_matrix, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_confusion_matrix(filename=FILE_DIR + 'cm1', display=False)
-    trainer.lda.plot_confusion_matrix(True, filename=FILE_DIR + 'cm2', display=False)
-    assert glob.glob(FILE_DIR + 'cm1.png')
-    assert glob.glob(FILE_DIR + 'cm2.png')
+    trainer.plot_confusion_matrix(
+        dataset=dataset,
+        normalize=normalize,
+        filename=FILE_DIR + f'cm1_{dataset}_{normalize}',
+        display=False
+    )
+    trainer.lgb.plot_confusion_matrix(
+        dataset=dataset,
+        normalize=normalize,
+        filename=FILE_DIR + f'cm2_{dataset}_{normalize}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'cm1_{dataset}_{normalize}.png')
+    assert glob.glob(FILE_DIR + f'cm2_{dataset}_{normalize}.png')
 
     # For multiclass classification tasks
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1_macro')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1_macro')
     pytest.raises(NotFittedError, trainer.plot_confusion_matrix, models='LDA')
     trainer.run(class_train, class_test)
     pytest.raises(NotImplementedError, trainer.plot_confusion_matrix)
-    trainer.lda.plot_confusion_matrix(True, filename=FILE_DIR + 'cm3', display=False)
-    assert glob.glob(FILE_DIR + 'cm3.png')
+    trainer.lgb.plot_confusion_matrix(
+        dataset=dataset,
+        normalize=normalize,
+        filename=FILE_DIR + f'cm3_{dataset}_{normalize}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'cm3_{dataset}_{normalize}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_confusion_matrix(filename=FILE_DIR + 'cm4', display=False)
-    atom.lda.plot_confusion_matrix(filename=FILE_DIR + 'cm5', display=False)
-    assert glob.glob(FILE_DIR + 'cm4.png')
-    assert glob.glob(FILE_DIR + 'cm5.png')
+    atom.run('LGB', metric='f1')
+    atom.plot_confusion_matrix(
+        dataset=dataset,
+        normalize=normalize,
+        filename=FILE_DIR + f'cm4_{dataset}_{normalize}',
+        display=False
+    )
+    atom.lgb.plot_confusion_matrix(
+        dataset=dataset,
+        normalize=normalize,
+        filename=FILE_DIR + f'cm5_{dataset}_{normalize}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'cm4_{dataset}_{normalize}.png')
+    assert glob.glob(FILE_DIR + f'cm5_{dataset}_{normalize}.png')
 
 
-def test_plot_threshold():
+@pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
+def test_plot_threshold(dataset):
     """Assert that the plot_threshold method work as intended."""
     # When task is not binary
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -562,26 +671,44 @@ def test_plot_threshold():
     trainer.run(bin_train, bin_test)
     pytest.raises(AttributeError, trainer.plot_threshold)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_threshold, models='LDA')
     trainer.run(bin_train, bin_test)
     pytest.raises(ValueError, trainer.plot_threshold, metric='unknown')
-    trainer.plot_threshold(filename=FILE_DIR + 'threshold1', display=False)
-    mets = [f1_score, get_scorer('average_precision'), 'precision', 'auc']
-    trainer.lda.plot_threshold(mets, filename=FILE_DIR + 'threshold2', display=False)
-    assert glob.glob(FILE_DIR + 'threshold1.png')
-    assert glob.glob(FILE_DIR + 'threshold2.png')
+    trainer.plot_threshold(
+        dataset=dataset,
+        filename=FILE_DIR + f'threshold1_{dataset}',
+        display=False
+    )
+    metrics = [f1_score, get_scorer('average_precision'), 'precision', 'auc']
+    trainer.rf.plot_threshold(
+        metric=metrics,
+        dataset=dataset,
+        filename=FILE_DIR + f'threshold2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'threshold1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'threshold2_{dataset}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_threshold(filename=FILE_DIR + 'threshold3', display=False)
-    atom.lda.plot_threshold(filename=FILE_DIR + 'threshold4', display=False)
-    assert glob.glob(FILE_DIR + 'threshold3.png')
-    assert glob.glob(FILE_DIR + 'threshold4.png')
+    atom.run('LGB', metric='f1')
+    atom.plot_threshold(
+        dataset=dataset,
+        filename=FILE_DIR + f'threshold3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_threshold(
+        dataset=dataset,
+        filename=FILE_DIR + f'threshold4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'threshold3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'threshold4_{dataset}.png')
 
 
-def test_plot_probabilities():
+@pytest.mark.parametrize('dataset', ['train', 'test'])
+def test_plot_probabilities(dataset):
     """Assert that the plot_probabilities method work as intended."""
     # When task is not classification
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -593,22 +720,39 @@ def test_plot_probabilities():
     trainer.run(bin_train, bin_test)
     pytest.raises(AttributeError, trainer.plot_probabilities)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_probabilities, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_probabilities(filename=FILE_DIR + 'prob1', display=False)
-    trainer.lda.plot_probabilities(filename=FILE_DIR + 'prob2', display=False)
-    assert glob.glob(FILE_DIR + 'prob1.png')
-    assert glob.glob(FILE_DIR + 'prob2.png')
+    trainer.plot_probabilities(
+        dataset=dataset,
+        filename=FILE_DIR + f'prob1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_probabilities(
+        dataset=dataset,
+        filename=FILE_DIR + f'prob2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'prob1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'prob2_{dataset}.png')
 
     # From ATOM (target is str)
     y = ['a' if i == 0 else 'b' for i in y_bin]
     atom = ATOMClassifier(X_bin, y, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_probabilities(target='b', filename=FILE_DIR + 'prob3', display=False)
-    atom.lda.plot_probabilities(filename=FILE_DIR + 'prob4', display=False)
-    assert glob.glob(FILE_DIR + 'prob3.png')
-    assert glob.glob(FILE_DIR + 'prob4.png')
+    atom.run('LGB', metric='f1')
+    atom.plot_probabilities(
+        dataset=dataset,
+        target='b',
+        filename=FILE_DIR + f'prob3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_probabilities(
+        dataset=dataset,
+        filename=FILE_DIR + f'prob4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'prob3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'prob4_{dataset}.png')
 
 
 def test_plot_calibration():
@@ -636,7 +780,8 @@ def test_plot_calibration():
     assert glob.glob(FILE_DIR + 'calibration4.png')
 
 
-def test_plot_gains():
+@pytest.mark.parametrize('dataset', ['train', 'test'])
+def test_plot_gains(dataset):
     """Assert that the plot_gains method work as intended."""
     # When task is not binary
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -648,24 +793,41 @@ def test_plot_gains():
     trainer.run(bin_train, bin_test)
     pytest.raises(AttributeError, trainer.plot_gains)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_gains, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_gains(filename=FILE_DIR + 'gains1', display=False)
-    trainer.lda.plot_gains(filename=FILE_DIR + 'gains2', display=False)
-    assert glob.glob(FILE_DIR + 'gains1.png')
-    assert glob.glob(FILE_DIR + 'gains2.png')
+    trainer.plot_gains(
+        dataset=dataset,
+        filename=FILE_DIR + f'gains1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_gains(
+        dataset=dataset,
+        filename=FILE_DIR + f'gains2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'gains1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'gains2_{dataset}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_gains(filename=FILE_DIR + 'gains3', display=False)
-    atom.lda.plot_gains(filename=FILE_DIR + 'gains4', display=False)
-    assert glob.glob(FILE_DIR + 'gains3.png')
-    assert glob.glob(FILE_DIR + 'gains4.png')
+    atom.run('LGB', metric='f1')
+    atom.plot_gains(
+        dataset=dataset,
+        filename=FILE_DIR + f'gains3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_gains(
+        dataset=dataset,
+        filename=FILE_DIR + f'gains4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'gains3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'gains4_{dataset}.png')
 
 
-def test_plot_lift():
+@pytest.mark.parametrize('dataset', ['train', 'test'])
+def test_plot_lift(dataset):
     """Assert that the plot_lift method work as intended."""
     # When task is not binary
     trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
@@ -677,18 +839,34 @@ def test_plot_lift():
     trainer.run(bin_train, bin_test)
     pytest.raises(AttributeError, trainer.plot_lift)
 
-    trainer = TrainerClassifier(['LDA', 'LGB'], metric='f1')
+    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
     pytest.raises(NotFittedError, trainer.plot_lift, models='LDA')
     trainer.run(bin_train, bin_test)
-    trainer.plot_lift(filename=FILE_DIR + 'lift1', display=False)
-    trainer.lda.plot_lift(filename=FILE_DIR + 'lift2', display=False)
-    assert glob.glob(FILE_DIR + 'lift1.png')
-    assert glob.glob(FILE_DIR + 'lift2.png')
+    trainer.plot_lift(
+        dataset=dataset,
+        filename=FILE_DIR + f'lift1_{dataset}',
+        display=False
+    )
+    trainer.rf.plot_lift(
+        dataset=dataset,
+        filename=FILE_DIR + f'lift2_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'lift1_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'lift2_{dataset}.png')
 
     # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lda', metric='f1')
-    atom.plot_lift(filename=FILE_DIR + 'lift3', display=False)
-    atom.lda.plot_lift(filename=FILE_DIR + 'lift4', display=False)
-    assert glob.glob(FILE_DIR + 'lift3.png')
-    assert glob.glob(FILE_DIR + 'lift4.png')
+    atom.run('LGB', metric='f1')
+    atom.plot_lift(
+        dataset=dataset,
+        filename=FILE_DIR + f'lift3_{dataset}',
+        display=False
+    )
+    atom.lgb.plot_lift(
+        dataset=dataset,
+        filename=FILE_DIR + f'lift4_{dataset}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'lift3_{dataset}.png')
+    assert glob.glob(FILE_DIR + f'lift4_{dataset}.png')

@@ -56,10 +56,10 @@ def test_operators_parameter():
 
 
 def test_n_features_above_maximum():
-    """Assert that n_features becomes maximum if more than maximum for 'genetic'."""
+    """Assert that n_features becomes maximum if more than maximum for 'DFS'."""
     generator = FeatureGenerator(n_features=1000, operators='log', random_state=1)
     _ = generator.fit_transform(X_bin, y_bin)
-    assert generator.n_features == 28
+    assert generator.n_features == 30
 
 
 def test_attribute_genetic_features():
@@ -86,16 +86,16 @@ def test_genetic_maximum_features():
 def test_updated_dataset():
     """Assert that the feature set contains the new features."""
     generator = FeatureGenerator(strategy='gfg',
-                                 n_features=4,
+                                 n_features=1,
                                  generations=4,
-                                 population=400,
+                                 population=1000,
                                  random_state=1)
     X = generator.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == X_bin.shape[1] + 4
+    assert X.shape[1] == X_bin.shape[1] + 1
 
-    generator = FeatureGenerator(strategy='dfs', n_features=4, random_state=1)
+    generator = FeatureGenerator(strategy='dfs', n_features=None, random_state=1)
     X = generator.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == X_bin.shape[1] + 4
+    assert X.shape[1] > X_bin.shape[1]
 
 
 # Test FeatureSelector ====================================================== >>

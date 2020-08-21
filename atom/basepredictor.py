@@ -16,7 +16,7 @@ from typeguard import typechecked
 from .utils import (
     X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted, get_best_score,
     get_model_name, clear, method_to_log, composed, crash
-    )
+)
 
 
 class BasePredictor(object):

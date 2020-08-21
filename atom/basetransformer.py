@@ -136,13 +136,13 @@ class BaseTransformer(object):
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Dataset containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            - If None, y is not used in the estimator
-            - If int: index of the column of X which is selected as target
-            - If string: name of the target column in X
-            - Else: data target column with shape=(n_samples,)
+        y: int, str, sequence, np.array or pd.Series
+            - If None, y is not used in the estimator.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -160,7 +160,7 @@ class BaseTransformer(object):
             y = deepcopy(y)
             if len(X) != len(y):
                 raise ValueError("X and y don't have the same number of " +
-                                 f"rows: {len(X)}, {len(y)}.")
+                                 f"rows, got len(X)={len(X)} and len(y)={len(y)}.")
 
             # Convert y to pd.Series
             if not isinstance(y, pd.Series):
@@ -180,7 +180,7 @@ class BaseTransformer(object):
 
         elif isinstance(y, str):
             if y not in X.columns:
-                raise ValueError("Target column not found in X!")
+                raise ValueError(f"Column '{y}' not found in X!")
 
             return X.drop(y, axis=1), X[y]
 

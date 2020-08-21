@@ -20,7 +20,7 @@ from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
     OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, merge, to_df,
     to_series, get_best_score, time_to_string, get_model_name, get_metric, clear
-    )
+)
 
 
 class BaseTrainer(BaseTransformer, BasePredictor):
@@ -35,33 +35,33 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     metric: str, callable or sequence, optional (default=None)
         Metric(s) on which the pipeline fits the models. Choose from any of
         the scorers predefined by sklearn, use a score (or loss) function with
-        signature metric_(y, y_pred, **kwargs) or use a scorer object.
+        signature metric(y, y_pred, **kwargs) or use a scorer object.
         If multiple metrics are selected, only the first will be used to
-        optimize the BO. If None, a default metric_ is selected:
+        optimize the BO. If None, a default metric is selected:
             - 'f1' for binary classification
             - 'f1_weighted' for multiclass classification
             - 'r2' for regression
 
     greater_is_better: bool or sequence, optional (default=True)
-        Whether the metric_ is a score function or a loss function,
+        Whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric_ is a string or a scorer.
-        If sequence, the n-th value will apply to the n-th metric_ in the
+        better. Will be ignored if the metric is a string or a scorer.
+        If sequence, the n-th value will apply to the n-th metric in the
         pipeline.
 
     needs_proba: bool or sequence, optional (default=False)
-        Whether the metric_ function requires probability estimates out of a
+        Whether the metric function requires probability estimates out of a
         classifier. If True, make sure that every model in the pipeline has
-        a `predict_proba` method. Will be ignored if the metric_ is a string
-        or a scorer. If sequence, the n-th value will apply to the n-th metric_
+        a `predict_proba` method. Will be ignored if the metric is a string
+        or a scorer. If sequence, the n-th value will apply to the n-th metric
         in the pipeline.
 
     needs_threshold: bool or sequence, optional (default=False)
-        Whether the metric_ function takes a continuous decision certainty.
+        Whether the metric function takes a continuous decision certainty.
         This only works for binary classification using estimators that
         have either a `decision_function` or `predict_proba` method. Will
-        be ignored if the metric_ is a string or a scorer. If sequence, the
-        n-th value will apply to the n-th metric_ in the pipeline.
+        be ignored if the metric is a string or a scorer. If sequence, the
+        n-th value will apply to the n-th metric in the pipeline.
 
     n_calls: int or sequence, optional (default=0)
         Maximum number of iterations of the BO (including `random starts`).
@@ -230,7 +230,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 dimensions[get_model_name(key)] = self.bo_params['dimensions'][key]
             self.bo_params['dimensions'] = dimensions
 
-        # Check validity metric_ ============================================= >>
+        # Check validity metric ============================================= >>
 
         # Set parameters as attributes for get_params()
         self.greater_is_better = greater_is_better
@@ -247,12 +247,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if not isinstance(metric, (list, tuple)):
             metric = [metric]
 
-        # Check metric_ parameters
+        # Check metric parameters
         if isinstance(gib, (list, tuple)):
             if len(gib) != len(metric):
                 raise ValueError("Invalid value for the greater_is_better " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric_)={len(metric)} " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
                                  f"and len(greater_is_better)={len(gib)}.")
         else:
             gib = [gib for _ in metric]
@@ -261,7 +261,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if len(needs_proba) != len(metric):
                 raise ValueError("Invalid value for the needs_proba " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric_)={len(metric)} " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
                                  f"and len(needs_proba)={len(needs_proba)}.")
         else:
             needs_proba = [needs_proba for _ in metric]
@@ -270,7 +270,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if len(needs_threshold) != len(metric):
                 raise ValueError("Invalid value for the needs_threshold " +
                                  "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric_)={len(metric)} " +
+                                 f"of metrics, got len(metric)={len(metric)} " +
                                  f"and len(needs_threshold)={len(needs_threshold)}.")
         else:
             needs_threshold = [needs_threshold for _ in metric]
@@ -316,8 +316,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Loop over every independent model
         to_remove = []
-        for m, n_calls, n_random_starts, bagging in zip(
-                self.models, self.n_calls, self.n_random_starts, self.bagging):
+        for idx, (m, n_calls, n_random_starts, bagging) in enumerate(zip(
+                self.models, self.n_calls, self.n_random_starts, self.bagging)):
 
             # Check n_calls parameter
             if n_calls < 0:
@@ -355,7 +355,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self.log(f'Total time: {total_time}', 1)
 
             except Exception as ex:
-                if hasattr(subclass, 'get_domain') and n_calls > 0:
+                if idx != 0 or (hasattr(subclass, 'get_domain') and n_calls > 0):
                     self.log('', 1)  # Add extra line
                 self.log("Exception encountered while running the "
                          + f"{m} model. Removing model from "

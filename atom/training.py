@@ -20,7 +20,7 @@ from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotte
 from .utils import (
     CAL, TRAIN_TYPES, get_best_score, get_default_metric, infer_task,
     composed, method_to_log, crash
-    )
+)
 
 
 # Classes =================================================================== >>
@@ -53,7 +53,7 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._params_to_attr(*arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
 
-        # Assign default metric_ (not in __init__ since we need the task)
+        # Assign default metric (not in __init__ since we need the task)
         if self.metric_ == [None]:
             self.metric_ = [get_default_metric(self.task)]
 
@@ -201,7 +201,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self._params_to_attr(*arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
 
-        # Assign default metric_ (not in __init__ since we need the task)
+        # Assign default metric (not in __init__ since we need the task)
         if self.metric_ == [None]:
             self.metric_ = [get_default_metric(self.task)]
 

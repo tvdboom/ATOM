@@ -8,6 +8,7 @@ Description: Module containing the feature selection and generator estimators.
 """
 
 # Standard packages
+import random
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
@@ -23,7 +24,7 @@ from sklearn.decomposition import PCA
 from sklearn.feature_selection import (
     f_classif, f_regression, mutual_info_classif, mutual_info_regression,
     chi2, SelectKBest, SelectFromModel, RFE, RFECV
-    )
+)
 
 # Own modules
 from .models import MODEL_LIST
@@ -32,7 +33,7 @@ from .data_cleaning import BaseCleaner, Scaler
 from .utils import (
     METRIC_ACRONYMS, X_TYPES, Y_TYPES, to_df, check_scaling, check_is_fitted,
     get_model_name, composed, crash, method_to_log
-    )
+)
 from .plots import FeatureSelectorPlotter
 
 
@@ -195,9 +196,9 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If int: Position of the target column in X.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -240,23 +241,23 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             # Since dfs doesn't return a specific order in the features and we need
             # an order for the selection to be deterministic, order by name
             new_dfs = []
-            for feature in sorted(map(str, self.dfs_features)):
+            for feature in sorted(map(str, self.dfs_features[X.shape[1]-1:])):
                 for fx in self.dfs_features:
                     if feature == str(fx):
                         new_dfs.append(fx)
                         break
-            self.dfs_features = new_dfs
+            self.dfs_features = self.dfs_features[:X.shape[1]-1] + new_dfs
 
             # Make sure there are enough features (-1 because X has an index column)
-            max_features = len(self.dfs_features) - X.shape[1] - 1
+            max_features = len(self.dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
                 self.n_features = max_features
 
             # Get random indices from the feature list
-            idx_old = list(range(X.shape[1]-1))
-            idx_new = list(np.random.randint(
-                X.shape[1], len(self.dfs_features), self.n_features))
-            idx = idx_old + idx_new
+            idx_old = range(X.shape[1]-1)
+            idx_new = random.sample(
+                range(X.shape[1]-1, len(self.dfs_features)), self.n_features)
+            idx = list(idx_old) + list(idx_new)
 
             # Get random selection of features
             self.dfs_features = \
@@ -581,49 +582,6 @@ class FeatureSelector(BaseEstimator,
         self.rfecv = None
         self._is_fitted = False
 
-    def _remove_collinear(self, X, max_):
-        """Remove collinear features.
-
-        Finds pairs of collinear features based on the Pearson correlation
-        coefficient. For each pair above the specified limit (in terms of
-        absolute value), it removes one of the two. Using code adapted from:
-        https://chrisalbon.com/machine_learning/feature_selection/
-        drop_highly_correlated_features
-
-        Parameters
-        ----------
-        X: pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
-
-        max_: float
-            Maximum correlation allowed before removing one of the columns.
-
-        Returns
-        -------
-        X: pd.DataFrame
-            Dataframe with no highly correlated features.
-
-        """
-        mtx = X.corr()  # Pearson correlation coefficient matrix
-
-        # Extract the upper triangle of the correlation matrix
-        upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
-
-        # Select the features with correlations above the threshold
-        to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
-
-        # Iterate to record pairs of correlated features
-        for col in to_drop:
-            # Find the correlated features and corresponding values
-            corr_features = ', '.join(upper.index[abs(upper[col]) > max_])
-            corr_values = ', '.join(map(str, upper[col][abs(upper[col]) > max_]))
-
-            # Update dataframe
-            self.collinear = self.collinear.append(
-                [col, corr_features, corr_values], ignore_index=True)
-
-        return X.drop(to_drop, axis=1)
-
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the data according to the selected strategy.
@@ -637,10 +595,10 @@ class FeatureSelector(BaseEstimator,
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Position of the target column in X.
+            - If None, y is not used in the estimator.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------

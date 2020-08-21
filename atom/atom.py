@@ -191,8 +191,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             index = []
             for key, value in self.mapping.items():
                 try:
-                    list_ = list(map(int, self.mapping))
-                    if list_ != list(self.mapping.values()):
+                    if list(map(int, self.mapping)) != list(self.mapping.values()):
                         index.append(str(value) + ': ' + key)
                     else:
                         index.append(value)

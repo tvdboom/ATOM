@@ -115,7 +115,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
     Parameters
     ----------
     X: dict, sequence, np.array or pd.DataFrame
-        Dataset containing the features, with shape=(n_samples, n_features)
+        Dataset containing the features, with shape=(n_samples, n_features).
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
         - If int: Index of the target column in X.
@@ -197,7 +197,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
     Parameters
     ----------
     X: dict, sequence, np.array or pd.DataFrame
-        Dataset containing the features, with shape=(n_samples, n_features)
+        Dataset containing the features, with shape=(n_samples, n_features).
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
         - If int: Index of the target column in X.

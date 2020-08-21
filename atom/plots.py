@@ -37,7 +37,7 @@ from atom.basetransformer import BaseTransformer
 from .utils import (
     CAL, METRIC_ACRONYMS, lst, check_is_fitted, get_best_score,
     get_model_name, partial_dependence, composed, crash, plot_from_model
-    )
+)
 
 
 # Classes =================================================================== >>
@@ -83,7 +83,7 @@ class BasePlotter(object):
     def style(self, style: str):
         styles = ['darkgrid', 'whitegrid', 'dark', 'white', 'ticks']
         if style not in styles:
-            raise ValueError("Invalid value for the style parameter, got " +
+            raise ValueError("Invalid value for the style parameter, got "
                              f"{style}. Choose from {', '.join(styles)}.")
         sns.set_style(style)
         self._aesthetics['style'] = style
@@ -106,9 +106,8 @@ class BasePlotter(object):
     @typechecked
     def title_fontsize(self, title_fontsize: int):
         if title_fontsize <= 0:
-            raise ValueError("Invalid value for the title_fontsize " +
-                             "parameter. Value should be >=0, got " +
-                             f"{title_fontsize}.")
+            raise ValueError("Invalid value for the title_fontsize parameter. "
+                             f"Value should be >=0, got {title_fontsize}.")
         self._aesthetics['title_fontsize'] = title_fontsize
 
     @property
@@ -119,9 +118,8 @@ class BasePlotter(object):
     @typechecked
     def label_fontsize(self, label_fontsize: int):
         if label_fontsize <= 0:
-            raise ValueError("Invalid value for the label_fontsize " +
-                             "parameter. Value should be >=0, got " +
-                             f"{label_fontsize}.")
+            raise ValueError("Invalid value for the label_fontsize parameter. "
+                             f"Value should be >=0, got {label_fontsize}.")
         self._aesthetics['label_fontsize'] = label_fontsize
 
     @property
@@ -132,23 +130,26 @@ class BasePlotter(object):
     @typechecked
     def tick_fontsize(self, tick_fontsize: int):
         if tick_fontsize <= 0:
-            raise ValueError("Invalid value for the tick_fontsize " +
-                             "parameter. Value should be >=0, got " +
-                             f"{tick_fontsize}.")
+            raise ValueError("Invalid value for the tick_fontsize parameter. "
+                             f"Value should be >=0, got {tick_fontsize}.")
         self._aesthetics['tick_fontsize'] = tick_fontsize
 
     # Methods =============================================================== >>
 
-    def _check_models(self, models):
+    def _check_models(self, models, max_one=False):
         """Check the provided input models.
 
         Make sure all names are correct and that every model is in the trainer's
-        pipeline. If models is None, returns all models in pipeline.
+        pipeline. If models is None, returns all models in the pipeline.
 
         Parameters
         ----------
         models: str or sequence
             Models provided by the plot's parameter.
+
+        max_one: bool
+            Whether one or multiple models are allowed. If True, return the model
+            instead of a list.
 
         """
         if models is None:
@@ -163,21 +164,26 @@ class BasePlotter(object):
             if model not in self.models:
                 raise ValueError(f"Model {model} not found in the pipeline!")
 
-        return [m for m in self.models_ if m.name in models]
+        model_subclasses = [m for m in self.models_ if m.name in models]
+
+        if max_one and len(model_subclasses) > 1:
+            raise ValueError("This plot method allows only one model at a time!")
+
+        return model_subclasses[0] if max_one else model_subclasses
 
     def _check_metric(self, metric):
-        """Check the provided input metric_.
+        """Check the provided input metric.
 
         Parameters
         ----------
         metric: int or str
-            Metric provided by the metric_ parameter.
+            Metric provided by the metric parameter.
 
         """
         def _raise():
             raise ValueError(
-                "Invalid value for the metric_ parameter. Value should be the " +
-                f"index or name of a metric_ used to run the pipeline, got {metric}.")
+                "Invalid value for the metric parameter. Value should be the index"
+                f" or name of a metric used to run the pipeline, got {metric}.")
 
         # If it's a str, return the corresponding idx
         if isinstance(metric, str):
@@ -197,12 +203,12 @@ class BasePlotter(object):
 
     @staticmethod
     def _check_set(dataset):
-        """Check the provided input metric_.
+        """Check the provided input metric.
 
         Parameters
         ----------
         dataset: str
-            Metric provided by the metric_ parameter.
+            Metric provided by the metric parameter.
 
         """
         if dataset.lower() == 'both':
@@ -210,7 +216,7 @@ class BasePlotter(object):
         elif dataset.lower() in ('train', 'test'):
             return [dataset.lower()]
         else:
-            raise ValueError("Invalid value for the on_set parameter. " +
+            raise ValueError("Invalid value for the dataset parameter. "
                              "Choose between 'train', 'test' or 'both'.")
 
     def _plot(self, **kwargs):
@@ -280,7 +286,7 @@ class FeatureSelectorPlotter(BasePlotter):
 
         """
         if not hasattr(self, 'pca') or not self.pca:
-            raise PermissionError("The plot_pca method is only available " +
+            raise PermissionError("The plot_pca method is only available "
                                   "if you applied PCA on the data!")
 
         n = self.pca.n_components_  # Number of chosen components
@@ -336,7 +342,7 @@ class FeatureSelectorPlotter(BasePlotter):
 
         """
         if not hasattr(self, 'pca') or not self.pca:
-            raise PermissionError("The plot_components method is only available " +
+            raise PermissionError("The plot_components method is only available "
                                   "if you applied PCA on the data!")
 
         # Set parameters
@@ -345,7 +351,7 @@ class FeatureSelectorPlotter(BasePlotter):
         elif show > self.pca.n_features_:
             show = self.pca.n_features_
         elif show < 1:
-            raise ValueError("Invalid value for the show parameter. " +
+            raise ValueError("Invalid value for the show parameter. "
                              f"Value should be >0, got {show}.")
         if figsize is None:  # Default figsize depends on features shown
             figsize = (10, int(4 + show / 2))
@@ -396,7 +402,7 @@ class FeatureSelectorPlotter(BasePlotter):
 
         """
         if not hasattr(self, 'rfecv') or not self.rfecv:
-            raise PermissionError("The plot_rfecv method is only available " +
+            raise PermissionError("The plot_rfecv method is only available "
                                   "if you applied RFECV on the data!")
 
         try:  # Define the y-label for the plot
@@ -456,7 +462,7 @@ class BaseModelPlotter(BasePlotter):
             pipeline that used bagging are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric_ to plot. Only for multi-metric_ runs.
+            Index or name of the metric to plot. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, adapts size to the number of models.
@@ -477,7 +483,7 @@ class BaseModelPlotter(BasePlotter):
 
         # Check there is at least one model with bagging
         if all([not m.metric_bagging for m in models]):
-            raise PermissionError("The plot_bagging method is only available " +
+            raise PermissionError("The plot_bagging method is only available "
                                   "you run the pipeline using bagging>0!")
 
         results, names = [], []
@@ -525,7 +531,7 @@ class BaseModelPlotter(BasePlotter):
             used bayesian optimization are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric_ to plot. Only for multi-metric_ runs.
+            Index or name of the metric to plot. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -547,7 +553,7 @@ class BaseModelPlotter(BasePlotter):
         # Check there is at least one model that run the BO
         if all([m.bo.empty for m in models]):
             raise PermissionError(
-                "The plot_bo method is only available for models that " +
+                "The plot_bo method is only available for models that "
                 "ran the bayesian optimization hyperparameter tuning!")
 
         plt.subplots(figsize=figsize)
@@ -615,17 +621,12 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, 'results')
-        m = self._check_models(models)
-        if len(m) > 1:
-            raise ValueError(
-                "The plot_evals method can only plot one model at a time.")
-        else:
-            m = m[0]  # Get first (and only) element of list
+        m = self._check_models(models, max_one=True)
 
-        # Check that all models have evals
-        if not m.evals:
+        # Check that the model had in-training evaluation
+        if not hasattr(m, 'evals'):
             raise AttributeError(
-                "The plot_evals method is only available for models " +
+                "The plot_evals method is only available for models "
                 f"that allow in-training evaluation, got {m.name}.")
 
         plt.subplots(figsize=figsize)
@@ -635,7 +636,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(title="Evaluation curves" if not title else title,
                    legend='best',
                    xlabel=m.get_domain()[0].name,  # First param is always the iter
-                   ylabel=m.evals['metric_'],
+                   ylabel=m.evals['metric'],
                    filename=filename,
                    display=display)
 
@@ -680,7 +681,7 @@ class BaseModelPlotter(BasePlotter):
         dataset = self._check_set(dataset)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_roc method is only available " +
+            raise PermissionError("The plot_roc method is only available "
                                   "for binary classification tasks!")
 
         plt.subplots(figsize=figsize)
@@ -690,12 +691,11 @@ class BaseModelPlotter(BasePlotter):
                 fpr, tpr, _ = roc_curve(getattr(m, f'y_{set_}'),
                                         getattr(m, f'predict_proba_{set_}')[:, 1])
 
-                # Draw line
                 if len(models) == 1:
                     l_set = f'{set_} - ' if len(dataset) > 1 else ''
-                    label = f"{l_set} AUC={m.scoring('roc_auc', set_):.3f}"
+                    label = f"{l_set}AUC={m.scoring('roc_auc', set_):.3f}"
                 else:
-                    l_set = f' - {set_} ' if len(dataset) > 1 else ''
+                    l_set = f' - {set_}' if len(dataset) > 1 else ''
                     label = f"{m.name}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
                 plt.plot(fpr, tpr, lw=2, label=label)
 
@@ -711,6 +711,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(self,
                  models: Union[None, str, Sequence[str]] = None,
+                 dataset: str = 'test',
                  title: Optional[str] = None,
                  figsize: Tuple[int, int] = (10, 6),
                  filename: Optional[str] = None,
@@ -725,6 +726,10 @@ class BaseModelPlotter(BasePlotter):
         models: str, list, tuple or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
+
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -741,23 +746,27 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('binary'):
-            raise PermissionError("The plot_prc method is only available for " +
+            raise PermissionError("The plot_prc method is only available for "
                                   "binary classification tasks!")
 
         plt.subplots(figsize=figsize)
         for m in models:
-            # Get precision-recall pairs for different probability thresholds
-            precision, recall, _ = \
-                precision_recall_curve(m.y_test, m.predict_proba_test[:, 1])
+            for set_ in dataset:
+                # Get precision-recall pairs for different probability thresholds
+                precision, recall, _ = \
+                    precision_recall_curve(getattr(m, f'y_{set_}'),
+                                           getattr(m, f'predict_proba_{set_}')[:, 1])
 
-            # Draw line
-            if len(models) == 1:
-                label = f"AP={m.scoring('average_precision'):.3f}"
-            else:
-                label = f"{m.name} (AP={m.scoring('average_precision'):.3f})"
-            plt.plot(recall, precision, lw=2, label=label)
+                if len(models) == 1:
+                    l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                    label = f"{l_set}AP={m.scoring('ap', set_):.3f}"
+                else:
+                    l_set = f' - {set_}' if len(dataset) > 1 else ''
+                    label = f"{m.name}{l_set} (AP={m.scoring('ap', set_):.3f})"
+                plt.plot(recall, precision, lw=2, label=label)
 
         self._plot(title="Precision-recall curve" if not title else title,
                    legend='lower left',
@@ -810,10 +819,10 @@ class BaseModelPlotter(BasePlotter):
         if show is None:
             show = self.X.shape[1]
         elif show <= 0:
-            raise ValueError("Invalid value for the show parameter." +
+            raise ValueError("Invalid value for the show parameter."
                              f"Value should be >0, got {show}.")
         if n_repeats <= 0:
-            raise ValueError("Invalid value for the n_repeats parameter." +
+            raise ValueError("Invalid value for the n_repeats parameter."
                              f"Value should be >0, got {n_repeats}.")
 
         # Default figsize depends on features shown
@@ -919,7 +928,7 @@ class BaseModelPlotter(BasePlotter):
         if show is None:
             show = self.X.shape[1]
         elif show <= 0:
-            raise ValueError("Invalid value for the show parameter." +
+            raise ValueError("Invalid value for the show parameter."
                              f"Value should be >0, got {show}.")
 
         # Create dataframe with columns as indices to plot with barh
@@ -928,7 +937,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             if m.type != 'tree':
                 raise PermissionError(
-                    "The plot_feature_importance method is only available for " +
+                    "The plot_feature_importance method is only available for "
                     f"tree-based models, got {m.longname}!")
 
             # Bagging has no direct feature importance implementation
@@ -1019,12 +1028,12 @@ class BaseModelPlotter(BasePlotter):
                 try:
                     feature = list(self.columns).index(feature)
                 except ValueError:
-                    raise ValueError("Invalid value for the features parameter. " +
+                    raise ValueError("Invalid value for the features parameter. "
                                      f"Unknown column: {feature}.")
             elif feature > self.X.shape[1] - 1:  # -1 because of index 0
-                raise ValueError("Invalid value for the features parameter. " +
-                                 f"Dataset has {self.X.shape[1]} features, got " +
-                                 f"index {feature}.")
+                raise ValueError(
+                    "Invalid value for the features parameter. Dataset "
+                    f"has {self.X.shape[1]} features, got index {feature}.")
             return int(feature)
 
         check_is_fitted(self, 'results')
@@ -1042,7 +1051,7 @@ class BaseModelPlotter(BasePlotter):
             features = [features]
 
         if len(features) > 3:
-            raise ValueError("Invalid value for the features parameter. " +
+            raise ValueError("Invalid value for the features parameter. "
                              f"Maximum 3 allowed, got {len(features)}.")
 
         # Convert features into a sequence of int tuples
@@ -1055,11 +1064,11 @@ class BaseModelPlotter(BasePlotter):
                     cols.append(tuple(convert_feature(fx) for fx in fxs))
                 else:
                     raise ValueError(
-                        "Invalid value for the features parameter. Values " +
+                        "Invalid value for the features parameter. Values "
                         f"should be single or in pairs, got {fxs}.")
             else:
                 raise ValueError(
-                    "Invalid value for the features parameter. Feature pairs " +
+                    "Invalid value for the features parameter. Feature pairs "
                     f"are invalid when plotting multiple models, got {fxs}.")
 
         # Prepare target parameter
@@ -1143,6 +1152,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(self,
                     models: Union[None, str, Sequence[str]] = None,
+                    dataset: str = 'test',
                     title: Optional[str] = None,
                     figsize: Tuple[int, int] = (10, 6),
                     filename: Optional[str] = None,
@@ -1161,6 +1171,10 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
+
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
@@ -1176,28 +1190,36 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('reg'):
-            raise PermissionError("The plot_errors method is only available " +
-                                  "for regression tasks!")
+            raise PermissionError(
+                "The plot_errors method is only available for regression tasks!")
 
         fig, ax = plt.subplots(figsize=figsize)
         for m in models:
-            if len(models) == 1:
-                label = f"R$^2$={m.scoring('r2'):.3f}"
-            else:
-                label = f"{m.name} (R$^2$={m.scoring('r2'):.3f})"
+            for set_ in dataset:
+                if len(models) == 1:
+                    l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                    label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
+                else:
+                    l_set = f' - {set_}' if len(dataset) > 1 else ''
+                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
-            plt.scatter(self.y_test, m.predict_test, alpha=0.8, label=label)
+                plt.scatter(getattr(self, f'y_{set_}'),
+                            getattr(m, f'predict_{set_}'),
+                            alpha=0.8,
+                            label=label)
 
-            # Fit a linear line on the points
-            from .models import OrdinaryLeastSquares
-            model = OrdinaryLeastSquares(self).get_model()
-            model.fit(np.array(self.y_test).reshape(-1, 1), m.predict_test)
+                # Fit a linear line on the points
+                from .models import OrdinaryLeastSquares
+                model = OrdinaryLeastSquares(self).get_model()
+                model.fit(np.array(getattr(self, f'y_{set_}')).reshape(-1, 1),
+                          getattr(m, f'predict_{set_}'))
 
-            # Draw the fit
-            x = np.linspace(*ax.get_xlim(), 100)
-            plt.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
+                # Draw the fit
+                x = np.linspace(*ax.get_xlim(), 100)
+                plt.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
         # Get limits before drawing the identity line
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
@@ -1217,6 +1239,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(self,
                        models: Union[None, str, Sequence[str]] = None,
+                       dataset: str = 'test',
                        title: Optional[str] = None,
                        figsize: Tuple[int, int] = (10, 6),
                        filename: Optional[str] = None,
@@ -1237,6 +1260,10 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
+
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
@@ -1252,10 +1279,11 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('reg'):
-            raise PermissionError("The plot_residuals method is only available " +
-                                  "for regression tasks!")
+            raise PermissionError(
+                "The plot_residuals method is only available for regression tasks!")
 
         # Create figure with two axes
         fig, ax = plt.subplots(figsize=figsize)
@@ -1263,13 +1291,17 @@ class BaseModelPlotter(BasePlotter):
         hax = divider.append_axes("right", size=1.5, pad=0.1)
 
         for m in models:
-            if len(models) == 1:
-                label = f"R$^2$={m.scoring('r2'):.3f}"
-            else:
-                label = f"{m.name} (R$^2$={m.scoring('r2'):.3f})"
+            for set_ in dataset:
+                if len(models) == 1:
+                    l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                    label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
+                else:
+                    l_set = f' - {set_}' if len(dataset) > 1 else ''
+                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
-            res = np.subtract(m.predict_test, self.y_test)
-            ax.scatter(m.predict_test, res, alpha=0.7, label=label)
+            res = np.subtract(getattr(m, f'predict_{set_}'),
+                              getattr(self, f'y_{set_}'))
+            ax.scatter(getattr(m, f'predict_{set_}'), res, alpha=0.7, label=label)
             hax.hist(res, orientation="horizontal", histtype='step', linewidth=1.2)
 
         # Get limits before drawing the identity line
@@ -1296,6 +1328,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(self,
                               models: Union[None, str, Sequence[str]] = None,
+                              dataset: str = 'test',
                               normalize: bool = False,
                               title: Optional[str] = None,
                               figsize: Optional[Tuple[int, int]] = None,
@@ -1303,6 +1336,7 @@ class BaseModelPlotter(BasePlotter):
                               display: bool = True):
         """Plot the confusion matrix.
 
+        Only for classification tasks.
         For 1 model: plot the confusion matrix in a heatmap.
         For >1 models: compare TP, FP, FN and TN in a barplot.
                        Not implemented for multiclass classification.
@@ -1312,6 +1346,9 @@ class BaseModelPlotter(BasePlotter):
         models: str, list, tuple or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
+
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train' or 'test'.
 
         normalize: bool, optional (default=False)
            Whether to normalize the matrix.
@@ -1333,13 +1370,13 @@ class BaseModelPlotter(BasePlotter):
         models = self._check_models(models)
 
         if self.task.startswith('reg'):
-            raise PermissionError("The plot_confusion_matrix_method is only " +
+            raise PermissionError("The plot_confusion_matrix_method is only "
                                   "available for classification tasks!")
 
         if self.task.startswith('multi') and len(models) > 1:
             raise NotImplementedError(
-                "The plot_confusion_matrix method does not support the " +
-                "comparison of various models for multiclass classification tasks.")
+                "The plot_confusion_matrix method does not support the comparison"
+                " of various models for multiclass classification tasks.")
 
         # Create dataframe to plot with barh if len(models) > 1
         df = pd.DataFrame(index=['True negatives', 'False positives',
@@ -1351,7 +1388,7 @@ class BaseModelPlotter(BasePlotter):
             title = "Confusion matrix"
 
         for m in models:
-            cm = m.scoring('confusion_matrix')
+            cm = m.scoring('confusion_matrix', dataset.lower())
             if normalize:
                 cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
@@ -1415,12 +1452,15 @@ class BaseModelPlotter(BasePlotter):
     def plot_threshold(self,
                        models: Union[None, str, Sequence[str]] = None,
                        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+                       dataset: str = 'test',
                        steps: int = 100,
                        title: Optional[str] = None,
                        figsize: Tuple[int, int] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-        """Plot performance metric_(s) against multiple threshold values.
+        """Plot performance metric(s) against multiple threshold values.
+
+        Only for binary classification tasks.
 
         Parameters
         ----------
@@ -1430,8 +1470,12 @@ class BaseModelPlotter(BasePlotter):
 
         metric: string, callable, list, tuple or None, optional (default=None)
             Metric(s) to plot. These can be one of the pre-defined sklearn scorers
-            as string, a metric_ function or a sklearn scorer object. If None, the
-            metric_ used to run the pipeline is used.
+            as string, a metric function or a sklearn scorer object. If None, the
+            metric used to run the pipeline is used.
+
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
 
         steps: int, optional (default=100)
             Number of thresholds measured.
@@ -1439,8 +1483,8 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
-        figsize: tuple, optional (default=(10, 10))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file (to save). If None, the figure is not saved.
@@ -1451,9 +1495,10 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_threshold method is only " +
+            raise PermissionError("The plot_threshold method is only "
                                   "available for binary classification tasks!")
 
         # Check that all models have predict_proba
@@ -1476,33 +1521,37 @@ class BaseModelPlotter(BasePlotter):
                     met = METRIC_ACRONYMS[met]
 
                 if met not in SCORERS:
-                    raise ValueError("Unknown value for the metric_ parameter, " +
+                    raise ValueError("Unknown value for the metric parameter, "
                                      f"got {met}. Try one of {list(SCORERS)}.")
                 metric_list.append(SCORERS[met]._score_func)
             elif hasattr(met, '_score_func'):  # It is a scorer
                 metric_list.append(met._score_func)
-            else:  # It is a metric_ function
+            else:  # It is a metric function
                 metric_list.append(met)
 
         plt.subplots(figsize=figsize)
         steps = np.linspace(0, 1, steps)
         for m in models:
             for met in metric_list:  # Create dict of empty arrays
-                results = []
-                for step in steps:
-                    predictions = (m.predict_proba_test[:, 1] >= step).astype(bool)
-                    results.append(met(m.y_test, predictions))
+                for set_ in dataset:
+                    results = []
+                    for step in steps:
+                        predictions = (
+                                getattr(m, f'predict_proba_{set_}')[:, 1] >= step
+                        ).astype(bool)
+                        results.append(met(getattr(m, f'y_{set_}'), predictions))
 
-                # Draw the line for each metric_
-                if len(models) == 1:
-                    label = met.__name__
-                else:
-                    label = f"{m.name} ({met.__name__})"
-                plt.plot(steps, results, label=label, lw=2)
+                    if len(models) == 1:
+                        l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                        label = f"{l_set}{met.__name__}"
+                    else:
+                        l_set = f' - {set_}' if len(dataset) > 1 else ''
+                        label = f"{m.name}{l_set} ({met.__name__})"
+                    plt.plot(steps, results, label=label, lw=2)
 
         if not title:
             temp = '' if len(metric) == 1 else 's'
-            title = f"Performance metric_{temp} against threshold value"
+            title = f"Performance metric{temp} against threshold value"
         self._plot(title=title,
                    legend='best',
                    xlabel='Threshold',
@@ -1513,6 +1562,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(self,
                            models: Union[None, str, Sequence[str]] = None,
+                           dataset: str = 'test',
                            target: Union[int, str] = 1,
                            title: Optional[str] = None,
                            figsize: Tuple[int, int] = (10, 6),
@@ -1520,11 +1570,17 @@ class BaseModelPlotter(BasePlotter):
                            display: bool = True):
         """Plot the probability of being the target category for every category.
 
+        Only for binary classification tasks.
+
         Parameters
         ----------
         models: str, list, tuple or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
+
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
 
         target: int or string, optional (default=1)
             Probability of being that category in the target column as index or name.
@@ -1533,8 +1589,8 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
-        figsize: tuple, optional (default=(10, 10))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file (to save). If None, the figure is not saved.
@@ -1546,16 +1602,17 @@ class BaseModelPlotter(BasePlotter):
         # Set parameters
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if self.task.startswith('reg'):
-            raise PermissionError("The plot_probabilities method is only " +
+            raise PermissionError("The plot_probabilities method is only "
                                   "available for classification tasks!")
 
         # Check that all models have predict_proba
         for m in models:
             if not hasattr(m.model, 'predict_proba'):
                 raise AttributeError(
-                    "The plot_probabilities method is only available " +
+                    "The plot_probabilities method is only available "
                     f"for models with a predict_proba method, got {m}.")
 
         # Make inverse target mapping
@@ -1572,18 +1629,25 @@ class BaseModelPlotter(BasePlotter):
 
         plt.subplots(figsize=figsize)
         for m in models:
-            for key, value in self.mapping.items():
-                idx = np.where(m.y_test == value)[0]  # Get indices per class
-                if len(models) == 1:
-                    label = f"Category: {key}"
-                else:
-                    label = f"{m.name} (Category: {key})"
-                sns.distplot(m.predict_proba_test[idx, target_int],
-                             hist=False,
-                             kde=True,
-                             norm_hist=True,
-                             kde_kws={'shade': True},
-                             label=label)
+            for set_ in dataset:
+                for key, value in self.mapping.items():
+                    # Get indices per class
+                    idx = np.where(getattr(m, f'y_{set_}') == value)[0]
+
+                    if len(models) == 1:
+                        l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                        label = f"{l_set}Category:{key}"
+                    else:
+                        l_set = f' - {set_}' if len(dataset) > 1 else ''
+                        label = f"{m.name}{l_set} (Category: {key})"
+                    sns.distplot(
+                        getattr(m, f'predict_proba_{set_}')[idx, target_int],
+                        hist=False,
+                        kde=True,
+                        norm_hist=True,
+                        kde_kws={'shade': True},
+                        label=label
+                    )
 
         if not title:
             title = f"Predicted probabilities for {m.y.name}={target_str}"
@@ -1632,7 +1696,7 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 10))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file (to save). If None, the figure is not saved.
@@ -1645,12 +1709,12 @@ class BaseModelPlotter(BasePlotter):
         models = self._check_models(models)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_probabilities method is only " +
+            raise PermissionError("The plot_probabilities method is only "
                                   "available for binary classification tasks!")
 
         # Set parameters
         if n_bins < 5:
-            raise ValueError("Invalid value for the n_bins parameter." +
+            raise ValueError("Invalid value for the n_bins parameter."
                              f"Value should be >=5, got {n_bins}.")
 
         plt.figure(figsize=figsize)
@@ -1694,6 +1758,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(self,
                    models: Union[None, str, Sequence[str]] = None,
+                   dataset: str = 'test',
                    title: Optional[str] = None,
                    figsize: Tuple[int, int] = (10, 6),
                    filename: Optional[str] = None,
@@ -1709,11 +1774,15 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
+
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file (to save). If None, the figure is not saved.
@@ -1724,31 +1793,44 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_gain method is only " +
+            raise PermissionError("The plot_gain method is only "
                                   "available for binary classification tasks!")
 
         # Check that all models have predict_proba
         for m in models:
             if not hasattr(m.model, 'predict_proba'):
                 raise AttributeError(
-                    "The plot_probabilities method is only available " +
+                    "The plot_probabilities method is only available "
                     f"for models with a predict_proba method, got {m}.")
 
         plt.subplots(figsize=figsize)
-        plt.plot([0, 1], [0, 1], 'k--', lw=2)
+        plt.plot([0, 1], [0, 1], 'k--', lw=2, alpha=0.7)
         for m in models:
-            # Compute Cumulative Gain Curves
-            y_true = (m.y_test == 1)  # Make y_true a boolean vector
+            for set_ in dataset:
+                y_true = (getattr(m, f'y_{set_}') == 1)  # Make y_true a bool vector
 
-            # Get sorted indices and correct for the test set
-            sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
-            sorted_indices = [i + len(m.y_train) for i in sorted_indices]
-            gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
+                # Get sorted indices and correct for the test set
+                sorted_indices = np.argsort(
+                    getattr(m, f'predict_proba_{set_}')[:, 1])[::-1]
 
-            x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
-            plt.plot(x, gains, lw=2, label=f'{m.name}')
+                if set_ == 'test':
+                    sorted_indices = [i + len(m.y_train) for i in sorted_indices]
+
+                # Compute cumulative gains
+                gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
+
+                x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
+                label = ''
+                if len(models) > 1:
+                    label += m.name
+                if len(models) > 1 and len (dataset) > 1:
+                    label += ' - '
+                if len(dataset) > 1:
+                    label += set_
+                plt.plot(x, gains, lw=2, label=label)
 
         self._plot(title="Cumulative gains curve" if not title else title,
                    legend='lower right',
@@ -1762,6 +1844,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(self,
                   models: Union[None, str, Sequence[str]] = None,
+                  dataset: str = 'test',
                   title: Optional[str] = None,
                   figsize: Tuple[int, int] = (10, 6),
                   filename: Optional[str] = None,
@@ -1777,11 +1860,15 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
+        dataset: str, optional (default='test')
+            Data set on which to calculate the metric. Options are 'train',
+            'test' or 'both'.
+
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file (to save). If None, the figure is not saved.
@@ -1792,34 +1879,43 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
+        dataset = self._check_set(dataset)
 
         if not self.task.startswith('bin'):
-            raise PermissionError("The plot_gain method is only " +
+            raise PermissionError("The plot_gain method is only "
                                   "available for binary classification tasks!")
 
         # Check that all models have predict_proba
         for m in models:
             if not hasattr(m.model, 'predict_proba'):
                 raise AttributeError(
-                    "The plot_probabilities method is only available " +
+                    "The plot_probabilities method is only available "
                     f"for models with a predict_proba method, got {m}.")
 
         plt.subplots(figsize=figsize)
-        plt.plot([0, 1], [1, 1], 'k--', lw=2)
+        plt.plot([0, 1], [1, 1], 'k--', lw=2, alpha=0.7)
         for m in models:
-            # Compute Cumulative Gain Curves
-            y_true = (m.y_test == 1)  # Make y_true a boolean vector
+            for set_ in dataset:
+                y_true = (getattr(m, f'y_{set_}') == 1)  # Make y_true a bool vector
 
-            sorted_indices = np.argsort(m.predict_proba_test[:, 1])[::-1]
-            sorted_indices = [i + len(m.y_train) for i in sorted_indices]
-            gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
+                # Get sorted indices and correct for the test set
+                sorted_indices = np.argsort(
+                    getattr(m, f'predict_proba_{set_}')[:, 1])[::-1]
 
-            if len(models) == 1:
-                label = f"Lift={round(m.scoring('lift'), 3)}"
-            else:
-                label = f"{m.name} (Lift={round(m.scoring('lift'), 3)})"
-            x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
-            plt.plot(x, gains/x, lw=2, label=label)
+                if set_ == 'test':  # Add the training set length to the indices
+                    sorted_indices = [i + len(m.y_train) for i in sorted_indices]
+
+                # Compute cumulative gains
+                gains = np.cumsum(y_true.loc[sorted_indices])/float(np.sum(y_true))
+
+                if len(models) == 1:
+                    l_set = f'{set_} - ' if len(dataset) > 1 else ''
+                    label = f"{l_set}Lift={round(m.scoring('lift'), 3)}"
+                else:
+                    l_set = f' - {set_}' if len(dataset) > 1 else ''
+                    label = f"{m.name}{l_set} (Lift={round(m.scoring('lift'), 3)})"
+                x = np.arange(start=1, stop=len(y_true) + 1)/float(len(y_true))
+                plt.plot(x, gains/x, lw=2, label=label)
 
         self._plot(title="Lift curve" if not title else title,
                    legend='upper right',
@@ -1828,6 +1924,106 @@ class BaseModelPlotter(BasePlotter):
                    xlim=(0, 1),
                    filename=filename,
                    display=display)
+
+    # SHAP plots ============================================================ >>
+
+    @composed(crash, plot_from_model, typechecked)
+    def force_plot(self,
+                   models: Union[None, str, Sequence[str]] = None,
+                   index: Optional[Union[int, Sequence]] = None,
+                   title: Optional[str] = None,
+                   figsize: Tuple[int, int] = (20, 4),
+                   filename: Optional[str] = None,
+                   display: bool = True,
+                   **kwargs):
+        """Plot SHAP's force plot.
+
+        Parameters
+        ----------
+        models: str, list, tuple or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        index: int, sequence or None, optional (default=None)
+            Indices of the rows in the test set to plot. If tuple (n, m),
+            select rows n until m. If None, select all rows in the test set.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the default option is used.
+
+        figsize: tuple, optional (default=None)
+            Figure's size, format as (x, y). If None, adapts size to `show` param.
+
+        filename: str or None, optional (default=None)
+            Name of the file (to save). If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for the plot.
+
+        """
+        try:
+            import shap
+        except ImportError:
+            raise ImportError("Failed to import the shap package. Install "
+                              "it before calling the plot_shap method!")
+
+        check_is_fitted(self, 'results')
+        m = self._check_models(models, max_one=True)
+
+        # Get the indices
+        if not index:
+            rows = self.X_test
+        elif isinstance(index, int):
+            rows = self.X_test.loc[index]
+        else:
+            rows = self.X_test.loc[slice(*index)]
+
+        # Get the explainer
+        if m.type == 'tree':
+            explainer = shap.TreeExplainer(m.model)
+        elif m.type == 'linear':
+            explainer = shap.LinearExplainer(m.model, self.X_train)
+        else:
+            if len(self.X_train) <= 100:
+                background_data = self.X_train
+            else:
+                background_data = shap.kmeans(self.X_train, 100)
+            explainer = shap.KernelExplainer(m.model.predict, background_data)
+
+        # Get the expected and shap values
+        expected_value = explainer.expected_value
+        shap_values = explainer.shap_values(rows)
+
+        if m.type == 'tree':  # TreeExplainer returns 1 extra dimension
+            expected_value = expected_value[0]
+            shap_values = shap_values[0]
+
+        sns.set_style('white')  # Only for this plot
+
+        plot = shap.force_plot(
+            expected_value,
+            shap_values=shap_values,
+            features=rows,
+            figsize=figsize,
+            show=False,
+            **kwargs
+        )
+
+        sns.set_style(self.style)
+        if kwargs.get('matplotlib'):
+            self._plot(title='' if not title else title,
+                       filename=filename,
+                       display=display)
+        else:
+            try:  # Render if possible (for notebooks)
+                from IPython.display import display
+                shap.initjs()
+                display(plot)
+            except ModuleNotFoundError:
+                pass
 
 
 class SuccessiveHalvingPlotter(BaseModelPlotter):
@@ -1852,7 +2048,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric_ to plot. Only for multi-metric_ runs.
+            Index or name of the metric to plot. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1922,7 +2118,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric_ to plot. Only for multi-metric_ runs.
+            Index or name of the metric to plot. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2047,8 +2243,6 @@ class ATOMPlotter(FeatureSelectorPlotter,
             Whether to render the plot.
 
         """
-        sns.set_style('white')  # Only for this plot
-
         # Calculate figure's limits
         params = []
         ylim = 30
@@ -2064,6 +2258,7 @@ class ATOMPlotter(FeatureSelectorPlotter,
                          if key not in BaseTransformer.attrs + ['self']])
                 ylim += len(params[-1]) * 10
 
+        sns.set_style('white')  # Only for this plot
         figsize = (8, int(ylim/30)) if figsize is None else figsize
         fig, ax = plt.subplots(figsize=figsize if figsize is None else figsize)
 

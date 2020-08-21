@@ -81,8 +81,10 @@ def test_invalid_delta_y():
 
 def test_plot_bo():
     """Assert than plot_bo runs without errors."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'GNB'], n_calls=25, bo_params={'plot_bo': True})
+    bo_params = {'plot_bo': True}
+
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, n_jobs=-1, random_state=1)
+    atom.run(['kSVM', 'MLP'], n_calls=25, n_random_starts=20, bo_params=bo_params)
     assert not atom.errors
 
 
@@ -335,21 +337,28 @@ def test_reset_predict_properties():
 
 
 def test_scoring_metric_None():
-    """Assert that the scoring methods works when metric_ is empty."""
+    """Assert that the scoring methods works when metric is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     assert isinstance(atom.mnb.scoring(), str)
 
 
 def test_unknown_metric():
-    """Assert that an error is raised when metric_ is unknown."""
+    """Assert that an error is raised when metric is unknown."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('OLS')
     pytest.raises(ValueError, atom.ols.scoring, 'unknown')
 
 
+def test_unknown_dataset():
+    """Assert that an error is raised when metric is unknown."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run('OLS')
+    pytest.raises(ValueError, atom.ols.scoring, metric='r2', dataset='unknown')
+
+
 def test_scoring_metric_acronym():
-    """Assert that the scoring methods works for metric_ acronyms."""
+    """Assert that the scoring methods works for metric acronyms."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     assert isinstance(atom.mnb.scoring('ap'), float)

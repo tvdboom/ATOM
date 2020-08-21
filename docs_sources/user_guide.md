@@ -163,6 +163,11 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
     to reduce the number of features!
 
 !!! warning
+    Using the div, log or sqrt operators can return new features with `inf` or
+    `nan` values. Check the warnings that may pop up or use the
+    [missing](./API/ATOM/atomclassifier.md/#properties) property.
+
+!!! warning
     When using DFS with n_jobs>1, make sure to protect your code with a if
     \__name__ == "\__main__". Featuretools uses dask, which uses python multiprocessing
     for parallelization. The spawn method on multiprocessing starts a new python
