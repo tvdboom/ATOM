@@ -32,7 +32,7 @@ def test_infer_task():
     trainer.run(class_train, class_test)
     assert trainer.task == 'multiclass classification'
 
-    trainer = TrainerRegressor('OLS')
+    trainer = TrainerRegressor('LGB')
     trainer.run(reg_train, reg_test)
     assert trainer.task == 'regression'
 
@@ -47,7 +47,7 @@ def test_default_metric():
     trainer.run(class_train, class_test)
     assert trainer.metric == 'f1_weighted'
 
-    trainer = TrainerRegressor('OLS')
+    trainer = TrainerRegressor('LGB')
     trainer.run(reg_train, reg_test)
     assert trainer.metric == 'r2'
 
@@ -61,7 +61,7 @@ def test_invalid_skip_iter():
 
 def test_successive_halving_results_is_multi_index():
     """Assert that the results property is a multi-index dataframe."""
-    sh = SuccessiveHalvingRegressor(['OLS', 'BR', 'RF', 'LGB'])
+    sh = SuccessiveHalvingRegressor(['Tree', 'RF', 'AdaB', 'LGB'], random_state=1)
     sh.run(reg_train, reg_test)
     assert len(sh.results) == 7  # 4 + 2 + 1
     assert isinstance(sh.results.index, pd.MultiIndex)
@@ -70,14 +70,14 @@ def test_successive_halving_results_is_multi_index():
 
 def test_models_are_reset():
     """Assert that the models attributes is reset after fitting."""
-    sh = SuccessiveHalvingRegressor(['OLS', 'BR', 'RF', 'LGB'])
+    sh = SuccessiveHalvingRegressor(['Tree', 'RF', 'AdaB', 'LGB'], random_state=1)
     sh.run(reg_train, reg_test)
     assert sh.models == ['OLS', 'BR', 'RF', 'LGB']
 
 
 def test_successive_halving_train_index_is_reset():
     """Assert that the train index is reset after fitting."""
-    sh = SuccessiveHalvingRegressor(['OLS', 'BR', 'RF', 'LGB'])
+    sh = SuccessiveHalvingRegressor(['Tree', 'RF', 'AdaB', 'LGB'], random_state=1)
     sh.run(reg_train, reg_test)
     assert sh._idx[0] == len(reg_train)
 
@@ -86,7 +86,7 @@ def test_successive_halving_train_index_is_reset():
 
 def test_train_sizing_results_is_multi_index():
     """Assert that the results property is a multi-index dataframe."""
-    ts = TrainSizingRegressor(['OLS', 'BR'])
+    ts = TrainSizingRegressor(['RF', 'LGB'], random_state=1)
     ts.run(reg_train, reg_test)
     assert len(ts.results) == 10  # 2 models * 5 runs
     assert isinstance(ts.results.index, pd.MultiIndex)
@@ -95,14 +95,14 @@ def test_train_sizing_results_is_multi_index():
 
 def test_sizes_attribute():
     """Assert that the _sizes attributes is reset after fitting."""
-    ts = TrainSizingRegressor('OLS', train_sizes=(0.1, 100))
+    ts = TrainSizingRegressor('LGB', train_sizes=(0.1, 100), random_state=1)
     ts.run(reg_train, reg_test)
     assert ts._sizes == [int(0.1 * len(reg_train)), 100]
 
 
 def test_train_sizing_train_index_is_reset():
     """Assert that the train index is reset after fitting."""
-    ts = TrainSizingRegressor('OLS')
+    ts = TrainSizingRegressor('LGB', random_state=1)
     ts.run(reg_train, reg_test)
     assert ts._idx[0] == len(reg_train)
 

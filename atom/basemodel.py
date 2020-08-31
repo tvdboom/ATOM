@@ -255,11 +255,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Append row to the bo attribute
             t = time_to_string(t_iter)
             t_tot = time_to_string(self._init_bo)
-            self.bo.loc[call] = {'params': params,
-                                 'model': model,
-                                 'score': flt(scores),
-                                 'time_iteration': t,
-                                 'time': t_tot}
+            self.bo.loc[call] = {
+                'params': params,
+                'model': model,
+                'score': flt(scores),
+                'time_iteration': t,
+                'time': t_tot
+            }
 
             # Update the progress bar
             if self._pbar:
@@ -278,10 +280,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Check parameters
         if n_random_starts < 1:
-            raise ValueError("Invalid value for the n_random_starts parameter. " +
+            raise ValueError("Invalid value for the n_random_starts parameter. "
                              f"Value should be >0, got {n_random_starts}.")
         if n_calls < n_random_starts:
-            raise ValueError("Invalid value for the n_calls parameter. Value " +
+            raise ValueError("Invalid value for the n_calls parameter. Value "
                              f"should be >n_random_starts, got {n_calls}.")
 
         self.T.log(f"\n\nRunning BO for {self.longname}...", 1)
@@ -301,21 +303,21 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         if bo_params.get('max_time'):
             if bo_params['max_time'] <= 0:
-                raise ValueError("Invalid value for the max_time parameter. " +
+                raise ValueError("Invalid value for the max_time parameter. "
                                  f"Value should be >0, got {bo_params['max_time']}.")
             callbacks.append(DeadlineStopper(bo_params['max_time']))
             bo_params.pop('max_time')
 
         if bo_params.get('delta_x'):
             if bo_params['delta_x'] < 0:
-                raise ValueError("Invalid value for the delta_x parameter. " +
+                raise ValueError("Invalid value for the delta_x parameter. "
                                  f"Value should be >=0, got {bo_params['delta_x']}.")
             callbacks.append(DeltaXStopper(bo_params['delta_x']))
             bo_params.pop('delta_x')
 
         if bo_params.get('delta_y'):
             if bo_params['delta_y'] < 0:
-                raise ValueError("Invalid value for the delta_y parameter. " +
+                raise ValueError("Invalid value for the delta_y parameter. "
                                  f"Value should be >=0, got {bo_params['delta_y']}.")
             callbacks.append(DeltaYStopper(bo_params['delta_y'], n_best=5))
             bo_params.pop('delta_y')
@@ -328,7 +330,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Prepare additional arguments
         if bo_params.get('cv'):
             if bo_params['cv'] <= 0:
-                raise ValueError("Invalid value for the max_time parameter. " +
+                raise ValueError("Invalid value for the max_time parameter. "
                                  f"Value should be >=0, got {bo_params['cv']}.")
             self._cv = bo_params['cv']
             bo_params.pop('cv')
@@ -336,7 +338,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if bo_params.get('early_stopping'):
             if bo_params['early_stopping'] <= 0:
                 raise ValueError(
-                    "Invalid value for the early_stopping parameter. " +
+                    "Invalid value for the early_stopping parameter. "
                     f"Value should be >=0, got {bo_params['early_stopping']}.")
             self._early_stopping = bo_params['early_stopping']
             bo_params.pop('early_stopping')
@@ -365,13 +367,15 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         base = bo_params.pop('base_estimator', 'GP')
 
         # Prepare keyword arguments for the optimizer
-        kwargs = dict(func=func,
-                      dimensions=dimensions,
-                      n_calls=n_calls,
-                      n_random_starts=n_random_starts,
-                      callback=callbacks,
-                      n_jobs=self.T.n_jobs,
-                      random_state=self.T.random_state)
+        kwargs = dict(
+            func=func,
+            dimensions=dimensions,
+            n_calls=n_calls,
+            n_random_starts=n_random_starts,
+            callback=callbacks,
+            n_jobs=self.T.n_jobs,
+            random_state=self.T.random_state
+        )
         kwargs.update(**bo_params)
 
         if isinstance(base, str):
@@ -385,7 +389,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 optimizer = gbrt_minimize(**kwargs)
             else:
                 raise ValueError(
-                    f"Invalid value for the base_estimator parameter, got {base}. " +
+                    f"Invalid value for the base_estimator parameter, got {base}. "
                     "Value should be one of: 'GP', 'ET', 'RF', 'GBRT'.")
         else:
             optimizer = base_minimize(base_estimator=base, **kwargs)
@@ -744,8 +748,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Returns the model's final output as a string."""
         # If bagging was used, we use a different format
         if self.mean_bagging:
-            out = '   '.join([f"{m.name}: {lst(self.mean_bagging)[i]:.3f}" +
-                              u" \u00B1 " +
+            out = '   '.join([f"{m.name}: {lst(self.mean_bagging)[i]:.3f}"
+                              u" \u00B1 "
                               f"{lst(self.std_bagging)[i]:.3f}"
                               for i, m in enumerate(self.T.metric_)])
 
@@ -817,13 +821,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         elif metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
         elif metric.lower() not in metric_opts:
-            raise ValueError("Unknown value for the metric parameter, " +
+            raise ValueError("Unknown value for the metric parameter, "
                              f"got {metric}. Try one of {', '.join(metric_opts)}.")
 
         # Check set parameter
         dataset = dataset.lower()
         if dataset not in ('train', 'test'):
-            raise ValueError("Unknown value for the dataset parameter. " +
+            raise ValueError("Unknown value for the dataset parameter. "
                              "Choose between 'train' or 'test'.")
 
         try:

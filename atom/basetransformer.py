@@ -79,7 +79,7 @@ class BaseTransformer(object):
     @typechecked
     def verbose(self, verbose: int):
         if verbose < 0 or verbose > 2:
-            raise ValueError("Invalid value for the verbose parameter. Value" +
+            raise ValueError("Invalid value for the verbose parameter. Value"
                              f" should be between 0 and 2, got {verbose}.")
         self._verbose = verbose
 
@@ -119,7 +119,7 @@ class BaseTransformer(object):
     @typechecked
     def random_state(self, random_state: Optional[int]):
         if random_state and random_state < 0:
-            raise ValueError("Invalid value for the random_state parameter. " +
+            raise ValueError("Invalid value for the random_state parameter. "
                              f"Value should be >0, got {random_state}.")
         np.random.seed(random_state)  # Set random seed
         self._random_state = random_state
@@ -159,7 +159,7 @@ class BaseTransformer(object):
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
             y = deepcopy(y)
             if len(X) != len(y):
-                raise ValueError("X and y don't have the same number of " +
+                raise ValueError("X and y don't have the same number of "
                                  f"rows, got len(X)={len(X)} and len(y)={len(y)}.")
 
             # Convert y to pd.Series

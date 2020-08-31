@@ -35,6 +35,7 @@ ATOM is built on top of several existing Python libraries. The required
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
+* **[shap](https://github.com/slundberg/shap/)** (>=0.36.0)
 
 **Optional**
 

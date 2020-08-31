@@ -141,24 +141,24 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         # Check Parameters
         if n_features is not None and n_features <= 0:
-            raise ValueError("Invalid value for the n_features parameter." +
+            raise ValueError("Invalid value for the n_features parameter."
                              f"Value should be >0, got {n_features}.")
 
         if strategy.lower() in ('gfg', 'genetic'):
             if population < 100:
-                raise ValueError("Invalid value for the population parameter." +
+                raise ValueError("Invalid value for the population parameter."
                                  f"Value should be >100, got {population}.")
             if generations < 1:
-                raise ValueError("Invalid value for the generations parameter." +
+                raise ValueError("Invalid value for the generations parameter."
                                  f"Value should be >100, got {generations}.")
             if n_features and n_features > int(0.01 * population):
-                raise ValueError("Invalid value for the n_features parameter." +
-                                 "Value should be <1% of the population, " +
-                                 f"got {n_features}.")
+                raise ValueError(
+                    "Invalid value for the n_features parameter. Value "
+                    f"should be <1% of the population, got {n_features}.")
         elif strategy.lower() != 'dfs':
-            raise ValueError("Invalid value for the strategy parameter." +
-                             "Value should be either 'dfs' or 'genetic', " +
-                             f"got {strategy}.")
+            raise ValueError(
+                "Invalid value for the strategy parameter. Value "
+                f"should be either 'dfs' or 'genetic', got {strategy}.")
 
         # Check operators
         default = ['add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan']
@@ -170,7 +170,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             for operator in operators:
                 if operator not in default:
                     raise ValueError(
-                        "Invalid value in the operators parameter, got " +
+                        "Invalid value in the operators parameter, got "
                         f"{operator}. Choose from: {', '.join(default)}.")
 
         # Define attributes
@@ -212,10 +212,12 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         if self.strategy.lower() == 'dfs':
             # Make an entity set and add the entity
             entity_set = ft.EntitySet(id='atom')
-            entity_set.entity_from_dataframe(entity_id='data',
-                                             dataframe=X,
-                                             make_index=True,
-                                             index='index')
+            entity_set.entity_from_dataframe(
+                entity_id='data',
+                dataframe=X,
+                make_index=True,
+                index='index'
+            )
 
             # Get list of transformation primitives
             trans_primitives = []
@@ -232,11 +234,13 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                     trans_primitives.append(eval(operator))
 
             # Run deep feature synthesis with transformation primitives
-            self.dfs_features = ft.dfs(entityset=entity_set,
-                                       target_entity='data',
-                                       max_depth=1,
-                                       features_only=True,
-                                       trans_primitives=trans_primitives)
+            self.dfs_features = ft.dfs(
+                entityset=entity_set,
+                target_entity='data',
+                max_depth=1,
+                features_only=True,
+                trans_primitives=trans_primitives
+            )
 
             # Since dfs doesn't return a specific order in the features and we need
             # an order for the selection to be deterministic, order by name
@@ -260,22 +264,22 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             idx = list(idx_old) + list(idx_new)
 
             # Get random selection of features
-            self.dfs_features = \
-                [value for i, value in enumerate(self.dfs_features) if i in idx]
+            self.dfs_features = [value for i, value in enumerate(self.dfs_features)
+                                 if i in idx]
 
         else:
-            self.symbolic_transformer = \
-                SymbolicTransformer(generations=self.generations,
-                                    population_size=self.population,
-                                    hall_of_fame=int(0.1 * self.population),
-                                    n_components=int(0.01 * self.population),
-                                    init_depth=(1, 2),
-                                    function_set=self.operators,
-                                    feature_names=X.columns,
-                                    verbose=0 if self.verbose < 2 else 1,
-                                    n_jobs=self.n_jobs,
-                                    random_state=self.random_state)
-            self.symbolic_transformer.fit(X, y)
+            self.symbolic_transformer = SymbolicTransformer(
+                generations=self.generations,
+                population_size=self.population,
+                hall_of_fame=int(0.1 * self.population),
+                n_components=int(0.01 * self.population),
+                init_depth=(1, 2),
+                function_set=self.operators,
+                feature_names=X.columns,
+                verbose=0 if self.verbose < 2 else 1,
+                n_jobs=self.n_jobs,
+                random_state=self.random_state
+            ).fit(X, y)
 
         self._is_fitted = True
         return self
@@ -306,14 +310,18 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         if self.strategy.lower() == 'dfs':
             # Make an entity set and add the entity
             entity_set = ft.EntitySet(id='atom')
-            entity_set.entity_from_dataframe(entity_id='data',
-                                             dataframe=X,
-                                             make_index=True,
-                                             index='index')
+            entity_set.entity_from_dataframe(
+                entity_id='data',
+                dataframe=X,
+                make_index=True,
+                index='index'
+            )
 
-            X = ft.calculate_feature_matrix(features=self.dfs_features,
-                                            entityset=entity_set,
-                                            n_jobs=self.n_jobs)
+            X = ft.calculate_feature_matrix(
+                features=self.dfs_features,
+                entityset=entity_set,
+                n_jobs=self.n_jobs
+            )
 
             X.index.name = ''  # DFS gives index a name automatically
             self.log(" --> {} new features were added to the dataset."
@@ -347,7 +355,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Check if any new features remain in the loop
             if len(descript) == 0:
-                self.log("WARNING! The genetic algorithm couldn't find any " +
+                self.log("WARNING! The genetic algorithm couldn't find any "
                          "improving non-linear features!", 1)
                 return X
 
@@ -360,11 +368,11 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             # Select best features only
             new_features = new_features[:, index]
             for i, idx in enumerate(index):
-                self.genetic_features = self.genetic_features.append(
-                    {'name': 'Feature ' + str(1 + i + len(X.columns)),
-                     'description': descript[idx],
-                     'fitness': fitness[idx]},
-                    ignore_index=True)
+                self.genetic_features = self.genetic_features.append({
+                    'name': 'Feature ' + str(1 + i + len(X.columns)),
+                    'description': descript[idx],
+                    'fitness': fitness[idx]
+                }, ignore_index=True)
 
             self.log(" --> {} new features were added to the dataset."
                      .format(len(self.genetic_features)), 2)
@@ -509,16 +517,17 @@ class FeatureSelector(BaseEstimator,
             strats = ['univariate', 'pca', 'sfm', 'rfe', 'rfecv']
 
             if strategy.lower() not in strats:
-                raise ValueError("Invalid value for the strategy parameter. " +
-                                 "Choose from: univariate, PCA, SFM, RFE or " +
-                                 "RFECV.")
+                raise ValueError("Invalid value for the strategy parameter. Choose "
+                                 "from: univariate, PCA, SFM, RFE or RFECV.")
 
             elif strategy.lower() == 'univariate':
-                solvers_dct = dict(f_classif=f_classif,
-                                   f_regression=f_regression,
-                                   mutual_info_classif=mutual_info_classif,
-                                   mutual_info_regression=mutual_info_regression,
-                                   chi2=chi2)
+                solvers_dct = dict(
+                    f_classif=f_classif,
+                    f_regression=f_regression,
+                    mutual_info_classif=mutual_info_classif,
+                    mutual_info_regression=mutual_info_regression,
+                    chi2=chi2
+                )
 
                 if not solver:
                     raise ValueError("Choose a solver for the strategy!")
@@ -545,22 +554,22 @@ class FeatureSelector(BaseEstimator,
 
                     if solver.lower() not in map(str.lower, MODEL_LIST):
                         raise ValueError(
-                            "Unknown value for the solver parameter, got " +
+                            "Unknown value for the solver parameter, got "
                             f"{solver}. Try one of {list(MODEL_LIST)}.")
                     else:  # Set to right model name and call model's method
                         model_class = MODEL_LIST[get_model_name(solver)]
                         solver = model_class(self).get_model()
 
         if n_features is not None and n_features <= 0:
-            raise ValueError("Invalid value for the n_features parameter. " +
+            raise ValueError("Invalid value for the n_features parameter. "
                              f"Value should be >0, got {n_features}.")
         if max_frac_repeated is not None and not 0 <= max_frac_repeated <= 1:
             raise ValueError(
-                "Invalid value for the max_frac_repeated parameter. Value should " +
+                "Invalid value for the max_frac_repeated parameter. Value should "
                 f"be between 0 and 1, got {max_frac_repeated}.")
         if max_correlation is not None and not 0 <= max_correlation <= 1:
             raise ValueError(
-                "Invalid value for the max_correlation parameter. Value should " +
+                "Invalid value for the max_correlation parameter. Value should "
                 f"be between 0 and 1, got {max_correlation}.")
 
         # Define attributes
@@ -608,7 +617,7 @@ class FeatureSelector(BaseEstimator,
         def check_y():
             """For some strategies, y needs to be provided."""
             if y is None:
-                raise ValueError("Invalid value for the y parameter. Value cannot " +
+                raise ValueError("Invalid value for the y parameter. Value cannot "
                                  f"be None for strategy='{self.strategy}'.")
 
         X, y = self._prepare_input(X, y)
@@ -644,11 +653,11 @@ class FeatureSelector(BaseEstimator,
                 corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
 
                 # Update dataframe
-                self.collinear = self.collinear.append(
-                    {'drop_feature': col,
-                     'correlated_feature': ', '.join(corr_features),
-                     'correlation_value': ', '.join(map(str, corr_values))},
-                    ignore_index=True)
+                self.collinear = self.collinear.append({
+                    'drop_feature': col,
+                    'correlated_feature': ', '.join(corr_features),
+                    'correlation_value': ', '.join(map(str, corr_values))
+                }, ignore_index=True)
 
             X.drop(to_drop, axis=1, inplace=True)
 
@@ -665,8 +674,10 @@ class FeatureSelector(BaseEstimator,
 
         elif self.strategy.lower() == 'univariate':
             check_y()
-            self.univariate = SelectKBest(self.solver, k=self.n_features)
-            self.univariate.fit(X, y)
+            self.univariate = SelectKBest(
+                score_func=self.solver,
+                k=self.n_features
+            ).fit(X, y)
 
         elif self.strategy.lower() == 'pca':
             # Always fit in case the data to transform is not scaled
@@ -675,12 +686,13 @@ class FeatureSelector(BaseEstimator,
                 X = self.scaler.transform(X)
 
             # Define PCA
-            self.pca = PCA(n_components=None,
-                           svd_solver=self.solver,
-                           random_state=self.random_state,
-                           **self.kwargs)
+            self.pca = PCA(
+                n_components=None,
+                svd_solver=self.solver,
+                random_state=self.random_state,
+                **self.kwargs
+            ).fit(X)
 
-            self.pca.fit(X)
             self.pca.n_components_ = self.n_features  # Number of components
 
         elif self.strategy.lower() == 'sfm':
@@ -693,19 +705,22 @@ class FeatureSelector(BaseEstimator,
             if not self.kwargs.get('threshold'):
                 self.kwargs['threshold'] = -np.inf
 
-            self.sfm = SelectFromModel(estimator=self.solver,
-                                       max_features=self.n_features,
-                                       **self.kwargs)
+            self.sfm = SelectFromModel(
+                estimator=self.solver,
+                max_features=self.n_features,
+                **self.kwargs
+            )
             if not self.kwargs['prefit']:
                 check_y()
                 self.sfm.fit(X, y)
 
         elif self.strategy.lower() == 'rfe':
             check_y()
-            self.rfe = RFE(estimator=self.solver,
-                           n_features_to_select=self.n_features,
-                           **self.kwargs)
-            self.rfe.fit(X, y)
+            self.rfe = RFE(
+                estimator=self.solver,
+                n_features_to_select=self.n_features,
+                **self.kwargs
+            ).fit(X, y)
 
         elif self.strategy.lower() == 'rfecv':
             check_y()
@@ -717,11 +732,12 @@ class FeatureSelector(BaseEstimator,
                     self.kwargs['scoring'] = \
                         METRIC_ACRONYMS[self.kwargs['scoring'].lower()]
 
-            self.rfecv = RFECV(estimator=self.solver,
-                               min_features_to_select=self.n_features,
-                               n_jobs=self.n_jobs,
-                               **self.kwargs)
-            self.rfecv.fit(X, y)
+            self.rfecv = RFECV(
+                estimator=self.solver,
+                min_features_to_select=self.n_features,
+                n_jobs=self.n_jobs,
+                **self.kwargs
+            ).fit(X, y)
 
         self._is_fitted = True
         return self
@@ -751,13 +767,13 @@ class FeatureSelector(BaseEstimator,
 
         # Remove features with too low variance
         for key, value in self._low_variance.items():
-            self.log(f" --> Feature {key} was removed due to low variance. Value " +
+            self.log(f" --> Feature {key} was removed due to low variance. Value "
                      f"{value[0]} repeated in {value[1]}% of the rows.", 2)
             X.drop(key, axis=1, inplace=True)
 
         # Remove features with too high correlation
         for col in self.collinear['drop_feature']:
-            self.log(f" --> Feature {col} was removed due to " +
+            self.log(f" --> Feature {col} was removed due to "
                      "collinearity with another feature.", 2)
             X.drop(col, axis=1, inplace=True)
 
@@ -790,7 +806,7 @@ class FeatureSelector(BaseEstimator,
         elif self.strategy.lower() == 'sfm':
             for n, column in enumerate(X):
                 if not self.sfm.get_support()[n]:
-                    self.log(f" --> Feature {column} was removed by the " +
+                    self.log(f" --> Feature {column} was removed by the "
                              f"{self.solver.__class__.__name__}.", 2)
                     X.drop(column, axis=1, inplace=True)
 

@@ -47,10 +47,11 @@ setuptools.setup(
           'gplearn >= 0.4.1',
           'matplotlib >= 3.3.0',
           'seaborn >= 0.10.0',
+          'shap >= 0.36.0'
       ],
       extras_require={
           'xgboost': ['xgboost>=0.90'],
           'lightgbm': ['lightgbm>=2.3.0'],
-          'catboost': ['catboost>=0.19.1'],
+          'catboost': ['catboost>=0.19.1']
       },
       python_requires='>=3.6')

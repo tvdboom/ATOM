@@ -20,27 +20,15 @@ from sklearn.impute import SimpleImputer, KNNImputer
 
 # Other packages
 from scipy.stats import zscore
-from category_encoders.backward_difference import BackwardDifferenceEncoder
-from category_encoders.basen import BaseNEncoder
-from category_encoders.binary import BinaryEncoder
-from category_encoders.cat_boost import CatBoostEncoder
-from category_encoders.helmert import HelmertEncoder
-from category_encoders.james_stein import JamesSteinEncoder
-from category_encoders.leave_one_out import LeaveOneOutEncoder
-from category_encoders.m_estimate import MEstimateEncoder
 from category_encoders.one_hot import OneHotEncoder
 from category_encoders.ordinal import OrdinalEncoder
-from category_encoders.polynomial import PolynomialEncoder
-from category_encoders.sum_coding import SumEncoder
-from category_encoders.target_encoder import TargetEncoder
-from category_encoders.woe import WOEEncoder
 from imblearn.over_sampling import ADASYN
 from imblearn.under_sampling import NearMiss
 
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, Y_TYPES, variable_return, to_df, to_series, merge,
+    X_TYPES, Y_TYPES, ENCODER_TYPES, variable_return, to_df, to_series, merge,
     check_is_fitted, infer_task, composed, crash, method_to_log
 )
 
@@ -255,7 +243,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             # Drop features with invalid data type
             dtype = str(X[col].dtype)
             if dtype in self.prohibited_types:
-                self.log(f" --> Dropping feature {col} for having a " +
+                self.log(f" --> Dropping feature {col} for having a "
                          f"prohibited type: {dtype}.", 2)
                 X.drop(col, axis=1, inplace=True)
                 continue
@@ -268,13 +256,13 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 # Drop features where all values are different
                 if self.maximum_cardinality and n_unique == len(X):
-                    self.log(f" --> Dropping feature {col} " +
+                    self.log(f" --> Dropping feature {col} "
                              "due to maximum cardinality.", 2)
                     X.drop(col, axis=1, inplace=True)
 
             # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
-                self.log(f" --> Dropping feature {col} due to minimum " +
+                self.log(f" --> Dropping feature {col} due to minimum "
                          f"cardinality. Contains only 1 value: {unique[0]}.", 2)
                 X.drop(col, axis=1, inplace=True)
 
@@ -289,7 +277,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     # Reset indices for the merger
                     X.reset_index(drop=True, inplace=True)
                     y.reset_index(drop=True, inplace=True)
-                    self.log(f" --> Dropping {diff} rows with " +
+                    self.log(f" --> Dropping {diff} rows with "
                              "missing values in target column.", 2)
 
             task = infer_task(y) if self.map_target is None else 'reg'
@@ -366,13 +354,13 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         # Check input Parameters
         strats = ['drop', 'mean', 'median', 'knn', 'most_frequent']
         if isinstance(strat_num, str) and strat_num.lower() not in strats:
-            raise ValueError("Unknown strategy for the strat_num parameter, got " +
+            raise ValueError("Unknown strategy for the strat_num parameter, got "
                              f"{strat_num}. Choose from: {', '.join(strats)}.")
         if min_frac_rows <= 0 or min_frac_rows >= 1:
-            raise ValueError("Invalid value for the min_frac_rows parameter. Value" +
+            raise ValueError("Invalid value for the min_frac_rows parameter. Value"
                              f" should be between 0 and 1, got {min_frac_rows}.")
         if min_frac_cols <= 0 or min_frac_cols >= 1:
-            raise ValueError("Invalid value for the min_frac_cols parameter. Value" +
+            raise ValueError("Invalid value for the min_frac_cols parameter. Value"
                              f" should be between 0 and 1, got {min_frac_cols}.")
 
         # Set default missing list
@@ -438,14 +426,12 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                     # Strategies: mean, median or most_frequent.
                     elif self.strat_num.lower() != 'drop':
                         self._imputers[col] = SimpleImputer(
-                            strategy=self.strat_num.lower()
-                            ).fit(values)
+                            strategy=self.strat_num.lower()).fit(values)
 
             # Column is categorical
             elif self.strat_cat.lower() == 'most_frequent':
                 self._imputers[col] = SimpleImputer(
-                    strategy=self.strat_cat.lower()
-                    ).fit(values)
+                    strategy=self.strat_cat.lower()).fit(values)
 
         self._is_fitted = True
         return self
@@ -492,7 +478,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             y = y[y.index.isin(X.index)]  # Select only indices that remain
         diff = length - len(X)
         if diff > 0:
-            self.log(f" --> Dropping {diff} rows for containing less than " +
+            self.log(f" --> Dropping {diff} rows for containing less than "
                      f"{int(self.min_frac_rows*100)}% non-missing values.", 2)
 
         # Loop over all columns to apply strategy dependent on type
@@ -503,7 +489,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             nans = X[col].isna().sum()  # Number of missing values in column
             p_nans = int(nans/len(X) * 100)  # Percentage of NaNs
             if (len(X) - nans)/len(X) < self.min_frac_cols:
-                self.log(f" --> Dropping feature {col} for containing " +
+                self.log(f" --> Dropping feature {col} for containing "
                          f"{nans} ({p_nans}%) missing values.", 2)
                 X.drop(col, axis=1, inplace=True)
                 continue  # Skip to side column
@@ -511,7 +497,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             # Column is numerical and contains missing values
             if X[col].dtype.kind in 'ifu' and nans > 0:
                 if not isinstance(self.strat_num, str):
-                    self.log(f" --> Imputing {nans} missing values with number " +
+                    self.log(f" --> Imputing {nans} missing values with number "
                              f"{str(self.strat_num)} in feature {col}.", 2)
                     X[col].replace(np.NaN, self.strat_num, inplace=True)
 
@@ -519,23 +505,23 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(f" --> Dropping {nans} rows due to missing " +
+                    self.log(f" --> Dropping {nans} rows due to missing "
                              f"values in feature {col}.", 2)
 
                 elif self.strat_num.lower() == 'knn':
-                    self.log(f" --> Imputing {nans} missing values using " +
+                    self.log(f" --> Imputing {nans} missing values using "
                              f"the KNN imputer in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
                 else:  # Strategies: mean, median or most_frequent.
-                    self.log(f" --> Imputing {nans} missing values with " +
+                    self.log(f" --> Imputing {nans} missing values with "
                              f"{self.strat_num.lower()} in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
             # Column is categorical and contains missing values
             elif nans > 0:
                 if self.strat_cat.lower() not in ['drop', 'most_frequent']:
-                    self.log(f" --> Imputing {nans} missing values with " +
+                    self.log(f" --> Imputing {nans} missing values with "
                              f"{self.strat_cat} in feature {col}.", 2)
                     X[col].replace(np.NaN, self.strat_cat, inplace=True)
 
@@ -543,11 +529,11 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(f" --> Dropping {nans} rows due to missing " +
+                    self.log(f" --> Dropping {nans} rows due to missing "
                              f"values in feature {col}.", 2)
 
                 elif self.strat_cat.lower() == 'most_frequent':
-                    self.log(f" --> Imputing {nans} missing values with " +
+                    self.log(f" --> Imputing {nans} missing values with "
                              f"most_frequent in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
@@ -609,37 +595,21 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                  **kwargs):
         super().__init__(verbose=verbose, logger=logger)
 
-        types = dict(BackwardDifference=BackwardDifferenceEncoder,
-                     BaseN=BaseNEncoder,
-                     Binary=BinaryEncoder,
-                     CatBoost=CatBoostEncoder,
-                     # Hashing=HashingEncoder,
-                     Helmert=HelmertEncoder,
-                     JamesStein=JamesSteinEncoder,
-                     LeaveOneOut=LeaveOneOutEncoder,
-                     MEstimate=MEstimateEncoder,
-                     # OneHot=OneHotEncoder,
-                     Ordinal=OrdinalEncoder,
-                     Polynomial=PolynomialEncoder,
-                     Sum=SumEncoder,
-                     Target=TargetEncoder,
-                     WOE=WOEEncoder)
-
         # Check Parameters
         if max_onehot is None:
             max_onehot = 0
         elif max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
-            raise ValueError("Invalid value for the max_onehot parameter." +
+            raise ValueError("Invalid value for the max_onehot parameter."
                              f"Value should be >= 0, got {max_onehot}.")
-        if encode_type.lower() not in [x.lower() for x in types]:
-            raise ValueError("Invalid value for the encode_type parameter." +
-                             f"Choose from: {', '.join(types)}.")
+        if encode_type.lower() not in [x.lower() for x in ENCODER_TYPES]:
+            raise ValueError("Invalid value for the encode_type parameter."
+                             f"Choose from: {', '.join(ENCODER_TYPES)}.")
         if frac_to_other and (frac_to_other <= 0 or frac_to_other >= 1):
-            raise ValueError("Invalid value for the frac_to_other parameter. Value" +
+            raise ValueError("Invalid value for the frac_to_other parameter. Value"
                              f" should be between 0 and 1, got {frac_to_other}.")
 
         self.max_onehot = max_onehot
-        for key, value in types.items():
+        for key, value in ENCODER_TYPES.items():
             if key.lower() == encode_type.lower():
                 self.encode_type = key
                 self._rest_encoder = value
@@ -694,23 +664,26 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
                     self._col_to_type[col] = 'Ordinal'
-                    self._encoders[col] = OrdinalEncoder(handle_missing='error',
-                                                         handle_unknown='error')
-                    self._encoders[col].fit(values)
+                    self._encoders[col] = OrdinalEncoder(
+                        handle_missing='error',
+                        handle_unknown='error'
+                    ).fit(values)
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._col_to_type[col] = 'One-hot'
-                    self._encoders[col] = OneHotEncoder(handle_missing='error',
-                                                        handle_unknown='error',
-                                                        use_cat_names=True)
-                    self._encoders[col].fit(values)
+                    self._encoders[col] = OneHotEncoder(
+                        handle_missing='error',
+                        handle_unknown='error',
+                        use_cat_names=True
+                    ).fit(values)
 
                 else:
                     self._col_to_type[col] = self.encode_type
-                    self._encoders[col] = self._rest_encoder(handle_missing='error',
-                                                             handle_unknown='error',
-                                                             **self.kwargs)
-                    self._encoders[col].fit(values, y)
+                    self._encoders[col] = self._rest_encoder(
+                        handle_missing='error',
+                        handle_unknown='error',
+                        **self.kwargs
+                    ).fit(values, y)
 
         self._is_fitted = True
         return self
@@ -755,12 +728,12 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 # Perform encoding type dependent on number of unique values
                 if self._col_to_type[col] == 'Ordinal':
-                    self.log(f" --> Label-encoding feature {col}. " +
+                    self.log(f" --> Label-encoding feature {col}. "
                              f"Contains {n_unique} unique categories.", 2)
                     X[col] = self._encoders[col].transform(values)
 
                 elif self._col_to_type[col] == 'One-hot':
-                    self.log(f" --> One-hot-encoding feature {col}. " +
+                    self.log(f" --> One-hot-encoding feature {col}. "
                              f"Contains {n_unique} unique categories.", 2)
                     onehot_cols = self._encoders[col].transform(values)
                     # Insert the new columns at old location
@@ -770,7 +743,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
                 else:
-                    self.log(f" --> {self.encode_type}-encoding feature " +
+                    self.log(f" --> {self.encode_type}-encoding feature "
                              f"{col}. Contains {n_unique} unique categories.", 2)
                     rest_cols = self._encoders[col].transform(values)
                     X = X.drop(col, axis=1)  # Drop the original column
@@ -829,10 +802,10 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         # Check Parameters
         if isinstance(strategy, str):
             if strategy.lower() not in ['drop', 'min_max']:
-                raise ValueError("Invalid value for the strategy parameter." +
+                raise ValueError("Invalid value for the strategy parameter."
                                  f"Choose from: 'drop', 'min_max'.")
         if max_sigma <= 0:
-            raise ValueError("Invalid value for the max_sigma parameter." +
+            raise ValueError("Invalid value for the max_sigma parameter."
                              f"Value should be > 0, got {max_sigma}.")
 
         # Define attributes
@@ -879,7 +852,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             cond = np.abs(z_scores) > self.max_sigma
             objective.mask(cond, self.strategy, inplace=True)
             if cond.sum() > 0:
-                self.log(f" --> Replacing {cond.sum()} outliers with " +
+                self.log(f" --> Replacing {cond.sum()} outliers with "
                          f"value {self.strategy}.", 2)
 
         elif self.strategy.lower() == 'min_max':
@@ -900,7 +873,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
                 counts += cond1.sum() + cond2.sum()
 
             if counts > 0:
-                self.log(f" --> Replacing {counts} outliers with the min " +
+                self.log(f" --> Replacing {counts} outliers with the min "
                          "or max of the column.", 2)
 
         elif self.strategy.lower() == 'drop':
@@ -1001,7 +974,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         # Not both strategies can be applied at the same time
         if oversample and undersample:
-            raise ValueError("Oversample and undersample cannot be " +
+            raise ValueError("Oversample and undersample cannot be "
                              "applied both at the same time!")
 
         # At least one of the two strategies needs to be applied
@@ -1013,15 +986,15 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         strat_under = strats + ['majority']
         strat_over = strats + ['minority']
         if isinstance(oversample, str) and oversample not in strat_over:
-            raise ValueError(f"Unknown value for the oversample parameter," +
+            raise ValueError(f"Unknown value for the oversample parameter,"
                              " got {}. Choose from: {}."
                              .format(oversample, ', '.join(strat_over)))
         if isinstance(undersample, str) and undersample not in strat_under:
-            raise ValueError(f"Unknown value for the undersample parameter," +
+            raise ValueError(f"Unknown value for the undersample parameter,"
                              " got {}. Choose from: {}."
                              .format(undersample, ', '.join(strat_under)))
         if n_neighbors <= 0:
-            raise ValueError("Invalid value for the n_neighbors parameter." +
+            raise ValueError("Invalid value for the n_neighbors parameter."
                              f"Value should be >0, got {n_neighbors}.")
 
         # Define attributes

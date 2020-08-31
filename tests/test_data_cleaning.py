@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 # Own modules
-from atom.utils import NotFittedError, check_scaling
+from atom.utils import ENCODER_TYPES, NotFittedError, check_scaling
 from atom.data_cleaning import (
     Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
     )
@@ -371,29 +371,12 @@ def test_one_hot_encoder():
     assert 'Feature 2_c' in X.columns
 
 
-def test_all_encoder_types():
+@pytest.mark.parametrize('encoder', ENCODER_TYPES)
+def test_all_encoder_types(encoder):
     """Assert that all encoder types work as intended."""
-    encode_types = ['BackwardDifference',
-                    'BaseN',
-                    'Binary',
-                    'CatBoost',
-                    # 'Hashing',
-                    'Helmert',
-                    'JamesStein',
-                    'LeaveOneOut',
-                    'MEstimate',
-                    # 'OneHot',
-                    'Ordinal',
-                    'Polynomial',
-                    'Sum',
-                    'Target',
-                    'WOE']
-
-    for encoder in encode_types:
-        encoder = Encoder(max_onehot=None, encode_type=encoder)
-        X = encoder.fit_transform(X10_str, y10)
-        for col in X:
-            assert X[col].dtype.kind in 'ifu'
+    encoder = Encoder(max_onehot=None, encode_type=encoder)
+    X = encoder.fit_transform(X10_str, y10)
+    assert all([X[col].dtype.kind in 'ifu' for col in X])
 
 
 def test_kwargs_parameters():

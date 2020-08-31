@@ -14,10 +14,8 @@ from sklearn.metrics import f1_score, get_scorer
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.feature_engineering import FeatureSelector
 from atom.training import (
-    TrainerClassifier, TrainerRegressor,
-    SuccessiveHalvingRegressor, TrainSizingRegressor
+    TrainerClassifier, TrainerRegressor
 )
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
@@ -105,141 +103,88 @@ def test_plot_correlation():
     assert glob.glob(FILE_DIR + 'correlation.png')
 
 
-def test_plot_pipeline():
+@pytest.mark.parametrize('show_params', [True, False])
+def test_plot_pipeline(show_params):
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.outliers()
+    atom.feature_selection('PCA', n_features=10)
     atom.successive_halving(['Tree', 'AdaB'])
-    atom.plot_pipeline(True, filename=FILE_DIR + 'pipeline1', display=False)
-    atom.plot_pipeline(False, filename=FILE_DIR + 'pipeline2', display=False)
-    assert glob.glob(FILE_DIR + 'pipeline1.png')
-    assert glob.glob(FILE_DIR + 'pipeline2.png')
+    atom.plot_pipeline(
+        show_params=show_params,
+        filename=FILE_DIR + f'pipeline_{show_params}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'pipeline_{show_params}.png')
 
 
 def test_plot_pca():
     """Assert that the plot_pca method work as intended."""
-    # When no PCA was run
-    fs = FeatureSelector()
-    pytest.raises(PermissionError, fs.plot_pca)
-
-    # When correct
-    fs = FeatureSelector('PCA', n_features=12)
-    fs.fit_transform(X_bin, y_bin)
-    fs.plot_pca(filename=FILE_DIR + 'pca1', display=False)
-    assert glob.glob(FILE_DIR + 'pca1.png')
-
-    # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(PermissionError, atom.plot_pca)  # No PCA in pipeline
     atom.feature_selection(strategy='PCA', n_features=10)
-    atom.plot_pca(filename=FILE_DIR + 'pca2', display=False)
-    assert glob.glob(FILE_DIR + 'pca2.png')
+    atom.plot_pca(filename=FILE_DIR + 'pca', display=False)
+    assert glob.glob(FILE_DIR + 'pca.png')
 
 
 def test_plot_components():
     """Assert that the plot_components method work as intended."""
-    # When no PCA was run
-    fs = FeatureSelector()
-    pytest.raises(PermissionError, fs.plot_components)
-
-    # When show is invalid
-    fs = FeatureSelector('PCA', n_features=12)
-    fs.fit_transform(X_bin, y_bin)
-    pytest.raises(ValueError, fs.plot_components, show=0)
-
-    # When correct (test if show is converted to max components)
-    fs.plot_components(show=100, filename=FILE_DIR + 'components1', display=False)
-    assert glob.glob(FILE_DIR + 'components1.png')
-
-    # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(PermissionError, atom.plot_components)  # No PCA in pipeline
     atom.feature_selection(strategy='PCA', n_features=10)
-    atom.plot_components(filename=FILE_DIR + 'components2', display=False)
-    assert glob.glob(FILE_DIR + 'components2.png')
+    pytest.raises(ValueError, atom.plot_components, show=0)  # Show is invalid
+    atom.plot_components(show=100, filename=FILE_DIR + 'components', display=False)
+    assert glob.glob(FILE_DIR + 'components.png')
 
 
 def test_plot_rfecv():
     """Assert that the plot_rfecv method work as intended """
-    # When no RFECV was run
-    fs = FeatureSelector()
-    pytest.raises(PermissionError, fs.plot_rfecv)
-
-    # When correct
-    fs = FeatureSelector('RFECV', solver='lgb_class', n_features=12, scoring='f1')
-    fs.fit_transform(X_bin, y_bin)
-    fs.plot_rfecv(filename=FILE_DIR + 'rfecv1', display=False)
-    assert glob.glob(FILE_DIR + 'rfecv1.png')
-
-    # From ATOM
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(PermissionError, atom.plot_rfecv)  # No RFECV in pipeline
     atom.run('lr', metric='precision')
     atom.feature_selection(strategy='RFECV', n_features=10)
-    atom.plot_rfecv(filename=FILE_DIR + 'rfecv2', display=False)
-    assert glob.glob(FILE_DIR + 'rfecv2.png')
+    atom.plot_rfecv(filename=FILE_DIR + 'rfecv', display=False)
+    assert glob.glob(FILE_DIR + 'rfecv.png')
 
 
 def test_plot_successive_halving():
     """Assert that the plot_successive_halving method work as intended."""
-    # When its not a SuccessiveHalving instance
-    trainer = TrainerRegressor(['ols', 'ridge'], metric='max_error')
-    trainer.run(reg_train, reg_test)
-    pytest.raises(PermissionError, trainer.ols.plot_successive_halving)
-
-    # When its not fitted
-    sh = SuccessiveHalvingRegressor(['ols', 'ridge'], metric='max_error', bagging=4)
-    pytest.raises(NotFittedError, sh.plot_successive_halving)
-
-    # When model is unknown or not in pipeline
-    sh.run(reg_train, reg_test)
-    pytest.raises(ValueError, sh.plot_successive_halving, models='unknown')
-    pytest.raises(ValueError, sh.plot_successive_halving, models='BR')
-
-    # When metric_ is invalid, unknown or not in pipeline
-    pytest.raises(ValueError, sh.plot_successive_halving, metric='unknown')
-    pytest.raises(ValueError, sh.plot_successive_halving, metric=-1)
-    pytest.raises(ValueError, sh.plot_successive_halving, metric=1)
-    pytest.raises(ValueError, sh.plot_successive_halving, metric='roc_auc')
-
-    # When correct
-    sh.plot_successive_halving(models=['OLS', 'Ridge'],
-                               metric='me',
-                               filename=FILE_DIR + 'sh1',
-                               display=False)
-    sh.ols.plot_successive_halving(filename=FILE_DIR + 'sh2', display=False)
-    assert glob.glob(FILE_DIR + 'sh1.png')
-    assert glob.glob(FILE_DIR + 'sh2.png')
-
-    # From ATOM
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.successive_halving('ols', metric='max_error')
-    atom.plot_successive_halving(filename=FILE_DIR + 'sh3', display=False)
-    atom.ols.plot_successive_halving(filename=FILE_DIR + 'sh4', display=False)
-    assert glob.glob(FILE_DIR + 'sh3.png')
-    assert glob.glob(FILE_DIR + 'sh4.png')
+    pytest.raises(NotFittedError, atom.plot_successive_halving)
+    atom.run('LGB')
+    pytest.raises(PermissionError, atom.plot_successive_halving)
+    atom.successive_halving(['LGB', 'Tree'], metric='max_error')
+    pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
+    pytest.raises(ValueError, atom.plot_successive_halving, models='BR')
+    pytest.raises(ValueError, atom.plot_successive_halving, metric='unknown')
+    pytest.raises(ValueError, atom.plot_successive_halving, metric=-1)
+    pytest.raises(ValueError, atom.plot_successive_halving, metric=1)
+    pytest.raises(ValueError, atom.plot_successive_halving, metric='roc_auc')
+    atom.plot_successive_halving(
+        filename=FILE_DIR + 'successive_halving_1',
+        display=False
+    )
+    atom.lgb.plot_successive_halving(
+        filename=FILE_DIR + 'successive_halving_2',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + 'successive_halving_1.png')
+    assert glob.glob(FILE_DIR + 'successive_halving_2.png')
 
 
 def test_plot_learning_curve():
     """Assert that the plot_learning_curve method work as intended."""
-    # When its not a TrainSizing instance
-    trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
-    trainer.run(reg_train, reg_test)
-    pytest.raises(PermissionError, trainer.ols.plot_learning_curve)
-
-    ts = TrainSizingRegressor(['ols', 'ridge'], metric='r2', bagging=4)
-    pytest.raises(NotFittedError, ts.plot_learning_curve)
-    ts.run(reg_train, reg_test)
-    ts.plot_learning_curve(filename=FILE_DIR + 'ts1', display=False)
-    ts.ols.plot_learning_curve(filename=FILE_DIR + 'ts2', display=False)
-    assert glob.glob(FILE_DIR + 'ts1.png')
-    assert glob.glob(FILE_DIR + 'ts2.png')
-
-    # From ATOM
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.train_sizing('ols', metric='max_error')
-    atom.plot_learning_curve(filename=FILE_DIR + 'ts3', display=False)
-    atom.ols.plot_learning_curve(filename=FILE_DIR + 'ts4', display=False)
-    assert glob.glob(FILE_DIR + 'ts3.png')
-    assert glob.glob(FILE_DIR + 'ts4.png')
+    pytest.raises(NotFittedError, atom.plot_learning_curve)
+    atom.run('LGB')
+    pytest.raises(PermissionError, atom.plot_learning_curve)
+    atom.train_sizing(['Tree', 'LGB'], metric='max_error')
+    atom.plot_learning_curve(filename=FILE_DIR + 'train_sizing_1', display=False)
+    atom.lgb.plot_learning_curve(filename=FILE_DIR + 'train_sizing_2', display=False)
+    assert glob.glob(FILE_DIR + 'train_sizing_1.png')
+    assert glob.glob(FILE_DIR + 'train_sizing_2.png')
+
 
 
 def test_plot_bagging():
@@ -465,7 +410,7 @@ def test_plot_feature_importance():
 
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method work as intended."""
-    trainer = TrainerRegressor(['ols', 'ridge'], metric='r2')
+    trainer = TrainerRegressor(['Tree', 'LGB'], metric='r2')
     pytest.raises(NotFittedError, trainer.plot_partial_dependence)
 
     # When invalid parameters
@@ -477,7 +422,7 @@ def test_plot_partial_dependence():
 
     # Triple feature
     with pytest.raises(ValueError, match=r".*should be single or in pairs.*"):
-        trainer.ols.plot_partial_dependence(features=[(0, 1, 2), 2])
+        trainer.tree.plot_partial_dependence(features=[(0, 1, 2), 2])
 
     # Pair for multi-model
     with pytest.raises(ValueError, match=r".*when plotting multiple models.*"):
@@ -498,15 +443,15 @@ def test_plot_partial_dependence():
         filename=FILE_DIR + 'pd1',
         display=False
     )
-    trainer.ols.plot_partial_dependence(filename=FILE_DIR + 'pd2', display=False)
+    trainer.tree.plot_partial_dependence(filename=FILE_DIR + 'pd2', display=False)
     assert glob.glob(FILE_DIR + 'pd1.png')
     assert glob.glob(FILE_DIR + 'pd2.png')
 
     # From ATOM (test multiclass)
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run('lda', metric='f1_macro')
+    atom.run('LGB', metric='f1_macro')
     atom.plot_partial_dependence(target=0, filename=FILE_DIR + 'pd3', display=False)
-    atom.lda.plot_partial_dependence(
+    atom.lgb.plot_partial_dependence(
         features=[('alcohol', 'ash')],
         target=2,
         filename=FILE_DIR + 'pd4',
@@ -870,3 +815,59 @@ def test_plot_lift(dataset):
     )
     assert glob.glob(FILE_DIR + f'lift3_{dataset}.png')
     assert glob.glob(FILE_DIR + f'lift4_{dataset}.png')
+
+
+@pytest.mark.parametrize('model', ['OLS', 'Tree', 'KNN', 'XGB', 'LGB', 'CatB'])
+def test_force_plot(model):
+    """Assert that the force_plot method work as intended."""
+    trainer = TrainerRegressor(model, metric='r2')
+    trainer.run(reg_train, reg_test)
+    trainer.force_plot(
+        models=model,
+        index=12,
+        matplotlib=True,
+        filename=FILE_DIR + f'force1_{model}',
+        display=False
+    )
+    trainer.force_plot(
+        models=model,
+        index=(430, 432),
+        matplotlib=False,
+        filename=FILE_DIR + f'force2_{model}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'force1_{model}.png')
+    assert glob.glob(FILE_DIR + f'force2_{model}.html')
+
+    # From ATOM
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(model, metric='MSE')
+    atom.force_plot(
+        models=model,
+        index=-5,
+        matplotlib=True,
+        filename=FILE_DIR + f'force3_{model}',
+        display=False
+    )
+    atom.force_plot(
+        models=model,
+        index=None,
+        matplotlib=False,
+        filename=FILE_DIR + f'force4_{model}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'force3_{model}.png')
+    assert glob.glob(FILE_DIR + f'force4_{model}.html')
+
+
+@pytest.mark.parametrize('ind', [4, 'mean texture', 'rank(3)'])
+def test_dependence_plot(ind):
+    """Assert that the dependence_plot method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(['LR', 'Tree'], metric='AP')
+    atom.lr.dependence_plot(
+        ind=ind,
+        filename=FILE_DIR + f'dependence_{ind}',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + f'dependence_{ind}.png')

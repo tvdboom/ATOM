@@ -180,14 +180,15 @@ class ATOMClassifier(BaseTransformer, ATOM):
                  warnings: Union[bool, str] = True,
                  verbose: int = 0,
                  random_state: Optional[int] = None):
-        """Assign the algorithm's goal and prepare the standard properties."""
-        self.goal = 'classification'
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         warnings=warnings,
-                         logger=logger,
-                         random_state=random_state)
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            random_state=random_state
+        )
 
+        self.goal = 'classification'
         ATOM.__init__(self, X, y, n_rows, test_size)
 
 
@@ -262,12 +263,13 @@ class ATOMRegressor(BaseTransformer, ATOM):
                  verbose: int = 0,
                  logger: Optional[Union[str, callable]] = None,
                  random_state: Optional[int] = None):
-        """Assign the algorithm's goal and prepare the standard properties."""
-        self.goal = 'regression'
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         warnings=warnings,
-                         logger=logger,
-                         random_state=random_state)
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            random_state=random_state
+        )
 
+        self.goal = 'regression'
         ATOM.__init__(self, X, y, n_rows, test_size)

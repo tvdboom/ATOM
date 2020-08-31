@@ -90,7 +90,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                  needs_threshold, skip_iter, n_calls, n_random_starts, bo_params,
                  bagging, n_jobs, verbose, warnings, logger, random_state):
         if skip_iter < 0:
-            raise ValueError("Invalid value for the skip_iter parameter." +
+            raise ValueError("Invalid value for the skip_iter parameter."
                              f"Value should be >=0, got {skip_iter}.")
         else:
             self.skip_iter = skip_iter
@@ -147,9 +147,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             run += 1
 
         # Concatenate all resulting dataframes with multi-index
-        self._results = pd.concat(objs=[df for df in results],
-                                  keys=range(len(results)),
-                                  names=('run', 'model'))
+        self._results = pd.concat(
+            objs=[df for df in results],
+            keys=range(len(results)),
+            names=('run', 'model')
+        )
 
         # Renew self.models and restore the training set
         self.models = all_models
@@ -226,9 +228,11 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
             results.append(self._run())
 
         # Concatenate all resulting dataframes with multi-index
-        self._results = pd.concat(objs=[df for df in results],
-                                  keys=range(len(results)),
-                                  names=('run', 'model'))
+        self._results = pd.concat(
+            objs=[df for df in results],
+            keys=range(len(results)),
+            names=('run', 'model')
+        )
 
         self._idx[0] = _train_idx  # Restore original training set
 

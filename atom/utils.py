@@ -17,6 +17,21 @@ from datetime import datetime
 from collections import deque
 from typing import Union, Sequence
 
+# Encoders
+from category_encoders.backward_difference import BackwardDifferenceEncoder
+from category_encoders.basen import BaseNEncoder
+from category_encoders.binary import BinaryEncoder
+from category_encoders.cat_boost import CatBoostEncoder
+from category_encoders.helmert import HelmertEncoder
+from category_encoders.james_stein import JamesSteinEncoder
+from category_encoders.leave_one_out import LeaveOneOutEncoder
+from category_encoders.m_estimate import MEstimateEncoder
+from category_encoders.ordinal import OrdinalEncoder
+from category_encoders.polynomial import PolynomialEncoder
+from category_encoders.sum_coding import SumEncoder
+from category_encoders.target_encoder import TargetEncoder
+from category_encoders.woe import WOEEncoder
+
 # Sklearn
 from sklearn.metrics import SCORERS, get_scorer, make_scorer
 from sklearn.utils import _safe_indexing
@@ -38,26 +53,48 @@ Y_TYPES = Union[int, str, list, tuple, dict, np.ndarray, pd.Series]
 TRAIN_TYPES = Union[Sequence[Union[int, float]], np.ndarray]
 
 # Tuple of models that need to import an extra package
-OPTIONAL_PACKAGES = (('XGB', 'xgboost'),
-                     ('LGB', 'lightgbm'),
-                     ('CatB', 'catboost'))
+OPTIONAL_PACKAGES = (
+    ('XGB', 'xgboost'),
+    ('LGB', 'lightgbm'),
+    ('CatB', 'catboost')
+)
 
 # List of models that only work for regression/classification tasks
 ONLY_CLASS = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
 ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR']
 
-METRIC_ACRONYMS = dict(ap='average_precision',
-                       ba='balanced_accuracy',
-                       auc='roc_auc',
-                       ev='explained_variance',
-                       me='max_error',
-                       mae='neg_mean_absolute_error',
-                       mse='neg_mean_squared_error',
-                       rmse='neg_root_mean_squared_error',
-                       msle='neg_mean_squared_log_error',
-                       medae='neg_median_absolute_error',
-                       poisson='neg_mean_poisson_deviance',
-                       gamma='neg_mean_gamma_deviance')
+METRIC_ACRONYMS = dict(
+    ap='average_precision',
+    ba='balanced_accuracy',
+    auc='roc_auc',
+    ev='explained_variance',
+    me='max_error',
+    mae='neg_mean_absolute_error',
+    mse='neg_mean_squared_error',
+    rmse='neg_root_mean_squared_error',
+    msle='neg_mean_squared_log_error',
+    medae='neg_median_absolute_error',
+    poisson='neg_mean_poisson_deviance',
+    gamma='neg_mean_gamma_deviance'
+)
+
+ENCODER_TYPES = dict(
+    BackwardDifference=BackwardDifferenceEncoder,
+    BaseN=BaseNEncoder,
+    Binary=BinaryEncoder,
+    CatBoost=CatBoostEncoder,
+    # Hashing=HashingEncoder,
+    Helmert=HelmertEncoder,
+    JamesStein=JamesSteinEncoder,
+    LeaveOneOut=LeaveOneOutEncoder,
+    MEstimate=MEstimateEncoder,
+    # OneHot=OneHotEncoder,
+    Ordinal=OrdinalEncoder,
+    Polynomial=PolynomialEncoder,
+    Sum=SumEncoder,
+    Target=TargetEncoder,
+    WOE=WOEEncoder
+)
 
 
 # Functions ================================================================= >>
@@ -253,7 +290,7 @@ def prepare_logger(logger, class_name):
         logger.addHandler(file_handler)  # Add file handler to logger
 
     elif type(logger) != logging.Logger:  # Should be python Logger object
-        raise TypeError("Invalid value for the logger parameter. Should be a " +
+        raise TypeError("Invalid value for the logger parameter. Should be a "
                         f"python logging.Logger object, got {type(logger)}!")
 
     return logger
@@ -299,29 +336,29 @@ def check_property(value, value_name,
     if side_name:  # Check for equal number of rows
         if len(value) != len(side):
             raise ValueError(
-                f"The {value_name} and {side_name} properties need to have the " +
+                f"The {value_name} and {side_name} properties need to have the "
                 f"same number of rows, got {len(value)} != {len(side)}.")
         if not value.index.equals(side.index):
             raise ValueError(
-                f"The {value_name} and {side_name} properties need to have the " +
+                f"The {value_name} and {side_name} properties need to have the "
                 f"same indices, got {value.index} != {side.index}.")
 
     if under_name:  # Check they have the same columns
         if 'y' in value_name:
             if value.name != under.name:
                 raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have " +
+                    f"The {value_name} and {under_name} properties need to have "
                     f"the same name, got {value.name} != {under.name}.")
         else:
             if value.shape[1] != under.shape[1]:
                 raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have " +
-                    f"the same number of columns, got {value.shape[1]} != " +
+                    f"The {value_name} and {under_name} properties need to have "
+                    f"the same number of columns, got {value.shape[1]} != "
                     f"{under.shape[1]}.")
 
             if list(value.columns) != list(under.columns):
                 raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have " +
+                    f"The {value_name} and {under_name} properties need to have "
                     f"the same columns , got {value.columns} != {under.columns}.")
 
     return value
@@ -355,9 +392,8 @@ def check_is_fitted(estimator, attributes=None, msg=None):
             return not getattr(estimator, attr)
 
     if msg is None:
-        msg = (f"This {type(estimator).__name__} instance is not fitted " +
-               "yet. Call 'fit' with appropriate arguments before using " +
-               "this estimator.")
+        msg = (f"This {type(estimator).__name__} instance is not fitted yet. "
+               "Call 'fit' with appropriate arguments before using this estimator.")
 
     if not isinstance(attributes, (list, tuple)):
         attributes = [attributes]
@@ -432,7 +468,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         if metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
         elif metric not in SCORERS:
-            raise ValueError("Unknown value for the metric parameter, got " +
+            raise ValueError("Unknown value for the metric parameter, got "
                              f"{metric}. Try one of: {', '.join(SCORERS)}.")
         metric = get_scorer(metric)
         metric.name = get_scorer_name(metric)
@@ -441,10 +477,12 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         metric.name = get_scorer_name(metric)
 
     else:  # Metric is a function with signature metric(y, y_pred)
-        metric = make_scorer(metric,
-                             greater_is_better=greater_is_better,
-                             needs_proba=needs_proba,
-                             needs_threshold=needs_threshold)
+        metric = make_scorer(
+            score_func=metric,
+            greater_is_better=greater_is_better,
+            needs_proba=needs_proba,
+            needs_threshold=needs_threshold
+        )
         metric.name = metric._score_func.__name__
 
     return metric
@@ -599,18 +637,20 @@ def transform(pl, X, y, verbose, **kwargs):
     """
     # Check verbose parameter
     if verbose < 0 or verbose > 2:
-        raise ValueError("Invalid value for the verbose parameter." +
+        raise ValueError("Invalid value for the verbose parameter."
                          f"Value should be between 0 and 2, got {verbose}.")
 
     # All data cleaning and feature selection methods and their classes
-    steps = dict(standard_cleaner='StandardCleaner',
-                 scale='Scaler',
-                 impute='Imputer',
-                 encode='Encoder',
-                 outliers='Outliers',
-                 balance='Balancer',
-                 feature_generation='FeatureGenerator',
-                 feature_selection='FeatureSelector')
+    steps = dict(
+        standard_cleaner='StandardCleaner',
+        scale='Scaler',
+        impute='Imputer',
+        encode='Encoder',
+        outliers='Outliers',
+        balance='Balancer',
+        feature_generation='FeatureGenerator',
+        feature_selection='FeatureSelector'
+    )
 
     # Set default values if pipeline is not provided
     if not kwargs.get('pipeline'):
@@ -809,24 +849,34 @@ class PlotCallback(object):
         ax1 = plt.subplot(gs[0])
         # Create a variable for the line so we can later update it
         line1, = ax1.plot(self.x, self.y1, '-o', alpha=0.8)
-        ax1.set_title(f"Bayesian Optimization for {self.M.longname}",
-                      fontsize=self.M.T.title_fontsize)
-        ax1.set_ylabel(self.M.T.metric_[0].name,
-                       fontsize=self.M.T.label_fontsize,
-                       labelpad=12)
+        ax1.set_title(
+            label=f"Bayesian Optimization for {self.M.longname}",
+            fontsize=self.M.T.title_fontsize
+        )
+        ax1.set_ylabel(
+            ylabel=self.M.T.metric_[0].name,
+            fontsize=self.M.T.label_fontsize,
+            labelpad=12
+        )
         ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
 
         # Second subplot
         ax2 = plt.subplot(gs[1], sharex=ax1)
         line2, = ax2.plot(self.x, self.y2, '-o', alpha=0.8)
-        ax2.set_title("Distance between last consecutive iterations",
-                      fontsize=self.M.T.title_fontsize)
-        ax2.set_xlabel('Iteration',
-                       fontsize=self.M.T.label_fontsize,
-                       labelpad=12)
-        ax2.set_ylabel('d',
-                       fontsize=self.M.T.label_fontsize,
-                       labelpad=12)
+        ax2.set_title(
+            label="Distance between last consecutive iterations",
+            fontsize=self.M.T.title_fontsize
+        )
+        ax2.set_xlabel(
+            xlabel='Iteration',
+            fontsize=self.M.T.label_fontsize,
+            labelpad=12
+        )
+        ax2.set_ylabel(
+            ylabel='d',
+            fontsize=self.M.T.label_fontsize,
+            labelpad=12
+        )
         ax2.set_xticks(self.x)
         ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
         ax2.set_ylim([-0.05, 0.1])

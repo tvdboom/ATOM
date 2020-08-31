@@ -86,13 +86,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Check input Parameters ============================================ >>
 
         if n_rows <= 0:
-            raise ValueError("Invalid value for the n_rows parameter. " +
+            raise ValueError("Invalid value for the n_rows parameter. "
                              f"Value should be >0, got {n_rows}.")
         elif n_rows > len(X):
             n_rows = len(X)
 
         if test_size <= 0 or test_size >= 1:
-            raise ValueError("Invalid value for the test_size parameter. " +
+            raise ValueError("Invalid value for the test_size parameter. "
                              f"Value should be between 0 and 1, got {test_size}.")
         else:
             self._test_size = test_size
@@ -114,12 +114,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         map_target = False if self.goal.startswith('reg') else True
 
         # Apply the standard cleaning steps
-        standard_cleaner = StandardCleaner(prohibited_types=prohibited_types,
-                                           map_target=map_target,
-                                           verbose=self.verbose,
-                                           logger=self.logger)
+        standard_cleaner = StandardCleaner(
+            prohibited_types=prohibited_types,
+            map_target=map_target,
+            verbose=self.verbose,
+            logger=self.logger
+        )
         X_y = merge(*standard_cleaner.transform(X, y))
-        self.pipeline = self.pipeline.append(pd.Series([standard_cleaner]), ignore_index=True)
+        self.pipeline = self.pipeline.append(
+            pd.Series([standard_cleaner]), ignore_index=True)
 
         # Add mapping attr to ATOM
         self.mapping = standard_cleaner.mapping
@@ -211,9 +214,11 @@ class ATOM(BasePredictor, ATOMPlotter):
                 train = c_train[idx_train[0]] if len(idx_train) != 0 else 0
                 idx_test = np.where(uq_test == value)[0]
                 test = c_test[idx_test[0]] if len(idx_test) != 0 else 0
-                stats = stats.append({' total': train + test,
-                                      ' train_set': train,
-                                      ' test_set': test}, ignore_index=True)
+                stats = stats.append({
+                    ' total': train + test,
+                    ' train_set': train,
+                    ' test_set': test
+                }, ignore_index=True)
 
                 keys += key + ':'
                 train_val.append(train)
@@ -369,12 +374,14 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
-        imputer = Imputer(strat_num=strat_num,
-                          strat_cat=strat_cat,
-                          min_frac_rows=min_frac_rows,
-                          min_frac_cols=min_frac_cols,
-                          missing=missing,
-                          **kwargs).fit(self.X_train, self.y_train)
+        imputer = Imputer(
+            strat_num=strat_num,
+            strat_cat=strat_cat,
+            min_frac_rows=min_frac_rows,
+            min_frac_cols=min_frac_cols,
+            missing=missing,
+            **kwargs
+        ).fit(self.X_train, self.y_train)
 
         X, y = imputer.transform(self.X, self.y)
         self.dataset = merge(X, y).reset_index(drop=True)
@@ -407,10 +414,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         kwargs = self._prepare_kwargs(kwargs, Encoder().get_params())
-        encoder = Encoder(max_onehot=max_onehot,
-                          encode_type=encode_type,
-                          frac_to_other=frac_to_other,
-                          **kwargs).fit(self.X_train, self.y_train)
+        encoder = Encoder(
+            max_onehot=max_onehot,
+            encode_type=encode_type,
+            frac_to_other=frac_to_other,
+            **kwargs
+        ).fit(self.X_train, self.y_train)
 
         self.X = encoder.transform(self.X)
         self.pipeline = self.pipeline.append(
@@ -433,10 +442,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         kwargs = self._prepare_kwargs(kwargs, Outliers().get_params())
-        outliers = Outliers(strategy=strategy,
-                            max_sigma=max_sigma,
-                            include_target=include_target,
-                            **kwargs)
+        outliers = Outliers(
+            strategy=strategy,
+            max_sigma=max_sigma,
+            include_target=include_target,
+            **kwargs
+        )
 
         X_train, y_train = outliers.transform(self.X_train, self.y_train)
         self.train = merge(X_train, y_train)
@@ -466,10 +477,12 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "The balance method is only available for classification tasks!")
 
         kwargs = self._prepare_kwargs(kwargs, Balancer().get_params())
-        balancer = Balancer(oversample=oversample,
-                            undersample=undersample,
-                            n_neighbors=n_neighbors,
-                            **kwargs)
+        balancer = Balancer(
+            oversample=oversample,
+            undersample=undersample,
+            n_neighbors=n_neighbors,
+            **kwargs
+        )
 
         # Add mapping from ATOM to balancer for cleaner printing
         balancer.mapping = self.mapping
@@ -500,13 +513,14 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         kwargs = self._prepare_kwargs(kwargs, FeatureGenerator().get_params())
-        feature_generator = FeatureGenerator(strategy=strategy,
-                                             n_features=n_features,
-                                             generations=generations,
-                                             population=population,
-                                             operators=operators,
-                                             **kwargs)
-        feature_generator.fit(self.X_train, self.y_train)
+        feature_generator = FeatureGenerator(
+            strategy=strategy,
+            n_features=n_features,
+            generations=generations,
+            population=population,
+            operators=operators,
+            **kwargs
+        ).fit(self.X_train, self.y_train)
 
         self.X = feature_generator.transform(self.X)
         self.pipeline = self.pipeline.append(
@@ -568,13 +582,14 @@ class ATOM(BasePredictor, ATOMPlotter):
                     kwargs['scoring'] = self.metric_[0]
 
         kwargs = self._prepare_kwargs(kwargs, FeatureSelector().get_params())
-        feature_selector = FeatureSelector(strategy=strategy,
-                                           solver=solver,
-                                           n_features=n_features,
-                                           max_frac_repeated=max_frac_repeated,
-                                           max_correlation=max_correlation,
-                                           **kwargs)
-        feature_selector.fit(self.X_train, self.y_train)
+        feature_selector = FeatureSelector(
+            strategy=strategy,
+            solver=solver,
+            n_features=n_features,
+            max_frac_repeated=max_frac_repeated,
+            max_correlation=max_correlation,
+            **kwargs
+        ).fit(self.X_train, self.y_train)
 
         self.X = feature_selector.transform(self.X)
         self.pipeline = self.pipeline.append(

@@ -126,11 +126,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def __init__(self, models, metric, greater_is_better, needs_proba,
                  needs_threshold, n_calls, n_random_starts, bo_params,
                  bagging, n_jobs, verbose, warnings, logger, random_state):
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         warnings=warnings,
-                         logger=logger,
-                         random_state=random_state)
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            random_state=random_state
+        )
 
         # Data attribute
         self._data = None
@@ -185,8 +187,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             self.n_calls = n_calls
             if len(self.n_calls) != len(self.models):
                 raise ValueError(
-                    "Invalid value for the n_calls parameter. Length should " +
-                    "be equal to the number of models, got len(models)=" +
+                    "Invalid value for the n_calls parameter. Length should "
+                    "be equal to the number of models, got len(models)="
                     f"{len(self.models)} and len(n_calls)={len(self.n_calls)}.")
         else:
             self.n_calls = [n_calls for _ in self.models]
@@ -194,9 +196,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             self.n_random_starts = n_random_starts
             if len(self.n_random_starts) != len(self.models):
                 raise ValueError(
-                    "Invalid value for the n_random_starts parameter. Length " +
-                    "should be equal to the number of models, got len(models)=" +
-                    f"{len(self.models)} and len(n_random_starts)=" +
+                    "Invalid value for the n_random_starts parameter. Length "
+                    "should be equal to the number of models, got len(models)="
+                    f"{len(self.models)} and len(n_random_starts)="
                     f"{len(self.n_random_starts)}.")
         else:
             self.n_random_starts = [n_random_starts for _ in self.models]
@@ -204,8 +206,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             self.bagging = bagging
             if len(self.bagging) != len(self.models):
                 raise ValueError(
-                    "Invalid value for the bagging parameter. Length should " +
-                    "be equal to the number of models, got len(models)=" +
+                    "Invalid value for the bagging parameter. Length should "
+                    "be equal to the number of models, got len(models)="
                     f"{len(self.models)} and len(bagging)={len(self.bagging)}.")
         else:
             self.bagging = [bagging for _ in self.models]
@@ -218,7 +220,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if not isinstance(self.bo_params.get('dimensions'), dict):
                 if len(self.models) != 1:
                     raise TypeError(
-                        "Invalid type for the dimensions parameter. For >1 " +
+                        "Invalid type for the dimensions parameter. For >1 "
                         "models, use a dictionary with the model names as keys!")
                 else:
                     self.bo_params['dimensions'] = \
@@ -250,9 +252,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Check metric parameters
         if isinstance(gib, (list, tuple)):
             if len(gib) != len(metric):
-                raise ValueError("Invalid value for the greater_is_better " +
-                                 "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                raise ValueError("Invalid value for the greater_is_better "
+                                 "parameter. Length should be equal to the number "
+                                 f"of metrics, got len(metric)={len(metric)} "
                                  f"and len(greater_is_better)={len(gib)}.")
         else:
             gib = [gib for _ in metric]
@@ -260,17 +262,17 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if isinstance(needs_proba, (list, tuple)):
             if len(needs_proba) != len(metric):
                 raise ValueError("Invalid value for the needs_proba " +
-                                 "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                                 "parameter. Length should be equal to the number "
+                                 f"of metrics, got len(metric)={len(metric)} "
                                  f"and len(needs_proba)={len(needs_proba)}.")
         else:
             needs_proba = [needs_proba for _ in metric]
 
         if isinstance(needs_threshold, (list, tuple)):
             if len(needs_threshold) != len(metric):
-                raise ValueError("Invalid value for the needs_threshold " +
-                                 "parameter. Length should be equal to the number " +
-                                 f"of metrics, got len(metric)={len(metric)} " +
+                raise ValueError("Invalid value for the needs_threshold "
+                                 "parameter. Length should be equal to the number "
+                                 f"of metrics, got len(metric)={len(metric)} "
                                  f"and len(needs_threshold)={len(needs_threshold)}.")
         else:
             needs_threshold = [needs_threshold for _ in metric]
@@ -293,7 +295,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             test = merge(to_df(args[1]), to_series(args[3]))
         else:
             raise ValueError(
-                "Invalid parameters. Must be either of the form (train, " +
+                "Invalid parameters. Must be either of the form (train, "
                 "test) or (X_train, X_test, y_train, y_test).")
 
         # Update the data attributes
@@ -321,7 +323,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             # Check n_calls parameter
             if n_calls < 0:
-                raise ValueError("Invalid value for the n_calls parameter. " +
+                raise ValueError("Invalid value for the n_calls parameter. "
                                  f"Value should be >=0, got {n_calls}.")
 
             model_time = time()
@@ -357,9 +359,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             except Exception as ex:
                 if idx != 0 or (hasattr(subclass, 'get_domain') and n_calls > 0):
                     self.log('', 1)  # Add extra line
-                self.log("Exception encountered while running the "
-                         + f"{m} model. Removing model from "
-                         + f"pipeline. \n{type(ex).__name__}: {ex}", 1)
+                self.log(f"Exception encountered while running the {m} model. Remov"
+                         f"ing model from pipeline. \n{type(ex).__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
                 self.errors[m] = ex
