@@ -72,7 +72,7 @@ def test_models_are_reset():
     """Assert that the models attributes is reset after fitting."""
     sh = SuccessiveHalvingRegressor(['Tree', 'RF', 'AdaB', 'LGB'], random_state=1)
     sh.run(reg_train, reg_test)
-    assert sh.models == ['OLS', 'BR', 'RF', 'LGB']
+    assert sh.models == ['Tree', 'RF', 'AdaB', 'LGB']
 
 
 def test_successive_halving_train_index_is_reset():

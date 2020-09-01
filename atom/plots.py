@@ -840,8 +840,8 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        show: int, optional (default=None)
-            Number of best features to show in the plot. None for all.
+        show: int or None, optional (default=None)
+            Number of best features to show in the plot. None to show all.
 
         n_repeats: int, optional (default=10)
             Number of times to permute each feature.
@@ -861,7 +861,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
-        if show is None:
+        if show is None or show > self.X.shape[1]:
             show = self.X.shape[1]
         elif show <= 0:
             raise ValueError("Invalid value for the show parameter."
@@ -958,8 +958,8 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        show: int, optional (default=None)
-            Number of best features to show in the plot. None for all.
+        show: int or None, optional (default=None)
+            Number of best features to show in the plot. None to show all.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -976,7 +976,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._check_models(models)
-        if show is None:
+        if show is None or show > self.X.shape[1]:
             show = self.X.shape[1]
         elif show <= 0:
             raise ValueError("Invalid value for the show parameter."
@@ -1272,7 +1272,7 @@ class BaseModelPlotter(BasePlotter):
                     label=label
                 )
 
-                # Fit a linear line on the points
+                # Fit the points using linear regression
                 from .models import OrdinaryLeastSquares
                 model = OrdinaryLeastSquares(self).get_model()
                 model.fit(np.array(getattr(self, f'y_{set_}')).reshape(-1, 1),
@@ -2169,10 +2169,181 @@ class BaseModelPlotter(BasePlotter):
             **kwargs
         )
 
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize)
-        ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize)
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
         self._plot(
             title='Dependence plot' if not title else title,
+            filename=filename,
+            display=display
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def summary_plot(self,
+                     models: Union[None, str, Sequence[str]] = None,
+                     show: Optional[int] = None,
+                     title: Optional[str] = None,
+                     figsize: Tuple[int, int] = (10, 6),
+                     filename: Optional[str] = None,
+                     display: bool = True,
+                     **kwargs):
+        """Plot SHAP's summary plot.
+
+        Create a SHAP beeswarm plot, colored by feature values when they are
+        provided. The explainer will be chosen automatically from the model's type.
+
+        Parameters
+        ----------
+        models: str, list, tuple or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        show: int or None, optional (default=None)
+            Number of features to show in the plot. None to show all.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file (to save). If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for shap's force_plot.
+
+        """
+        check_is_fitted(self, 'results')
+        m = self._check_models(models, max_one=True)
+        explainer = self._get_explainer(m)
+
+        if show is None or show > self.X.shape[1]:
+            show = self.X.shape[1]
+        elif show <= 0:
+            raise ValueError("Invalid value for the show parameter."
+                             f"Value should be >0, got {show}.")
+
+        fig, ax = plt.subplots(figsize=figsize)
+        shap.summary_plot(
+            shap_values=explainer.shap_values(self.X_test),
+            features=self.X_test,
+            max_display=show,
+            plot_size=figsize,
+            show=False,
+            **kwargs
+        )
+
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        self._plot(
+            title='Summary plot' if not title else title,
+            filename=filename,
+            display=display
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def decision_plot(self,
+                      models: Union[None, str, Sequence[str]] = None,
+                      index: Optional[Union[int, Sequence]] = None,
+                      title: Optional[str] = None,
+                      figsize: Optional[Tuple[int, int]] = None,
+                      filename: Optional[str] = None,
+                      display: bool = True,
+                      **kwargs):
+        """Plot SHAP's decision plot.
+
+        Visualize model decisions using cumulative SHAP values. Each plotted line
+        explains a single model prediction. If a single prediction is plotted,
+        feature values will be printed in the plot (if supplied). If multiple
+        predictions are plotted together, feature values will not be printed.
+        Plotting too many predictions together will make the plot unintelligible.
+        The explainer will be chosen automatically from the model's type.
+
+        Parameters
+        ----------
+        models: str, list, tuple or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        index: int, sequence or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If tuple (n, m), select
+            rows n until m. If None, select all rows in the test set.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=None)
+            Figure's size, format as (x, y). If None, adapts size to the
+            number of features.
+
+        filename: str or None, optional (default=None)
+            Name of the file (to save). If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for shap's force_plot.
+
+        """
+        check_is_fitted(self, 'results')
+        m = self._check_models(models, max_one=True)
+        explainer = self._get_explainer(m)
+
+        # Get the indices
+        if index is None:
+            rows = self.X_test
+        elif isinstance(index, int):
+            if index < 0:
+                rows = self.X.iloc[[len(self.X) + index]]
+            else:
+                rows = self.X.iloc[[index]]
+        else:
+            rows = self.X.iloc[slice(*index)]
+
+        if self.task.startswith('multi') and len(rows) > 1:
+            raise ValueError("Invalid value for the index parameter. The decision_"
+                             "plot method only supports single observations "
+                             f"for multiclass classification tasks, got {index}.")
+
+        # The expected value needs to be calculated after the shap values
+        shap_values = explainer.shap_values(rows)
+        expected_value = explainer.expected_value
+
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + self.X.shape[1]/4))
+
+        fig, ax = plt.subplots(figsize=figsize)
+        if not self.task.startswith('multi'):
+            shap.decision_plot(
+                base_value=expected_value,
+                shap_values=shap_values,
+                features=rows,
+                auto_size_plot=False,
+                show=False,
+                **kwargs
+            )
+        else:
+            if not hasattr(self, 'mapping'):
+                self.mapping = {str(i): i for i in self.y_test.unique()}
+
+            shap.multioutput_decision_plot(
+                base_values=expected_value,
+                shap_values=shap_values,
+                row_index=0,
+                features=rows,
+                legend_labels=self.mapping,
+                auto_size_plot=False,
+                legend_location='lower right',
+                show=False,
+                **kwargs
+            )
+
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        self._plot(
+            title='Decision plot' if not title else title,
             filename=filename,
             display=display
         )
