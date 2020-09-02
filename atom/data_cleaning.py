@@ -446,7 +446,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None, y is not used in the estimator.
+            - If None, y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).

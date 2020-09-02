@@ -64,32 +64,38 @@ def test_n_features_above_maximum():
 
 def test_attribute_genetic_features():
     """Assert that the genetic_features attribute is created."""
-    generator = FeatureGenerator(strategy='gfg',
-                                 generations=3,
-                                 population=200,
-                                 random_state=1)
+    generator = FeatureGenerator(
+        strategy='gfg',
+        generations=3,
+        population=200,
+        random_state=1
+    )
     _ = generator.fit_transform(X_bin, y_bin)
     assert isinstance(generator.genetic_features, pd.DataFrame)
 
 
 def test_genetic_maximum_features():
     """Assert that the features are 1% of the population for n_features=None."""
-    generator = FeatureGenerator(strategy='gfg',
-                                 n_features=None,
-                                 generations=4,
-                                 population=400,
-                                 random_state=1)
+    generator = FeatureGenerator(
+        strategy='gfg',
+        n_features=None,
+        generations=4,
+        population=400,
+        random_state=1
+    )
     X = generator.fit_transform(X_bin, y_bin)
     assert X.shape[1] == X_bin.shape[1] + 4
 
 
 def test_updated_dataset():
     """Assert that the feature set contains the new features."""
-    generator = FeatureGenerator(strategy='gfg',
-                                 n_features=1,
-                                 generations=4,
-                                 population=1000,
-                                 random_state=1)
+    generator = FeatureGenerator(
+        strategy='gfg',
+        n_features=1,
+        generations=4,
+        population=1000,
+        random_state=1
+    )
     X = generator.fit_transform(X_bin, y_bin)
     assert X.shape[1] == X_bin.shape[1] + 1
 
@@ -215,74 +221,109 @@ def test_PCA_components():
 
 def test_SFM_strategy_not_threshold():
     """Assert that if threshold is not specified, SFM selects n_features features."""
-    fs = FeatureSelector(strategy='SFM',
-                         solver=ExtraTreesClassifier(random_state=1),
-                         n_features=16)
+    fs = FeatureSelector(
+        strategy='SFM',
+        solver=ExtraTreesClassifier(random_state=1),
+        n_features=16,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 16
 
 
 def test_SFM_strategy_fitted_solver():
     """Assert that the SFM strategy works when the solver is already fitted."""
-    rf = ExtraTreesClassifier().fit(X_bin, y_bin)
-    fs = FeatureSelector('SFM', solver=rf, n_features=7)
+    fs = FeatureSelector(
+        strategy='SFM',
+        solver=ExtraTreesClassifier(random_state=1).fit(X_bin, y_bin),
+        n_features=7,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin)
     assert X.shape[1] == 7
 
 
 def test_SFM_strategy_not_fitted_solver():
     """Assert that the SFM strategy works when the solver is not fitted."""
-    fs = FeatureSelector('SFM', solver=ExtraTreesClassifier(), n_features=5)
+    fs = FeatureSelector(
+        strategy='SFM',
+        solver=ExtraTreesClassifier(random_state=1),
+        n_features=5
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
 
 
 def test_RFE_strategy():
     """Assert that the RFE strategy works as intended."""
-    fs = FeatureSelector('RFE', solver=ExtraTreesClassifier(), n_features=13)
+    fs = FeatureSelector(
+        strategy='RFE',
+        solver=ExtraTreesClassifier(random_state=1),
+        n_features=13,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 13
 
 
 def test_RFECV_strategy_before_pipeline_classification():
     """Assert that the RFECV strategy works before a fitted pipeline."""
-    fs = FeatureSelector('RFECV', solver='LGB_class', n_features=None)
+    fs = FeatureSelector(
+        strategy='RFECV',
+        solver='LGB_class',
+        n_features=None,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 20
 
 
 def test_RFECV_strategy_before_pipeline_regression():
     """Assert that the RFECV strategy works before a fitted pipeline."""
-    fs = FeatureSelector('RFECV', solver='LGB_reg', n_features=16)
+    fs = FeatureSelector(
+        strategy='RFECV',
+        solver='LGB_reg',
+        n_features=16,
+        random_state=1
+    )
     X = fs.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
 
 
 def test_kwargs_parameter_threshold():
     """Assert that the kwargs parameter works as intended (add threshold)."""
-    fs = FeatureSelector(strategy='SFM',
-                         solver=ExtraTreesClassifier(random_state=1),
-                         n_features=21,
-                         threshold='mean')
+    fs = FeatureSelector(
+        strategy='SFM',
+        solver=ExtraTreesClassifier(random_state=1),
+        n_features=21,
+        threshold='mean',
+        random_state=1
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 10
 
 
 def test_kwargs_parameter_tol():
     """Assert that the kwargs parameter works as intended (add tol)."""
-    fs = FeatureSelector(strategy='PCA',
-                         solver='arpack',
-                         tol=0.001,
-                         n_features=12)
+    fs = FeatureSelector(
+        strategy='PCA',
+        solver='arpack',
+        tol=0.001,
+        n_features=12,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin)
     assert X.shape[1] == 12
 
 
 def test_kwargs_parameter_scoring():
     """Assert that the kwargs parameter works as intended (add scoring acronym)."""
-    fs = FeatureSelector(strategy='RFECV',
-                         solver='lgb_class',
-                         scoring='auc',
-                         n_features=12)
+    fs = FeatureSelector(
+        strategy='RFECV',
+        solver='lgb_class',
+        scoring='auc',
+        n_features=12,
+        random_state=1
+    )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 24

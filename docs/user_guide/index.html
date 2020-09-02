@@ -56,7 +56,7 @@
 </li>
             
 <li>
-    <a href="../API/ATOM/atomloader/" class="dropdown-item">load</a>
+    <a href="../API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
     </ul>
   </li>
@@ -166,19 +166,19 @@
 </li>
             
 <li>
-    <a href="../API/prediction_methods/predict_proba.md" class="dropdown-item">predict_proba</a>
+    <a href="../API/prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/predict_log_proba.md" class="dropdown-item">predict_log_proba</a>
+    <a href="../API/prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/decision_function.md" class="dropdown-item">decision_function</a>
+    <a href="../API/prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/score.md" class="dropdown-item">score</a>
+    <a href="../API/prediction_methods/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -277,6 +277,22 @@
             
 <li>
     <a href="../API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
+</li>
+            
+<li>
+    <a href="../API/plots/force_plot.md" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/dependence_plot.md" class="dropdown-item">dependence_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/summary_plot.md" class="dropdown-item">summary_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/decision_plot.md" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -450,22 +466,26 @@
 <p><br><br></p>
 <h1 id="first-steps">First steps</h1>
 <hr />
-<p>You can quickly install atom via <code>pip</code> or <code>conda</code>, see the <a href="../getting_started/#installation">intallation guide</a>.
- The easiest way to use ATOM is through <a href="../API/ATOM/atomclassifier">ATOMClassifier</a>
- or <a href="../API/ATOM/atomregressor">ATOMRegressor</a>. These classes are wrappers for all
- other data cleaning, training and plotting methods. Contrary to sklearn's API,
- the ATOM instance contains the data you want to manipulate. Calling a method will
- apply all transformations on the data it contains.</p>
+<p>You can quickly install atom using <code>pip</code> or <code>conda</code>, see the <a href="../getting_started/#installation">intallation guide</a>.
+ The easiest way to use ATOM is through one of the two ATOM classes:</p>
+<ul>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> for binary or multiclass classification tasks.</li>
+<li><a href="../API/ATOM/atomregressor">ATOMRegressor</a> for regression tasks.</li>
+</ul>
+<p>The ATOM classes are convenient wrappers for all other data cleaning, feature engineering
+ and training classes that the package provides. Contrary to sklearn's API, an ATOM
+ instance contains the data you want to manipulate. Calling one of its methods will
+ apply the transformations on the data it contains. Let's get started!</p>
 <p>First, create an ATOM instance and provide the data you want to use.</p>
 <pre><code>atom = ATOMClassifier(X, y)
 </code></pre>
 <p>Apply data cleaning methods through the class. For example, calling
-<a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> will handle all missing
- values in the dataset.</p>
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> will handle
+ all missing values in the dataset.</p>
 <pre><code>atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
 </code></pre>
-<p>Fit the models you want to compare to the data.</p>
-<pre><code>atom.run(['GNB', 'ET', 'MLP'], metric='average_precision', n_calls=25, n_random_starts=10)
+<p>Select the best hyperparameters and fit a Random Forest and AdaBoost model.</p>
+<pre><code>atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_random_starts=10)
 </code></pre>
 <p>Analyze the results:</p>
 <pre><code>atom.ET.feature_importances(show=10, filename='feature_importance_plot')
@@ -546,6 +566,12 @@ Feature engineering is the process of creating new features from the existing on
 <p>DFS can create many new features and not all of them will be useful. Use the
 <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class
 to reduce the number of features!</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
+<code>nan</code> values. Check the warnings that may pop up or use the
+<a href="./API/ATOM/atomclassifier.md/#properties">missing</a> property.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -632,6 +658,11 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <p><br><br></p>
 <h1 id="model-fitting-and-evaluation">Model fitting and evaluation</h1>
 <hr />
+<h3 id="training">Training</h3>
+<p>Six classes: TrainerClassifier and reg, SuccessiveHalvingClassifier and reg,
+ and TrainSizingClassifier and reg. Accessed from an ATOM instance through run,
+ successive_halving and train_sizing.</p>
+<p><br></p>
 <p>A couple of things to take into account:</p>
 <ul>
 <li>The metric implementation follows <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values">sklearn's API</a>.
@@ -765,11 +796,24 @@ Fontsize for ticks.
 </table>
 
 <p><br></p>
+<h3 id="shap">SHAP</h3>
+<p>The <a href="https://github.com/slundberg/shap">SHAP</a> (SHapley Additive exPlanations) python
+ package uses a game theoretic approach to explain the output of any machine
+ learning model. It connects optimal credit allocation with local explanations
+ using the classic Shapley values from game theory and their related extensions.
+ ATOM implements methods to plot 4 of shap's plotting functions directly from its
+ API. The explainer will be chosen automatically based on the model's type.
+ The four plots are: <a href="../API/plots/force_plot">force_plot</a>,
+ <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>
+ and <a href="../API/plots/decision_plot">decision_plot</a>.</p>
+<p><br></p>
 <h3 id="available-plots">Available plots</h3>
-<p>A list of available plots can be find hereunder. Note that not all all plots can be
- used for all tasks.</p>
+<p>A list of available plots can be find hereunder. Note that not all plots can be
+ called from the model subclasses and that their availability can depend on the
+ task at hand.</p>
 <ul>
 <li><a href="../API/plots/plot_correlation">plot_correlation</a></li>
+<li><a href="../API/plots/plot_pipeline">plot_pipeline</a></li>
 <li><a href="../API/plots/plot_pca">plot_pca</a></li>
 <li><a href="../API/plots/plot_components">plot_components</a></li>
 <li><a href="../API/plots/plot_rfecv">plot_rfecv</a></li>
@@ -782,12 +826,19 @@ Fontsize for ticks.
 <li><a href="../API/plots/plot_prc">plot_prc</a></li>
 <li><a href="../API/plots/plot_permutation_importance">plot_permutation_importance</a></li>
 <li><a href="../API/plots/plot_feature_importance">plot_feature_importance</a></li>
+<li><a href="../API/plots/plot_partial_dependence">plot_partial_dependence</a></li>
+<li><a href="../API/plots/plot_errors">plot_errors</a></li>
+<li><a href="../API/plots/plot_residuals">plot_residuals</a></li>
 <li><a href="../API/plots/plot_confusion_matrix">plot_confusion_matrix</a></li>
 <li><a href="../API/plots/plot_threshold">plot_threshold</a></li>
 <li><a href="../API/plots/plot_probabilities">plot_probabilities</a></li>
 <li><a href="../API/plots/plot_calibration">plot_calibration</a></li>
 <li><a href="../API/plots/plot_gain">plot_gain</a></li>
 <li><a href="../API/plots/plot_lift">plot_lift</a></li>
+<li><a href="../API/plots/force_plot">force_plot</a></li>
+<li><a href="../API/plots/dependence_plot">dependence_plot</a></li>
+<li><a href="../API/plots/summary_plot">summary_plot</a></li>
+<li><a href="../API/plots/decision_plot">decision_plot</a></li>
 </ul></div>
             </div>
         </div>

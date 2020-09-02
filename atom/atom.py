@@ -293,30 +293,30 @@ class ATOM(BasePredictor, ATOMPlotter):
                   y: Y_TYPES = None,
                   verbose: Optional[int] = None,
                   **kwargs):
-        """Apply all data transformations in ATOM's pipeline to new data.
+        """Transform new data through all the pre-processing steps in the pipeline.
 
-        The default option is to not use the outliers and balance transformers
-        since they should only be used on the training set.
+        The outliers and balance transformations are not included by default since
+        they should only be applied on the training set.
 
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
-            - If None: y is not used in the transformation.
+        y: int, str, sequence, np.array, pd.Series or None, optional (default=None)
+            - If None: y is ignored in the transformers.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        verbose: int, optional (default=None)
+        verbose: int or None, optional (default=None)
             Verbosity level of the transformers. If None, it uses ATOM's verbosity.
 
         **kwargs
-            Additional keyword arguments to customize which transforming methods to
-            apply. You can either select them via the index in the pipeline, e.g.
-            pipeline = [0, 1, 4] or via every individual transformer, e.g.
-            impute=True, feature_selection=False.
+            Additional keyword arguments to customize which transformers to apply.
+            You can either select them including their index in the pipeline
+            parameter, e.g. `pipeline=[0, 1, 4]` or include/exclude them individually
+            using their method names, e.g. `impute=True, feature_selection=False`.
 
         Returns
         -------

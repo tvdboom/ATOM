@@ -1,15 +1,15 @@
-# predict
----------
+# decision_function
+-------------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">predict</strong>(X, verbose=None, \*\*kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L107">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">decision_function</strong>(X, verbose=None, \*\*kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L125">[source]</a></div></pre>
 <div style="padding-left:3%">
-Transform the data and make predictions on new data. If called from a
+Transform the data and evaluate the decision function on new data. If called from a
  [training instance](../../../user_guide/#training), it will use the best
  model in the pipeline (under the `winner` attribute). If called from a
  [model subclass](../../../user_guide/#model-subclasses), it will use that model.
- The model has to have a `predict` method.
+ The model has to have a `decision_function` method.
 <br /><br />
 <table>
 <tr>
@@ -45,8 +45,8 @@ Same keyword arguments as the [transform](transform.md) method to
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['Tree', 'AdaB'], metric='AP', n_calls=10)
+atom.run('kSVM', metric='accuracy')
 
-# Make predictions on new data
-predictions = atom.adab.predict(X_new)
+# Evaluate the decision function on new data
+predictions = atom.ksvm.decision_function(X_new)
 ```

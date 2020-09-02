@@ -44,26 +44,30 @@ So, this sounds a bit like AutoML, how is ATOM different than
 # First steps
 -------------
 
-You can quickly install atom via `pip` or `conda`, see the [intallation guide](../getting_started/#installation).
- The easiest way to use ATOM is through [ATOMClassifier](../API/ATOM/atomclassifier)
- or [ATOMRegressor](../API/ATOM/atomregressor). These classes are wrappers for all
- other data cleaning, training and plotting methods. Contrary to sklearn's API,
- the ATOM instance contains the data you want to manipulate. Calling a method will
- apply all transformations on the data it contains.
- 
+You can quickly install atom using `pip` or `conda`, see the [intallation guide](../getting_started/#installation).
+ The easiest way to use ATOM is through one of the two ATOM classes:
+
+* [ATOMClassifier](../API/ATOM/atomclassifier) for binary or multiclass classification tasks.
+* [ATOMRegressor](../API/ATOM/atomregressor) for regression tasks.
+
+The ATOM classes are convenient wrappers for all other data cleaning, feature engineering
+ and training classes that the package provides. Contrary to sklearn's API, an ATOM
+ instance contains the data you want to manipulate. Calling one of its methods will
+ apply the transformations on the data it contains. Let's get started!
+
 First, create an ATOM instance and provide the data you want to use.
 
     atom = ATOMClassifier(X, y)
 
 Apply data cleaning methods through the class. For example, calling
-[impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will handle all missing
- values in the dataset.
+ [impute](../API/ATOM/atomclassifier/#atomclassifier-impute) will handle
+ all missing values in the dataset.
 
     atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
 
-Fit the models you want to compare to the data.
+Select the best hyperparameters and fit a Random Forest and AdaBoost model.
 
-    atom.run(['GNB', 'ET', 'MLP'], metric='average_precision', n_calls=25, n_random_starts=10)
+    atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_random_starts=10)
 
 Analyze the results:
 
@@ -275,6 +279,13 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 # Model fitting and evaluation
 ------------------------------
 
+### Training
+
+Six classes: TrainerClassifier and reg, SuccessiveHalvingClassifier and reg,
+ and TrainSizingClassifier and reg. Accessed from an ATOM instance through run,
+ successive_halving and train_sizing.
+
+<br>
 
 A couple of things to take into account:
 
@@ -435,15 +446,33 @@ Fontsize for ticks.
 
 </td></tr>
 </table>
+
+
 <br>
 
+### SHAP
+
+The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations) python
+ package uses a game theoretic approach to explain the output of any machine
+ learning model. It connects optimal credit allocation with local explanations
+ using the classic Shapley values from game theory and their related extensions.
+ ATOM implements methods to plot 4 of shap's plotting functions directly from its
+ API. The explainer will be chosen automatically based on the model's type.
+ The four plots are: [force_plot](../API/plots/force_plot),
+ [dependence_plot](../API/plots/dependence_plot), [summary_plot](../API/plots/summary_plot)
+ and [decision_plot](../API/plots/decision_plot).
+ 
+
+<br>
 
 ### Available plots
 
-A list of available plots can be find hereunder. Note that not all all plots can be
- used for all tasks.
+A list of available plots can be find hereunder. Note that not all plots can be
+ called from the model subclasses and that their availability can depend on the
+ task at hand.
 
 * [plot_correlation](../API/plots/plot_correlation)
+* [plot_pipeline](../API/plots/plot_pipeline)
 * [plot_pca](../API/plots/plot_pca)
 * [plot_components](../API/plots/plot_components)
 * [plot_rfecv](../API/plots/plot_rfecv)
@@ -456,9 +485,16 @@ A list of available plots can be find hereunder. Note that not all all plots can
 * [plot_prc](../API/plots/plot_prc)
 * [plot_permutation_importance](../API/plots/plot_permutation_importance)
 * [plot_feature_importance](../API/plots/plot_feature_importance)
+* [plot_partial_dependence](../API/plots/plot_partial_dependence)
+* [plot_errors](../API/plots/plot_errors)
+* [plot_residuals](../API/plots/plot_residuals)
 * [plot_confusion_matrix](../API/plots/plot_confusion_matrix)
 * [plot_threshold](../API/plots/plot_threshold)
 * [plot_probabilities](../API/plots/plot_probabilities)
 * [plot_calibration](../API/plots/plot_calibration)
 * [plot_gain](../API/plots/plot_gain)
 * [plot_lift](../API/plots/plot_lift)
+* [force_plot](../API/plots/force_plot)
+* [dependence_plot](../API/plots/dependence_plot)
+* [summary_plot](../API/plots/summary_plot)
+* [decision_plot](../API/plots/decision_plot)

@@ -23,7 +23,7 @@ nav:
     - ATOM:
         - ATOMClassifier: API/ATOM/atomclassifier.md
         - ATOMRegressor: API/ATOM/atomregressor.md
-        - load: API/ATOM/atomloader.md
+        - ATOMLoader: API/ATOM/atomloader.md
     - Data cleaning:
          - Scaler: API/data_cleaning/scaler.md
          - StandardCleaner: API/data_cleaning/standard_cleaner.md
@@ -75,6 +75,10 @@ nav:
         - plot_calibration: API/plots/plot_calibration.md
         - plot_gains: API/plots/plot_gains.md
         - plot_lift: API/plots/plot_lift.md
+        - force_plot: API/plots/force_plot.md
+        - dependence_plot: API/plots/dependence_plot.md
+        - summary_plot: API/plots/summary_plot.md
+        - decision_plot: API/plots/decision_plot.md
 - Examples:
     - Binary classification: examples/binary_classification/binary_classification.md
     - Multiclass_classification: examples/multiclass_classification/multiclass_classification.md

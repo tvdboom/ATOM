@@ -131,6 +131,12 @@ Seed used by the random number generator. If None, the random number
  generator is the RandomState instance used by np.random.
 </blockquote>
 
+<strong>**kwargs</strong>
+<blockquote>
+Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
+ See the corresponding sklearn documentation for the available options.
+</blockquote>
+
 </td>
 </tr>
 </table>
@@ -370,7 +376,7 @@ Transformed feature set.
 
 <a name="FeatureSelector-get-params"></a>
 <pre><em>function</em> FeatureSelector.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -416,7 +422,7 @@ Name to save the file with. None to save with default name.
 
 <a name="FeatureSelector-set-params"></a>
 <pre><em>function</em> FeatureSelector.<strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
 <br><br>

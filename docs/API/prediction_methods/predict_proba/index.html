@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/ATOM/atomloader/">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/prediction_methods/predict_proba/">
         <link rel="shortcut icon" href="../../../img/favicon.ico">
-        <title>ATOMLoader - ATOM</title>
+        <title>predict_proba - ATOM</title>
         <link href="../../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../../css/base.css" rel="stylesheet">
@@ -48,15 +48,15 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../atomclassifier/" class="dropdown-item">ATOMClassifier</a>
+    <a href="../../ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
 </li>
             
 <li>
-    <a href="../atomregressor/" class="dropdown-item">ATOMRegressor</a>
+    <a href="../../ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">ATOMLoader</a>
+    <a href="../../ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
     </ul>
   </li>
@@ -158,27 +158,27 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="./" class="dropdown-item active">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -354,12 +354,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../atomregressor/" class="nav-link">
+                                <a rel="prev" href="../predict/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../data_cleaning/scaler/" class="nav-link">
+                                <a rel="next" href="../predict_log_proba/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -384,7 +384,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#atomloader" class="nav-link">ATOMLoader</a>
+            <li class="nav-item" data-level="1"><a href="#predict_proba" class="nav-link">predict_proba</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#example" class="nav-link">Example</a>
               <ul class="nav flex-column">
@@ -397,53 +397,39 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="atomloader">ATOMLoader</h1>
+<h1 id="predict_proba">predict_proba</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename=None, X=None, y=-1, transform_data=True, verbose=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None, **kwargs) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L113">[source]</a></div></pre>
 <div style="padding-left:3%">
-Load a class instance from a pickle file. If its a
- <a href="../../../user_guide/#training">training instance</a> that was saved using
- <code>save_data=False</code>, you can load new data in it. If its an
- <a href="../../../user_guide/#first-steps">ATOM instance</a>, you can directly apply all data
- transformations in the pipeline to the new data.
+Transform the data and make probabilistic predictions on new data. If called from a
+ <a href="../../../user_guide/#training">training instance</a>, it will use the best
+ model in the pipeline (under the <code>winner</code> attribute). If called from a
+ <a href="../../../user_guide/#model-subclasses">model subclass</a>, it will use that model.
+ The model has to have a <code>predict_proba</code> method.
 <br /><br />
-<table width="100%">
+<table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>filename: str</strong>
+<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
 <blockquote>
-Name of the pickle file to load.
-</blockquote>
-<strong>X: dict, sequence, np.array, pd.DataFrame or None, optional (default=None)</strong>
-<blockquote>
-Data containing the features, with shape=(n_samples, n_features). Only use this
- parameter if the file is a <a href="../../../user_guide/#training">training instance</a> that
- was saved using <code>save_data=False</code>. See the <a href="../atomclassifier/#atomclassifier-save">save</a>
- method.
-</blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series, optional (default=-1)</strong>
-<blockquote>
-<ul>
-<li>If int: Index of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
-</ul>
-This parameter is ignored if X=None.
-</blockquote>
-<strong>transform_data: bool, optional (default=True)</strong>
-<blockquote>
-Whether to transform the provided data through all the steps in the instance's
- pipeline. This parameter is ignored if the loaded file is not an
- <a href="../../../user_guide/#first-steps">ATOM instance</a>.
+Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the transformations applied on the new data. If None, use the
- verbosity from the loaded instance. This parameter is ignored if the loaded file
- is not an <a href="../../../user_guide/#first-steps">ATOM instance</a>.
+Verbosity level of the output. If None, it uses ATOM's verbosity. Possible values are:
+<ul>
+<li>0 to not print anything.</li>
+<li>1 to print basic information.</li>
+<li>2 to print detailed information.</li>
+</ul>
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Same keyword arguments as the <a href="../transform/">transform</a> method to
+ include/exclude transformers from the transformations.
 </blockquote>
 </tr>
 </table>
@@ -451,16 +437,13 @@ Verbosity level of the transformations applied on the new data. If None, use the
 <br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier, ATOMLoader
+<pre><code class="python">from atom import ATOMClassifier
 
-# Save an atom instance to a pickle file
 atom = ATOMClassifier(X, y)
-atom.encode(max_onehot=12, encode_type='HelmertEncoder')
-atom.run('LR', metric='AP', n_calls=25, n_random_starts=10)
-atom.save('atom_lr', save_data=False)
+atom.run(['Tree', 'AdaB'], metric='AP', n_calls=10)
 
-# Load the class again and add the data again
-atom = ATOMLoader('atom_lr', X, y, verbose=0)
+# Make predictions on new data
+predictions = atom.adab.predict_proba(X_new)
 </code></pre></div>
             </div>
         </div>

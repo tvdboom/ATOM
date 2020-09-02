@@ -27,35 +27,38 @@ def ATOMLoader(filename: str,
                y: Y_TYPES = -1,
                transform_data: bool = True,
                verbose: Optional[int] = None):
-    """Load a class from a pickle file.
+    """Load a class instance from a pickle file.
 
     If its a training instance, you can load new data.
     If its an ATOM instance, you can load new data and apply all data
-    transformations in the pipeline.
+    transformations in the pipeline to the new data.
 
     Parameters
     ----------
     filename: str
         Name of the pickle file to load.
 
-    X: dict, sequence, np.array or pd.DataFrame
-        Data containing the features, with shape=(n_samples, n_features).
-        Only use this parameter if the file is an ATOM or training instance that
-        was saved using save_data=False. See the save method in basetransformer.py
+    X: dict, sequence, np.array, pd.DataFrame or None, optional (default=None)
+        Data containing the features, with shape=(n_samples, n_features). Only
+        use this parameter if the file is a training instance that was saved
+        using `save_data=False`. See the save method in basetransformer.py.
 
-    y: int, str, sequence, np.array or pd.Series, optional (default=None)
-        - If None: y is not used in the transformation.
+    y: int, str, sequence, np.array or pd.Series, optional (default=-1)
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
         - Else: Target column with shape=(n_samples,).
 
+        This parameter is ignored if X=None.
+
     transform_data: bool, optional (default=True)
         Whether to transform the provided data through all the steps in the
-        instance's pipeline. Only if the loaded file is an ATOM instance.
+        instance's pipeline. This parameter is ignored if the loaded file is
+        not an ATOM instance.
 
     verbose: int or None, optional (default=None)
         Verbosity level of the transformations applied on the new data. If None,
-        use the verbosity from the loaded instance.
+        use the verbosity from the loaded instance. This parameter is ignored if
+        the loaded file is not an ATOM instance.
 
     """
     # Check verbose parameter

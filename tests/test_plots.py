@@ -636,10 +636,10 @@ def test_decision_plot_binary(index):
     assert glob.glob(FILE_DIR + f'decision_{index}_1.png')
 
 
-# def test_decision_plot_multiclass():
-#     """Assert that the decision_plot method work as intended for multiclass tasks."""
-#     atom = ATOMClassifier(X_class, y_class, random_state=1)
-#     atom.run(['LR', 'Tree'], metric='f1_macro')
-#     pytest.raises(ValueError, atom.tree.decision_plot, index=(20, 24))
-#     atom.lr.decision_plot(index=20, filename=FILE_DIR + f'decision_2', display=False)
-#     assert glob.glob(FILE_DIR + f'decision_2.png')
+def test_decision_plot_multiclass():
+    """Assert that the decision_plot method work as intended for multiclass tasks."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run(['LR', 'Tree'], metric='f1_macro')
+    pytest.raises(ValueError, atom.tree.decision_plot, index=(20, 24))
+    atom.lr.decision_plot(index=20, filename=FILE_DIR + f'decision_2', display=False)
+    assert glob.glob(FILE_DIR + f'decision_2.png')

@@ -598,10 +598,10 @@ def partial_dependence(estimator, X, features):
 # Functions shared by classes =============================================== >>
 
 def transform(pl, X, y, verbose, **kwargs):
-    """Apply all data transformations in ATOM's pipeline to new data.
+    """Transform new data through all the pre-processing steps in the pipeline.
 
-    The default option is to not use the outliers and balance transformers
-    since they should only be used on the training set.
+    The outliers and balance transformations are not included by default since they
+    should only be applied on the training set.
 
     Parameters
     ----------

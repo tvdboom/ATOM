@@ -2029,7 +2029,7 @@ class BaseModelPlotter(BasePlotter):
         """Plot SHAP's force plot.
 
         Visualize the given SHAP values with an additive force layout. The explainer
-        will be chosen automatically from the model's type. For kernelExplainer,
+        will be chosen automatically based on the model's type. For kernelExplainer,
         the data used to estimate the expected values is the complete training set
         when <100 rows, else we summarize it with a set of 10 weighted K-means, each
         weighted by the number of points they represent.
@@ -2125,7 +2125,7 @@ class BaseModelPlotter(BasePlotter):
         and is like a richer extenstion of the classical partial dependence plots.
         Vertical dispersion of the data points represents interaction effects. Grey
         ticks along the y-axis are data points where the feature's value was NaN.
-        The explainer will be chosen automatically from the model's type.
+        The explainer will be chosen automatically based on the model's type.
 
         Parameters
         ----------
@@ -2189,7 +2189,7 @@ class BaseModelPlotter(BasePlotter):
         """Plot SHAP's summary plot.
 
         Create a SHAP beeswarm plot, colored by feature values when they are
-        provided. The explainer will be chosen automatically from the model's type.
+        provided. The explainer will be chosen automatically based on the model's type.
 
         Parameters
         ----------
@@ -2259,7 +2259,7 @@ class BaseModelPlotter(BasePlotter):
         feature values will be printed in the plot (if supplied). If multiple
         predictions are plotted together, feature values will not be printed.
         Plotting too many predictions together will make the plot unintelligible.
-        The explainer will be chosen automatically from the model's type.
+        The explainer will be chosen automatically based on the model's type.
 
         Parameters
         ----------
@@ -2330,7 +2330,7 @@ class BaseModelPlotter(BasePlotter):
                 self.mapping = {str(i): i for i in self.y_test.unique()}
 
             shap.multioutput_decision_plot(
-                base_values=expected_value,
+                base_values=list(expected_value),
                 shap_values=shap_values,
                 row_index=0,
                 features=rows,
