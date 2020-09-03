@@ -32,8 +32,8 @@ nav:
          - Outliers: API/data_cleaning/outliers.md
          - Balancer: API/data_cleaning/balancer.md
     - Feature engineering:
-        - FetaureGenerator: API/feature_engineering/feature_generator.md
-        - FetaureSelector: API/feature_engineering/feature_selector.md
+        - FeatureGenerator: API/feature_engineering/feature_generator.md
+        - FeatureSelector: API/feature_engineering/feature_selector.md
     - Training:
         - Trainer:
            - TrainerClassifier: API/training/trainerclassifier.md

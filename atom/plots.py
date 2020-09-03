@@ -2617,7 +2617,7 @@ class ATOMPlotter(FeatureSelectorPlotter,
 
         for i, estimator in enumerate(self.pipeline):
             plt.annotate(
-                s=estimator.__class__.__name__,
+                text=estimator.__class__.__name__,
                 xy=(15, pos_estimator),
                 xytext=(30, pos_param - 3 - 15),
                 ha="left",
@@ -2631,7 +2631,7 @@ class ATOMPlotter(FeatureSelectorPlotter,
             if show_params:
                 for j, key in enumerate(params[i]):
                     plt.annotate(
-                        s=key + ': ' + str(estimator.get_params()[key]),
+                        text=key + ': ' + str(estimator.get_params()[key]),
                         xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
                         xytext=(40, pos_param - 12),
                         ha='left',

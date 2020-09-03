@@ -1,13 +1,14 @@
 # Outliers
---------
+----------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(srategy='drop', max_sigma=3, include_target=False, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
-
+<a name="atom"></a>
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy='drop', max_sigma=3, include_target=False, verbose=0, logger=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L757">[source]</a></div></pre>
+<div style="padding-left:3%">
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
  Ignores categorical columns.
-
+<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -21,19 +22,16 @@ Strategy to apply on the outliers. Choose from:
 <li>Any numerical value with which to replace the outliers.</li>
 </ul>
 </blockquote>
-
 <strong>max_sigma: int or float, optional (default=3)</strong>
 <blockquote>
 Maximum allowed standard deviations from the mean of the column.
  If more, it is considered an outlier.
 </blockquote>
-
 <strong>include_target: bool, optional (default=False)</strong>
 <blockquote>
 Whether to include the target column in the transformation. This can be useful for
  regression tasks.
 </blockquote>
-
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -43,20 +41,19 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name, False for no logger.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
-<li>If class: python Logger object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
-
 </td>
 </tr>
 </table>
+</div>
 <br>
 
 
@@ -64,39 +61,43 @@ Verbosity level of the class. Possible values are:
 ---------
 
 <table>
-
 <tr>
-<td><a href="#Outliers-fit-transform">fit_transform</a></td>
+<td><a href="#outliers-fit-transform">fit_transform</a></td>
 <td>Same as transform.</td>
 </tr>
 
 <tr>
-<td><a href="#Outliers-get-params">get_params</a></td>
+<td><a href="#outliers-get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Outliers-save">save</a></td>
+<td width="15%"><a href="#outliers-log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#outliers-save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 
 <tr>
-<td><a href="#Outliers-set-params">set_params</a></td>
+<td><a href="#outliers-set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Outliers-transform">transform</a></td>
+<td><a href="#outliers-transform">transform</a></td>
 <td>Transform the data.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="Outliers-fit-transform"></a>
-<pre><em>function</em> Outliers.<strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="outliers-fit-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the outlier strategy on the data.
 <br><br>
@@ -112,10 +113,10 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is not used in this estimator.</li>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -134,9 +135,9 @@ Transformed target column. Only returned if provided.
 </table>
 <br />
 
-<a name="Outliers-get-params"></a>
-<pre><em>function</em> Outliers.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="outliers-get-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -162,9 +163,33 @@ Dictionary of the parameter names mapped to their values.
 <br />
 
 
-<a name="Outliers-save"></a>
-<pre><em>function</em> Outliers.<strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<a name="outliers-log"></a>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L194">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="outliers-save"></a>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L218">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file.
 <br><br>
@@ -182,9 +207,9 @@ Name to save the file with. None to save with default name.
 <br>
 
 
-<a name="Outliers-set-params"></a>
-<pre><em>function</em> Outliers.<strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="outliers-set-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
 <br><br>
@@ -210,9 +235,9 @@ Estimator instance.
 <br />
 
 
-<a name="Outliers-transform"></a>
-<pre><em>function</em> Outliers.<strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="outliers-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L817">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the outlier strategy on the data.
 <br><br>
@@ -228,10 +253,10 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is not used in this estimator.</li>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -255,8 +280,15 @@ Transformed target column. Only returned if provided.
 ----------
 
 ```python
+from atom import ATOMRegressor
+
+atom = ATOMRegressor(X, y)
+atom.outliers(strategy='min_max', max_sigma=2, include_target=True)
+```
+or
+```python
 from atom.data_cleaning import Outliers
 
-Outliers = Outliers(strategy='min_max', max_sigma=2, include_target=True)
-X_transformed, y_transformed = Outliers.transform(X, y)
+outliers = Outliers(strategy='min_max', max_sigma=2, include_target=True)
+X_train, y_train = outliers.transform(X_train, y_train)
 ```

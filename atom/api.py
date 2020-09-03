@@ -160,7 +160,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
 
@@ -168,7 +168,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     """
 
@@ -183,13 +183,11 @@ class ATOMClassifier(BaseTransformer, ATOM):
                  warnings: Union[bool, str] = True,
                  verbose: int = 0,
                  random_state: Optional[int] = None):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            warnings=warnings,
-            logger=logger,
-            random_state=random_state
-        )
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         warnings=warnings,
+                         logger=logger,
+                         random_state=random_state)
 
         self.goal = 'classification'
         ATOM.__init__(self, X, y, n_rows, test_size)
@@ -243,7 +241,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
         - If class: python Logger object.
 
@@ -251,7 +249,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     """
 
@@ -266,13 +264,11 @@ class ATOMRegressor(BaseTransformer, ATOM):
                  verbose: int = 0,
                  logger: Optional[Union[str, callable]] = None,
                  random_state: Optional[int] = None):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            warnings=warnings,
-            logger=logger,
-            random_state=random_state
-        )
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         warnings=warnings,
+                         logger=logger,
+                         random_state=random_state)
 
         self.goal = 'regression'
         ATOM.__init__(self, X, y, n_rows, test_size)

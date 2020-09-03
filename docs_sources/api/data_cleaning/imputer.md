@@ -1,13 +1,14 @@
 # Imputer
---------
+---------
 
+<a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5,
                                  min_frac_cols=0.5, missing=None, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
-
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L293">[source]</a></div></pre>
+<div style="padding-left:3%">
 Impute or remove missing values according to the selected strategy.
  Also removes rows and columns with too many missing values.
-
+<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -24,7 +25,6 @@ Imputing strategy for numerical columns. Choose from:
 <li>int or float: Impute with provided numerical value.</li>
 </ul>
 </blockquote>
-
 <strong>strat_cat: str, optional (default='drop')</strong>
 <blockquote>
 Imputing strategy for categorical columns. Choose from:
@@ -34,25 +34,21 @@ Imputing strategy for categorical columns. Choose from:
 <li>string: Impute with provided string.</li>
 </ul>
 </blockquote>
-
 <strong>min_frac_rows: float, optional (default=0.5)</strong>
 <blockquote>
 Minimum fraction of non-missing values in a row. If less, the row is removed.
 </blockquote>
-
 <strong>min_frac_cols: float, optional (default=0.5)</strong>
 <blockquote>
 Minimum fraction of non-missing values in a column. If less, the column is removed.
 </blockquote>
-
 <strong>missing: int, float or list, optional (default=None)</strong>
 <blockquote>
 List of values to treat as 'missing'. None to use the default values:
  [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']. Note that
- np.NaN, None, np.inf and -np.inf will always be imputed since they are incompatible
- with most models. 
+ `np.NaN`, `None`, `np.inf` and `-np.inf` will always be imputed since they are
+ incompatible with most models.
 </blockquote>
-
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -62,19 +58,19 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name, False for no logger.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
-<li>If class: python Logger object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
 </td>
 </tr>
 </table>
+</div>
 <br>
 
 
@@ -98,6 +94,11 @@ Verbosity level of the class. Possible values are:
 </tr>
 
 <tr>
+<td width="15%"><a href="#imputer-log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
 <td><a href="#imputer-save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
@@ -117,8 +118,8 @@ Verbosity level of the class. Possible values are:
 
 
 <a name="imputer-fit"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L387">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class.
 <br><br>
@@ -149,15 +150,14 @@ Fitted instance of self.
 
 
 <a name="imputer-fit-transform"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the Imputer and return the imputed data.
  
-!!!note
+!!!warning
     Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped in the transformation. Use this option only for
-    prediction methods.
+    if rows are dropped in the transformation.
 
 </div>
 <table width="100%">
@@ -171,10 +171,10 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If None: y is not used in the transformation.</li>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -194,8 +194,8 @@ Transformed target column. Only returned if provided.
 <br />
 
 <a name="imputer-get-params"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -206,7 +206,8 @@ Get parameters for this estimator.
 <td width="75%" style="background:white;">
 <strong>deep: bool, default=True</strong>
 <blockquote>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
+If True, will return the parameters for this estimator and contained subobjects
+ that are estimators.
 </blockquote>
 </tr>
 <tr>
@@ -221,9 +222,33 @@ Dictionary of the parameter names mapped to their values.
 <br />
 
 
+<a name="imputer-log"></a>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L194">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
 <a name="imputer-save"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L218">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file.
 <br><br>
@@ -242,8 +267,8 @@ Name to save the file with. None to save with default name.
 
 
 <a name="imputer-set-params"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
 <br><br>
@@ -270,15 +295,14 @@ Estimator instance.
 
 
 <a name="imputer-transform"></a>
-<pre><em>function</em> Imputer.<strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L440">[source]</a></div></pre>
 <div style="padding-left:3%">
 Impute the data.
 
-!!!note
+!!!warning
     Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped in the transformation. Use this option only for
-    prediction methods.
+    if rows are dropped in the transformation.
 
 </div>
 <table width="100%">
@@ -292,10 +316,10 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If None: y is not used in the transformation.</li>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If None: y is ignored in the transformation.</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,)</li>
 </ul>
 </blockquote>
 </tr>
@@ -317,9 +341,18 @@ Transformed target column. Only returned if provided.
 
 ## Example
 ---------
+
 ```python
+from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.impute(strat_num='knn', strat_cat='drop', min_frac_cols=0.8)
+```
+or
+```Python
 from atom.data_cleaning import Imputer
 
 imputer = Imputer(strat_num='knn', strat_cat='drop', min_frac_cols=0.8)
-X_imputed, y = imputer.fit_transform(X, y)
+imputer.fit(X_train, y_train)
+X = imputer.transform(X)
 ```

@@ -1,21 +1,22 @@
 # Balancer
 ----------
 
+<a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(oversample='not majority', undersample=None, n_neighbors=5,
                                   n_jobs=1, verbose=0, logger=None, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
-
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L905">[source]</a></div></pre>
+<div style="padding-left:3%">
 Balance the number of rows per target category. Using oversample and
  undersample at the same time or not using any will raise an exception.
  Use only for classification tasks.
-
+<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
 <strong>oversample: float, string or None, optional (default='not majority')</strong>
 <blockquote>
-Oversampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html">ADASYN</a>.
+Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html).
  Choose from:
 <ul>
 <li>None: Don't oversample.</li>
@@ -26,10 +27,9 @@ Oversampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/
 <li>'all': Resample all categories.</li>
 </ul>
 </blockquote>
-
 <strong>undersample: float, string or None, optional (default=None)</strong>
 <blockquote>
-Undersampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html">NearMiss</a>.
+Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html).
  Choose from:
 <ul>
 <li>None: Don't oversample.</li>
@@ -40,12 +40,10 @@ Undersampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en
 <li>'all': Resample all categories.</li>
 </ul>
 </blockquote>
-
 <strong>n_neighbors: int, optional (default=5)</strong>
 <blockquote>
-Number of nearest neighbors used for the ADASYN and NearMiss algorithms.
+Number of nearest neighbors used for for both the undersample and oversample algorithms.
 </blockquote>
-
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
 Number of cores to use for parallel processing.
@@ -57,7 +55,6 @@ Number of cores to use for parallel processing.
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </blockquote>
-
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -67,23 +64,40 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name, False for no logger.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
-<li>If class: python Logger object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
-
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the RandomState instance used by np.random.
+ generator is the `RandomState` instance used by `numpy.random`.
 </blockquote>
+</td>
+</tr>
+</table>
+</div>
+<br>
 
+
+
+
+## Attributes
+-------------
+
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>mapping: dict</strong>
+<blockquote>
+Dictionary of the target values mapped to their respective encoded integer.
+</blockquote>
 </td>
 </tr>
 </table>
@@ -94,38 +108,42 @@ Seed used by the random number generator. If None, the random number
 ---------
 
 <table>
-
 <tr>
-<td><a href="#Balancer-fit-transform">fit_transform</a></td>
+<td><a href="#balancer-fit-transform">fit_transform</a></td>
 <td>Same as transform.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-get-params">get_params</a></td>
+<td><a href="#balancer-get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-save">save</a></td>
+<td width="15%"><a href="#balancer-log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#balancer-save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-set-params">set_params</a></td>
+<td><a href="#balancer-set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-transform">transform</a></td>
+<td><a href="#balancer-transform">transform</a></td>
 <td>Transform the data.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="Balancer-fit-transform"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="balancer-fit-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -141,9 +159,9 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -162,9 +180,9 @@ Transformed target column.
 </table>
 <br />
 
-<a name="Balancer-get-params"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="balancer-get-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -190,9 +208,33 @@ Dictionary of the parameter names mapped to their values.
 <br />
 
 
-<a name="Balancer-save"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<a name="balancer-log"></a>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L194">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="balancer-save"></a>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L218">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file.
 <br><br>
@@ -210,8 +252,8 @@ Name to save the file with. None to save with default name.
 <br>
 
 
-<a name="Balancer-set-params"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">set_params</strong>(**params) 
+<a name="balancer-set-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
@@ -238,9 +280,9 @@ Estimator instance.
 <br />
 
 
-<a name="Balancer-transform"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<a name="balancer-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1009">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -256,9 +298,9 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -282,8 +324,15 @@ Transformed target column.
 ----------
 
 ```python
+from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.balance(undersample='not majority', n_neighbors=10)
+```
+or
+```python
 from atom.data_cleaning import Balancer
 
-Balancer = Balancer(undersample='not majority', n_neigbors=10, verbose=2, random_state=1)
-X_balanced, y_balanced = Balancer.transform(X, y)
+balancer = Balancer(undersample='not majority', n_neighbors=10)
+X_train, y_train = balancer.transform(X_train, y_train)
 ```

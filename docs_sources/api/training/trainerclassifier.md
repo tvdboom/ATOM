@@ -321,7 +321,7 @@ Name of the models to clear from the pipeline. If 'all', clear all models.
 
 <a name="Trainerclassifier-get-params"></a>
 <pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -454,7 +454,7 @@ If string, choose from any of sklearn's [SCORERS](https://scikit-learn.org/stabl
 
 <a name="Trainerclassifier-set-params"></a>
 <pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
 <br><br>

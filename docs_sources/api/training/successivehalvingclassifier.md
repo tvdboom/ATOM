@@ -259,7 +259,7 @@ Dataframe of the training results with the model acronyms as index. Columns can 
 
 <a name="SuccessiveHalvingClassifier-get-params"></a>
 <pre><em>function</em> SuccessiveHalvingClassifier.<strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
 <br><br>
@@ -335,7 +335,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 
 <a name="SuccessiveHalvingClassifier-set-params"></a>
 <pre><em>function</em> SuccessiveHalvingClassifier.<strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
 <br><br>

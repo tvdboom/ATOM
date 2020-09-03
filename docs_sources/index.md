@@ -1,6 +1,6 @@
-<center>
-    <img src="./img/logo.png" height="150" width="600"/>
-</center>
+<div align="center">
+    <img src="/img/logo.png" alt="ATOM" height="150" width="600"/>
+</div>
 <br><br>
 
 # Automated Tool for Optimized Modelling
@@ -72,6 +72,6 @@ Example steps taken by ATOM's pipeline:
 
 <br/><br/>
 
-<center>
-    <img src="./img/diagram.png" height="300" width="1000"/>
-</center>
+<div align="center">
+    <img src="/img/diagram.jpg" alt="diagram" height="300" width="1000"/>
+</div>

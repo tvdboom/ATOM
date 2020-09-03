@@ -270,19 +270,19 @@ def test_RFECV_strategy_before_pipeline_classification():
     """Assert that the RFECV strategy works before a fitted pipeline."""
     fs = FeatureSelector(
         strategy='RFECV',
-        solver='LGB_class',
+        solver='RF_class',
         n_features=None,
         random_state=1
     )
     X = fs.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 20
+    assert X.shape[1] == 17
 
 
 def test_RFECV_strategy_before_pipeline_regression():
     """Assert that the RFECV strategy works before a fitted pipeline."""
     fs = FeatureSelector(
         strategy='RFECV',
-        solver='LGB_reg',
+        solver='RF_reg',
         n_features=16,
         random_state=1
     )
@@ -320,10 +320,10 @@ def test_kwargs_parameter_scoring():
     """Assert that the kwargs parameter works as intended (add scoring acronym)."""
     fs = FeatureSelector(
         strategy='RFECV',
-        solver='lgb_class',
+        solver='rf_class',
         scoring='auc',
         n_features=12,
         random_state=1
     )
     X = fs.fit_transform(X_bin, y_bin)
-    assert X.shape[1] == 24
+    assert X.shape[1] == 14

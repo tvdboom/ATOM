@@ -48,8 +48,8 @@ class BaseCleaner(object):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None: y is not used in the estimator.
-            - If int: Position of the target column in X.
+            - If None: y is ignored in the transformation.
+            - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Data target column with shape=(n_samples,).
 
@@ -80,9 +80,9 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     """
 
@@ -178,9 +178,9 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     """
 
@@ -218,7 +218,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None, y is not used in the estimator.
+            - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -335,9 +335,9 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     """
 
@@ -446,7 +446,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None, y is ignored in the transformation.
+            - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -548,9 +548,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         - If 2 < n_unique <= max_onehot, use one-hot-encoding.
         - If n_unique > max_onehot, use 'encode_type'.
 
-    Also replaces classes with low occurrences with the value 'other' in order to
+    Also replaces classes with low occurrences with the value `other` in order to
     prevent too high cardinality. Categorical features are defined as all columns
-    whose dtype.kind not in 'ifu'. Will raise an error if it encounters missing
+    whose dtype.kind not in `ifu`. Will raise an error if it encounters missing
     values or unknown categories while transforming.
 
     Parameters
@@ -566,7 +566,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     frac_to_other: float, optional (default=None)
         Categories with less rows than n_rows * fraction_to_other are replaced
-        with the string 'other'. If None, this skip this step.
+        with the string `other`. If None, this skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -576,9 +576,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     **kwargs
         Additional keyword arguments passed to the encoder selected
@@ -785,9 +785,9 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     """
 
@@ -823,7 +823,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None, y is not used in the estimator.
+            - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -903,11 +903,10 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
 
 class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
-    """Balance the target categories in the training set.
+    """Balance the number of rows per target category.
 
-    Balance the number of instances per target category. Using oversample and
-    undersample at the same time or not using any will raise an exception.
-    Use only for classification tasks.
+    Using oversample and undersample at the same time or not using any will raise
+    an exception. Use only for classification tasks.
 
     Parameters
     ----------
@@ -930,7 +929,8 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 'all': Resample all categories.
 
     n_neighbors: int, optional (default=5)
-        Number of nearest neighbors used for the ADASYN and NearMiss algorithms.
+        Number of nearest neighbors used for for both the undersample
+        and oversample algorithms.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -949,13 +949,13 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     """
 

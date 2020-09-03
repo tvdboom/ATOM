@@ -114,13 +114,13 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     """
 
@@ -286,7 +286,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Create the new features.
+        """Generate the new features.
 
         Parameters
         ----------
@@ -428,19 +428,14 @@ class FeatureSelector(BaseEstimator,
                 + 'full'
                 + 'arpack'
                 + 'randomized'
-            - for 'SFM': choose a base estimator from which the
-                         transformer is built. The estimator must have
-                         either a feature_importances_ or coef_ attribute
-                         after fitting. No default option. You can use a
-                         model from the ATOM package. No default option.
-            - for 'RFE': choose a supervised learning estimator. The
-                         estimator must have either a feature_importances_
-                         or coef_ attribute after fitting. You can use a
-                         model from the ATOM package. No default option.
-            - for 'RFECV': choose a supervised learning estimator. The
-                           estimator must have either feature_importances_
-                           or coef_ attribute after fitting. You can use a
-                           model from the ATOM package. No default option.
+            - for 'SFM', 'RFE' and 'RFECV:
+                Choose a supervised learning model. The estimator must have either
+                `feature_importances_` or `coef_` attribute after fitting. You can
+                use a model from the ATOM package (add `_class` or `_reg` after the
+                model name to specify a classification or regression task
+                respectively, e.g. `solver='LGB_reg'`). No default option. Note that
+                the RFE and RFECV strategies don't work when the solver is a CatBoost
+                model due to incompatibility of the APIs.
 
     n_features: int, float or None, optional (default=None)
         Number of features to select. Choose from:
@@ -448,10 +443,10 @@ class FeatureSelector(BaseEstimator,
             - if < 1: Fraction of the total features to select.
             - if >= 1: Number of features to select.
 
-        If strategy='SFM' and the threshold parameter is not specified, the threshold
-        will be set to -np.inf in order to make this parameter the number of features
-        to select.
-        If strategy='RFECV', it's the minimum number of features to select.
+        If `strategy='SFM'` and the threshold parameter is not specified, the
+        threshold will be set to `-np.inf` in order to make this parameter the
+        number of features to select.
+        If `strategy='RFECV'`, it's the minimum number of features to select.
 
     max_frac_repeated: float or None, optional (default=1.)
         Remove features with the same value in at least this fraction of
@@ -482,13 +477,13 @@ class FeatureSelector(BaseEstimator,
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     **kwargs
         Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
@@ -604,7 +599,7 @@ class FeatureSelector(BaseEstimator,
             Data containing the features, with shape=(n_samples, n_features).
 
         y: int, str, sequence, np.array or pd.Series
-            - If None, y is not used in the estimator.
+            - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
