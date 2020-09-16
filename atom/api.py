@@ -29,9 +29,9 @@ def ATOMLoader(filename: str,
                verbose: Optional[int] = None):
     """Load a class instance from a pickle file.
 
-    If its a training instance, you can load new data.
-    If its an ATOM instance, you can load new data and apply all data
-    transformations in the pipeline to the new data.
+    If the file is a `training` instance that was saved using `save_data=False`,
+    you can load new data into it. If the file is an `atom` instance, you can also
+    apply all data transformations in the pipeline to the provided data.
 
     Parameters
     ----------
@@ -40,8 +40,8 @@ def ATOMLoader(filename: str,
 
     X: dict, sequence, np.array, pd.DataFrame or None, optional (default=None)
         Data containing the features, with shape=(n_samples, n_features). Only
-        use this parameter if the file is a training instance that was saved
-        using `save_data=False`. See the save method in basetransformer.py.
+        use this parameter for `training` instances saved using `save_data=False`.
+        See the save method in basetransformer.py.
 
     y: int, str, sequence, np.array or pd.Series, optional (default=-1)
         - If int: Index of the target column in X.
@@ -53,12 +53,12 @@ def ATOMLoader(filename: str,
     transform_data: bool, optional (default=True)
         Whether to transform the provided data through all the steps in the
         instance's pipeline. This parameter is ignored if the loaded file is
-        not an ATOM instance.
+        not an `atom` instance.
 
     verbose: int or None, optional (default=None)
         Verbosity level of the transformations applied on the new data. If None,
         use the verbosity from the loaded instance. This parameter is ignored if
-        the loaded file is not an ATOM instance.
+        the loaded file is not an `atom` instance.
 
     """
     # Check verbose parameter
@@ -90,14 +90,15 @@ def ATOMLoader(filename: str,
 
                 # Some transformations are only applied on the training set
                 if estimator.__class__.__name__ in ['Outliers', 'Balancer']:
-                    X_train, y_train = estimator.transform(cls_.X_train, cls_.y_train)
-                    cls_._data = pd.concat([merge(X_train, y_train), cls_.test])
+                    X, y = estimator.transform(cls_.X_train, cls_.y_train)
+                    cls_._data = pd.concat([merge(X, y), cls_.test])
                     cls_._data.reset_index(drop=True, inplace=True)
                 else:
                     X = estimator.transform(cls_.X, cls_.y)
-                    if isinstance(X, tuple):  # Estimator returned X, y
-                        X = merge(*X)
-                    cls_._data = X.reset_index(drop=True)
+
+                    # Data changes depending if the estimator returned X or X, y
+                    data = merge(*X) if isinstance(X, tuple) else merge(X, y)
+                    cls_._data = data.reset_index(drop=True)
 
                 if verbose is not None:
                     estimator.verbose = vb  # Reset the original verbosity
@@ -162,7 +163,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python 'Logger' object.
 
         Note that warnings will not be saved to the logger in any case.
 
@@ -243,7 +244,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python 'Logger' object.
 
         Note that warnings will not be saved to the logger in any case.
 

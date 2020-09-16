@@ -4,10 +4,12 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5,
                                  min_frac_cols=0.5, missing=None, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L293">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L298">[source]</a></div></pre>
 <div style="padding-left:3%">
-Impute or remove missing values according to the selected strategy.
- Also removes rows and columns with too many missing values.
+Impute or remove missing values according to the selected strategy. Also removes rows
+ and columns with too many missing values. This class can be accessed from `atom`
+ through the [impute](../../ATOM/atomclassifier/#atomclassifier-impute) method. Read
+ more in the [user guide](../../../user_guide/#imputing-missing-values).
 <br /><br />
 <table>
 <tr>
@@ -31,7 +33,7 @@ Imputing strategy for categorical columns. Choose from:
 <ul>
 <li>'drop': Drop rows containing missing values.</li>
 <li>'most_frequent': Impute with most frequent value.</li>
-<li>string: Impute with provided string.</li>
+<li>str: Impute with provided string.</li>
 </ul>
 </blockquote>
 <strong>min_frac_rows: float, optional (default=0.5)</strong>
@@ -47,7 +49,7 @@ Minimum fraction of non-missing values in a column. If less, the column is remov
 List of values to treat as 'missing'. None to use the default values:
  [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']. Note that
  `np.NaN`, `None`, `np.inf` and `-np.inf` will always be imputed since they are
- incompatible with most models.
+ incompatible with most estimators.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -71,6 +73,12 @@ Verbosity level of the class. Possible values are:
 </tr>
 </table>
 </div>
+<br>
+
+!!!tip
+    Use `atom`'s [missing](../../ATOM/atomclassifier/#utility-properties) property
+    for an overview of the missing values in the dataset.
+
 <br>
 
 
@@ -119,7 +127,7 @@ Verbosity level of the class. Possible values are:
 
 <a name="imputer-fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L387">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L368">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class.
 <br><br>
@@ -151,13 +159,13 @@ Fitted instance of self.
 
 <a name="imputer-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the Imputer and return the imputed data.
  
 !!!warning
     Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped in the transformation.
+    if rows are dropped during the transformation.
 
 </div>
 <table width="100%">
@@ -296,13 +304,13 @@ Estimator instance.
 
 <a name="imputer-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L440">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L443">[source]</a></div></pre>
 <div style="padding-left:3%">
 Impute the data.
 
 !!!warning
     Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped in the transformation.
+    if rows are dropped during the transformation.
 
 </div>
 <table width="100%">

@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../../plots/force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../../plots/force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../../plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../../plots/summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../../plots/decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -565,7 +565,7 @@ Maximum number of iterations of the BO (including <code>n_random starts</code>).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to <code>n_calls</code>, the optimizer will
@@ -610,7 +610,7 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                       needs_threshold=False,
                                       skip_iter=0,
                                       n_calls=0,
-                                      n_random_starts=5,
+                                      n_initial_points=5,
                                       bo_kwargs={},
                                       bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2172">[source]</a></div></pre>
@@ -696,7 +696,7 @@ Maximum number of iterations of the BO (including <code>n_random starts</code>).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to <code>n_calls</code>, the optimizer will
@@ -741,7 +741,7 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                 needs_threshold=False,
                                 train_sizes=np.linspcae(0.2, 1.0, 5),
                                 n_calls=0,
-                                n_random_starts=5,
+                                n_initial_points=5,
                                 bo_kwargs={},
                                 bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2201">[source]</a></div></pre>
@@ -830,7 +830,7 @@ Maximum number of iterations of the BO (including <code>n_random starts</code>).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to <code>n_calls</code>, the optimizer will

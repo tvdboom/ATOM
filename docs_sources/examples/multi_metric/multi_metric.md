@@ -27,7 +27,7 @@ X, y = load_breast_cancer(return_X_y=True)
 # Call ATOM and run the pipeline using multipe metrics
 # Note that for every step of the BO, both metrics are calculated, but only the first is used for optimization!
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
-atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_random_starts=1, bagging=4)
+atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1, bagging=4)
 ```
 
     << ================== ATOM ================== >>

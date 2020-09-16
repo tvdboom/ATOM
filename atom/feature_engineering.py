@@ -138,53 +138,15 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                          verbose=verbose,
                          logger=logger,
                          random_state=random_state)
-
-        # Check Parameters
-        if n_features is not None and n_features <= 0:
-            raise ValueError("Invalid value for the n_features parameter."
-                             f"Value should be >0, got {n_features}.")
-
-        if strategy.lower() in ('gfg', 'genetic'):
-            if population < 100:
-                raise ValueError("Invalid value for the population parameter."
-                                 f"Value should be >100, got {population}.")
-            if generations < 1:
-                raise ValueError("Invalid value for the generations parameter."
-                                 f"Value should be >100, got {generations}.")
-            if n_features and n_features > int(0.01 * population):
-                raise ValueError(
-                    "Invalid value for the n_features parameter. Value "
-                    f"should be <1% of the population, got {n_features}.")
-        elif strategy.lower() != 'dfs':
-            raise ValueError(
-                "Invalid value for the strategy parameter. Value "
-                f"should be either 'dfs' or 'genetic', got {strategy}.")
-
-        # Check operators
-        default = ['add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan']
-        if not operators:  # None or empty list
-            operators = default
-        else:
-            if not isinstance(operators, (list, tuple)):
-                operators = [operators]
-            for operator in operators:
-                if operator not in default:
-                    raise ValueError(
-                        "Invalid value in the operators parameter, got "
-                        f"{operator}. Choose from: {', '.join(default)}.")
-
-        # Define attributes
         self.strategy = strategy
         self.n_features = n_features
         self.generations = generations
         self.population = population
         self.operators = operators
 
-        self._is_fitted = False
-        self.dfs_features = None
+        self._dfs_features = None
         self.symbolic_transformer = None
-        self.genetic_features = pd.DataFrame(
-            columns=['name', 'description', 'fitness'])
+        self.genetic_features = None
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
@@ -206,6 +168,40 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
+
+        # Check Parameters
+        if self.n_features is not None and self.n_features <= 0:
+            raise ValueError("Invalid value for the n_features parameter."
+                             f"Value should be >0, got {self.n_features}.")
+
+        if self.strategy.lower() in ('gfg', 'genetic'):
+            if self.population < 100:
+                raise ValueError("Invalid value for the population parameter."
+                                 f"Value should be >100, got {self.population}.")
+            if self.generations < 1:
+                raise ValueError("Invalid value for the generations parameter."
+                                 f"Value should be >100, got {self.generations}.")
+            if self.n_features and self.n_features > int(0.01 * self.population):
+                raise ValueError(
+                    "Invalid value for the n_features parameter. Value "
+                    f"should be <1% of the population, got {self.n_features}.")
+        elif self.strategy.lower() != 'dfs':
+            raise ValueError(
+                "Invalid value for the strategy parameter. Value "
+                f"should be either 'dfs' or 'genetic', got {self.strategy}.")
+
+        # Check operators
+        default = ['add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan']
+        if not self.operators:  # None or empty list
+            self.operators = default
+        else:
+            if not isinstance(self.operators, (list, tuple)):
+                self.operators = [self.operators]
+            for self.operator in self.operators:
+                if self.operator not in default:
+                    raise ValueError(
+                        "Invalid value in the operators parameter, got "
+                        f"{self.operator}. Choose from: {', '.join(default)}.")
 
         self.log("Fitting FeatureGenerator...", 1)
 
@@ -234,7 +230,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                     trans_primitives.append(eval(operator))
 
             # Run deep feature synthesis with transformation primitives
-            self.dfs_features = ft.dfs(
+            self._dfs_features = ft.dfs(
                 entityset=entity_set,
                 target_entity='data',
                 max_depth=1,
@@ -245,27 +241,27 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             # Since dfs doesn't return a specific order in the features and we need
             # an order for the selection to be deterministic, order by name
             new_dfs = []
-            for feature in sorted(map(str, self.dfs_features[X.shape[1]-1:])):
-                for fx in self.dfs_features:
+            for feature in sorted(map(str, self._dfs_features[X.shape[1] - 1:])):
+                for fx in self._dfs_features:
                     if feature == str(fx):
                         new_dfs.append(fx)
                         break
-            self.dfs_features = self.dfs_features[:X.shape[1]-1] + new_dfs
+            self._dfs_features = self._dfs_features[:X.shape[1] - 1] + new_dfs
 
             # Make sure there are enough features (-1 because X has an index column)
-            max_features = len(self.dfs_features) - (X.shape[1] - 1)
+            max_features = len(self._dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
                 self.n_features = max_features
 
             # Get random indices from the feature list
             idx_old = range(X.shape[1]-1)
             idx_new = random.sample(
-                range(X.shape[1]-1, len(self.dfs_features)), self.n_features)
+                range(X.shape[1] - 1, len(self._dfs_features)), self.n_features)
             idx = list(idx_old) + list(idx_new)
 
             # Get random selection of features
-            self.dfs_features = [value for i, value in enumerate(self.dfs_features)
-                                 if i in idx]
+            self._dfs_features = [value for i, value in enumerate(self._dfs_features)
+                                  if i in idx]
 
         else:
             self.symbolic_transformer = SymbolicTransformer(
@@ -281,7 +277,6 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 random_state=self.random_state
             ).fit(X, y)
 
-        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log, typechecked)
@@ -302,7 +297,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             Dataframe containing the newly generated features.
 
         """
-        check_is_fitted(self, '_is_fitted')
+        check_is_fitted(self, ('_dfs_features', 'symbolic_transformer'))
         X, y = self._prepare_input(X, y)
 
         self.log("Creating new features...", 1)
@@ -318,7 +313,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             )
 
             X = ft.calculate_feature_matrix(
-                features=self.dfs_features,
+                features=self._dfs_features,
                 entityset=entity_set,
                 n_jobs=self.n_jobs
             )
@@ -355,8 +350,8 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Check if any new features remain in the loop
             if len(descript) == 0:
-                self.log("WARNING! The genetic algorithm couldn't find any "
-                         "improving non-linear features!", 1)
+                self.log(" --> WARNING! The genetic algorithm couldn't "
+                         "find any improving non-linear features!", 1)
                 return X
 
             # Get indices of the best features
@@ -367,12 +362,16 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Select best features only
             new_features = new_features[:, index]
+
+            # Create the genetic_features attribute
+            features_df = pd.DataFrame(columns=['name', 'description', 'fitness'])
             for i, idx in enumerate(index):
-                self.genetic_features = self.genetic_features.append({
+                features_df = features_df.append({
                     'name': 'Feature ' + str(1 + i + len(X.columns)),
                     'description': descript[idx],
                     'fitness': fitness[idx]
                 }, ignore_index=True)
+            self.genetic_features = features_df
 
             self.log(" --> {} new features were added to the dataset."
                      .format(len(self.genetic_features)), 2)
@@ -429,13 +428,11 @@ class FeatureSelector(BaseEstimator,
                 + 'arpack'
                 + 'randomized'
             - for 'SFM', 'RFE' and 'RFECV:
-                Choose a supervised learning model. The estimator must have either
-                `feature_importances_` or `coef_` attribute after fitting. You can
-                use a model from the ATOM package (add `_class` or `_reg` after the
-                model name to specify a classification or regression task
-                respectively, e.g. `solver='LGB_reg'`). No default option. Note that
-                the RFE and RFECV strategies don't work when the solver is a CatBoost
-                model due to incompatibility of the APIs.
+                Estimator with either a `feature_importances_` or `coef_` attribute
+                after fitting. You can use one of ATOM's pre-defined models. Add
+                `_class` or `_reg` after the model's name to specify a classification
+                or regression task, e.g. `solver='LGB_reg'` (not necessary if called
+                from an `atom` instance. No default option.
 
     n_features: int, float or None, optional (default=None)
         Number of features to select. Choose from:
@@ -506,68 +503,6 @@ class FeatureSelector(BaseEstimator,
                          verbose=verbose,
                          logger=logger,
                          random_state=random_state)
-
-        # Check parameters
-        if isinstance(strategy, str):
-            strats = ['univariate', 'pca', 'sfm', 'rfe', 'rfecv']
-
-            if strategy.lower() not in strats:
-                raise ValueError("Invalid value for the strategy parameter. Choose "
-                                 "from: univariate, PCA, SFM, RFE or RFECV.")
-
-            elif strategy.lower() == 'univariate':
-                solvers_dct = dict(
-                    f_classif=f_classif,
-                    f_regression=f_regression,
-                    mutual_info_classif=mutual_info_classif,
-                    mutual_info_regression=mutual_info_regression,
-                    chi2=chi2
-                )
-
-                if not solver:
-                    raise ValueError("Choose a solver for the strategy!")
-                elif solver in solvers_dct:
-                    solver = solvers_dct[solver]
-                elif isinstance(solver, str):
-                    raise ValueError(
-                        f"Unknown solver. Choose from: {', '.join(solvers_dct)}.")
-
-            elif strategy.lower() == 'pca':
-                solver = 'auto' if solver is None else solver
-
-            elif strategy.lower() in ['sfm', 'rfe', 'rfecv']:
-                if solver is None:
-                    raise ValueError("Select a solver for the strategy!")
-                elif isinstance(solver, str):
-                    # Assign goal depending on solver's ending
-                    if solver[-6:] == '_class':
-                        self.goal = 'classification'
-                        solver = solver[:-6]
-                    elif solver[-4:] == '_reg':
-                        self.goal = 'regression'
-                        solver = solver[:-4]
-
-                    if solver.lower() not in map(str.lower, MODEL_LIST):
-                        raise ValueError(
-                            "Unknown value for the solver parameter, got "
-                            f"{solver}. Try one of {list(MODEL_LIST)}.")
-                    else:  # Set to right model name and call model's method
-                        model_class = MODEL_LIST[get_model_name(solver)]
-                        solver = model_class(self).get_model()
-
-        if n_features is not None and n_features <= 0:
-            raise ValueError("Invalid value for the n_features parameter. "
-                             f"Value should be >0, got {n_features}.")
-        if max_frac_repeated is not None and not 0 <= max_frac_repeated <= 1:
-            raise ValueError(
-                "Invalid value for the max_frac_repeated parameter. Value should "
-                f"be between 0 and 1, got {max_frac_repeated}.")
-        if max_correlation is not None and not 0 <= max_correlation <= 1:
-            raise ValueError(
-                "Invalid value for the max_correlation parameter. Value should "
-                f"be between 0 and 1, got {max_correlation}.")
-
-        # Define attributes
         self.strategy = strategy
         self.solver = solver
         self.n_features = n_features
@@ -584,6 +519,7 @@ class FeatureSelector(BaseEstimator,
         self.sfm = None
         self.rfe = None
         self.rfecv = None
+        self.feature_importance = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -616,6 +552,66 @@ class FeatureSelector(BaseEstimator,
                                  f"be None for strategy='{self.strategy}'.")
 
         X, y = self._prepare_input(X, y)
+
+        # Check parameters
+        if isinstance(self.strategy, str):
+            strats = ['univariate', 'pca', 'sfm', 'rfe', 'rfecv']
+
+            if self.strategy.lower() not in strats:
+                raise ValueError("Invalid value for the strategy parameter. Choose "
+                                 "from: univariate, PCA, SFM, RFE or RFECV.")
+
+            elif self.strategy.lower() == 'univariate':
+                solvers_dct = dict(
+                    f_classif=f_classif,
+                    f_regression=f_regression,
+                    mutual_info_classif=mutual_info_classif,
+                    mutual_info_regression=mutual_info_regression,
+                    chi2=chi2
+                )
+
+                if not self.solver:
+                    raise ValueError("Choose a solver for the strategy!")
+                elif self.solver in solvers_dct:
+                    self.solver = solvers_dct[self.solver]
+                elif isinstance(self.solver, str):
+                    raise ValueError(
+                        f"Unknown solver. Choose from: {', '.join(solvers_dct)}.")
+
+            elif self.strategy.lower() == 'pca':
+                self.solver = 'auto' if self.solver is None else self.solver
+
+            elif self.strategy.lower() in ['sfm', 'rfe', 'rfecv']:
+                if self.solver is None:
+                    raise ValueError("Select a solver for the strategy!")
+                elif isinstance(self.solver, str):
+                    # Assign goal depending on solver's ending
+                    if self.solver[-6:] == '_class':
+                        self.goal = 'classification'
+                        self.solver = self.solver[:-6]
+                    elif self.solver[-4:] == '_reg':
+                        self.goal = 'regression'
+                        self.solver = self.solver[:-4]
+
+                    if self.solver.lower() not in map(str.lower, MODEL_LIST):
+                        raise ValueError(
+                            "Unknown value for the solver parameter, got "
+                            f"{self.solver}. Try one of {list(MODEL_LIST)}.")
+                    else:  # Set to right model name and call model's method
+                        model_class = MODEL_LIST[get_model_name(self.solver)]
+                        self.solver = model_class(self).get_estimator()
+
+        if self.n_features is not None and self.n_features <= 0:
+            raise ValueError("Invalid value for the n_features parameter. "
+                             f"Value should be >0, got {self.n_features}.")
+        if self.max_frac_repeated is not None and not 0 <= self.max_frac_repeated <= 1:
+            raise ValueError(
+                "Invalid value for the max_frac_repeated parameter. Value should "
+                f"be between 0 and 1, got {self.max_frac_repeated}.")
+        if self.max_correlation is not None and not 0 <= self.max_correlation <= 1:
+            raise ValueError(
+                "Invalid value for the max_correlation parameter. Value should "
+                f"be between 0 and 1, got {self.max_correlation}.")
 
         self.log("Fitting FeatureSelector...", 1)
 
@@ -705,7 +701,13 @@ class FeatureSelector(BaseEstimator,
                 max_features=self.n_features,
                 **self.kwargs
             )
-            if not self.kwargs['prefit']:
+            if self.kwargs['prefit']:
+                if len(self.sfm.get_support()) != X.shape[1]:
+                    raise ValueError("Invalid value for the solver parameter. The "
+                                     f"{self.solver.__class__.__name__} estimator "
+                                     "is fitted with different columns than X!")
+                self.sfm.estimator_ = self.solver
+            else:
                 check_y()
                 self.sfm.fit(X, y)
 
@@ -755,8 +757,35 @@ class FeatureSelector(BaseEstimator,
             Copy of the feature dataset.
 
         """
+        def get_scores(est):
+            """Return the feature scores for a given estimator.
+
+            Return the values of the attributes scores_, feature_importances_ or
+            coef_ if available (in that order). For multiclass classification tasks,
+            the coef_ attribute has shape (n_targets, n_features). In this case, the
+            mean of the coef_ value over the targets is returned.
+
+            Parameters
+            ----------
+            est: class
+                Estimator for which to get the scores.
+
+            Returns
+            -------
+            scores: np.ndarray
+                Scores of the selected attribute for the provided estimator.
+
+            """
+            attributes = ['scores_', 'feature_importances_', 'coef_']
+            scores = getattr(est, next(i for i in attributes if hasattr(est, i)))
+            if scores.ndim > 1:
+                scores = np.mean(scores, axis=0)
+
+            return scores
+
         check_is_fitted(self, '_is_fitted')
         X, y = self._prepare_input(X, y)
+        columns = X.columns  # Save columns for SFM
 
         self.log("Performing feature selection ...", 1)
 
@@ -777,13 +806,18 @@ class FeatureSelector(BaseEstimator,
             return X
 
         elif self.strategy.lower() == 'univariate':
-            for n, col in enumerate(X):
+            indices = np.argsort(get_scores(self.univariate))
+            best_fxs = [X.columns[idx] for idx in indices][::-1]
+            self.log(f" --> The univariate test selected "
+                     f"{self.n_features} features from the dataset.", 2)
+            for n, column in enumerate(X):
                 if not self.univariate.get_support()[n]:
-                    self.log(f" --> Feature {col} was removed after the uni" +
-                             "variate test (score: {:.2f}  p-value: {:.2f})."
-                             .format(self.univariate.scores_[n],
-                                     self.univariate.pvalues_[n]), 2)
-                    X.drop(col, axis=1, inplace=True)
+                    self.log(f"   >>> Dropping feature {column} "
+                             f"(score: {self.univariate.scores_[n]:.2f}  "
+                             f"p-value: {self.univariate.pvalues_[n]:.2f}).", 2)
+                    X.drop(column, axis=1, inplace=True)
+
+            self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
         elif self.strategy.lower() == 'pca':
             self.log(f" --> Applying Principal Component Analysis...", 2)
@@ -799,22 +833,41 @@ class FeatureSelector(BaseEstimator,
             self.log(f"   >>> Total explained variance: {round(var.sum(), 3)}", 2)
 
         elif self.strategy.lower() == 'sfm':
+            # Here we use columns since some cols could be removed before by
+            # variance or correlation checks and there would be cols mismatch
+            indices = np.argsort(get_scores(self.sfm.estimator_))
+            best_fxs = [columns[idx] for idx in indices][::-1]
+            self.log(f" --> The {self.solver.__class__.__name__} estimator selected "
+                     f"{sum(self.sfm.get_support())} features from the dataset.", 2)
             for n, column in enumerate(X):
                 if not self.sfm.get_support()[n]:
-                    self.log(f" --> Feature {column} was removed by the "
-                             f"{self.solver.__class__.__name__}.", 2)
+                    self.log(f"   >>> Dropping feature {column}.", 2)
                     X.drop(column, axis=1, inplace=True)
+
+            self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
         elif self.strategy.lower() == 'rfe':
+            self.log(" --> The RFE selected {} features from the dataset."
+                     .format(self.rfe.n_features_), 2)
             for n, column in enumerate(X):
                 if not self.rfe.support_[n]:
-                    self.log(f" --> Feature {column} was removed by the RFE.", 2)
+                    self.log("   >>> Dropping feature {} (rank {})."
+                             .format(column, self.rfe.ranking_[n]), 2)
                     X.drop(column, axis=1, inplace=True)
 
+            self.feature_importance = \
+                X.columns[[np.argsort(get_scores(self.rfe.estimator_))]][::-1]
+
         elif self.strategy.lower() == 'rfecv':
+            self.log(" --> The RFECV selected {} features from the dataset."
+                     .format(self.rfecv.n_features_), 2)
             for n, column in enumerate(X):
                 if not self.rfecv.support_[n]:
-                    self.log(f" --> Feature {column} was removed by the RFECV.", 2)
+                    self.log("   >>> Dropping feature {} (rank {})."
+                             .format(column, self.rfecv.ranking_[n]), 2)
                     X.drop(column, axis=1, inplace=True)
+
+            self.feature_importance = \
+                X.columns[[np.argsort(get_scores(self.rfecv.estimator_))]][::-1]
 
         return X

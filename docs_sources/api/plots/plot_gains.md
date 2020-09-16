@@ -1,10 +1,11 @@
 # plot_gains
 ------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_gains</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_gains</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1897">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the cumulative gains curve. Only for binary classification.
+Plot the cumulative gains curve. Only for binary classification tasks.
 <br /><br />
 <table width="100%">
 <tr>
@@ -13,6 +14,10 @@ Plot the cumulative gains curve. Only for binary classification.
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
+</blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the gains curve. Options are 'train', 'test' or 'both'.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -39,6 +44,7 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
@@ -46,4 +52,6 @@ atom = ATOMClassifier(X, y)
 atom.run(['GNB', 'RF', 'LGB'], metric='roc_auc')
 atom.plot_gains(filename='cumulative_gains_curve.png')
 ```
-![plot_gains](./img/plot_gains.png)
+<div align="center">
+    <img src="/img/plots/plot_gains.png" alt="plot_gains" width="700" height="420"/>
+</div>

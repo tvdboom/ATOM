@@ -16,43 +16,49 @@ from sklearn.feature_selection import f_regression
 # Own modules
 from atom.feature_engineering import FeatureGenerator, FeatureSelector
 from atom.utils import check_scaling
-from .utils import X_bin, y_bin, X_reg, y_reg
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
 # Test FeatureGenerator ===================================================== >>
 
 def test_n_features_parameter_negative():
     """Assert that an error is raised when n_features is negative."""
+    fg = FeatureGenerator(n_features=-2)
     with pytest.raises(ValueError, match=r".*should be >0.*"):
-        FeatureGenerator(n_features=-2)
+        fg.fit(X_bin, y_bin)
 
 
 def test_population_parameter():
     """Assert that an error is raised when population is invalid."""
-    pytest.raises(ValueError, FeatureGenerator, 'genetic', population=30)
+    fg = FeatureGenerator(strategy='GFG', population=30)
+    pytest.raises(ValueError, fg.fit, X_reg, y_reg)
 
 
 def test_generations_parameter():
     """Assert that an error is raised when generations is invalid."""
-    pytest.raises(ValueError, FeatureGenerator, 'genetic', generations=0)
+    fg = FeatureGenerator(strategy='GFG', generations=0)
+    pytest.raises(ValueError, fg.fit, X_bin, y_bin)
 
 
 def test_n_features_parameter_not_one_percent():
     """Assert that the n_features parameter is within 1% of population."""
+    fg = FeatureGenerator(strategy='GFG', n_features=23, population=200)
     with pytest.raises(ValueError, match=r".*should be <1%.*"):
-        FeatureGenerator('genetic', n_features=23, population=200)
+        fg.fit(X_bin, y_bin)
 
 
 def test_strategy_parameter():
-    """Assert that the strategy parameter is either 'dfs' or 'genetic'."""
+    """Assert that the strategy parameter is either 'DFS', 'GFG' or 'genetic'."""
+    fg = FeatureGenerator(strategy='invalid')
     with pytest.raises(ValueError, match=r".*should be either 'dfs'.*"):
-        FeatureGenerator('unknown', n_features=None)
+        fg.fit(X_bin, y_bin)
 
 
 def test_operators_parameter():
     """Assert that all operators are valid."""
+    fg = FeatureGenerator('GFG', n_features=None, operators=('div', 'invalid'))
     with pytest.raises(ValueError, match=r".*value in the operators.*"):
-        FeatureGenerator('gfg', n_features=None, operators=('div', 'invalid'))
+        fg.fit(X_bin, y_bin)
 
 
 def test_n_features_above_maximum():
@@ -60,6 +66,19 @@ def test_n_features_above_maximum():
     generator = FeatureGenerator(n_features=1000, operators='log', random_state=1)
     _ = generator.fit_transform(X_bin, y_bin)
     assert generator.n_features == 30
+
+
+def test_genetic_non_improving_features():
+    """Assert that the code doesn't fail if there are no new improving features."""
+    generator = FeatureGenerator(
+        strategy='gfg',
+        generations=5,
+        population=300,
+        operators='sqrt',
+        random_state=1
+    )
+    _ = generator.fit_transform(X_reg, y_reg)
+    assert generator.genetic_features is None
 
 
 def test_attribute_genetic_features():
@@ -71,7 +90,7 @@ def test_attribute_genetic_features():
         random_state=1
     )
     _ = generator.fit_transform(X_bin, y_bin)
-    assert isinstance(generator.genetic_features, pd.DataFrame)
+    assert not generator.genetic_features.empty
 
 
 def test_genetic_maximum_features():
@@ -108,71 +127,82 @@ def test_updated_dataset():
 
 def test_unknown_strategy_parameter():
     """Assert that an error is raised when strategy is unknown."""
-    pytest.raises(ValueError, FeatureSelector, strategy='test')
+    fs = FeatureSelector(strategy='invalid')
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_solver_parameter_empty_univariate():
     """Assert that an error is raised when solver is None for univariate."""
-    pytest.raises(ValueError,  FeatureSelector, strategy='univariate')
+    fs = FeatureSelector(strategy='univariate')
+    pytest.raises(ValueError,  fs.fit, X_reg, y_reg)
 
 
 def test_raise_unknown_solver_univariate():
     """Assert that an error is raised when the solver is unknown."""
-    pytest.raises(ValueError, FeatureSelector, 'univariate', solver='test')
+    fs = FeatureSelector(strategy='univariate', solver='invalid')
+    pytest.raises(ValueError,  fs.fit, X_reg, y_reg)
 
 
 def test_solver_auto_PCA():
     """Assert that the solver is set to 'auto' when None."""
     fs = FeatureSelector(strategy='PCA', solver=None)
+    fs.fit(X_bin, y_bin)
     assert fs.solver == 'auto'
 
 
 def test_solver_parameter_empty_SFM():
     """Assert that an error is raised when solver is None for SFM strategy."""
-    pytest.raises(ValueError,  FeatureSelector, strategy='SFM')
+    fs = FeatureSelector(strategy='SFM', solver=None)
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_goal_attribute():
     """Assert that the goal is deduced from the model's name."""
     # For classification tasks
     fs = FeatureSelector(strategy='SFM', solver='LGB_class')
+    fs.fit(X_bin, y_bin)
     assert fs.goal == 'classification'
 
     # For regression tasks
     fs = FeatureSelector(strategy='SFM', solver='LGB_reg')
+    fs.fit(X_reg, y_reg)
     assert fs.goal == 'regression'
 
 
 def test_solver_parameter_invalid_value():
     """Assert that an error is raised when solver is unknown."""
-    pytest.raises(ValueError, FeatureSelector, strategy='rfe', solver='test')
+    fs = FeatureSelector(strategy='RFE', solver='invalid')
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_n_features_parameter():
     """Assert that an error is raised when n_features is invalid."""
-    pytest.raises(ValueError, FeatureSelector, n_features=0)
+    fs = FeatureSelector(strategy='RFE', n_features=0)
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_max_frac_repeated_parameter():
     """Assert that an error is raised when max_frac_repeated is invalid."""
-    pytest.raises(ValueError, FeatureSelector, max_frac_repeated=1.1)
+    fs = FeatureSelector(strategy='RFE', max_frac_repeated=1.1)
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_max_correlation_parameter():
     """Assert that an error is raised when max_correlation is invalid."""
-    pytest.raises(ValueError, FeatureSelector, max_correlation=-0.2)
+    fs = FeatureSelector(strategy=None, max_correlation=-0.2)
+    pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_error_y_is_None():
     """Assert that an error is raised when y is None for some strategies."""
-    fs = FeatureSelector('univariate', solver=f_regression, n_features=9)
+    fs = FeatureSelector(strategy='univariate', solver=f_regression, n_features=9)
     pytest.raises(ValueError, fs.fit, X_reg)
 
 
 def test_remove_low_variance():
     """Assert that the remove_low_variance function works as intended."""
     X = X_bin.copy()
-    X['test'] = 3  # Add column with minimum variance
+    X['invalid'] = 3  # Add column with minimum variance
     fs = FeatureSelector(max_frac_repeated=1.)
     X = fs.fit_transform(X)
     assert X.shape[1] == X_bin.shape[1]
@@ -196,6 +226,7 @@ def test_univariate_strategy_custom_solver():
     fs = FeatureSelector('univariate', solver=f_regression, n_features=9)
     X = fs.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 9
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_PCA_strategy_normalization():
@@ -217,6 +248,17 @@ def test_PCA_components():
     fs = FeatureSelector(strategy='PCA')
     X = fs.fit_transform(X_bin)
     assert 'Component 0' in X.columns
+
+
+def test_SFM_prefit_invalid_estimator():
+    """Assert that an error is raised for an invalid estimator in SFM."""
+    fs = FeatureSelector(
+        strategy='SFM',
+        solver=ExtraTreesClassifier(random_state=1).fit(X_class, y_class),
+        n_features=8,
+        random_state=1
+    )
+    pytest.raises(ValueError, fs.fit, X_bin, y_bin)
 
 
 def test_SFM_strategy_not_threshold():
@@ -241,6 +283,7 @@ def test_SFM_strategy_fitted_solver():
     )
     X = fs.fit_transform(X_bin)
     assert X.shape[1] == 7
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_SFM_strategy_not_fitted_solver():
@@ -252,6 +295,7 @@ def test_SFM_strategy_not_fitted_solver():
     )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 5
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_RFE_strategy():
@@ -264,6 +308,7 @@ def test_RFE_strategy():
     )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 13
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_RFECV_strategy_before_pipeline_classification():
@@ -276,6 +321,7 @@ def test_RFECV_strategy_before_pipeline_classification():
     )
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 17
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_RFECV_strategy_before_pipeline_regression():
@@ -288,6 +334,7 @@ def test_RFECV_strategy_before_pipeline_regression():
     )
     X = fs.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
+    assert set(fs.feature_importance) == set(X.columns)
 
 
 def test_kwargs_parameter_threshold():

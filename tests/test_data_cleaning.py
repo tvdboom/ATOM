@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 # Own modules
-from atom.utils import ENCODER_TYPES, NotFittedError, check_scaling
+from atom.utils import ENCODER_TYPES, BALANCER_TYPES, NotFittedError, check_scaling
 from atom.data_cleaning import (
     Scaler, StandardCleaner, Imputer, Encoder, Outliers, Balancer
     )
@@ -165,17 +165,20 @@ def test_target_mapping():
 
 def test_strat_num_parameter():
     """Assert that the strat_num parameter is set correctly."""
-    pytest.raises(ValueError, Imputer, strat_num='test')
+    imputer = Imputer(strat_num='invalid')
+    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
 def test_min_frac_rows_parameter():
     """Assert that the min_frac_rows parameter is set correctly."""
-    pytest.raises(ValueError, Imputer, min_frac_rows=1.0)
+    imputer = Imputer(min_frac_rows=1.0)
+    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
 def test_min_frac_cols_parameter():
     """Assert that the min_frac_cols parameter is set correctly."""
-    pytest.raises(ValueError, Imputer, min_frac_cols=5.2)
+    imputer = Imputer(min_frac_cols=5.2)
+    pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
 def test_missing_parameter_is_string():
@@ -322,19 +325,29 @@ def test_imputing_non_numeric_most_frequent():
 
 # Test Encoder ============================================================== >>
 
+def test_strategy_parameter_encoder():
+    """Assert that the strategy parameter is set correctly."""
+    encoder = Encoder(strategy='invalid')
+    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
+
+
+def test_strategy_with_encoder_at_end():
+    """Assert that the strategy works with Encoder at the end of the string."""
+    encoder = Encoder(strategy='TargetEncoder', max_onehot=None)
+    encoder.fit(X10_str, y10)
+    assert encoder._encoders['Feature 2'].__class__.__name__ == 'TargetEncoder'
+
+
 def test_max_onehot_parameter():
     """Assert that the max_onehot parameter is set correctly."""
-    pytest.raises(ValueError, Encoder, max_onehot=-2)
-
-
-def test_encode_type_parameter():
-    """Assert that the encode_type parameter is set correctly."""
-    pytest.raises(ValueError, Encoder, encode_type='unknown')
+    encoder = Encoder(max_onehot=-2)
+    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
 
 
 def test_frac_to_other_parameter():
     """Assert that the frac_to_other parameter is set correctly."""
-    pytest.raises(ValueError, Encoder, frac_to_other=2.2)
+    encoder = Encoder(frac_to_other=2.2)
+    pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
 
 
 def test_frac_to_other():
@@ -358,30 +371,30 @@ def test_raise_missing_transform():
 
 
 def test_label_encoder():
-    """Assert that the label-encoder works as intended."""
+    """Assert that the Label-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
-    assert np.all((X['Feature 2'] == 1) | (X['Feature 2'] == 2))
+    assert np.all((X['Feature 2'] == 0) | (X['Feature 2'] == 1))
 
 
 def test_one_hot_encoder():
-    """Assert that the one-hot-encoder works as intended."""
+    """Assert that the OneHot-encoder works as intended."""
     encoder = Encoder(max_onehot=4)
     X = encoder.fit_transform(X10_str, y10)
     assert 'Feature 2_c' in X.columns
 
 
-@pytest.mark.parametrize('encoder', ENCODER_TYPES)
-def test_all_encoder_types(encoder):
-    """Assert that all encoder types work as intended."""
-    encoder = Encoder(max_onehot=None, encode_type=encoder)
+@pytest.mark.parametrize('strategy', ENCODER_TYPES)
+def test_all_encoder_types(strategy):
+    """Assert that all estimators work as intended."""
+    encoder = Encoder(strategy=strategy, max_onehot=None)
     X = encoder.fit_transform(X10_str, y10)
     assert all([X[col].dtype.kind in 'ifu' for col in X])
 
 
 def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
-    encoder = Encoder(max_onehot=None, encode_type='LeaveOneOut', sigma=0.5)
+    encoder = Encoder(strategy='LeaveOneOut', max_onehot=None, sigma=0.5)
     encoder.fit(X10_str, y10)
     assert encoder._encoders['Feature 2'].get_params()['sigma'] == 0.5
 
@@ -390,12 +403,14 @@ def test_kwargs_parameters():
 
 def test_invalid_strategy_parameter():
     """Assert that the strategy parameter is set correctly."""
-    pytest.raises(ValueError, Outliers, strategy='invalid')
+    outliers = Outliers(strategy='invalid')
+    pytest.raises(ValueError, outliers.transform, X_bin)
 
 
 def test_max_sigma_parameter():
     """Assert that the max_sigma parameter is set correctly."""
-    pytest.raises(ValueError, Outliers, max_sigma=0)
+    outliers = Outliers(strategy='invalid')
+    pytest.raises(ValueError, outliers.transform, X_bin)
 
 
 def test_max_sigma_functionality():
@@ -442,60 +457,36 @@ def test_drop_outlier_in_target():
 
 # Test Balancer ============================================================= >>
 
-def test_oversample_and_undersample_same_time():
-    """Assert that error is raised when over and undersample are both set."""
-    pytest.raises(ValueError, Balancer, oversample=0.8, undersample=0.6)
+def test_strategy_parameter_balancer():
+    """Assert that an error is raised when strategy is invalid."""
+    balancer = Balancer(strategy='invalid')
+    pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
 
 
-def test_None_both_parameter():
-    """Assert that error raises when over and undersample are both None."""
-    pytest.raises(ValueError, Balancer, oversample=None, undersample=None)
+def test_kwargs_parameter():
+    """Assert that the kwargs are passed to the estimator."""
+    balancer = Balancer(strategy='SMOTE', k_neighbors=12)
+    balancer.transform(X_class, y_class)
+    assert balancer.smote.get_params()['k_neighbors'] == 12
 
 
-def test_oversample_parameter():
-    """Assert that an error is raised when oversample is unknown."""
-    pytest.raises(ValueError, Balancer, oversample='test', undersample=None)
+@pytest.mark.parametrize('strategy', [i for i in BALANCER_TYPES if i != 'smotenc'])
+def test_all_balancers(strategy):
+    """Assert that all estimators work as intended."""
+    balancer = Balancer(strategy=strategy, sampling_strategy='all')
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
-def test_undersample_parameter():
-    """Assert that an error is raised when undersample is unknown."""
-    pytest.raises(ValueError, Balancer, oversample=None, undersample='test')
-
-
-def test_n_neighbors_parameter():
-    """Assert that an error is raised for an invalid value of n_neighbors."""
-    pytest.raises(ValueError, Balancer, oversample=0.8, n_neighbors=0)
-
-
-def test_oversampling_method_binary():
+@pytest.mark.parametrize('sampling', [1.0, 0.7, 'minority', 'not majority', 'all'])
+def test_sampling_binary(sampling):
     """Assert that the oversampling method works for binary tasks."""
-    strats = [1.0, 0.9, 'minority', 'not majority', 'all']
-    for strat in strats:
-        X, y = Balancer(oversample=strat).transform(X_bin, y_bin)
-        assert (y == 0).sum() != (y_bin == 0).sum()
+    X, y = Balancer(sampling_strategy=sampling).transform(X_bin, y_bin)
+    assert (y == 1).sum() != (y_class == 1).sum()
 
 
-def test_oversampling_method_multiclass():
+@pytest.mark.parametrize('sampling', ['minority', 'not majority', 'all'])
+def test_sampling_multiclass(sampling):
     """Assert that the oversampling method works for multiclass tasks."""
-    strats = ['minority', 'not majority', 'all']
-    for strat in strats:
-        X, y = Balancer(oversample=strat).transform(X_class, y_class)
-        assert (y == 2).sum() != (y_class == 2).sum()
-
-
-def test_undersampling_method_binary():
-    """Assert that the undersampling method works for binary tasks."""
-    strats = [1.0, 0.7, 'majority', 'not minority', 'all']
-    for strat in strats:
-        balancer = Balancer(oversample=None, undersample=strat)
-        X, y = balancer.transform(X_bin, y_bin)
-        assert (y == 1).sum() != (y_bin == 1).sum()
-
-
-def test_undersampling_method_multiclass():
-    """Assert that the undersampling method works for multiclass tasks."""
-    strats = ['majority', 'not minority', 'all']
-    for strat in strats:
-        balancer = Balancer(oversample=None, undersample=strat)
-        X, y = balancer.transform(X_class, y_class)
-        assert (y == 1).sum() != (y_class == 1).sum()
+    X, y = Balancer(sampling_strategy=sampling).transform(X_class, y_class)
+    assert (y == 2).sum() != (y_class == 2).sum()

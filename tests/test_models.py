@@ -24,7 +24,7 @@ def test_models_binary(model):
     atom.run(models=model,
              metric='auc',
              n_calls=2,
-             n_random_starts=1,
+             n_initial_points=1,
              bo_params={'base_estimator': 'rf', 'cv': 1})
     assert not atom.errors  # Assert that the model ran without errors
     assert hasattr(atom, model) and hasattr(atom, model.lower())
@@ -38,7 +38,7 @@ def test_models_multiclass(model):
         atom.run(models=model,
                  metric='f1_micro',
                  n_calls=2,
-                 n_random_starts=1,
+                 n_initial_points=1,
                  bo_params={'base_estimator': 'rf', 'cv': 1})
         assert not atom.errors
         assert hasattr(atom, model) and hasattr(atom, model.lower())
@@ -51,7 +51,7 @@ def test_models_regression(model):
     atom.run(models=model,
              metric='neg_mean_absolute_error',
              n_calls=2,
-             n_random_starts=1,
+             n_initial_points=1,
              bo_params={'base_estimator': 'gbrt', 'cv': 1})
     assert not atom.errors
     assert hasattr(atom, model) and hasattr(atom, model.lower())

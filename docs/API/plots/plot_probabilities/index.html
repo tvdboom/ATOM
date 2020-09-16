@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -399,11 +399,12 @@
 
 <h1 id="plot_probabilities">plot_probabilities</h1>
 <hr />
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_probabilities</strong>(models=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
-
+<p><a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_probabilities</strong>(models=None, dataset='test', target=1,
+                          title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1708">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot performance metric(s) against multiple threshold values.
+Plot performance metric(s) against multiple threshold values. Only for classification tasks.
 <br /><br />
 <table width="100%">
 <tr>
@@ -413,10 +414,14 @@ Plot performance metric(s) against multiple threshold values.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+</blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
 Probability of being that category in the target column as index or name.
- Only for multiclass classification.
+ Only for multiclass classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -437,8 +442,7 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-
-<p><br /></p>
+<br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
@@ -448,7 +452,9 @@ atom.run('rf')
 atom.plot_probabilities(target='Yes', filenmae='probabilities_category_yes')
 </code></pre>
 
-<p><img alt="plot_probabilities" src="../img/plot_probabilities.png" /></p></div>
+<div align="center">
+    <img src="/img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>
+</div></div>
             </div>
         </div>
 

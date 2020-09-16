@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -400,16 +400,15 @@
 <h1 id="plot_permutation_importance">plot_permutation_importance</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
-                                                title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
+                                   title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L887">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the feature permutation importance of models. Calculating all permutations can 
-be time consuming, especially if <code>n_repeats</code> is high. They are stored under
-the attribute <code>permutations</code>. This means that if a plot is repeated for
+Plot the feature permutation importance of models. Calculating all permutations can
+ be time consuming, especially if <code>n_repeats</code> is high. They are stored under
+ the attribute <code>permutations</code>. This means that if a plot is repeated for
  the same model with the same <code>n_repeats</code>, it will be considerably faster.
- The <code>best_features</code> attribute is created, which stores the showed features in order
- of importance.
+ The <code>feature_importance</code> attribute is updated with the extracted importance ranking.
 <br /><br />
 <table width="100%">
 <tr>
@@ -431,7 +430,7 @@ Number of times to permute each feature.
 <blockquote>
 Plot's title. If None, the default option is used.
 </blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
+<strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
 Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
 </blockquote>
@@ -456,7 +455,9 @@ atom.run(['LR', 'LDA'], metric='average_precision')
 atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
 </code></pre>
 
-<p><img alt="plot_permutation_importance" src="../img/plot_permutation_importance.png" /></p></div>
+<div align="center">
+    <img src="/img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>
+</div></div>
             </div>
         </div>
 

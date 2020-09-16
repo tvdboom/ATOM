@@ -20,7 +20,7 @@ from .utils import (
 
 
 class BasePredictor(object):
-    """Data properties and shared methods fot he ATOM and training classes."""
+    """Properties and shared methods for the training classes."""
 
     # Utility properties ==================================================== >>
 
@@ -51,11 +51,19 @@ class BasePredictor(object):
 
     @property
     def columns(self):
-        return self._data.columns
+        return list(self._data.columns)
 
     @property
     def target(self):
-        return self._data.columns[-1]
+        return self.columns[-1]
+
+    @property
+    def categories(self):
+        return list(sorted(self.y.unique()))
+
+    @property
+    def n_categories(self):
+        return len(self.categories)
 
     # Data properties=== ==================================================== >>
 
@@ -135,17 +143,17 @@ class BasePredictor(object):
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
-        """Print the trainer's final scoring for a specific metric_.
+        """Print the final scoring for a specific metric.
 
-        If a model shows a `XXX`, it means the metric_ failed for that specific
-        model. This can happen if either the metric_ is unavailable for the task
-        or if the model does not have a `predict_proba` method while the metric_
+        If a model shows a `XXX`, it means the metric failed for that specific
+        model. This can happen if either the metric is unavailable for the task
+        or if the model does not have a `predict_proba` method while the metric
         requires it.
 
         Parameters
         ----------
         metric: string or None, optional (default=None)
-            String of one of sklearn's predefined scorers. If None, the metric_(s)
+            String of one of sklearn's predefined scorers. If None, the metric(s)
             used to fit the trainer is selected and the bagging results will be
             showed (if used).
 
@@ -165,7 +173,7 @@ class BasePredictor(object):
         # Get list of scores
         all_scores = [m.scoring(metric, dataset) for m in self.models_]
 
-        # Raise an error if the metric_ was invalid for all models
+        # Raise an error if the metric was invalid for all models
         if metric and all([isinstance(score, str) for score in all_scores]):
             raise ValueError("Invalid metric_ selected!")
 
@@ -177,7 +185,7 @@ class BasePredictor(object):
             else:
                 score = m.scoring(metric, dataset)
 
-                # Create string of the score (if wrong metric_ for model -> XXX)
+                # Create string of the score (if wrong metric for model -> XXX)
                 if isinstance(score, str):
                     out = f"{m.longname:{maxlen}s} --> XXX"
                 else:
@@ -189,10 +197,10 @@ class BasePredictor(object):
     def clear(self, models: Union[str, Sequence[str]] = 'all'):
         """Clear models from the trainer.
 
-        Removes all traces of a model in the trainer's pipeline (except for the
-        errors attribute). This includes the models and results attributes, and
-        the model subclass. If all models in the pipeline are removed, the
-        metric is reset.
+        Removes all traces of a model in the pipeline (except for the errors
+        attribute). This includes the models and results attributes, and the
+        `model` subclass. If all models in the pipeline are removed, the metric
+        is reset.
 
         Parameters
         ----------

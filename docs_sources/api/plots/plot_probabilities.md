@@ -1,10 +1,12 @@
 # plot_probabilities
--------------------
+--------------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_probabilities</strong>(models=None, target=1, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_probabilities</strong>(models=None, dataset='test', target=1,
+                          title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1708">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot performance metric(s) against multiple threshold values.
+Plot performance metric(s) against multiple threshold values. Only for classification tasks.
 <br /><br />
 <table width="100%">
 <tr>
@@ -14,10 +16,14 @@ Plot performance metric(s) against multiple threshold values.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+</blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
 Probability of being that category in the target column as index or name.
- Only for multiclass classification.
+ Only for multiclass classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -44,6 +50,7 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
@@ -51,4 +58,6 @@ atom = ATOMClassifier(X, y='RainTomorrow')
 atom.run('rf')
 atom.plot_probabilities(target='Yes', filenmae='probabilities_category_yes')
 ```
-![plot_probabilities](./img/plot_probabilities.png)
+<div align="center">
+    <img src="/img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>
+</div>

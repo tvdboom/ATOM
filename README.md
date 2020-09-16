@@ -24,7 +24,11 @@ Description
 -----------------
 
 There is no magic formula in data science that can tell us which type of machine
- learning algorithm will perform best for a specific use-case. Best practices tell
+ learning algorithm will perform best for a specific use-case. Different models
+ are better suited for different types of data and different problems. At best,
+ you can follow some [rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
+ on how to approach problems with regard to which model to try on your data, but
+ these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
  complicated models (e.g. logistic regression -> random forest -> multilayer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
@@ -60,7 +64,6 @@ So, this sounds a bit like AutoML, how is ATOM different than
  provided plotting methods, it’s easy to demonstrate why a model is better/worse than
  the other.
 
-
 Example steps taken by ATOM's pipeline:
 
 1. Data Cleaning
@@ -85,7 +88,7 @@ Example steps taken by ATOM's pipeline:
 <br/><br/>
 
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.png?raw=true" alt="diagram" title="diagram" width="900" height="300" />
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.jpg?raw=true" alt="diagram" title="diagram" width="900" height="300" />
 </p>
 
 <br><br>
@@ -127,7 +130,7 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
     atom.impute(strat_num='knn', strat_cat='most_frequent',  min_frac_rows=0.1)  
-    atom.encode(max_onehot=10, frac_to_other=0.05)  
+    atom.encode(strategy='Target', max_onehot=8, frac_to_other=0.05)  
     atom.feature_selection(strategy='PCA', n_features=12)
 
 Run the pipeline with the models you want to compare:
@@ -135,7 +138,7 @@ Run the pipeline with the models you want to compare:
     atom.run(models=['LR', 'LDA', 'XGB', 'lSVM'],
              metric='f1',
              n_calls=25,
-             n_random_starts=10,
+             n_initial_points=10,
              bagging=4)
 
 Make plots to analyze the results: 

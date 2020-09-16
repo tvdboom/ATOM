@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -399,14 +399,16 @@
 
 <h1 id="plot_confusion_matrix">plot_confusion_matrix</h1>
 <hr />
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, normalize=False, title=None,
-                                          figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
-
+<p><a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset='test', normalize=False,
+                             title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1461">[source]</a></div></pre>
 <div style="padding-left:3%">
-For 1 model: plot the confusion matrix in a heatmap. For multiple models: compare TP,
- FP, FN and TN in a barplot (not implemented for multiclass classification).
-<br /><br />
+Plot the confusion matrix. Only for classification tasks.</p>
+<ul>
+<li>For 1 model: plot the confusion matrix in a heatmap.</li>
+<li>For multiple models: compare TP, FP, FN and TN in a barplot (not implemented for multiclass classification tasks).</li>
+</ul>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -415,9 +417,13 @@ For 1 model: plot the confusion matrix in a heatmap. For multiple models: compar
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the confusion matrix. Options are 'train' or 'test'.
+</blockquote>
 <strong>normalize: bool, optional (default=False)</strong>
 <blockquote>
-Whether to normalize the matrix.
+Whether to normalize the matrix. Only for the heatmap plot.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -425,11 +431,11 @@ Plot's title. If None, the default option is used.
 </blockquote>
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, 
+Figure's size, format as (x, y). If None, adapts size to plot type.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, adapts size to plot type.
+Name of the file (to save). If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
@@ -437,9 +443,9 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 
-<p><br /></p>
+<p></div>
+<br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
@@ -449,11 +455,16 @@ atom.run(['Tree', 'Bag'])
 atom.Tree.plot_confusion_matrix(normalize=True)
 </code></pre>
 
-<p><img alt="plot_confusion_matrix_1" src="../img/plot_confusion_matrix_1.png" /></p>
+<div align="center">
+    <img src="/img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="560"/>
+</div>
+
 <pre><code class="python">atom.plot_confusion_matrix()
 </code></pre>
 
-<p><img alt="plot_confusion_matrix_2" src="../img/plot_confusion_matrix_2.png" /></p></div>
+<div align="center">
+    <img src="/img/plots/plot_confusion_matrix_2.png" alt="plot_confusion_matrix_2" width="700" height="420"/>
+</div></div>
             </div>
         </div>
 

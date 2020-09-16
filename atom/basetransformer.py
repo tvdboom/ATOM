@@ -26,7 +26,7 @@ class BaseTransformer(object):
     """Base estimator for classes in the package.
 
     Contains shared properties (n_jobs, verbose, warnings, logger, random_state)
-    and standard methods across multiple classes.
+    and standard methods across transformers.
 
     Parameters
     ----------
@@ -130,8 +130,8 @@ class BaseTransformer(object):
     def _prepare_input(X, y):
         """Prepare the input data.
 
-        Copy X and y and convert to pandas. If already in pandas frame, reset
-        all indices for them to be able to merge.
+        Copy X and y, convert to pandas (if not already) and perform standard
+        compatibility checks (dimensions, length, indices, etc...).
 
         Parameters
         ----------
@@ -226,7 +226,7 @@ class BaseTransformer(object):
         **kwargs
             Additional keyword arguments. Can contain:
                 - 'save_data': Whether to save the dataset with the instance.
-                               Only for ATOM or a training class.
+                               Only for `training` instances.
 
         """
         if kwargs.get('save_data') is False and hasattr(self, '_data'):

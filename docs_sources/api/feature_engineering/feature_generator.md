@@ -8,7 +8,9 @@
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
- features. See the [user guide](../../../user_guide/#generating-new-features) for more information.
+ features. This class can be accessed from `atom` through the
+ [feature_generation](../../ATOM/atomclassifier/#atomclassifier-feature-generation)
+ method. Read more in the [user guide](../../../user_guide/#generating-new-features).
 <br /><br />
 <table>
 <tr>
@@ -24,16 +26,16 @@ Strategy to crate new features. Choose from:
 </blockquote>
 <strong>n_features: int or None, optional (default=None)</strong>
 <blockquote>
-Number of newly generated features to add to the dataset (if `strategy='genetic'`, no
+Number of newly generated features to add to the dataset (if strategy='genetic', no
  more than 1% of the population). If None, select all created.
 </blockquote>
 <strong>generations: int, optional (default=20)</strong>
 <blockquote>
-Number of generations to evolve. Only if `strategy='genetic'`.
+Number of generations to evolve. Only if strategy='genetic'.
 </blockquote>
 <strong>population: int, optional (default=500)</strong>
 <blockquote>
-Number of programs in each generation. Only if `strategy='genetic'`.
+Number of programs in each generation. Only if strategy='genetic'.
 </blockquote>
 <strong>operators: str, sequence or None, optional (default=None)</strong>
 <blockquote>
@@ -81,6 +83,25 @@ Seed used by the random number generator. If None, the random number
 <br>
 
 
+!!! tip
+    DFS can create many new features and not all of them will be useful. Use
+    [FeatureSelector](/API/feature_engineering/feature_selector) to reduce
+    the number of features!
+
+!!! warning
+    Using the div, log or sqrt operators can return new features with `inf` or
+    `NaN` values. Check the warnings that may pop up or use `atom`'s
+    [missing](/API/ATOM/atomclassifier/#properties) property.
+
+!!! warning
+    When using DFS with `n_jobs>1`, make sure to protect your code with `if __name__
+    == "__main__"`. Featuretools uses [dask](https://dask.org/), which uses python
+    multiprocessing for parallelization. The spawn method on multiprocessing starts
+    a new python process, which requires it to import the \__main__ module before it
+    can do its task.
+
+<br>
+
 ## Attributes
 -------------
 
@@ -93,11 +114,11 @@ Seed used by the random number generator. If None, the random number
 <blockquote>
 Instance used to calculate the genetic features, from
  [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
- Only if `strategy='genetic'`.
+ Only if strategy='genetic'.
 </blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the newly created non-linear features. Only if `strategy='genetic'`. 
+Dataframe of the newly created non-linear features. Only if strategy='genetic'. 
  Columns include:
 <ul>
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -156,7 +177,7 @@ Dataframe of the newly created non-linear features. Only if `strategy='genetic'`
 
 <a name="featuregenerator-fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L190">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class.
 <br><br>
@@ -192,7 +213,7 @@ Fitted instance of self.
 
 <a name="featuregenerator-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the FeatureGenerator and return the transformed data.
 <br><br>
@@ -327,7 +348,7 @@ Estimator instance.
 
 <a name="featuregenerator-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L288">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L283">[source]</a></div></pre>
 <div style="padding-left:3%">
 Generate new features.
 <br><br>
@@ -364,13 +385,13 @@ Feature set with the newly generated features.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_generation(n_features=3, generations=30)
+atom.feature_generation(strategy='genetic', n_features=3, generations=30, population=400)
 ```
 or
 ```python
 from atom.feature_engineering import FeatureGenerator
 
-feature_generator = FeatureGenerator(n_features=3, generations=30)
+feature_generator = FeatureGenerator(strategy='genetic', n_features=3, generations=30, population=400)
 feature_generator.fit(X_train, y_train)
 X = feature_generator.transform(X)
 ```

@@ -32,6 +32,17 @@ from category_encoders.sum_coding import SumEncoder
 from category_encoders.target_encoder import TargetEncoder
 from category_encoders.woe import WOEEncoder
 
+# Balancers
+from imblearn.under_sampling import (
+    ClusterCentroids, CondensedNearestNeighbour, EditedNearestNeighbours,
+    RepeatedEditedNearestNeighbours, AllKNN, InstanceHardnessThreshold,
+    NearMiss, NeighbourhoodCleaningRule, OneSidedSelection, RandomUnderSampler,
+    TomekLinks
+)
+from imblearn.over_sampling import (
+    ADASYN, BorderlineSMOTE, KMeansSMOTE, RandomOverSampler, SMOTE, SMOTENC, SVMSMOTE
+)
+
 # Sklearn
 from sklearn.metrics import SCORERS, get_scorer, make_scorer
 from sklearn.utils import _safe_indexing
@@ -48,9 +59,10 @@ from matplotlib.gridspec import GridSpec
 
 # Variable types
 CAL = Union[str, callable]
+SCALAR = Union[int, float]
 X_TYPES = Union[dict, Sequence[Sequence], np.ndarray, pd.DataFrame]
 Y_TYPES = Union[int, str, list, tuple, dict, np.ndarray, pd.Series]
-TRAIN_TYPES = Union[Sequence[Union[int, float]], np.ndarray]
+TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray]
 
 # Tuple of models that need to import an extra package
 OPTIONAL_PACKAGES = (
@@ -79,21 +91,42 @@ METRIC_ACRONYMS = dict(
 )
 
 ENCODER_TYPES = dict(
-    BackwardDifference=BackwardDifferenceEncoder,
-    BaseN=BaseNEncoder,
-    Binary=BinaryEncoder,
-    CatBoost=CatBoostEncoder,
-    # Hashing=HashingEncoder,
-    Helmert=HelmertEncoder,
-    JamesStein=JamesSteinEncoder,
-    LeaveOneOut=LeaveOneOutEncoder,
-    MEstimate=MEstimateEncoder,
-    # OneHot=OneHotEncoder,
-    Ordinal=OrdinalEncoder,
-    Polynomial=PolynomialEncoder,
-    Sum=SumEncoder,
-    Target=TargetEncoder,
-    WOE=WOEEncoder
+    backwarddifference=BackwardDifferenceEncoder,
+    basen=BaseNEncoder,
+    binary=BinaryEncoder,
+    catboost=CatBoostEncoder,
+    # hashing=HashingEncoder,
+    helmert=HelmertEncoder,
+    jamesstein=JamesSteinEncoder,
+    leaveoneout=LeaveOneOutEncoder,
+    mestimate=MEstimateEncoder,
+    # onehot=OneHotEncoder,
+    ordinal=OrdinalEncoder,
+    polynomial=PolynomialEncoder,
+    sum=SumEncoder,
+    target=TargetEncoder,
+    woe=WOEEncoder
+)
+
+BALANCER_TYPES = dict(
+    clustercentroids=ClusterCentroids,
+    condensednearestneighbour=CondensedNearestNeighbour,
+    editednearestneighborus=EditedNearestNeighbours,
+    repeatededitednearestneighbours=RepeatedEditedNearestNeighbours,
+    allknn=AllKNN,
+    instancehardnessthreshold=InstanceHardnessThreshold,
+    nearmiss=NearMiss,
+    neighbourhoodcleaningrule=NeighbourhoodCleaningRule,
+    onesidedselection=OneSidedSelection,
+    randomundersampler=RandomUnderSampler,
+    tomeklinks=TomekLinks,
+    adasyn=ADASYN,
+    borderlinesmote=BorderlineSMOTE,
+    kmanssmote=KMeansSMOTE,
+    randomoversampler=RandomOverSampler,
+    smote=SMOTE,
+    smotenc=SMOTENC,
+    svmsmote=SVMSMOTE
 )
 
 
@@ -142,8 +175,8 @@ def get_best_score(item, metric=0):
 
     Parameters
     ----------
-    item: model subclass or pd.Series
-        Model subclass instance or row from the results dataframe.
+    item: model or pd.Series
+        Model instance or row from the results dataframe.
 
     metric: int, optional (default=0)
         Index of the metric to use.
@@ -434,7 +467,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
 
     Parameters
     ----------
-    metric: str, callable or None
+    metric: str or callable
         Metric as a string, function or scorer.
 
     greater_is_better: bool
@@ -462,9 +495,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
             if scorer.__dict__ == value.__dict__:
                 return key
 
-    if metric is None:
-        return
-    elif isinstance(metric, str):
+    if isinstance(metric, str):
         if metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
         elif metric not in SCORERS:
@@ -842,7 +873,7 @@ class PlotCallback(object):
         plt.ion()  # Call to matplotlib that allows dynamic plotting
 
         # Initialize plot
-        fig = plt.figure(figsize=(10, 6))
+        fig = plt.figure(figsize=(10, 8))
         gs = GridSpec(2, 1, height_ratios=[2, 1])
 
         # First subplot (without xtick labels)
@@ -851,7 +882,8 @@ class PlotCallback(object):
         line1, = ax1.plot(self.x, self.y1, '-o', alpha=0.8)
         ax1.set_title(
             label=f"Bayesian Optimization for {self.M.longname}",
-            fontsize=self.M.T.title_fontsize
+            fontsize=self.M.T.title_fontsize,
+            pad=20
         )
         ax1.set_ylabel(
             ylabel=self.M.T.metric_[0].name,
@@ -865,7 +897,8 @@ class PlotCallback(object):
         line2, = ax2.plot(self.x, self.y2, '-o', alpha=0.8)
         ax2.set_title(
             label="Distance between last consecutive iterations",
-            fontsize=self.M.T.title_fontsize
+            fontsize=self.M.T.title_fontsize,
+            pad=20
         )
         ax2.set_xlabel(
             xlabel='Iteration',

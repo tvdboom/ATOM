@@ -293,6 +293,13 @@ def test_balance_mapping():
     assert atom.pipeline[1].mapping == atom.mapping
 
 
+def test_balance_attribute():
+    """Assert that Balancer's estimator is attached to ATOM."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance(strategy='NearMiss')
+    assert atom.nearmiss.__class__.__name__ == 'NearMiss'
+
+
 # Test feature engineering methods ========================================== >>
 
 def test_feature_generation():
@@ -311,7 +318,7 @@ def test_feature_generation_attributes():
 
 
 def test_feature_selection_attrs():
-    """Assert that the feature_engineering attaches only used attributes."""
+    """Assert that feature_selection attaches only used attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy='pca', n_features=8, max_correlation=0.8)
     assert hasattr(atom, 'collinear') and hasattr(atom, 'pca')
@@ -332,10 +339,15 @@ def test_default_solver_univariate():
 
 def test_winner_solver_after_run():
     """Assert that the solver is the winning model after run."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('lr')
-    atom.feature_selection(strategy='sfm', solver=None, n_features=8)
-    assert atom.pipeline[2].solver is atom.winner.model
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run('LR')
+    atom.feature_selection(
+        strategy='SFM',
+        solver=None,
+        n_features=8,
+        max_correlation=None
+    )
+    assert atom.pipeline[2].solver is atom.winner.estimator
 
 
 def test_default_solver_from_task():
@@ -371,7 +383,7 @@ def test_plot_methods_attached():
 def test_errors_are_passed_to_ATOM():
     """Assert that the errors found in models are passed to ATOM."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'LGB'], n_calls=5, n_random_starts=(2, -1))
+    atom.run(['LR', 'LGB'], n_calls=5, n_initial_points=(2, -1))
     assert atom.errors.get('LGB')
 
 
@@ -441,8 +453,8 @@ def test_pipeline_attr_is_attached():
 def test_errors_are_updated():
     """Assert that the found exceptions are updated in the errors attribute."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(['XGB', 'LGB'], n_calls=2, n_random_starts=2)  # No errors
-    atom.run(['XGB', 'LGB'], n_calls=2, n_random_starts=(2, -1))  # Produces an error
+    atom.run(['XGB', 'LGB'], n_calls=2, n_initial_points=2)  # No errors
+    atom.run(['XGB', 'LGB'], n_calls=2, n_initial_points=(2, -1))  # Produces an error
     assert atom.errors.get('LGB')
 
 

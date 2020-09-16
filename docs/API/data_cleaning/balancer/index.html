@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../../plots/force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../../plots/force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../../plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../../plots/summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../../plots/decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../../plots/decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -386,6 +386,10 @@
             
             <li class="nav-item" data-level="1"><a href="#balancer" class="nav-link">Balancer</a>
               <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#attributes" class="nav-link">Attributes</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
             <li class="nav-item" data-level="2"><a href="#methods" class="nav-link">Methods</a>
               <ul class="nav flex-column">
               </ul>
@@ -403,62 +407,57 @@
 
 <h1 id="balancer">Balancer</h1>
 <hr />
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(oversample='not majority', undersample=None, n_neighbors=5,
-                                  n_jobs=1, verbose=0, logger=None, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L114">[source]</a></div></pre>
-
-<p>Balance the number of rows per target category. Using oversample and
- undersample at the same time or not using any will raise an exception.
- Use only for classification tasks.</p>
+<p><a name="atom"></a>
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', sampling_strategy='not majority',
+                                  n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L897">[source]</a></div></pre>
+<div style="padding-left:3%">
+Balance the number of rows per target category. Use only for classification tasks.
+This class can be accessed from <code>atom</code> through the
+ <a href="../../ATOM/atomclassifier/#atomclassifier-balance">balance</a> method. Read more in
+ the <a href="../../../user_guide/#balancing-the-data">user guide</a>.
+<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>oversample: float, string or None, optional (default='not majority')</strong>
+<strong>strategy: str, optional (default='ADASYN')</strong>
 <blockquote>
-Oversampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html">ADASYN</a>.
- Choose from:
+Type of algorithm to use for oversampling or undersampling. Choose from one
+ of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
+ package.
+</blockquote>
+<strong>sampling_strategy: float, str, dict or callable, optional (default='not majority')</strong>
+<blockquote>
+Sampling information to sample the data set.
 <ul>
-<li>None: Don't oversample.</li>
-<li>float: Fraction minority/majority (only for binary classification).</li>
-<li>'minority': Resample only the minority category.</li>
-<li>'not minority': Resample all but the minority category.</li>
-<li>'not majority': Resample all but the majority category.</li>
-<li>'all': Resample all categories.</li>
+<li>If float: Fraction minority/majority (only for binary classification).</li>
+<li>If str: Choose from:
+    <ul>
+    <li>'minority': Resample only the minority category.</li>
+    <li>'majority': Resample only the majority category.</li>
+    <li>'not minority': Resample all but the minority category.</li>
+    <li>'not majority': Resample all but the majority category.</li>
+    <li>'all': Resample all categories.</li>
+    </ul></li>
+<li>If dict: The keys correspond to the targeted categories. The values
+               correspond to the desired number of samples for each targeted
+               category.</li>
+<li>If callable: Function taking y and returns a dict with the same format
+                   as described above.</li>
 </ul>
 </blockquote>
-
-<strong>undersample: float, string or None, optional (default=None)</strong>
-<blockquote>
-Undersampling strategy using <a href="https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html">NearMiss</a>.
- Choose from:
-<ul>
-<li>None: Don't oversample.</li>
-<li>float: Fraction minority/majority (only for binary classification).</li>
-<li>'majority': Resample only the majority category.</li>
-<li>'not minority': Resample all but the minority category.</li>
-<li>'not majority': Resample all but the majority category.</li>
-<li>'all': Resample all categories.</li>
-</ul>
-</blockquote>
-
-<strong>n_neighbors: int, optional (default=5)</strong>
-<blockquote>
-Number of nearest neighbors used for the ADASYN and NearMiss algorithms.
-</blockquote>
-
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
 Number of cores to use for parallel processing.
 <ul>
-<li>If >0: Number of cores to use.</li>
+<li>If &gt;0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
-<li>If <-1: Use available_cores - 1 + n_jobs.</li>
+<li>If &lt;-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
 </blockquote>
-
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -468,62 +467,87 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name, False for no logger.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
-<li>If class: python Logger object.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
 </blockquote>
-
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the RandomState instance used by np.random.
+ generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
-
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments passed to the <code>strategy</code> estimator.
+</blockquote>
 </td>
 </tr>
 </table>
-
-<p><br></p>
+</div>
+<br></p>
+<h2 id="attributes">Attributes</h2>
+<hr />
+<p><a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>&lt;estimator_name&gt;: class</strong>
+<blockquote>
+Estimator instance (attribute name in all lowercase) used to oversample/undersample
+ the data, e.g. <code>balancer.adasyn</code> for the default option.
+</blockquote>
+<strong>mapping: dict</strong>
+<blockquote>
+Dictionary of the target values mapped to their respective encoded integer.
+</blockquote>
+</td>
+</tr>
+</table>
+<br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <table>
-
 <tr>
-<td><a href="#Balancer-fit-transform">fit_transform</a></td>
+<td><a href="#balancer-fit-transform">fit_transform</a></td>
 <td>Same as transform.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-get-params">get_params</a></td>
+<td><a href="#balancer-get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-save">save</a></td>
+<td width="15%"><a href="#balancer-log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#balancer-save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-set-params">set_params</a></td>
+<td><a href="#balancer-set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#Balancer-transform">transform</a></td>
+<td><a href="#balancer-transform">transform</a></td>
 <td>Transform the data.</td>
 </tr>
 </table>
 
 <p><br></p>
-<p><a name="Balancer-fit-transform"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<p><a name="balancer-fit-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -539,9 +563,9 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -559,8 +583,8 @@ Transformed target column.
 </tr>
 </table>
 <br /></p>
-<p><a name="Balancer-get-params"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">get_params</strong>(deep=True) 
+<p><a name="balancer-get-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
@@ -585,9 +609,31 @@ Dictionary of the parameter names mapped to their values.
 </tr>
 </table>
 <br /></p>
-<p><a name="Balancer-save"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<p><a name="balancer-log"></a>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L194">[source]</a></div></pre>
+<div style="padding-left:3%">
+Write a message to the logger and print it to stdout.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>msg: str</strong>
+<blockquote>
+Message to write to the logger and print to stdout.
+</blockquote>
+<strong>level: int, optional (default=0)</strong>
+<blockquote>
+Minimum verbosity level in order to print the message.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
+<p><a name="balancer-save"></a>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L218">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file.
 <br><br>
@@ -603,8 +649,8 @@ Name to save the file with. None to save with default name.
 </table>
 </div>
 <br></p>
-<p><a name="Balancer-set-params"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">set_params</strong>(**params) 
+<p><a name="balancer-set-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
@@ -629,9 +675,9 @@ Estimator instance.
 </tr>
 </table>
 <br /></p>
-<p><a name="Balancer-transform"></a>
-<pre><em>function</em> Balancer.<strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<p><a name="balancer-transform"></a>
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L973">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -647,9 +693,9 @@ Data containing the features, with shape=(n_samples, n_features).
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If int: Index of the target column in X.</li>
+<li>If string: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 </tr>
@@ -669,10 +715,17 @@ Transformed target column.
 <br /></p>
 <h2 id="example">Example</h2>
 <hr />
+<pre><code class="python">from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.balance(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+</code></pre>
+
+<p>or</p>
 <pre><code class="python">from atom.data_cleaning import Balancer
 
-Balancer = Balancer(undersample='not majority', n_neigbors=10, verbose=2, random_state=1)
-X_balanced, y_balanced = Balancer.transform(X, y)
+balancer = Balancer(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+X_train, y_train = balancer.transform(X_train, y_train)
 </code></pre></div>
             </div>
         </div>

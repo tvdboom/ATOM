@@ -535,8 +535,7 @@ ATOM provides five data cleaning methods to scale your features and handle missi
 <pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">scale</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L487">[source]</a></div></pre>
 <div style="padding-left:3%">
-Scale the feature set to mean=1 and std=0. This method calls the [Cleaner](#../data_cleaning/cleaner.md)
- class under the hood and fits it only on the training set to avoid data leakage.
+Scale the features to mean=1 and std=0.
 </div>
 <br /><br />
 
@@ -630,6 +629,7 @@ Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
  features.
 See [FeatureGenerator](../feature_engineering/feature_generator.md) for a description of the parameters.
+ Attributes created by the class are attached to the ATOM instance.
 </div>
 <br />
 
@@ -645,6 +645,7 @@ removes features with too low variance and finds pairs of collinear features
 based on the Pearson correlation coefficient. For each pair above the specified
 limit (in terms of absolute value), it removes one of the two.
 See [FeatureSelector](../feature_engineering/feature_selector.md) for a description of the parameters.
+ Plotting methods and attributes created by the class are attached to the ATOM instance.
 
 !!! note
     <ul>
@@ -706,7 +707,7 @@ Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
 
 <a name="atomclassifier-successive-halving"></a>
 <pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
-                                           needs_threshold=False, skip_iter=0, n_calls=0, n_random_starts=5,
+                                           needs_threshold=False, skip_iter=0, n_calls=0, n_initial_points=5,
                                            bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2172">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -718,7 +719,7 @@ Calls a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md
 <a name="atomclassifier-train-sizing"></a>
 <pre><em>function</em> ATOMClassifier.<strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                      needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5),
-                                     n_calls=0, n_random_starts=5, bo_params={}, bagging=None) 
+                                     n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2201">[source]</a></div></pre>
 <div style="padding-left:3%">
 Calls a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
@@ -772,9 +773,9 @@ Dataframe containing the information of every step taken by the BO. Columns incl
 Dictionary of the best combination of hyperparameters found by the BO.
 </blockquote>
 
-<strong>model: class</strong>
+<strong>estimator: class</strong>
 <blockquote>
-Model instance with the best combination of hyperparameters fitted on the complete training set.
+Estimator instance with the best combination of hyperparameters fitted on the complete training set.
 </blockquote>
 
 <strong>predict_train: np.ndarray</strong>
@@ -918,9 +919,10 @@ The majority of the [plots](#plots) can be called directly from the
 <div style="padding-left:3%">
 Applies probability calibration on the winning model. The calibration is done
  with the [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
- class from sklearn. The model will be trained via cross-validation on a subset of the
+ class from sklearn. The estimator will be trained via cross-validation on a subset of the
  training data, using the rest to fit the calibrator. The new classifier will replace
- the `model` attribute.
+ the `estimator` attribute. All prediction properties will be reset since the
+ estimator will have changed.
 <br /><br />
 <table>
 <tr>
@@ -1367,7 +1369,7 @@ atom.balance(oversample=0.7)
 atom.run(models=['QDA', 'CatB'],
          metric='precision',
          n_calls=25,
-         n_random_starts=10,
+         n_initial_points=10,
          bo_params={'cv': 1},
          bagging=4)
 
@@ -1384,7 +1386,7 @@ atom.CatB.plot_feature_importance(filename='catboost_feature_importance.png')
 atom.run(models='LR',
          metric='precision',
          n_calls=25,
-         n_random_starts=10,
+         n_initial_points=10,
          bo_params={'cv': 1},
          bagging=4)
 

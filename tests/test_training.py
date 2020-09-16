@@ -37,26 +37,12 @@ def test_infer_task():
     assert trainer.task == 'regression'
 
 
-def test_default_metric():
-    """Assert that a default metric_ is assigned depending on the task."""
-    trainer = TrainerClassifier('LR')
-    trainer.run(bin_train, bin_test)
-    assert trainer.metric == 'f1'
-
-    trainer = TrainerClassifier('LR')
-    trainer.run(class_train, class_test)
-    assert trainer.metric == 'f1_weighted'
-
-    trainer = TrainerRegressor('LGB')
-    trainer.run(reg_train, reg_test)
-    assert trainer.metric == 'r2'
-
-
 # Test SuccessiveHalving ==================================================== >>
 
 def test_invalid_skip_iter():
     """Assert that an error is raised if skip_iter < 0."""
-    pytest.raises(ValueError, SuccessiveHalvingRegressor, 'OLS', skip_iter=-1)
+    sh = SuccessiveHalvingRegressor(models='OLS', skip_iter=-1)
+    pytest.raises(ValueError, sh.run, reg_train, reg_test)
 
 
 def test_successive_halving_results_is_multi_index():

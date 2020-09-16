@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../../API/feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../../API/feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../../API/prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../../API/predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../../API/prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../../API/predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../../API/prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../../API/predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../../API/prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../../API/predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../../API/prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../../API/predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../../API/prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../../API/predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../../../API/plots/force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../../../API/plots/force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../../../API/plots/dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../../../API/plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../../../API/plots/summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../../../API/plots/summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../../../API/plots/decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../../../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -424,7 +424,7 @@ X, y = load_breast_cancer(return_X_y=True)
 # An early stopping of 0.1 means that the model will stop if it
 # didn't improve in the last 10% of it's iterations.
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
-atom.run('LGB', metric='ap', n_calls=7, n_random_starts=3, bo_params={'early_stopping': 0.1, 'cv': 1})
+atom.run('LGB', metric='ap', n_calls=7, n_initial_points=3, bo_params={'early_stopping': 0.1, 'cv': 1})
 </code></pre>
 
 <pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;

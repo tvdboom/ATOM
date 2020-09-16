@@ -8,7 +8,11 @@
 
 
 There is no magic formula in data science that can tell us which type of machine
- learning algorithm will perform best for a specific use-case. Best practices tell
+ learning algorithm will perform best for a specific use-case. Different models
+ are better suited for different types of data and different problems. At best,
+ you can follow some [rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
+ on how to approach problems with regard to which model to try on your data, but
+ these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
  complicated models (e.g. logistic regression -> random forest -> multilayer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require

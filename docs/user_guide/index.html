@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../API/feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../API/feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../API/feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../API/predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../API/predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../API/predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../API/predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../API/predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../API/prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../API/predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../API/plots/force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../API/plots/force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../API/plots/dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../API/plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../API/plots/summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../API/plots/summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../API/plots/decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -389,6 +389,11 @@
               </ul>
             </li>
             
+            <li class="nav-item" data-level="1"><a href="#nomenclature" class="nav-link">Nomenclature</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
             <li class="nav-item" data-level="1"><a href="#first-steps" class="nav-link">First steps</a>
               <ul class="nav flex-column">
               </ul>
@@ -404,22 +409,22 @@
               </ul>
             </li>
             
-            <li class="nav-item" data-level="1"><a href="#model-fitting-and-evaluation" class="nav-link">Model fitting and evaluation</a>
+            <li class="nav-item" data-level="1"><a href="#training" class="nav-link">Training</a>
               <ul class="nav flex-column">
               </ul>
             </li>
             
-            <li class="nav-item" data-level="1"><a href="#model-subclasses" class="nav-link">Model subclasses</a>
+            <li class="nav-item" data-level="1"><a href="#models" class="nav-link">Models</a>
               <ul class="nav flex-column">
               </ul>
             </li>
             
-            <li class="nav-item" data-level="1"><a href="#prediction-methods" class="nav-link">Prediction  methods</a>
+            <li class="nav-item" data-level="1"><a href="#predicting" class="nav-link">Predicting</a>
               <ul class="nav flex-column">
               </ul>
             </li>
             
-            <li class="nav-item" data-level="1"><a href="#plotting" class="nav-link">Plotting</a>
+            <li class="nav-item" data-level="1"><a href="#plots" class="nav-link">Plots</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -431,64 +436,121 @@
 <h1 id="introduction">Introduction</h1>
 <hr />
 <p>There is no magic formula in data science that can tell us which type of machine
- learning algorithm will perform best for a specific use-case. Best practices tell
+ learning algorithm will perform best for a specific use-case. Different models
+ are better suited for different types of data and different problems. At best,
+ you can follow some <a href="https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html">rough guide</a>
+ on how to approach problems with regard to which model to try on your data, but
+ these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
  complicated models (e.g. logistic regression -&gt; random forest -&gt; multilayer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
- different data cleaning steps, tuning a new set of hyperparameters, etc. Refactoring
- the code for all these steps can be very time consuming. This result in many data
- scientists just using the model best known to them and fine-tuning this particular
- model without ever trying other ones. This can result in poor performance (because
- the model is just not the right one for the task) or in poor time management (because you
- could have achieved a similar performance with a simpler/faster model).  </p>
+ different data cleaning steps, different type/amount of features, tuning a new set
+ of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
+ and time consuming. Because of this, many data scientists end up just using the model
+ best known to them and fine-tuning this particular model without ever trying different
+ ones. This can result in poor performance (because the model is just not the right one
+ for the task) or in poor time management (because you could have achieved a similar
+ performance with a simpler/faster model).</p>
 <p>ATOM is here to help us solve these issues. With just a few lines of code, you can
- perform basic data cleaning steps, select relevant features and compare the
- performance of multiple models on a given dataset. ATOM should be able to provide
- quick insights on which algorithms perform best for the task at hand and provide an
- indication of the feasibility of the ML solution.</p>
+ perform basic data cleaning steps, select relevant features and compare the performance
+ of multiple models on a given dataset. ATOM should be able to provide quick insights
+ on which algorithms perform best for the task at hand and provide an indication of
+ the feasibility of the ML solution.</p>
 <p>It is important to realize that ATOM is not here to replace all the work a data
  scientist has to do before getting his model into production. ATOM doesn't spit out
  production-ready models just by tuning some parameters in its API. After helping you
  to determine the right model, you will most probably need to fine-tune it using
- use-case specific features and data cleaning steps in order to achieve maximum
- performance.</p>
+ use-case specific features and data cleaning steps in order to achieve maximum performance.</p>
 <p>So, this sounds a bit like AutoML, how is ATOM different than 
- <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or
- <a href="http://epistasislab.github.io/tpot/">TPOT</a>? Well, ATOM does AutoML in the sense
- that it helps you find the best model for a specific task, but contrary to the
- aforementioned packages, it does not actively search for the best model. It just
- runs all of them and let you pick the one that you think suites the best.
- AutoML packages are often black boxes to which you provide data, and magically,
- a good model comes out. Although it works great, they often produce complicated
- pipelines with low explainability, hard to sell to the business. In this, ATOM excels.
- Every step of the pipeline is accounted for, and using the provided plotting methods,
- its easy to demonstrate why a model is better/worse than the other.</p>
+ <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or <a href="http://epistasislab.github.io/tpot/">TPOT</a>?
+ Well, ATOM does AutoML in the sense that it helps you find the best model for a
+ specific task, but contrary to the aforementioned packages, it does not actively
+ search for the best model. It simply runs all of them and let you pick the one that
+ you think suites you best. AutoML packages are often black boxes: if you provide
+ data, it will magically return a working model. Although it works great, they often
+ produce complicated pipelines with low explainability, hard to sell to the business.
+ In this, ATOM excels. Every step of the pipeline is accounted for, and using the
+ provided plotting methods, it’s easy to demonstrate why a model is better/worse than
+ the other.</p>
+<p><br><br></p>
+<h1 id="nomenclature">Nomenclature</h1>
+<hr />
+<p>In this documentation we will consistently use terms to refer to certain concepts
+ related to the ATOM package.</p>
+<ul>
+<li><strong>ATOM</strong>: Refers to this package.</li>
+<li><strong>task</strong>: Refers to one of the three supervised machine learning approaches that ATOM supports:<ul>
+<li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
+</ul>
+</li>
+<li><strong>category</strong>: Refers to one of the unique values in a column, i.e. a binary classifier has 2 categories in the target column.</li>
+<li><strong>missing values</strong>: Refers to <code>None</code>, <code>NaN</code> and <code>inf</code> values.</li>
+<li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
+<li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
+ <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
+ use it as variable name for the instance).</li>
+<li><code>model</code>: Refers to an instance of one of the <a href="#models">models</a> available in ATOM.</li>
+<li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
+ models. The classes are:<ul>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a></li>
+<li><a href="../API/ATOM/atomregressor">ATOMRegressor</a></li>
+<li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
+<li><a href="../API/training/trainerregressor">TrainerRegressor</a></li>
+<li><a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
+<li><a href="../API/training/successivehalvingregressor">SuccessiveHavingRegressor</a></li>
+<li><a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
+<li><a href="../API/training/trainsizingregressor">TrainSizingRegressor</a></li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that <code>atom</code> instances are also <code>training</code> instances!</p>
+</div>
 <p><br><br></p>
 <h1 id="first-steps">First steps</h1>
 <hr />
-<p>You can quickly install atom using <code>pip</code> or <code>conda</code>, see the <a href="../getting_started/#installation">intallation guide</a>.
- The easiest way to use ATOM is through one of the two ATOM classes:</p>
+<p>You can quickly install atom using <code>pip</code> or <code>conda</code>, see the <a href="../getting_started/#installation">installation guide</a>.
+ ATOM contains a variety of classes to perform data cleaning, feature engineering,
+ model training and much more. The easiest way to use all these classes on the same
+ dataset is through one of the main classes:</p>
 <ul>
 <li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> for binary or multiclass classification tasks.</li>
 <li><a href="../API/ATOM/atomregressor">ATOMRegressor</a> for regression tasks.</li>
 </ul>
-<p>The ATOM classes are convenient wrappers for all other data cleaning, feature engineering
- and training classes that the package provides. Contrary to sklearn's API, an ATOM
- instance contains the data you want to manipulate. Calling one of its methods will
- apply the transformations on the data it contains. Let's get started!</p>
-<p>First, create an ATOM instance and provide the data you want to use.</p>
+<p>These two classes are convenient wrappers for all the possibilities this package
+ provides. Like a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+ they assemble several steps that can be cross-validated together while setting
+ different parameters. There are some important differences with sklearn's API though:</p>
+<ol>
+<li><code>atom</code> is initialized with the data you want to manipulate. This data can be accessed
+ at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data properties</a>.</li>
+<li>The classes in ATOM's API are reached through <code>atom</code>'s methods. For example, calling
+ the <a href="../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a> method, will initialize
+ an <a href="../API/data_cleaning/encoder">Encoder</a> instance, fit it on the training set and
+ transform the whole dataset.</li>
+<li>The transformations are applied immediately after calling the method (there is no
+ fit method). This approach gives the user a clearer overview and more control over
+ every step in the pipeline.</li>
+<li>The pipeline does not have to end with an estimator. ATOM can be used just for data
+ cleaning or feature engineering.</li>
+</ol>
+<p>Let's get started with an example!</p>
+<p>First, initialize <code>atom</code> and provide it the data you want to use.</p>
 <pre><code>atom = ATOMClassifier(X, y)
 </code></pre>
-<p>Apply data cleaning methods through the class. For example, calling
- <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> will handle
- all missing values in the dataset.</p>
+<p>Apply data cleaning methods through the class. For example, calling the
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a> method will
+ handle all missing values in the dataset.</p>
 <pre><code>atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
 </code></pre>
 <p>Select the best hyperparameters and fit a Random Forest and AdaBoost model.</p>
-<pre><code>atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_random_starts=10)
+<pre><code>atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_initial_points=10)
 </code></pre>
 <p>Analyze the results:</p>
-<pre><code>atom.ET.feature_importances(show=10, filename='feature_importance_plot')
+<pre><code>atom.feature_importances(show=10, filename='feature_importance_plot')
 atom.plot_prc(title='Precision-recall curve comparison plot')
 </code></pre>
 <p><br><br></p>
@@ -499,30 +561,84 @@ atom.plot_prc(title='Precision-recall curve comparison plot')
  lines of code. Since ATOM is all about fast exploration and experimentation, it
  provides various data cleaning classes to apply the most common transformations fast
  and easy.</p>
-<p>This example will encode all categorical columns in the dataset:</p>
-<pre><code>encoder = Encoder(max_onehot=5, encode_type='LeaveOneOut')
-encoder.fit(X_train, y_train)
-encoded_X = encoder.transform(X)
-</code></pre>
-<p>The same can be achieved from an ATOM instance with just one line of code!</p>
-<pre><code>atom.encode(max_onehot=5, encode_type='LeaveOneOut')
-</code></pre>
-<p>The available data cleaning classes are:</p>
+<p><br></p>
+<h3 id="scaling-the-feature-set">Scaling the feature set</h3>
+<p>Standardization of a dataset is a common requirement for many machine learning
+ estimators: they might behave badly if the individual features do not more or less
+ look like standard normally distributed data (e.g. Gaussian with 0 mean and unit
+ variance). The <a href="../API/data_cleaning/scaler/">Scaler</a> class scales data to mean=0 and
+ std=1. It can be accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-scale">scale</a>
+ method. </p>
+<p><br></p>
+<h3 id="standard-data-cleaning">Standard data cleaning</h3>
+<p>There are many data cleaning steps that are useful to perform on any dataset before
+ modelling. These are general rules that apply on every use-case and every task. The
+ <a href="../API/data_cleaning/standard_cleaner/">StandardCleaner</a> class is a convenient tool
+ to apply such steps. It is automatically called when initializing <code>atom</code>. Use the
+ class' parameters to choose which transformations to perform. The available steps are:</p>
 <ul>
-<li><a href="../API/data_cleaning/scaler/">Scaler</a></li>
-<li><a href="../API/data_cleaning/standard_cleaner/">StandardCleaner</a></li>
-<li><a href="../API/data_cleaning/imputer/">Imputer</a></li>
-<li><a href="../API/data_cleaning/encoder/">Encoder</a></li>
-<li><a href="../API/data_cleaning/outliers/">Outliers</a></li>
-<li><a href="../API/data_cleaning/balancer/">Balancer</a></li>
+<li>Remove columns with prohibited data types.</li>
+<li>Strip categorical features from white spaces.</li>
+<li>Remove categorical columns with maximal cardinality.</li>
+<li>Remove columns with minimum cardinality.</li>
+<li>Remove rows with missing values in the target column.</li>
+<li>Label-encode the target column.</li>
 </ul>
+<p><br> </p>
+<h3 id="imputing-missing-values">Imputing missing values</h3>
+<p>For various reasons, many real world datasets contain missing values, often encoded
+ as blanks, NaNs or other placeholders. Such datasets however are incompatible with
+ ATOM's models which assume that all values in an array are numerical, and that all
+ have and hold meaning. The <a href="../API/data_cleaning/imputer/">Imputer</a> class handles
+ missing values in the dataset by either dropping or imputing the value. It can be
+ accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-impute">impute</a>
+ method.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#utility-properties">missing</a> property
+for an overview of the missing values in the dataset.</p>
+</div>
+<p><br></p>
+<h3 id="encoding-categorical-features">Encoding categorical features</h3>
+<p>Many datasets will contain categorical features. Their variables are typically stored
+ as text values which represent various traits. Some examples include color (“Red”,
+ “Yellow”, “Blue”), size (“Small”, “Medium”, “Large”) or geographic designations
+ (city or country). Regardless of what the value is used for, the challenge is
+ determining how to use this data in the analysis. ATOM's models don't support
+ direct manipulation of this kind of data. Use the <a href="../API/data_cleaning/encoder/">Encoder</a>
+ class to encode categorical features to numerical values. It can be accessed from
+ <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a> method.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#utility-properties">categorical</a> property
+for a list of the categorical columns in the dataset.</p>
+</div>
+<p><br> </p>
+<h3 id="handling-outliers">Handling outliers</h3>
+<p>When modeling, it is important to clean the data sample to ensure that the observations
+ best represent the problem. Sometimes a dataset can contain extreme values that are
+ outside the range of what is expected and unlike the other data. These are called
+ outliers. Often, machine learning modeling and model skill in general can be improved
+ by understanding and even removing these outlier values. The <a href="../API/data_cleaning/outliers/">Outliers</a> 
+ class can drop or impute outliers in the dataset. It can be accessed from <code>atom</code>
+ through the <a href="../API/ATOM/atomclassifier/#atomclassifier-outliers">outliers</a> method.</p>
+<p><br> </p>
+<h3 id="balancing-the-data">Balancing the data</h3>
+<p>One of the common issues found in datasets that are used for classification is
+ imbalanced classes. Data imbalance usually reflects an unequal distribution of
+ classes within a dataset. For example, in a credit card fraud detection dataset,
+ most of the transactions are non-fraud and a very few cases are fraud. This leaves
+ us with a very unbalanced ratio of fraud vs non-fraud cases. The
+ <a href="../API/data_cleaning/balancer/">Balancer</a> class can oversample the minority category
+ or undersample the majority category. It can be accessed from <code>atom</code> through the
+ <a href="../API/ATOM/atomclassifier/#atomclassifier-balance">balance</a> method.</p>
 <p><br><br></p>
 <h1 id="feature-engineering">Feature engineering</h1>
 <hr />
 <p><cite>
-<center>
+<div align="center">
 "Applied machine learning" is basically feature engineering. ~ Andrew Ng.
-</center>
+</div>
 </cite></p>
 <p><br>
 Feature engineering is the process of creating new features from the existing ones,
@@ -535,20 +651,20 @@ Feature engineering is the process of creating new features from the existing on
  created features can be useless, i.e. they do not help the algorithm to make better
  predictions. Even worse, having useless features can drop your performance. To avoid
  this, we perform feature selection, a process in which we select the relevant features 
- in the dataset. Click <a href="../examples/feature_engineering/feature_engineering/">here</a> for an example.</p>
+ in the dataset. See <a href="../examples/feature_engineering/feature_engineering/">here</a> an example.</p>
 <p><br></p>
 <h3 id="generating-new-features">Generating new features</h3>
 <p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
  new non-linear features based on the original feature set. It can be accessed from
- an ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-generation">feature_generation</a>
+ <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-generation">feature_generation</a>
  method. You can choose between two strategies: Deep Feature Synthesis and Genetic
  Feature Generation.</p>
-<p><strong>Deep Feature Synthesis</strong></p>
-<p>Deep feature synthesis (DFS) applies the selected operators on the features in
+<p><strong>Deep Feature Synthesis</strong><br>
+Deep feature synthesis (DFS) applies the selected operators on the features in
  the dataset. For example, if the operator is 'log', it will create the new feature
  <code>LOG(old_feature)</code> and if the operator is 'mul', it will create the new feature
- <code>old_feature_1 x old_feature_2</code>. DFS can create many new features. The operators
- can be chosen through the <code>operators</code> parameter. Available options are:
+ <code>old_feature_1 x old_feature_2</code>. The operators can be chosen through the <code>operators</code>
+ parameter. Available options are:
 <ul>
 <li><b>add: </b>Sum two features together.</li>
 <li><b>sub: </b>Subtract two features from each other.</li>
@@ -563,72 +679,70 @@ Feature engineering is the process of creating new features from the existing on
 <p>ATOM's implementation of DFS uses the <a href="https://www.featuretools.com/">featuretools</a> package.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>DFS can create many new features and not all of them will be useful. Use the
-<a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class
-to reduce the number of features!</p>
+<p>DFS can create many new features and not all of them will be useful. Use
+<a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> to reduce
+the number of features!</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
-<code>nan</code> values. Check the warnings that may pop up or use the
-<a href="./API/ATOM/atomclassifier.md/#properties">missing</a> property.</p>
+<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>'s
+<a href="/API/ATOM/atomclassifier/#properties">missing</a> property.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>When using DFS with n_jobs&gt;1, make sure to protect your code with a if
-__name__ == "__main__". Featuretools uses dask, which uses python multiprocessing
-for parallelization. The spawn method on multiprocessing starts a new python
-process, which requires it to import the __main__ module before it can do
-its task.</p>
+<p>When using DFS with <code>n_jobs&gt;1</code>, make sure to protect your code with <code>if __name__
+== "__main__"</code>. Featuretools uses <a href="https://dask.org/">dask</a>, which uses python
+multiprocessing for parallelization. The spawn method on multiprocessing starts
+a new python process, which requires it to import the __main__ module before it
+can do its task.</p>
 </div>
-<p><br>
-<strong>Genetic Feature Generation</strong></p>
-<p>Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
+<p><br></p>
+<p><strong>Genetic Feature Generation</strong><br>
+Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Genetic_programming">genetic programming</a>,
  a branch of evolutionary programming, to determine which features are successful and
- create new ones based on those. Where DFS' method can be seen as some kind of "brute force"
- for feature engineering, GFG tries to improve its features with every generation of
- the algorithm. GFG uses the same operators as DFS, but instead of only applying the
- transformations once, it evolves them further, creating complicated non-linear
- combinations of features with many transformations. The new features are given the
- name <code>Feature N</code> for the N-th feature. You can access the genetic feature's fitness
- and description (how they are calculated) through the <code>genetic_features</code> attribute.</p>
-<p>ATOM uses the
- <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
+ create new ones based on those. Where DFS' method can be seen as some kind of "brute
+ force" for feature engineering, GFG tries to improve its features with every
+ generation of the algorithm. GFG uses the same operators as DFS, but instead of only
+ applying the transformations once, it evolves them further, creating complicated
+ non-linear combinations of features with many transformations. The new features are
+ given the name <code>Feature N</code> for the N-th feature. You can access the genetic feature's
+ fitness and description (how they are calculated) through the <code>genetic_features</code>
+ attribute.</p>
+<p>ATOM uses the <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a>
  class from the <a href="https://gplearn.readthedocs.io/en/stable/index.html">gplearn</a> package
  for the genetic algorithm. Read more about this implementation
  <a href="https://gplearn.readthedocs.io/en/stable/intro.html#transformer">here</a>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>GFG can be slow for very large populations!</p>
+</div>
 <p><br></p>
 <h3 id="selecting-useful-features">Selecting useful features</h3>
 <p>The <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class provides
- tooling to select the relevant features from a dataset. It can be accessed from an
- ATOM instance through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
+ tooling to select the relevant features from a dataset. It can be accessed from <code>atom</code>
+ through the <a href="../API/ATOM/atomclassifier/#atomclassifier-feature-selection">feature_selection</a>
  method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>Use the <a href="../API/plots/plot_feature_importance/">plot_feature_importance</a> method to
-examine how much a specific feature contributes to the fianl predictions. If the
-model doesn't have a <code>feature_importances_</code> attribute, use 
-<a href="../API/plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
-</div>
-<p><strong>Univariate</strong></p>
-<p>Univariate feature selection works by selecting the best features based on univariate statistical F-test.
+<p><strong>Univariate</strong><br>
+Univariate feature selection works by selecting the best features based on univariate statistical F-test.
  The test is provided via the <code>solver</code> parameter. It takes any function taking two arrays (X, y),
- and returning arrays (scores, p-values).
- Read more in the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
-<p><strong>Principal Components Analysis</strong></p>
-<p>Applying PCA will reduce the dimensionality of the dataset by maximizing the variance of each dimension.
+ and returning arrays (scores, p-values).</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
+<p><strong>Principal Components Analysis</strong><br>
+Applying PCA will reduce the dimensionality of the dataset by maximizing the variance of each dimension.
  The new features will be called Component 0, Component 1, etc... The dataset will be
  scaled before applying the transformation (if it wasn't already).</p>
-<p><strong>Selection from model</strong></p>
-<p>SFM uses a supervised machine learning model with <code>feature_importances_</code> or <code>coef_</code>
- attributes to select the best features in a dataset based on importance weights.
- The model is provided through the <code>solver</code> parameter and can be already fitted.
- ATOM allows you to input one of the pre-defined models, e.g. <code>solver='RF'</code>. If you
- called the FeatureSelector class without using the ATOM wrapper, don't forget to
- indicate the task adding <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a
- random forest classifier.</p>
-<p><strong>Recursive feature elimination</strong></p>
-<p>Select features by recursively considering smaller and smaller sets of features.
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</p>
+<p><strong>Selection from model</strong><br>
+SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes to select the
+ best features in a dataset based on importance weights. The estimator is provided
+ through the <code>solver</code> parameter and can be already fitted. ATOM allows you to use one
+ its pre-defined <a href="#models">models</a>, e.g. <code>solver='RF'</code>. If you didn't call the
+ FeatureSeletor through <code>atom</code>, don't forget to indicate the estimator's task adding
+ <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a random forest classifier.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
+<p><strong>Recursive feature elimination</strong><br>
+Select features by recursively considering smaller and smaller sets of features.
  First, the estimator is trained on the initial set of features and the importance
  of each feature is obtained either through a <code>coef_</code> attribute or through a
  <code>feature_importances_</code> attribute. Then, the least important features are pruned from
@@ -641,24 +755,38 @@ model doesn't have a <code>feature_importances_</code> attribute, use
  by <code>n_features</code>, RFECV returns the number of features that achieved the optimal score
  on the specified metric. Note that this is not always equal to the amount specified
  by <code>n_features</code>.</p>
-<p><strong>Removing features with low variance</strong></p>
-<p>Variance is the expectation of the squared deviation of a random variable from its mean.
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
+<p><strong>Removing features with low variance</strong><br>
+Variance is the expectation of the squared deviation of a random variable from its mean.
  Features with low variance have many values repeated, which means the model will not
  learn much from them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
  removes all features where the same value is repeated in at least <code>max_frac_repeated</code>
  fraction of the rows. The default option is to remove a feature if all values in it
- are the same. </p>
-<p><strong>Removing features with multi-collinearity</strong></p>
-<p>Two features that are highly correlated are redundant, i.e. two will not contribute more
+ are the same.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#removing-features-with-low-variance">documentation</a>.</p>
+<p><strong>Removing features with multi-collinearity</strong><br>
+Two features that are highly correlated are redundant, i.e. two will not contribute more
  to the model than only one of them. <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a>
- will a features that have a Pearson correlation coefficient larger  than
+ will drop a feature that has a Pearson correlation coefficient larger than
  <code>max_correlation</code> with another feature. A correlation of 1 means the two columns
  are equal. A dataframe of the removed features and their correlation values can
  be accessed through the <code>collinear</code> attribute.</p>
+<p><br></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Use the <a href="../API/plots/plot_feature_importance/">plot_feature_importance</a> method to
+examine how much a specific feature contributes to the final predictions. If the
+model doesn't have a <code>feature_importances_</code> attribute, use 
+<a href="../API/plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The RFE and RFECV strategies don't work when the solver is a 
+<a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
+</div>
 <p><br><br></p>
-<h1 id="model-fitting-and-evaluation">Model fitting and evaluation</h1>
+<h1 id="training">Training</h1>
 <hr />
-<h3 id="training">Training</h3>
 <p>Six classes: TrainerClassifier and reg, SuccessiveHalvingClassifier and reg,
  and TrainSizingClassifier and reg. Accessed from an ATOM instance through run,
  successive_halving and train_sizing.</p>
@@ -702,61 +830,80 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 </ul>
 <p><br></p>
 <h3 id="metric">Metric</h3>
+<p><strong>Scorers</strong></p>
+<p><strong>Custom metric acronyms</strong></p>
+<p><strong>Multi-metric runs</strong></p>
 <p><br></p>
 <h3 id="hyperparameter-tuning">Hyperparameter tuning</h3>
 <p><br></p>
 <h3 id="bagging">Bagging</h3>
 <p><br></p>
 <h3 id="early-stopping">Early stopping</h3>
+<p><br></p>
+<h3 id="successive-halving">Successive halving</h3>
+<p><br></p>
+<h3 id="train-sizing">Train sizing</h3>
 <p><br><br></p>
-<h1 id="model-subclasses">Model subclasses</h1>
+<h1 id="models">Models</h1>
 <hr />
+<h3 id="properties">Properties</h3>
+<h3 id="methods">Methods</h3>
 <p><br><br></p>
-<h1 id="prediction-methods">Prediction  methods</h1>
+<h1 id="predicting">Predicting</h1>
 <hr />
-<p>After running a succesful pipeline, it is possible you would like to apply all
-used transformations onto new data, or make predictions using one of the trained
-models. Just like a sklearn estimator, you can call the prediction
-methods from a fitted ATOM instance, e.g. <code>atom.predict(X)</code>. Calling the method
-directly from ATOM will use the winning model in the pipeline (under attribute
-<code>winner</code>). To use a different model, simply call the method from the model
-subclass, e.g. <code>atom.KNN.predict(X)</code>.</p>
-<p>The methods will all call the <a href="../API/ATOM/atomclassifier/#atomclassifier-transform">transform</a>
-method, that is, all data pre-processing transformation taken by ATOM will be first
-applied on the provided data before making predictions. By default, this excludes
-outlier handling and balancing the dataset since these steps should only be applied
-on the training set. Use the method's parameters to select which transformations to
-use in every call.</p>
-<p>The available methods are a selection of the most common methods in sklearn's API:</p>
+<p>After running a successful pipeline, it is possible you would like to apply all
+ used transformations onto new data, or make predictions using one of the trained
+ models. Just like a sklearn estimator, you can call the prediction methods from a
+ fitted <code>training</code> instance, e.g. <code>atom.predict(X)</code>. Calling the method without
+ specifying a model will use the winning model in the pipeline (under attribute
+ <code>winner</code>). To use a different model, simply call the method from a <code>model</code>,
+ e.g. <code>atom.KNN.predict(X)</code>.</p>
+<p>If called from <code>atom</code>, the prediction methods will transform the provided data through
+ all the transformers in the pipeline before making the predictions. By default, this
+ excludes outlier handling and balancing the dataset since these steps should only
+ be applied on the training set. Use the method's kwargs to select which transformations
+ to use in every call.</p>
+<p>The available prediction methods are a selection of the most common methods for
+ estimators in sklearn's API:</p>
 <ul>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-transform">transform</a></li>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-predict">predict</a></li>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-predict-proba">predict_proba</a></li>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-predict-log-proba">predict_log_proba</a></li>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-decision_function">decision_function</a></li>
-<li><a href="../API/ATOM/atomclassifier/#atomclassifier-score">score</a></li>
+<li><a href="../API/predicting/transform">transform</a></li>
+<li><a href="../API/predicting/predict">predict</a></li>
+<li><a href="../API/predicting/predict_proba">predict_proba</a></li>
+<li><a href="../API/predicting/predict_log_proba">predict_log_proba</a></li>
+<li><a href="../API/predicting/decision_function">decision_function</a></li>
+<li><a href="../API/predicting/score">score</a></li>
 </ul>
+<p>Except for transform, the prediction methods can be calculated on the train and test
+ set. You can access them through the <a href="#properties">properties</a> of the
+ <code>models</code>, e.g. <code>atom.mnb.predict_proba_train</code> or <code>atom.mnb.predict_proba_test</code>.
+ Keep in mind that the results of these properties are calculated only once, the
+ first time the property is called. Once calculated, they are stored as private
+ attributes of the instance. This mechanism avoids having to calculate attributes
+ that are never used (saving time and memory), but allows using the same property
+ without having to calculate it again. Many of the <a href="#plots">plots</a> benefit from this
+ approach.</p>
 <p><br><br></p>
-<h1 id="plotting">Plotting</h1>
+<h1 id="plots">Plots</h1>
 <hr />
 <p>After fitting the models to the data, it's time to analyze the results. ATOM provides
- many plotting methods to compare the model performances. Click <a href="../API/ATOM/atomclassifier/#plots">here</a>
- for a list of the available plots. The plot descriptions and examples can be find in
- the API section. ATOM uses the <a href="https://matplotlib.org/">matplotlib</a> and 
- <a href="https://seaborn.pydata.org/">seaborn</a> packages for plotting.</p>
-<p>The plot methods can be called from the ATOM instance directly, e.g. <code>atom.plot_roc()</code>,
- or from one of the model subclasses, <code>e.g. atom.LGB.plot_roc()</code>. If called from ATOM,
- it will make the plot for all models in the pipeline. This can be useful to compare 
- the results of multiple models. If called from the model subclass, it will only make
- the plot for that model. Use this option if you want information just for a specific
- model or to make the plot a bit less crowded.</p>
+ many plotting methods to compare the model performances. Descriptions and examples
+ can be found in the API section. ATOM uses the packages <a href="https://matplotlib.org/">matplotlib</a>,
+ <a href="https://seaborn.pydata.org/">seaborn</a> and <a href="https://github.com/slundberg/shap">shap</a>
+ for plotting.</p>
+<p>The plot methods can be called from a <code>training</code> directly, e.g. <code>atom.plot_roc()</code>,
+ or from one of the <code>models</code>, e.g. <code>atom.LGB.plot_roc()</code>. If called from <code>training</code>,
+ it will make the plot for all models in the pipeline. This can be useful to compare
+ the results of multiple models. If called from a <code>model</code>, it will make the plot for
+ only that model. Use this option if you want information just for that specific
+ model or to make a plot less crowded.</p>
 <p><br></p>
 <h3 id="parameters">Parameters</h3>
-<p>Apart from the plot-specific parameters they may have, all plots have four parameters in common:</p>
+<p>Apart from the plot-specific parameters they may have, all plots have four parameters
+ in common:</p>
 <ul>
 <li>The <code>title</code> parameter allows you to add a custom title to the plot.</li>
-<li>The <code>figsize</code> parameter allows you to adjust the plot's size.</li>
-<li>The <code>filename</code> parameter is used to save the plot as a .png file.</li>
+<li>The <code>figsize</code> parameter adjust the plot's size.</li>
+<li>The <code>filename</code> parameter is used to save the plot.</li>
 <li>The <code>display</code> parameter determines whether the plot is rendered.</li>
 </ul>
 <p><br></p>
@@ -767,29 +914,29 @@ use in every call.</p>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Properties:</strong></td>
 <td width="75%" style="background:white;">
-<strong>style: str</strong>
+<strong>style: str, optional (default='darkgrid')</strong>
 <blockquote>
 Seaborn plotting style. See the <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
 </blockquote>
 
-<strong>palette: str</strong>
+<strong>palette: str, optional (default='GnBu_r_d')</strong>
 <blockquote>
 Seaborn color palette. See the <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
 </blockquote>
 
-<strong>title_fontsize: int</strong>
+<strong>title_fontsize: int, optional (default=20)</strong>
 <blockquote>
-Fontsize for plot titles.
+Fontsize for the plot's title.
 </blockquote>
 
-<strong>label_fontsize: int</strong>
+<strong>label_fontsize: int, optional (default=16)</strong>
 <blockquote>
 Fontsize for labels and legends.
 </blockquote>
 
-<strong>tick_fontsize: int</strong>
+<strong>tick_fontsize: int, optional (default=12)</strong>
 <blockquote>
-Fontsize for ticks.
+Fontsize for the ticks along the plot's axes.
 </blockquote>
 
 </td></tr>
@@ -802,15 +949,25 @@ Fontsize for ticks.
  learning model. It connects optimal credit allocation with local explanations
  using the classic Shapley values from game theory and their related extensions.
  ATOM implements methods to plot 4 of shap's plotting functions directly from its
- API. The explainer will be chosen automatically based on the model's type.
+ API. The explainer will be chosen automatically based on the model's type. For 
+ kernelExplainer, the data used to estimate the expected values is the complete
+ training set when &lt;100 rows, else its summarized with a set of 10 weighted K-means,
+ each weighted by the number of points they represent.
  The four plots are: <a href="../API/plots/force_plot">force_plot</a>,
  <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>
  and <a href="../API/plots/decision_plot">decision_plot</a>.</p>
+<p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
+ Selecting more than one model will raise an exception. To avoid this, call the plot
+ from a <code>model</code>, e.g. <code>atom.xgb.force_plot()</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can recognize the SHAP plots by the fact that they end (instead of start)
+with <code>plot</code>.</p>
+</div>
 <p><br></p>
 <h3 id="available-plots">Available plots</h3>
 <p>A list of available plots can be find hereunder. Note that not all plots can be
- called from the model subclasses and that their availability can depend on the
- task at hand.</p>
+ called from every class and that their availability can depend on the task at hand.</p>
 <ul>
 <li><a href="../API/plots/plot_correlation">plot_correlation</a></li>
 <li><a href="../API/plots/plot_pipeline">plot_pipeline</a></li>

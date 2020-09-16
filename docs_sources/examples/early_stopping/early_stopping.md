@@ -28,7 +28,7 @@ X, y = load_breast_cancer(return_X_y=True)
 # An early stopping of 0.1 means that the model will stop if it
 # didn't improve in the last 10% of it's iterations.
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
-atom.run('LGB', metric='ap', n_calls=7, n_random_starts=3, bo_params={'early_stopping': 0.1, 'cv': 1})
+atom.run('LGB', metric='ap', n_calls=7, n_initial_points=3, bo_params={'early_stopping': 0.1, 'cv': 1})
 ```
 
     << ================== ATOM ================== >>

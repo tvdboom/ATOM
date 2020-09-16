@@ -25,17 +25,17 @@ from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, X10_str, y10
 
 # Test bayesian_optimization ================================================ >>
 
-def test_n_random_starts_lower_1():
-    """Assert than an error is raised when n_random_starts<1."""
+def test_n_initial_points_lower_1():
+    """Assert than an error is raised when n_initial_points<1."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'LDA'], n_calls=5, n_random_starts=(2, -1))
+    atom.run(['LR', 'LDA'], n_calls=5, n_initial_points=(2, -1))
     assert atom.errors.get('LDA')
 
 
-def test_n_calls_lower_n_random_starts():
-    """Assert than an error is raised when n_calls<n_random_starts."""
+def test_n_calls_lower_n_initial_points():
+    """Assert than an error is raised when n_calls<n_initial_points."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['LR', 'LDA'], n_calls=(5, 2), n_random_starts=(2, 3))
+    atom.run(['LR', 'LDA'], n_calls=(5, 2), n_initial_points=(2, 3))
     assert atom.errors.get('LDA')
 
 
@@ -84,7 +84,7 @@ def test_plot_bo():
     bo_params = {'plot_bo': True}
 
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, n_jobs=-1, random_state=1)
-    atom.run(['kSVM', 'MLP'], n_calls=25, n_random_starts=20, bo_params=bo_params)
+    atom.run(['kSVM', 'MLP'], n_calls=25, n_initial_points=20, bo_params=bo_params)
     assert not atom.errors
 
 
@@ -199,8 +199,8 @@ def test_all_prediction_properties():
     assert atom.lr.predict_proba_test is atom.lr._predict_proba_test
     assert atom.lr.predict_log_proba_train is atom.lr._predict_log_proba_train
     assert atom.lr.predict_log_proba_test is atom.lr._predict_log_proba_test
-    assert atom.sgd.decision_function_train is atom.sgd._decision_func_train
-    assert atom.sgd.decision_function_test is atom.sgd._decision_func_test
+    assert atom.sgd.decision_function_train is atom.sgd._dec_func_train
+    assert atom.sgd.decision_function_test is atom.sgd._dec_func_test
     assert atom.sgd.score_train is atom.sgd._score_train
     assert atom.sgd.score_test is atom.sgd._score_test
 
@@ -315,17 +315,19 @@ def test_calibrate_invalid_task():
 
 
 def test_calibrate():
-    """Assert that calibrate  method works as intended."""
+    """Assert that calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     atom.calibrate(cv=3)
-    assert isinstance(atom.mnb.model, CalibratedClassifierCV)
+    assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
-    # For cv='prefit'
+
+def test_calibrate_prefit():
+    """Assert that calibrate method works as intended when cv='prefit'."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     atom.calibrate(cv='prefit')
-    assert isinstance(atom.mnb.model, CalibratedClassifierCV)
+    assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
 def test_reset_predict_properties():

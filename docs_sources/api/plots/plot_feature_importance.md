@@ -1,13 +1,13 @@
 # plot_feature_importance
 -------------------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_feature_importance</strong>(models=None, show=None, title=None,
-                                            figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_feature_importance</strong>(models=None, show=None, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1007">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot a tree-based model's feature importance. The importances are normalized in order
- to be able to compare them between models. The `best_features` attribute is created,
- which stores the showed features in order of importance.
+ to be able to compare them between models. The `feature_importance` attribute is
+ updated with the extracted importance ranking.
 <br /><br />
 <table width="100%">
 <tr>
@@ -19,13 +19,13 @@ Name of the models to plot. If None, all the models in the pipeline are selected
 </blockquote>
 <strong>show: int, optional (default=None)</strong>
 <blockquote>
-Number of best features to show in the plot. None to show for all.
+Number of best features to show in the plot. None to show all.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
 Plot's title. If None, the default option is used.
 </blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
+<strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
 Figure's size, format as (x, y). If None, adapts size to `show` parameter.
 </blockquote>
@@ -46,11 +46,14 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(['LR', 'RF'], metric='recall_weighted')
-atom.RF.plot_feature_importance(show=10, filename='random_forest_importance.png')
+atom.RF.plot_feature_importance(show=11, filename='random_forest_importance.png')
 ```
-![plot_feature_importance](./img/plot_feature_importance.png)
+<div align="center">
+    <img src="/img/plots/plot_feature_importance.png" alt="plot_feature_importance" width="700" height="700"/>
+</div>

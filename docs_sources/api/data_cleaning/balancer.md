@@ -2,47 +2,44 @@
 ----------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(oversample='not majority', undersample=None, n_neighbors=5,
-                                  n_jobs=1, verbose=0, logger=None, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L905">[source]</a></div></pre>
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', sampling_strategy='not majority',
+                                  n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L897">[source]</a></div></pre>
 <div style="padding-left:3%">
-Balance the number of rows per target category. Using oversample and
- undersample at the same time or not using any will raise an exception.
- Use only for classification tasks.
+Balance the number of rows per target category. Use only for classification tasks.
+This class can be accessed from `atom` through the
+ [balance](../../ATOM/atomclassifier/#atomclassifier-balance) method. Read more in
+ the [user guide](../../../user_guide/#balancing-the-data).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>oversample: float, string or None, optional (default='not majority')</strong>
+<strong>strategy: str, optional (default='ADASYN')</strong>
 <blockquote>
-Oversampling strategy using [ADASYN](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.over_sampling.ADASYN.html).
- Choose from:
-<ul>
-<li>None: Don't oversample.</li>
-<li>float: Fraction minority/majority (only for binary classification).</li>
-<li>'minority': Resample only the minority category.</li>
-<li>'not minority': Resample all but the minority category.</li>
-<li>'not majority': Resample all but the majority category.</li>
-<li>'all': Resample all categories.</li>
-</ul>
+Type of algorithm to use for oversampling or undersampling. Choose from one
+ of the estimators available in the [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/index.html)
+ package.
 </blockquote>
-<strong>undersample: float, string or None, optional (default=None)</strong>
+<strong>sampling_strategy: float, str, dict or callable, optional (default='not majority')</strong>
 <blockquote>
-Undersampling strategy using [NearMiss](https://imbalanced-learn.readthedocs.io/en/stable/generated/imblearn.under_sampling.NearMiss.html).
- Choose from:
+Sampling information to sample the data set.
 <ul>
-<li>None: Don't oversample.</li>
-<li>float: Fraction minority/majority (only for binary classification).</li>
-<li>'majority': Resample only the majority category.</li>
-<li>'not minority': Resample all but the minority category.</li>
-<li>'not majority': Resample all but the majority category.</li>
-<li>'all': Resample all categories.</li>
+<li>If float: Fraction minority/majority (only for binary classification).</li>
+<li>If str: Choose from:
+    <ul>
+    <li>'minority': Resample only the minority category.</li>
+    <li>'majority': Resample only the majority category.</li>
+    <li>'not minority': Resample all but the minority category.</li>
+    <li>'not majority': Resample all but the majority category.</li>
+    <li>'all': Resample all categories.</li>
+    </ul></li>
+<li>If dict: The keys correspond to the targeted categories. The values
+               correspond to the desired number of samples for each targeted
+               category.</li>
+<li>If callable: Function taking y and returns a dict with the same format
+                   as described above.</li>
 </ul>
-</blockquote>
-<strong>n_neighbors: int, optional (default=5)</strong>
-<blockquote>
-Number of nearest neighbors used for for both the undersample and oversample algorithms.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -78,6 +75,10 @@ Verbosity level of the class. Possible values are:
 Seed used by the random number generator. If None, the random number
  generator is the `RandomState` instance used by `numpy.random`.
 </blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments passed to the `strategy` estimator.
+</blockquote>
 </td>
 </tr>
 </table>
@@ -90,10 +91,16 @@ Seed used by the random number generator. If None, the random number
 ## Attributes
 -------------
 
+<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
+<strong>&lt;estimator_name&gt;: class</strong>
+<blockquote>
+Estimator instance (attribute name in all lowercase) used to oversample/undersample
+ the data, e.g. `balancer.adasyn` for the default option.
+</blockquote>
 <strong>mapping: dict</strong>
 <blockquote>
 Dictionary of the target values mapped to their respective encoded integer.
@@ -143,7 +150,7 @@ Dictionary of the target values mapped to their respective encoded integer.
 
 <a name="balancer-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -282,7 +289,7 @@ Estimator instance.
 
 <a name="balancer-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1009">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L973">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>
@@ -327,12 +334,12 @@ Transformed target column.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.balance(undersample='not majority', n_neighbors=10)
+atom.balance(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
 ```
 or
 ```python
 from atom.data_cleaning import Balancer
 
-balancer = Balancer(undersample='not majority', n_neighbors=10)
+balancer = Balancer(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
 X_train, y_train = balancer.transform(X_train, y_train)
 ```

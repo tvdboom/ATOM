@@ -21,15 +21,13 @@ from sklearn.impute import SimpleImputer, KNNImputer
 # Other packages
 from scipy.stats import zscore
 from category_encoders.one_hot import OneHotEncoder
-from category_encoders.ordinal import OrdinalEncoder
-from imblearn.over_sampling import ADASYN
-from imblearn.under_sampling import NearMiss
 
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, Y_TYPES, ENCODER_TYPES, variable_return, to_df, to_series, merge,
-    check_is_fitted, infer_task, composed, crash, method_to_log
+    CAL, SCALAR, X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES,
+    variable_return, to_df, to_series, merge, check_is_fitted, infer_task,
+    composed, crash, method_to_log
 )
 
 
@@ -143,6 +141,14 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
     """Applies standard data cleaning steps on a dataset.
 
+     These steps can include:
+        - Strip categorical features from white spaces.
+        - Removing columns with prohibited data types.
+        - Removing categorical columns with maximal cardinality.
+        - Removing columns with minimum cardinality.
+        - Removing rows with missing values in the target column.
+        - Label-encode the target column.
+
     Parameters
     ----------
     prohibited_types: str or sequence, optional (default=[])
@@ -194,12 +200,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None):
         super().__init__(verbose=verbose, logger=logger)
-
-        # Define attributes
-        if isinstance(prohibited_types, str):
-            self.prohibited_types = [prohibited_types]
-        else:
-            self.prohibited_types = prohibited_types
+        self.prohibited_types = prohibited_types
         self.strip_categorical = strip_categorical
         self.maximum_cardinality = maximum_cardinality
         self.minimum_cardinality = minimum_cardinality
@@ -233,6 +234,10 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
+
+        # Make a list from the prohibited types if a str was provided
+        if isinstance(self.prohibited_types, str):
+            self.prohibited_types = [self.prohibited_types]
 
         self.log("Applying data cleaning...", 1)
 
@@ -280,7 +285,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     self.log(f" --> Dropping {diff} rows with "
                              "missing values in target column.", 2)
 
-            task = infer_task(y) if self.map_target is None else 'reg'
+            task = infer_task(y) if self.map_target is None else 'regression'
             # Map the target column to numerical values
             if self.map_target or not task.startswith('reg'):
                 le = LabelEncoder()
@@ -311,7 +316,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         Imputing strategy for categorical columns. Choose from:
             - 'drop': Drop rows containing missing values.
             - 'most_frequent': Impute with most frequent value.
-            - string: Impute with provided string.
+            - str: Impute with provided string.
 
     min_frac_rows: float, optional (default=0.5)
         Minimum fraction of non-missing values in a row. If less,
@@ -325,7 +330,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         List of values to treat as 'missing'. None to use the default
         values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf'].
         Note that np.NaN, None, np.inf and -np.inf will always be imputed since they
-        are incompatible with most models.
+        are incompatible with most estimators.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -350,30 +355,6 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None):
         super().__init__(verbose=verbose, logger=logger)
-
-        # Check input Parameters
-        strats = ['drop', 'mean', 'median', 'knn', 'most_frequent']
-        if isinstance(strat_num, str) and strat_num.lower() not in strats:
-            raise ValueError("Unknown strategy for the strat_num parameter, got "
-                             f"{strat_num}. Choose from: {', '.join(strats)}.")
-        if min_frac_rows <= 0 or min_frac_rows >= 1:
-            raise ValueError("Invalid value for the min_frac_rows parameter. Value"
-                             f" should be between 0 and 1, got {min_frac_rows}.")
-        if min_frac_cols <= 0 or min_frac_cols >= 1:
-            raise ValueError("Invalid value for the min_frac_cols parameter. Value"
-                             f" should be between 0 and 1, got {min_frac_cols}.")
-
-        # Set default missing list
-        if missing is None:
-            missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']
-        elif not isinstance(missing, list):
-            missing = [missing]  # Has to be an iterable for loop
-
-        # Some values must always be imputed (but can be double)
-        missing.extend([np.inf, -np.inf])
-        missing = set(missing)
-
-        # Define attributes
         self.strat_num = strat_num
         self.strat_cat = strat_cat
         self.min_frac_rows = min_frac_rows
@@ -401,6 +382,28 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
+
+        # Check input Parameters
+        strats = ['drop', 'mean', 'median', 'knn', 'most_frequent']
+        if isinstance(self.strat_num, str) and self.strat_num.lower() not in strats:
+            raise ValueError("Unknown strategy for the strat_num parameter, got "
+                             f"{self.strat_num}. Choose from: {', '.join(strats)}.")
+        if self.min_frac_rows <= 0 or self.min_frac_rows >= 1:
+            raise ValueError("Invalid value for the min_frac_rows parameter. Value "
+                             f"should be between 0 and 1, got {self.min_frac_rows}.")
+        if self.min_frac_cols <= 0 or self.min_frac_cols >= 1:
+            raise ValueError("Invalid value for the min_frac_cols parameter. Value "
+                             f"should be between 0 and 1, got {self.min_frac_cols}.")
+
+        # Set default missing list
+        if self.missing is None:
+            self.missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']
+        elif not isinstance(self.missing, list):
+            self.missing = [self.missing]  # Has to be an iterable for loop
+
+        # Some values must always be imputed (but can be double)
+        self.missing.extend([np.inf, -np.inf])
+        self.missing = set(self.missing)
 
         self.log("Fitting Imputer...", 1)
 
@@ -544,29 +547,30 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of unique values in the column:
-        - If n_unique=2, use label-encoding.
-        - If 2 < n_unique <= max_onehot, use one-hot-encoding.
-        - If n_unique > max_onehot, use 'encode_type'.
+        - If n_unique=2, use Label-encoding.
+        - If 2 < n_unique <= max_onehot, use OneHot-encoding.
+        - If n_unique > max_onehot, use `strategy`-encoding.
 
     Also replaces classes with low occurrences with the value `other` in order to
     prevent too high cardinality. Categorical features are defined as all columns
     whose dtype.kind not in `ifu`. Will raise an error if it encounters missing
-    values or unknown categories while transforming.
+    values or unknown categories when transforming.
 
     Parameters
     ----------
-    max_onehot: int or None, optional (default=10)
-        Maximum number of unique values in a feature to perform
-        one-hot-encoding. If None, it will never do one-hot-encoding.
+    strategy: str, optional (default='LeaveOneOut')
+        Type of encoding to use for high cardinality features. Choose from one of
+        the estimators available in the category-encoders package except for:
+            - OneHotEncoder: Use the `max_onehot` parameter.
+            - HashingEncoder: Incompatibility of APIs.
 
-    encode_type: str, optional (default='Target')
-        Type of encoding to use for high cardinality features. Choose from
-        one of the encoders available in the category_encoders package (except
-        for OneHotEncoder and HashingEncoder).
+    max_onehot: int or None, optional (default=10)
+        Maximum number of unique values in a feature to perform one-hot-encoding.
+        If None, it will always use `strategy` when n_unique > 2.
 
     frac_to_other: float, optional (default=None)
-        Categories with less rows than n_rows * fraction_to_other are replaced
-        with the string `other`. If None, this skip this step.
+        Categories with less occurrences than n_rows * fraction_to_other are
+        replaced with the string `other`. If None, this skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -581,44 +585,24 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         - If class: python `Logger` object.
 
     **kwargs
-        Additional keyword arguments passed to the encoder selected
-        by the 'encode_type' parameter.
+        Additional keyword arguments passed to the `strategy` estimator.
 
     """
 
     def __init__(self,
+                 strategy: str = 'LeaveOneOut',
                  max_onehot: Optional[int] = 10,
-                 encode_type: str = 'Target',
                  frac_to_other: Optional[float] = None,
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None,
                  **kwargs):
         super().__init__(verbose=verbose, logger=logger)
-
-        # Check Parameters
-        if max_onehot is None:
-            max_onehot = 0
-        elif max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
-            raise ValueError("Invalid value for the max_onehot parameter."
-                             f"Value should be >= 0, got {max_onehot}.")
-        if encode_type.lower() not in [x.lower() for x in ENCODER_TYPES]:
-            raise ValueError("Invalid value for the encode_type parameter."
-                             f"Choose from: {', '.join(ENCODER_TYPES)}.")
-        if frac_to_other and (frac_to_other <= 0 or frac_to_other >= 1):
-            raise ValueError("Invalid value for the frac_to_other parameter. Value"
-                             f" should be between 0 and 1, got {frac_to_other}.")
-
+        self.strategy = strategy
         self.max_onehot = max_onehot
-        for key, value in ENCODER_TYPES.items():
-            if key.lower() == encode_type.lower():
-                self.encode_type = key
-                self._rest_encoder = value
-                break
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
         self._to_other = {}
-        self._col_to_type = {}
         self._encoders = {}
         self._is_fitted = False
 
@@ -643,6 +627,26 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
+        # Check Parameters
+        if self.strategy.lower().endswith('encoder'):
+            self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
+        if self.strategy.lower() not in ENCODER_TYPES:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                f"Choose from: {' '.join(ENCODER_TYPES)}.")
+        strategy = ENCODER_TYPES[self.strategy.lower()]
+
+        if self.max_onehot is None:
+            self.max_onehot = 0
+        elif self.max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
+            raise ValueError("Invalid value for the max_onehot parameter."
+                             f"Value should be >= 0, got {self.max_onehot}.")
+        if self.frac_to_other:
+            if self.frac_to_other <= 0 or self.frac_to_other >= 1:
+                raise ValueError(
+                    "Invalid value for the frac_to_other parameter. Value "
+                    f"should be between 0 and 1, got {self.frac_to_other}.")
+
         self.log("Fitting Encoder...", 1)
 
         for col in X:
@@ -663,14 +667,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
-                    self._col_to_type[col] = 'Ordinal'
-                    self._encoders[col] = OrdinalEncoder(
-                        handle_missing='error',
-                        handle_unknown='error'
-                    ).fit(values)
+                    self._encoders[col] = LabelEncoder().fit(values)
 
                 elif 2 < n_unique <= self.max_onehot:
-                    self._col_to_type[col] = 'One-hot'
                     self._encoders[col] = OneHotEncoder(
                         handle_missing='error',
                         handle_unknown='error',
@@ -678,8 +677,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     ).fit(values)
 
                 else:
-                    self._col_to_type[col] = self.encode_type
-                    self._encoders[col] = self._rest_encoder(
+                    self._encoders[col] = strategy(
                         handle_missing='error',
                         handle_unknown='error',
                         **self.kwargs
@@ -726,15 +724,14 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Get index of the column
                 idx = X.columns.get_loc(col)
 
+                self.log(f" --> {self._encoders[col].__class__.__name__[:-7]}"
+                         f"-encoding feature {col}. Contains {n_unique} unique "
+                         "categories.", 2)
                 # Perform encoding type dependent on number of unique values
-                if self._col_to_type[col] == 'Ordinal':
-                    self.log(f" --> Label-encoding feature {col}. "
-                             f"Contains {n_unique} unique categories.", 2)
+                if self._encoders[col].__class__.__name__[:-7] == 'Label':
                     X[col] = self._encoders[col].transform(values)
 
-                elif self._col_to_type[col] == 'One-hot':
-                    self.log(f" --> One-hot-encoding feature {col}. "
-                             f"Contains {n_unique} unique categories.", 2)
+                elif self._encoders[col].__class__.__name__[:-7] == 'OneHot':
                     onehot_cols = self._encoders[col].transform(values)
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
@@ -743,8 +740,6 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
                 else:
-                    self.log(f" --> {self.encode_type}-encoding feature "
-                             f"{col}. Contains {n_unique} unique categories.", 2)
                     rest_cols = self._encoders[col].transform(values)
                     X = X.drop(col, axis=1)  # Drop the original column
                     # Insert the new columns at old location
@@ -757,9 +752,8 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
     """Remove or replace outliers in the data.
 
-    Outliers are defined as values that lie further than
-    `max_sigma` * standard_deviation away from the mean of the column.
-    Ignores categorical columns.
+    Outliers are values that lie further than `max_sigma` * standard_deviation
+    away from the mean of the column. Ignores categorical columns.
 
     Parameters
     ----------
@@ -798,17 +792,6 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None):
         super().__init__(verbose=verbose, logger=logger)
-
-        # Check Parameters
-        if isinstance(strategy, str):
-            if strategy.lower() not in ['drop', 'min_max']:
-                raise ValueError("Invalid value for the strategy parameter."
-                                 f"Choose from: 'drop', 'min_max'.")
-        if max_sigma <= 0:
-            raise ValueError("Invalid value for the max_sigma parameter."
-                             f"Value should be > 0, got {max_sigma}.")
-
-        # Define attributes
         self.strategy = strategy
         self.max_sigma = max_sigma
         self.include_target = include_target
@@ -838,6 +821,15 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
+
+        # Check Parameters
+        if isinstance(self.strategy, str):
+            if self.strategy.lower() not in ['drop', 'min_max']:
+                raise ValueError("Invalid value for the strategy parameter."
+                                 f"Choose from: 'drop', 'min_max'.")
+        if self.max_sigma <= 0:
+            raise ValueError("Invalid value for the max_sigma parameter."
+                             f"Value should be > 0, got {self.max_sigma}.")
 
         self.log('Handling outliers...', 1)
 
@@ -905,32 +897,28 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
     """Balance the number of rows per target category.
 
-    Using oversample and undersample at the same time or not using any will raise
-    an exception. Use only for classification tasks.
+    Use only for classification tasks.
 
     Parameters
     ----------
-    oversample: float, string or None, optional (default='not majority')
-        Oversampling strategy using ADASYN. Choose from:
-            - None: Don't oversample.
-            - float: Fraction minority/majority (only for binary classification).
-            - 'minority': Resample only the minority category.
-            - 'not minority': Resample all but the minority category.
-            - 'not majority': Resample all but the majority category.
-            - 'all': Resample all categories.
+    strategy: str, optional (default='ADASYN')
+        Type of algorithm to use for oversampling or undersampling. Choose from one
+        of the estimators available in the imbalanced-learn package.
 
-    undersample: float, string or None, optional (default=None)
-        Undersampling strategy using NearMiss. Choose from:
-            - None: Don't undersample.
-            - float: Fraction minority/majority (only for binary classification).
-            - 'majority': Resample only the majority category.
-            - 'not minority': Resample all but minority category.
-            - 'not majority': Resample all but majority category.
-            - 'all': Resample all categories.
-
-    n_neighbors: int, optional (default=5)
-        Number of nearest neighbors used for for both the undersample
-        and oversample algorithms.
+    sampling_strategy: float, str, dict, callable, optional (default='not majority')
+        Sampling information to sample the data set.
+            - If float: Fraction minority/majority (only for binary classification).
+            - If str: Choose from:
+                - 'minority': Resample only the minority category.
+                - 'majority': Resample only the majority category.
+                - 'not minority': Resample all but the minority category.
+                - 'not majority': Resample all but the majority category.
+                - 'all': Resample all categories.
+            - If dict: The keys correspond to the targeted categories. The values
+                       correspond to the desired number of samples for each targeted
+                       category.
+            - If callable: Function taking y and returns a dict with the same format
+                           as described above.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -957,50 +945,26 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` instance used by `numpy.random`.
 
+    **kwargs
+        Additional keyword arguments passed to the `strategy` estimator.
+
     """
 
     def __init__(self,
-                 oversample: Optional[Union[int, float, str]] = 'not majority',
-                 undersample: Optional[Union[int, float, str]] = None,
-                 n_neighbors: int = 5,
+                 strategy: str = 'ADASYN',
+                 sampling_strategy: Union[SCALAR, CAL, dict] = 'not majority',
                  n_jobs: int = 1,
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None,
-                 random_state: Optional[int] = None):
+                 random_state: Optional[int] = None,
+                 **kwargs):
         super().__init__(n_jobs=n_jobs,
                          verbose=verbose,
                          logger=logger,
                          random_state=random_state)
-
-        # Not both strategies can be applied at the same time
-        if oversample and undersample:
-            raise ValueError("Oversample and undersample cannot be "
-                             "applied both at the same time!")
-
-        # At least one of the two strategies needs to be applied
-        if not oversample and not undersample:
-            raise ValueError("Oversample and undersample cannot be both None!")
-
-        # List of admitted string values
-        strats = ['not majority', 'not minority', 'all', 'auto']
-        strat_under = strats + ['majority']
-        strat_over = strats + ['minority']
-        if isinstance(oversample, str) and oversample not in strat_over:
-            raise ValueError(f"Unknown value for the oversample parameter,"
-                             " got {}. Choose from: {}."
-                             .format(oversample, ', '.join(strat_over)))
-        if isinstance(undersample, str) and undersample not in strat_under:
-            raise ValueError(f"Unknown value for the undersample parameter,"
-                             " got {}. Choose from: {}."
-                             .format(undersample, ', '.join(strat_under)))
-        if n_neighbors <= 0:
-            raise ValueError("Invalid value for the n_neighbors parameter."
-                             f"Value should be >0, got {n_neighbors}.")
-
-        # Define attributes
-        self.oversample = oversample
-        self.undersample = undersample
-        self.n_neighbors = n_neighbors
+        self.strategy = strategy
+        self.sampling_strategy = sampling_strategy
+        self.kwargs = kwargs
 
         self.mapping = {}
         self._cols = None
@@ -1030,6 +994,13 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
+        # Check Parameters
+        if self.strategy.lower() not in BALANCER_TYPES:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                f"Choose from: {' '.join(BALANCER_TYPES)}.")
+        strategy = BALANCER_TYPES[self.strategy.lower()]
+
         # Save index and columns for later
         index = X.index
         columns = X.columns
@@ -1042,22 +1013,24 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         for key, value in self.mapping.items():
             counts[key] = np.sum(y == value)
 
-        # Oversampling using ADASYN
-        if self.oversample is not None:
-            self.log("Performing oversampling...", 1)
-            adasyn = ADASYN(sampling_strategy=self.oversample,
-                            n_neighbors=self.n_neighbors,
-                            n_jobs=self.n_jobs,
-                            random_state=self.random_state)
-            X, y = adasyn.fit_resample(X, y)
+        if 'over_sampling' in strategy.__module__:
+            self.log(f"Oversampling with {strategy.__name__}...", 1)
+        else:
+            self.log(f"Undersampling with {strategy.__name__}...", 1)
+        estimator = strategy(
+            sampling_strategy=self.sampling_strategy,
+            **self.kwargs
+        )
 
-        # Undersampling using NearMiss
-        if self.undersample is not None:
-            self.log("Performing undersampling...", 1)
-            NM = NearMiss(sampling_strategy=self.undersample,
-                          n_neighbors=self.n_neighbors,
-                          n_jobs=self.n_jobs)
-            X, y = NM.fit_resample(X, y)
+        # Add n_jobs or random_state if its one of the balancer's parameters
+        for param in ['n_jobs', 'random_state']:
+            if param in estimator.get_params():
+                estimator.set_params(**{param: getattr(self, param)})
+
+        X, y = estimator.fit_resample(X, y)
+
+        # Add the estimator as attribute to Balancer
+        setattr(self, strategy.__name__.lower(), estimator)
 
         # Print changes
         for key, value in self.mapping.items():

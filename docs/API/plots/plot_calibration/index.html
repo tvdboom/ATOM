@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -399,22 +399,24 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
-
+<p><a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1797">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the calibration curve for a binary classifier.
  Well calibrated classifiers are probabilistic classifiers for which the
- output of the predict_proba method can be directly interpreted as a
+ output of the <code>predict_proba</code> method can be directly interpreted as a
  confidence level. For instance a well calibrated (binary) classifier
  should classify the samples such that among the samples to which it gave
- a predict_proba value close to 0.8, approx. 80% actually belong to the
- positive class. This figure shows two plots: the calibration curve, where
+ a <code>predict_proba</code> value close to 0.8, approx. 80% actually belong to the
+ positive class. Read more in sklearn's
+ <a href="https://scikit-learn.org/stable/modules/calibration.html">documentation</a>.</p>
+<p>This figure shows two plots: the calibration curve, where
  the x-axis represents the average predicted probability in each bin and the
  y-axis is the fraction of positives, i.e. the proportion of samples whose
  class is the positive class (in each bin); and a distribution of all
  predicted probabilities of the classifier.
-<br /><br />
+<br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -447,8 +449,7 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-
-<p><br /></p>
+<br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
@@ -458,7 +459,9 @@ atom.run(['GNB', 'LR', 'LGB'], metric='average_precision')
 atom.plot_calibration()
 </code></pre>
 
-<p><img alt="plot_calibration" src="../img/plot_calibration.png" /></p></div>
+<div align="center">
+    <img src="/img/plots/plot_calibration.png" alt="plot_calibration" width="700" height="700"/>
+</div></div>
             </div>
         </div>
 

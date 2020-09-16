@@ -1,13 +1,14 @@
 # plot_evals
 ------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_evals</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset='both', title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L685">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot evaluation curves for the train and test set. The metric is provided by the model's
- package and is different for every model and every task. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). Only allows plotting one model at a time
- because of the different evaluation metric for each.
+Plot evaluation curves for the train and test set. Only for models that allow
+ in-training evaluation (XGB, LGB, CatB). The metric is provided by the model's
+ package and is different for every model and every task. For this reason, the
+ method only allows plotting one model at a time.
 <br /><br />
 <table width="100%">
 <tr>
@@ -15,8 +16,14 @@ Plot evaluation curves for the train and test set. The metric is provided by the
 <td width="75%" style="background:white;">
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Name of the models to plot. If None, all models in the pipeline are selected. Note
- that this will raise an exception if there are multiple models in the pipeline.
+Name of the model to plot. If None, all models in the pipeline are selected. Note
+ that leaving the default option could raise an exception if there are multiple
+ models in the pipeline. To avoid this, call the plot from a `model`, e.g. `atom.lgb.plot_evals()`.
+</blockquote>
+<strong>dataset: str, optional (default='both')</strong>
+<blockquote>
+Data set on which to calculate the evaluation curves. Options
+ are 'train', 'test' or 'both'.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -43,11 +50,15 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run('XGB')
-atom.XGB.plot_evals()
+atom.run(['Bag', 'LGB'])
+atom.lgb.plot_evals()
 ```
-![plot_evals](./img/plot_evals.png)
+<div align="center">
+    <img src="/img/plots/plot_evals.png" alt="plot_evals" width="700" height="420"/>
+</div>
+

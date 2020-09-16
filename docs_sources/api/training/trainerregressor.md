@@ -91,7 +91,7 @@ Maximum number of iterations of the BO (including `random starts`).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to `n_calls`, the optimizer will
@@ -446,7 +446,7 @@ Estimator instance.
 from atom.training import TrainerRegressor
 
 # Run the pipeline
-trainer = TrainerRegressor(['OLS', 'BR'], n_calls=5, n_random_starts=3, bagging=5)
+trainer = TrainerRegressor(['OLS', 'BR'], n_calls=5, n_initial_points=3, bagging=5)
 trainer.run(train, test)
 
 # Analyze the results

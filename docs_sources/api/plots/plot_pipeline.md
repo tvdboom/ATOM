@@ -1,10 +1,11 @@
 # plot_pipeline
 ---------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2602">[source]</a></div></pre>
 <div style="padding-left:3%">
-Create a diagram showing every estimator in ATOM's pipeline.
+Create a diagram showing every estimator in `atom`'s pipeline.
  <br /><br />
 <table width="100%">
 <tr>
@@ -39,12 +40,13 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.impute(strat_num='median', strat_cat='drop', min_frac_rows=0.8)
-atom.encode(8, encode_type='LeaveOneOut', frac_to_other=0.02)
+atom.encode(strategy='LeaveOneOut', max_onehot=8, frac_to_other=0.02)
 atom.outliers(strategy='drop', max_sigma=4, include_target=False)
 atom.feature_selection(strategy='PCA',
                        n_features=10,
@@ -54,10 +56,12 @@ atom.feature_selection(strategy='PCA',
 atom.run(['GBM', 'LGB'],
          metric='recall_weighted',
          n_calls=(10, 20),
-         n_random_starts=(5, 12),
+         n_initial_points=(5, 12),
          bo_params={'base_estimator': 'RF', 'cv': 1, 'max_time': 1000},
          bagging=4)
 
 atom.plot_pipeline()
 ```
-![plot_pipeline](./img/plot_pipeline.png)
+<div align="center">
+    <img src="/img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="1200"/>
+</div>

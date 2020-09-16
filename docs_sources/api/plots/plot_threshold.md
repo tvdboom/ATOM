@@ -1,11 +1,12 @@
 # plot_threshold
 ----------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, steps=100,
-                                   title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset='test', steps=100,
+                      title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1599">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot performance metric(s) against multiple threshold values.
+Plot performance metric(s) against multiple values. Only for binary classification tasks.
 <br /><br />
 <table width="100%">
 <tr>
@@ -17,9 +18,13 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: str, callable, sequence or None, optional (default=None)</strong>
 <blockquote>
-Metric(s) to plot. These can be one of the pre-defined sklearn scorers as string,
- a metric function or a sklearn scorer object. If None, the metric used to run
- the pipeline is used.
+Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric function
+ or a sklearn scorer object (see the [user guide](../../../user_guide/#metric)). If
+ None, the metric used to run the pipeline is used.
+</blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
 </blockquote>
 <strong>steps: int, optional (default=100)</strong>
 <blockquote>
@@ -50,12 +55,16 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 from sklearn.metrics import recall_score
 
 atom = ATOMClassifier(X, y)
-atom.run('KNN')
+atom.run('LGB')
 atom.plot_threshold(metric=['accuracy', 'f1', recall_score])
 ```
-![plot_threshold](./img/plot_threshold.png)
+<div align="center">
+    <img src="/img/plots/plot_threshold.png" alt="plot_threshold" width="700" height="420"/>
+</div>
+

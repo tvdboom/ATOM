@@ -44,13 +44,13 @@ nav:
         - TrainSizing:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
-    - Prediction methods:
-          - transform: API/prediction_methods/transform.md
-          - predict: API/prediction_methods/predict.md
-          - predict_proba: API/prediction_methods/predict_proba.md
-          - predict_log_proba: API/prediction_methods/predict_log_proba.md
-          - decision_function: API/prediction_methods/decision_function.md
-          - score: API/prediction_methods/score.md
+    - Predicting:
+          - transform: API/predicting/transform.md
+          - predict: API/predicting/predict.md
+          - predict_proba: API/predicting/predict_proba.md
+          - predict_log_proba: API/predicting/predict_log_proba.md
+          - decision_function: API/predicting/decision_function.md
+          - score: API/predicting/score.md
     - Plots:
         - plot_correlation: API/plots/plot_correlation.md
         - plot_pipeline: API/plots/plot_pipeline.md

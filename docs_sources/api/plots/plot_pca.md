@@ -1,14 +1,12 @@
 # plot_pca
-------------------
+----------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L86">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L344">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the explained variance ratio vs the number of components. Can only be
- called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
- <a href="../../ATOM/atomregressor">ATOMRegressor</a> or 
- <a href="../../feature_engineering/feature_selector">FeatureSelector</a> instance that
- applied PCA on the dataset. Can't be called from the model subclasses.
+Plot the explained variance ratio vs the number of components. Only available if PCA
+ was applied on the data.
 <br /><br />
 <table width="100%">
 <tr>
@@ -39,6 +37,7 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
@@ -46,4 +45,6 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy='PCA', n_features=11)
 atom.plot_pca()
 ```
-![plot_correlation](./img/plot_pca.png)
+<div align="center">
+    <img src="/img/plots/plot_pca.png" alt="plot_pca" width="700" height="420"/>
+</div>

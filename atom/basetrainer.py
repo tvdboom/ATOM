@@ -18,8 +18,8 @@ from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, merge, to_df,
-    to_series, get_best_score, time_to_string, get_model_name, get_metric, clear
+    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, merge, to_df, to_series, get_best_score,
+    time_to_string, get_model_name, get_metric, get_default_metric, clear
 )
 
 
@@ -30,7 +30,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     ----------
     models: string or sequence
         List of models to fit on the data. Use the predefined acronyms
-        in MODEL_NAMES.
+        in MODEL_LIST.
 
     metric: str, callable or sequence, optional (default=None)
         Metric(s) on which the pipeline fits the models. Choose from any of
@@ -51,7 +51,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     needs_proba: bool or sequence, optional (default=False)
         Whether the metric function requires probability estimates out of a
-        classifier. If True, make sure that every model in the pipeline has
+        classifier. If True, make sure that every estimator in the pipeline has
         a `predict_proba` method. Will be ignored if the metric is a string
         or a scorer. If sequence, the n-th value will apply to the n-th metric
         in the pipeline.
@@ -69,7 +69,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         If sequence, the n-th value will apply to the n-th model in the
         pipeline.
 
-    n_random_starts: int or sequence, optional (default=5)
+    n_initial_points: int or sequence, optional (default=5)
         Initial number of random tests of the BO before fitting the
         surrogate function. If equal to `n_calls`, the optimizer will
         technically be performing a random search. If sequence, the n-th
@@ -124,45 +124,76 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, n_calls, n_random_starts, bo_params,
+                 needs_threshold, n_calls, n_initial_points, bo_params,
                  bagging, n_jobs, verbose, warnings, logger, random_state):
-        super().__init__(
-            n_jobs=n_jobs,
-            verbose=verbose,
-            warnings=warnings,
-            logger=logger,
-            random_state=random_state
-        )
+        super().__init__(n_jobs=n_jobs,
+                         verbose=verbose,
+                         warnings=warnings,
+                         logger=logger,
+                         random_state=random_state)
 
-        # Data attribute
+        # Parameter attributes
+        self.models = models
+        self.metric_ = metric
+        self.greater_is_better = greater_is_better
+        self.needs_proba = needs_proba
+        self.needs_threshold = needs_threshold
+        self.n_calls = n_calls
+        self.n_initial_points = n_initial_points
+        self.bo_params = bo_params
+        self.bagging = bagging
+
+        # Data attributes
         self._data = None
         self._idx = [None, None]
+        self.mapping = {}
         self.scaler = None
         self.task = None
 
         # Model attributes
-        self.models = []
         self.errors = {}
         self._results = pd.DataFrame(
             columns=['name', 'metric_bo', 'time_bo',
                      'metric_train', 'metric_test', 'time_fit',
                      'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
 
-        # Check validity models ============================================= >>
+    def _params_to_attr(self, *args):
+        """Attach the provided data as attributes of the class."""
+        # Data can be already in attrs
+        if len(args) == 0 and self._data is not None:
+            return
+        if len(args) == 2:
+            train, test = to_df(args[0]), to_df(args[1])
+        elif len(args) == 4:
+            train = merge(to_df(args[0]), to_series(args[2]))
+            test = merge(to_df(args[1]), to_series(args[3]))
+        else:
+            raise ValueError(
+                "Invalid parameters. Must be either of the form (train, "
+                "test) or (X_train, X_test, y_train, y_test).")
 
-        if isinstance(models, str):
-            models = [models]
+        # Update the data attributes
+        self._data = pd.concat([train, test]).reset_index(drop=True)
+        self._idx = [len(train), len(test)]
+
+        # Reset data scaler in case of a rerun with new data
+        self.scaler = None
+
+    def _check_parameters(self):
+        """Check the validity of the input parameters."""
+        if isinstance(self.models, str):
+            self.models = [self.models]
 
         # Set models to right name
-        self.models = [get_model_name(m) for m in models]
+        models = [get_model_name(m) for m in self.models]
 
         # Check for duplicates
-        if len(self.models) != len(set(self.models)):
+        if len(models) != len(set(models)):
             raise ValueError("There are duplicate values in the models parameter!")
 
         # Check if packages for not-sklearn models are available
         for m, package in OPTIONAL_PACKAGES:
-            if m in self.models:
+            if m in models:
                 try:
                     importlib.import_module(package)
                 except ImportError:
@@ -171,50 +202,47 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Remove regression/classification-only models from pipeline
         if self.goal.startswith('class'):
             for m in ONLY_REG:
-                if m in self.models:
+                if m in models:
                     raise ValueError(
                         f"The {m} model can't perform classification tasks!")
         else:
             for m in ONLY_CLASS:
-                if m in self.models:
+                if m in models:
                     raise ValueError(
                         f"The {m} model can't perform regression tasks!")
 
-        # Check validity parameters ========================================= >>
+        self.models = models
 
-        # Check Parameters
-        if isinstance(n_calls, (list, tuple)):
-            self.n_calls = n_calls
+        # Check validity BO parameters ======================================= >>
+
+        if isinstance(self.n_calls, (list, tuple)):
             if len(self.n_calls) != len(self.models):
                 raise ValueError(
                     "Invalid value for the n_calls parameter. Length should "
                     "be equal to the number of models, got len(models)="
                     f"{len(self.models)} and len(n_calls)={len(self.n_calls)}.")
         else:
-            self.n_calls = [n_calls for _ in self.models]
-        if isinstance(n_random_starts, (list, tuple)):
-            self.n_random_starts = n_random_starts
-            if len(self.n_random_starts) != len(self.models):
+            self.n_calls = [self.n_calls for _ in self.models]
+        if isinstance(self.n_initial_points, (list, tuple)):
+            if len(self.n_initial_points) != len(self.models):
                 raise ValueError(
-                    "Invalid value for the n_random_starts parameter. Length "
+                    "Invalid value for the n_initial_points parameter. Length "
                     "should be equal to the number of models, got len(models)="
-                    f"{len(self.models)} and len(n_random_starts)="
-                    f"{len(self.n_random_starts)}.")
+                    f"{len(self.models)} and len(n_initial_points)="
+                    f"{len(self.n_initial_points)}.")
         else:
-            self.n_random_starts = [n_random_starts for _ in self.models]
-        if isinstance(bagging, (list, tuple)):
-            self.bagging = bagging
+            self.n_initial_points = [self.n_initial_points for _ in self.models]
+        if isinstance(self.bagging, (list, tuple)):
             if len(self.bagging) != len(self.models):
                 raise ValueError(
                     "Invalid value for the bagging parameter. Length should "
                     "be equal to the number of models, got len(models)="
                     f"{len(self.models)} and len(bagging)={len(self.bagging)}.")
         else:
-            self.bagging = [bagging for _ in self.models]
+            self.bagging = [self.bagging for _ in self.models]
 
         # Check dimensions params =========================================== >>
 
-        self.bo_params = bo_params
         if self.bo_params.get('dimensions'):
             # Dimensions can be array for one model or dict if more
             if not isinstance(self.bo_params.get('dimensions'), dict):
@@ -234,14 +262,20 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Check validity metric ============================================= >>
 
-        # Set parameters as attributes for get_params()
-        self.greater_is_better = greater_is_better
-        self.needs_proba = needs_proba
-        self.needs_threshold = needs_threshold
+        if not self.metric_:
+            self.metric_ = [get_default_metric(self.task)]
+        else:
+            self.metric_ = self._prepare_metric(
+                metric=self.metric_,
+                gib=self.greater_is_better,
+                needs_proba=self.needs_proba,
+                needs_threshold=self.needs_threshold
+            )
 
-        # Get the metric scorer(s)
-        self.metric_ = self._prepare_metric(
-            metric, greater_is_better, needs_proba, needs_threshold)
+        # Assign mapping ==================================================== >>
+
+        if not self.task.startswith('reg'):
+            self.mapping = {str(i): i for i in self.categories}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -283,28 +317,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         return metric_list
 
-    def _params_to_attr(self, *args):
-        """Attach the provided data as attributes of the class."""
-        # Data can be already in attrs
-        if len(args) == 0 and self._data is not None:
-            return
-        if len(args) == 2:
-            train, test = to_df(args[0]), to_df(args[1])
-        elif len(args) == 4:
-            train = merge(to_df(args[0]), to_series(args[2]))
-            test = merge(to_df(args[1]), to_series(args[3]))
-        else:
-            raise ValueError(
-                "Invalid parameters. Must be either of the form (train, "
-                "test) or (X_train, X_test, y_train, y_test).")
-
-        # Update the data attributes
-        self._data = pd.concat([train, test]).reset_index(drop=True)
-        self._idx = [len(train), len(test)]
-
-        # Reset data scaler in case of a rerun with new data
-        self.scaler = None
-
     def _run(self):
         """Core iteration.
 
@@ -318,8 +330,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Loop over every independent model
         to_remove = []
-        for idx, (m, n_calls, n_random_starts, bagging) in enumerate(zip(
-                self.models, self.n_calls, self.n_random_starts, self.bagging)):
+        for idx, (m, n_calls, n_initial_points, bagging) in enumerate(zip(
+                self.models, self.n_calls, self.n_initial_points, self.bagging)):
 
             # Check n_calls parameter
             if n_calls < 0:
@@ -343,7 +355,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Shallow copy is enough since we only delete entries in basemodel
                 if hasattr(subclass, 'get_domain') and n_calls > 0:
                     subclass.bayesian_optimization(
-                        n_calls, n_random_starts, self.bo_params.copy())
+                        n_calls, n_initial_points, self.bo_params.copy())
 
                 subclass.fit()
 

@@ -192,7 +192,7 @@ atom.plot_components(figsize=(8, 6), filename='atom_PCA_plot')
 atom.run(['Tree', 'Bag', 'ET'],
          metric='MSE',
          n_calls=5,
-         n_random_starts=2,
+         n_initial_points=2,
          bo_params={'base_estimator': 'GBRT', 'cv': 1},
          bagging=5)
 ```

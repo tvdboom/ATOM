@@ -3,11 +3,13 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy='drop', max_sigma=3, include_target=False, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L757">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L752">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
- Ignores categorical columns.
+ Ignores categorical columns. This class can be accessed from `atom` through the
+ [outliers](../../ATOM/atomclassifier/#atomclassifier-outliers) method. Read more
+ in the [user guide](../../../user_guide/#handling-outliers).
 <br /><br />
 <table>
 <tr>
@@ -97,7 +99,7 @@ Verbosity level of the class. Possible values are:
 
 <a name="outliers-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the outlier strategy on the data.
 <br><br>
@@ -237,7 +239,7 @@ Estimator instance.
 
 <a name="outliers-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L817">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L800">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the outlier strategy on the data.
 <br><br>

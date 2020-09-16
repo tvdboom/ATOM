@@ -34,15 +34,15 @@ Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
     atom.impute(strat_num='knn', strat_cat='most_frequent', min_frac_rows=0.1)  
-    atom.encode(max_onehot=10, frac_to_other=0.05)  
+    atom.encode(strategy='Target', max_onehot=8, frac_to_other=0.05)  
     atom.feature_selection(strategy='PCA', n_features=12)
 
-Run the pipeline with the models you want to compare:
+Train and evaluate the models you want to compare:
 
     atom.run(models=['LR', 'LDA', 'XGB', 'lSVM'],
              metric='f1',
              n_calls=25,
-             n_random_starts=10,
+             n_initial_points=10,
              bagging=4)
 
 Make plots to analyze the results: 

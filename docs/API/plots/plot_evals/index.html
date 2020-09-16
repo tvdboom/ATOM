@@ -96,11 +96,11 @@
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FetaureGenerator</a>
+    <a href="../../feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
 </li>
             
 <li>
-    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FetaureSelector</a>
+    <a href="../../feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
 </li>
     </ul>
   </li>
@@ -154,31 +154,31 @@
   </li>
                                     
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Prediction methods</a>
+    <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../prediction_methods/transform/" class="dropdown-item">transform</a>
+    <a href="../../predicting/transform/" class="dropdown-item">transform</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict/" class="dropdown-item">predict</a>
+    <a href="../../predicting/predict/" class="dropdown-item">predict</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_proba/" class="dropdown-item">predict_proba</a>
+    <a href="../../predicting/predict_proba/" class="dropdown-item">predict_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
+    <a href="../../predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/decision_function/" class="dropdown-item">decision_function</a>
+    <a href="../../predicting/decision_function/" class="dropdown-item">decision_function</a>
 </li>
             
 <li>
-    <a href="../../prediction_methods/score/" class="dropdown-item">score</a>
+    <a href="../../predicting/score/" class="dropdown-item">score</a>
 </li>
     </ul>
   </li>
@@ -280,19 +280,19 @@
 </li>
             
 <li>
-    <a href="../force_plot.md" class="dropdown-item">force_plot</a>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot.md" class="dropdown-item">dependence_plot</a>
+    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
 </li>
             
 <li>
-    <a href="../summary_plot.md" class="dropdown-item">summary_plot</a>
+    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
 </li>
             
 <li>
-    <a href="../decision_plot.md" class="dropdown-item">decision_plot</a>
+    <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
     </ul>
   </li>
@@ -399,14 +399,14 @@
 
 <h1 id="plot_evals">plot_evals</h1>
 <hr />
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_evals</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
-
+<p><a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset='both', title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L685">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot evaluation curves for the train and test set. The metric is provided by the model's
- package and is different for every model and every task. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). Only allows plotting one model at a time
- because of the different evaluation metric for each.
+Plot evaluation curves for the train and test set. Only for models that allow
+ in-training evaluation (XGB, LGB, CatB). The metric is provided by the model's
+ package and is different for every model and every task. For this reason, the
+ method only allows plotting one model at a time.
 <br /><br />
 <table width="100%">
 <tr>
@@ -414,8 +414,14 @@ Plot evaluation curves for the train and test set. The metric is provided by the
 <td width="75%" style="background:white;">
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Name of the models to plot. If None, all models in the pipeline are selected. Note
- that this will raise an exception if there are multiple models in the pipeline.
+Name of the model to plot. If None, all models in the pipeline are selected. Note
+ that leaving the default option could raise an exception if there are multiple
+ models in the pipeline. To avoid this, call the plot from a <code>model</code>, e.g. <code>atom.lgb.plot_evals()</code>.
+</blockquote>
+<strong>dataset: str, optional (default='both')</strong>
+<blockquote>
+Data set on which to calculate the evaluation curves. Options
+ are 'train', 'test' or 'both'.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -436,18 +442,19 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-
-<p><br /></p>
+<br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="python">from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run('XGB')
-atom.XGB.plot_evals()
+atom.run(['Bag', 'LGB'])
+atom.lgb.plot_evals()
 </code></pre>
 
-<p><img alt="plot_evals" src="../img/plot_evals.png" /></p></div>
+<div align="center">
+    <img src="/img/plots/plot_evals.png" alt="plot_evals" width="700" height="420"/>
+</div></div>
             </div>
         </div>
 

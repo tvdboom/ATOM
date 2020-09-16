@@ -15,76 +15,113 @@ from sklearn.metrics import get_scorer, f1_score
 
 # Own modules
 from atom.training import TrainerClassifier, TrainerRegressor
-from .utils import bin_train, bin_test
+from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
 
 
-# Test __init__ ============================================================= >>
+# Test _check_parameters ==================================================== >>
 
 def test_model_is_string():
     """Assert that a string input is accepted."""
     trainer = TrainerClassifier('LR')
+    trainer.run(bin_train, bin_test)
     assert trainer.models == ['LR']
 
 
 def test_models_get_right_name():
     """Assert that the model names are transformed to the correct acronyms."""
-    trainer = TrainerClassifier(['lr', 'et', 'CATB'])
+    trainer = TrainerClassifier(['lR', 'et', 'CATB'])
+    trainer.run(bin_train, bin_test)
     assert trainer.models == ['LR', 'ET', 'CatB']
 
 
 def test_duplicate_models():
     """Assert that an error is raised when models contains duplicates."""
-    pytest.raises(ValueError, TrainerClassifier, ['lr', 'LR', 'lgb'])
+    trainer = TrainerClassifier(['lr', 'LR', 'lgb'])
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_only_task_models():
     """Assert that an error is raised for models at invalid task."""
-    # Only regression
-    pytest.raises(ValueError, TrainerClassifier, 'OLS')
+    trainer = TrainerClassifier('OLS')  # Only regression
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
-    # Only classification
-    pytest.raises(ValueError, TrainerRegressor, 'LDA')
-
-
-def test_n_calls_parameter():
-    """Assert that the n_calls parameter is set correctly."""
-    pytest.raises(ValueError, TrainerClassifier, 'LR', n_calls=(2, 2))
-    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=2)
-    assert trainer.n_calls == [2, 2]
+    trainer = TrainerRegressor('LDA')  # Only classification
+    pytest.raises(ValueError, trainer.run, reg_train, reg_test)
 
 
-def test_n_random_starts_parameter():
-    """Assert that the n_random_starts parameter is set correctly."""
-    pytest.raises(
-        ValueError, TrainerClassifier, 'LR', n_calls=2, n_random_starts=(2, 2))
-    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=2, n_random_starts=1)
-    assert trainer.n_random_starts == [1, 1]
+def test_n_calls_parameter_invalid():
+    """Assert that an error is raised when n_calls is invalid."""
+    trainer = TrainerClassifier('LR', n_calls=(2, 2))
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-def test_bagging_parameter():
-    """Assert that the bagging parameter is set correctly."""
-    pytest.raises(ValueError, TrainerClassifier, 'LR', bagging=(2, 2))
+def test_n_calls_parameter_to_list():
+    """Assert that n_calls is made a list."""
+    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=7)
+    trainer.run(bin_train, bin_test)
+    assert trainer.n_calls == [7, 7]
+
+
+def test_n_initial_points_parameter_invalid():
+    """Assert that an error is raised when n_initial_points is invalid."""
+    trainer = TrainerClassifier('LR', n_calls=2, n_initial_points=(2, 2))
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_n_initial_points_parameter_to_list():
+    """Assert that n_initial_points is made a list."""
+    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=2, n_initial_points=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.n_initial_points == [1, 1]
+
+
+def test_bagging_parameter_invalid():
+    """Assert that an error is raised when bagging is invalid."""
+    trainer = TrainerClassifier('LR', bagging=(2, 2))
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
+def test_bagging_parameter_to_list():
+    """Assert that bagging is made a list."""
     trainer = TrainerClassifier(['LR', 'LDA'], bagging=2)
+    trainer.run(bin_train, bin_test)
     assert trainer.bagging == [2, 2]
 
 
 def test_dimensions_is_array():
     """Assert that the dimensions parameter works as array."""
-    dim = {'dimensions': [Integer(100, 1000, name='max_iter')]}
+    dim = [Integer(100, 1000, name='max_iter')]
 
     # If more than one model
-    pytest.raises(TypeError, TrainerClassifier, ['LR', 'LDA'], bo_params=dim.copy())
+    trainer = TrainerClassifier(['LR', 'LDA'], bo_params={'dimensions': dim})
+    pytest.raises(TypeError, trainer.run, bin_train, bin_test)
 
     # For a single model
-    trainer = TrainerClassifier('LR', bo_params=dim.copy())
-    assert trainer.bo_params == {'dimensions': {'LR': dim['dimensions']}}
+    trainer = TrainerClassifier('LR', bo_params={'dimensions': {'LR': dim}})
+    assert trainer.bo_params == {'dimensions': {'LR': dim}}
 
 
 def test_dimensions_proper_naming():
     """Assert that the correct model acronyms are used as keys."""
-    lst = [Integer(100, 1000, name='max_iter')]
-    trainer = TrainerClassifier('LR', bo_params={'dimensions': {'lr': lst}})
-    assert trainer.bo_params == {'dimensions': {'LR': lst}}
+    dim = [Integer(100, 1000, name='max_iter')]
+    trainer = TrainerClassifier('LR', bo_params={'dimensions': {'lr': dim}})
+    trainer.run(bin_train, bin_test)
+    assert trainer.bo_params == {'dimensions': {'LR': dim}}
+
+
+def test_default_metric():
+    """Assert that a default metric_ is assigned depending on the task."""
+    trainer = TrainerClassifier('LR')
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == 'f1'
+
+    trainer = TrainerClassifier('LR')
+    trainer.run(class_train, class_test)
+    assert trainer.metric == 'f1_weighted'
+
+    trainer = TrainerRegressor('LGB')
+    trainer.run(reg_train, reg_test)
+    assert trainer.metric == 'r2'
 
 
 # Test _prepare_metric ====================================================== >>
@@ -92,45 +129,55 @@ def test_dimensions_proper_naming():
 def test_metric_to_list():
     """Assert that the metric_ attribute is always a list."""
     trainer = TrainerClassifier('LR', metric='f1')
+    trainer.run(bin_train, bin_test)
     assert isinstance(trainer.metric_, list)
 
 
 def test_greater_is_better_parameter():
     """Assert that an error is raised if invalid length for greater_is_better."""
-    pytest.raises(
-        ValueError, TrainerClassifier, 'LR', greater_is_better=[True, False])
+    trainer = TrainerClassifier('LR', greater_is_better=[True, False])
+    trainer.run(bin_train, bin_test)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_needs_proba_parameter():
     """Assert that an error is raised if invalid length for needs_proba."""
-    pytest.raises(ValueError, TrainerClassifier, 'LR', needs_proba=[True, False])
+    trainer = TrainerClassifier('LR', needs_proba=[True, False])
+    trainer.run(bin_train, bin_test)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_needs_threshold_parameter():
     """Assert that an error is raised if invalid length for needs_threshold."""
-    pytest.raises(ValueError, TrainerClassifier, 'LR', needs_threshold=[True, False])
+    trainer = TrainerClassifier('LR', needs_threshold=[True, False])
+    trainer.run(bin_train, bin_test)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_metric_acronym():
     """"Assert that using the metric_ acronyms work."""
     trainer = TrainerClassifier('LR', metric='auc')
+    trainer.run(bin_train, bin_test)
     assert trainer.metric == 'roc_auc'
 
 
 def test_invalid_scorer_name():
     """Assert that an error is raised when scorer name is invalid."""
-    pytest.raises(ValueError, TrainerClassifier, 'LR', metric='invalid')
+    trainer = TrainerClassifier('LR', metric='invalid')
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_function_metric_parameter():
     """Assert that a function metric_ works."""
     trainer = TrainerClassifier('LR', metric=f1_score)
+    trainer.run(bin_train, bin_test)
     assert trainer.metric == 'f1_score'
 
 
 def test_scorer_metric_parameter():
     """Assert that a scorer metric_ works."""
     trainer = TrainerClassifier('LR', metric=get_scorer(f1_score))
+    trainer.run(bin_train, bin_test)
     assert trainer.metric == 'f1_score'
 
 
@@ -181,7 +228,7 @@ def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
     trainer = TrainerClassifier(['LR', 'LDA', 'LGB'],
                                 n_calls=(2, 3, 4),
-                                n_random_starts=(1, 2, 3),
+                                n_initial_points=(1, 2, 3),
                                 bagging=[2, 5, 7],
                                 random_state=1)
     trainer.run(bin_train, bin_test)
@@ -192,7 +239,7 @@ def test_sequence_parameters():
 
 def test_invalid_n_calls_parameter():
     """Assert that an error is raised for negative n_calls."""
-    trainer = TrainerClassifier('LR', n_calls=-1, n_random_starts=1)
+    trainer = TrainerClassifier('LR', n_calls=-1, n_initial_points=1)
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
@@ -213,7 +260,7 @@ def test_scaler_is_created():
 
 def test_error_handling():
     """Assert that models with errors are removed from pipeline."""
-    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=4, n_random_starts=[2, -1])
+    trainer = TrainerClassifier(['LR', 'LDA'], n_calls=4, n_initial_points=[2, -1])
     trainer.run(bin_train, bin_test)
     assert trainer.errors.get('LDA')
     assert 'lDA' not in trainer.models
@@ -222,5 +269,5 @@ def test_error_handling():
 
 def test_all_models_failed():
     """Assert that an error is raised when all models failed."""
-    trainer = TrainerClassifier('LR', n_calls=4, n_random_starts=-1)
+    trainer = TrainerClassifier('LR', n_calls=4, n_initial_points=-1)
     pytest.raises(RuntimeError, trainer.run, bin_train, bin_test)

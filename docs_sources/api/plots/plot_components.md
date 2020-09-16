@@ -1,14 +1,12 @@
 # plot_components
-------------------
+-----------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L146">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L399">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the explained variance ratio per components. Can only be
- called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
- <a href="../../ATOM/atomregressor">ATOMRegressor</a> or 
- <a href="../../feature_engineering/feature_selector">FeatureSelector</a> instance that
- applied PCA on the dataset. Can't be called from the model subclasses.
+Plot the explained variance ratio per components. Only available if PCA was applied
+ on the data.
 <br /><br />
 <table width="100%">
 <tr>
@@ -22,7 +20,7 @@ Number of components to show. If None, the number of components in the data are 
 <blockquote>
 Plot's title. If None, the default option is used.
 </blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
+<strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
 Figure's size, format as (x, y). If None, adapts size to `show` parameter.
 </blockquote>
@@ -43,6 +41,7 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
@@ -50,4 +49,6 @@ atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy='PCA', n_features=11)
 atom.plot_components()
 ```
-![plot_correlation](./img/plot_components.png)
+<div align="center">
+    <img src="/img/plots/plot_components.png" alt="plot_components" width="700" height="700"/>
+</div>

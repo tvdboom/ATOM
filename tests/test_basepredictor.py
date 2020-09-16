@@ -14,7 +14,7 @@ import numpy as np
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_reg, y_reg
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
 # Test utility properties =================================================== >>
@@ -63,6 +63,18 @@ def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
     atom = ATOMClassifier(X_bin, 'mean radius', random_state=1)
     assert atom.target == 'mean radius'
+
+
+def test_categories_property():
+    """Assert that the categories property returns the categories in y."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.categories == [0, 1, 2]
+
+
+def test_n_categories_property():
+    """Assert that the n_categories property returns the number of categories."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.n_categories == 3
 
 
 # Data properties =========================================================== >>
@@ -135,7 +147,7 @@ def test_calibrate_method():
     pytest.raises(NotFittedError, atom.calibrate)  # When not yet fitted
     atom.run('LR')
     atom.calibrate()
-    assert atom.winner.model.__class__.__name__ == 'CalibratedClassifierCV'
+    assert atom.winner.estimator.__class__.__name__ == 'CalibratedClassifierCV'
 
 
 # Test prediction methods =================================================== >>

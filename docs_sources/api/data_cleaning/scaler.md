@@ -3,14 +3,13 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L71">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L69">[source]</a></div></pre>
 <div style="padding-left:3%">
-Scales data to mean=0 and std=1. Standardization of a dataset is a common requirement
- for many machine learning estimators: they might behave badly if the individual
- features do not more or less look like standard normally distributed data (e.g.
- Gaussian with 0 mean and unit variance). This method is equal to sklearn's
+Scales data to mean=0 and std=1. This method is equal to sklearn's
  [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
- except that it returns a pd.DataFrame when provided.
+ except that it returns a dataframe when provided. This class can be accessed from
+ `atom` through the [scale](../../ATOM/atomclassifier/#atomclassifier-scale)
+ method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
 <br /><br />
 <table>
 <tr>
@@ -87,7 +86,7 @@ Verbosity level of the class. Possible values are:
 
 <a name="scaler-fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L97">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L95">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class.
 <br><br>
@@ -251,7 +250,7 @@ Estimator instance.
 
 <a name="scaler-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L119">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L117">[source]</a></div></pre>
 <div style="padding-left:3%">
 Scale the data.
 <br><br>

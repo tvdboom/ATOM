@@ -1,8 +1,9 @@
 # plot_residuals
 ----------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_residuals</strong>(models=None, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L336">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_residuals</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1372">[source]</a></div></pre>
 <div style="padding-left:3%">
 The plot shows the residuals (difference between the predicted and the
  true value) on the vertical axis and the independent variable on the
@@ -19,6 +20,10 @@ The plot shows the residuals (difference between the predicted and the
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
+</blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -45,6 +50,7 @@ Whether to render the plot.
 
 ## Example
 ----------
+
 ```python
 from atom import ATOMRegressor
 
@@ -52,4 +58,6 @@ atom = ATOMRegressor(X, y)
 atom.run(['OLS', 'LGB'], metric='MAE')
 atom.plot_residuals()
 ```
-![plot_errors](./img/plot_residuals.png)
+<div align="center">
+    <img src="/img/plots/plot_residuals.png" alt="plot_residuals" width="700" height="420"/>
+</div>

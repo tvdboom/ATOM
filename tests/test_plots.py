@@ -18,7 +18,7 @@ from atom.training import TrainerClassifier
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train, bin_test
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, class_train, class_test
 )
 
 
@@ -125,22 +125,24 @@ def test_plot_pca():
     assert glob.glob(FILE_DIR + 'pca.png')
 
 
-def test_plot_components():
+@pytest.mark.parametrize('show', [10, 200, None])
+def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_components)  # No PCA in pipeline
     atom.feature_selection(strategy='PCA', n_features=10)
     pytest.raises(ValueError, atom.plot_components, show=0)  # Show is invalid
-    atom.plot_components(show=100, filename=FILE_DIR + 'components', display=False)
+    atom.plot_components(show=show, filename=FILE_DIR + 'components', display=False)
     assert glob.glob(FILE_DIR + 'components.png')
 
 
-def test_plot_rfecv():
+@pytest.mark.parametrize('scoring', [None, 'auc'])
+def test_plot_rfecv(scoring):
     """Assert that the plot_rfecv method work as intended """
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.plot_rfecv)  # No RFECV in pipeline
     atom.run('lr', metric='precision')
-    atom.feature_selection(strategy='RFECV', n_features=10)
+    atom.feature_selection(strategy='RFECV', n_features=10, scoring=scoring)
     atom.plot_rfecv(filename=FILE_DIR + 'rfecv', display=False)
     assert glob.glob(FILE_DIR + 'rfecv.png')
 
@@ -151,7 +153,7 @@ def test_plot_successive_halving():
     pytest.raises(NotFittedError, atom.plot_successive_halving)
     atom.run('LGB')
     pytest.raises(PermissionError, atom.plot_successive_halving)
-    atom.successive_halving(['LGB', 'Tree'], metric='max_error')
+    atom.successive_halving(['LGB', 'Tree'], metric='max_error', bagging=4)
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
     pytest.raises(ValueError, atom.plot_successive_halving, models='BR')
     pytest.raises(ValueError, atom.plot_successive_halving, metric='unknown')
@@ -176,21 +178,22 @@ def test_plot_learning_curve():
     pytest.raises(NotFittedError, atom.plot_learning_curve)
     atom.run('LGB')
     pytest.raises(PermissionError, atom.plot_learning_curve)  # No train_sizing
-    atom.train_sizing(['Tree', 'LGB'], metric='max_error')
+    atom.train_sizing(['Tree', 'LGB'], metric='max_error', bagging=4)
     atom.plot_learning_curve(filename=FILE_DIR + 'train_sizing_1', display=False)
     atom.lgb.plot_learning_curve(filename=FILE_DIR + 'train_sizing_2', display=False)
     assert glob.glob(FILE_DIR + 'train_sizing_1.png')
     assert glob.glob(FILE_DIR + 'train_sizing_2.png')
 
 
-def test_plot_bagging():
+@pytest.mark.parametrize('metric', ['r2', ['r2', 'me']])
+def test_plot_bagging(metric):
     """Assert that the plot_bagging method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_bagging)
-    atom.run('Tree', metric=['me', 'r2'], bagging=0)
+    atom.run('Tree', metric=metric, bagging=0)
     pytest.raises(PermissionError, atom.plot_bagging, models='Tree')  # No bagging
-    atom.run('Tree', metric=['me', 'r2'], bagging=3)
-    atom.plot_bagging(metric='me', filename=FILE_DIR + 'bagging_1', display=False)
+    atom.run('Tree', metric=metric, bagging=3)
+    atom.plot_bagging(metric='r2', filename=FILE_DIR + 'bagging_1', display=False)
     atom.tree.plot_bagging(filename=FILE_DIR + 'bagging_2', display=False)
     assert glob.glob(FILE_DIR + 'bagging_1.png')
     assert glob.glob(FILE_DIR + 'bagging_2.png')
@@ -202,7 +205,7 @@ def test_plot_bo():
     pytest.raises(NotFittedError, atom.plot_bo)
     atom.run('lasso', metric='max_error', n_calls=0)
     pytest.raises(PermissionError, atom.plot_bo)  # No BO in pipeline
-    atom.run('lasso', metric='max_error', n_calls=10)
+    atom.run(['lasso', 'ridge'], metric='max_error', n_calls=10)
     atom.plot_bo(filename=FILE_DIR + 'bagging_1', display=False)
     atom.lasso.plot_bo(filename=FILE_DIR + 'bagging_2', display=False)
     assert glob.glob(FILE_DIR + 'bagging_1.png')
@@ -230,7 +233,7 @@ def test_plot_roc(dataset):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_roc)
-    atom.run('LGB', metric='f1')
+    atom.run(['XGB', 'LGB'], metric='f1')
     pytest.raises(ValueError, atom.lgb.plot_roc, dataset='invalid')
     atom.plot_roc(
         dataset=dataset,
@@ -255,7 +258,7 @@ def test_plot_prc(dataset):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_prc)
-    atom.run('LGB', metric='f1')
+    atom.run(['XGB', 'LGB'], metric='f1')
     atom.plot_prc(
         dataset=dataset,
         filename=FILE_DIR + f'prc_{dataset}_1',
@@ -311,9 +314,10 @@ def test_plot_feature_importance():
 
 def test_plot_partial_dependence():
     """Assert that the plot_partial_dependence method work as intended."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    # For binary classification tasks
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
-    atom.run(['Tree', 'LGB'], metric='f1_macro')
+    atom.run(['Tree', 'LGB'], metric='f1')
 
     # More than 3 features
     with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
@@ -335,19 +339,37 @@ def test_plot_partial_dependence():
     with pytest.raises(ValueError, match=r".*got index.*"):
         atom.plot_partial_dependence(features=[120, 2])
 
+    # Invalid target int
+    with pytest.raises(ValueError, match=r".*categories, got .*"):
+        atom.plot_partial_dependence(target=5)
+
+    # Invalid target str
+    with pytest.raises(ValueError, match=r".*not found in the mapping.*"):
+        atom.plot_partial_dependence(target='Yes')
+
     atom.plot_partial_dependence(
-        target=0,
         filename=FILE_DIR + 'partial_dependence_1',
         display=False
     )
+    atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(
-        features=[('alcohol', 'ash')],
-        target=2,
+        features='mean texture',
         filename=FILE_DIR + 'partial_dependence_2',
         display=False
     )
     assert glob.glob(FILE_DIR + 'partial_dependence_1.png')
     assert glob.glob(FILE_DIR + 'partial_dependence_2.png')
+
+    # For multiclass classification tasks
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run(['Tree', 'LGB'], metric='f1_macro')
+    atom.lgb.plot_partial_dependence(
+        features=('ash', 'alcohol'),
+        target=2,
+        filename=FILE_DIR + 'partial_dependence_3',
+        display=False
+    )
+    assert glob.glob(FILE_DIR + 'partial_dependence_3.png')
 
 
 @pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
@@ -399,8 +421,7 @@ def test_plot_residuals(dataset):
 
 
 @pytest.mark.parametrize('dataset', ['train', 'test'])
-@pytest.mark.parametrize('normalize', [True, False])
-def test_plot_confusion_matrix(dataset, normalize):
+def test_plot_confusion_matrix(dataset):
     """Assert that the plot_confusion_matrix method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(['Ridge'])
@@ -412,31 +433,29 @@ def test_plot_confusion_matrix(dataset, normalize):
     atom.run(['RF', 'LGB'])
     atom.plot_confusion_matrix(
         dataset=dataset,
-        normalize=normalize,
-        filename=FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_1',
+        filename=FILE_DIR + f'confusion_matrix_{dataset}_1',
         display=False
     )
     atom.lgb.plot_confusion_matrix(
         dataset=dataset,
-        normalize=normalize,
-        filename=FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_2',
+        normalize=True,
+        filename=FILE_DIR + f'confusion_matrix_{dataset}_2',
         display=False
     )
-    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_1.png')
-    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_2.png')
+    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_1.png')
+    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_2.png')
 
     # For multiclass classification tasks
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_confusion_matrix)
     atom.run(['RF', 'LGB'])
     pytest.raises(NotImplementedError, atom.plot_confusion_matrix)
     atom.lgb.plot_confusion_matrix(
         dataset=dataset,
-        normalize=normalize,
-        filename=FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_3',
+        normalize=True,
+        filename=FILE_DIR + f'confusion_matrix_{dataset}_3',
         display=False
     )
-    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_{normalize}_3.png')
+    assert glob.glob(FILE_DIR + f'confusion_matrix_{dataset}_3.png')
 
 
 @pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
@@ -470,14 +489,6 @@ def test_plot_threshold(dataset):
 @pytest.mark.parametrize('dataset', ['train', 'test', 'both'])
 def test_plot_probabilities(dataset):
     """Assert that the plot_probabilities method work as intended."""
-    trainer = TrainerClassifier(['RF', 'LGB'], metric='f1')
-    trainer.run(bin_train, bin_test)
-    trainer.plot_probabilities(
-        dataset=dataset,
-        filename=FILE_DIR + f'probabilities_{dataset}_1',
-        display=False
-    )
-
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('Ridge')
     pytest.raises(PermissionError, atom.plot_probabilities)  # Task is not classif
@@ -491,18 +502,17 @@ def test_plot_probabilities(dataset):
         models=['Tree', 'LGB'],
         dataset=dataset,
         target='a',
-        filename=FILE_DIR + f'probabilities_{dataset}_2',
+        filename=FILE_DIR + f'probabilities_{dataset}_1',
         display=False
     )
     atom.lgb.plot_probabilities(
         dataset=dataset,
         target='b',
-        filename=FILE_DIR + f'probabilities_{dataset}_3',
+        filename=FILE_DIR + f'probabilities_{dataset}_2',
         display=False
     )
     assert glob.glob(FILE_DIR + f'probabilities_{dataset}_1.png')
     assert glob.glob(FILE_DIR + f'probabilities_{dataset}_2.png')
-    assert glob.glob(FILE_DIR + f'probabilities_{dataset}_3.png')
 
 
 def test_plot_calibration():
@@ -573,73 +583,63 @@ def test_plot_lift(dataset):
     assert glob.glob(FILE_DIR + f'lift_{dataset}_2.png')
 
 
-@pytest.mark.parametrize('model', ['OLS', 'Tree', 'KNN', 'XGB', 'LGB', 'CatB'])
-@pytest.mark.parametrize('index', [(12, (430, 432)), (-5, None)])
+@pytest.mark.parametrize('model', ['BR', 'Tree', 'KNN', 'XGB', 'LGB', 'CatB'])
+@pytest.mark.parametrize('index', [(12, (30, 33)), (-5, None)])
 def test_force_plot(model, index):
-    """Assert that the force_plot method work as intended."""
+    """Assert that the force_plot method work as intended for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
     atom.run(model, metric='MSE')
+    pytest.raises(ValueError, atom.force_plot, index=(996, 998))
     atom.force_plot(
-        models=model,
         index=index[0],
         matplotlib=True,
         filename=FILE_DIR + f'force_{model}_{index}_1',
         display=False
     )
     atom.force_plot(
-        models=model,
         index=index[1],
         matplotlib=False,
         filename=FILE_DIR + f'force_{model}_{index}_2',
-        display=False
+        display=True
     )
     assert glob.glob(FILE_DIR + f'force_{model}_{index}_1.png')
     assert glob.glob(FILE_DIR + f'force_{model}_{index}_2.html')
 
 
-@pytest.mark.parametrize('ind', [4, 'mean texture', 'rank(3)'])
-def test_dependence_plot(ind):
+@pytest.mark.parametrize('index', [4, 'alcohol', 'rank(3)'])
+def test_dependence_plot(index):
     """Assert that the dependence_plot method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.dependence_plot)
-    atom.run(['LR', 'Tree'], metric='AP')
-    atom.lr.dependence_plot(
-        ind=ind,
-        filename=FILE_DIR + f'dependence_{ind}',
+    atom.run('Tree', metric='f1_macro')
+    atom.dependence_plot(
+        index=index,
+        filename=FILE_DIR + f'dependence_{index}',
         display=False
     )
-    assert glob.glob(FILE_DIR + f'dependence_{ind}.png')
+    assert glob.glob(FILE_DIR + f'dependence_{index}.png')
 
 
 def test_summary_plot():
     """Assert that the summary_plot method work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.summary_plot)
-    atom.run(['LR', 'Tree'], metric='AP')
+    atom.run(['LR', 'Tree'], metric='f1_macro')
     pytest.raises(ValueError, atom.tree.summary_plot, show=0)
     atom.lr.summary_plot(filename=FILE_DIR + f'summary', display=False)
     assert glob.glob(FILE_DIR + f'summary.png')
 
 
-@pytest.mark.parametrize('index', [12, (430, 432), -5, None])
-def test_decision_plot_binary(index):
+@pytest.mark.parametrize('index', [12, (30, 32), -5, None])
+def test_decision_plot(index):
     """Assert that the decision_plot method work as intended for binary tasks."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.decision_plot)
-    atom.run(['LR', 'Tree'], metric='AP')
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    pytest.raises(NotFittedError, atom.summary_plot)
+    atom.run(['LR', 'Tree'], metric='f1_macro')
     atom.lr.decision_plot(
         index=index,
         filename=FILE_DIR + f'decision_{index}_1',
         display=False
     )
     assert glob.glob(FILE_DIR + f'decision_{index}_1.png')
-
-
-def test_decision_plot_multiclass():
-    """Assert that the decision_plot method work as intended for multiclass tasks."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    atom.run(['LR', 'Tree'], metric='f1_macro')
-    pytest.raises(ValueError, atom.tree.decision_plot, index=(20, 24))
-    atom.lr.decision_plot(index=20, filename=FILE_DIR + f'decision_2', display=False)
-    assert glob.glob(FILE_DIR + f'decision_2.png')

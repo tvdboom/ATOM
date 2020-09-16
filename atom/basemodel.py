@@ -74,7 +74,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # BaseModel attributes
         self.best_params = None
-        self.model = None
+        self.estimator = None
         self.time_fit = None
         self.metric_bo = None
         self.time_bo = None
@@ -84,7 +84,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
-        self._reset_predict_properties()
+        self._reset_prediction_properties()
 
         # Results
         self._results = pd.DataFrame(
@@ -96,7 +96,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     @composed(crash, method_to_log, typechecked)
     def bayesian_optimization(self,
                               n_calls: int = 15,
-                              n_random_starts: int = 5,
+                              n_initial_points: int = 5,
                               bo_params: dict = {}):
         """Run the bayesian optimization algorithm.
 
@@ -112,7 +112,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             If sequence, the n-th value will apply to the n-th model in the
             pipeline.
 
-        n_random_starts: int or sequence, optional (default=5)
+        n_initial_points: int or sequence, optional (default=5)
             Initial number of random tests of the BO before fitting the
             surrogate function. If equal to `n_calls`, the optimizer will
             technically be performing a random search. If sequence, the n-th
@@ -162,7 +162,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 Score achieved by the model.
 
             """
-            def fit_model(train_idx, val_idx, model):
+            def fit_model(train_idx, val_idx, estimator):
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub)train and validation set for this
@@ -177,8 +177,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 val_idx: list
                     Indices for the validation set.
 
-                model: class
-                    Model instance.
+                estimator: class
+                    Estimator's instance.
 
                 Returns
                 -------
@@ -193,23 +193,23 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 if hasattr(self, 'custom_fit'):
                     train, test = (X_subtrain, y_subtrain), (X_val, y_val)
-                    self.custom_fit(model, train, test)
+                    self.custom_fit(estimator, train, test)
 
                     # Alert if early stopping was applied
                     if self._cv == 1 and self._stopped:
                         self.T.log("Early stop at iteration {} of {}."
                                    .format(self._stopped[0], self._stopped[1]), 2)
                 else:
-                    model.fit(X_subtrain, y_subtrain)
+                    estimator.fit(X_subtrain, y_subtrain)
 
                 # Calculate metrics on the validation set
-                return [metric(model, X_val, y_val) for metric in self.T.metric_]
+                return [metric(estimator, X_val, y_val) for metric in self.T.metric_]
 
             t_iter = time()  # Get current time for start of the iteration
 
             # Print iteration and time
             self._iter += 1
-            if self._iter > n_random_starts:
+            if self._iter > n_initial_points:
                 call = f'Iteration {self._iter}'
             else:
                 call = f'Random start {self._iter}'
@@ -220,7 +220,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log(f"{call} {len_}", 2)
             self.T.log(f"Parameters --> {params}", 2)
 
-            model = self.get_model(params)
+            estimator = self.get_estimator(params)
 
             # Same splits per model, but different for every iteration of the BO
             rs = self.T.random_state + self._iter if self.T.random_state else None
@@ -236,7 +236,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     split = ShuffleSplit(1, **kwargs)
 
                 train_idx, val_idx = next(split.split(self.X_train, self.y_train))
-                scores = fit_model(train_idx, val_idx, model)
+                scores = fit_model(train_idx, val_idx, estimator)
 
             else:  # Use cross validation to get the score
                 kwargs = dict(n_splits=self._cv, shuffle=True, random_state=rs)
@@ -248,7 +248,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 # Parallel loop over fit_model
                 jobs = Parallel(self.T.n_jobs)(
-                           delayed(fit_model)(i, j, model)
+                           delayed(fit_model)(i, j, estimator)
                            for i, j in k_fold.split(self.X_train, self.y_train))
                 scores = list(np.mean(jobs, axis=0))
 
@@ -257,7 +257,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             t_tot = time_to_string(self._init_bo)
             self.bo.loc[call] = {
                 'params': params,
-                'model': model,
+                'estimator': estimator,
                 'score': flt(scores),
                 'time_iteration': t,
                 'time': t_tot
@@ -279,12 +279,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Running optimization ============================================== >>
 
         # Check parameters
-        if n_random_starts < 1:
-            raise ValueError("Invalid value for the n_random_starts parameter. "
-                             f"Value should be >0, got {n_random_starts}.")
-        if n_calls < n_random_starts:
+        if n_initial_points < 1:
+            raise ValueError("Invalid value for the n_initial_points parameter. "
+                             f"Value should be >0, got {n_initial_points}.")
+        if n_calls < n_initial_points:
             raise ValueError("Invalid value for the n_calls parameter. Value "
-                             f"should be >n_random_starts, got {n_calls}.")
+                             f"should be >n_initial_points, got {n_calls}.")
 
         self.T.log(f"\n\nRunning BO for {self.longname}...", 1)
 
@@ -360,7 +360,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             bo_params.pop('dimensions')
 
         # If only 1 random start, use the model's default parameters
-        if n_random_starts == 1:
+        if n_initial_points == 1:
             bo_params['x0'] = self.get_init_values()
 
         # Choose base estimator (GP is chosen as default)
@@ -371,7 +371,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             func=func,
             dimensions=dimensions,
             n_calls=n_calls,
-            n_random_starts=n_random_starts,
+            n_initial_points=n_initial_points,
             callback=callbacks,
             n_jobs=self.T.n_jobs,
             random_state=self.T.random_state
@@ -414,7 +414,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.metric_bo = self.bo.score.max(axis=0)
 
         # Save best model (not yet fitted)
-        self.model = self.get_model(self.best_params)
+        self.estimator = self.get_estimator(self.best_params)
 
         # Get the BO duration
         self.time_bo = time_to_string(self._init_bo)
@@ -434,20 +434,20 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         t_init = time()
 
         # In case the bayesian_optimization method wasn't called
-        if self.model is None:
-            self.model = self.get_model()
+        if self.estimator is None:
+            self.estimator = self.get_estimator()
 
         # Fit the selected model on the complete training set
         if hasattr(self, 'custom_fit'):
             train, test = (self.X_train, self.y_train), (self.X_test, self.y_test)
-            self.custom_fit(self.model, train, test)
+            self.custom_fit(self.estimator, train, test)
         else:
-            self.model.fit(self.X_train, self.y_train)
+            self.estimator.fit(self.X_train, self.y_train)
 
         # Save metric scores on complete training and test set
-        self.metric_train = flt([metric(self.model, self.X_train, self.y_train)
+        self.metric_train = flt([metric(self.estimator, self.X_train, self.y_train)
                                  for metric in self.T.metric_])
-        self.metric_test = flt([metric(self.model, self.X_test, self.y_test)
+        self.metric_test = flt([metric(self.estimator, self.X_test, self.y_test)
                                 for metric in self.T.metric_])
 
         # Print stats ======================================================= >>
@@ -496,7 +496,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             sample_x, sample_y = resample(self.X_train, self.y_train)
 
             # Fit on bootstrapped set and predict on the independent test set
-            algorithm = self.model.fit(sample_x, sample_y)
+            algorithm = self.estimator.fit(sample_x, sample_y)
             scores = flt([metric(algorithm, self.X_test, self.y_test)
                           for metric in self.T.metric_])
 
@@ -553,7 +553,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             Return of the attribute.
 
         """
-        if not hasattr(self.model, method):
+        if not hasattr(self.estimator, method):
             raise AttributeError(
                 f"The {self.name} model doesn't have a {method} method!")
 
@@ -568,9 +568,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             X = self.T.scaler.transform(X)
 
         if y is None:
-            return getattr(self.model, method)(X)
+            return getattr(self.estimator, method)(X)
         else:
-            return getattr(self.model, method)(X, y)
+            return getattr(self.estimator, method)(X, y)
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
@@ -599,36 +599,36 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     # Prediction properties ================================================= >>
 
-    def _reset_predict_properties(self):
+    def _reset_prediction_properties(self):
         """Reset all prediction properties."""
         self._predict_train, self._predict_test = None, None
         self._predict_proba_train, self._predict_proba_test = None, None
         self._predict_log_proba_train, self._predict_log_proba_test = None, None
-        self._decision_func_train, self._decision_func_test = None, None
+        self._dec_func_train, self._dec_func_test = None, None
         self._score_train, self._score_test = None, None
 
     @property
     def predict_train(self):
         if self._predict_train is None:
-            self._predict_train = self.model.predict(self.X_train)
+            self._predict_train = self.estimator.predict(self.X_train)
         return self._predict_train
 
     @property
     def predict_test(self):
         if self._predict_test is None:
-            self._predict_test = self.model.predict(self.X_test)
+            self._predict_test = self.estimator.predict(self.X_test)
         return self._predict_test
 
     @property
     def predict_proba_train(self):
         if self._predict_proba_train is None:
-            self._predict_proba_train = self.model.predict_proba(self.X_train)
+            self._predict_proba_train = self.estimator.predict_proba(self.X_train)
         return self._predict_proba_train
 
     @property
     def predict_proba_test(self):
         if self._predict_proba_test is None:
-            self._predict_proba_test = self.model.predict_proba(self.X_test)
+            self._predict_proba_test = self.estimator.predict_proba(self.X_test)
         return self._predict_proba_test
 
     @property
@@ -645,26 +645,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @property
     def decision_function_train(self):
-        if self._decision_func_train is None:
-            self._decision_func_train = self.model.decision_function(self.X_train)
-        return self._decision_func_train
+        if self._dec_func_train is None:
+            self._dec_func_train = self.estimator.decision_function(self.X_train)
+        return self._dec_func_train
 
     @property
     def decision_function_test(self):
-        if self._decision_func_test is None:
-            self._decision_func_test = self.model.decision_function(self.X_test)
-        return self._decision_func_test
+        if self._dec_func_test is None:
+            self._dec_func_test = self.estimator.decision_function(self.X_test)
+        return self._dec_func_test
 
     @property
     def score_train(self):
         if self._score_train is None:
-            self._score_train = self.model.score(self.X_train, self.y_train)
+            self._score_train = self.estimator.score(self.X_train, self.y_train)
         return self._score_train
 
     @property
     def score_test(self):
         if self._score_test is None:
-            self._score_test = self.model.score(self.X_test, self.y_test)
+            self._score_test = self.estimator.score(self.X_test, self.y_test)
         return self._score_test
 
     # Utility properties ==================================================== >>
@@ -769,10 +769,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def calibrate(self, **kwargs):
         """Calibrate the model.
 
-        Applies probability calibration on the winning model. The calibration is done
-        with the CalibratedClassifierCV class from sklearn. The model will be trained
-        via cross-validation on a subset of the training data, using the rest to fit
-        the calibrator. The new classifier will replace the model attribute.
+        Applies probability calibration on the winning model. The calibration is
+        done with the CalibratedClassifierCV class from sklearn. The estimator will
+        be trained via cross-validation on a subset of the training data, using the
+        rest to fit the calibrator. The new classifier will replace the `estimator`
+        attribute. All prediction properties will be reset since the estimator will
+        have changed.
 
         Parameters
         ----------
@@ -787,14 +789,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             raise PermissionError(
                 "The calibrate method is only available for classification tasks!")
 
-        cal = CalibratedClassifierCV(self.model, **kwargs)
+        cal = CalibratedClassifierCV(self.estimator, **kwargs)
         if kwargs.get('cv') != 'prefit':
-            self.model = cal.fit(self.X_train, self.y_train)
+            self.estimator = cal.fit(self.X_train, self.y_train)
         else:
-            self.model = cal.fit(self.X_test, self.y_test)
+            self.estimator = cal.fit(self.X_test, self.y_test)
 
         # Reset all prediction properties since we changed the model attribute
-        self._reset_predict_properties()
+        self._reset_prediction_properties()
 
     @composed(crash, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
@@ -859,14 +861,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             if type(SCORERS[metric]).__name__ == '_ThresholdScorer':
                 if self.T.task.startswith('reg'):
                     y_pred = getattr(self, f'predict_{dataset}')
-                elif hasattr(self.model, 'decision_function'):
+                elif hasattr(self.estimator, 'decision_function'):
                     y_pred = getattr(self, f'decision_function_{dataset}')
                 else:
                     y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
             elif type(SCORERS[metric]).__name__ == '_ProbaScorer':
-                if hasattr(self.model, 'predict_proba'):
+                if hasattr(self.estimator, 'predict_proba'):
                     y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
@@ -898,5 +900,5 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             filename = filename.replace('auto', self.name + '_model')
 
         with open(filename, 'wb') as file:
-            pickle.dump(self.model, file)
+            pickle.dump(self.estimator, file)
         self.T.log(self.longname + " model saved successfully!", 1)

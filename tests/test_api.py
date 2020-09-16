@@ -68,8 +68,10 @@ def test_data_is_X_y():
 def test_transform_data():
     """Assert that the data is transformed or not depending on the parameter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.outliers()
     atom.balance()
-    atom.feature_selection(strategy='pca', n_features=10)
+    atom.feature_generation(strategy='dfs', n_features=5)
+    atom.feature_selection(strategy='sfm', solver='lgb', n_features=10)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin, transform_data=True)

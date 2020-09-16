@@ -126,7 +126,7 @@ atom = ATOMClassifier(X, y, n_jobs=-1, warnings='ignore', verbose=2, random_stat
 atom.run(models=['LR','LDA', 'RF'],
          metric='roc_auc_ovr',
          n_calls=4,
-         n_random_starts=3,
+         n_initial_points=3,
          bo_params={'base_estimator': 'rf', 'max_time': 100},
          bagging=5)
 ```

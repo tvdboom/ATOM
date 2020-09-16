@@ -5,19 +5,20 @@
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">StandardCleaner</strong>(prohibited_types=[], strip_categorical=True, maximum_cardinality=True,
                                          minimum_cardinality=True, missing_target=True, map_target=None,
                                          verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L143">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L141">[source]</a></div></pre>
 <div style="padding-left:3%">
-Performs standard data cleaning steps on a dataset. These steps can include:
+Performs standard data cleaning steps on a dataset. Use the parameters to choose
+ which transformations to perform. The available steps are:
 
+  * Remove columns with prohibited data types.
   * Strip categorical features from white spaces.
-  * Removing columns with prohibited data types.
-  * Removing categorical columns with maximal cardinality.
-  * Removing columns with minimum cardinality.
-  * Removing rows with missing values in the target column.
+  * Remove categorical columns with maximal cardinality.
+  * Remove columns with minimum cardinality.
+  * Remove rows with missing values in the target column.
   * Label-encode the target column.
 
-This class will be called automatically from the \__init\__ method of an
- [ATOM instance](../../../user_guide/#first-steps).
+This class is automatically called when initializing `atom`. Read more in the
+ [user guide](../../../user_guide/#standard-data-cleaning).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -138,7 +139,7 @@ Dictionary of the target values mapped to their respective encoded integer.
 
 <a name="standardcleaner-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the data cleaning steps on the data.
 <br><br>
@@ -278,7 +279,7 @@ Estimator instance.
 
 <a name="standardcleaner-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L212">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L213">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the data cleaning steps on the data.
 <br><br>

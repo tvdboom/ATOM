@@ -2,41 +2,47 @@
 --------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(max_onehot=10, encode_type='Target',
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy='LeaveOneOut', max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L543">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L546">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the number
  of unique values in the column:
 
-- If n_unique=2, use label-encoding.
-- If 2 < n_unique <= max_onehot, use one-hot-encoding.
-- If n_unique > max_onehot, use `encode_type`.
+- If n_unique=2, use Label-encoding.
+- If 2 < n_unique <= max_onehot, use OneHot-encoding.
+- If n_unique > max_onehot, use `strategy`-encoding.
 
 Also replaces classes with low occurrences with the value `other` in
  order to prevent too high cardinality. Categorical features are defined as
  all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
- missing values or unknown categories while transforming.
+ missing values or unknown categories when transforming. This class can be accessed
+ from `atom` through the [encode](../../ATOM/atomclassifier/#atomclassifier-encode)
+ method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
+<strong>strategy: str, optional (default='LeaveOneOut')</strong>
+<blockquote>
+Type of encoding to use for high cardinality features. Choose from one of the
+ estimators available in the [category-encoders](http://contrib.scikit-learn.org/category_encoders/)
+ package except for:
+<ul>
+<li>OneHotEncoder: Use the `max_onehot` parameter.</li>
+<li>HashingEncoder: Incompatibility of APIs.</li>
+</ul>
+</blockquote>
 <strong>max_onehot: int or None, optional (default=10)</strong>
 <blockquote>
 Maximum number of unique values in a feature to perform one-hot-encoding.
- If None, it will never do one-hot-encoding.
-</blockquote>
-<strong>encode_type: str, optional (default='Target')</strong>
-<blockquote>
-Type of encoding to use for high cardinality features. Choose from one of the
- encoders available in the [category-encoders](http://contrib.scikit-learn.org/category_encoders/)
- package (except for OneHotEncoder and HashingEncoder).
+ If None, it will always use `strategy` when n_unique > 2.
 </blockquote>
 <strong>frac_to_other: float, optional (default=None)</strong>
 <blockquote>
-Categories with less rows than n_rows * `fraction_to_other` are replaced with the
- string `other`. If None, skip this step.
+Categories with less occurrences than n_rows * `fraction_to_other` are replaced
+ with the string `other`. If None, skip this step.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -58,12 +64,18 @@ Verbosity level of the class. Possible values are:
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Additional keyword arguments passed to the encoder selected by the `encode_type` parameter.
+Additional keyword arguments passed to the `strategy` estimator.
 </blockquote>
 </td>
 </tr>
 </table>
 </div>
+<br>
+
+!!!tip
+    Use `atom`'s [categorical](../../ATOM/atomclassifier/#utility-properties) property
+    for a list of the categorical columns in the dataset.
+
 <br>
 
 
@@ -112,7 +124,7 @@ Additional keyword arguments passed to the encoder selected by the `encode_type`
 
 <a name="encoder-fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L626">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L610">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class.
 <br><br>
@@ -148,7 +160,7 @@ Fitted instance of self.
 
 <a name="encoder-fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L42">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the Encoder and return the encoded data.
 <br><br>
@@ -283,7 +295,7 @@ Estimator instance.
 
 <a name="encoder-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L692">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L690">[source]</a></div></pre>
 <div style="padding-left:3%">
 Encode the data.
 <br><br>
@@ -315,17 +327,18 @@ Transformed feature set.
 
 ## Example
 ---------
+
 ```python
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.encode(max_onehot=5, encode_type='LeaveOneOut')
+atom.encode(strategy='CatBoost', max_onehot=5)
 ```
 or
 ```python
 from atom.data_cleaning import Encoder
 
-encoder = Encoder(max_onehot=5, encode_type='LeaveOneOut')
+encoder = Encoder(strategy='CatBoost', max_onehot=5)
 encoder.fit(X_train, y_train)
 X = encoder.transform(X)
 ```

@@ -166,7 +166,7 @@ Maximum number of iterations of the BO (including `n_random starts`).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to `n_calls`, the optimizer will
@@ -213,7 +213,7 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                       needs_threshold=False,
                                       skip_iter=0,
                                       n_calls=0,
-                                      n_random_starts=5,
+                                      n_initial_points=5,
                                       bo_kwargs={},
                                       bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2172">[source]</a></div></pre>
@@ -299,7 +299,7 @@ Maximum number of iterations of the BO (including `n_random starts`).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to `n_calls`, the optimizer will
@@ -346,7 +346,7 @@ Number of data sets (bootstrapped from the training set) to use in the bagging
                                 needs_threshold=False,
                                 train_sizes=np.linspcae(0.2, 1.0, 5),
                                 n_calls=0,
-                                n_random_starts=5,
+                                n_initial_points=5,
                                 bo_kwargs={},
                                 bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2201">[source]</a></div></pre>
@@ -435,7 +435,7 @@ Maximum number of iterations of the BO (including `n_random starts`).
  If 0, skip the BO and fit the model on its default Parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_random_starts: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to `n_calls`, the optimizer will

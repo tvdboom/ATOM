@@ -1,23 +1,25 @@
 # plot_correlation
 ------------------
 
-<pre><em>function</em> atom.plots.<strong style="color:#008AB8">plot_correlation</strong>(title=None, figsize=(10, 10), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L41">[source]</a></div></pre>
+<a name="atom"></a>
+<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(method='pearson', title=None, figsize=(8, 8), filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2545">[source]</a></div></pre>
 <div style="padding-left:3%">
-Correlation matrix plot of the dataset. Ignores non-numeric columns. Can only be
- called from an <a href="../../ATOM/atomclassifier">ATOMClassifier</a>/
- <a href="../../ATOM/atomregressor">ATOMRegressor</a> instance. Can't be called
- from the model subclasses.
+Plot the data's correlation matrix. Ignores non-numeric columns.
 <br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
+<strong>method: str, optional (default='pearson')</strong>
+<blockquote>
+Method of correlation. Choose from 'pearson', 'kendall' or 'spearman'.
+</blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
 Plot's title. If None, the default option is used.
 </blockquote>
-<strong>figsize: tuple, optional (default=(10, 10))</strong>
+<strong>figsize: tuple, optional (default=(8, 8))</strong>
 <blockquote>
 Figure's size, format as (x, y).
 </blockquote>
@@ -35,13 +37,15 @@ Whether to render the plot.
 <br />
 
 
-
 ## Example
 ----------
+
 ```python
 from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, y)
+atom = ATOMClassifier(X, y='RainTomorrow')
 atom.plot_correlation()
 ```
-![plot_correlation](./img/plot_correlation.png)
+<div align="center">
+    <img src="/img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="560"/>
+</div>

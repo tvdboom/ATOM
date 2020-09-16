@@ -3,8 +3,8 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing all the available models for the fit method
-             of the ATOM class. All classes must have the following structure:
+Description: Module containing all available models. All classes must have the
+             following structure:
 
         Name
         ----
@@ -33,8 +33,8 @@ Description: Module containing all the available models for the fit method
         get_params(self, x):
             Return a dictionary of the model´s hyperparameters.
 
-        get_model(self, params={}):
-            Return the model object with unpacked parameters.
+        get_estimator(self, params={}):
+            Return the model's estimator with unpacked parameters.
 
         custom_fit(model, train, validation):
             If the direct fit method of the model is not enough and you desire to
@@ -134,7 +134,7 @@ class GaussianProcess(BaseModel):
         self.name, self.longname = 'GP', 'Gaussian Process'
         self.type = 'kernel'
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return GaussianProcessClassifier(random_state=self.T.random_state,
@@ -154,7 +154,7 @@ class GaussianNaiveBayes(BaseModel):
         self.type = 'kernel'
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return GaussianNB(**params)
 
@@ -175,7 +175,7 @@ class MultinomialNaiveBayes(BaseModel):
         return params
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return MultinomialNB(**params)
 
@@ -207,7 +207,7 @@ class BernoulliNaiveBayes(BaseModel):
         return params
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return BernoulliNB(**params)
 
@@ -231,7 +231,7 @@ class OrdinaryLeastSquares(BaseModel):
         self.name, self.longname = 'OLS', 'Ordinary Least Squares'
         self.type = 'linear'
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Call the model object."""
         return LinearRegression(n_jobs=self.T.n_jobs, **params)
 
@@ -255,7 +255,7 @@ class Ridge(BaseModel):
                   'alpha': round(x[1], 3)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return RidgeClassifier(random_state=self.T.random_state, **params)
@@ -289,7 +289,7 @@ class Lasso(BaseModel):
                   'alpha': round(x[1], 3)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Call the model object."""
         return LassoRegressor(random_state=self.T.random_state, **params)
 
@@ -321,7 +321,7 @@ class ElasticNet(BaseModel):
                   'l1_ratio': round(x[2], 1)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Call the model object."""
         return ElasticNetRegressor(random_state=self.T.random_state, **params)
 
@@ -353,7 +353,7 @@ class BayesianRegression(BaseModel):
         return params
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return BayesianRidge(**params)
 
@@ -399,7 +399,7 @@ class LogisticRegression(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Call the model object."""
         return LR(random_state=self.T.random_state,
                   n_jobs=self.T.n_jobs,
@@ -442,7 +442,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         return params
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return LDA(**params)
 
@@ -473,7 +473,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         return params
 
     @staticmethod
-    def get_model(params={}):
+    def get_estimator(params={}):
         """Call the model object."""
         return QDA(**params)
 
@@ -505,7 +505,7 @@ class KNearestNeighbors(BaseModel):
                   'weights': x[3]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return KNeighborsClassifier(n_jobs=self.T.n_jobs, **params)
@@ -546,7 +546,7 @@ class DecisionTree(BaseModel):
                   'ccp_alpha': round(x[6], 3)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return DecisionTreeClassifier(random_state=self.T.random_state,
@@ -597,7 +597,7 @@ class Bagging(BaseModel):
                   'bootstrap_features': x[4]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return BaggingClassifier(random_state=self.T.random_state,
@@ -648,7 +648,7 @@ class ExtraTrees(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return ExtraTreesClassifier(random_state=self.T.random_state,
@@ -706,7 +706,7 @@ class RandomForest(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return RandomForestClassifier(random_state=self.T.random_state,
@@ -754,7 +754,7 @@ class AdaBoost(BaseModel):
                   'learning_rate': round(x[1], 2)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return AdaBoostClassifier(random_state=self.T.random_state,
@@ -797,7 +797,7 @@ class GradientBoostingMachine(BaseModel):
                   'ccp_alpha': round(x[8], 3)}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return GradientBoostingClassifier(random_state=self.T.random_state,
@@ -848,7 +848,7 @@ class XGBoost(BaseModel):
                   'reg_lambda': x[8]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         from xgboost import XGBClassifier, XGBRegressor
         # XGBoost can't handle random_state to be None
@@ -935,7 +935,7 @@ class LightGBM(BaseModel):
                   'reg_lambda': x[9]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
         if self.T.goal.startswith('class'):
@@ -1011,7 +1011,7 @@ class CatBoost(BaseModel):
                   'reg_lambda': x[5]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         from catboost import CatBoostClassifier, CatBoostRegressor
         if self.T.goal.startswith('class'):
@@ -1091,7 +1091,7 @@ class LinearSVM(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return LinearSVC(random_state=self.T.random_state, **params)
@@ -1142,7 +1142,7 @@ class KernelSVM(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return SVC(random_state=self.T.random_state, **params)
@@ -1182,7 +1182,7 @@ class PassiveAggressive(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return PAC(random_state=self.T.random_state,
@@ -1237,7 +1237,7 @@ class StochasticGradientDescent(BaseModel):
 
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return SGDClassifier(random_state=self.T.random_state,
@@ -1301,7 +1301,7 @@ class MultilayerPerceptron(BaseModel):
                   'batch_size': x[6]}
         return params
 
-    def get_model(self, params={}):
+    def get_estimator(self, params={}):
         """Return the model object with unpacked parameters."""
         if self.T.goal.startswith('class'):
             return MLPClassifier(random_state=self.T.random_state, **params)
