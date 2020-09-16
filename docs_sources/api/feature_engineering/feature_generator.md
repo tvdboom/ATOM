@@ -348,7 +348,7 @@ Estimator instance.
 
 <a name="featuregenerator-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L283">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L284">[source]</a></div></pre>
 <div style="padding-left:3%">
 Generate new features.
 <br><br>

@@ -198,7 +198,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             if not isinstance(self.operators, (list, tuple)):
                 self.operators = [self.operators]
             for self.operator in self.operators:
-                if self.operator not in default:
+                if self.operator.lower() not in default:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
                         f"{self.operator}. Choose from: {', '.join(default)}.")
@@ -217,17 +217,18 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Get list of transformation primitives
             trans_primitives = []
+            custom_operators = dict(sqrt=sqrt, log=log, sin=sin, cos=cos, tan=tan)
             for operator in self.operators:
-                if operator == 'add':
+                if operator.lower() == 'add':
                     trans_primitives.append('add_numeric')
-                elif operator == 'sub':
+                elif operator.lower() == 'sub':
                     trans_primitives.append('subtract_numeric')
-                elif operator == 'mul':
+                elif operator.lower() == 'mul':
                     trans_primitives.append('multiply_numeric')
-                elif operator == 'div':
+                elif operator.lower() == 'div':
                     trans_primitives.append('divide_numeric')
-                elif operator in ('sqrt', 'log', 'sin', 'cos', 'tan'):
-                    trans_primitives.append(eval(operator))
+                elif operator.lower() in ('sqrt', 'log', 'sin', 'cos', 'tan'):
+                    trans_primitives.append(custom_operators[operator.lower()])
 
             # Run deep feature synthesis with transformation primitives
             self._dfs_features = ft.dfs(
