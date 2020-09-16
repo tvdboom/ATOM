@@ -5,7 +5,7 @@
 <pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None, solver=None, n_features=None, max_frac_repeated=1.,
                                                max_correlation=1., n_jobs=1, verbose=0, logger=None,
                                                random_state=None, \*\*kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L386">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L376">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
  features with equal scores will be broken in an unspecified way.
@@ -276,7 +276,7 @@ Remaining features ordered by importance. Only if strategy in ['univariate', 'SF
 
 <a name="featureselector-fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L527">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L517">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit the class. Note that the univariate, sfm (when model is not fitted), rfe and
  rfecv strategies all need a target column. Leaving it None will raise an exception.
@@ -381,7 +381,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="featureselector-log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L194">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
 Write a message to the logger and print it to stdout.
 <br /><br />
@@ -436,7 +436,7 @@ Plot the scores obtained by the estimator fitted on every subset of
 
 <a name="featureselector-save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L218">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file.
 <br><br>
@@ -484,7 +484,7 @@ Estimator instance.
 
 <a name="featureselector-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L744">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L734">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the feature set.
 <br><br>

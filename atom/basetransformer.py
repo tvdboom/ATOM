@@ -10,6 +10,7 @@ Description: Module containing the BaseTransformer class.
 # Standard packages
 import os
 import pickle
+import random
 import numpy as np
 import pandas as pd
 import multiprocessing
@@ -121,6 +122,7 @@ class BaseTransformer(object):
         if random_state and random_state < 0:
             raise ValueError("Invalid value for the random_state parameter. "
                              f"Value should be >0, got {random_state}.")
+        random.seed(random_state)  # Set random seed
         np.random.seed(random_state)  # Set random seed
         self._random_state = random_state
 

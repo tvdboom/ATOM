@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the feature selection and generator estimators.
+Description: Module containing the FeatureGenerator and FeatureSelector estimators.
 
 """
 
@@ -36,37 +36,6 @@ from .utils import (
 )
 from .plots import FeatureSelectorPlotter
 
-
-# Functions and variables ================================================== >>
-
-def sqrt(column):
-    return np.sqrt(column)
-
-
-def log(column):
-    return np.log(column)
-
-
-def sin(column):
-    return np.sin(column)
-
-
-def cos(column):
-    return np.cos(column)
-
-
-def tan(column):
-    return np.tan(column)
-
-
-sqrt = make_trans_primitive(sqrt, [Numeric], Numeric)
-log = make_trans_primitive(log, [Numeric], Numeric)
-sin = make_trans_primitive(sin, [Numeric], Numeric)
-cos = make_trans_primitive(cos, [Numeric], Numeric)
-tan = make_trans_primitive(tan, [Numeric], Numeric)
-
-
-# Classes =================================================================== >>
 
 class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
     """Apply automated feature engineering.
@@ -167,6 +136,21 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         self: FeatureGenerator
 
         """
+        def sqrt(column):
+            return np.sqrt(column)
+
+        def log(column):
+            return np.log(column)
+
+        def sin(column):
+            return np.sin(column)
+
+        def cos(column):
+            return np.cos(column)
+
+        def tan(column):
+            return np.tan(column)
+
         X, y = self._prepare_input(X, y)
 
         # Check Parameters
@@ -217,7 +201,13 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Get list of transformation primitives
             trans_primitives = []
-            custom_operators = dict(sqrt=sqrt, log=log, sin=sin, cos=cos, tan=tan)
+            custom_operators = dict(
+                sqrt=make_trans_primitive(sqrt, [Numeric], Numeric),
+                log=make_trans_primitive(log, [Numeric], Numeric),
+                sin=make_trans_primitive(sin, [Numeric], Numeric),
+                cos=make_trans_primitive(cos, [Numeric], Numeric),
+                tan=make_trans_primitive(tan, [Numeric], Numeric)
+            )
             for operator in self.operators:
                 if operator.lower() == 'add':
                     trans_primitives.append('add_numeric')
