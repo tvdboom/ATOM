@@ -44,6 +44,7 @@ nav:
         - TrainSizing:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
+    - Models: API/models.md
     - Predicting:
           - transform: API/predicting/transform.md
           - predict: API/predicting/predict.md

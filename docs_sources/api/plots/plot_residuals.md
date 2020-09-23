@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_residuals</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1372">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1374">[source]</a></div></pre>
 <div style="padding-left:3%">
 The plot shows the residuals (difference between the predicted and the
  true value) on the vertical axis and the independent variable on the

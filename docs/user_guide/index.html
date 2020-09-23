@@ -153,6 +153,10 @@
     </ul>
   </li>
                                     
+<li>
+    <a href="../API/models/" class="dropdown-item">Models</a>
+</li>
+                                    
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
@@ -491,7 +495,8 @@
 <li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
  <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
  use it as variable name for the instance).</li>
-<li><code>model</code>: Refers to an instance of one of the <a href="#models">models</a> available in ATOM.</li>
+<li><code>model</code>: Refers to one of the <a href="../API/models/">model</a> instances.</li>
+<li><strong>estimator</strong>: Actual estimator corresponding to a model. Implemented by an external package.</li>
 <li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
  models. The classes are:<ul>
 <li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a></li>
@@ -523,10 +528,10 @@
 <p>These two classes are convenient wrappers for all the possibilities this package
  provides. Like a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
  they assemble several steps that can be cross-validated together while setting
- different parameters. There are some important differences with sklearn's API though:</p>
+ different parameters. There are some important differences with sklearn's API:</p>
 <ol>
 <li><code>atom</code> is initialized with the data you want to manipulate. This data can be accessed
- at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data properties</a>.</li>
+ at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
 <li>The classes in ATOM's API are reached through <code>atom</code>'s methods. For example, calling
  the <a href="../API/ATOM/atomclassifier/#atomclassifier-encode">encode</a> method, will initialize
  an <a href="../API/data_cleaning/encoder">Encoder</a> instance, fit it on the training set and
@@ -534,8 +539,8 @@
 <li>The transformations are applied immediately after calling the method (there is no
  fit method). This approach gives the user a clearer overview and more control over
  every step in the pipeline.</li>
-<li>The pipeline does not have to end with an estimator. ATOM can be used just for data
- cleaning or feature engineering.</li>
+<li>The pipeline does not have to end with an estimator. ATOM can be just for data
+ cleaning or feature engineering purposes only.</li>
 </ol>
 <p>Let's get started with an example!</p>
 <p>First, initialize <code>atom</code> and provide it the data you want to use.</p>
@@ -833,6 +838,8 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <p><strong>Scorers</strong></p>
 <p><strong>Custom metric acronyms</strong></p>
 <p><strong>Multi-metric runs</strong></p>
+<p>Only the first metric is used to evaluate the bayesian optimization and to select
+ the winning model.</p>
 <p><br></p>
 <h3 id="hyperparameter-tuning">Hyperparameter tuning</h3>
 <p><br></p>
@@ -846,8 +853,48 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <p><br><br></p>
 <h1 id="models">Models</h1>
 <hr />
-<h3 id="properties">Properties</h3>
-<h3 id="methods">Methods</h3>
+<p>ATOM provides 27 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, the <a href="../API/models/"><code>models</code></a> are
+ attached to the <code>training</code> instance as attributes. The models are called through
+ their acronyms: </p>
+<ul>
+<li>GP: Gaussian Process (no hyperparameter tuning)</li>
+<li>GNB: Gaussian Naive Bayes</li>
+<li>MNB: Multinomial Naive Bayes (no hyperparameter tuning)</li>
+<li>BNB: Bernoulli Naive Bayes</li>
+<li>OLS: Ordinary Least Squares (no hyperparameter tuning)</li>
+<li>Ridge: Ridge classification/regression</li>
+<li>Lasso: Lasso regression</li>
+<li>EN: Elastic Net regression</li>
+<li>BR: Bayesian Regression (uses ridge regularization)</li>
+<li>LR: Logistic Regression</li>
+<li>LDA: Linear Discriminant Analysis</li>
+<li>QDA: Quadratic Discriminant Analysis</li>
+<li>KNN: K-Nearest Neighbors</li>
+<li>Tree: Decision Tree</li>
+<li>Bag: Bagging (uses a decision tree as base estimator)</li>
+<li>ET: Extra-Trees</li>
+<li>RF: Random Forest</li>
+<li>AdaB: AdaBoost (uses a decision tree as base estimator)</li>
+<li>GBM: Gradient Boosting Machine</li>
+<li>XGB: XGBoost (only available if package is installed)</li>
+<li>LGB: LightGBM (only available if package is installed)</li>
+<li>CatB: CatBoost (only available if package is installed)</li>
+<li>lSVM: Linear-SVM (uses a one-vs-rest strategy for multiclass classification)</li>
+<li>kSVM: Kernel-SVM (uses a one-vs-one strategy for multiclass classification)</li>
+<li>PA: Passive Aggressive</li>
+<li>SGD: Stochastic Gradient Descent</li>
+<li>MLP: Multilayer Perceptron (can have between one and three hidden layers)</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code>models</code> should not be initialized by the user! Only use them through the
+<code>training</code> instances.</p>
+</div>
 <p><br><br></p>
 <h1 id="predicting">Predicting</h1>
 <hr />
@@ -865,23 +912,50 @@ model doesn't have a <code>feature_importances_</code> attribute, use
  to use in every call.</p>
 <p>The available prediction methods are a selection of the most common methods for
  estimators in sklearn's API:</p>
-<ul>
-<li><a href="../API/predicting/transform">transform</a></li>
-<li><a href="../API/predicting/predict">predict</a></li>
-<li><a href="../API/predicting/predict_proba">predict_proba</a></li>
-<li><a href="../API/predicting/predict_log_proba">predict_log_proba</a></li>
-<li><a href="../API/predicting/decision_function">decision_function</a></li>
-<li><a href="../API/predicting/score">score</a></li>
-</ul>
+<table>
+<tr>
+<td width="15%"><a href="../API/predicting/transform">transform</a></td>
+<td>Transform new data through all the pre-processing steps in the pipeline.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict">predict</a></td>
+<td>Transform the data and make predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict_proba">predict_proba</a></td>
+<td>Transform the data and make probabilistic predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/predict_log_proba">predict_log_proba</a></td>
+<td>Transform the data and make logarithmic probability predictions on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/decision_function">decision_function</a></td>
+<td>Transform the data and evaluate the decision function on new data.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/predicting/score">score</a></td>
+<td>Transform the data and return the model's score on new data.</td>
+</tr>
+</table>
+
 <p>Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the <a href="#properties">properties</a> of the
- <code>models</code>, e.g. <code>atom.mnb.predict_proba_train</code> or <code>atom.mnb.predict_proba_test</code>.
- Keep in mind that the results of these properties are calculated only once, the
- first time the property is called. Once calculated, they are stored as private
- attributes of the instance. This mechanism avoids having to calculate attributes
- that are never used (saving time and memory), but allows using the same property
- without having to calculate it again. Many of the <a href="#plots">plots</a> benefit from this
- approach.</p>
+ set. You can access them through the <code>model</code>'s <a href="../API/models/#prediction-attributes">prediction attributes</a>,
+ e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that the
+ results are not calculated until the attribute is called for the first time. This
+ mechanism avoids having to calculate attributes that are never used, saving time
+ and memory.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Many of the <a href="#plots">plots</a> use the prediction attributes. This can considerably
+increase the size of the class for large datasets. Use the <a href="../API/models/#models-reset-prediction-attributes">reset_prediction_attributes</a>
+method if you need to free some memory!</p>
+</div>
 <p><br><br></p>
 <h1 id="plots">Plots</h1>
 <hr />
@@ -908,40 +982,18 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 </ul>
 <p><br></p>
 <h3 id="aesthetics">Aesthetics</h3>
-<p>The plot aesthetics can be customized using the properties described hereunder, e.g.
- <code>atom.style = 'white'</code>.</p>
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Properties:</strong></td>
-<td width="75%" style="background:white;">
-<strong>style: str, optional (default='darkgrid')</strong>
-<blockquote>
-Seaborn plotting style. See the <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
-</blockquote>
-
-<strong>palette: str, optional (default='GnBu_r_d')</strong>
-<blockquote>
-Seaborn color palette. See the <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
-</blockquote>
-
-<strong>title_fontsize: int, optional (default=20)</strong>
-<blockquote>
-Fontsize for the plot's title.
-</blockquote>
-
-<strong>label_fontsize: int, optional (default=16)</strong>
-<blockquote>
-Fontsize for labels and legends.
-</blockquote>
-
-<strong>tick_fontsize: int, optional (default=12)</strong>
-<blockquote>
-Fontsize for the ticks along the plot's axes.
-</blockquote>
-
-</td></tr>
-</table>
-
+<p>The plot aesthetics can be customized using the plot attributes, e.g.
+ <code>atom.style = 'white'</code>. These attributes can be called from any instance with
+ plotting methods. Note that the plot attributes are attached to the class and not
+ the instance. This means that changing the attribute will also change it for all
+ other instances in the module. ATOM's default values are:</p>
+<ul>
+<li>style: 'darkgrid'</li>
+<li>palette: 'GnBu_r_d'</li>
+<li>title_fontsize: 20</li>
+<li>label_fontsize: 16</li>
+<li>tick_fontsize: 12</li>
+</ul>
 <p><br></p>
 <h3 id="shap">SHAP</h3>
 <p>The <a href="https://github.com/slundberg/shap">SHAP</a> (SHapley Additive exPlanations) python
@@ -962,41 +1014,148 @@ Fontsize for the ticks along the plot's axes.
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You can recognize the SHAP plots by the fact that they end (instead of start)
-with <code>plot</code>.</p>
+with plot.</p>
 </div>
 <p><br></p>
 <h3 id="available-plots">Available plots</h3>
 <p>A list of available plots can be find hereunder. Note that not all plots can be
  called from every class and that their availability can depend on the task at hand.</p>
-<ul>
-<li><a href="../API/plots/plot_correlation">plot_correlation</a></li>
-<li><a href="../API/plots/plot_pipeline">plot_pipeline</a></li>
-<li><a href="../API/plots/plot_pca">plot_pca</a></li>
-<li><a href="../API/plots/plot_components">plot_components</a></li>
-<li><a href="../API/plots/plot_rfecv">plot_rfecv</a></li>
-<li><a href="../API/plots/plot_successive_halving">plot_successive_halving</a></li>
-<li><a href="../API/plots/plot_learning_curve">plot_learning_curve</a></li>
-<li><a href="../API/plots/plot_bagging">plot_bagging</a></li>
-<li><a href="../API/plots/plot_bo">plot_bo</a></li>
-<li><a href="../API/plots/plot_evals">plot_evals</a></li>
-<li><a href="../API/plots/plot_roc">plot_roc</a></li>
-<li><a href="../API/plots/plot_prc">plot_prc</a></li>
-<li><a href="../API/plots/plot_permutation_importance">plot_permutation_importance</a></li>
-<li><a href="../API/plots/plot_feature_importance">plot_feature_importance</a></li>
-<li><a href="../API/plots/plot_partial_dependence">plot_partial_dependence</a></li>
-<li><a href="../API/plots/plot_errors">plot_errors</a></li>
-<li><a href="../API/plots/plot_residuals">plot_residuals</a></li>
-<li><a href="../API/plots/plot_confusion_matrix">plot_confusion_matrix</a></li>
-<li><a href="../API/plots/plot_threshold">plot_threshold</a></li>
-<li><a href="../API/plots/plot_probabilities">plot_probabilities</a></li>
-<li><a href="../API/plots/plot_calibration">plot_calibration</a></li>
-<li><a href="../API/plots/plot_gain">plot_gain</a></li>
-<li><a href="../API/plots/plot_lift">plot_lift</a></li>
-<li><a href="../API/plots/force_plot">force_plot</a></li>
-<li><a href="../API/plots/dependence_plot">dependence_plot</a></li>
-<li><a href="../API/plots/summary_plot">summary_plot</a></li>
-<li><a href="../API/plots/decision_plot">decision_plot</a></li>
-</ul></div>
+<table>
+<tr>
+<td width="15%"><a href="../API/plots/plot_correlation">plot_correlation</a></td>
+<td>Plot the data's correlation matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_pipeline">plot_pipeline</a></td>
+<td>Plot a diagram of every estimator in atom's pipeline.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_pca">plot_pca</a></td>
+<td>Plot the explained variance ratio vs the number of components.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_components">plot_components</a></td>
+<td>Plot the explained variance ratio per components.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_rfecv">plot_rfecv</a></td>
+<td>Plot the RFECV results.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_successive_halving">plot_successive_halving</a></td>
+<td>Plot of the models' scores per iteration of the successive halving.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_learning_curve">plot_learning_curve</a></td>
+<td>Plot the model's learning curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_bagging">plot_bagging</a></td>
+<td>Plot a boxplot of the bagging's results.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_bo">plot_bo</a></td>
+<td>Plot the bayesian optimization scoring.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_evals">plot_evals</a></td>
+<td>Plot evaluation curves for the train and test set.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_roc">plot_roc</a></td>
+<td>Plot the Receiver Operating Characteristics curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_prc">plot_prc</a></td>
+<td>Plot the precision-recall curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
+<td>Plot the feature permutation importance of models.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_feature_importance">plot_feature_importance</a></td>
+<td>Plot a tree-based model's feature importance.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
+<td>Plot the partial dependence of features.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_errors">plot_errors</a></td>
+<td>Plot a model's prediction errors.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_residuals">plot_residuals</a></td>
+<td>Plot a model's residuals.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_confusion_matrix">plot_confusion_matrix</a></td>
+<td>Plot a model's confusion matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_threshold">plot_threshold</a></td>
+<td>Plot a metric's performance against threshold values.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_probabilities">plot_probabilities</a></td>
+<td>Plot the probability distribution of the categories in the target column.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_calibration">plot_calibration</a></td>
+<td>Plot the calibration curve for a binary classifier.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_gains">plot_gains</a></td>
+<td>Plot the cumulative gains curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_lift">plot_lift</a></td>
+<td>Plot the lift curve.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
+<td>Plot SHAP's force plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/dependence_plot">dependence_plot</a></td>
+<td>Plot SHAP's dependence plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/summary_plot">summary_plot</a></td>
+<td>Plot SHAP's summary plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
+<td>Plot SHAP's decision plot.</td>
+</tr>
+</table></div>
             </div>
         </div>
 

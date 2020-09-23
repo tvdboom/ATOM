@@ -248,7 +248,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def report(self,
-               df: str = 'dataset',
+               dataset: str = 'dataset',
                n_rows: Optional[Union[int, float]] = None,  # float for 1e3...
                filename: Optional[str] = None):
         """Create an extensive profile analysis of the data.
@@ -258,8 +258,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        df: str, optional(default='dataset')
-            Name of the data class property to get the report from.
+        dataset: str, optional(default='dataset')
+            Name of the data set to get the report from.
 
         n_rows: int or None, optional(default=None)
             Number of (randomly picked) rows to process. None for all rows.
@@ -269,11 +269,11 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         # If rows=None, select all rows in the dataframe
-        rows = getattr(self, df).shape[0] if n_rows is None else int(n_rows)
+        rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
 
         self.log("Creating profile report...", 1)
 
-        self.profile = ProfileReport(getattr(self, df).sample(rows))
+        self.profile = ProfileReport(getattr(self, dataset).sample(rows))
         try:  # Render if possible (for notebooks)
             from IPython.display import display
             display(self.profile)
@@ -404,14 +404,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Perform encoding of categorical features.
 
         The encoding type depends on the number of unique values in the column:
-            - If n_unique=2, use label-encoding.
-            - If 2 < n_unique <= max_onehot, use one-hot-encoding.
-            - If n_unique > max_onehot, use 'strategy'.
+            - If n_unique=2, use Label-encoding.
+            - If 2 < n_unique <= max_onehot, use OneHot-encoding.
+            - If n_unique > max_onehot, use 'strategy'-encoding.
 
         Also replaces classes with low occurrences with the value 'other' in
         order to prevent too high cardinality. Categorical features are defined as
-        all columns whose dtype.kind not in 'ifu'. The encoder is fitted only on
-        the training set to avoid data leakage.
+        all columns whose dtype.kind not in 'ifu'. Will raise an error if it
+        encounters missing values or unknown categories when transforming. The
+        encoder is fitted only on the training set to avoid data leakage.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -439,7 +440,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Outliers are defined as values that lie further than
         `max_sigma` * standard_deviation away from the mean of the column. Only
         outliers from the training set are removed to maintain an original
-        sample of target values in the test set.
+        sample of target values in the test set. Ignores categorical columns.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -541,7 +542,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                           solver: Optional[Union[str, callable]] = None,
                           n_features: Optional[Union[int, float]] = None,
                           max_frac_repeated: Optional[Union[int, float]] = 1.,
-                          max_correlation: Optional[float] = 0.98,
+                          max_correlation: Optional[float] = 1.,
                           **kwargs):
         """Apply feature selection techniques.
 
@@ -558,7 +559,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         to the selected metric (if not explicitly provided).
 
         After running the method, the created attributes and methods are attached
-        to `atom`.
+        to `the instance.
 
         See the feature_engineering.py module for a description of the parameters.
 
@@ -786,10 +787,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._run()
         self._sizes = self.trainer._sizes
 
-    # Data properties ======================================================= >>
+    # data attributes ======================================================= >>
 
     def _update_trainer(self):
-        """Update the trainer's data when changing data properties from ATOM."""
+        """Update the trainer's data when changing data attributes from ATOM."""
         if self.trainer is not None:
             self.trainer._data = self._data
             self.trainer._idx = self._idx

@@ -2,8 +2,9 @@
 ---------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">decision_plot</strong>(models=None, index=None, target=1, title=None, figsize=None, filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2318">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">decision_plot</strong>(models=None, index=None, show=None, target=1,
+                     title=None, figsize=None, filename=None, display=True, **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2315">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot SHAP's decision plot. Visualize model decisions using cumulative SHAP values.
  Each plotted line explains a single model prediction. If a single prediction is
@@ -27,6 +28,10 @@ Name of the models to plot. If None, all models in the pipeline are selected. No
 <blockquote>
 Indices of the rows in the dataset to plot. If tuple (n, m), select rows n until m.
  If None, select all rows in the test set.
+</blockquote>
+<strong>show: int or None, optional (default=None)</strong>
+<blockquote>
+Number of features (ordered by importance) to show in the plot. None to show all.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>

@@ -45,27 +45,7 @@ class BasePredictor(object):
         if self.models:  # Returns None if not fitted
             return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
 
-    @property
-    def shape(self):
-        return self._data.shape
-
-    @property
-    def columns(self):
-        return list(self._data.columns)
-
-    @property
-    def target(self):
-        return self.columns[-1]
-
-    @property
-    def categories(self):
-        return list(sorted(self.y.unique()))
-
-    @property
-    def n_categories(self):
-        return len(self.categories)
-
-    # Data properties=== ==================================================== >>
+    # data attributes ======================================================= >>
 
     @property
     def dataset(self):
@@ -102,6 +82,26 @@ class BasePredictor(object):
     @property
     def y_test(self):
         return self.test[self.target]
+
+    @property
+    def shape(self):
+        return self._data.shape
+
+    @property
+    def columns(self):
+        return list(self._data.columns)
+
+    @property
+    def target(self):
+        return self.columns[-1]
+
+    @property
+    def categories(self):
+        return list(sorted(self.y.unique()))
+
+    @property
+    def n_categories(self):
+        return len(self.categories)
 
     # Methods =============================================================== >>
 
@@ -197,16 +197,15 @@ class BasePredictor(object):
     def clear(self, models: Union[str, Sequence[str]] = 'all'):
         """Clear models from the trainer.
 
-        Removes all traces of a model in the pipeline (except for the errors
-        attribute). This includes the models and results attributes, and the
-        `model` subclass. If all models in the pipeline are removed, the metric
-        is reset.
+        Removes all traces of a model in the pipeline (except for the `errors`
+        attribute). If all models in the pipeline are removed, the metric is reset.
+        Use this method to remove unwanted models from the pipeline or to clear
+        memory before saving the instance.
 
         Parameters
         ----------
-        models: str, or sequence, optional (default='all')
-            Name of the models to clear from the pipeline. If 'all', clear
-            all models.
+        models: str or sequence, optional (default='all')
+            Model(s) to clear from the pipeline. If 'all', clear all models.
 
         """
         # Prepare the models parameter

@@ -25,7 +25,7 @@ from .utils import (
 # Classes =================================================================== >>
 
 class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
-    """Train the models in a direct fashion.
+    """Fit and evaluate the models in a direct fashion.
 
     See basetrainer.py for a description of the parameters.
 
@@ -62,7 +62,7 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
 
 class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
-    """Train the models in a successive halving fashion.
+    """Fit and evaluate the models in a successive halving fashion.
 
     If you want to compare similar models, you can choose to use a successive
     halving approach to run the pipeline. This technique is a bandit-based
@@ -151,7 +151,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
 
 class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
-    """Train the models in a train sizing fashion.
+    """Fit and evaluate the models in a train sizing fashion.
 
     When training models, there is usually a trade-off between model performance
     and computation time that is regulated by the number of samples in the

@@ -84,7 +84,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
-        self._reset_prediction_properties()
+        self.reset_prediction_attributes()
 
         # Results
         self._results = pd.DataFrame(
@@ -107,7 +107,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         Parameters
         ----------
         n_calls: int or sequence, optional (default=15)
-            Maximum number of iterations of the BO (including `random starts`).
+            Maximum number of iterations of the BO (including `n_initial_points`).
             If 0, skip the BO and fit the model on its default Parameters.
             If sequence, the n-th value will apply to the n-th model in the
             pipeline.
@@ -121,31 +121,41 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         bo_params: dict, optional (default={})
             Dictionary of extra keyword arguments for the BO.
             These can include:
-                - base_estimator: str
-                    Surrogate model to use. Choose from: 'GP', 'ET', 'RF', 'GBRT'.
-                - max_time: int
-                    Maximum allowed time for the BO (in seconds).
-                - delta_x: int or float
-                    Maximum distance between two consecutive points.
-                - delta_y: int or float
-                    Maximum score between two consecutive points.
-                - early stopping: int or float
+                - base_estimator: str, optional (default='GP')
+                    Surrogate model to use. Choose from:
+                        - 'GP' for Gaussian Process
+                        - 'RF' for Random Forest
+                        - 'ET' for Extra-Trees
+                        - 'GBRT' for Gradient Boosted Regression Trees
+                - max_time: int, optional (default=np.inf)
+                    Stop the optimization after `max_time` seconds.
+                - delta_x: int or float, optional (default=0)
+                    Stop the optimization when `|x1 - x2| < delta_x`.
+                - delta_y: int or float, optional (default=0)
+                    Stop the optimization if the 5 minima are within `delta_y`.
+                - early stopping: int, float or None, optional (default=None)
                     Training will stop if the model didn't improve in last
-                    early_stopping rounds. If <1, fraction of rounds from the total.
-                    Only available for models that allow in-training evaluation.
-                - cv: int
+                    `early_stopping` rounds. If <1, fraction of rounds from the
+                    total. If None, no early stopping is performed. Only available
+                    for models that allow in-training evaluation.
+                - cv: int, optional (default=5)
                     Number of folds for the cross-validation. If 1, the
                     training set will be randomly split in a subtrain and
                     validation set.
-                - callbacks: callable or list of callables
+                - callbacks: callable or list of callables, optional (default=None)
                     Callbacks for the BO.
-                - dimensions: dict or array
+                - dimensions: dict, array or None, optional (default=None)
                     Custom hyperparameter space for the bayesian optimization.
                     Can be an array (only if there is 1 model in the pipeline)
-                    or a dictionary with the model names as key.
-                - plot_bo: bool
-                    Whether to plot the BO's progress.
-                - Any other parameter for the skopt estimator.
+                    or a dictionary with the model names as key. If None, ATOM's
+                    predefined dimensions are used.
+                - plot_bo: bool, optional (default=False)
+                    Whether to plot the BO's progress as it runs. Creates a canvas
+                    with two plots: the first plot shows the score of every trial
+                    and the second shows the distance between the last consecutive
+                    steps. Don't forget to call `%matplotlib` at the start of the
+                    cell if you are using an interactive notebook!
+                - Any other parameter for skopt's optimizer.
 
         """
         def optimize(**params):
@@ -599,8 +609,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     # Prediction properties ================================================= >>
 
-    def _reset_prediction_properties(self):
-        """Reset all prediction properties."""
+    def reset_prediction_attributes(self):
+        """Clear all the prediction attributes."""
         self._predict_train, self._predict_test = None, None
         self._predict_proba_train, self._predict_proba_test = None, None
         self._predict_log_proba_train, self._predict_log_proba_test = None, None
@@ -667,26 +677,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self._score_test = self.estimator.score(self.X_test, self.y_test)
         return self._score_test
 
-    # Utility properties ==================================================== >>
+    # Properties ==================================================== >>
 
     @property
     def results(self):
         """Return results without empty columns."""
         return self._results.dropna(axis=1, how='all')
-
-    @property
-    def shape(self):
-        return self.T.shape
-
-    @property
-    def columns(self):
-        return self.T.columns
-
-    @property
-    def target(self):
-        return self.T.target
-
-    # Data properties ======================================================= >>
 
     @property
     def dataset(self):
@@ -742,6 +738,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def y_test(self):
         return self.T.y_test
 
+    @property
+    def shape(self):
+        return self.T.shape
+
+    @property
+    def columns(self):
+        return self.T.columns
+
+    @property
+    def target(self):
+        return self.T.target
+
+    @property
+    def categories(self):
+        return self.T.categories
+
+    @property
+    def n_categories(self):
+        return self.T.n_categories
+
     # Utility methods ======================================================= >>
 
     def _final_output(self):
@@ -773,8 +789,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         done with the CalibratedClassifierCV class from sklearn. The estimator will
         be trained via cross-validation on a subset of the training data, using the
         rest to fit the calibrator. The new classifier will replace the `estimator`
-        attribute. All prediction properties will be reset since the estimator will
-        have changed.
+        attribute. All prediction attributes will reset.
 
         Parameters
         ----------
@@ -796,7 +811,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.estimator = cal.fit(self.X_test, self.y_test)
 
         # Reset all prediction properties since we changed the model attribute
-        self._reset_prediction_properties()
+        self.reset_prediction_attributes()
 
     @composed(crash, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
@@ -807,8 +822,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         metric: str, optional (default=None)
             Name of the metric to calculate. Choose from any of sklearn's SCORERS or
             one of the following custom metrics: 'cm', 'tn', 'fp', 'fn', 'tp',
-            'lift', 'fpr', 'tpr' or 'sup'. If None, returns the metric score used for
-            fitting (on the test set).
+            'lift', 'fpr', 'tpr' or 'sup'. If None, returns ATOM's final results for
+            the model (ignores `dataset`).
 
         dataset: str, optional (default='test')
             Data set on which to calculate the metric. Options are 'train' or 'test'.
@@ -885,13 +900,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             return f"Invalid metric for a {self.name} model with {self.T.task} task!"
 
     @composed(crash, method_to_log, typechecked)
-    def save_model(self, filename: Optional[str] = None):
-        """Save the best model (fitted) to a pickle file.
+    def save_estimator(self, filename: Optional[str] = None):
+        """Save the estimator to a pickle file.
 
         Parameters
         ----------
         filename: str, optional (default=None)
-            Name of the file to save. If None or 'auto', a default name will be used.
+            Name of the file to save. If None or 'auto', the default name is used.
 
         """
         if not filename:
@@ -901,4 +916,4 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         with open(filename, 'wb') as file:
             pickle.dump(self.estimator, file)
-        self.T.log(self.longname + " model saved successfully!", 1)
+        self.T.log(self.longname + " estimator saved successfully!", 1)

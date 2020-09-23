@@ -4,9 +4,9 @@
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset='test', normalize=False,
                              title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1461">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1463">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the confusion matrix. Only for classification tasks.
+Plot a model's confusion matrix. Only for classification tasks.
 
 * For 1 model: plot the confusion matrix in a heatmap.
 * For multiple models: compare TP, FP, FN and TN in a barplot (not implemented for multiclass classification tasks).

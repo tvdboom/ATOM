@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None, metric=0, title=None, figsize=(10, 8), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L599">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L609">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the bayesian optimization scoring. Only for models that ran the hyperparameter
  optimization. This is the same plot as the one produced by `bo_params={'plot_bo': True}`

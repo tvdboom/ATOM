@@ -147,16 +147,12 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
 
 <br>
 
-## Properties
-
-The plot aesthetics can be customized using the properties described
- [here](../../../user_guide/#aesthetics), e.g. `FeatureSelector.tick_fontsize = 12`.
- Note that the properties are bound to the class, not the instance.
-<br><br><br>
 
 
 ## Attributes
 -------------
+
+### Utility attributes
 
 <a name="atom"></a>
 <table>
@@ -214,6 +210,36 @@ Remaining features ordered by importance. Only if strategy in ['univariate', 'SF
 </table>
 <br>
 
+### Plot attributes
+ 
+<a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+<strong>palette: str</strong>
+<blockquote>
+Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for the plot's title.
+</blockquote>
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for the ticks along the plot's axes.
+</blockquote>
+</td></tr>
+</table>
+<br><br><br>
 
 
 ## Methods

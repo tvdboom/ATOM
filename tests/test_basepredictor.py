@@ -77,7 +77,7 @@ def test_n_categories_property():
     assert atom.n_categories == 3
 
 
-# Data properties =========================================================== >>
+# data attributes =========================================================== >>
 
 def test_dataset_property():
     """Assert that the dataset property returns the _data attribute."""

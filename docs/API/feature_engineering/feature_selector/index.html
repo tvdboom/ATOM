@@ -153,6 +153,10 @@
     </ul>
   </li>
                                     
+<li>
+    <a href="../../models/" class="dropdown-item">Models</a>
+</li>
+                                    
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
@@ -386,10 +390,6 @@
             
             <li class="nav-item" data-level="1"><a href="#featureselector" class="nav-link">FeatureSelector</a>
               <ul class="nav flex-column">
-            <li class="nav-item" data-level="2"><a href="#properties" class="nav-link">Properties</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
             <li class="nav-item" data-level="2"><a href="#attributes" class="nav-link">Attributes</a>
               <ul class="nav flex-column">
               </ul>
@@ -557,13 +557,9 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
 </div>
 <p><br></p>
-<h2 id="properties">Properties</h2>
-<p>The plot aesthetics can be customized using the properties described
- <a href="../../../user_guide/#aesthetics">here</a>, e.g. <code>FeatureSelector.tick_fontsize = 12</code>.
- Note that the properties are bound to the class, not the instance.
-<br><br><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
+<h3 id="utility-attributes">Utility attributes</h3>
 <p><a name="atom"></a>
 <table>
 <tr>
@@ -619,6 +615,35 @@ Remaining features ordered by importance. Only if strategy in ['univariate', 'SF
 </tr>
 </table>
 <br></p>
+<h3 id="plot-attributes">Plot attributes</h3>
+<p><a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+<strong>palette: str</strong>
+<blockquote>
+Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for the plot's title.
+</blockquote>
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for the ticks along the plot's axes.
+</blockquote>
+</td></tr>
+</table>
+<br><br><br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <table width="100%">

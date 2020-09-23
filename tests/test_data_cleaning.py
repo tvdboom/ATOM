@@ -409,7 +409,7 @@ def test_invalid_strategy_parameter():
 
 def test_max_sigma_parameter():
     """Assert that the max_sigma parameter is set correctly."""
-    outliers = Outliers(strategy='invalid')
+    outliers = Outliers(strategy='min_max', max_sigma=0)
     pytest.raises(ValueError, outliers.transform, X_bin)
 
 

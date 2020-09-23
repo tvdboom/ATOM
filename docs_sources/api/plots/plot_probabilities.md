@@ -4,9 +4,9 @@
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_probabilities</strong>(models=None, dataset='test', target=1,
                           title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1708">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1710">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot performance metric(s) against multiple threshold values. Only for classification tasks.
+Plot the probability distribution of the categories in the target column. Only for classification tasks.
 <br /><br />
 <table width="100%">
 <tr>

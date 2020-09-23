@@ -153,6 +153,10 @@
     </ul>
   </li>
                                     
+<li>
+    <a href="../../../API/models/" class="dropdown-item">Models</a>
+</li>
+                                    
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
@@ -537,13 +541,13 @@ Instances in RainTomorrow per class:
 | 0: No  |     5615 |         4473 |        1142 |
 | 1: Yes |     1495 |         1215 |         280 |
 </code></pre>
-<pre><code class="python"># We can change the data properties in the pipeline
+<pre><code class="python"># We can change the data attributes in the pipeline
 # Note that we can only replace the property with a new df
 new_train = atom.X
 new_train.insert(loc=3, column='AvgTemp', value=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 atom.X = new_train
 
-# This will automatically update all other data properties
+# This will automatically update all other data attributes
 assert 'AvgTemp' in atom.dataset
 </code></pre>
 

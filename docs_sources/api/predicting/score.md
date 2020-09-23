@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, verbose=None, \*\*kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L131">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L139">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the data and return the model's score on new data. The score is a default
  evaluation criterion for the problem the estimator is designed to solve, defined by

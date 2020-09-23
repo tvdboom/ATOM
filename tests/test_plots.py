@@ -14,12 +14,9 @@ from sklearn.metrics import f1_score, get_scorer
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import TrainerClassifier
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
-from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, class_train, class_test
-)
+from .utils import FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
 # Test BasePlotter ========================================================== >>
@@ -185,7 +182,7 @@ def test_plot_learning_curve():
     assert glob.glob(FILE_DIR + 'train_sizing_2.png')
 
 
-@pytest.mark.parametrize('metric', ['r2', ['r2', 'me']])
+@pytest.mark.parametrize('metric', ['me', ['me', 'r2']])
 def test_plot_bagging(metric):
     """Assert that the plot_bagging method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -193,7 +190,7 @@ def test_plot_bagging(metric):
     atom.run('Tree', metric=metric, bagging=0)
     pytest.raises(PermissionError, atom.plot_bagging, models='Tree')  # No bagging
     atom.run('Tree', metric=metric, bagging=3)
-    atom.plot_bagging(metric='r2', filename=FILE_DIR + 'bagging_1', display=False)
+    atom.plot_bagging(metric='me', filename=FILE_DIR + 'bagging_1', display=False)
     atom.tree.plot_bagging(filename=FILE_DIR + 'bagging_2', display=False)
     assert glob.glob(FILE_DIR + 'bagging_1.png')
     assert glob.glob(FILE_DIR + 'bagging_2.png')
@@ -298,7 +295,6 @@ def test_plot_feature_importance():
     pytest.raises(NotFittedError, atom.plot_feature_importance)
     atom.run(['KNN', 'Tree', 'Bag'], metric='f1_micro')
     pytest.raises(PermissionError, atom.knn.plot_feature_importance)
-    pytest.raises(ValueError, atom.tree.plot_feature_importance, show=0)
     atom.plot_feature_importance(
         models=['Tree', 'Bag'],
         filename=FILE_DIR + 'feature_importance_1',
@@ -353,7 +349,6 @@ def test_plot_partial_dependence():
     )
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(
-        features='mean texture',
         filename=FILE_DIR + 'partial_dependence_2',
         display=False
     )
@@ -364,7 +359,7 @@ def test_plot_partial_dependence():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(['Tree', 'LGB'], metric='f1_macro')
     atom.lgb.plot_partial_dependence(
-        features=('ash', 'alcohol'),
+        features=(('ash', 'alcohol'), 'ash', 2),
         target=2,
         filename=FILE_DIR + 'partial_dependence_3',
         display=False
@@ -587,7 +582,7 @@ def test_plot_lift(dataset):
 @pytest.mark.parametrize('index', [(12, (30, 33)), (-5, None)])
 def test_force_plot(model, index):
     """Assert that the force_plot method work as intended for regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, n_rows=70, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
     atom.run(model, metric='MSE')
     pytest.raises(ValueError, atom.force_plot, index=(996, 998))
@@ -625,9 +620,8 @@ def test_summary_plot():
     """Assert that the summary_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.summary_plot)
-    atom.run(['LR', 'Tree'], metric='f1_macro')
-    pytest.raises(ValueError, atom.tree.summary_plot, show=0)
-    atom.lr.summary_plot(filename=FILE_DIR + f'summary', display=False)
+    atom.run(['KNN', 'Tree'], metric='f1_macro')
+    atom.knn.summary_plot(filename=FILE_DIR + f'summary', display=False)
     assert glob.glob(FILE_DIR + f'summary.png')
 
 

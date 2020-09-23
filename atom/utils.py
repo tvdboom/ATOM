@@ -278,9 +278,9 @@ def prepare_logger(logger, class_name):
     ----------
     logger: bool, str, class or None
         - If None: No logger.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object'.
 
         The default name created by ATOM contains the class name followed by the
         timestamp  of the logger's creation, e.g. ATOMClassifier_
@@ -322,7 +322,7 @@ def prepare_logger(logger, class_name):
             logger.handlers.clear()
         logger.addHandler(file_handler)  # Add file handler to logger
 
-    elif type(logger) != logging.Logger:  # Should be python Logger object
+    elif type(logger) != logging.Logger:  # Should be python 'Logger' object'
         raise TypeError("Invalid value for the logger parameter. Should be a "
                         f"python logging.Logger object, got {type(logger)}!")
 

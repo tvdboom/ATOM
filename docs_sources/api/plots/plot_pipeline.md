@@ -3,9 +3,9 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2602">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2607">[source]</a></div></pre>
 <div style="padding-left:3%">
-Create a diagram showing every estimator in `atom`'s pipeline.
+Plot a diagram of every estimator in `atom`'s pipeline.
  <br /><br />
 <table width="100%">
 <tr>
@@ -13,7 +13,7 @@ Create a diagram showing every estimator in `atom`'s pipeline.
 <td width="75%" style="background:white;">
 <strong>show_params: bool, optional (default=True)</strong>
 <blockquote>
-Whether to show the parameters of every estimator in the pipeline.
+Whether to show the parameters used for every estimator.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>

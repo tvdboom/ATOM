@@ -113,13 +113,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name, False for no logger.
+        - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python Logger object.
+        - If class: python `Logger` object'.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the RandomState instance used by `np.random`.
+        number generator is the `RandomState` instance used by `numpy.random`.
 
     """
 

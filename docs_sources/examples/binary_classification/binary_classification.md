@@ -150,13 +150,13 @@ atom = ATOMClassifier(X, y='RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False
 
 
 ```python
-# We can change the data properties in the pipeline
+# We can change the data attributes in the pipeline
 # Note that we can only replace the property with a new df
 new_train = atom.X
 new_train.insert(loc=3, column='AvgTemp', value=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 atom.X = new_train
 
-# This will automatically update all other data properties
+# This will automatically update all other data attributes
 assert 'AvgTemp' in atom.dataset
 ```
 

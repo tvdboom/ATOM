@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_feature_importance</strong>(models=None, show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1007">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1013">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot a tree-based model's feature importance. The importances are normalized in order
  to be able to compare them between models. The `feature_importance` attribute is

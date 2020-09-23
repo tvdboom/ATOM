@@ -177,13 +177,13 @@ def test_solver_parameter_invalid_value():
 
 def test_n_features_parameter():
     """Assert that an error is raised when n_features is invalid."""
-    fs = FeatureSelector(strategy='RFE', n_features=0)
+    fs = FeatureSelector(strategy='SFM', solver='XGB_reg', n_features=0)
     pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 
 def test_max_frac_repeated_parameter():
     """Assert that an error is raised when max_frac_repeated is invalid."""
-    fs = FeatureSelector(strategy='RFE', max_frac_repeated=1.1)
+    fs = FeatureSelector(strategy=None, max_frac_repeated=1.1)
     pytest.raises(ValueError, fs.fit, X_reg, y_reg)
 
 

@@ -3,10 +3,10 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L461">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L471">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot the scores obtained by the estimator fitted on every subset of the dataset. Only
- available if RFECV was applied on the data.
+Plot the RFECV results, i.e. the scores obtained by the estimator fitted on every
+ subset of the dataset. Only available if RFECV was applied on the data.
 <br /><br />
 <table width="100%">
 <tr>

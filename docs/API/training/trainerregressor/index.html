@@ -153,6 +153,10 @@
     </ul>
   </li>
                                     
+<li>
+    <a href="../../models/" class="dropdown-item">Models</a>
+</li>
+                                    
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
     <ul class="dropdown-menu">
@@ -407,21 +411,22 @@
 
 <h1 id="trainerregressor">TrainerRegressor</h1>
 <hr />
+<p><a name="atom"></a>
 <pre><em>class</em> atom.training.<strong style="color:#008AB8">TrainerRegressor</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
-                                     needs_threshold=False, n_calls=10, n_random_points=5, bo_kwargs={},
+                                     needs_threshold=False, n_calls=10, n_random_points=5, bo_params={},
                                      bagging=None, n_jobs=1, verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
-
-<p>The TrainerRegressor fits and evaluates the models. The pipeline applies the following steps:</p>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L253">[source]</a></div></pre>
+<div style="padding-left:3%">
+Fit and evaluates the models to the data in the pipeline. The following steps are applied:</p>
 <ol>
 <li>The optimal hyperparameters are selected using a Bayesian Optimization (BO) algorithm.</li>
-<li>The model is fitted on the complete training set using the best combinations of hyperparameters found.</li>
+<li>The model is fitted on the training set using the best combinations of hyperparameters found.</li>
 <li>Using a bagging algorithm, various scores on the test set are calculated.</li>
 </ol>
-<p>Just like an ATOM instance, you can call the <a href="../../../user_guide/#prediction-methods">prediction methods</a>,
- <a href="../../ATOM/atomregressor/#plots">plots</a> and
- <a href="../../ATOM/atomregressor/#model-subclasses">model subclasses</a> from the instance. 
- Read more in the <a href="../../../user_guide/#model-fitting-and-evaluation">user guide</a>.</p>
+<p>Just like <code>atom</code>, you can <a href="../../../user_guide/#predicting">predict</a>,
+ <a href="../../../user_guide/#plots">plot</a> and call any <a href="../../../user_guide/#models"><code>model</code></a>
+ from the TrainerRegressor instance. Read more in the <a href="../../../user_guide/#training">user guide</a>.
+<br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -455,11 +460,11 @@ List of models to fit on the data. Use the predefined acronyms to select the mod
 </blockquote>
 <strong>metric: str, callable or sequence, optional (default=None)</strong>
 <blockquote>
-Metric(s) on which the pipeline fits the models. Choose from any of
-the <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a> predefined by sklearn, use a score (or loss)
-function with signature metric(y, y_pred, **kwargs) or use a
-scorer object. If multiple metrics are selected, only the first will
-be used to optimize the BO. If None, a default metric is selected:
+Metric(s) on which the pipeline fits the models. Choose from any of sklearn's predefined
+ <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a>,
+ use a score (or loss) function with signature metric(y, y_pred, **kwargs) or use a
+ scorer object. If multiple metrics are selected, only the first will be used to
+ optimize the BO. If None, a default metric is selected:
 <ul>
 <li>'f1' for binary classification</li>
 <li>'f1_weighted' for multiclass classification</li>
@@ -478,7 +483,7 @@ Whether the metric is a score function or a loss function,
 <blockquote>
 Whether the metric function requires probability estimates out of a
  classifier. If True, make sure that every model in the pipeline has
- a `predict_proba` method. Will be ignored if the metric is a string
+ a <code>predict_proba</code> method. Will be ignored if the metric is a string
  or a scorer. If sequence, the n-th value will apply to the n-th metric
  in the pipeline.
 </blockquote>
@@ -486,44 +491,54 @@ Whether the metric function requires probability estimates out of a
 <blockquote>
 Whether the metric function takes a continuous decision certainty.
  This only works for binary classification using estimators that
- have either a `decision_function` or `predict_proba` method. Will
+ have either a <code>decision_function</code> or <code>predict_proba</code> method. Will
  be ignored if the metric is a string or a scorer. If sequence, the
  n-th value will apply to the n-th metric in the pipeline.
 </blockquote>
 <strong>n_calls: int or sequence, optional (default=0)</strong>
 <blockquote>
-Maximum number of iterations of the BO (including `random starts`).
- If 0, skip the BO and fit the model on its default Parameters.
+Maximum number of iterations of the BO (including <code>n_initial_points</code>).
+ If 0, skip the BO and fit the model on its default parameters.
  If sequence, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
 <strong>n_initial_points: int or sequence, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
- surrogate function. If equal to `n_calls`, the optimizer will
+ surrogate function. If equal to <code>n_calls</code>, the optimizer will
  technically be performing a random search. If sequence, the n-th
  value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>bo_kwargs: dict, optional (default={})</strong>
+<strong>bo_params: dict, optional (default={})</strong>
 <blockquote>
 Dictionary of extra keyword arguments for the BO. These can include:
 <ul>
-<li><b>base_estimator: str</b><br>Base estimator to use in the BO.
- Choose from: 'GP', 'RF', 'ET' or 'GBRT'.</li>
-<li><b>max_time: int</b><br>Maximum allowed time for the BO (in seconds).</li>
-<li><b>delta_x: int or float</b><br>Maximum distance between two consecutive points.</li>
-<li><b>delta_x: int or float</b><br>Maximum score between two consecutive points.</li>
-<li><b>cv: int</b><br>Number of folds for the cross-validation. If 1, the
+<li><b>base_estimator: str, optional (default='GP')</b><br>Base estimator to use in the BO.
+ Choose from:
+<ul>
+<li>'GP' for Gaussian Process</li>
+<li>'RF' for Random Forest</li>
+<li>'ET' for Extra-Trees</li>
+<li>'GBRT' for Gradient Boosted Regression Trees</li>
+</ul></li>
+<li><b>max_time: int, optional (default=np.inf)</b><br>Stop the optimization after <code>max_time</code> seconds.</li>
+<li><b>delta_x: int or float, optional (default=0)</b><br>Stop the optimization when <code>|x1 - x2| &lt; delta_x</code>.</li>
+<li><b>delta_y: int or float, optional (default=0)</b><br>Stop the optimization if the 5 minima are within <code>delta_y</code>.</li>
+<li><b>cv: int, optional (default=5)</b><br>Number of folds for the cross-validation. If 1, the
  training set will be randomly split in a subtrain and validation set.</li>
-<li><b>callback: callable or list</b><br>Callbacks for the BO.</li>
-<li><b>dimensions: dict or array</b><br>Custom hyperparameter space for the
- bayesian optimization. Can be an array (only if there is 1 model in the
- pipeline) or a dictionary with the model's name as key.</li>
-<li><b>plot_bo: bool</b><br>Whether to plot the BO's progress as it runs.
+<li><b>early stopping: int, float or None, optional (default=None)</b><br>Training
+ will stop if the model didn't improve in last <code>early_stopping</code> rounds. If &lt;1,
+ fraction of rounds from the total. If None, no early stopping is performed. Only
+ available for models that allow in-training evaluation.</li>
+<li><b>callback: callable or list of callables, optional (default=None)</b><br>Callbacks for the BO.</li>
+<li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
+ space for the bayesian optimization. Can be an array (only if there is 1 model in the
+ pipeline) or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
+<li><b>plot_bo: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
  Creates a canvas with two plots: the first plot shows the score of every trial
  and the second shows the distance between the last consecutive steps. Don't
- forget to call `%matplotlib` at the start of the cell if you are using jupyter
+ forget to call <code>%matplotlib</code> at the start of the cell if you are using an interactive
  notebook!</li>
-<li><b>Any other parameter for the bayesian optimization function.</b></li>                
+<li><b>Additional keyword argument for skopt's optimizer.</b></li>              <br />
 </ul>
 </blockquote>
 <strong>bagging: int or None, optional (default=None)</strong>
@@ -536,9 +551,9 @@ Number of data sets (bootstrapped from the training set) to use in
 <blockquote>
 Number of cores to use for parallel processing.
 <ul>
-<li>If >0: Number of cores to use.</li>
+<li>If &gt;0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
-<li>If <-1: Use available_cores - 1 + n_jobs.</li>
+<li>If &lt;-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
@@ -556,58 +571,115 @@ Verbosity level of the class. Possible values are:
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name, False for no logger.</li>
+<li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
-<li>If class: python Logger object.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the RandomState instance used by np.random.
+ generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 </td>
 </tr>
 </table>
-
-<p><br></p>
+</div>
+<br><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
+<h3 id="data-attributes">Data attributes</h3>
+<p>The instance's dataset can be accessed through multiple attributes, e.g. calling
+ <code>trainer.train</code> will return the training set. The data can also be changed through
+ these attributes, e.g. <code>trainer.test = trainer.test.drop(0)</code> will drop the first row
+ from the test set. Doing this will automatically update the other data attributes.</p>
+<p><a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-
+<strong>dataset: pd.DataFrame</strong>
+<blockquote>
+Complete dataset in the pipeline.
+</blockquote>
+<strong>train: pd.DataFrame</strong>
+<blockquote>
+Training set.
+</blockquote>
+<strong>test: pd.DataFrame</strong>
+<blockquote>
+Test set.
+</blockquote>
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Feature set.
+</blockquote>
+<strong>y: pd.Series</strong>
+<blockquote>
+Target column.
+</blockquote>
+<strong>X_train: pd.DataFrame</strong>
+<blockquote>
+Training features.
+</blockquote>
+<strong>y_train: pd.Series</strong>
+<blockquote>
+Training target.
+</blockquote>
+<strong>X_test: pd.DataFrame</strong>
+<blockquote>
+Test features.
+</blockquote>
+<strong>y_test: pd.Series</strong>
+<blockquote>
+Test target.
+</blockquote>
+<strong>shape: tuple</strong>
+<blockquote>
+Dataset's shape in the form (rows x columns).
+</blockquote>
+<strong>columns: list</strong>
+<blockquote>
+List of columns in the dataset.
+</blockquote>
+<strong>target: str</strong>
+<blockquote>
+Name of the target column.
+</blockquote>
+</td></tr>
+</table>
+<br></p>
+<h3 id="utility-attributes">Utility attributes</h3>
+<p><a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
 <strong>models: list</strong>
 <blockquote>
 List of models in the pipeline.
 </blockquote>
-
 <strong>metric: str or list</strong>
 <blockquote>
-Metric(s) used to fit the models in the pipeline.
+Metric(s) used to fit the models.
 </blockquote>
-
 <strong>errors: dict</strong>
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-
-<strong>winner: model subclass</strong>
+<strong>winner: <a href="../../models/"><code>model</code></a></strong>
 <blockquote>
-Model subclass that performed best on the test set. If multi-metric, only the first
- metric is checked.
+Model subclass that performed best on the test set.
 </blockquote>
-
 <strong>results: pd.DataFrame</strong>
 <blockquote>
 Dataframe of the training results with the model acronyms as index. Columns can include:
 <ul>
 <li><b>name:</b> Name of the model.</li>
-<li><b>score_bo:</b> Best score achieved during the BO.</li>
+<li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
-<li><b>score_train:</b> Score on the training set.</li>
-<li><b>score_test:</b> Score on the test set.</li>
+<li><b>metric_train:</b> Metric score on the training set.</li>
+<li><b>metric_test:</b>Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
 <li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
 <li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
@@ -618,73 +690,101 @@ Dataframe of the training results with the model acronyms as index. Columns can 
 </td>
 </tr>
 </table>
-
-<p><br></p>
+<br></p>
+<h3 id="plot-attributes">Plot attributes</h3>
+<p><a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>style: str</strong>
+<blockquote>
+Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
+</blockquote>
+<strong>palette: str</strong>
+<blockquote>
+Color palette. See seaborn's <a href="https://seaborn.pydata.org/tutorial/color_palettes.html">documentation</a>.
+</blockquote>
+<strong>title_fontsize: int</strong>
+<blockquote>
+Fontsize for the plot's title.
+</blockquote>
+<strong>label_fontsize: int</strong>
+<blockquote>
+Fontsize for labels and legends.
+</blockquote>
+<strong>tick_fontsize: int</strong>
+<blockquote>
+Fontsize for the ticks along the plot's axes.
+</blockquote>
+</td></tr>
+</table>
+<br><br><br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <table width="100%">
 
 <tr>
-<td width="15%"><a href="#Trainerclassifier-clear">clear</a></td>
+<td width="15%"><a href="#TrainerRegressor-clear">clear</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
 
 <tr>
-<td><a href="#Trainerclassifier-get-params">get_params</a></td>
+<td><a href="#TrainerRegressor-get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#Trainerclassifier-log">log</a></td>
+<td width="15%"><a href="#TrainerRegressor-log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
 </tr>
 
 <tr>
-<td><a href="#Trainerclassifier-run">run</a></td>
+<td><a href="#TrainerRegressor-run">run</a></td>
 <td>Fit and evaluate the models.</td>
 </tr>
 
 <tr>
-<td><a href="#Trainerclassifier-save">save</a></td>
+<td><a href="#TrainerRegressor-save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#Trainerclassifier-scoring">scoring</a></td>
+<td><a href="#TrainerRegressor-scoring">scoring</a></td>
 <td>Print the scoring of the models for a specific metric.</td>
 </tr>
 
 <tr>
-<td><a href="#Trainerclassifier-set-params">set_params</a></td>
+<td><a href="#TrainerRegressor-set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 </table>
 
 <p><br></p>
-<p><a name="Trainerclassifier-clear"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">clear</strong>(models='all')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L570">[source]</a></div></pre>
+<p><a name="TrainerRegressor-clear"></a>
+<pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L197">[source]</a></div></pre>
 <div style="padding-left:3%">
-Removes all traces of a model in the pipeline (except for the errors attribute).
- This includes the models and results attributes, and the model subclass.
- If all models in the pipeline are removed, the metric is reset. Use this method 
- to remove unwanted models from the pipeline or to clear memory before saving. 
+Removes all traces of a model in the pipeline (except for the <code>errors</code>
+ attribute). If all models in the pipeline are removed, the metric is reset.
+ Use this method to remove unwanted models from the pipeline or to clear
+ memory before saving the instance. 
 <br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, or sequence, optional (default='all')</strong>
+<strong>models: str or sequence, optional (default='all')</strong>
 <blockquote>
-Name of the models to clear from the pipeline. If 'all', clear all models.
+Model(s) to clear from the pipeline. If 'all', clear all models.
 </blockquote>
 </tr>
 </table>
 </div>
 <br /></p>
-<p><a name="Trainerclassifier-get-params"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">get_params</strong>(deep=True) 
+<p><a name="TrainerRegressor-get-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get parameters for this estimator.
@@ -709,11 +809,11 @@ Dictionary of the parameter names mapped to their values.
 </tr>
 </table>
 <br /></p>
-<p><a name="Trainerclassifier-log"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<p><a name="TrainerRegressor-log"></a>
+<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
-Save information to the ATOM logger and print it to stdout.
+Write a message to the logger and print it to stdout.
 <br /><br />
 <table>
 <tr>
@@ -721,7 +821,7 @@ Save information to the ATOM logger and print it to stdout.
 <td width="75%" style="background:white;">
 <strong>msg: str</strong>
 <blockquote>
-Message to save to the logger and print to stdout.
+Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
@@ -731,9 +831,9 @@ Minimum verbosity level in order to print the message.
 </table>
 </div>
 <br /></p>
-<p><a name="Trainerclassifier-run"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">run</strong>(*arrays)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
+<p><a name="TrainerRegressor-run"></a>
+<pre><em>method</em> <strong style="color:#008AB8">run</strong>(*arrays)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L43">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit and evaluate the models.
 <br><br>
@@ -750,38 +850,38 @@ Either a train and test set or X_train, X_test, y_train, y_test.
 </tr>
 </table>
 <br /></p>
-<p><a name="Trainerclassifier-save"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L696">[source]</a></div></pre>
+<p><a name="TrainerRegressor-save"></a>
+<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the instance to a pickle file. Remember that the class contains the complete
  dataset as property, so the file can become large for big datasets! To avoid this,
- use <code>save_data=False</code>.</p>
+ use <code>save_data=False</code>.
+<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. If None or 'auto', use default name (Trainerclassifier).
+Name to save the file with. If None or 'auto', use the name of the class.
 </blockquote>
 <strong>save_data: bool, optional (default=True)</strong>
 <blockquote>
 Whether to save the data as an attribute of the instance. If False, remember to
- update the data immediately after loading the pickle using the dataset's @setter.
+ update the data immediately after loading the pickle using the dataset's <code>@setter</code>.
 </blockquote>
 </tr>
 </table>
-
-<p></div>
+</div>
 <br></p>
-<p><a name="Trainerclassifier-scoring"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">scoring</strong>(metric=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L616">[source]</a></div></pre>
+<p><a name="TrainerRegressor-scoring"></a>
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L145">[source]</a></div></pre>
 <div style="padding-left:3%">
 Print the scoring of the models for a specific metric. If a model
  shows a <code>XXX</code>, it means the metric failed for that specific model. This
- can happen if either the metric is unavailable for classification tasks or if the
+ can happen if either the metric is unavailable for the task or if the
  model does not have a <code>predict_proba</code> method while the metric requires it.
 <br /><br />
 <table>
@@ -790,16 +890,19 @@ Print the scoring of the models for a specific metric. If a model
 <td width="75%" style="background:white;">
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the metric to calculate. If None, returns the metric used to fit the pipeline.
-If string, choose from any of sklearn's
- <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>.
+Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>.
+ If None, returns the final results for the model (ignores the <code>dataset</code> parameter).
+</blockquote>
+<strong>dataset: str, optional (default='test')</strong>
+<blockquote>
+Data set on which to calculate the metric. Options are 'train' or 'test'.
 </blockquote>
 </tr>
 </table>
 </div>
 <br /></p>
-<p><a name="Trainerclassifier-set-params"></a>
-<pre><em>function</em> Trainerclassifier.<strong style="color:#008AB8">set_params</strong>(**params) 
+<p><a name="TrainerRegressor-set-params"></a>
+<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
 Set the parameters of this estimator.
@@ -817,7 +920,7 @@ Estimator parameters.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="75%" style="background:white;">
-<strong>self: Trainerclassifier</strong>
+<strong>self: TrainerRegressor</strong>
 <blockquote>
 Estimator instance.
 </blockquote>

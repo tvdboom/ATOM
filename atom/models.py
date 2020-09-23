@@ -380,8 +380,7 @@ class LogisticRegression(BaseModel):
     def get_params(x):
         """Return a dictionary of the model´s hyperparameters."""
         params = {'max_iter': x[0],
-                  'solver': x[1],
-                  'class_weight': x[5]}
+                  'solver': x[1]}
 
         # Limitations on solver and penalty combinations
         condition1 = (x[3] == 'none' and x[1] == 'liblinear')
@@ -414,13 +413,12 @@ class LogisticRegression(BaseModel):
                 Categorical(solvers, name='solver'),
                 Real(1e-3, 100, 'log-uniform', name='C'),
                 Categorical(penalties, name='penalty'),
-                Categorical(np.linspace(0.1, 0.9, 9), name='l1_ratio'),
-                Categorical([None, 'balanced'], name='class_weight')]
+                Categorical(np.linspace(0.1, 0.9, 9), name='l1_ratio')]
 
     @staticmethod
     def get_init_values():
         """Return the default values of the model's hyperparameters."""
-        return [100, 'lbfgs', 1.0, 'l2', 0.5, None]
+        return [100, 'lbfgs', 1.0, 'l2', 0.5]
 
 
 class LinearDiscriminantAnalysis(BaseModel):

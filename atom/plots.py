@@ -208,6 +208,16 @@ class BasePlotter(object):
             raise ValueError("Invalid value for the dataset parameter. "
                              "Choose between 'train', 'test' or 'both'.")
 
+    def _get_show(self, show):
+        """Check and return the provided input show."""
+        if show is None or show > self.X.shape[1]:
+            return self.X.shape[1]
+        elif show < 1:
+            raise ValueError("Invalid value for the show parameter."
+                             f"Value should be >0, got {show}.")
+
+        return show
+
     def _get_index(self, index):
         """Check and return the provided input index."""
         if not index:
@@ -925,11 +935,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._get_models(models)
-        if show is None or show > self.X.shape[1]:
-            show = self.X.shape[1]
-        elif show < 1:
-            raise ValueError("Invalid value for the show parameter."
-                             f"Value should be >0, got {show}.")
+        show = self._get_show(show)
         if n_repeats <= 0:
             raise ValueError("Invalid value for the n_repeats parameter."
                              f"Value should be >0, got {n_repeats}.")
@@ -1041,11 +1047,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         models = self._get_models(models)
-        if show is None or show > self.X.shape[1]:
-            show = self.X.shape[1]
-        elif show < 1:
-            raise ValueError("Invalid value for the show parameter."
-                             f"Value should be >0, got {show}.")
+        show = self._get_show(show)
 
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame(index=self.X.columns)
@@ -1376,7 +1378,7 @@ class BaseModelPlotter(BasePlotter):
                        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-        """Residual plot of a model.
+        """Plot a model's residuals.
 
         The plot shows the residuals (difference between the predicted and the
         true value) on the vertical axis and the independent variable on the
@@ -1466,7 +1468,7 @@ class BaseModelPlotter(BasePlotter):
                               figsize: Optional[Tuple[int, int]] = None,
                               filename: Optional[str] = None,
                               display: bool = True):
-        """Plot the confusion matrix.
+        """Plot a model's confusion matrix.
 
         Only for classification tasks.
         For 1 model: plot the confusion matrix in a heatmap.
@@ -1523,7 +1525,7 @@ class BaseModelPlotter(BasePlotter):
             if len(models) == 1:  # Create matrix heatmap
                 if normalize:
                     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-                    if not title:
+                    if title == "Confusion matrix":
                         title = "Normalized confusion matrix"
 
                 fig, ax = plt.subplots(figsize=(8, 8) if not figsize else figsize)
@@ -1605,7 +1607,7 @@ class BaseModelPlotter(BasePlotter):
                        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-        """Plot performance metric(s) against threshold values.
+        """Plot a metric's performance against threshold values.
 
         Only for binary classification tasks.
 
@@ -1652,7 +1654,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             if not hasattr(m.estimator, 'predict_proba'):
                 raise AttributeError(
-                    "The plot_probabilities method is only available "
+                    "The plot_threshold method is only available "
                     f"for models with a predict_proba method, got {m}.")
 
         if metric is None:
@@ -1713,7 +1715,7 @@ class BaseModelPlotter(BasePlotter):
                            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
                            filename: Optional[str] = None,
                            display: bool = True):
-        """Plot the probability of being the target category for every category.
+        """Plot the probability distribution of the categories in the target column.
 
         Only for binary classification tasks.
 
@@ -1964,7 +1966,7 @@ class BaseModelPlotter(BasePlotter):
                 label = ''
                 if len(models) > 1:
                     label += m.name
-                if len(models) > 1 and len (dataset) > 1:
+                if len(models) > 1 and len(dataset) > 1:
                     label += ' - '
                 if len(dataset) > 1:
                     label += set_
@@ -2246,7 +2248,8 @@ class BaseModelPlotter(BasePlotter):
         """Plot SHAP's summary plot.
 
         Create a SHAP beeswarm plot, colored by feature values when they are
-        provided. The explainer will be chosen automatically based on the model's type.
+        provided. The explainer will be chosen automatically based on the model's
+        type.
 
         Parameters
         ----------
@@ -2280,14 +2283,9 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, 'results')
         m = self._get_models(models, max_one=True)
+        show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
-
-        if show is None or show > self.X.shape[1]:
-            show = self.X.shape[1]
-        elif show <= 0:
-            raise ValueError("Invalid value for the show parameter."
-                             f"Value should be >0, got {show}.")
 
         if figsize is None:  # Default figsize depends on features shown
             figsize = (10, int(4 + show/2))
@@ -2317,6 +2315,7 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(self,
                       models: Union[None, str, Sequence[str]] = None,
                       index: Optional[Union[int, Sequence]] = None,
+                      show: Optional[int] = None,
                       target: Union[int, str] = 1,
                       title: Optional[str] = None,
                       figsize: Optional[Tuple[int, int]] = None,
@@ -2343,6 +2342,10 @@ class BaseModelPlotter(BasePlotter):
             Indices of the rows in the dataset to plot. If tuple (n, m), select
             rows n until m. If None, select all rows in the test set.
 
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show in the plot.
+            None to show all.
+
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
             Only for multi-class classification tasks.
@@ -2367,17 +2370,19 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, 'results')
         m = self._get_models(models, max_one=True)
         rows = self._get_index(index)
+        show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
         if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + self.X.shape[1]/4))
+            figsize = (10, int(4 + show/2))
 
         fig, ax = plt.subplots(figsize=figsize)
         shap.decision_plot(
             base_value=expected_value,
             shap_values=shap_values,
             features=rows,
+            feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
             show=False,
             **kwargs
@@ -2605,12 +2610,12 @@ class ATOMPlotter(FeatureSelectorPlotter,
                       figsize: Optional[Tuple[int, int]] = None,
                       filename: Optional[str] = None,
                       display: bool = True):
-        """Create a diagram showing every estimator in ATOM's pipeline.
+        """Plot a diagram of every estimator in ATOM's pipeline.
 
         Parameters
         ----------
         show_params: bool, optional (default=True)
-            Whether to show the parameters of every estimator in the pipeline.
+            Whether to show the parameters used for every estimator.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.

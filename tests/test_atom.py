@@ -593,14 +593,14 @@ def test_y_test_setter():
 
 
 def test_data_properties_to_df():
-    """Assert that the data properties are converted to a df at setter."""
+    """Assert that the data attributes are converted to a df at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.X = X_bin_array
     assert isinstance(atom.X, pd.DataFrame)
 
 
 def test_data_properties_to_series():
-    """Assert that the data properties are converted to a series at setter."""
+    """Assert that the data attributes are converted to a series at setter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.y = y_bin_array
     assert isinstance(atom.y, pd.Series)
