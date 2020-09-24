@@ -54,5 +54,5 @@ atom.run(['LR', 'Tree', 'LGB', 'MLP'], metric='accuracy', bagging=5)
 atom.plot_bagging()
 ```
 <div align="center">
-    <img src="/img/plots/plot_bagging.png" alt="plot_bagging" width="700" height="420"/>
+    <img src="img/plots/plot_bagging.png" alt="plot_bagging" width="700" height="420"/>
 </div>

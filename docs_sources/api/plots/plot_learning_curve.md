@@ -55,5 +55,5 @@ atom.train_sizing(['GNB', 'LDA'], metric='accuracy', train_sizes=np.linspace(0.1
 atom.plot_learning_curve()
 ```
 <div align="center">
-    <img src="/img/plots/plot_learning_curve.png" alt="plot_learning_curve" width="700" height="420"/>
+    <img src="img/plots/plot_learning_curve.png" alt="plot_learning_curve" width="700" height="420"/>
 </div>

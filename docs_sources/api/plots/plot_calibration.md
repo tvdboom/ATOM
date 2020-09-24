@@ -67,5 +67,5 @@ atom.run(['GNB', 'LR', 'LGB'], metric='average_precision')
 atom.plot_calibration()
 ```
 <div align="center">
-    <img src="/img/plots/plot_calibration.png" alt="plot_calibration" width="700" height="700"/>
+    <img src="img/plots/plot_calibration.png" alt="plot_calibration" width="700" height="700"/>
 </div>

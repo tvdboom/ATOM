@@ -76,12 +76,12 @@ atom.run('RF')
 atom.decision_plot(index=(120, 140))
 ```
 <div align="center">
-    <img src="/img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
+    <img src="img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
 </div>
 
 ```python
 atom.decision_plot(index=120)
 ```
 <div align="center">
-    <img src="/img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
+    <img src="img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
 </div>

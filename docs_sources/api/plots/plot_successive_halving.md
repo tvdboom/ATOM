@@ -55,5 +55,5 @@ atom.successive_halving(['tree', 'bag', 'adab', 'et', 'rf', 'gbm', 'xgb', 'lgb']
 atom.plot_successive_halving()
 ```
 <div align="center">
-    <img src="/img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>
+    <img src="img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>
 </div>

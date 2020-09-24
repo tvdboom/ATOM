@@ -62,5 +62,5 @@ atom.run(['LR', 'LDA'], metric='average_precision')
 atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
 ```
 <div align="center">
-    <img src="/img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>
+    <img src="img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>
 </div>

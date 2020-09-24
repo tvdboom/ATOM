@@ -59,5 +59,5 @@ atom.run('rf')
 atom.plot_probabilities(target='Yes', filenmae='probabilities_category_yes')
 ```
 <div align="center">
-    <img src="/img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>
+    <img src="img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>
 </div>

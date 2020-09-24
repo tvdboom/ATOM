@@ -59,5 +59,5 @@ atom.run(['OLS', 'LGB'], metric='MAE')
 atom.plot_residuals()
 ```
 <div align="center">
-    <img src="/img/plots/plot_residuals.png" alt="plot_residuals" width="700" height="420"/>
+    <img src="img/plots/plot_residuals.png" alt="plot_residuals" width="700" height="420"/>
 </div>

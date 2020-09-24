@@ -69,12 +69,12 @@ atom.run(['Tree', 'Bag'], metric='precision')
 atom.Tree.plot_partial_dependence(features=[0, 1, (1, 3)])
 ```
 <div align="center">
-    <img src="/img/plots/plot_partial_dependence_1.png" alt="plot_partial_dependence_1" width="700" height="420"/>
+    <img src="img/plots/plot_partial_dependence_1.png" alt="plot_partial_dependence_1" width="700" height="420"/>
 </div>
 
 ```python
 atom.plot_partial_dependence()
 ```
 <div align="center">
-    <img src="/img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>
+    <img src="img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>
 </div>

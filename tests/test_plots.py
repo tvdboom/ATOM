@@ -308,7 +308,8 @@ def test_plot_feature_importance():
     assert glob.glob(FILE_DIR + 'feature_importance_2.png')
 
 
-def test_plot_partial_dependence():
+@pytest.mark.parametrize('features', [(('ash', 'alcohol'), 2), 'ash', 2])
+def test_plot_partial_dependence(features):
     """Assert that the plot_partial_dependence method work as intended."""
     # For binary classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -359,7 +360,7 @@ def test_plot_partial_dependence():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(['Tree', 'LGB'], metric='f1_macro')
     atom.lgb.plot_partial_dependence(
-        features=(('ash', 'alcohol'), 'ash', 2),
+        features=features,
         target=2,
         filename=FILE_DIR + 'partial_dependence_3',
         display=False

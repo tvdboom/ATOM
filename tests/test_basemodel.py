@@ -212,27 +212,6 @@ def test_results_property():
     assert 'mean_bagging' not in atom.lr.results
 
 
-def test_shape_property():
-    """Assert that the shape property returns the shape of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('LR')
-    assert atom.lr.shape == atom.shape
-
-
-def test_columns_property():
-    """Assert that the columns property returns the columns of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run('LR')
-    assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
-
-
-def test_target_property():
-    """Assert that the target property returns the last column in the dataset."""
-    atom = ATOMClassifier(X_bin, random_state=1)
-    atom.run('LR')
-    assert atom.lr.target == atom.target
-
-
 def test_dataset_property():
     """Assert that the dataset property returns scaled data if needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -303,6 +282,41 @@ def test_y_test_property():
     atom.run(['MNB', 'LR'])
     assert atom.y_test.equals(atom.mnb.y_test)
     assert atom.y_test.equals(atom.lr.y_test)
+
+
+def test_shape_property():
+    """Assert that the shape property returns the shape of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.shape == atom.shape
+
+
+def test_columns_property():
+    """Assert that the columns property returns the columns of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
+
+
+def test_target_property():
+    """Assert that the target property returns the last column in the dataset."""
+    atom = ATOMClassifier(X_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.target == atom.target
+
+
+def test_categories_property():
+    """Assert that the categories property returns the unique categories."""
+    atom = ATOMClassifier(X_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.categories == atom.categories
+
+
+def test_n_categories_property():
+    """Assert that the n_categories property returns the unique categories."""
+    atom = ATOMClassifier(X_bin, random_state=1)
+    atom.run('LR')
+    assert atom.lr.n_categories == atom.n_categories
 
 
 # Test utility methods ====================================================== >>

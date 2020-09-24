@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="/img/logo.png" alt="ATOM" height="150" width="600"/>
+    <img src="img/logo.png" alt="ATOM" height="150" width="600"/>
 </div>
 <br><br>
 
@@ -77,5 +77,5 @@ Example steps taken by ATOM's pipeline:
 <br/><br/>
 
 <div align="center">
-    <img src="/img/diagram.jpg" alt="diagram" height="300" width="1000"/>
+    <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
 </div>
