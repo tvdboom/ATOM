@@ -53,5 +53,5 @@ atom.run(['LR', 'RF', 'LGB'], metric='roc_auc')
 atom.plot_roc(filename='roc_curve.png')
 ```
 <div align="center">
-    <img src="img/plots/plot_roc.png" alt="plot_roc" width="700" height="420"/>
+    <img src="../../img/plots/plot_roc.png" alt="plot_roc" width="700" height="420"/>
 </div>

@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="img/logo.png" alt="ATOM" height="150" width="600"/>
+    <img src="img/logo.png" alt="ATOM" height="170" width="600"/>
 </div>
 <br><br>
 

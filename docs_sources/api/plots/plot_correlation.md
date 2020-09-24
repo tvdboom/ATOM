@@ -47,5 +47,5 @@ atom = ATOMClassifier(X, y='RainTomorrow')
 atom.plot_correlation()
 ```
 <div align="center">
-    <img src="img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="560"/>
+    <img src="../../img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="560"/>
 </div>

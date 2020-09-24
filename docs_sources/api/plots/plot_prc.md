@@ -54,5 +54,5 @@ atom.run(['LR', 'RF', 'LGB'], metric='average_precision')
 atom.plot_prc()
 ```
 <div align="center">
-    <img src="img/plots/plot_prc.png" alt="plot_prc" width="700" height="420"/>
+    <img src="../../img/plots/plot_prc.png" alt="plot_prc" width="700" height="420"/>
 </div>

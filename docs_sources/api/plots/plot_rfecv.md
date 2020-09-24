@@ -46,5 +46,5 @@ atom.feature_selection(strategy='RFECV', solver='LGB', scoring='precision')
 atom.plot_rfecv()
 ```
 <div align="center">
-    <img src="img/plots/plot_rfecv.png" alt="plot_rfecv" width="700" height="420"/>
+    <img src="../../img/plots/plot_rfecv.png" alt="plot_rfecv" width="700" height="420"/>
 </div>

@@ -50,5 +50,5 @@ atom.feature_selection(strategy='PCA', n_features=11)
 atom.plot_components()
 ```
 <div align="center">
-    <img src="img/plots/plot_components.png" alt="plot_components" width="700" height="700"/>
+    <img src="../../img/plots/plot_components.png" alt="plot_components" width="700" height="700"/>
 </div>

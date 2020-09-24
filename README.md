@@ -1,5 +1,5 @@
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" width="600" height="180"/>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/logo.png?raw=true" alt="ATOM" title="ATOM" height="170" width="600"/>
 </p>
 
 

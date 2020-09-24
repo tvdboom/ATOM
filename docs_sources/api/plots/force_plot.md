@@ -70,6 +70,6 @@ atom.run('lr')
 atom.force_plot(index=atom.X_test.index[0], matplotlib=True, filename='force_plot')
 ```
 <div align="center">
-    <img src="img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>
+    <img src="../../img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>
 </div>
 
