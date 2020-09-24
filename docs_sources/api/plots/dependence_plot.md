@@ -74,6 +74,6 @@ atom.run('RF')
 atom.dependence_plot(index='rank(3)')
 ```
 <div align="center">
-    <img src="../../img/plots/dependence_plot.png" alt="dependence_plot" width="700" height="420"/>
+    <img src="img/plots/dependence_plot.png" alt="dependence_plot" width="700" height="420"/>
 </div>
 

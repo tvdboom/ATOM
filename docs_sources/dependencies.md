@@ -13,7 +13,7 @@ As of the moment, ATOM supports Python
 ----------
 
 ATOM is built on top of several existing Python libraries. The required
- packages are necessary for it's correct functioning. Additionnaly, you can
+ packages are necessary for it's correct functioning. Additionally, you can
  install some optional packages needed for specific methods or to use
  machine learning models not provided by sklearn.
 
@@ -53,7 +53,7 @@ ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by provid
  core project contributors with a set of developer tools free of charge.
 
 <div align="center">
-        <a href="http://www.jetbrains.com"><img src="/img/jetbrains.png" alt="JetBrains" height="200" width="200"/ style="margin-right:120px"></a>
-        <a href="https://www.jetbrains.com/pycharm/"><img src="/img/pycharm.png" alt="pyCharm" height="120" width="120"/></a>
+        <a href="http://www.jetbrains.com"><img src="img/jetbrains.png" alt="JetBrains" height="200" width="200"/ style="margin-right:120px"></a>
+        <a href="https://www.jetbrains.com/pycharm/"><img src="img/pycharm.png" alt="pyCharm" height="120" width="120"/></a>
 </div>
 
