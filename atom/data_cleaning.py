@@ -518,14 +518,14 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 else:  # Strategies: mean, median or most_frequent.
                     self.log(f" --> Imputing {nans} missing values with "
-                             f"'{self.strat_num.lower()}' in feature {col}.", 2)
+                             f"{self.strat_num.lower()} in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
             # Column is categorical and contains missing values
             elif nans > 0:
                 if self.strat_cat.lower() not in ['drop', 'most_frequent']:
                     self.log(f" --> Imputing {nans} missing values with "
-                             f"{self.strat_cat} in feature {col}.", 2)
+                             f"'{self.strat_cat}' in feature {col}.", 2)
                     X[col].replace(np.NaN, self.strat_cat, inplace=True)
 
                 elif self.strat_cat.lower() == 'drop':
