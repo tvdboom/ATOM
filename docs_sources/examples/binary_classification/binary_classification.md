@@ -57,59 +57,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>65083</th>
-      <td>MelbourneAirport</td>
-      <td>9.3</td>
-      <td>13.9</td>
-      <td>3.8</td>
-      <td>2.4</td>
-      <td>3.3</td>
-      <td>S</td>
+      <th>135379</th>
+      <td>AliceSprings</td>
+      <td>22.4</td>
+      <td>35.4</td>
+      <td>0.0</td>
+      <td>4.8</td>
+      <td>11.2</td>
+      <td>ESE</td>
+      <td>33.0</td>
+    </tr>
+    <tr>
+      <th>55572</th>
+      <td>Ballarat</td>
+      <td>11.7</td>
+      <td>19.8</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NNE</td>
       <td>48.0</td>
     </tr>
     <tr>
-      <th>105643</th>
-      <td>Woomera</td>
-      <td>5.7</td>
-      <td>17.4</td>
-      <td>0.0</td>
-      <td>2.2</td>
+      <th>111664</th>
+      <td>Witchcliffe</td>
+      <td>3.9</td>
+      <td>15.4</td>
+      <td>5.6</td>
       <td>NaN</td>
-      <td>W</td>
-      <td>54.0</td>
+      <td>NaN</td>
+      <td>NW</td>
+      <td>43.0</td>
     </tr>
     <tr>
-      <th>98697</th>
-      <td>MountGambier</td>
-      <td>6.7</td>
-      <td>20.9</td>
+      <th>6661</th>
+      <td>Cobar</td>
+      <td>21.6</td>
+      <td>34.9</td>
       <td>0.0</td>
-      <td>6.4</td>
-      <td>10.9</td>
-      <td>S</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>106637</th>
-      <td>Albany</td>
-      <td>14.4</td>
-      <td>20.2</td>
-      <td>0.0</td>
-      <td>4.2</td>
       <td>11.2</td>
       <td>NaN</td>
-      <td>NaN</td>
+      <td>NNE</td>
+      <td>41.0</td>
     </tr>
     <tr>
-      <th>69629</th>
-      <td>Mildura</td>
-      <td>10.7</td>
-      <td>27.9</td>
+      <th>78634</th>
+      <td>Watsonia</td>
+      <td>13.6</td>
+      <td>33.3</td>
       <td>0.0</td>
-      <td>5.8</td>
-      <td>11.3</td>
-      <td>SE</td>
-      <td>30.0</td>
+      <td>8.0</td>
+      <td>12.3</td>
+      <td>N</td>
+      <td>37.0</td>
     </tr>
   </tbody>
 </table>
@@ -132,14 +132,16 @@ atom = ATOMClassifier(X, y='RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False
     
     Dataset stats ================= >>
     Shape: (7110, 22)
-    Missing values: 14621
+    Missing values: 15896
     Categorical columns: 5
     Scaled: False
     ----------------------------------
-    Size of training set: 5688
-    Size of test set: 1422
+    Train set size: 5688
+    Test set size: 1422
     ----------------------------------
-    Class balance: No:Yes <==> 3.8:1.0
+    Train set balance: No:Yes <==> 3.7:1.0
+    Test set balance: No:Yes <==> 4.1:1.0
+    ----------------------------------
     Instances in RainTomorrow per class:
     |        |    total |    train_set |    test_set |
     |:-------|---------:|-------------:|------------:|
@@ -150,11 +152,9 @@ atom = ATOMClassifier(X, y='RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False
 
 
 ```python
-# We can change the data attributes in the pipeline
-# Note that we can only replace the property with a new df
-new_train = atom.X
-new_train.insert(loc=3, column='AvgTemp', value=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
-atom.X = new_train
+# We can change the data attributes in between the pipeline
+# Note that we can only replace it with a new dataframe!
+atom.X = atom.X.assign(AvgTemp=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 
 # This will automatically update all other data attributes
 assert 'AvgTemp' in atom.dataset
@@ -163,7 +163,7 @@ assert 'AvgTemp' in atom.dataset
 
 ```python
 # Impute missing values
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num='knn', strat_cat='drop', min_frac_rows=0.8)
 ```
 
     Fitting Imputer...
@@ -171,71 +171,70 @@ atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
      --> Dropping 778 rows for containing less than 80% non-missing values.
      --> Imputing 5 missing values using the KNN imputer in feature MinTemp.
      --> Imputing 3 missing values using the KNN imputer in feature MaxTemp.
-     --> Imputing 8 missing values using the KNN imputer in feature AvgTemp.
      --> Imputing 31 missing values using the KNN imputer in feature Rainfall.
      --> Imputing 2314 missing values using the KNN imputer in feature Evaporation.
      --> Imputing 2645 missing values using the KNN imputer in feature Sunshine.
-     --> Imputing 201 missing values with remove in feature WindGustDir.
-     --> Imputing 199 missing values using the KNN imputer in feature WindGustSpeed.
-     --> Imputing 365 missing values with remove in feature WindDir9am.
-     --> Imputing 24 missing values with remove in feature WindDir3pm.
-     --> Imputing 4 missing values using the KNN imputer in feature WindSpeed9am.
-     --> Imputing 3 missing values using the KNN imputer in feature WindSpeed3pm.
-     --> Imputing 23 missing values using the KNN imputer in feature Humidity9am.
-     --> Imputing 55 missing values using the KNN imputer in feature Humidity3pm.
-     --> Imputing 42 missing values using the KNN imputer in feature Pressure9am.
-     --> Imputing 40 missing values using the KNN imputer in feature Pressure3pm.
-     --> Imputing 2112 missing values using the KNN imputer in feature Cloud9am.
-     --> Imputing 2198 missing values using the KNN imputer in feature Cloud3pm.
-     --> Imputing 5 missing values using the KNN imputer in feature Temp9am.
-     --> Imputing 32 missing values using the KNN imputer in feature Temp3pm.
-     --> Imputing 31 missing values with remove in feature RainToday.
+     --> Dropping 201 rows due to missing values in feature WindGustDir.
+     --> Dropping 358 rows due to missing values in feature WindDir9am.
+     --> Dropping 15 rows due to missing values in feature WindDir3pm.
+     --> Imputing 17 missing values using the KNN imputer in feature Humidity9am.
+     --> Imputing 52 missing values using the KNN imputer in feature Humidity3pm.
+     --> Imputing 37 missing values using the KNN imputer in feature Pressure9am.
+     --> Imputing 34 missing values using the KNN imputer in feature Pressure3pm.
+     --> Imputing 1891 missing values using the KNN imputer in feature Cloud9am.
+     --> Imputing 1977 missing values using the KNN imputer in feature Cloud3pm.
+     --> Imputing 4 missing values using the KNN imputer in feature Temp9am.
+     --> Imputing 31 missing values using the KNN imputer in feature Temp3pm.
+     --> Dropping 30 rows due to missing values in feature RainToday.
+     --> Imputing 4 missing values using the KNN imputer in feature AvgTemp.
     
 
 
 ```python
 # Encode the categorical features
-atom.encode(max_onehot=10, frac_to_other=0.04)
+atom.encode(strategy='CatBoost', max_onehot=10, frac_to_other=0.04)
 ```
 
     Fitting Encoder...
     Encoding categorical columns...
-     --> Target-encoding feature Location. Contains 1 unique categories.
-     --> Target-encoding feature WindGustDir. Contains 17 unique categories.
-     --> Target-encoding feature WindDir9am. Contains 17 unique categories.
-     --> Target-encoding feature WindDir3pm. Contains 17 unique categories.
-     --> One-hot-encoding feature RainToday. Contains 3 unique categories.
+     --> CatBoost-encoding feature Location. Contains 1 unique categories.
+     --> CatBoost-encoding feature WindGustDir. Contains 16 unique categories.
+     --> CatBoost-encoding feature WindDir9am. Contains 16 unique categories.
+     --> CatBoost-encoding feature WindDir3pm. Contains 16 unique categories.
+     --> Label-encoding feature RainToday. Contains 2 unique categories.
     
 
 
 ```python
 # Perform undersampling of the majority class
-atom.balance(oversample=None, undersample=0.9)
+atom.balance(strategy='smote', sampling_strategy=0.9)
 atom.stats()  # Note the balanced training set
 ```
 
-    Performing undersampling...
-     --> Removing 3145 rows from category: No.
+    Oversampling with SMOTE...
+     --> Adding 2302 rows to category: Yes.
     
     Dataset stats ================= >>
-    Shape: (3965, 24)
+    Shape: (8030, 23)
     Scaled: False
     ----------------------------------
-    Size of training set: 2543
-    Size of test set: 1422
+    Train set size: 6885
+    Test set size: 1145
     ----------------------------------
-    Class balance: No:Yes <==> 1.7:1.0
+    Train set balance: No:Yes <==> 1.1:1.0
+    Test set balance: No:Yes <==> 4.1:1.0
+    ----------------------------------
     Instances in RainTomorrow per class:
     |        |    total |    train_set |    test_set |
     |:-------|---------:|-------------:|------------:|
-    | 0: No  |     2473 |         1338 |        1135 |
-    | 1: Yes |     1492 |         1205 |         287 |
+    | 0: No  |     4543 |         3624 |         919 |
+    | 1: Yes |     3487 |         3261 |         226 |
     
     
 
 
 ```python
-# Define a custom metric_
+# Define a custom metric
 def f2_score(y_true, y_pred):
     return fbeta_score(y_true, y_pred, beta=2)
 
@@ -256,32 +255,32 @@ atom.run(models=['et', 'rf'],
     Results for Extra-Trees:         
     Fitting -----------------------------------------
     Score on the train set --> f2_score: 1.0000
-    Score on the test set  --> f2_score: 0.7509
-    Time elapsed: 0.345s
+    Score on the test set  --> f2_score: 0.5474
+    Time elapsed: 0.191s
     Bagging -----------------------------------------
-    Score --> f2_score: 0.7165 ± 0.0036
-    Time elapsed: 1.209s
+    Score --> f2_score: 0.6027 ± 0.0190
+    Time elapsed: 0.843s
     -------------------------------------------------
-    Total time: 1.559s
+    Total time: 1.038s
     
     
     Results for Random Forest:         
     Fitting -----------------------------------------
     Score on the train set --> f2_score: 1.0000
-    Score on the test set  --> f2_score: 0.7194
-    Time elapsed: 0.449s
+    Score on the test set  --> f2_score: 0.5959
+    Time elapsed: 0.295s
     Bagging -----------------------------------------
-    Score --> f2_score: 0.6933 ± 0.0088
-    Time elapsed: 1.718s
+    Score --> f2_score: 0.6087 ± 0.0113
+    Time elapsed: 1.291s
     -------------------------------------------------
-    Total time: 2.172s
+    Total time: 1.589s
     
     
     Final results ========================= >>
-    Duration: 3.733s
+    Duration: 2.627s
     ------------------------------------------
-    Extra-Trees   --> f2_score: 0.717 ± 0.004 ~ !
-    Random Forest --> f2_score: 0.693 ± 0.009 ~
+    Extra-Trees   --> f2_score: 0.603 ± 0.019 ~
+    Random Forest --> f2_score: 0.609 ± 0.011 ~ !
     
 
 ## Analyze the results
@@ -300,13 +299,13 @@ print('Score on the test set: ', atom.winner.metric_test)
 ```
 
     Results ===================== >>
-    Extra-Trees   --> f2_score: 0.717 ± 0.004 ~
-    Random Forest --> f2_score: 0.693 ± 0.009 ~
+    Extra-Trees   --> f2_score: 0.603 ± 0.019 ~
+    Random Forest --> f2_score: 0.609 ± 0.011 ~
     
     
-    And the winner is the Extra-Trees model!!
+    And the winner is the Random Forest model!!
     Score on the training set:  1.0
-    Score on the test set:  0.7508630609896432
+    Score on the test set:  0.5958781362007168
     
 
 **We can make many plots to check the performance of the models**

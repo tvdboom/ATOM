@@ -11,8 +11,6 @@ Import the boston dataset from [sklearn.datasets](https://scikit-learn.org/stabl
 
 ```python
 # Import packages
-import numpy as np
-import pandas as pd
 from sklearn.datasets import load_boston
 from atom import ATOMRegressor
 ```
@@ -38,8 +36,8 @@ atom = ATOMRegressor(X, y, verbose=1, random_state=1)
     Shape: (506, 14)
     Scaled: False
     ----------------------------------
-    Size of training set: 405
-    Size of test set: 101
+    Train set size: 405
+    Test set size: 101
     
     
 
@@ -69,73 +67,73 @@ atom.successive_halving(['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
     Time elapsed: 0.007s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -4.3307 ± 0.5250
-    Time elapsed: 0.020s
+    Time elapsed: 0.018s
     -------------------------------------------------
-    Total time: 0.030s
+    Total time: 0.027s
     
     
     Results for Bagging Regressor:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -1.3054
     Score on the test set  --> neg_mean_absolute_error: -2.6950
-    Time elapsed: 0.020s
+    Time elapsed: 0.018s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -3.0957 ± 0.2677
     Time elapsed: 0.079s
     -------------------------------------------------
-    Total time: 0.103s
+    Total time: 0.100s
     
     
     Results for Extra-Trees:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.0000
     Score on the test set  --> neg_mean_absolute_error: -2.1541
-    Time elapsed: 0.088s
+    Time elapsed: 0.084s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.5554 ± 0.1708
-    Time elapsed: 0.364s
+    Time elapsed: 0.357s
     -------------------------------------------------
-    Total time: 0.456s
+    Total time: 0.443s
     
     
     Results for Random Forest:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -1.1509
     Score on the test set  --> neg_mean_absolute_error: -2.4143
-    Time elapsed: 0.111s
+    Time elapsed: 0.109s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.9574 ± 0.2253
     Time elapsed: 0.509s
     -------------------------------------------------
-    Total time: 0.625s
+    Total time: 0.621s
     
     
     Results for LightGBM:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -3.4205
     Score on the test set  --> neg_mean_absolute_error: -4.5600
-    Time elapsed: 0.024s
+    Time elapsed: 0.027s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -4.8393 ± 0.2682
-    Time elapsed: 0.068s
+    Time elapsed: 0.060s
     -------------------------------------------------
-    Total time: 0.097s
+    Total time: 0.091s
     
     
     Results for CatBoost:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.0806
     Score on the test set  --> neg_mean_absolute_error: -2.3984
-    Time elapsed: 0.760s
+    Time elapsed: 0.846s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.9165 ± 0.2564
-    Time elapsed: 3.112s
+    Time elapsed: 2.764s
     -------------------------------------------------
-    Total time: 3.875s
+    Total time: 3.611s
     
     
     Final results ========================= >>
-    Duration: 5.188s
+    Duration: 4.894s
     ------------------------------------------
     Decision Tree     --> neg_mean_absolute_error: -4.331 ± 0.525 ~
     Bagging Regressor --> neg_mean_absolute_error: -3.096 ± 0.268 ~
@@ -155,40 +153,40 @@ atom.successive_halving(['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.0000
     Score on the test set  --> neg_mean_absolute_error: -2.2361
-    Time elapsed: 0.099s
+    Time elapsed: 0.098s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.6016 ± 0.2890
-    Time elapsed: 0.418s
+    Time elapsed: 0.414s
     -------------------------------------------------
-    Total time: 0.520s
+    Total time: 0.514s
     
     
     Results for CatBoost:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.2835
     Score on the test set  --> neg_mean_absolute_error: -2.4196
-    Time elapsed: 0.873s
+    Time elapsed: 0.815s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.5681 ± 0.2119
-    Time elapsed: 3.423s
+    Time elapsed: 3.124s
     -------------------------------------------------
-    Total time: 4.300s
+    Total time: 3.942s
     
     
     Results for Random Forest:         
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.9820
     Score on the test set  --> neg_mean_absolute_error: -2.5055
-    Time elapsed: 0.132s
+    Time elapsed: 0.129s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.6144 ± 0.1188
-    Time elapsed: 0.603s
+    Time elapsed: 0.590s
     -------------------------------------------------
-    Total time: 0.739s
+    Total time: 0.721s
     
     
     Final results ========================= >>
-    Duration: 5.561s
+    Duration: 5.178s
     ------------------------------------------
     Extra-Trees   --> neg_mean_absolute_error: -2.602 ± 0.289 ~
     CatBoost      --> neg_mean_absolute_error: -2.568 ± 0.212 ~ !
@@ -205,16 +203,16 @@ atom.successive_halving(['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
     Fitting -----------------------------------------
     Score on the train set --> neg_mean_absolute_error: -0.3978
     Score on the test set  --> neg_mean_absolute_error: -1.8772
-    Time elapsed: 1.252s
+    Time elapsed: 1.207s
     Bagging -----------------------------------------
     Score --> neg_mean_absolute_error: -2.0501 ± 0.0892
-    Time elapsed: 5.481s
+    Time elapsed: 5.234s
     -------------------------------------------------
-    Total time: 6.737s
+    Total time: 6.444s
     
     
     Final results ========================= >>
-    Duration: 6.740s
+    Duration: 6.445s
     ------------------------------------------
     CatBoost --> neg_mean_absolute_error: -2.050 ± 0.089 ~
     
@@ -250,8 +248,8 @@ atom.results
       <th></th>
       <th></th>
       <th>name</th>
-      <th>score_train</th>
-      <th>score_test</th>
+      <th>metric_train</th>
+      <th>metric_test</th>
       <th>time_fit</th>
       <th>mean_bagging</th>
       <th>std_bagging</th>
@@ -281,63 +279,63 @@ atom.results
       <td>0.007s</td>
       <td>-4.330693</td>
       <td>0.525026</td>
-      <td>0.020s</td>
-      <td>0.030s</td>
+      <td>0.018s</td>
+      <td>0.027s</td>
     </tr>
     <tr>
       <th>Bag</th>
       <td>Bagging Regressor</td>
       <td>-1.305373e+00</td>
       <td>-2.695050</td>
-      <td>0.020s</td>
+      <td>0.018s</td>
       <td>-3.095663</td>
       <td>0.267668</td>
       <td>0.079s</td>
-      <td>0.103s</td>
+      <td>0.100s</td>
     </tr>
     <tr>
       <th>ET</th>
       <td>Extra-Trees</td>
       <td>-2.256238e-14</td>
       <td>-2.154089</td>
-      <td>0.088s</td>
+      <td>0.084s</td>
       <td>-2.555434</td>
       <td>0.170823</td>
-      <td>0.364s</td>
-      <td>0.456s</td>
+      <td>0.357s</td>
+      <td>0.443s</td>
     </tr>
     <tr>
       <th>RF</th>
       <td>Random Forest</td>
       <td>-1.150866e+00</td>
       <td>-2.414297</td>
-      <td>0.111s</td>
+      <td>0.109s</td>
       <td>-2.957400</td>
       <td>0.225311</td>
       <td>0.509s</td>
-      <td>0.625s</td>
+      <td>0.621s</td>
     </tr>
     <tr>
       <th>LGB</th>
       <td>LightGBM</td>
       <td>-3.420518e+00</td>
       <td>-4.559962</td>
-      <td>0.024s</td>
+      <td>0.027s</td>
       <td>-4.839315</td>
       <td>0.268167</td>
-      <td>0.068s</td>
-      <td>0.097s</td>
+      <td>0.060s</td>
+      <td>0.091s</td>
     </tr>
     <tr>
       <th>CatB</th>
       <td>CatBoost</td>
       <td>-8.055503e-02</td>
       <td>-2.398431</td>
-      <td>0.760s</td>
+      <td>0.846s</td>
       <td>-2.916470</td>
       <td>0.256428</td>
-      <td>3.112s</td>
-      <td>3.875s</td>
+      <td>2.764s</td>
+      <td>3.611s</td>
     </tr>
     <tr>
       <th rowspan="3" valign="top">1</th>
@@ -345,33 +343,33 @@ atom.results
       <td>Extra-Trees</td>
       <td>-2.315185e-14</td>
       <td>-2.236079</td>
-      <td>0.099s</td>
+      <td>0.098s</td>
       <td>-2.601648</td>
       <td>0.289034</td>
-      <td>0.418s</td>
-      <td>0.520s</td>
+      <td>0.414s</td>
+      <td>0.514s</td>
     </tr>
     <tr>
       <th>CatB</th>
       <td>CatBoost</td>
       <td>-2.835499e-01</td>
       <td>-2.419625</td>
-      <td>0.873s</td>
+      <td>0.815s</td>
       <td>-2.568085</td>
       <td>0.211868</td>
-      <td>3.423s</td>
-      <td>4.300s</td>
+      <td>3.124s</td>
+      <td>3.942s</td>
     </tr>
     <tr>
       <th>RF</th>
       <td>Random Forest</td>
       <td>-9.819778e-01</td>
       <td>-2.505465</td>
-      <td>0.132s</td>
+      <td>0.129s</td>
       <td>-2.614416</td>
       <td>0.118758</td>
-      <td>0.603s</td>
-      <td>0.739s</td>
+      <td>0.590s</td>
+      <td>0.721s</td>
     </tr>
     <tr>
       <th>2</th>
@@ -379,11 +377,11 @@ atom.results
       <td>CatBoost</td>
       <td>-3.977985e-01</td>
       <td>-1.877205</td>
-      <td>1.252s</td>
+      <td>1.207s</td>
       <td>-2.050118</td>
       <td>0.089185</td>
-      <td>5.481s</td>
-      <td>6.737s</td>
+      <td>5.234s</td>
+      <td>6.444s</td>
     </tr>
   </tbody>
 </table>

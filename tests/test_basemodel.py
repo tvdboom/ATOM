@@ -397,9 +397,9 @@ def test_invalid_metric():
     assert isinstance(atom.ols.scoring('roc_auc'), str)
 
 
-def test_save_model():
-    """Assert that the save_model saves a pickle file."""
+def test_save_estimator():
+    """Assert that the save_estimator saves a pickle file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
-    atom.mnb.save_model(FILE_DIR + 'auto')
+    atom.mnb.save_estimator(FILE_DIR + 'auto')
     assert glob.glob(FILE_DIR + 'MNB_model')

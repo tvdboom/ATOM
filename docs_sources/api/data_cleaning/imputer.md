@@ -76,7 +76,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 !!!tip
-    Use `atom`'s [missing](../../ATOM/atomclassifier/#utility-properties) property
+    Use `atom`'s [missing](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>

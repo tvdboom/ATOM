@@ -170,6 +170,30 @@ Sorted list of the unique categories in the target column.
 <blockquote>
 Number of unique categories in the target column.
 </blockquote>
+<strong>mapping: dict</strong>
+<blockquote>
+Dictionary of the target categories mapped to their respective encoded integer.
+</blockquote>
+<strong>missing: pd.Series</strong>
+<blockquote>
+Returns columns with number of missing values.
+</blockquote>
+<strong>n_missing: int</strong>
+<blockquote>
+Number of columns with missing values.
+</blockquote>
+<strong>categorical: list</strong>
+<blockquote>
+Returns columns with categorical features.
+</blockquote>
+<strong>n_categorical: int</strong>
+<blockquote>
+Number of columns with categorical features.
+</blockquote>
+<strong>scaled: bool</strong>
+<blockquote>
+Returns whether the feature set is scaled.
+</blockquote>
 </td></tr>
 </table>
 <br>
@@ -182,10 +206,6 @@ Number of unique categories in the target column.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>mapping: dict</strong>
-<blockquote>
-Dictionary of the target categories mapped to their respective encoded integer.
-</blockquote>
 <strong>profile: ProfileReport</strong>
 <blockquote>
 Profile created by pandas-profiling after calling the report method.
@@ -606,7 +626,7 @@ Remove or replace outliers in the training set. Outliers are defined as values t
 
 
 <a name="atomclassifier-balance"></a>
-<pre><em>method</em> <strong style="color:#008AB8">balance</strong>(strategy='ADASYN', sampling_strategy='not majority', **kwargs)
+<pre><em>method</em> <strong style="color:#008AB8">balance</strong>(strategy='ADASYN', **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L463">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of instances per target category in the training set.
@@ -642,7 +662,7 @@ To further pre-process the data you can create new non-linear features transform
 
 <a name="atomclassifier-feature-generation"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy='DFS', n_features=None, generations=20, population=500, operators=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L504">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L497">[source]</a></div></pre>
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
@@ -656,7 +676,7 @@ Use Deep feature Synthesis or a genetic algorithm to create new combinations
 <a name="atomclassifier-feature-selection"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None, solver=None, n_features=None,
                          max_frac_repeated=1., max_correlation=1., **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L540">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L533">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
  features with equal scores will be broken in an unspecified way. Also
@@ -715,7 +735,7 @@ The training methods are where the models are fitted to the data and their
 <a name="atomclassifier-run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
            needs_threshold=False, n_calls=10, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L664">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L657">[source]</a></div></pre>
 <div style="padding-left:3%">
 Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
  Using this class through `atom` allows subsequent runs with different models
@@ -727,7 +747,7 @@ Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
 <a name="atomclassifier-successive-halving"></a>
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
                           skip_iter=0, n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L713">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L706">[source]</a></div></pre>
 <div style="padding-left:3%">
 Calls a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
 </div>
@@ -737,7 +757,7 @@ Calls a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md
 <a name="atomclassifier-train-sizing"></a>
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
                     train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L754">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L747">[source]</a></div></pre>
 <div style="padding-left:3%">
 Calls a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
 </div>

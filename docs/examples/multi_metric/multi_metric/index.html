@@ -388,7 +388,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#multi-metric-runs" class="nav-link">Multi-metric runs</a>
+            <li class="nav-item" data-level="1"><a href="#multi-metric" class="nav-link">Multi-metric</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#load-the-data" class="nav-link">Load the data</a>
               <ul class="nav flex-column">
@@ -409,7 +409,7 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="multi-metric-runs">Multi-metric runs</h1>
+<h1 id="multi-metric">Multi-metric</h1>
 <hr />
 <p>This example shows how we can evaluate an ATOM pipeline on multiple metrics.</p>
 <p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
@@ -439,10 +439,12 @@ Dataset stats ================= &gt;&gt;
 Shape: (569, 31)
 Scaled: False
 ----------------------------------
-Size of training set: 456
-Size of test set: 113
+Train set size: 456
+Test set size: 113
 ----------------------------------
-Class balance: 0:1 &lt;==&gt; 0.6:1.0
+Train set balance: 0:1 &lt;==&gt; 0.6:1.0
+Test set balance: 0:1 &lt;==&gt; 0.7:1.0
+----------------------------------
 Instances in target per class:
 |    |    total |    train_set |    test_set |
 |---:|---------:|-------------:|------------:|
@@ -459,71 +461,71 @@ Running BO for Multinomial Naive Bayes...
 Random start 1 ----------------------------------
 Parameters --&gt; {'alpha': 1, 'fit_prior': True}
 Evaluation --&gt; f1: 0.9260  Best f1: 0.9260   recall: 0.9722  Best recall: 0.9722
-Time iteration: 2.823s   Total time: 2.826s
+Time iteration: 3.108s   Total time: 3.124s
 Iteration 2 -------------------------------------
-Parameters --&gt; {'alpha': 9.744, 'fit_prior': False}
-Evaluation --&gt; f1: 0.9208  Best f1: 0.9260   recall: 0.9654  Best recall: 0.9722
-Time iteration: 0.043s   Total time: 2.872s
+Parameters --&gt; {'alpha': 9.744, 'fit_prior': True}
+Evaluation --&gt; f1: 0.9225  Best f1: 0.9260   recall: 0.9688  Best recall: 0.9722
+Time iteration: 0.048s   Total time: 3.172s
 Iteration 3 -------------------------------------
-Parameters --&gt; {'alpha': 0.99, 'fit_prior': True}
-Evaluation --&gt; f1: 0.9244  Best f1: 0.9260   recall: 0.9724  Best recall: 0.9724
-Time iteration: 0.032s   Total time: 3.030s
+Parameters --&gt; {'alpha': 0.66, 'fit_prior': False}
+Evaluation --&gt; f1: 0.9223  Best f1: 0.9260   recall: 0.9655  Best recall: 0.9722
+Time iteration: 0.044s   Total time: 3.357s
 
 Results for Multinomial Naive Bayes:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {'alpha': 1, 'fit_prior': True}
 Best evaluation --&gt; f1: 0.9260   recall: 0.9722
-Time elapsed: 3.201s
+Time elapsed: 3.494s
 Fitting -----------------------------------------
 Score on the train set --&gt; f1: 0.9243   recall: 0.9723
 Score on the test set  --&gt; f1: 0.9103   recall: 0.9706
-Time elapsed: 0.014s
+Time elapsed: 0.004s
 Bagging -----------------------------------------
 Score --&gt; f1: 0.9100 ± 0.0005   recall: 0.9669 ± 0.0064
-Time elapsed: 0.034s
+Time elapsed: 0.031s
 -------------------------------------------------
-Total time: 3.253s
+Total time: 3.531s
 
 
 Running BO for Quadratic Discriminant Analysis...
 Random start 1 ----------------------------------
 Parameters --&gt; {'reg_param': 0}
 Evaluation --&gt; f1: 0.9654  Best f1: 0.9654   recall: 0.9619  Best recall: 0.9619
-Time iteration: 0.054s   Total time: 0.056s
+Time iteration: 0.031s   Total time: 0.031s
 Iteration 2 -------------------------------------
 Parameters --&gt; {'reg_param': 1.0}
 Evaluation --&gt; f1: 0.9245  Best f1: 0.9654   recall: 0.9897  Best recall: 0.9897
-Time iteration: 0.054s   Total time: 0.114s
+Time iteration: 0.031s   Total time: 0.063s
 Iteration 3 -------------------------------------
-Parameters --&gt; {'reg_param': 0.1}
-Evaluation --&gt; f1: 0.9626  Best f1: 0.9654   recall: 0.9793  Best recall: 0.9897
-Time iteration: 0.057s   Total time: 0.252s
+Parameters --&gt; {'reg_param': 0.0}
+Evaluation --&gt; f1: 0.9633  Best f1: 0.9654   recall: 0.9549  Best recall: 0.9897
+Time iteration: 0.031s   Total time: 0.188s
 
 Results for Quadratic Discriminant Analysis:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {'reg_param': 0}
 Best evaluation --&gt; f1: 0.9654   recall: 0.9619
-Time elapsed: 0.435s
+Time elapsed: 0.297s
 Fitting -----------------------------------------
 Score on the train set --&gt; f1: 0.9828   recall: 0.9896
 Score on the test set  --&gt; f1: 0.9710   recall: 0.9853
-Time elapsed: 0.018s
+Time elapsed: 0.016s
 Bagging -----------------------------------------
 Score --&gt; f1: 0.9606 ± 0.0081   recall: 0.9853 ± 0.0104
-Time elapsed: 0.036s
+Time elapsed: 0.031s
 -------------------------------------------------
-Total time: 0.494s
+Total time: 0.344s
 
 
 Final results ========================= &gt;&gt;
-Duration: 3.750s
+Duration: 3.875s
 ------------------------------------------
 Multinomial Naive Bayes         --&gt; f1: 0.910 ± 0.001   recall: 0.967 ± 0.006
 Quadratic Discriminant Analysis --&gt; f1: 0.961 ± 0.008   recall: 0.985 ± 0.010 !
 </code></pre>
 <h2 id="analyze-the-results">Analyze the results</h2>
 <pre><code class="python"># Note that some columns in the results dataframe now contain a list of scores,
-# one for each metric_, in the same order as you called them
+# one for each metric, in the same order as you called them
 atom.results[['metric_bo', 'metric_train', 'metric_test']]
 </code></pre>
 
@@ -545,9 +547,9 @@ atom.results[['metric_bo', 'metric_train', 'metric_test']]
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>score_bo</th>
-      <th>score_train</th>
-      <th>score_test</th>
+      <th>metric_bo</th>
+      <th>metric_train</th>
+      <th>metric_test</th>
     </tr>
     <tr>
       <th>model</th>
@@ -573,7 +575,7 @@ atom.results[['metric_bo', 'metric_train', 'metric_test']]
 </table>
 </div>
 
-<pre><code class="python"># Some plots allow us to choose the metric_ we want to show
+<pre><code class="python"># Some plots allow us to choose the metric we want to show
 atom.plot_bagging(metric='recall')
 </code></pre>
 

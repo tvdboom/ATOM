@@ -56,59 +56,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>118244</th>
-      <td>Perth</td>
-      <td>20.9</td>
-      <td>35.5</td>
-      <td>0.0</td>
-      <td>11.0</td>
-      <td>13.1</td>
-      <td>SW</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>17985</th>
-      <td>NorahHead</td>
-      <td>19.1</td>
-      <td>21.0</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>S</td>
-      <td>44.0</td>
-    </tr>
-    <tr>
-      <th>96569</th>
-      <td>Adelaide</td>
-      <td>7.6</td>
-      <td>16.1</td>
-      <td>1.8</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SW</td>
-      <td>35.0</td>
-    </tr>
-    <tr>
-      <th>63982</th>
-      <td>MelbourneAirport</td>
+      <th>36171</th>
+      <td>WaggaWagga</td>
+      <td>14.3</td>
+      <td>21.4</td>
+      <td>0.8</td>
+      <td>10.6</td>
       <td>5.8</td>
-      <td>11.9</td>
-      <td>3.6</td>
-      <td>1.8</td>
-      <td>6.6</td>
-      <td>N</td>
+      <td>W</td>
       <td>52.0</td>
     </tr>
     <tr>
-      <th>97093</th>
-      <td>MountGambier</td>
-      <td>6.2</td>
-      <td>11.7</td>
-      <td>10.8</td>
-      <td>1.8</td>
+      <th>44425</th>
+      <td>Canberra</td>
+      <td>16.0</td>
+      <td>22.8</td>
+      <td>0.0</td>
+      <td>12.4</td>
+      <td>6.0</td>
+      <td>E</td>
+      <td>50.0</td>
+    </tr>
+    <tr>
+      <th>126238</th>
+      <td>Walpole</td>
+      <td>13.8</td>
+      <td>20.7</td>
+      <td>4.8</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NW</td>
+      <td>33.0</td>
+    </tr>
+    <tr>
+      <th>54550</th>
+      <td>Ballarat</td>
+      <td>3.3</td>
+      <td>14.7</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>N</td>
+      <td>46.0</td>
+    </tr>
+    <tr>
+      <th>85638</th>
+      <td>Cairns</td>
+      <td>23.5</td>
+      <td>31.5</td>
+      <td>43.8</td>
       <td>0.8</td>
-      <td>WNW</td>
-      <td>31.0</td>
+      <td>8.5</td>
+      <td>SSE</td>
+      <td>52.0</td>
     </tr>
   </tbody>
 </table>
@@ -130,8 +130,11 @@ atom.run('LGB', metric='auc')
 atom.scoring()
 ```
 
+    is_categorical is deprecated and will be removed in a future version.  Use is_categorical_dtype instead
+    
+
     Results ===================== >>
-    LightGBM --> roc_auc: 0.945
+    LightGBM --> roc_auc: 0.878
     
 
 
@@ -151,69 +154,116 @@ atom.plot_feature_importance(show=10)
 atom.verbose = 2  # Increase verbosity to see the output
 
 # Create 100 new features using DFS
-atom.feature_generation(strategy='dfs', n_features=100)
-
-# Select the best 50 features using RFECV
-atom.feature_selection(strategy='RFECV', solver='lgb', n_features=30, scoring='auc')
+atom.feature_generation(strategy='dfs', n_features=100, operators=['add', 'sub', 'log', 'sqrt'])
 ```
 
     Fitting FeatureGenerator...
     Creating new features...
      --> 100 new features were added to the dataset.
-    Fitting FeatureSelector...
     
 
-    C:\Users\Mavs\AppData\Roaming\Python\Python37\site-packages\pandas\core\series.py:679: RuntimeWarning: divide by zero encountered in log
-      result = getattr(ufunc, method)(*inputs, **kwargs)
-    
-
-    Performing feature selection ...
-     --> Feature Location was removed due to low variance. Value 0.21025 repeated in 100.0% of rows.
-     --> Feature WindDir3pm + WindSpeed9am was removed due to collinearity with another feature.
-     --> Feature Pressure9am + RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature Cloud9am + Humidity9am was removed due to collinearity with another feature.
-     --> Feature MaxTemp + WindGustDir was removed due to collinearity with another feature.
-     --> Feature Location + Pressure3pm was removed due to collinearity with another feature.
-     --> Feature Location + Rainfall was removed due to collinearity with another feature.
-     --> Feature RainToday_Yes + Temp9am was removed due to collinearity with another feature.
-     --> Feature Evaporation + Location was removed due to collinearity with another feature.
-     --> Feature Location + MaxTemp was removed due to collinearity with another feature.
-     --> Feature Location - RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature Cloud3pm - RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature Humidity3pm - WindDir9am was removed due to collinearity with another feature.
-     --> Feature Sunshine - WindDir3pm was removed due to collinearity with another feature.
-     --> Feature WindDir9am - WindSpeed3pm was removed due to collinearity with another feature.
-     --> Feature Humidity9am * Pressure9am was removed due to collinearity with another feature.
-     --> Feature MinTemp * Pressure9am was removed due to collinearity with another feature.
-     --> Feature Location * WindGustDir was removed due to collinearity with another feature.
-     --> Feature MaxTemp * Pressure3pm was removed due to collinearity with another feature.
-     --> Feature Pressure9am * WindSpeed9am was removed due to collinearity with another feature.
-     --> Feature Cloud3pm * Pressure3pm was removed due to collinearity with another feature.
-     --> Feature Temp3pm * WindSpeed3pm was removed due to collinearity with another feature.
-     --> Feature Location * Pressure3pm was removed due to collinearity with another feature.
-     --> Feature Pressure9am * Temp9am was removed due to collinearity with another feature.
-     --> Feature Humidity9am / Pressure3pm was removed due to collinearity with another feature.
-     --> Feature RainToday_No / Location was removed due to collinearity with another feature.
-     --> Feature WindSpeed9am / RainToday_No was removed due to collinearity with another feature.
-     --> Feature Pressure3pm / Location was removed due to collinearity with another feature.
-     --> Feature WindDir9am / Pressure9am was removed due to collinearity with another feature.
-     --> Feature Evaporation / RainToday_Yes was removed due to collinearity with another feature.
-     --> Feature SQRT(WindGustDir) was removed due to collinearity with another feature.
-     --> Feature SQRT(Pressure9am) was removed due to collinearity with another feature.
-     --> Feature WindSpeed9am was removed by the RFECV.
-     --> Feature WindSpeed3pm was removed by the RFECV.
-     --> Feature Cloud3pm was removed by the RFECV.
-     --> Feature RainToday_Yes was removed by the RFECV.
-     --> Feature RainToday_No was removed by the RFECV.
-     --> Feature Rainfall * RainToday_No was removed by the RFECV.
-     --> Feature Location / RainToday_Yes was removed by the RFECV.
-     --> Feature LOG(Rainfall) was removed by the RFECV.
+    divide by zero encountered in log
+    invalid value encountered in log
     
 
 
 ```python
-# The collineart attribute shows what features
-# were removed due to collinearity
+# The warnings warn us that some operators created missing values!
+# We can see the columns with missing values using the missing attribute
+atom.missing
+
+# We can easily turn off warnings in the future
+atom.warnings = False
+```
+
+
+```python
+# We can use the impute method again
+atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+```
+
+    Fitting Imputer...
+    Imputing missing values...
+     --> Imputing 577 missing values using the KNN imputer in feature LOG(Cloud9am).
+     --> Dropping feature LOG(RainToday_other) for containing 8873 (99%) missing values.
+     --> Imputing 148 missing values using the KNN imputer in feature LOG(Sunshine).
+     --> Imputing 6 missing values using the KNN imputer in feature LOG(Temp9am).
+     --> Imputing 33 missing values using the KNN imputer in feature LOG(WindSpeed3pm).
+    
+
+
+```python
+# 100 new features may be to much...
+# Let's check for multicollinearity and use RFECV to reduce the number even further
+atom.feature_selection(strategy='RFECV', solver='lgb', n_features=30, scoring='auc', max_correlation=0.98)
+```
+
+    Fitting FeatureSelector...
+    Performing feature selection ...
+     --> Feature Location was removed due to low variance. Value 0.2077375946173255 repeated in 100% of the rows.
+     --> Feature Cloud3pm + Humidity3pm was removed due to collinearity with another feature.
+     --> Feature Cloud3pm + RainToday_No was removed due to collinearity with another feature.
+     --> Feature Cloud3pm + WindDir9am was removed due to collinearity with another feature.
+     --> Feature Cloud3pm - Location was removed due to collinearity with another feature.
+     --> Feature Cloud3pm - RainToday_No was removed due to collinearity with another feature.
+     --> Feature Cloud9am + WindGustDir was removed due to collinearity with another feature.
+     --> Feature Evaporation + Location was removed due to collinearity with another feature.
+     --> Feature Evaporation + WindGustDir was removed due to collinearity with another feature.
+     --> Feature Evaporation - WindDir3pm was removed due to collinearity with another feature.
+     --> Feature Humidity3pm - RainToday_No was removed due to collinearity with another feature.
+     --> Feature Humidity3pm - Sunshine was removed due to collinearity with another feature.
+     --> Feature Humidity9am + RainToday_Yes was removed due to collinearity with another feature.
+     --> Feature Humidity9am - RainToday_No was removed due to collinearity with another feature.
+     --> Feature Humidity9am - Sunshine was removed due to collinearity with another feature.
+     --> Feature LOG(MaxTemp) was removed due to collinearity with another feature.
+     --> Feature Location + MinTemp was removed due to collinearity with another feature.
+     --> Feature Location + RainToday_No was removed due to collinearity with another feature.
+     --> Feature Location + WindDir3pm was removed due to collinearity with another feature.
+     --> Feature Location + WindGustDir was removed due to collinearity with another feature.
+     --> Feature Location + WindSpeed3pm was removed due to collinearity with another feature.
+     --> Feature Location - RainToday_Yes was removed due to collinearity with another feature.
+     --> Feature MaxTemp + RainToday_No was removed due to collinearity with another feature.
+     --> Feature MaxTemp + RainToday_Yes was removed due to collinearity with another feature.
+     --> Feature MinTemp + WindGustDir was removed due to collinearity with another feature.
+     --> Feature Pressure3pm + RainToday_other was removed due to collinearity with another feature.
+     --> Feature Pressure3pm + Temp3pm was removed due to collinearity with another feature.
+     --> Feature Pressure3pm - WindGustDir was removed due to collinearity with another feature.
+     --> Feature Pressure9am - WindGustDir was removed due to collinearity with another feature.
+     --> Feature RainToday_No + Temp9am was removed due to collinearity with another feature.
+     --> Feature RainToday_No + WindGustDir was removed due to collinearity with another feature.
+     --> Feature RainToday_No - WindDir9am was removed due to collinearity with another feature.
+     --> Feature RainToday_Yes + Temp9am was removed due to collinearity with another feature.
+     --> Feature RainToday_Yes + WindDir3pm was removed due to collinearity with another feature.
+     --> Feature RainToday_Yes + WindDir9am was removed due to collinearity with another feature.
+     --> Feature RainToday_Yes - WindDir9am was removed due to collinearity with another feature.
+     --> Feature RainToday_other - Temp9am was removed due to collinearity with another feature.
+     --> Feature RainToday_other - WindGustSpeed was removed due to collinearity with another feature.
+     --> Feature RainToday_other - WindSpeed9am was removed due to collinearity with another feature.
+     --> Feature Rainfall + RainToday_No was removed due to collinearity with another feature.
+     --> Feature Rainfall + WindDir9am was removed due to collinearity with another feature.
+     --> Feature Rainfall - WindDir3pm was removed due to collinearity with another feature.
+     --> Feature SQRT(Humidity3pm) was removed due to collinearity with another feature.
+     --> Feature SQRT(Pressure9am) was removed due to collinearity with another feature.
+     --> Feature Sunshine + WindDir9am was removed due to collinearity with another feature.
+     --> Feature Temp3pm + WindDir9am was removed due to collinearity with another feature.
+     --> Feature Temp3pm + WindGustDir was removed due to collinearity with another feature.
+     --> Feature Temp3pm - WindDir3pm was removed due to collinearity with another feature.
+     --> Feature Temp9am - WindDir9am was removed due to collinearity with another feature.
+     --> Feature WindDir3pm - WindSpeed3pm was removed due to collinearity with another feature.
+     --> Feature WindGustDir + WindGustSpeed was removed due to collinearity with another feature.
+     --> Feature WindGustDir - WindSpeed9am was removed due to collinearity with another feature.
+     --> The RFECV selected 64 features from the dataset.
+       >>> Dropping feature RainToday_Yes (rank 3).
+       >>> Dropping feature RainToday_No (rank 5).
+       >>> Dropping feature Location - WindSpeed9am (rank 2).
+       >>> Dropping feature SQRT(Cloud9am) (rank 7).
+       >>> Dropping feature SQRT(Rainfall) (rank 6).
+       >>> Dropping feature SQRT(WindSpeed9am) (rank 4).
+    
+
+
+```python
+# The collinear attribute shows what features were removed due to multicollinearity
 atom.collinear
 ```
 
@@ -246,189 +296,309 @@ atom.collinear
   <tbody>
     <tr>
       <th>0</th>
-      <td>WindDir3pm + WindSpeed9am</td>
-      <td>WindSpeed9am</td>
-      <td>0.99999</td>
+      <td>Cloud3pm + Humidity3pm</td>
+      <td>Humidity3pm</td>
+      <td>0.99578</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>Pressure9am + RainToday_Yes</td>
-      <td>Pressure9am</td>
-      <td>0.99832</td>
+      <td>Cloud3pm + RainToday_No</td>
+      <td>Cloud3pm</td>
+      <td>0.98122</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>Cloud9am + Humidity9am</td>
-      <td>Humidity9am</td>
-      <td>0.99422</td>
+      <td>Cloud3pm + WindDir9am</td>
+      <td>Cloud3pm, Cloud3pm + RainToday_No</td>
+      <td>0.99968, 0.98054</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>MaxTemp + WindGustDir</td>
-      <td>MaxTemp</td>
-      <td>0.99998</td>
+      <td>Cloud3pm - Location</td>
+      <td>Cloud3pm, Cloud3pm + RainToday_No, Cloud3pm + ...</td>
+      <td>1.0, 0.98122, 0.99968</td>
     </tr>
     <tr>
       <th>4</th>
-      <td>Location + Pressure3pm</td>
-      <td>Pressure3pm</td>
-      <td>1.0</td>
+      <td>Cloud3pm - RainToday_No</td>
+      <td>Cloud3pm, Cloud3pm + WindDir9am, Cloud3pm - Lo...</td>
+      <td>0.98405, 0.98408, 0.98405</td>
     </tr>
     <tr>
       <th>5</th>
-      <td>Location + Rainfall</td>
-      <td>Rainfall</td>
-      <td>1.0</td>
+      <td>Cloud9am + WindGustDir</td>
+      <td>Cloud9am</td>
+      <td>0.99979</td>
     </tr>
     <tr>
       <th>6</th>
-      <td>RainToday_Yes + Temp9am</td>
-      <td>Temp9am</td>
-      <td>0.99794</td>
-    </tr>
-    <tr>
-      <th>7</th>
       <td>Evaporation + Location</td>
       <td>Evaporation</td>
       <td>1.0</td>
     </tr>
     <tr>
+      <th>7</th>
+      <td>Evaporation + WindGustDir</td>
+      <td>Evaporation, Evaporation + Location</td>
+      <td>0.9999, 0.9999</td>
+    </tr>
+    <tr>
       <th>8</th>
-      <td>Location + MaxTemp</td>
-      <td>MaxTemp, MaxTemp + WindGustDir</td>
-      <td>1.0, 0.99998</td>
+      <td>Evaporation - WindDir3pm</td>
+      <td>Evaporation, Evaporation + Location, Evaporati...</td>
+      <td>0.9999, 0.9999, 0.99969</td>
     </tr>
     <tr>
       <th>9</th>
-      <td>Location - RainToday_Yes</td>
-      <td>RainToday_Yes, RainToday_No</td>
-      <td>-1.0, 0.98441</td>
+      <td>Humidity3pm - RainToday_No</td>
+      <td>Humidity3pm, Cloud3pm + Humidity3pm</td>
+      <td>0.99983, 0.99572</td>
     </tr>
     <tr>
       <th>10</th>
-      <td>Cloud3pm - RainToday_Yes</td>
-      <td>Cloud3pm</td>
-      <td>0.98149</td>
+      <td>Humidity3pm - Sunshine</td>
+      <td>Humidity3pm, Cloud3pm + Humidity3pm, Humidity3...</td>
+      <td>0.99347, 0.99405, 0.9935</td>
     </tr>
     <tr>
       <th>11</th>
-      <td>Humidity3pm - WindDir9am</td>
-      <td>Humidity3pm</td>
-      <td>1.0</td>
+      <td>Humidity9am + RainToday_Yes</td>
+      <td>Humidity9am</td>
+      <td>0.9998</td>
     </tr>
     <tr>
       <th>12</th>
-      <td>Sunshine - WindDir3pm</td>
-      <td>Sunshine</td>
-      <td>0.99987</td>
+      <td>Humidity9am - RainToday_No</td>
+      <td>Humidity9am, Humidity9am + RainToday_Yes</td>
+      <td>0.9998, 0.99999</td>
     </tr>
     <tr>
       <th>13</th>
-      <td>WindDir9am - WindSpeed3pm</td>
-      <td>WindSpeed3pm, RainToday_No - WindSpeed3pm</td>
-      <td>-0.99998, 0.99879</td>
+      <td>Humidity9am - Sunshine</td>
+      <td>Humidity9am, Humidity9am + RainToday_Yes, Humi...</td>
+      <td>0.99165, 0.99183, 0.99184</td>
     </tr>
     <tr>
       <th>14</th>
-      <td>Humidity9am * Pressure9am</td>
-      <td>Humidity9am, Cloud9am + Humidity9am</td>
-      <td>0.99965, 0.99341</td>
+      <td>LOG(MaxTemp)</td>
+      <td>MaxTemp</td>
+      <td>0.98395</td>
     </tr>
     <tr>
       <th>15</th>
-      <td>MinTemp * Pressure9am</td>
+      <td>Location + MinTemp</td>
       <td>MinTemp</td>
-      <td>0.99992</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>16</th>
-      <td>Location * WindGustDir</td>
+      <td>Location + RainToday_No</td>
+      <td>RainToday_Yes, RainToday_No</td>
+      <td>-0.98403, 1.0</td>
+    </tr>
+    <tr>
+      <th>17</th>
+      <td>Location + WindDir3pm</td>
+      <td>WindDir3pm</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>18</th>
+      <td>Location + WindGustDir</td>
       <td>WindGustDir</td>
       <td>1.0</td>
     </tr>
     <tr>
-      <th>17</th>
-      <td>MaxTemp * Pressure3pm</td>
-      <td>MaxTemp, MaxTemp + WindGustDir, Location + Max...</td>
-      <td>0.9998, 0.99974, 0.9998</td>
-    </tr>
-    <tr>
-      <th>18</th>
-      <td>Pressure9am * WindSpeed9am</td>
-      <td>WindSpeed9am, WindDir3pm + WindSpeed9am, WindD...</td>
-      <td>0.99991, 0.99989, -0.99991</td>
-    </tr>
-    <tr>
       <th>19</th>
-      <td>Cloud3pm * Pressure3pm</td>
-      <td>Cloud3pm, Cloud3pm - RainToday_Yes</td>
-      <td>0.99986, 0.98165</td>
+      <td>Location + WindSpeed3pm</td>
+      <td>WindSpeed3pm</td>
+      <td>1.0</td>
     </tr>
     <tr>
       <th>20</th>
-      <td>Temp3pm * WindSpeed3pm</td>
-      <td>MaxTemp * WindSpeed3pm</td>
-      <td>0.99029</td>
+      <td>Location - RainToday_Yes</td>
+      <td>RainToday_Yes, RainToday_No, Location + RainTo...</td>
+      <td>-1.0, 0.98403, 0.98403</td>
     </tr>
     <tr>
       <th>21</th>
-      <td>Location * Pressure3pm</td>
-      <td>Pressure3pm, Location + Pressure3pm</td>
-      <td>1.0, 1.0</td>
+      <td>MaxTemp + RainToday_No</td>
+      <td>MaxTemp, LOG(MaxTemp)</td>
+      <td>0.99841, 0.9831</td>
     </tr>
     <tr>
       <th>22</th>
-      <td>Pressure9am * Temp9am</td>
-      <td>Temp9am, RainToday_Yes + Temp9am</td>
-      <td>0.99987, 0.9976</td>
+      <td>MaxTemp + RainToday_Yes</td>
+      <td>MaxTemp, LOG(MaxTemp), MaxTemp + RainToday_No</td>
+      <td>0.99834, 0.98156, 0.99356</td>
     </tr>
     <tr>
       <th>23</th>
-      <td>Humidity9am / Pressure3pm</td>
-      <td>Humidity9am, Cloud9am + Humidity9am, Humidity9...</td>
-      <td>0.99965, 0.99422, 0.99863</td>
+      <td>MinTemp + WindGustDir</td>
+      <td>MinTemp, Location + MinTemp</td>
+      <td>0.99997, 0.99997</td>
     </tr>
     <tr>
       <th>24</th>
-      <td>RainToday_No / Location</td>
-      <td>RainToday_Yes, RainToday_No, Location - RainTo...</td>
-      <td>-0.98441, 1.0, 0.98441</td>
+      <td>Pressure3pm + RainToday_other</td>
+      <td>Pressure3pm</td>
+      <td>0.99995</td>
     </tr>
     <tr>
       <th>25</th>
-      <td>WindSpeed9am / RainToday_No</td>
-      <td>WindSpeed9am, WindDir3pm + WindSpeed9am, WindD...</td>
-      <td>1.0, 0.99999, -0.99998, 0.99993</td>
+      <td>Pressure3pm + Temp3pm</td>
+      <td>MaxTemp + Pressure3pm</td>
+      <td>0.98005</td>
     </tr>
     <tr>
       <th>26</th>
-      <td>Pressure3pm / Location</td>
-      <td>Pressure3pm, Location + Pressure3pm, Location ...</td>
-      <td>1.0, 1.0, 1.0</td>
+      <td>Pressure3pm - WindGustDir</td>
+      <td>Pressure3pm, Pressure3pm + RainToday_other</td>
+      <td>0.99998, 0.99992</td>
     </tr>
     <tr>
       <th>27</th>
-      <td>WindDir9am / Pressure9am</td>
-      <td>WindDir9am, Location - WindDir9am</td>
-      <td>0.99958, -0.99958</td>
+      <td>Pressure9am - WindGustDir</td>
+      <td>Pressure9am</td>
+      <td>0.99998</td>
     </tr>
     <tr>
       <th>28</th>
-      <td>Evaporation / RainToday_Yes</td>
-      <td>Evaporation, Evaporation + Location</td>
-      <td>1.0, 1.0</td>
+      <td>RainToday_No + Temp9am</td>
+      <td>Temp9am</td>
+      <td>0.99797</td>
     </tr>
     <tr>
       <th>29</th>
-      <td>SQRT(WindGustDir)</td>
-      <td>WindGustDir, Location * WindGustDir</td>
-      <td>0.9979, 0.9979</td>
+      <td>RainToday_No + WindGustDir</td>
+      <td>RainToday_No, Location + RainToday_No</td>
+      <td>0.9933, 0.9933</td>
     </tr>
     <tr>
       <th>30</th>
+      <td>RainToday_No - WindDir9am</td>
+      <td>RainToday_No, Location + RainToday_No</td>
+      <td>0.99169, 0.99169</td>
+    </tr>
+    <tr>
+      <th>31</th>
+      <td>RainToday_Yes + Temp9am</td>
+      <td>Temp9am, RainToday_No + Temp9am, RainToday_No ...</td>
+      <td>0.99795, 0.99191, -0.99993</td>
+    </tr>
+    <tr>
+      <th>32</th>
+      <td>RainToday_Yes + WindDir3pm</td>
+      <td>RainToday_Yes, Location - RainToday_Yes</td>
+      <td>0.99334, -0.99334</td>
+    </tr>
+    <tr>
+      <th>33</th>
+      <td>RainToday_Yes + WindDir9am</td>
+      <td>RainToday_Yes, Location - RainToday_Yes, RainT...</td>
+      <td>0.99154, -0.99154, -0.9847, 0.98993</td>
+    </tr>
+    <tr>
+      <th>34</th>
+      <td>RainToday_Yes - WindDir9am</td>
+      <td>RainToday_Yes, Location - RainToday_Yes</td>
+      <td>0.9911, -0.9911</td>
+    </tr>
+    <tr>
+      <th>35</th>
+      <td>RainToday_other - Temp9am</td>
+      <td>Temp9am, RainToday_No + Temp9am, RainToday_No ...</td>
+      <td>-0.99993, -0.998, 0.99775, -0.99792</td>
+    </tr>
+    <tr>
+      <th>36</th>
+      <td>RainToday_other - WindGustSpeed</td>
+      <td>WindGustSpeed, Cloud9am - WindGustSpeed</td>
+      <td>-0.99998, 0.98438</td>
+    </tr>
+    <tr>
+      <th>37</th>
+      <td>RainToday_other - WindSpeed9am</td>
+      <td>WindSpeed9am, Location - WindSpeed9am</td>
+      <td>-0.99997, 0.99997</td>
+    </tr>
+    <tr>
+      <th>38</th>
+      <td>Rainfall + RainToday_No</td>
+      <td>Rainfall</td>
+      <td>0.99907</td>
+    </tr>
+    <tr>
+      <th>39</th>
+      <td>Rainfall + WindDir9am</td>
+      <td>Rainfall, Rainfall + RainToday_No</td>
+      <td>0.99998, 0.99902</td>
+    </tr>
+    <tr>
+      <th>40</th>
+      <td>Rainfall - WindDir3pm</td>
+      <td>Rainfall, Rainfall + RainToday_No, Rainfall + ...</td>
+      <td>0.99998, 0.99907, 0.99995</td>
+    </tr>
+    <tr>
+      <th>41</th>
+      <td>SQRT(Humidity3pm)</td>
+      <td>Humidity3pm, Cloud3pm + Humidity3pm, Humidity3...</td>
+      <td>0.98722, 0.98193, 0.98674</td>
+    </tr>
+    <tr>
+      <th>42</th>
       <td>SQRT(Pressure9am)</td>
-      <td>Pressure9am, Pressure9am + RainToday_Yes</td>
-      <td>1.0, 0.99831</td>
+      <td>Pressure9am, Pressure9am - WindGustDir</td>
+      <td>1.0, 0.99998</td>
+    </tr>
+    <tr>
+      <th>43</th>
+      <td>Sunshine + WindDir9am</td>
+      <td>Sunshine, RainToday_other - Sunshine</td>
+      <td>0.99982, -0.99948</td>
+    </tr>
+    <tr>
+      <th>44</th>
+      <td>Temp3pm + WindDir9am</td>
+      <td>Temp3pm</td>
+      <td>0.99997</td>
+    </tr>
+    <tr>
+      <th>45</th>
+      <td>Temp3pm + WindGustDir</td>
+      <td>Temp3pm, Temp3pm + WindDir9am</td>
+      <td>0.99998, 0.99997</td>
+    </tr>
+    <tr>
+      <th>46</th>
+      <td>Temp3pm - WindDir3pm</td>
+      <td>Temp3pm, Temp3pm + WindDir9am, Temp3pm + WindG...</td>
+      <td>0.99998, 0.99993, 0.99993</td>
+    </tr>
+    <tr>
+      <th>47</th>
+      <td>Temp9am - WindDir9am</td>
+      <td>Temp9am, RainToday_No + Temp9am, RainToday_No ...</td>
+      <td>0.99996, 0.99798, -0.99783, 0.99787, -0.9999</td>
+    </tr>
+    <tr>
+      <th>48</th>
+      <td>WindDir3pm - WindSpeed3pm</td>
+      <td>WindSpeed3pm, Location + WindSpeed3pm, Locatio...</td>
+      <td>-0.99998, -0.99998, 0.99998</td>
+    </tr>
+    <tr>
+      <th>49</th>
+      <td>WindGustDir + WindGustSpeed</td>
+      <td>WindGustSpeed, Cloud9am - WindGustSpeed, RainT...</td>
+      <td>0.99999, -0.9843, -0.99998</td>
+    </tr>
+    <tr>
+      <th>50</th>
+      <td>WindGustDir - WindSpeed9am</td>
+      <td>WindSpeed9am, Location - WindSpeed9am, RainTod...</td>
+      <td>-0.99999, 0.99999, 0.99995</td>
     </tr>
   </tbody>
 </table>
@@ -443,31 +613,8 @@ atom.plot_rfecv()
 ```
 
 
-![png](output_10_0.png)
+![png](output_13_0.png)
 
-
-
-```python
-# Since the new features apply divisions, we can have inf values in the dataset
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
-```
-
-    Fitting Imputer...
-    Imputing missing values...
-     --> Imputing 4 missing values using the KNN imputer in feature Temp9am / MinTemp.
-     --> Dropping feature WindSpeed3pm / Rainfall for containing 5766 (64%) missing values.
-     --> Imputing 33 missing values using the KNN imputer in feature Evaporation / WindSpeed3pm.
-     --> Imputing 17 missing values using the KNN imputer in feature RainToday_No / Evaporation.
-     --> Imputing 4 missing values using the KNN imputer in feature Cloud9am / MinTemp.
-     --> Imputing 290 missing values using the KNN imputer in feature Pressure9am / Cloud3pm.
-     --> Imputing 33 missing values using the KNN imputer in feature Pressure9am / WindSpeed3pm.
-     --> Imputing 17 missing values using the KNN imputer in feature MinTemp / Evaporation.
-     --> Imputing 4 missing values using the KNN imputer in feature Cloud3pm / MinTemp.
-     --> Imputing 4 missing values using the KNN imputer in feature Rainfall / MinTemp.
-     --> Imputing 17 missing values using the KNN imputer in feature WindSpeed9am / Evaporation.
-     --> Imputing 33 missing values using the KNN imputer in feature WindSpeed9am / WindSpeed3pm.
-     --> Imputing 33 missing values using the KNN imputer in feature Rainfall / WindSpeed3pm.
-    
 
 
 ```python
@@ -483,17 +630,17 @@ atom.run('LGB')
     
     Results for LightGBM:         
     Fitting -----------------------------------------
-    Score on the train set --> roc_auc: 0.9955
-    Score on the test set  --> roc_auc: 0.9502
-    Time elapsed: 1.409s
+    Score on the train set --> roc_auc: 0.9962
+    Score on the test set  --> roc_auc: 0.8787
+    Time elapsed: 0.708s
     -------------------------------------------------
-    Total time: 1.428s
+    Total time: 0.722s
     
     
     Final results ========================= >>
-    Duration: 1.430s
+    Duration: 0.723s
     ------------------------------------------
-    LightGBM --> roc_auc: 0.950
+    LightGBM --> roc_auc: 0.879
     
 
 
@@ -503,48 +650,40 @@ atom.plot_feature_importance(show=10)
 ```
 
 
-![png](output_13_0.png)
+![png](output_15_0.png)
 
 
 **Lets try the same using Genetic Feature Generation**
 
 
 ```python
-atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
+atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, warnings=False, random_state=1)
 atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
+# Change verbosity to print extended info
+atom.verbose = 2
+
 # Create new features using Genetic Programming
-atom.feature_generation(strategy='genetic', n_features=10, generations=20, population=1000, verbose=2)
+atom.feature_generation(strategy='genetic', n_features=20, generations=10, population=2000)
 ```
 
     Fitting FeatureGenerator...
         |   Population Average    |             Best Individual              |
     ---- ------------------------- ------------------------------------------ ----------
      Gen   Length          Fitness   Length          Fitness      OOB Fitness  Time Left
-       0     3.13         0.135435        3         0.503097              N/A     11.11s
-       1     3.18         0.348074        7         0.506413              N/A     10.95s
-       2     3.23         0.437331        5         0.513643              N/A      9.99s
-       3     3.44         0.457825        5         0.513643              N/A      9.33s
-       4     4.50         0.449698        9         0.522278              N/A      8.81s
-       5     5.65          0.45053       13         0.527538              N/A      9.66s
-       6     7.76         0.472921       17         0.528579              N/A      7.96s
-       7     9.36          0.49098       15         0.529782              N/A      7.43s
-       8     9.83         0.488757       15         0.529782              N/A      6.76s
-       9    10.63         0.488877       15         0.529782              N/A      6.18s
-      10    11.03         0.485024       13         0.528901              N/A      5.61s
-      11    11.31          0.48378       11         0.527328              N/A      5.04s
-      12    10.61         0.482128       11         0.527328              N/A      4.35s
-      13    10.99         0.486747       11         0.527328              N/A      3.78s
-      14    10.81         0.487697       11         0.527328              N/A      3.11s
-      15    11.03         0.487411       11         0.527328              N/A      2.49s
-      16    10.89         0.490537       11         0.527328              N/A      1.86s
-      17    10.98         0.484706       11         0.546642              N/A      1.24s
-      18    10.90         0.481711       11         0.546642              N/A      0.62s
-      19    10.96         0.486717       13         0.555663              N/A      0.00s
+       0     3.17         0.127531        3          0.50405              N/A      9.52s
+       1     3.10         0.338627        5         0.536586              N/A      9.04s
+       2     3.50         0.443734        9         0.541692              N/A      7.65s
+       3     4.44          0.47684        7          0.54494              N/A      6.89s
+       4     6.25         0.512037       13         0.546193              N/A      5.76s
+       5     7.47         0.507736        9         0.550266              N/A      4.62s
+       6     7.73         0.500405       11          0.55324              N/A      3.56s
+       7     7.99         0.497944       11         0.553398              N/A      2.38s
+       8     9.29         0.494223       13         0.554965              N/A      1.29s
+       9    10.68         0.493684       11         0.553398              N/A      0.00s
     Creating new features...
-    -------------------------------------------------
-     --> 10 new features were added to the dataset.
+     --> 5 new features were added to the dataset.
     
 
 
@@ -582,63 +721,33 @@ atom.genetic_features
   <tbody>
     <tr>
       <th>0</th>
-      <td>Feature 23</td>
-      <td>mul(Humidity3pm, mul(add(WindGustSpeed, WindDi...</td>
-      <td>0.542663</td>
+      <td>Feature 24</td>
+      <td>mul(sub(sub(sub(Humidity3pm, Sunshine), Sunshi...</td>
+      <td>0.542398</td>
     </tr>
     <tr>
       <th>1</th>
-      <td>Feature 24</td>
-      <td>mul(sub(add(WindGustSpeed, WindDir9am), Sunshi...</td>
-      <td>0.539049</td>
+      <td>Feature 25</td>
+      <td>mul(sub(sub(Humidity3pm, Sunshine), Sunshine),...</td>
+      <td>0.542240</td>
     </tr>
     <tr>
       <th>2</th>
-      <td>Feature 25</td>
-      <td>mul(Humidity3pm, mul(sub(Humidity3pm, Sunshine...</td>
-      <td>0.533669</td>
+      <td>Feature 26</td>
+      <td>mul(sub(Humidity3pm, Sunshine), mul(sub(sub(Hu...</td>
+      <td>0.542240</td>
     </tr>
     <tr>
       <th>3</th>
-      <td>Feature 26</td>
-      <td>mul(Humidity3pm, mul(Humidity3pm, mul(Humidity...</td>
-      <td>0.530592</td>
+      <td>Feature 27</td>
+      <td>mul(mul(sub(Humidity3pm, Sunshine), WindGustSp...</td>
+      <td>0.542240</td>
     </tr>
     <tr>
       <th>4</th>
-      <td>Feature 27</td>
-      <td>mul(Humidity3pm, mul(Humidity3pm, add(WindGust...</td>
-      <td>0.532912</td>
-    </tr>
-    <tr>
-      <th>5</th>
       <td>Feature 28</td>
-      <td>mul(sub(sub(add(WindGustSpeed, WindDir9am), Su...</td>
-      <td>0.522363</td>
-    </tr>
-    <tr>
-      <th>6</th>
-      <td>Feature 29</td>
-      <td>mul(Humidity3pm, mul(Humidity3pm, sub(sub(sub(...</td>
-      <td>0.518317</td>
-    </tr>
-    <tr>
-      <th>7</th>
-      <td>Feature 30</td>
-      <td>mul(mul(Humidity3pm, sub(sub(add(WindGustSpeed...</td>
-      <td>0.511776</td>
-    </tr>
-    <tr>
-      <th>8</th>
-      <td>Feature 31</td>
-      <td>mul(Humidity3pm, mul(Humidity3pm, mul(Humidity...</td>
-      <td>0.514151</td>
-    </tr>
-    <tr>
-      <th>9</th>
-      <td>Feature 32</td>
-      <td>mul(Humidity3pm, mul(Humidity3pm, sub(sub(sub(...</td>
-      <td>0.516328</td>
+      <td>mul(mul(sub(sub(Humidity3pm, Sunshine), Sunshi...</td>
+      <td>0.542240</td>
     </tr>
   </tbody>
 </table>
@@ -660,25 +769,39 @@ atom.run('LGB', metric='auc')
     
     Results for LightGBM:         
     Fitting -----------------------------------------
-    Score on the train set --> roc_auc: 0.9879
-    Score on the test set  --> roc_auc: 0.9459
-    Time elapsed: 0.545s
+    Score on the train set --> roc_auc: 0.9901
+    Score on the test set  --> roc_auc: 0.8793
+    Time elapsed: 0.305s
     -------------------------------------------------
-    Total time: 0.557s
+    Total time: 0.313s
     
     
     Final results ========================= >>
-    Duration: 0.559s
+    Duration: 0.314s
     ------------------------------------------
-    LightGBM --> roc_auc: 0.946
+    LightGBM --> roc_auc: 0.879
     
 
 
 ```python
-# And show the feature importance
 atom.plot_feature_importance(show=10)
 ```
 
 
-![png](output_18_0.png)
+![png](output_20_0.png)
+
+
+
+```python
+# We can check the feature importance with other plots as well
+atom.plot_permutation_importance(show=10)
+atom.dependence_plot()
+```
+
+
+![png](output_21_0.png)
+
+
+
+![png](output_21_1.png)
 

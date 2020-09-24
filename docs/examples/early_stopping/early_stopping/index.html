@@ -440,10 +440,12 @@ Dataset stats ================= &gt;&gt;
 Shape: (569, 31)
 Scaled: False
 ----------------------------------
-Size of training set: 456
-Size of test set: 113
+Train set size: 456
+Test set size: 113
 ----------------------------------
-Class balance: 0:1 &lt;==&gt; 0.6:1.0
+Train set balance: 0:1 &lt;==&gt; 0.6:1.0
+Test set balance: 0:1 &lt;==&gt; 0.7:1.0
+----------------------------------
 Instances in target per class:
 |    |    total |    train_set |    test_set |
 |---:|---------:|-------------:|------------:|
@@ -458,63 +460,62 @@ Metric: average_precision
 
 Running BO for LightGBM...
 Random start 1 ----------------------------------
-Parameters --&gt; {'n_estimators': 499, 'learning_rate': 0.73, 'max_depth': 2, 'num_leaves': 40, 'min_child_weight': 5, 'min_child_samples': 18, 'subsample': 0.7, 'colsample_bytree': 0.8, 'reg_alpha': 100, 'reg_lambda': 100}
+Parameters --&gt; {'n_estimators': 499, 'learning_rate': 0.73, 'max_depth': 2, 'num_leaves': 40, 'min_child_weight': 5, 'min_child_samples': 18, 'subsample': 0.7, 'colsample_bytree': 0.8, 'reg_alpha': 100.0, 'reg_lambda': 10.0}
 Early stop at iteration 50 of 499.
 Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
-Time iteration: 0.025s   Total time: 0.038s
+Time iteration: 0.031s   Total time: 0.047s
 Random start 2 ----------------------------------
-Parameters --&gt; {'n_estimators': 170, 'learning_rate': 0.11, 'max_depth': 5, 'num_leaves': 25, 'min_child_weight': 11, 'min_child_samples': 28, 'subsample': 0.7, 'colsample_bytree': 0.6, 'reg_alpha': 100, 'reg_lambda': 10}
+Parameters --&gt; {'n_estimators': 170, 'learning_rate': 0.11, 'max_depth': 5, 'num_leaves': 25, 'min_child_weight': 11, 'min_child_samples': 28, 'subsample': 0.7, 'colsample_bytree': 0.6, 'reg_alpha': 100.0, 'reg_lambda': 10.0}
 Early stop at iteration 18 of 170.
 Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
-Time iteration: 0.020s   Total time: 0.062s
+Time iteration: 0.028s   Total time: 0.075s
 Random start 3 ----------------------------------
-Parameters --&gt; {'n_estimators': 364, 'learning_rate': 0.4, 'max_depth': 2, 'num_leaves': 30, 'min_child_weight': 17, 'min_child_samples': 27, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 10}
-Early stop at iteration 45 of 364.
-Evaluation --&gt; average_precision: 0.9785  Best average_precision: 0.9785
-Time iteration: 0.022s   Total time: 0.088s
+Parameters --&gt; {'n_estimators': 364, 'learning_rate': 0.4, 'max_depth': 2, 'num_leaves': 30, 'min_child_weight': 17, 'min_child_samples': 27, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 1.0}
+Early stop at iteration 42 of 364.
+Evaluation --&gt; average_precision: 0.9819  Best average_precision: 0.9819
+Time iteration: 0.020s   Total time: 0.099s
 Iteration 4 -------------------------------------
-Parameters --&gt; {'n_estimators': 496, 'learning_rate': 0.5, 'max_depth': 5, 'num_leaves': 37, 'min_child_weight': 15, 'min_child_samples': 15, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 100}
-Early stop at iteration 88 of 496.
-Evaluation --&gt; average_precision: 0.9916  Best average_precision: 0.9916
-Time iteration: 0.027s   Total time: 0.936s
+Parameters --&gt; {'n_estimators': 238, 'learning_rate': 0.49, 'max_depth': 3, 'num_leaves': 29, 'min_child_weight': 18, 'min_child_samples': 25, 'subsample': 0.9, 'colsample_bytree': 0.4, 'reg_alpha': 0.0, 'reg_lambda': 10.0}
+Early stop at iteration 30 of 238.
+Evaluation --&gt; average_precision: 0.9911  Best average_precision: 0.9911
+Time iteration: 0.016s   Total time: 1.343s
 Iteration 5 -------------------------------------
-Parameters --&gt; {'n_estimators': 500, 'learning_rate': 1.0, 'max_depth': 10, 'num_leaves': 40, 'min_child_weight': 1, 'min_child_samples': 10, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 0.01}
-Early stop at iteration 57 of 500.
-Evaluation --&gt; average_precision: 0.9947  Best average_precision: 0.9947
-Time iteration: 0.027s   Total time: 1.195s
+Parameters --&gt; {'n_estimators': 31, 'learning_rate': 0.07, 'max_depth': 6, 'num_leaves': 21, 'min_child_weight': 18, 'min_child_samples': 28, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0.0, 'reg_lambda': 100.0}
+Evaluation --&gt; average_precision: 0.9920  Best average_precision: 0.9920
+Time iteration: 0.016s   Total time: 1.762s
 Iteration 6 -------------------------------------
-Parameters --&gt; {'n_estimators': 500, 'learning_rate': 0.05, 'max_depth': 10, 'num_leaves': 40, 'min_child_weight': 20, 'min_child_samples': 10, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 100}
-Early stop at iteration 271 of 500.
-Evaluation --&gt; average_precision: 0.9980  Best average_precision: 0.9980
-Time iteration: 0.048s   Total time: 1.478s
+Parameters --&gt; {'n_estimators': 20, 'learning_rate': 1.0, 'max_depth': 3, 'num_leaves': 40, 'min_child_weight': 20, 'min_child_samples': 10, 'subsample': 0.8, 'colsample_bytree': 0.3, 'reg_alpha': 0.0, 'reg_lambda': 100.0}
+Early stop at iteration 12 of 20.
+Evaluation --&gt; average_precision: 0.9953  Best average_precision: 0.9953
+Time iteration: 0.016s   Total time: 2.178s
 Iteration 7 -------------------------------------
-Parameters --&gt; {'n_estimators': 178, 'learning_rate': 0.28, 'max_depth': 1, 'num_leaves': 21, 'min_child_weight': 12, 'min_child_samples': 15, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 100}
-Early stop at iteration 130 of 178.
-Evaluation --&gt; average_precision: 0.9983  Best average_precision: 0.9983
-Time iteration: 0.030s   Total time: 1.843s
+Parameters --&gt; {'n_estimators': 69, 'learning_rate': 0.17, 'max_depth': 7, 'num_leaves': 26, 'min_child_weight': 17, 'min_child_samples': 14, 'subsample': 0.5, 'colsample_bytree': 0.8, 'reg_alpha': 0.01, 'reg_lambda': 1.0}
+Early stop at iteration 22 of 69.
+Evaluation --&gt; average_precision: 0.9978  Best average_precision: 0.9978
+Time iteration: 0.016s   Total time: 2.499s
 
 Results for LightGBM:         
 Bayesian Optimization ---------------------------
-Best parameters --&gt; {'n_estimators': 178, 'learning_rate': 0.28, 'max_depth': 1, 'num_leaves': 21, 'min_child_weight': 12, 'min_child_samples': 15, 'subsample': 0.9, 'colsample_bytree': 0.5, 'reg_alpha': 0, 'reg_lambda': 100}
-Best evaluation --&gt; average_precision: 0.9983
-Time elapsed: 2.103s
+Best parameters --&gt; {'n_estimators': 69, 'learning_rate': 0.17, 'max_depth': 7, 'num_leaves': 26, 'min_child_weight': 17, 'min_child_samples': 14, 'subsample': 0.5, 'colsample_bytree': 0.8, 'reg_alpha': 0.01, 'reg_lambda': 1.0}
+Best evaluation --&gt; average_precision: 0.9978
+Time elapsed: 2.912s
 Fitting -----------------------------------------
-Early stop at iteration 174 of 178.
-Score on the train set --&gt; average_precision: 0.9971
-Score on the test set  --&gt; average_precision: 0.9847
-Time elapsed: 0.040s
+Early stop at iteration 27 of 69.
+Score on the train set --&gt; average_precision: 0.9962
+Score on the test set  --&gt; average_precision: 0.9712
+Time elapsed: 0.016s
 -------------------------------------------------
-Total time: 2.151s
+Total time: 2.928s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.153s
+Duration: 2.928s
 ------------------------------------------
-LightGBM --&gt; average_precision: 0.985
+LightGBM --&gt; average_precision: 0.971
 </code></pre>
 <h2 id="analyze-the-results">Analyze the results</h2>
 <pre><code class="python"># For these models, we can plot the evaluation on the train and test set during training
-# Note that the metric_ is provided by the model's library, not ATOM!
+# Note that the metric is provided by the model's library, not ATOM!
 atom.lgb.plot_evals(title=&quot;LightGBM's evaluation curve&quot;, figsize=(11, 9))
 </code></pre>
 

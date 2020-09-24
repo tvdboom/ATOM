@@ -180,7 +180,7 @@ For various reasons, many real world datasets contain missing values, often enco
  method.
 
 !!!tip
-    Use `atom`'s [missing](../API/ATOM/atomclassifier/#utility-properties) property
+    Use `atom`'s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -197,7 +197,7 @@ Many datasets will contain categorical features. Their variables are typically s
  `atom` through the [encode](../API/ATOM/atomclassifier/#atomclassifier-encode) method.
 
 !!!tip
-    Use `atom`'s [categorical](../API/ATOM/atomclassifier/#utility-properties) property
+    Use `atom`'s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br> 

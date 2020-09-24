@@ -2,8 +2,7 @@
 ----------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', sampling_strategy='not majority',
-                                  n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L897">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target category. Use only for classification tasks.
@@ -20,26 +19,6 @@ This class can be accessed from `atom` through the
 Type of algorithm to use for oversampling or undersampling. Choose from one
  of the estimators available in the [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/index.html)
  package.
-</blockquote>
-<strong>sampling_strategy: float, str, dict or callable, optional (default='not majority')</strong>
-<blockquote>
-Sampling information to sample the data set.
-<ul>
-<li>If float: Fraction minority/majority (only for binary classification).</li>
-<li>If str: Choose from:
-    <ul>
-    <li>'minority': Resample only the minority category.</li>
-    <li>'majority': Resample only the majority category.</li>
-    <li>'not minority': Resample all but the minority category.</li>
-    <li>'not majority': Resample all but the majority category.</li>
-    <li>'all': Resample all categories.</li>
-    </ul></li>
-<li>If dict: The keys correspond to the targeted categories. The values
-               correspond to the desired number of samples for each targeted
-               category.</li>
-<li>If callable: Function taking y and returns a dict with the same format
-                   as described above.</li>
-</ul>
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -289,7 +268,7 @@ Estimator instance.
 
 <a name="balancer-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L973">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L956">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>

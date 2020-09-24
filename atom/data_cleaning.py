@@ -518,7 +518,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 else:  # Strategies: mean, median or most_frequent.
                     self.log(f" --> Imputing {nans} missing values with "
-                             f"{self.strat_num.lower()} in feature {col}.", 2)
+                             f"'{self.strat_num.lower()}' in feature {col}.", 2)
                     X[col] = self._imputers[col].transform(values)
 
             # Column is categorical and contains missing values
@@ -905,21 +905,6 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         Type of algorithm to use for oversampling or undersampling. Choose from one
         of the estimators available in the imbalanced-learn package.
 
-    sampling_strategy: float, str, dict, callable, optional (default='not majority')
-        Sampling information to sample the data set.
-            - If float: Fraction minority/majority (only for binary classification).
-            - If str: Choose from:
-                - 'minority': Resample only the minority category.
-                - 'majority': Resample only the majority category.
-                - 'not minority': Resample all but the minority category.
-                - 'not majority': Resample all but the majority category.
-                - 'all': Resample all categories.
-            - If dict: The keys correspond to the targeted categories. The values
-                       correspond to the desired number of samples for each targeted
-                       category.
-            - If callable: Function taking y and returns a dict with the same format
-                           as described above.
-
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
@@ -952,7 +937,6 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     def __init__(self,
                  strategy: str = 'ADASYN',
-                 sampling_strategy: Union[SCALAR, CAL, dict] = 'not majority',
                  n_jobs: int = 1,
                  verbose: int = 0,
                  logger: Optional[Union[bool, str, callable]] = None,
@@ -963,7 +947,6 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
                          logger=logger,
                          random_state=random_state)
         self.strategy = strategy
-        self.sampling_strategy = sampling_strategy
         self.kwargs = kwargs
 
         self.mapping = {}
@@ -1017,10 +1000,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             self.log(f"Oversampling with {strategy.__name__}...", 1)
         else:
             self.log(f"Undersampling with {strategy.__name__}...", 1)
-        estimator = strategy(
-            sampling_strategy=self.sampling_strategy,
-            **self.kwargs
-        )
+        estimator = strategy(**self.kwargs)
 
         # Add n_jobs or random_state if its one of the balancer's parameters
         for param in ['n_jobs', 'random_state']:

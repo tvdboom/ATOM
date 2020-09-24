@@ -56,59 +56,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>99450</th>
-      <td>MountGambier</td>
-      <td>11.3</td>
-      <td>23.1</td>
+      <th>40667</th>
+      <td>Williamtown</td>
+      <td>10.0</td>
+      <td>20.4</td>
       <td>0.0</td>
-      <td>7.0</td>
-      <td>12.8</td>
-      <td>S</td>
-      <td>50.0</td>
-    </tr>
-    <tr>
-      <th>103753</th>
-      <td>Woomera</td>
-      <td>16.0</td>
-      <td>28.9</td>
-      <td>0.0</td>
-      <td>10.4</td>
-      <td>8.2</td>
-      <td>ESE</td>
-      <td>44.0</td>
-    </tr>
-    <tr>
-      <th>120513</th>
-      <td>Perth</td>
-      <td>14.7</td>
-      <td>17.8</td>
-      <td>8.6</td>
-      <td>2.0</td>
-      <td>5.3</td>
-      <td>SW</td>
-      <td>43.0</td>
-    </tr>
-    <tr>
-      <th>47178</th>
-      <td>Canberra</td>
-      <td>13.2</td>
-      <td>18.7</td>
-      <td>0.0</td>
+      <td>5.4</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>E</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>54139</th>
-      <td>Ballarat</td>
-      <td>7.6</td>
-      <td>19.1</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SE</td>
+      <td>NW</td>
       <td>48.0</td>
+    </tr>
+    <tr>
+      <th>43490</th>
+      <td>Wollongong</td>
+      <td>15.0</td>
+      <td>22.0</td>
+      <td>0.4</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>SSW</td>
+      <td>59.0</td>
+    </tr>
+    <tr>
+      <th>102419</th>
+      <td>Nuriootpa</td>
+      <td>2.6</td>
+      <td>23.9</td>
+      <td>0.0</td>
+      <td>8.0</td>
+      <td>12.8</td>
+      <td>ESE</td>
+      <td>35.0</td>
+    </tr>
+    <tr>
+      <th>123437</th>
+      <td>SalmonGums</td>
+      <td>3.4</td>
+      <td>18.0</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>WSW</td>
+      <td>33.0</td>
+    </tr>
+    <tr>
+      <th>18121</th>
+      <td>NorahHead</td>
+      <td>16.5</td>
+      <td>22.3</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>S</td>
+      <td>46.0</td>
     </tr>
   </tbody>
 </table>
@@ -125,7 +125,7 @@ atom = ATOMClassifier(X, y='RainTomorrow', n_rows=1e4, verbose=1, warnings='igno
 
 # Handle missing values and categorical columns in the dataset
 atom.impute(strat_num='median', strat_cat='most_frequent')
-atom.encode(5, encode_type='target', frac_to_other=0.05)
+atom.encode(strategy='target', max_onehot=5, frac_to_other=0.05)
 
 # Fit a linear SVM to the data
 atom.run('lsvm')
@@ -137,12 +137,12 @@ atom.run('lsvm')
     
     Dataset stats ================= >>
     Shape: (10000, 22)
-    Missing values: 20763
+    Missing values: 22613
     Categorical columns: 5
     Scaled: False
     ----------------------------------
-    Size of training set: 8000
-    Size of test set: 2000
+    Train set size: 8000
+    Test set size: 2000
     
     Fitting Imputer...
     Imputing missing values...
@@ -156,17 +156,17 @@ atom.run('lsvm')
     
     Results for Linear SVM:         
     Fitting -----------------------------------------
-    Score on the train set --> f1: 0.5654
-    Score on the test set  --> f1: 0.5938
-    Time elapsed: 0.442s
+    Score on the train set --> f1: 0.5639
+    Score on the test set  --> f1: 0.5929
+    Time elapsed: 0.444s
     -------------------------------------------------
-    Total time: 0.451s
+    Total time: 0.444s
     
     
     Final results ========================= >>
-    Duration: 0.453s
+    Duration: 0.444s
     ------------------------------------------
-    Linear SVM --> f1: 0.594
+    Linear SVM --> f1: 0.593
     
 
 ## Analyze the results

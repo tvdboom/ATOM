@@ -460,10 +460,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             pd.Series([outliers]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
-    def balance(self,
-                strategy: str = 'ADASYN',
-                sampling_strategy: Union[int, float, str] = 'not majority',
-                **kwargs):
+    def balance(self, strategy: str = 'ADASYN', **kwargs):
         """Balance the target categories in the training set.
 
         Balance the number of instances per target category in the training set.
@@ -479,11 +476,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "The balance method is only available for classification tasks!")
 
         kwargs = self._prepare_kwargs(kwargs, Balancer().get_params())
-        balancer = Balancer(
-            strategy=strategy,
-            sampling_strategy=sampling_strategy,
-            **kwargs
-        )
+        balancer = Balancer(strategy=strategy, **kwargs)
 
         # Add mapping from ATOM to balancer for cleaner printing
         balancer.mapping = self.mapping
