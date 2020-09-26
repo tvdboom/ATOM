@@ -12,12 +12,11 @@ As of the moment, ATOM supports Python
 # Packages
 ----------
 
-ATOM is built on top of several existing Python libraries. The required
- packages are necessary for it's correct functioning. Additionally, you can
- install some optional packages needed for specific methods or to use
- machine learning models not provided by sklearn.
+ATOM is built on top of several existing Python libraries. The required packages are
+ necessary for it's correct functioning. Additionally, you can install some optional
+ packages to use machine learning estimators not provided by sklearn.
 
-**Required**
+### Required
 
 * **[numpy](https://numpy.org/)** (>=1.17.2)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
@@ -37,7 +36,7 @@ ATOM is built on top of several existing Python libraries. The required
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.36.0)
 
-**Optional**
+### Optional
 
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=2.3.0)
@@ -53,7 +52,6 @@ ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by provid
  core project contributors with a set of developer tools free of charge.
 
 <div align="center">
-        <a href="http://www.jetbrains.com"><img src="img/jetbrains.png" alt="JetBrains" height="200" width="200"/ style="margin-right:120px"></a>
-        <a href="https://www.jetbrains.com/pycharm/"><img src="img/pycharm.png" alt="pyCharm" height="120" width="120"/></a>
+    <a href="http://www.jetbrains.com"><img src="../img/jetbrains.png" alt="JetBrains" height="200" width="200" style="margin-right:120px"/></a>
+    <a href="https://www.jetbrains.com/pycharm/"><img src="../img/pycharm.png" alt="pyCharm" height="120" width="120"/></a>
 </div>
-

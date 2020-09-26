@@ -457,16 +457,73 @@ A couple of things to take into account:
 
 <br>
 
+### Models
+
+ATOM provides 27 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, every [`model`](../API/models/) is
+ attached to the `training` instance as an attribute. Models are called through the
+ `models` parameter using their corresponding acronym's, e.g. `atom.run(models='RF')`
+ to run a Random forest model.
+
+<br>
+
 ### Metric
 
-**Scorers**
+ATOM uses sklearn's [scorers](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
+ for model selection and evaluation. A scorer consists of a metric function and some
+ parameters that define the scorer's properties such as it's a score or loss function
+ or if the function needs probability estimates or rounded predictions (see
+ [make_scorer](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html)).
+ ATOM lets you define the scorer for the pipeline in three ways:
 
-**Custom metric acronyms**
+* The `metric` parameter is one of sklearn's predefined scorers (as string).
+* The `metric` parameter is a score (or loss) function with signature metric(y, y_pred, **kwargs). In
+ this case, use the `greater_is_better`, `needs_proba` and `needs_threshold` parameters
+ to specify the scorer's properties.
+* The `metric` parameter is a scorer object.
+ 
 
-**Multi-metric runs**
+Note that all scorers follow the convention that higher return values are better than
+ lower return values. Thus metrics which measure the distance between the model and
+ the data (i.e. loss functions), like `max_error` or `mean_squared_error`, will return
+ the negated value of the metric.
 
-Only the first metric is used to evaluate the bayesian optimization and to select
- the winning model.
+
+**Custom scorer acronyms**<br>
+Since some of sklearn's scorers have quite long names and ATOM is all about <s>lazy</s>fast
+ experimentation, the package provides acronyms for some of the most commonly used ones.
+ These acronyms are case insensitive can be used for the `metric` parameter instead of the
+ scorer's full name, e.g. `atom.run('LR', metric='BA')` will use `balanced_accuracy`.
+ The available acronyms are:
+
+* 'AP' for 'average_precision'
+* 'BA' for 'balanced_accuracy'
+* 'AUC' for 'roc_auc'
+* 'EV' for 'explained_variance'
+* 'ME' for 'max_error'
+* 'MAE' for 'neg_mean_absolute_error'
+* 'MSE' for 'neg_mean_squared_error'
+* 'RMSE' for 'neg_root_mean_squared_error'
+* 'MSLE' for 'neg_mean_squared_log_error'
+* 'MEDAE' for 'neg_median_absolute_error'
+* 'POISSON' for 'neg_mean_poisson_deviance'
+* 'GAMMA' for 'neg_mean_gamma_deviance'
+
+
+**Multi-metric runs**<br>
+Sometimes it is useful to measure the performance of the models in more than one way.
+ ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
+ provide the `metric` parameter with a list of desired metrics, e.g. `atom.run('LDA', metric=['r2', 'mse'])`.
+ If you provide metric functions, don't forget to also provide lists to the
+ `greater_is_better`, `needs_proba` and `needs_threshold` parameters, where the n-th
+ value in the list corresponds to the n-th function. If you leave them as a single value,
+ that value will apply to every provided metric.
+ 
+When fitting multi-metric runs, the resulting scores will return a list of metrics. For
+ example, if you provided three metrics to the pipeline, `atom.knn.metric_bo` could return
+ [0.8734, 0.6672, 0.9001]. It is also important to note that only the first metric of
+ a multi-metric run is used to evaluate every step of the bayesian optimization and to
+ select the winning model.
 
 <br>
 
@@ -493,53 +550,6 @@ Only the first metric is used to evaluate the bayesian optimization and to selec
 
 ### Train sizing
 
-
-
-
-<br><br>
-# Models
---------
-
-ATOM provides 27 models for classification and regression tasks that can be used
- to fit the data in the pipeline. After fitting, the [`models`](../API/models/) are
- attached to the `training` instance as attributes. The models are called through
- their acronyms: 
-
-* GP: Gaussian Process (no hyperparameter tuning)
-* GNB: Gaussian Naive Bayes
-* MNB: Multinomial Naive Bayes (no hyperparameter tuning)
-* BNB: Bernoulli Naive Bayes
-* OLS: Ordinary Least Squares (no hyperparameter tuning)
-* Ridge: Ridge classification/regression
-* Lasso: Lasso regression
-* EN: Elastic Net regression
-* BR: Bayesian Regression (uses ridge regularization)
-* LR: Logistic Regression
-* LDA: Linear Discriminant Analysis
-* QDA: Quadratic Discriminant Analysis
-* KNN: K-Nearest Neighbors
-* Tree: Decision Tree
-* Bag: Bagging (uses a decision tree as base estimator)
-* ET: Extra-Trees
-* RF: Random Forest
-* AdaB: AdaBoost (uses a decision tree as base estimator)
-* GBM: Gradient Boosting Machine
-* XGB: XGBoost (only available if package is installed)
-* LGB: LightGBM (only available if package is installed)
-* CatB: CatBoost (only available if package is installed)
-* lSVM: Linear-SVM (uses a one-vs-rest strategy for multiclass classification)
-* kSVM: Kernel-SVM (uses a one-vs-one strategy for multiclass classification)
-* PA: Passive Aggressive
-* SGD: Stochastic Gradient Descent
-* MLP: Multilayer Perceptron (can have between one and three hidden layers)
-
-
-!!! tip
-    You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.
-
-!!! warning
-    The `models` should not be initialized by the user! Only use them through the
-    `training` instances.
 
 
 
