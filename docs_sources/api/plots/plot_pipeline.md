@@ -63,5 +63,5 @@ atom.run(['GBM', 'LGB'],
 atom.plot_pipeline()
 ```
 <div align="center">
-    <img src="../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="1200"/>
+    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="1200"/>
 </div>

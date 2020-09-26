@@ -65,6 +65,6 @@ atom.run('LGB')
 atom.plot_threshold(metric=['accuracy', 'f1', recall_score])
 ```
 <div align="center">
-    <img src="../../img/plots/plot_threshold.png" alt="plot_threshold" width="700" height="420"/>
+    <img src="../../../img/plots/plot_threshold.png" alt="plot_threshold" width="700" height="420"/>
 </div>
 

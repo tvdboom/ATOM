@@ -1,13 +1,43 @@
 # Models
 --------
 
-After fitting, a class for every model is attached to the `training` instance as an
+After fitting, every model class is attached to the `training` instance as an
  attribute. We refer to these "subclasses" as `models` (see the
- [nomenclature](../../user_guide/#nomenclature)). They can be accessed using the
- models' [acronyms](../../user_guide/#models), e.g. `atom.LGB` to access LightGBM's
- `model`. The classes contain a variety of attributes and methods to help you
- understand how the underlying estimator performed.
- <br><br>
+ [nomenclature](../../user_guide/#nomenclature)). The classes contain a variety of
+ attributes and methods to help you understand how the underlying estimator performed.
+ They can be accessed using the models' [acronyms](../../user_guide/#models), e.g.
+ `atom.LGB` to access LightGBM's `model`. The available models and their corresponding
+ acronyms are: 
+
+* 'GP' for Gaussian Process
+* 'GNB' for Gaussian Naive Bayes
+* 'MNB' for Multinomial Naive Bayes
+* 'BNB' for Bernoulli Naive Bayes
+* 'OLS' for Ordinary Least Squares
+* 'Ridge' for Ridge classification/regression
+* 'Lasso' for Lasso regression
+* 'EN' for Elastic Net regression
+* 'BR' for Bayesian Regression
+* 'LR' for Logistic Regression
+* 'LDA' for Linear Discriminant Analysis
+* 'QDA' for Quadratic Discriminant Analysis
+* 'KNN' for K-Nearest Neighbors
+* 'Tree' for Decision Tree
+* 'Bag' for Bagging
+* 'ET' for Extra-Trees
+* 'RF' for Random Forest
+* 'AdaB' for AdaBoost
+* 'GBM' for Gradient Boosting Machine
+* 'XGB' for XGBoost
+* 'LGB' for LightGBM
+* 'CatB' for CatBoost
+* 'lSVM' for Linear-SVM
+* 'kSVM' for Kernel-SVM
+* 'PA' for Passive Aggressive
+* 'SGD' for Stochastic Gradient Descent
+* 'MLP' for Multilayer Perceptron
+
+<br><br>
 
 !!! tip
     You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.

@@ -418,11 +418,6 @@
               </ul>
             </li>
             
-            <li class="nav-item" data-level="1"><a href="#models" class="nav-link">Models</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            
             <li class="nav-item" data-level="1"><a href="#predicting" class="nav-link">Predicting</a>
               <ul class="nav flex-column">
               </ul>
@@ -834,12 +829,64 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 </li>
 </ul>
 <p><br></p>
+<h3 id="models">Models</h3>
+<p>ATOM provides 27 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, every <a href="../API/models/"><code>model</code></a> is
+ attached to the <code>training</code> instance as an attribute. Models are called through the
+ <code>models</code> parameter using their corresponding acronym's, e.g. <code>atom.run(models='RF')</code>
+ to run a Random forest model.</p>
+<p><br></p>
 <h3 id="metric">Metric</h3>
-<p><strong>Scorers</strong></p>
-<p><strong>Custom metric acronyms</strong></p>
-<p><strong>Multi-metric runs</strong></p>
-<p>Only the first metric is used to evaluate the bayesian optimization and to select
- the winning model.</p>
+<p>ATOM uses sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a>
+ for model selection and evaluation. A scorer consists of a metric function and some
+ parameters that define the scorer's properties such as it's a score or loss function
+ or if the function needs probability estimates or rounded predictions (see
+ <a href="https://scikit-learn.org/stable/modules/generated/sklearn.metrics.make_scorer.html">make_scorer</a>).
+ ATOM lets you define the scorer for the pipeline in three ways:</p>
+<ul>
+<li>The <code>metric</code> parameter is one of sklearn's predefined scorers (as string).</li>
+<li>The <code>metric</code> parameter is a score (or loss) function with signature metric(y, y_pred, **kwargs). In
+ this case, use the <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters
+ to specify the scorer's properties.</li>
+<li>The <code>metric</code> parameter is a scorer object.</li>
+</ul>
+<p>Note that all scorers follow the convention that higher return values are better than
+ lower return values. Thus metrics which measure the distance between the model and
+ the data (i.e. loss functions), like <code>max_error</code> or <code>mean_squared_error</code>, will return
+ the negated value of the metric.</p>
+<p><strong>Custom scorer acronyms</strong><br>
+Since some of sklearn's scorers have quite long names and ATOM is all about <s>lazy</s>fast
+ experimentation, the package provides acronyms for some of the most commonly used ones.
+ These acronyms are case insensitive can be used for the <code>metric</code> parameter instead of the
+ scorer's full name, e.g. <code>atom.run('LR', metric='BA')</code> will use <code>balanced_accuracy</code>.
+ The available acronyms are:</p>
+<ul>
+<li>'AP' for 'average_precision'</li>
+<li>'BA' for 'balanced_accuracy'</li>
+<li>'AUC' for 'roc_auc'</li>
+<li>'EV' for 'explained_variance'</li>
+<li>'ME' for 'max_error'</li>
+<li>'MAE' for 'neg_mean_absolute_error'</li>
+<li>'MSE' for 'neg_mean_squared_error'</li>
+<li>'RMSE' for 'neg_root_mean_squared_error'</li>
+<li>'MSLE' for 'neg_mean_squared_log_error'</li>
+<li>'MEDAE' for 'neg_median_absolute_error'</li>
+<li>'POISSON' for 'neg_mean_poisson_deviance'</li>
+<li>'GAMMA' for 'neg_mean_gamma_deviance'</li>
+</ul>
+<p><strong>Multi-metric runs</strong><br>
+Sometimes it is useful to measure the performance of the models in more than one way.
+ ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
+ provide the <code>metric</code> parameter with a list of desired metrics, e.g. <code>atom.run('LDA', metric=['r2', 'mse'])</code>.
+ If you provide metric functions, don't forget to also provide lists to the
+ <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters, where the n-th
+ value in the list corresponds to the n-th function. If you leave them as a single value,
+ that value will apply to every provided metric.</p>
+<p>When fitting multi-metric runs, the resulting scores will return a list of metrics. For
+ example, if you provided three metrics to the pipeline, <code>atom.knn.metric_bo</code> could return
+ [0.8734, 0.6672, 0.9001]. It is also important to note that only the first metric of
+ a multi-metric run is used to evaluate every step of the bayesian optimization and to
+ select the winning model.</p>
 <p><br></p>
 <h3 id="hyperparameter-tuning">Hyperparameter tuning</h3>
 <p><br></p>
@@ -850,51 +897,6 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <h3 id="successive-halving">Successive halving</h3>
 <p><br></p>
 <h3 id="train-sizing">Train sizing</h3>
-<p><br><br></p>
-<h1 id="models">Models</h1>
-<hr />
-<p>ATOM provides 27 models for classification and regression tasks that can be used
- to fit the data in the pipeline. After fitting, the <a href="../API/models/"><code>models</code></a> are
- attached to the <code>training</code> instance as attributes. The models are called through
- their acronyms: </p>
-<ul>
-<li>GP: Gaussian Process (no hyperparameter tuning)</li>
-<li>GNB: Gaussian Naive Bayes</li>
-<li>MNB: Multinomial Naive Bayes (no hyperparameter tuning)</li>
-<li>BNB: Bernoulli Naive Bayes</li>
-<li>OLS: Ordinary Least Squares (no hyperparameter tuning)</li>
-<li>Ridge: Ridge classification/regression</li>
-<li>Lasso: Lasso regression</li>
-<li>EN: Elastic Net regression</li>
-<li>BR: Bayesian Regression (uses ridge regularization)</li>
-<li>LR: Logistic Regression</li>
-<li>LDA: Linear Discriminant Analysis</li>
-<li>QDA: Quadratic Discriminant Analysis</li>
-<li>KNN: K-Nearest Neighbors</li>
-<li>Tree: Decision Tree</li>
-<li>Bag: Bagging (uses a decision tree as base estimator)</li>
-<li>ET: Extra-Trees</li>
-<li>RF: Random Forest</li>
-<li>AdaB: AdaBoost (uses a decision tree as base estimator)</li>
-<li>GBM: Gradient Boosting Machine</li>
-<li>XGB: XGBoost (only available if package is installed)</li>
-<li>LGB: LightGBM (only available if package is installed)</li>
-<li>CatB: CatBoost (only available if package is installed)</li>
-<li>lSVM: Linear-SVM (uses a one-vs-rest strategy for multiclass classification)</li>
-<li>kSVM: Kernel-SVM (uses a one-vs-one strategy for multiclass classification)</li>
-<li>PA: Passive Aggressive</li>
-<li>SGD: Stochastic Gradient Descent</li>
-<li>MLP: Multilayer Perceptron (can have between one and three hidden layers)</li>
-</ul>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>The <code>models</code> should not be initialized by the user! Only use them through the
-<code>training</code> instances.</p>
-</div>
 <p><br><br></p>
 <h1 id="predicting">Predicting</h1>
 <hr />

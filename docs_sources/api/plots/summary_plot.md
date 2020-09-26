@@ -66,6 +66,6 @@ atom.run('RF')
 atom.summary_plot(show=11)
 ```
 <div align="center">
-    <img src="../../img/plots/summary_plot.png" alt="summary_plot" width="700" height="700"/>
+    <img src="../../../img/plots/summary_plot.png" alt="summary_plot" width="700" height="700"/>
 </div>
 

@@ -407,13 +407,43 @@
 
 <h1 id="models">Models</h1>
 <hr />
-<p>After fitting, a class for every model is attached to the <code>training</code> instance as an
+<p>After fitting, every model class is attached to the <code>training</code> instance as an
  attribute. We refer to these "subclasses" as <code>models</code> (see the
- <a href="../../user_guide/#nomenclature">nomenclature</a>). They can be accessed using the
- models' <a href="../../user_guide/#models">acronyms</a>, e.g. <code>atom.LGB</code> to access LightGBM's
- <code>model</code>. The classes contain a variety of attributes and methods to help you
- understand how the underlying estimator performed.
- <br><br></p>
+ <a href="../../user_guide/#nomenclature">nomenclature</a>). The classes contain a variety of
+ attributes and methods to help you understand how the underlying estimator performed.
+ They can be accessed using the models' <a href="../../user_guide/#models">acronyms</a>, e.g.
+ <code>atom.LGB</code> to access LightGBM's <code>model</code>. The available models and their corresponding
+ acronyms are: </p>
+<ul>
+<li>'GP' for Gaussian Process</li>
+<li>'GNB' for Gaussian Naive Bayes</li>
+<li>'MNB' for Multinomial Naive Bayes</li>
+<li>'BNB' for Bernoulli Naive Bayes</li>
+<li>'OLS' for Ordinary Least Squares</li>
+<li>'Ridge' for Ridge classification/regression</li>
+<li>'Lasso' for Lasso regression</li>
+<li>'EN' for Elastic Net regression</li>
+<li>'BR' for Bayesian Regression</li>
+<li>'LR' for Logistic Regression</li>
+<li>'LDA' for Linear Discriminant Analysis</li>
+<li>'QDA' for Quadratic Discriminant Analysis</li>
+<li>'KNN' for K-Nearest Neighbors</li>
+<li>'Tree' for Decision Tree</li>
+<li>'Bag' for Bagging</li>
+<li>'ET' for Extra-Trees</li>
+<li>'RF' for Random Forest</li>
+<li>'AdaB' for AdaBoost</li>
+<li>'GBM' for Gradient Boosting Machine</li>
+<li>'XGB' for XGBoost</li>
+<li>'LGB' for LightGBM</li>
+<li>'CatB' for CatBoost</li>
+<li>'lSVM' for Linear-SVM</li>
+<li>'kSVM' for Kernel-SVM</li>
+<li>'PA' for Passive Aggressive</li>
+<li>'SGD' for Stochastic Gradient Descent</li>
+<li>'MLP' for Multilayer Perceptron</li>
+</ul>
+<p><br><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>

@@ -55,5 +55,5 @@ atom.run(['LR', 'RF'], metric='recall_weighted')
 atom.RF.plot_feature_importance(show=11, filename='random_forest_importance.png')
 ```
 <div align="center">
-    <img src="../../img/plots/plot_feature_importance.png" alt="plot_feature_importance" width="700" height="700"/>
+    <img src="../../../img/plots/plot_feature_importance.png" alt="plot_feature_importance" width="700" height="700"/>
 </div>
