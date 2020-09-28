@@ -8,20 +8,10 @@
                                                n_jobs=1, verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L305">[source]</a></div></pre>
 <div style="padding-left:3%">
-Fit and evaluate the models in a successive halving fashion.
+Fit and evaluate the models in a [successive halving](../../../user_guide/#successive-halving)
+ fashion. The pipeline applies the following steps per iteration:
 
-If you want to compare similar models, you can choose to use a successive
-halving approach to run the pipeline. This technique is a bandit-based
-algorithm that fits N models to 1/N of the data. The best half are selected
-to go to the next iteration where the process is repeated. This continues
-until only one model remains, which is fitted on the complete dataset.
-Beware that a model's performance can depend greatly on the amount of data
-on which it is trained. For this reason, we recommend only to use this
-technique with similar models, e.g. only using tree-based models.
-
-The pipeline applies the following steps:
-
-1. The optimal hyperparameters are selected using a Bayesian Optimization (BO) algorithm.
+1. The optimal hyperparameters are selected using a bayesian optimization algorithm.
 2. The model is fitted on the complete training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 

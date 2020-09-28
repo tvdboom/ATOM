@@ -9,7 +9,7 @@
 <div style="padding-left:3%">
 Fit and evaluates the models to the data in the pipeline. The following steps are applied:
 
-1. The optimal hyperparameters are selected using a Bayesian Optimization (BO) algorithm.
+1. The optimal hyperparameters are selected using a bayesian optimization algorithm.
 2. The model is fitted on the training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 

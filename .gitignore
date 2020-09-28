@@ -5,6 +5,9 @@ run_automl.py
 tests/files/*
 !tests/files/.gitkeep
 
+# Conda-forge receipts
+staged-recipes/
+
 # Log, pickle and figures in root directory
 /*.log
 /*.pkl

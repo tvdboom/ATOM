@@ -418,15 +418,11 @@
                                          n_jobs=1, verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L359">[source]</a></div></pre>
 <div style="padding-left:3%">
-Fit and evaluate the models in a train sizing fashion.</p>
-<p>When training models, there is usually a trade-off between model performance
-and computation time that is regulated by the number of samples in the
-training set. TrainSizingRegressor can be used to create insights in this
-trade-off and help determine the optimal size of the training set.</p>
-<p>The pipeline applies the following steps:</p>
+Fit and evaluate the models in a <a href="../../../user_guide/#train-sizing">train sizing</a>
+ fashion. The pipeline applies the following steps per iteration:</p>
 <ol>
-<li>The optimal hyperparameters are selected using a Bayesian Optimization (BO) algorithm.</li>
-<li>The model is fitted on the complete training set using the best combinations of hyperparameters found.</li>
+<li>The optimal hyperparameters are selected using a bayesian optimization algorithm.</li>
+<li>The model is fitted on the training set using the best combinations of hyperparameters found.</li>
 <li>Using a bagging algorithm, various scores on the test set are calculated.</li>
 </ol>
 <p>Just like <code>atom</code>, you can <a href="../../../user_guide/#predicting">predict</a>,

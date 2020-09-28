@@ -644,7 +644,7 @@ The training methods are where the models are fitted to the data and their
            needs_threshold=False, n_calls=10, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L664">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [TrainerRegressor](../training/trainerregressor.md) instance.
+Runs a [TrainerRegressor](../training/trainerregressor.md) instance.
  Using this class through `atom` allows subsequent runs with different models
  without losing previous information.
 </div>
@@ -656,7 +656,7 @@ Calls a [TrainerRegressor](../training/trainerregressor.md) instance.
                           skip_iter=0, n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L713">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) instance.
+Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) instance.
 </div>
 <br />
 
@@ -666,7 +666,7 @@ Calls a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) 
                     train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L754">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [TrainSizingRegressor](../training/trainsizingregressor.md) instance.
+Runs a [TrainSizingRegressor](../training/trainsizingregressor.md) instance.
 </div>
 <br />
 

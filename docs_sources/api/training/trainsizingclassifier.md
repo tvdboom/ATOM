@@ -8,17 +8,11 @@
                                           n_jobs=1, verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L332">[source]</a></div></pre>
 <div style="padding-left:3%">
-Fit and evaluate the models in a train sizing fashion.
+Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizing)
+ fashion. The pipeline applies the following steps per iteration:
 
-When training models, there is usually a trade-off between model performance
-and computation time that is regulated by the number of samples in the
-training set. TrainSizingClassifier can be used to create insights in this
-trade-off and help determine the optimal size of the training set.
-
-The pipeline applies the following steps:
-
-1. The optimal hyperparameters are selected using a Bayesian Optimization (BO) algorithm.
-2. The model is fitted on the complete training set using the best combinations of hyperparameters found.
+1. The optimal hyperparameters are selected using a bayesian optimization algorithm.
+2. The model is fitted on the training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 
 Just like `atom`, you can [predict](../../../user_guide/#predicting),

@@ -106,7 +106,7 @@ def ATOMLoader(filename: str,
         if getattr(cls_, 'trainer', None):
             cls_.trainer._data = cls_._data
 
-    cls_.log(f"{cls_.__class__.__name__} loaded successfully!")
+    cls_.log(f"{cls_.__class__.__name__} loaded successfully!", 1)
 
     return cls_
 

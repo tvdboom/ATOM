@@ -737,7 +737,7 @@ The training methods are where the models are fitted to the data and their
            needs_threshold=False, n_calls=10, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L657">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
+Runs a [TrainerClassifier](../training/trainerclassifier.md) instance.
  Using this class through `atom` allows subsequent runs with different models
  without losing previous information.
 </div>
@@ -749,7 +749,7 @@ Calls a [TrainerClassifier](../training/trainerclassifier.md) instance.
                           skip_iter=0, n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L706">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
+Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
 </div>
 <br />
 
@@ -759,7 +759,7 @@ Calls a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md
                     train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L747">[source]</a></div></pre>
 <div style="padding-left:3%">
-Calls a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
+Runs a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
 </div>
 <br />
 

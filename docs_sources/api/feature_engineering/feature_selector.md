@@ -9,7 +9,7 @@
 <div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
  features with equal scores will be broken in an unspecified way.
- Also removes features with too low variance and finds pairs of
+ Additionally, removes features with too low variance and finds pairs of
  collinear features based on the Pearson correlation coefficient. For
  each pair above the specified limit (in terms of absolute value), it
  removes one of the two. This class can be accessed from `atom`

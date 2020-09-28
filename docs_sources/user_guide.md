@@ -63,6 +63,7 @@ In this documentation we will consistently use terms to refer to certain concept
  use it as variable name for the instance).
 * `model`: Refers to one of the [model](../API/models/) instances.
 * **estimator**: Actual estimator corresponding to a model. Implemented by an external package.
+* **BO**: Bayesian optimization algorithm used for hyperparameter optimization.
 * `training`: Refers to an instance of one of the classes that train and evaluate the
  models. The classes are:
     - [ATOMClassifier](../API/ATOM/atomclassifier)
@@ -415,44 +416,46 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 # Training
 ----------
 
-Six classes: TrainerClassifier and reg, SuccessiveHalvingClassifier and reg,
- and TrainSizingClassifier and reg. Accessed from an ATOM instance through run,
- successive_halving and train_sizing.
+The training phase is where the models are fitted and evaluated. After this, the
+ `models` are attached to the `training` instance and you can use the [plotting](#plots)
+ and [predicting](#predicting) methods.  The pipeline applies the following steps
+ iteratively for all models:
 
+1. The [optimal hyperparameters](#hyperparameter-optimization) are selected.
+2. The model is trained on the training set and evaluated on the test set.
+3. The [bagging](#bagging) algorithm is applied.
+
+There are three approaches to run the training.
+
+* Direct training:
+    - [TrainerClassifier](../API/training/trainerclassifier)
+    - [TrainerRegressor](../API/training/trainerregressor)
+* Training via [successive halving](#successive-halving):
+    - [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)
+    - [SuccessiveHavingRegressor](../API/training/successivehalvingregressor)
+* Training via [train sizing](#train-sizing):
+    - [TrainSizingClassifier](../API/training/trainsizingclassifier)
+    - [TrainSizingRegressor](../API/training/trainsizingregressor)
+
+The direct fashion repeats the aforementioned steps only once, while the other two
+ approaches repeats them more than once. Every approach can be directly called from
+ `atom` through the [run](../API/ATOM/atomclassifier/#atomclassifier-run),
+ [successive_halving](../API/ATOM/atomclassifier/#atomclassifier-successive-halving)
+ and [train_sizing](../API/ATOM/atomclassifier/#atomclassifier-train-sizing) methods
+ respectively.
 <br>
 
 A couple of things to take into account:
 
-* The metric implementation follows [sklearn's API](https://scikit-learn.org/stable/modules/model_evaluation.html#common-cases-predefined-values).
-  This means that the implementation always tries to maximize the scorer, i.e.
-  loss functions will be made negative.
-* If an exception is encountered while fitting a model, the
-  pipeline will automatically jump to the next model and save the
-  exception in the `errors` attribute.
-* When showing the final results, a `!!` indicates the highest
-  score and a `~` indicates that the model is possibly overfitting
-  (training set has a score at least 20% higher than the test set).
-* The winning model subclass will be attached to the `winner` attribute.
-
-
-1. The optimal hyperparameters are selected using a Bayesian Optimization (BO)
- algorithm. The resulting score of each step of the BO is either computed by
- cross-validation on the complete training set or by randomly splitting the training set every iteration into a (sub) training
- set and a validation set. This process can create some data leakage but
- ensures a maximal use of the provided data. The test set, however, does not
- contain any leakage and will be used to determine the final score of every model.
- Note that, if the dataset is relatively small, the best score on the BO can
- consistently be lower than the final score on the test set (despite the
- leakage) due to the considerable fewer instances on which it is trained.
-<div></div>
- 
-2. Once the best hyperparameters are found, the model is trained again, now
- using the complete training set. After this, predictions are made on the test set.
-<div></div>
-
-3. You can choose to evaluate the robustness of each model's applying a bagging
- algorithm, i.e. the model will be trained multiple times on a bootstrapped
- training set, returning a distribution of its performance on the test set.
+* If an exception is encountered while fitting an estimator, the pipeline will
+  automatically skip the model and jump to the next model and save the exception
+  in the `errors` attribute. Note that in that case there will be no `model` for
+  that estimator.
+* When showing the final results, a `!!` indicates the highest score and a `~`
+  indicates that the model is possibly overfitting (training set has a score at
+  least 20% higher than the test set).
+* The winning `model` (the one with the highest `mean_bagging` or `metric_test`)
+  will be attached to the `winner` attribute.
 
 
 <br>
@@ -525,30 +528,139 @@ When fitting multi-metric runs, the resulting scores will return a list of metri
  a multi-metric run is used to evaluate every step of the bayesian optimization and to
  select the winning model.
 
+!!!tip
+    Some plots let you choose which of the metrics to show using the `metric` parameter.
+
 <br>
 
-### Hyperparameter tuning
+### Hyperparameter optimization
+
+In order to achieve maximum performance, we need to tune an estimator's hyperparameters
+ before training it. ATOM provides [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
+ using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
+ (BO) approach implemented by [skopt](https://scikit-optimize.github.io/stable/). The
+ BO is optimized on the first metric provided with the `metric` parameter. Each step
+ is either computed by cross-validation on the complete training set or by randomly
+ splitting the training set every iteration into a (sub) training set and a validation
+ set. This process can create some data leakage but ensures maximal use of the provided
+ data. The test set, however, does not contain any leakage and will be used to
+ determine the final score of every model. Note that, if the dataset is relatively
+ small, the BO's best score can consistently be lower than the final score on the
+ test set (despite the leakage) due to the considerable fewer instances on which it
+ is trained.
+
+There are many possibilities to tune the BO to your liking. Use `n_calls` and
+ `n_initial_points` to determine the number of iterations that are performed
+ randomly at the start (exploration) and the number of iterations spent optimizing
+ (exploitation). If `n_calls` is equal to `n_initial_points`, every iteration of the
+ BO will select its hyperparameters randomly. This means the algorithm is technically
+ performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf).
+
+!!!note
+    The `n_calls` parameter includes the iterations in `n_initial_points`. Calling
+    `atom.run('LR', n_calls=20, n_intial_points=10)` will run 20 iterations of which
+    the first 10 are random.
+
+Other settings can be changed through the `bo_params` parameter, a dictionary where
+ every key-value combination can be used to further customize the BO.
+
+By default, the hyperparameters and corresponding dimensions per model are predefined
+ by ATOM. Use the `dimensions` key to use custom ones. Use an array for only one model
+ and a dictionary with the model names as keys if there are multiple models in the
+ pipeline. Note that the provided search space dimensions must be compliant with
+ skopt's API.
+
+    atom.run('LR', n_calls=10, bo_params={'dimensions': [Integer(100, 1000, name='max_iter')]})
+
+The majority of skopt's callbacks to stop the optimizer early can be accessed
+ through `bo_params`. You can include other callbacks using the `callbacks` key.
+  
+    atom.run('LR', n_calls=10, bo_params={'max_time': 1000, 'callbacks': custom_callback()})
+
+You can also include other optimizer's parameters as key-value pairs.
+
+    atom.run('LR', n_calls=10, bo_params={'acq_func': 'EI'})
 
 
 <br>
 
 ### Bagging
 
+After fitting the estimator, you can asses the robustness of the model using
+ [bootstrap aggregating](https://en.wikipedia.org/wiki/Bootstrap_aggregating)
+ (bagging). This technique creates several new data sets selecting random samples
+ from the training set (with replacement) and evaluates them on the test set. This
+ way we get a distribution of the performance of the model. The number of sets can
+ be chosen through the `bagging` parameter.
+
+!!!tip
+    Use the [plot_bagging](../API/plots/plot_bagging) method to plot the bagging scores
+    in a convenient boxplot.
+
 
 <br>
 
 ### Early stopping
 
+[XGBoost](https://xgboost.readthedocs.io/en/latest/python/python_api.html),
+ [LighGBM](https://lightgbm.readthedocs.io/en/latest/) and
+ [CatBoost](https://catboost.ai/) allow in-training evaluation. This means that the
+ estimator is evaluated after every round of the training. Use the `early_stopping`
+ key in `bo_params` to stop the training early if it didn't improve in the last
+ `early_stopping` rounds. This can save the pipeline much time that would otherwise
+ be wasted on an estimator that is unlikely to improve further. Note that this
+ technique will be applied both during the BO and at the final fit on the complete
+ training set. After fitting, the `model` will get the `evals` attribute, a
+ dictionary of the train and test performances per round (also if early stopping 
+ wasn't applied).
+
+!!!tip
+    Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training
+    evaluation on the train and test set.
 
 
 <br>
 
 ### Successive halving
 
+Successive halving is a bandit-based algorithm that fits N models to 1/N of the data.
+ The best half are selected to go to the next iteration where the process is repeated.
+ This continues until only one model remains, which is fitted on the complete dataset.
+ Beware that a model's performance can depend greatly on the amount of data on which
+ it is trained. For this reason, we recommend only to use this technique with similar
+ models, e.g. only using tree-based models.
+ 
+Use successive halving through the [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)/
+ [SuccessiveHalvingRegressor](../API/training/successivehalvingregressor) classes
+ or from `atom` via the [successive_halving](../API/ATOM/atomclassifier/#atomclassifier-successive-halving)
+ method. After running the pipeline, the `results` attribute will be multi-index,
+ where the first index indicates the iteration and the second the model's acronym.
+
+!!!tip
+    Use the [plot_successive_halving](../API/plots/plot_successive_halving) method to
+    see every model's performance per iteration of the successive halving.
 
 <br>
 
 ### Train sizing
+
+When training models, there is usually a trade-off between model performance and
+ computation time that is regulated by the number of samples in the training set.
+ Train sizing can be used to create insights in this trade-off and help determine
+ the optimal size of the training set, fitting the models multiple times, ever
+ increasing the number of samples in the training set.
+
+Use train sizing through the [TrainSizingClassifier](../API/training/trainsizingclassifier)/
+[TrainSizingRegressor](../API/training/trainsizingregressor) classes or from `atom`
+ via the [train_sizing](../API/ATOM/atomclassifier/#atomclassifier-train-sizing)
+ method. The number of iterations and the number of samples per training can be
+ specified with the `train_sizes` parameter. After running the pipeline, the `results`
+ attribute will be multi-index, where the first index indicates the iteration and the
+ second the model's acronym.
+
+!!!tip
+    Use the [plot_learning_curve](../API/plots/plot_learning_curve) method to see
+    the model's performance per size of the training set.
 
 
 
