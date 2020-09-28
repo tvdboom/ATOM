@@ -445,7 +445,7 @@ The direct fashion repeats the aforementioned steps only once, while the other t
  respectively.
 <br>
 
-A couple of things to take into account:
+Additional information:
 
 * If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
