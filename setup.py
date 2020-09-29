@@ -7,17 +7,20 @@ Description: Package's setup code.
 
 """
 
+import os
 import setuptools
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+
+this_directory = os.path.abspath(os.path.dirname(__file__))
+with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setuptools.setup(
       name='atom-ml',
-      version='v4.0.0',
+      version='v4.0.1',
       license='MIT',
       description='A Python AutoML tool for fast exploration and experimentation of supervised machine learning pipelines.',
-      download_url='https://github.com/tvdboom/ATOM/archive/v4.0.0.tar.gz',
+      download_url='https://github.com/tvdboom/ATOM/archive/v4.0.1.tar.gz',
       url='http://github.com/tvdboom/ATOM',
       author='tvdboom',
       author_email='m.524687@gmail.com',
@@ -26,7 +29,10 @@ setuptools.setup(
       long_description_content_type="text/markdown",
       packages=['atom'],
       classifiers=[
-         "Programming Language :: Python :: 3",
+         "Programming Language :: Python :: 3.6",
+         "Programming Language :: Python :: 3.7",
+         "Programming Language :: Python :: 3.8",
+         "Topic :: Scientific/Engineering :: Artificial Intelligence",
          "License :: OSI Approved :: MIT License",
          "Operating System :: OS Independent",
       ],
@@ -54,4 +60,5 @@ setuptools.setup(
           'lightgbm': ['lightgbm>=2.3.0'],
           'catboost': ['catboost>=0.19.1']
       },
-      python_requires='>=3.6')
+      python_requires='>=3.6'
+)

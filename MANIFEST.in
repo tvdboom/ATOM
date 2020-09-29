@@ -1,0 +1,4 @@
+include README.md LICENSE
+recursive-include images *
+recursive-include atom *.py
+recursive-include tests *.py
