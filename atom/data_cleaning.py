@@ -25,9 +25,9 @@ from category_encoders.one_hot import OneHotEncoder
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    CAL, SCALAR, X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES,
-    variable_return, to_df, to_series, merge, check_is_fitted, infer_task,
-    composed, crash, method_to_log
+    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, variable_return,
+    to_df, to_series, merge, check_is_fitted, infer_task, composed,
+    crash, method_to_log
 )
 
 
