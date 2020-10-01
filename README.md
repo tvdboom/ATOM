@@ -3,39 +3,36 @@
 </p>
 
 
-Automated Tool for Optimized Modelling
---------------------------------------
+## Automated Tool for Optimized Modelling
 
 Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com
 
-------------
 
-Repository:
+#### Repository:
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Conda Recipe](https://img.shields.io/badge/recipe-atom--ml-green.svg)](https://anaconda.org/conda-forge/atom-ml)
 [![Python 3.6|3.7|3.8](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue)](https://www.python.org/downloads/release/python-380/)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
--------------
 
-Release info:
+
+#### Release info:
 [![PyPI version](https://img.shields.io/pypi/v/atom-ml)](https://pypi.org/project/atom-ml/)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
 [![Downloads](https://pepy.tech/badge/atom-ml)](https://pepy.tech/project/atom-ml)
 
--------------
 
-Build status:
+#### Build status:
 [![Build Status](https://travis-ci.com/tvdboom/ATOM.svg?branch=master)](https://travis-ci.com/tvdboom/ATOM)
 [![Azure Pipelines](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/atom-ml-feedstock?branchName=master)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=10822&branchName=master)
 [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
--------------
 
-Code analysis:
+
+#### Code analysis:
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/context:python)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/tvdboom/ATOM.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tvdboom/ATOM/alerts/)
---------------
+
 
 <br><br>
 
