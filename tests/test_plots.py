@@ -150,7 +150,11 @@ def test_plot_successive_halving():
     pytest.raises(NotFittedError, atom.plot_successive_halving)
     atom.run('LGB')
     pytest.raises(PermissionError, atom.plot_successive_halving)
-    atom.successive_halving(['LGB', 'Tree'], metric='max_error', bagging=4)
+    atom.successive_halving(
+        models=['LDA', 'QDA', 'Tree', 'Bag', 'RF', 'LGB'],
+        metric='max_error',
+        bagging=4
+    )
     pytest.raises(ValueError, atom.plot_successive_halving, models='unknown')
     pytest.raises(ValueError, atom.plot_successive_halving, models='BR')
     pytest.raises(ValueError, atom.plot_successive_halving, metric='unknown')
@@ -160,6 +164,10 @@ def test_plot_successive_halving():
     atom.plot_successive_halving(
         filename=FILE_DIR + 'successive_halving_1',
         display=False
+    )
+    atom.successive_halving(
+        models=['LDA', 'QDA', 'Tree', 'Bag', 'ET', 'RF', 'XGB', 'LGB', 'CatB'],
+        metric='max_error',
     )
     atom.lgb.plot_successive_halving(
         filename=FILE_DIR + 'successive_halving_2',
@@ -177,6 +185,7 @@ def test_plot_learning_curve():
     pytest.raises(PermissionError, atom.plot_learning_curve)  # No train_sizing
     atom.train_sizing(['Tree', 'LGB'], metric='max_error', bagging=4)
     atom.plot_learning_curve(filename=FILE_DIR + 'train_sizing_1', display=False)
+    atom.train_sizing(['Tree', 'LGB'], metric='max_error')
     atom.lgb.plot_learning_curve(filename=FILE_DIR + 'train_sizing_2', display=False)
     assert glob.glob(FILE_DIR + 'train_sizing_1.png')
     assert glob.glob(FILE_DIR + 'train_sizing_2.png')
@@ -536,10 +545,10 @@ def test_plot_gains(dataset):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(['Tree', 'LGB', 'PA'], metric='f1')
+    atom.run(['RNN', 'LGB', 'PA'], metric='f1')
     pytest.raises(AttributeError, atom.pa.plot_gains)  # No predict_proba
     atom.plot_gains(
-        models=['Tree', 'LGB'],
+        models=['RNN', 'LGB'],
         dataset=dataset,
         filename=FILE_DIR + f'gains_{dataset}_1',
         display=False

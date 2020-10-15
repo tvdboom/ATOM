@@ -189,9 +189,9 @@ def test_function_metric_parameter():
 
 def test_scorer_metric_parameter():
     """Assert that a scorer metric_ works."""
-    trainer = TrainerClassifier('LR', metric=get_scorer(f1_score))
+    trainer = TrainerClassifier('LR', metric=get_scorer('f1'))
     trainer.run(bin_train, bin_test)
-    assert trainer.metric == 'f1_score'
+    assert trainer.metric == 'f1'
 
 
 # Test _params_to_attr ====================================================== >>

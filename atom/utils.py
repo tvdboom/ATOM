@@ -462,7 +462,7 @@ def get_model_name(model):
                 return name
 
 
-def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
+def  get_metric(metric, greater_is_better, needs_proba, needs_threshold):
     """Get the right metric depending on input type.
 
     Parameters

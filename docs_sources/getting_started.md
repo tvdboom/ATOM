@@ -39,11 +39,13 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 
 Train and evaluate the models you want to compare:
 
-    atom.run(models=['LR', 'LDA', 'XGB', 'lSVM'],
-             metric='f1',
-             n_calls=25,
-             n_initial_points=10,
-             bagging=4)
+    atom.run(
+        models=['LR', 'LDA', 'XGB', 'lSVM'],
+        metric='f1',
+        n_calls=25,
+        n_initial_points=10,
+        bagging=4
+    )
 
 Make plots to analyze the results: 
 

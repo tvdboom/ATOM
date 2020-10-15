@@ -84,8 +84,8 @@ def test_plot_bo():
     """Assert than plot_bo runs without errors."""
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, n_jobs=-1, random_state=1)
     atom.run(
-        models=['kSVM', 'MLP'],
-        n_calls=25,
+        models=['lSVM', 'kSVM', 'MLP'],
+        n_calls=35,
         n_initial_points=20,
         bo_params={'plot_bo': True}
     )
