@@ -151,7 +151,7 @@ def test_plot_successive_halving():
     atom.run('LGB')
     pytest.raises(PermissionError, atom.plot_successive_halving)
     atom.successive_halving(
-        models=['LDA', 'QDA', 'Tree', 'Bag', 'RF', 'LGB'],
+        models=['OLS', 'KNN', 'ARD', 'Bag', 'RF', 'LGB'],
         metric='max_error',
         bagging=4
     )
@@ -166,7 +166,7 @@ def test_plot_successive_halving():
         display=False
     )
     atom.successive_halving(
-        models=['LDA', 'QDA', 'Tree', 'Bag', 'ET', 'RF', 'XGB', 'LGB', 'CatB'],
+        models=['OLS', 'KNN', 'Tree', 'Bag', 'ET', 'RF', 'XGB', 'LGB', 'CatB'],
         metric='max_error',
     )
     atom.lgb.plot_successive_halving(
