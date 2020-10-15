@@ -665,15 +665,13 @@ class DecisionTree(BaseModel):
         else:
             criterion = ['mse', 'mae', 'friedman_mse']
 
-        max_features = [*np.linspace(0.5, 0.9, 5), None, 'sqrt', 'log2']
-
         dimensions = [
             Categorical(criterion, name='criterion'),
             Categorical(['best', 'random'], name='splitter'),
             Categorical([None, *list(range(1, 10))], name='max_depth'),
             Integer(2, 20, name='min_samples_split'),
             Integer(1, 20, name='min_samples_leaf'),
-            Categorical(max_features, name='max_features'),
+            Categorical([None, *np.linspace(0.5, 0.9, 5)], name='max_features'),
             Real(0, 0.035, name='ccp_alpha')
         ]
         return [d for d in dimensions if d.name in self.params]
@@ -733,7 +731,7 @@ class ExtraTrees(BaseModel):
             max_depth=[None, 0],
             min_samples_split=[2, 0],
             min_samples_leaf=[1, 0],
-            max_features=['sqrt', 0],
+            max_features=[None, 0],
             bootstrap=[False, 0],
             ccp_alpha=[0, 3],
             max_samples=[0.9, 1]
@@ -765,15 +763,13 @@ class ExtraTrees(BaseModel):
         else:
             criterion = ['mse', 'mae']
 
-        max_features = [*np.linspace(0.5, 0.9, 5), None, 'sqrt', 'log2']
-
         dimensions = [
             Integer(10, 500, name='n_estimators'),
             Categorical(criterion, name='criterion'),
             Categorical([None, *list(range(1, 10))], name='max_depth'),
             Integer(2, 20, name='min_samples_split'),
             Integer(1, 20, name='min_samples_leaf'),
-            Categorical(max_features, name='max_features'),
+            Categorical([None, *np.linspace(0.5, 0.9, 5)], name='max_features'),
             Categorical([True, False], name='bootstrap'),
             Real(0, 0.035, name='ccp_alpha'),
             Categorical(np.linspace(0.5, 0.9, 5), name='max_samples')
@@ -794,7 +790,7 @@ class RandomForest(BaseModel):
             max_depth=[None, 0],
             min_samples_split=[2, 0],
             min_samples_leaf=[1, 0],
-            max_features=['sqrt', 0],
+            max_features=[None, 0],
             bootstrap=[False, 0],
             ccp_alpha=[0, 3],
             max_samples=[0.9, 1]
@@ -826,15 +822,13 @@ class RandomForest(BaseModel):
         else:
             criterion = ['mse', 'mae']
 
-        max_features = [*np.linspace(0.5, 0.9, 5), None, 'sqrt', 'log2']
-
         dimensions = [
             Integer(10, 500, name='n_estimators'),
             Categorical(criterion, name='criterion'),
             Categorical([None, *list(range(1, 10))], name='max_depth'),
             Integer(2, 20, name='min_samples_split'),
             Integer(1, 20, name='min_samples_leaf'),
-            Categorical(max_features, name='max_features'),
+            Categorical([None, *np.linspace(0.5, 0.9, 5)], name='max_features'),
             Categorical([True, False], name='bootstrap'),
             Real(0, 0.035, name='ccp_alpha'),
             Categorical(np.linspace(0.5, 0.9, 5), name='max_samples')
@@ -932,8 +926,6 @@ class GradientBoostingMachine(BaseModel):
         else:
             loss = ['ls', 'lad', 'huber', 'quantile']
 
-        max_features = [*np.linspace(0.5, 0.9, 5), None, 'sqrt', 'log2']
-
         dimensions = [
             Real(0.01, 1.0, 'log-uniform', name='learning_rate'),
             Integer(10, 500, name='n_estimators'),
@@ -942,7 +934,7 @@ class GradientBoostingMachine(BaseModel):
             Integer(2, 20, name='min_samples_split'),
             Integer(1, 20, name='min_samples_leaf'),
             Integer(1, 10, name='max_depth'),
-            Categorical(max_features, name='max_features'),
+            Categorical([None, *np.linspace(0.5, 0.9, 5)], name='max_features'),
             Real(0, 0.035, name='ccp_alpha'),
             Categorical(loss, name='loss'),
             Categorical(np.linspace(0.5, 0.9, 5), name='alpha')

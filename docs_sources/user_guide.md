@@ -520,7 +520,6 @@ atom.run('Lasso')
     Reruns are only allowed if the same metric is used. Leaving the `metric` parameter
     empty after the first run will automatically use the one in the pipeline.
 
-<br>
 
 Additional information:
 
@@ -530,7 +529,7 @@ Additional information:
   automatically skip the model and jump to the next model and save the exception
   in the `errors` attribute. Note that in that case there will be no `model` for
   that estimator.
-* When showing the final results, a `!!` indicates the highest score and a `~`
+* When showing the final results, a `!` indicates the highest score and a `~`
   indicates that the model is possibly overfitting (training set has a score at
   least 20% higher than the test set).
 * The winning `model` (the one with the highest `mean_bagging` or `metric_test`)
