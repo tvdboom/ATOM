@@ -1031,7 +1031,6 @@ atom.run('Lasso')
 <p>Reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
 empty after the first run will automatically use the one in the pipeline.</p>
 </div>
-<p><br></p>
 <p>Additional information:</p>
 <ul>
 <li>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models='RF')</code>
@@ -1040,7 +1039,7 @@ empty after the first run will automatically use the one in the pipeline.</p>
   automatically skip the model and jump to the next model and save the exception
   in the <code>errors</code> attribute. Note that in that case there will be no <code>model</code> for
   that estimator.</li>
-<li>When showing the final results, a <code>!!</code> indicates the highest score and a <code>~</code>
+<li>When showing the final results, a <code>!</code> indicates the highest score and a <code>~</code>
   indicates that the model is possibly overfitting (training set has a score at
   least 20% higher than the test set).</li>
 <li>The winning <code>model</code> (the one with the highest <code>mean_bagging</code> or <code>metric_test</code>)
