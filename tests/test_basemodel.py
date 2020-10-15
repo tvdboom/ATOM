@@ -62,9 +62,10 @@ def test_all_callbacks():
 
 def test_invalid_max_time():
     """Assert than an error is raised when max_time<0."""
+    kwargs = dict(models='LR', n_calls=5, bo_params={'max_time': -1})
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(
-        RuntimeError, atom.run, 'LR', n_calls=5, bo_params={'max_time': -1})
+    pytest.raises(RuntimeError, atom.run, **kwargs)
 
 
 def test_invalid_delta_x():
@@ -81,10 +82,13 @@ def test_invalid_delta_y():
 
 def test_plot_bo():
     """Assert than plot_bo runs without errors."""
-    bo_params = {'plot_bo': True}
-
     atom = ATOMClassifier(X_bin, y_bin, n_rows=0.1, n_jobs=-1, random_state=1)
-    atom.run(['kSVM', 'MLP'], n_calls=25, n_initial_points=20, bo_params=bo_params)
+    atom.run(
+        models=['kSVM', 'MLP'],
+        n_calls=25,
+        n_initial_points=20,
+        bo_params={'plot_bo': True}
+    )
     assert not atom.errors
 
 
@@ -96,9 +100,10 @@ def test_invalid_cv():
 
 def test_invalid_early_stopping():
     """Assert than an error is raised when early_stopping<=0."""
+    kwargs = dict(models='LGB', n_calls=5, bo_params={'early_stopping': -1})
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(
-        RuntimeError, atom.run, 'LGB', n_calls=5, bo_params={'early_stopping': -1})
+    pytest.raises(RuntimeError, atom.run, **kwargs)
 
 
 def test_custom_dimensions():
@@ -127,18 +132,35 @@ def test_estimator_kwargs():
 
 def test_invalid_base_estimator():
     """Assert than an error is raised when the base_estimator is invalid."""
+    kwargs = dict(models='LR', n_calls=5, bo_params={'base_estimator': 'unknown'})
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(RuntimeError,
-                  atom.run, 'LR', n_calls=5, bo_params={'base_estimator': 'unknown'})
+    pytest.raises(RuntimeError, atom.run, **kwargs)
 
 
 def test_early_stopping():
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(['XGB', 'LGB', 'CatB'], n_calls=5, bo_params={'early_stopping': 0.1,
-                                                           'cv': 1})
+    atom.run(
+        models=['XGB', 'LGB', 'CatB'],
+        n_calls=5,
+        bo_params={'early_stopping': 0.1, 'cv': 1}
+    )
     for model in atom.models_:
         assert isinstance(model.evals, dict)
+
+
+def test_est_params_removed_from_bo():
+    """Assert that all params in est_params are dropped from the BO."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LGB', n_calls=5, est_params={'n_estimators': 220})
+    assert 'n_estimators' not in atom.lgb.bo.params[0]
+
+
+def test_est_params_unknown_param():
+    """Assert that an error is raised for an unknown parameter in est_params."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(RuntimeError, atom.run, 'LGB', n_calls=5, est_params={'test': 220})
 
 
 def test_verbose_is_1():
@@ -416,4 +438,4 @@ def test_save_estimator():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('MNB')
     atom.mnb.save_estimator(FILE_DIR + 'auto')
-    assert glob.glob(FILE_DIR + 'MNB_model')
+    assert glob.glob(FILE_DIR + 'MultinomialNB')

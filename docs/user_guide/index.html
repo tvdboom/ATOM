@@ -153,9 +153,135 @@
     </ul>
   </li>
                                     
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Models</a>
+    <ul class="dropdown-menu">
+            
 <li>
-    <a href="../API/models/" class="dropdown-item">Models</a>
+    <a href="../API/models/gp/" class="dropdown-item">Gaussian Process</a>
 </li>
+            
+<li>
+    <a href="../API/models/gnb/" class="dropdown-item">Gaussian Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../API/models/mnb/" class="dropdown-item">Multinomial Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../API/models/bnb/" class="dropdown-item">Bernoulli Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../API/models/catnb/" class="dropdown-item">Categorical Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../API/models/cnb/" class="dropdown-item">Complement Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../API/models/ols/" class="dropdown-item">Ordinary Least Squares</a>
+</li>
+            
+<li>
+    <a href="../API/models/ridge/" class="dropdown-item">Ridge</a>
+</li>
+            
+<li>
+    <a href="../API/models/lasso/" class="dropdown-item">Lasso</a>
+</li>
+            
+<li>
+    <a href="../API/models/en/" class="dropdown-item">Elastic Net</a>
+</li>
+            
+<li>
+    <a href="../API/models/br/" class="dropdown-item">Bayesian Ridge</a>
+</li>
+            
+<li>
+    <a href="../API/models/ard/" class="dropdown-item">Automated Relevance Determination</a>
+</li>
+            
+<li>
+    <a href="../API/models/lr/" class="dropdown-item">Logistic Regression</a>
+</li>
+            
+<li>
+    <a href="../API/models/lda/" class="dropdown-item">Linear Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../API/models/qda/" class="dropdown-item">Quadratic Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../API/models/knn/" class="dropdown-item">K-Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../API/models/rnn/" class="dropdown-item">Radius Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../API/models/tree/" class="dropdown-item">Decision Tree</a>
+</li>
+            
+<li>
+    <a href="../API/models/bag/" class="dropdown-item">Bagging</a>
+</li>
+            
+<li>
+    <a href="../API/models/et/" class="dropdown-item">Extra-Trees</a>
+</li>
+            
+<li>
+    <a href="../API/models/rf/" class="dropdown-item">Random Forest</a>
+</li>
+            
+<li>
+    <a href="../API/models/adab/" class="dropdown-item">AdaBoost</a>
+</li>
+            
+<li>
+    <a href="../API/models/gbm/" class="dropdown-item">Gradient Boosting Machine</a>
+</li>
+            
+<li>
+    <a href="../API/models/xgb/" class="dropdown-item">XGBoost</a>
+</li>
+            
+<li>
+    <a href="../API/models/lgb/" class="dropdown-item">LightGBM</a>
+</li>
+            
+<li>
+    <a href="../API/models/catb/" class="dropdown-item">CatBoost</a>
+</li>
+            
+<li>
+    <a href="../API/models/lsvm/" class="dropdown-item">Linear-SVM</a>
+</li>
+            
+<li>
+    <a href="../API/models/ksvm/" class="dropdown-item">Kernel-SVM</a>
+</li>
+            
+<li>
+    <a href="../API/models/pa/" class="dropdown-item">Passive Aggressive</a>
+</li>
+            
+<li>
+    <a href="../API/models/sgd/" class="dropdown-item">Stochastic Gradient Descent</a>
+</li>
+            
+<li>
+    <a href="../API/models/mlp/" class="dropdown-item">Multi-layer Perceptron</a>
+</li>
+    </ul>
+  </li>
                                     
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
@@ -341,6 +467,10 @@
 <li>
     <a href="../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
 </li>
+                                    
+<li>
+    <a href="../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+</li>
                                 </ul>
                             </li>
                             <li class="navitem">
@@ -413,6 +543,11 @@
               </ul>
             </li>
             
+            <li class="nav-item" data-level="1"><a href="#models" class="nav-link">Models</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
             <li class="nav-item" data-level="1"><a href="#training" class="nav-link">Training</a>
               <ul class="nav flex-column">
               </ul>
@@ -441,7 +576,7 @@
  on how to approach problems with regard to which model to try on your data, but
  these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
- complicated models (e.g. logistic regression -&gt; random forest -&gt; multilayer perceptron)
+ complicated models (e.g. logistic regression -&gt; random forest -&gt; multi-layer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
  different data cleaning steps, different type/amount of features, tuning a new set
  of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
@@ -490,7 +625,8 @@
 <li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
  <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
  use it as variable name for the instance).</li>
-<li><code>model</code>: Refers to one of the <a href="../API/models/">model</a> instances.</li>
+<li><code>model</code>: Refers to one of the <a href="#models">model</a> instances.</li>
+<li><strong>pipeline</strong>: Refers to the collection of data cleaning, feature engineering and training steps performed by <code>atom</code>.</li>
 <li><strong>estimator</strong>: Actual estimator corresponding to a model. Implemented by an external package.</li>
 <li><strong>BO</strong>: Bayesian optimization algorithm used for hyperparameter optimization.</li>
 <li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
@@ -786,6 +922,59 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
 </div>
 <p><br><br></p>
+<h1 id="models">Models</h1>
+<hr />
+<p>ATOM provides 31 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, every model class is attached to
+ the <code>training</code> instance as an attribute. We refer to these "subclasses" as
+ <code>models</code> (see the <a href="#nomenclature">nomenclature</a>). The classes contain a variety
+ of attributes and methods to help you understand how the underlying estimator
+ performed. They can be accessed using the models' acronyms, e.g. <code>atom.LGB</code> to
+ access the LightGBM's <code>model</code>. The available models and their corresponding
+ acronyms are: </p>
+<ul>
+<li>'GP' for <a href="../API/models/gp">Gaussian Process</a></li>
+<li>'GNB' for <a href="../API/models/gnb">Gaussian Naive Bayes</a></li>
+<li>'MNB' for <a href="../API/models/mnb">Multinomial Naive Bayes</a></li>
+<li>'BNB' for <a href="../API/models/bnb">Bernoulli Naive Bayes</a></li>
+<li>'CatNB' for <a href="../API/models/catnb">Categorical Naive Bayes</a></li>
+<li>'CNB' for <a href="../API/models/cnb">Complement Naive Bayes</a></li>
+<li>'OLS' for <a href="../API/models/ols">Ordinary Least Squares</a></li>
+<li>'Ridge' for <a href="../API/models/ridge">Ridge Classification/Regression</a></li>
+<li>'Lasso' for <a href="../API/models/lasso">Lasso Regression</a></li>
+<li>'EN' for <a href="../API/models/en">Elastic Net</a></li>
+<li>'BR' for <a href="../API/models/br">Bayesian Ridge</a></li>
+<li>'ARD' for <a href="../API/models/ard">Automated Relevance Determination</a></li>
+<li>'LR' for <a href="../API/models/lr">Logistic Regression</a></li>
+<li>'LDA' for <a href="../API/models/lda">Linear Discriminant Analysis</a></li>
+<li>'QDA' for <a href="../API/models/qda">Quadratic Discriminant Analysis</a></li>
+<li>'KNN' for <a href="../API/models/knn">K-Nearest Neighbors</a></li>
+<li>'RNN' for <a href="../API/models/rnn">Radius Nearest Neighbors</a></li>
+<li>'Tree' for <a href="../API/models/tree">Decision Tree</a></li>
+<li>'Bag' for <a href="../API/models/bag">Bagging</a></li>
+<li>'ET' for <a href="../API/models/et">Extra-Trees</a></li>
+<li>'RF' for <a href="../API/models/rf">Random Forest</a></li>
+<li>'AdaB' for <a href="../API/models/adab">AdaBoost</a></li>
+<li>'GBM' for <a href="../API/models/gbm">Gradient Boosting Machine</a></li>
+<li>'XGB' for <a href="../API/models/xgb">XGBoost</a></li>
+<li>'LGB' for <a href="../API/models/lgb">LightGBM</a></li>
+<li>'CatB' for <a href="../API/models/catb">CatBoost</a></li>
+<li>'lSVM' for <a href="../API/models/lsvm">Linear-SVM</a></li>
+<li>'kSVM' for <a href="../API/models/ksvm">Kernel-SVM</a></li>
+<li>'PA' for <a href="../API/models/pa">Passive Aggressive</a></li>
+<li>'SGD' for <a href="../API/models/sgd">Stochastic Gradient Descent</a></li>
+<li>'MLP' for <a href="../API/models/mlp">Multi-layer Perceptron</a></li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code>models</code> should not be initialized by the user! Only use them through the
+<code>training</code> instances.</p>
+</div>
+<p><br><br></p>
 <h1 id="training">Training</h1>
 <hr />
 <p>The training phase is where the models are fitted and evaluated. After this, the
@@ -820,10 +1009,33 @@ model doesn't have a <code>feature_importances_</code> attribute, use
  <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#atomclassifier-run">run</a>,
  <a href="../API/ATOM/atomclassifier/#atomclassifier-successive-halving">successive_halving</a>
  and <a href="../API/ATOM/atomclassifier/#atomclassifier-train-sizing">train_sizing</a> methods
- respectively.
-<br></p>
+ respectively. Every approach should be called from an independent instance of <code>atom</code>.
+ Subsequent runs from different approaches will remove all information from previous
+ trainings from the pipeline. You can, however, rerun the same approach multiple times.
+ In that case, the results are combined. Note that if you rerun the same model, only
+ the last <code>model</code> is saved.</p>
+<p>For example, here atom will "forget" the successive halving run.</p>
+<pre><code class="python">atom = ATOMClassifier(X, y)
+atom.successive_halving(['Tree', 'Bag'])
+atom.run('LGB') 
+</code></pre>
+
+<p>In this case, both the Ridge and Lasso regressors are kept in the pipeline.</p>
+<pre><code class="python">atom = ATOMRegressor(X, y)
+atom.run('Ridge')
+atom.run('Lasso')
+</code></pre>
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
+empty after the first run will automatically use the one in the pipeline.</p>
+</div>
+<p><br></p>
 <p>Additional information:</p>
 <ul>
+<li>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models='RF')</code>
+  will train a Random Forest.</li>
 <li>If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
   in the <code>errors</code> attribute. Note that in that case there will be no <code>model</code> for
@@ -834,13 +1046,6 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <li>The winning <code>model</code> (the one with the highest <code>mean_bagging</code> or <code>metric_test</code>)
   will be attached to the <code>winner</code> attribute.</li>
 </ul>
-<p><br></p>
-<h3 id="models">Models</h3>
-<p>ATOM provides 27 models for classification and regression tasks that can be used
- to fit the data in the pipeline. After fitting, every <a href="../API/models/"><code>model</code></a> is
- attached to the <code>training</code> instance as an attribute. Models are called through the
- <code>models</code> parameter using their corresponding acronym's, e.g. <code>atom.run(models='RF')</code>
- to run a Random forest model.</p>
 <p><br></p>
 <h3 id="metric">Metric</h3>
 <p>ATOM uses sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a>
@@ -898,6 +1103,28 @@ Sometimes it is useful to measure the performance of the models in more than one
 <p>Some plots let you choose which of the metrics to show using the <code>metric</code> parameter.</p>
 </div>
 <p><br></p>
+<h3 id="parameter-customization">Parameter customization</h3>
+<p>By default, the parameters every estimator uses are the same default parameters they
+ get from their respective packages. To select different ones, use <code>est_params</code>. There
+ are two ways to add custom parameters to the models: adding them directly to the
+ dictionary as key-value pairs or through multiple dicts with the model names as keys.</p>
+<p>Adding the parameters directly to <code>est_params</code> will share them across all models
+ in the pipeline. In this example, both the XGBoost and the LightGBM model
+ will use n_estimators=200. Make sure all the models do have the specified parameters
+ or an exception will be raised!</p>
+<pre><code>atom.run(['XGB', 'LGB'], est_params={'n_estimators': 200})
+</code></pre>
+<p>To specify parameters per model, use the model name as key and a dict of the
+ parameters as value. In this example, the XGBoost model will use n_estimators=200
+ and the Multi-layer Perceptron will use one hidden layer with 75 neurons.</p>
+<pre><code>atom.run(['XGB', 'MLP'], est_params={'XGB': {'n_estimators': 200}, 'MLP': {'hidden_layer_sizes': (75,)}})
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If a parameter is specified through <code>est_params</code>, it will be ignored by the
+bayesian optimization! </p>
+</div>
+<p><br></p>
 <h3 id="hyperparameter-optimization">Hyperparameter optimization</h3>
 <p>In order to achieve maximum performance, we need to tune an estimator's hyperparameters
  before training it. ATOM provides <a href="https://en.wikipedia.org/wiki/Hyperparameter_optimization">hyperparameter tuning</a>
@@ -920,17 +1147,22 @@ Sometimes it is useful to measure the performance of the models in more than one
  performing a <a href="https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf">random search</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The <code>n_calls</code> parameter includes the iterations in <code>n_initial_points</code>. Calling
+<p>The <code>n_calls</code> parameter includes the iterations in <code>n_initial_points</code>, i.e. calling
 <code>atom.run('LR', n_calls=20, n_intial_points=10)</code> will run 20 iterations of which
 the first 10 are random.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If <code>n_initial_points=1</code>, the first trial will be equal to the estimator's
+default parameters.</p>
 </div>
 <p>Other settings can be changed through the <code>bo_params</code> parameter, a dictionary where
  every key-value combination can be used to further customize the BO.</p>
 <p>By default, the hyperparameters and corresponding dimensions per model are predefined
- by ATOM. Use the <code>dimensions</code> key to use custom ones. Use an array for only one model
- and a dictionary with the model names as keys if there are multiple models in the
- pipeline. Note that the provided search space dimensions must be compliant with
- skopt's API.</p>
+ by ATOM. Use the <code>dimensions</code> key to use custom ones. Just like with <code>est_params</code>,
+ you can share the same dimensions across models or use a dictionary with the model
+ names as keys to specify the dimensions for every individual model. Note that the
+ provided search space dimensions must be compliant with skopt's API.</p>
 <pre><code>atom.run('LR', n_calls=10, bo_params={'dimensions': [Integer(100, 1000, name='max_iter')]})
 </code></pre>
 <p>The majority of skopt's callbacks to stop the optimizer early can be accessed
@@ -955,17 +1187,15 @@ in a convenient boxplot.</p>
 </div>
 <p><br></p>
 <h3 id="early-stopping">Early stopping</h3>
-<p><a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html">XGBoost</a>,
- <a href="https://lightgbm.readthedocs.io/en/latest/">LighGBM</a> and
- <a href="https://catboost.ai/">CatBoost</a> allow in-training evaluation. This means that the
- estimator is evaluated after every round of the training. Use the <code>early_stopping</code>
- key in <code>bo_params</code> to stop the training early if it didn't improve in the last
- <code>early_stopping</code> rounds. This can save the pipeline much time that would otherwise
- be wasted on an estimator that is unlikely to improve further. Note that this
- technique will be applied both during the BO and at the final fit on the complete
- training set. After fitting, the <code>model</code> will get the <code>evals</code> attribute, a
- dictionary of the train and test performances per round (also if early stopping 
- wasn't applied).</p>
+<p><a href="../API/models/xgb">XGBoost</a>, <a href="../API/models/lgb">LighGBM</a> and <a href="../API/models/catb">CatBoost</a>
+ allow in-training evaluation. This means that the estimator is evaluated after
+ every round of the training. Use the <code>early_stopping</code> key in <code>bo_params</code> to stop
+ the training early if it didn't improve in the last <code>early_stopping</code> rounds. This
+ can save the pipeline much time that would otherwise be wasted on an estimator
+ that is unlikely to improve further. Note that this technique will be applied
+ both during the BO and at the final fit on the complete training set. After
+ fitting, the <code>model</code> will get the <code>evals</code> attribute, a dictionary of the train
+ and test performances per round (also if early stopping wasn't applied).</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
@@ -1058,7 +1288,7 @@ the model's performance per size of the training set.</p>
 </table>
 
 <p>Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the <code>model</code>'s <a href="../API/models/#prediction-attributes">prediction attributes</a>,
+ set. You can access them through the <code>model</code>'s prediction attributes,
  e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -1066,7 +1296,7 @@ the model's performance per size of the training set.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Many of the <a href="#plots">plots</a> use the prediction attributes. This can considerably
-increase the size of the class for large datasets. Use the <a href="../API/models/#models-reset-prediction-attributes">reset_prediction_attributes</a>
+increase the size of the class for large datasets. Use the <code>reset_prediction_attributes</code>
 method if you need to free some memory!</p>
 </div>
 <p><br><br></p>

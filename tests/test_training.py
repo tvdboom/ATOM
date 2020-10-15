@@ -39,9 +39,15 @@ def test_infer_task():
 
 # Test SuccessiveHalving ==================================================== >>
 
-def test_invalid_skip_iter():
-    """Assert that an error is raised if skip_iter < 0."""
-    sh = SuccessiveHalvingRegressor(models='OLS', skip_iter=-1)
+def test_skip_runs_below_zero():
+    """Assert that an error is raised if skip_runs < 0."""
+    sh = SuccessiveHalvingRegressor(models='OLS', skip_runs=-1)
+    pytest.raises(ValueError, sh.run, reg_train, reg_test)
+
+
+def test_skip_runs_too_large():
+    """Assert that an error is raised if skip_runs >= n_runs."""
+    sh = SuccessiveHalvingRegressor(models=['OLS', 'BR'], skip_runs=2)
     pytest.raises(ValueError, sh.run, reg_train, reg_test)
 
 
@@ -51,7 +57,7 @@ def test_successive_halving_results_is_multi_index():
     sh.run(reg_train, reg_test)
     assert len(sh.results) == 7  # 4 + 2 + 1
     assert isinstance(sh.results.index, pd.MultiIndex)
-    assert sh.results.index.names == ['run', 'model']
+    assert sh.results.index.names == ['n_models', 'model']
 
 
 def test_models_are_reset():
@@ -72,23 +78,16 @@ def test_successive_halving_train_index_is_reset():
 
 def test_train_sizing_results_is_multi_index():
     """Assert that the results property is a multi-index dataframe."""
-    ts = TrainSizingRegressor(['RF', 'LGB'], random_state=1)
+    ts = TrainSizingRegressor(['RF', 'LGB'], train_sizes=[100, 200], random_state=1)
     ts.run(reg_train, reg_test)
-    assert len(ts.results) == 10  # 2 models * 5 runs
+    assert len(ts.results) == 4  # 2 models * 2 runs
     assert isinstance(ts.results.index, pd.MultiIndex)
-    assert ts.results.index.names == ['run', 'model']
-
-
-def test_sizes_attribute():
-    """Assert that the _sizes attributes is reset after fitting."""
-    ts = TrainSizingRegressor('LGB', train_sizes=(0.1, 100), random_state=1)
-    ts.run(reg_train, reg_test)
-    assert ts._sizes == [int(0.1 * len(reg_train)), 100]
+    assert ts.results.index.names == ['frac', 'model']
 
 
 def test_train_sizing_train_index_is_reset():
     """Assert that the train index is reset after fitting."""
-    ts = TrainSizingRegressor('LGB', random_state=1)
+    ts = TrainSizingRegressor('LGB', train_sizes=[0.6, 0.8], random_state=1)
     ts.run(reg_train, reg_test)
     assert ts._idx[0] == len(reg_train)
 

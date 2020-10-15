@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">predict</strong>(X, verbose=None, \*\*kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L115">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L122">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the data and make predictions on new data. If called from a `training`
  instance, it will use the best model in the pipeline (under the `winner` attribute).

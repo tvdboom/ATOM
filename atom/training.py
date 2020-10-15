@@ -32,12 +32,13 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, n_calls, n_initial_points, bo_params,
-                 bagging, n_jobs, verbose, warnings, logger, random_state):
+                 needs_threshold, n_calls, n_initial_points, est_params,
+                 bo_params, bagging, n_jobs, verbose, warnings, logger,
+                 random_state):
         super().__init__(models, metric, greater_is_better, needs_proba,
                          needs_threshold, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings,
-                         logger, random_state)
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -53,8 +54,8 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nRunning pipeline ============================= >>", 1)
-        self.log(f"Models in pipeline: {', '.join(self.models)}", 1)
+        self.log("\nTraining ===================================== >>", 1)
+        self.log(f"Models: {', '.join(self.models)}", 1)
         self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
 
         self._results = self._run()
@@ -77,19 +78,20 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
     Parameters
     ----------
-    skip_iter: int, optional (default=0)
-        Skip last `skip_iter` iterations of the successive halving.
+    skip_runs: int, optional (default=0)
+        Skip last `skip_runs` runs of the successive halving.
 
     """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, skip_iter, n_calls, n_initial_points, bo_params,
-                 bagging, n_jobs, verbose, warnings, logger, random_state):
-        self.skip_iter = skip_iter
+                 needs_threshold, skip_runs, n_calls, n_initial_points,
+                 est_params, bo_params, bagging, n_jobs, verbose, warnings,
+                 logger, random_state):
+        self.skip_runs = skip_runs
         super().__init__(models, metric, greater_is_better, needs_proba,
                          needs_threshold, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings,
-                         logger, random_state)
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -104,27 +106,31 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         self._params_to_attr(*arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
+        n_models = len(self.models)
 
-        if self.skip_iter < 0:
-            raise ValueError("Invalid value for the skip_iter parameter."
-                             f"Value should be >=0, got {self.skip_iter}.")
+        if self.skip_runs < 0:
+            raise ValueError("Invalid value for the skip_runs parameter."
+                             f"Value should be >=0, got {self.skip_runs}.")
+        elif self.skip_runs >= int(n_models/2) + 1:
+            raise ValueError("Invalid value for the skip_runs parameter. Less than 1 "
+                             f"run remaining, got n_runs={int(n_models/2) + 1} and " 
+                             f"skip_runs={self.skip_runs}.")
 
-        self.log("\nRunning pipeline ============================= >>", 1)
+        self.log("\nTraining ===================================== >>", 1)
         self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
 
         run = 0
         results = []  # List of dataframes returned by self._run
-        all_models = self.models[:]
         _train_idx = self._idx[0]  # Save the size of the original training set
-        while len(self.models) > 2 ** self.skip_iter - 1:
+        while len(self.models) > 2 ** self.skip_runs - 1:
             # Select 1/N of training set to use for this iteration
             self._idx[0] = int(1./len(self.models) * _train_idx)
 
             # Print stats for this subset of the data
             p = round(100. / len(self.models))
-            self.log(f"\n\nRun {run} ({p}% of set) {'='*(30-len(str(p)))}>>", 1)
-            self.log(f"Models in pipeline: {', '.join(self.models)}", 1)
-            self.log(f"Size of training set: {len(self.train)}", 1)
+            self.log(f"\n\nRun: {run} {'='*32} >>", 1)
+            self.log(f"Models: {', '.join(self.models)}", 1)
+            self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             # Run iteration and append to the results list
@@ -141,12 +147,12 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         # Concatenate all resulting dataframes with multi-index
         self._results = pd.concat(
             objs=[df for df in results],
-            keys=range(len(results)),
-            names=('run', 'model')
+            keys=[len(df) for df in results],
+            names=('n_models', 'model')
         )
 
         # Renew self.models and restore the training set
-        self.models = all_models
+        self.models = list(self._results.index.unique(1).values)
         self._idx[0] = _train_idx
 
 
@@ -163,23 +169,21 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
     Parameters
     ----------
     train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))
-        Relative or absolute numbers of training examples that will be used
-        to generate the learning curve. If the value is <=1, it is
-        interpreted as a fraction of the maximum size of the training set.
-        If the value is > 1, it is interpreted as the total number of samples
-        in the set.
+        Sequence of training set sizes used to run the trainings.
+             - If <=1: Fraction of the training set.
+             - If >1: Total number of samples.
 
     """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, train_sizes, n_calls, n_initial_points, bo_params,
-                 bagging, n_jobs, verbose, warnings, logger, random_state):
+                 needs_threshold, train_sizes, n_calls, n_initial_points,
+                 est_params, bo_params, bagging, n_jobs, verbose, warnings,
+                 logger, random_state):
         self.train_sizes = train_sizes
-        self._sizes = []  # Number of training samples (attr for plot)
         super().__init__(models, metric, greater_is_better, needs_proba,
                          needs_threshold, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings,
-                         logger, random_state)
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -195,21 +199,26 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nRunning pipeline ============================= >>", 1)
-        self.log(f"Models in pipeline: {', '.join(self.models)}", 1)
+        self.log("\nTraining ===================================== >>", 1)
+        self.log(f"Models: {', '.join(self.models)}", 1)
         self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
 
+        frac = []  # Fraction of the training set used in evey run
         results = []  # List of dataframes returned by self._run
         _train_idx = self._idx[0]  # Save the size of the original training set
-        for run, n_rows in enumerate(self.train_sizes):
-            # Select fraction of data to use for this iteration
-            self._idx[0] = int(n_rows * _train_idx if n_rows <= 1 else n_rows)
-            self._sizes.append(len(self.train))
+        for run, size in enumerate(self.train_sizes):
+            # Select fraction of data to use in this run
+            if size <= 1:
+                frac.append(round(size, 3))
+                self._idx[0] = int(size * _train_idx)
+            else:
+                frac.append(round(size/_train_idx, 3))
+                self._idx[0] = size
 
             # Print stats for this subset of the data
             p = round(len(self.train) * 100. / _train_idx)
-            self.log(f"\n\nRun {run} ({p}% of set) {'='*(30-len(str(p)))}>>", 1)
-            self.log(f"Size of training set: {len(self.train)}", 1)
+            self.log(f"\n\nRun: {run} {'='*32} >>", 1)
+            self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             # Run iteration and append to the results list
@@ -218,8 +227,8 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         # Concatenate all resulting dataframes with multi-index
         self._results = pd.concat(
             objs=[df for df in results],
-            keys=range(len(results)),
-            names=('run', 'model')
+            keys=frac,
+            names=('frac', 'model')
         )
 
         self._idx[0] = _train_idx  # Restore original training set
@@ -237,6 +246,7 @@ class TrainerClassifier(Trainer):
                  needs_threshold: Union[bool, Sequence[bool]] = False,
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -246,8 +256,9 @@ class TrainerClassifier(Trainer):
                  random_state: Optional[int] = None):
         self.goal = 'classification'
         super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points, bo_params,
-                         bagging, n_jobs, verbose, warnings, logger, random_state)
+                         needs_threshold, n_calls, n_initial_points,
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
 
 class TrainerRegressor(Trainer):
@@ -262,6 +273,7 @@ class TrainerRegressor(Trainer):
                  needs_threshold: Union[bool, Sequence[bool]] = False,
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -271,8 +283,9 @@ class TrainerRegressor(Trainer):
                  random_state: Optional[int] = None):
         self.goal = 'regression'
         super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points, bo_params,
-                         bagging, n_jobs, verbose, warnings, logger, random_state)
+                         needs_threshold, n_calls, n_initial_points,
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
 
 class SuccessiveHalvingClassifier(SuccessiveHalving):
@@ -285,9 +298,10 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
                  needs_threshold: Union[bool, Sequence[bool]] = False,
-                 skip_iter: int = 0,
+                 skip_runs: int = 0,
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -297,9 +311,9 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
                  random_state: Optional[int] = None):
         self.goal = 'classification'
         super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, skip_iter, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings, logger,
-                         random_state)
+                         needs_threshold, skip_runs, n_calls, n_initial_points,
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
 
 class SuccessiveHalvingRegressor(SuccessiveHalving):
@@ -312,9 +326,10 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
                  needs_threshold: Union[bool, Sequence[bool]] = False,
-                 skip_iter: int = 0,
+                 skip_runs: int = 0,
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -324,9 +339,9 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
                  random_state: Optional[int] = None):
         self.goal = 'regression'
         super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, skip_iter, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings, logger,
-                         random_state)
+                         needs_threshold, skip_runs, n_calls, n_initial_points,
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
 
 class TrainSizingClassifier(TrainSizing):
@@ -342,6 +357,7 @@ class TrainSizingClassifier(TrainSizing):
                  train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -352,8 +368,8 @@ class TrainSizingClassifier(TrainSizing):
         self.goal = 'classification'
         super().__init__(models, metric, greater_is_better, needs_proba,
                          needs_threshold, train_sizes, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings, logger,
-                         random_state)
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)
 
 
 class TrainSizingRegressor(TrainSizing):
@@ -369,6 +385,7 @@ class TrainSizingRegressor(TrainSizing):
                  train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
                  n_calls: Union[int, Sequence[int]] = 0,
                  n_initial_points: Union[int, Sequence[int]] = 5,
+                 est_params: dict = {},
                  bo_params: dict = {},
                  bagging: Optional[Union[int, Sequence[int]]] = None,
                  n_jobs: int = 1,
@@ -379,5 +396,5 @@ class TrainSizingRegressor(TrainSizing):
         self.goal = 'regression'
         super().__init__(models, metric, greater_is_better, needs_proba,
                          needs_threshold, train_sizes, n_calls, n_initial_points,
-                         bo_params, bagging, n_jobs, verbose, warnings, logger,
-                         random_state)
+                         est_params, bo_params, bagging, n_jobs, verbose,
+                         warnings, logger, random_state)

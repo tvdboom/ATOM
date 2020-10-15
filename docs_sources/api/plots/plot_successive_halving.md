@@ -4,7 +4,7 @@
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_successive_halving</strong>(models=None, metric=0, title=None,
                                figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2407">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2413">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot of the models' scores per iteration of the successive halving. Only
  available if the models were fitted using [successive halving](../../../user_guide/#successive-halving).
@@ -48,11 +48,11 @@ Whether to render the plot.
 ----------
 
 ```python
-from atom import ATOMRegressor
+from atom import ATOMClassifier
 
-atom = ATOMRegressor(X, y)
-atom.successive_halving(['tree', 'bag', 'adab', 'et', 'rf', 'gbm', 'xgb', 'lgb'], metric='mse')
-atom.plot_successive_halving()
+atom = ATOMClassifier(X, y)
+atom.successive_halving(['bag', 'adab', 'et', 'lgb'], metric='accuracy', bagging=5)
+atom.plot_successive_halving(filename='plot_successive_halving')
 ```
 <div align="center">
     <img src="../../../img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>

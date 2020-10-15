@@ -31,11 +31,11 @@ from skopt.optimizer import (
     base_minimize, gp_minimize, forest_minimize, gbrt_minimize
 )
 
-# Own package modules
+# Own modules
 from .utils import (
     X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst, merge, check_scaling,
-    time_to_string, catch_return, transform, composed, crash,
-    method_to_log, PlotCallback
+    time_to_string, catch_return, transform, composed, get_best_score,
+    crash, method_to_log, PlotCallback
 )
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 
@@ -88,15 +88,39 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Results
         self._results = pd.DataFrame(
-            columns=['name', 'metric_bo', 'time_bo',
-                     'metric_train', 'metric_test', 'time_fit',
-                     'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
+            columns=['metric_bo', 'time_bo', 'metric_train',
+                     'metric_test', 'time_fit', 'mean_bagging',
+                     'std_bagging', 'time_bagging', 'time'])
         self._results.index.name = 'model'
+
+    def __repr__(self):
+        repr_ = (
+            f"{self.longname}"
+            f"\n --> Estimator: {self.estimator.__class__.__name__}"
+            f"\n --> Score: {get_best_score(self)}"
+        )
+        return repr_
+
+    def get_params(self, x):
+        """Return a dictionary of the model´s hyperparameters."""
+        params = {}
+        for i, (key, value) in enumerate(self.params.items()):
+            if value[1]:  # If it has decimals...
+                params[key] = round(x[i], value[1])
+            else:
+                params[key] = x[i]
+
+        return params
+
+    def get_init_values(self):
+        """Return the default values of the model's hyperparameters."""
+        return [value[0] for value in self.params.values()]
 
     @composed(crash, method_to_log, typechecked)
     def bayesian_optimization(self,
                               n_calls: int = 15,
                               n_initial_points: int = 5,
+                              est_params: dict = {},
                               bo_params: dict = {}):
         """Run the bayesian optimization algorithm.
 
@@ -118,9 +142,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             technically be performing a random search. If sequence, the n-th
             value will apply to the n-th model in the pipeline.
 
+        est_params: dict, optional (default={})
+            Additional parameters for the estimator.
+
         bo_params: dict, optional (default={})
-            Dictionary of extra keyword arguments for the BO.
-            These can include:
+            Additional parameters to for the BO. These can include:
                 - base_estimator: str, optional (default='GP')
                     Surrogate model to use. Choose from:
                         - 'GP' for Gaussian Process
@@ -146,7 +172,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     Callbacks for the BO.
                 - dimensions: dict, array or None, optional (default=None)
                     Custom hyperparameter space for the bayesian optimization.
-                    Can be an array (only if there is 1 model in the pipeline)
+                    Can be an array to share the same dimensions across models
                     or a dictionary with the model names as key. If None, ATOM's
                     predefined dimensions are used.
                 - plot_bo: bool, optional (default=False)
@@ -222,7 +248,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             if self._iter > n_initial_points:
                 call = f'Iteration {self._iter}'
             else:
-                call = f'Random start {self._iter}'
+                call = f'Initial point {self._iter}'
 
             if self._pbar:
                 self._pbar.set_description(call)
@@ -231,6 +257,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log(f"Parameters --> {params}", 2)
 
             estimator = self.get_estimator(params)
+            estimator.set_params(**est_params)
 
             # Same splits per model, but different for every iteration of the BO
             rs = self.T.random_state + self._iter if self.T.random_state else None
@@ -353,15 +380,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self._early_stopping = bo_params['early_stopping']
             bo_params.pop('early_stopping')
 
+        # Drop dimensions from BO if already in est_params
+        for param in est_params:
+            if param not in self.get_estimator().get_params().keys():
+                raise ValueError(
+                    f"Invalid value for the est_params parameter. Got {param} "
+                    f"for estimator {self.get_estimator().__class__.__name__}.")
+            elif param in self.params:
+                self.params.pop(param)
+
         # Specify model dimensions
         def pre_defined_hyperparameters(x):
             return optimize(**self.get_params(x))
 
-        dimensions = self.get_domain()
+        dimensions = self.get_dimensions()
         func = pre_defined_hyperparameters  # Default optimization func
         if bo_params.get('dimensions'):
             if bo_params['dimensions'].get(self.name):
-                dimensions = bo_params.get('dimensions').get(self.name)
+                dimensions = bo_params.get('dimensions')[self.name]
 
                 @use_named_args(dimensions)
                 def custom_hyperparameters(**x):
@@ -369,7 +405,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 func = custom_hyperparameters  # Use custom hyperparameters
             bo_params.pop('dimensions')
 
-        # If only 1 random start, use the model's default parameters
+        # If only 1 initial point, use the model's default parameters
         if n_initial_points == 1:
             bo_params['x0'] = self.get_init_values()
 
@@ -406,8 +442,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         if self._pbar:
             self._pbar.close()
-        # if plot_bo:
-        #     plt.close()
 
         # Optimal parameters found by the BO
         # Return from skopt wrapper to get dict of custom hyperparameter space
@@ -425,6 +459,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Save best model (not yet fitted)
         self.estimator = self.get_estimator(self.best_params)
+        self.estimator.set_params(**est_params)
 
         # Get the BO duration
         self.time_bo = time_to_string(self._init_bo)
@@ -439,13 +474,21 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log(f"Time elapsed: {self.time_bo}", 1)
 
     @composed(crash, method_to_log)
-    def fit(self):
-        """Fit to the complete training set and get the score on the test set."""
+    def fit(self, est_params: dict = {}):
+        """Fit to the complete training set and get the score on the test set.
+
+        Parameters
+        ----------
+        est_params: dict, optional (default={})
+            Additional parameters for the estimator.
+
+        """
         t_init = time()
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
             self.estimator = self.get_estimator()
+            self.estimator.set_params(**est_params)
 
         # Fit the selected model on the complete training set
         if hasattr(self, 'custom_fit'):
@@ -465,7 +508,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if self.bo.empty:
             self.T.log('\n', 1)  # Print 2 extra lines
             self.T.log(f"Results for {self.longname}:{' ':9s}", 1)
-        self.T.log("Fitting -----------------------------------------", 1)
+        self.T.log("Fit ---------------------------------------------", 1)
         if self._stopped:
             self.T.log("Early stop at iteration {} of {}."
                        .format(self._stopped[0], self._stopped[1]), 1)
@@ -564,8 +607,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         if not hasattr(self.estimator, method):
-            raise AttributeError(
-                f"The {self.name} model doesn't have a {method} method!")
+            raise AttributeError(f"The {self.estimator.__class__.__name__} "
+                                 f"estimator doesn't have a {method} method!")
 
         # When called from the ATOM class, apply all data transformations first
         if hasattr(self, 'pipeline'):
@@ -763,15 +806,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def _final_output(self):
         """Returns the model's final output as a string."""
         # If bagging was used, we use a different format
-        if self.mean_bagging:
+        if self.mean_bagging is None:
+            out = '   '.join([f"{m.name}: {lst(self.metric_test)[i]:.3f}"
+                              for i, m, in enumerate(self.T.metric_)])
+        else:
             out = '   '.join([f"{m.name}: {lst(self.mean_bagging)[i]:.3f}"
                               u" \u00B1 "
                               f"{lst(self.std_bagging)[i]:.3f}"
                               for i, m in enumerate(self.T.metric_)])
-
-        else:
-            out = '   '.join([f"{m.name}: {lst(self.metric_test)[i]:.3f}"
-                              for i, m, in enumerate(self.T.metric_)])
 
         # Annotate if model overfitted when train 20% > test
         metric_train = lst(self.metric_train)
@@ -910,10 +952,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         if not filename:
-            filename = self.name + '_model'
+            filename = self.estimator.__class__.__name__
         elif filename == 'auto' or filename.endswith('/auto'):
-            filename = filename.replace('auto', self.name + '_model')
+            filename = filename.replace('auto', self.estimator.__class__.__name__)
 
         with open(filename, 'wb') as file:
             pickle.dump(self.estimator, file)
-        self.T.log(self.longname + " estimator saved successfully!", 1)
+        self.T.log(f"{self.longname} estimator saved successfully!", 1)

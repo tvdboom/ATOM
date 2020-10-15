@@ -9,6 +9,7 @@ Description: Module containing the main ATOM class.
 
 
 # Standard packages
+import inspect
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
@@ -17,6 +18,7 @@ from pandas_profiling import ProfileReport
 
 # Own modules
 from .basepredictor import BasePredictor
+from .basetransformer import BaseTransformer
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
     StandardCleaner, Scaler, Imputer, Encoder, Outliers, Balancer
@@ -29,8 +31,8 @@ from .training import (
     )
 from .plots import ATOMPlotter
 from .utils import (
-    CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, composed, crash, method_to_log, merge,
-    check_property, check_scaling, infer_task, transform, clear
+    CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, composed, crash, method_to_log,
+    merge, check_property, check_scaling, infer_task, transform, clear
     )
 
 
@@ -65,7 +67,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Prepare input, run StandardCleaner and split data in train/test sets."""
         # Data attributes
         self._idx = [None, None]  # Train and test set sizes
-        self._sizes = None  # Number of samples per iteration of train_sizing
 
         # Pipeline attributes
         self.profile = None
@@ -77,10 +78,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.metric_ = []
         self.errors = {}
         self._results = pd.DataFrame(
-            columns=['name', 'metric_bo', 'time_bo',
-                     'metric_train', 'metric_test', 'time_fit',
-                     'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
-        self._results.index.name = 'model'
+            columns=['metric_bo', 'time_bo', 'metric_train',
+                     'metric_test', 'time_fit', 'mean_bagging',
+                     'std_bagging', 'time_bagging', 'time'])
 
         # Check input Parameters ============================================ >>
 
@@ -133,6 +133,16 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._idx[1] = int(self._test_size * len(self.dataset))
         self._idx[0] = len(self.dataset) - self._idx[1]
         self.stats(1)  # Print data stats
+
+    def __repr__(self):
+        repr_ = f"{self.__class__.__name__}"
+        for est in self.pipeline:
+            repr_ += f"\n --> {est.__class__.__name__}"
+            for param in inspect.signature(est.__init__).parameters:
+                if param not in BaseTransformer.attrs + ['self']:
+                    repr_ += f"\n   >>> {param}: {str(flt(getattr(est, param)))}"
+
+        return repr_
 
     # Utility properties ==================================================== >>
 
@@ -598,13 +608,46 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     # Training methods ====================================================== >>
 
+    def _prepare_run(self, approach, metric, gib, proba, threshold):
+        """Prepare the pipeline for a run.
+
+        Clear the pipeline from previous approaches. In case of a rerun,
+        check if the provided metric is the same as the one in the pipeline.
+
+        """
+        # If this is the first run of this approach, clear all previous results
+        if not type(self.trainer).__name__.startswith(approach):
+            clear(self, self.models[:])
+
+            # Define the results' index
+            if approach == 'Trainer':
+                self._results.index = pd.Index([], name='model')
+            else:
+                col_name = 'n_models' if approach.startswith('Suc') else 'frac'
+                self._results.index = pd.MultiIndex(
+                    levels=[[], []], codes=[[], []], names=(col_name, 'model'))
+
+        else:
+            if metric is None:  # Assign the existing metric
+                metric = self.metric_
+            else:  # Check that the selected metric is the same as previous run
+                metric_ = BaseTrainer._prepare_metric(
+                    lst(metric), gib, proba, threshold)
+
+                metric_name = flt([m.name for m in metric_])
+                if metric_name != self.metric:
+                    raise ValueError("Invalid value for the metric parameter! Value" +
+                                     " should be the same as previous run. Expected" +
+                                     f" {self.metric}, got {metric_name}.")
+
+        return metric
+
     def _run(self):
         """Run the trainer.
 
         If all models failed, catch the errors and pass them to the ATOM instance
         before raising the exception. If successful run, update all relevant
-        attributes and methods. Only the run method allows for subsequent calls
-        without erasing previous information.
+        attributes and methods.
 
         """
         try:
@@ -619,12 +662,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.metric_ = self.trainer.metric_
             self.trainer.mapping = self.mapping  # Attach mapping for plots
 
-            # If SuccessiveHalving or TrainSizing, replace the results
-            if isinstance(self.trainer.results.index, pd.MultiIndex):
-                self._results = self.trainer._results
-            else:  # If Trainer, add them row by row
-                for idx, row in self.trainer._results.iterrows():
-                    self._results.loc[idx] = row
+            # Update the results attribute
+
+            for idx, row in self.trainer._results.iterrows():
+                self._results.loc[idx, :] = row
 
             for model in self.trainer.models:
                 self.errors.pop(model, None)  # Remove model from errors if there
@@ -636,20 +677,20 @@ class ATOM(BasePredictor, ATOMPlotter):
                 # Add pipeline to model subclasses for transform method
                 setattr(getattr(self, model), 'pipeline', self.pipeline)
 
-            # Remove SuccessiveHalving and TrainSizing from the pipeline
+            # Remove different approaches from the pipeline
+            to_drop = []
+            for approach in ['Trainer', 'SuccessiveHalving', 'TrainSizing']:
+                if not self.trainer.__class__.__name__.startswith(approach):
+                    to_drop.append(approach)
+
             self.pipeline = self.pipeline[
-                ~self.pipeline.astype(str).str.startswith(('Success', 'TrainSiz'))]
+                ~self.pipeline.astype(str).str.startswith(tuple(to_drop))]
 
-            # If the last class in pipeline is a trainer, remove it as well
-            if self.pipeline.iloc[-1].__class__.__name__.startswith('Trainer'):
-                self.pipeline = self.pipeline.iloc[:-1]
-
-            # Add trainer to tje pipeline
+            # Add the trainer to the pipeline
             self.pipeline = self.pipeline.append(
                 pd.Series([self.trainer]), ignore_index=True)
 
-        finally:
-            # Catch errors and pass them to ATOM's attribute
+        finally:  # Catch errors and pass them to ATOM's attribute
             for model, error in self.trainer.errors.items():
                 self.errors[model] = error
 
@@ -662,37 +703,26 @@ class ATOM(BasePredictor, ATOMPlotter):
             needs_threshold: Union[bool, Sequence[bool]] = False,
             n_calls: Union[int, Sequence[int]] = 0,
             n_initial_points: Union[int, Sequence[int]] = 5,
+            est_params: dict = {},
             bo_params: dict = {},
             bagging: Optional[Union[int, Sequence[int]]] = None,
             **kwargs):
         """Fit the models to the dataset in a direct fashion.
 
-        Contrary to the Trainer class in training.py, this method allows
-        subsequent runs and stores all results as attributes (only the `models`
-        are overwritten if the same model is rerun).
-
         See the basetrainer.py module for a description of the parameters.
 
         """
-        # If this is the first direct run, clear all previous results
-        if not type(self.trainer).__name__.startswith('Trainer'):
-            clear(self, self.models[:])
+        metric = self._prepare_run(
+            approach='Trainer',
+            metric=metric,
+            gib=greater_is_better,
+            proba=needs_proba,
+            threshold=needs_threshold
+        )
 
-        elif metric is None:  # Assign the existing metric_
-            metric = self.metric_
-
-        else:  # Check that the selected metric_ is the same as previous run
-            metric_ = BaseTrainer._prepare_metric(
-                metric, greater_is_better, needs_proba, needs_threshold)
-
-            metric_name = flt([m.name for m in metric_])
-            if metric_name != self.metric:
-                raise ValueError("Invalid value for the metric parameter! Value " +
-                                 "should be the same as previous run. Expected " +
-                                 f"{self.metric}, got {metric_name}.")
-
-        params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  n_calls, n_initial_points, bo_params, bagging)
+        params = (models, metric, greater_is_better, needs_proba,
+                  needs_threshold, n_calls, n_initial_points,
+                  est_params, bo_params, bagging)
 
         kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
@@ -710,9 +740,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             greater_is_better: Union[bool, Sequence[bool]] = True,
             needs_proba: Union[bool, Sequence[bool]] = False,
             needs_threshold: Union[bool, Sequence[bool]] = False,
-            skip_iter: int = 0,
+            skip_runs: int = 0,
             n_calls: Union[int, Sequence[int]] = 0,
             n_initial_points: Union[int, Sequence[int]] = 5,
+            est_params: dict = {},
             bo_params: dict = {},
             bagging: Optional[Union[int, Sequence[int]]] = None,
             **kwargs):
@@ -730,10 +761,17 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the basetrainer.py module for a description of the parameters.
 
         """
-        clear(self, self.models[:])
+        metric = self._prepare_run(
+            approach='SuccessiveHalving',
+            metric=metric,
+            gib=greater_is_better,
+            proba=needs_proba,
+            threshold=needs_threshold
+        )
 
-        params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  skip_iter, n_calls, n_initial_points, bo_params, bagging)
+        params = (models, metric, greater_is_better, needs_proba,
+                  needs_threshold, skip_runs, n_calls, n_initial_points,
+                  est_params, bo_params, bagging)
 
         kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
@@ -753,6 +791,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                      train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
                      n_calls: Union[int, Sequence[int]] = 0,
                      n_initial_points: Union[int, Sequence[int]] = 5,
+                     est_params: dict = {},
                      bo_params: dict = {},
                      bagging: Optional[Union[int, Sequence[int]]] = None,
                      **kwargs):
@@ -760,16 +799,23 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         If you want to compare how different models perform when training on
         varying dataset sizes, you can choose to use a train_sizing approach
-        to run the pipeline. This technique fits the models on increasingly large
-        training sets.
+        to run the pipeline. This technique fits the models on increasingly
+        large training sets.
 
         See the basetrainer.py module for a description of the parameters.
 
         """
-        clear(self, self.models[:])
+        metric = self._prepare_run(
+            approach='TrainSizing',
+            metric=metric,
+            gib=greater_is_better,
+            proba=needs_proba,
+            threshold=needs_threshold,
+        )
 
-        params = (models, metric, greater_is_better, needs_proba, needs_threshold,
-                  train_sizes, n_calls, n_initial_points, bo_params, bagging)
+        params = (models, metric, greater_is_better, needs_proba,
+                  needs_threshold, train_sizes, n_calls,
+                  n_initial_points, est_params, bo_params, bagging)
 
         kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith('class'):
@@ -778,7 +824,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.trainer = TrainSizingRegressor(*params, **kwargs)
 
         self._run()
-        self._sizes = self.trainer._sizes
 
     # data attributes ======================================================= >>
 

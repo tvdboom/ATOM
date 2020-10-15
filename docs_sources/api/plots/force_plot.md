@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1, title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2075">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2081">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot SHAP's force plot. Visualize the given SHAP values with an additive force layout.
  The explainer will be chosen automatically based on the model's type. Note that by

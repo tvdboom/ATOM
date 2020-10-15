@@ -4,9 +4,9 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.training.<strong style="color:#008AB8">TrainSizingRegressor</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                          needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5),
-                                         n_calls=10, n_random_points=5, bo_params={}, bagging=None,
-                                         n_jobs=1, verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L359">[source]</a></div></pre>
+                                         n_calls=10, n_initial_points=5, est_params={}, bo_params={},
+                                         bagging=None, n_jobs=1, verbose=0, logger=None, random_state=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L375">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizing)
  fashion. The pipeline applies the following steps per iteration:
@@ -27,27 +27,29 @@ Just like `atom`, you can [predict](../../../user_guide/#predicting),
 <blockquote>
 List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>'GP' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">Gaussian Process</a> (no hyperparameter tuning)</li>
-<li>'OLS' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a> (no hyperparameter tuning)</li>
-<li>'Ridge' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge Linear Regression</a></li>
-<li>'Lasso' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html">Lasso Linear Regression</a></li>
-<li>'EN' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet Linear Regression</a></li>
-<li>'BR' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html">Bayesian Regression</a> (uses ridge regularization)</li>
+<li>'GP' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">Gaussian Process</a></li>
+<li>'OLS' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a></li>
+<li>'Ridge' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge Regression</a></li>
+<li>'Lasso' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html">Lasso Regression</a></li>
+<li>'EN' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet</a></li>
+<li>'BR' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html">Bayesian Ridge</a></li>
+<li>'ARD' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html">Automated Relevance Determination</a></li>
 <li>'KNN' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html">K-Nearest Neighbors</a></li>
+<li>'RNN' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html">Radius Nearest Neighbors</a></li>
 <li>'Tree' for a single <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html">Decision Tree</a></li>
-<li>'Bag' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html">Bagging</a> (uses a decision tree as base estimator)</li>
+<li>'Bag' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html">Bagging</a></li>
 <li>'ET' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html">Extra-Trees</a></li>
 <li>'RF' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html">Random Forest</a></li>
-<li>'AdaB' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html">AdaBoost</a> (uses a decision tree as base estimator)</li>
+<li>'AdaB' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html">AdaBoost</a></li>
 <li>'GBM' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html">Gradient Boosting Machine</a></li> 
 <li>'XGB' for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">XGBoost</a> (only available if package is installed)</li>
 <li>'LGB' for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">LightGBM</a> (only available if package is installed)</li>
 <li>'CatB' for <a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">CatBoost</a> (only available if package is installed)</li>
-<li>'lSVM' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear Support Vector Machine</a> (uses a one-vs-rest strategy for multiclass classification)</li> 
-<li>'kSVM' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel Support Vector Machine</a> (uses a one-vs-one strategy for multiclass classification)</li>
+<li>'lSVM' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear-SVM</a></li> 
+<li>'kSVM' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel-SVM</a></li>
 <li>'PA' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">Passive Aggressive</a></li>
 <li>'SGD' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">Stochastic Gradient Descent</a></li>
-<li>'MLP' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multilayer Perceptron</a> (can have between one and three hidden layers)</li> 
+<li>'MLP' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multi-layer Perceptron</a></li> 
 </ul>
 </blockquote>
 <strong>metric: str, callable or sequence, optional (default=None)</strong>
@@ -89,11 +91,11 @@ Whether the metric function takes a continuous decision certainty.
 </blockquote>
 <strong>train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))</strong>
 <blockquote>
-Relative or absolute numbers of training examples that will be used
- to generate the learning curve. If the value is <=1, it is
- interpreted as a fraction of the maximum size of the training set.
- If the value is > 1, it is interpreted as the total number of samples
- in the set.
+Sequence of training set sizes used to run the trainings.
+<ul>
+<li>If <=1: Fraction of the training set.</li>
+<li>If >1: Total number of samples.</li>
+</ul>
 </blockquote>
 <strong>n_calls: int or sequence, optional (default=0)</strong>
 <blockquote>
@@ -108,9 +110,15 @@ Initial number of random tests of the BO before fitting the
  technically be performing a random search. If sequence, the n-th
  value will apply to the n-th model in the pipeline.
 </blockquote>
+<strong>est_params: dict, optional (default={}})</strong>
+<blockquote>
+Additional parameters for the estimators. See the corresponding
+ documentation for the available options. For multiple models, use
+ the acronyms as key and a dictionary of the parameters as value.
+</blockquote>
 <strong>bo_params: dict, optional (default={})</strong>
 <blockquote>
-Dictionary of extra keyword arguments for the BO. These can include:
+Additional parameters to for the BO. These can include:
 <ul>
 <li><b>base_estimator: str, optional (default='GP')</b><br>Base estimator to use in the BO.
  Choose from:
@@ -131,8 +139,8 @@ Dictionary of extra keyword arguments for the BO. These can include:
  available for models that allow in-training evaluation.</li>
 <li><b>callback: callable or list of callables, optional (default=None)</b><br>Callbacks for the BO.</li>
 <li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
- space for the bayesian optimization. Can be an array (only if there is 1 model in the
- pipeline) or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
+ space for the bayesian optimization. Can be an array to share dimensions across
+ models or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
 <li><b>plot_bo: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
  Creates a canvas with two plots: the first plot shows the score of every trial
  and the second shows the distance between the last consecutive steps. Don't
@@ -194,10 +202,10 @@ Seed used by the random number generator. If None, the random number
 
 ### Data attributes
 
-The instance's dataset can be accessed through multiple attributes, e.g. calling
+The dataset can be accessed at any time through multiple properties, e.g. calling
  `trainer.train` will return the training set. The data can also be changed through
- these attributes, e.g. `trainer.test = trainer.test.drop(0)` will drop the first row
- from the test set. Doing this will automatically update the other data attributes.
+ these properties, e.g. `trainer.test = atom.test.drop(0)` will drop the first row
+ from the test set. This will also update the other data attributes.
 
 <a name="atom"></a>
 <table>
@@ -276,19 +284,19 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../models/)</strong>
+<strong>winner: [`model`](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
 <strong>results: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the training results with the model acronyms as index. Columns can include:
+Dataframe of the training results with the fraction of the training set and the model
+ acronyms as indices. Columns can include:
 <ul>
-<li><b>name:</b> Name of the model.</li>
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
-<li><b>metric_test:</b>Metric score on the test set.</li>
+<li><b>metric_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
 <li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
 <li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
@@ -367,7 +375,7 @@ Fontsize for the ticks along the plot's axes.
 
 <tr>
 <td><a href="#TrainerRegressor-scoring">scoring</a></td>
-<td>Print the scoring of the models for a specific metric.</td>
+<td>Returns the scores of the models for a specific metric.</td>
 </tr>
 
 <tr>
@@ -380,7 +388,7 @@ Fontsize for the ticks along the plot's axes.
 
 <a name="TrainerRegressor-clear"></a>
 <pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L197">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Removes all traces of a model in the pipeline (except for the `errors`
  attribute). If all models in the pipeline are removed, the metric is reset.
@@ -455,7 +463,7 @@ Minimum verbosity level in order to print the message.
 
 <a name="TrainerRegressor-run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(\*arrays)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L43">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit and evaluate the models.
 <br><br>
@@ -502,9 +510,9 @@ Whether to save the data as an attribute of the instance. If False, remember to
 
 <a name="TrainerRegressor-scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L145">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
-Print the scoring of the models for a specific metric. If a model
+Returns the scores of the models for a specific metric. If a model
  shows a `XXX`, it means the metric failed for that specific model. This
  can happen if either the metric is unavailable for the task or if the
  model does not have a `predict_proba` method while the metric requires it.
@@ -516,7 +524,7 @@ Print the scoring of the models for a specific metric. If a model
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules).
- If None, returns the final results for the model (ignores the `dataset` parameter).
+ If None, returns the models' final results (ignores the `dataset` parameter).
 </blockquote>
 <strong>dataset: str, optional (default='test')</strong>
 <blockquote>

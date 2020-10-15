@@ -153,9 +153,135 @@
     </ul>
   </li>
                                     
+  <li class="dropdown-submenu">
+    <a href="#" class="dropdown-item">Models</a>
+    <ul class="dropdown-menu">
+            
 <li>
-    <a href="../../models/" class="dropdown-item">Models</a>
+    <a href="../../models/gp/" class="dropdown-item">Gaussian Process</a>
 </li>
+            
+<li>
+    <a href="../../models/gnb/" class="dropdown-item">Gaussian Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/mnb/" class="dropdown-item">Multinomial Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/bnb/" class="dropdown-item">Bernoulli Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/catnb/" class="dropdown-item">Categorical Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/cnb/" class="dropdown-item">Complement Naive Bayes</a>
+</li>
+            
+<li>
+    <a href="../../models/ols/" class="dropdown-item">Ordinary Least Squares</a>
+</li>
+            
+<li>
+    <a href="../../models/ridge/" class="dropdown-item">Ridge</a>
+</li>
+            
+<li>
+    <a href="../../models/lasso/" class="dropdown-item">Lasso</a>
+</li>
+            
+<li>
+    <a href="../../models/en/" class="dropdown-item">Elastic Net</a>
+</li>
+            
+<li>
+    <a href="../../models/br/" class="dropdown-item">Bayesian Ridge</a>
+</li>
+            
+<li>
+    <a href="../../models/ard/" class="dropdown-item">Automated Relevance Determination</a>
+</li>
+            
+<li>
+    <a href="../../models/lr/" class="dropdown-item">Logistic Regression</a>
+</li>
+            
+<li>
+    <a href="../../models/lda/" class="dropdown-item">Linear Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../../models/qda/" class="dropdown-item">Quadratic Discriminant Analysis</a>
+</li>
+            
+<li>
+    <a href="../../models/knn/" class="dropdown-item">K-Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../../models/rnn/" class="dropdown-item">Radius Nearest Neighbors</a>
+</li>
+            
+<li>
+    <a href="../../models/tree/" class="dropdown-item">Decision Tree</a>
+</li>
+            
+<li>
+    <a href="../../models/bag/" class="dropdown-item">Bagging</a>
+</li>
+            
+<li>
+    <a href="../../models/et/" class="dropdown-item">Extra-Trees</a>
+</li>
+            
+<li>
+    <a href="../../models/rf/" class="dropdown-item">Random Forest</a>
+</li>
+            
+<li>
+    <a href="../../models/adab/" class="dropdown-item">AdaBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/gbm/" class="dropdown-item">Gradient Boosting Machine</a>
+</li>
+            
+<li>
+    <a href="../../models/xgb/" class="dropdown-item">XGBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/lgb/" class="dropdown-item">LightGBM</a>
+</li>
+            
+<li>
+    <a href="../../models/catb/" class="dropdown-item">CatBoost</a>
+</li>
+            
+<li>
+    <a href="../../models/lsvm/" class="dropdown-item">Linear-SVM</a>
+</li>
+            
+<li>
+    <a href="../../models/ksvm/" class="dropdown-item">Kernel-SVM</a>
+</li>
+            
+<li>
+    <a href="../../models/pa/" class="dropdown-item">Passive Aggressive</a>
+</li>
+            
+<li>
+    <a href="../../models/sgd/" class="dropdown-item">Stochastic Gradient Descent</a>
+</li>
+            
+<li>
+    <a href="../../models/mlp/" class="dropdown-item">Multi-layer Perceptron</a>
+</li>
+    </ul>
+  </li>
                                     
   <li class="dropdown-submenu">
     <a href="#" class="dropdown-item">Predicting</a>
@@ -341,6 +467,10 @@
 <li>
     <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
 </li>
+                                    
+<li>
+    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+</li>
                                 </ul>
                             </li>
                             <li class="navitem">
@@ -504,7 +634,7 @@ Note that changing this parameter will affect the <code>PYTHONWARNINGS</code> en
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. 'auto' for default name.</li>
-<li>If class: python <code>Logger</code> object'.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
 Note that warnings will not be saved to the logger in any case.
 </blockquote>
@@ -516,14 +646,15 @@ Seed used by the random number generator. If None, the random number
 </td>
 </tr>
 </table>
+</div>
 <br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
 <h3 id="data-attributes">Data attributes</h3>
-<p>The dataset within ATOM's pipeline can be accessed at any time through multiple
- properties, e.g. calling <code>atom.train</code> will return the training set. The data can also
- be changed through these properties, e.g. <code>atom.test = atom.test.drop(0)</code> will
- drop the first row from the test set. This will also update the other data attributes.</p>
+<p>The dataset can be accessed at any time through multiple properties, e.g. calling
+ <code>atom.train</code> will return the training set. The data can also be changed through
+ these properties, e.g. <code>atom.test = atom.test.drop(0)</code> will drop the first row
+ from the test set. This will also update the other data attributes.</p>
 <p><a name="atom"></a>
 <table>
 <tr>
@@ -622,19 +753,24 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: <a href="../../models/"><code>model</code></a></strong>
+<strong>winner: <a href="../../../user_guide/#models"><code>model</code></a></strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
+<strong>pipeline: pd.Series</strong>
+<blockquote>
+Series containing all classes fitted in the pipeline. Use this attribute only to
+ access the individual classes. To visualize the pipeline, use <code>atom</code>'s __repr__
+ or <a href="../../plots/plot_pipeline">plot_pipeline</a>.
+</blockquote>
 <strong>results: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the training results with the model acronyms as index. Columns can include:
+Dataframe of the training results. Columns can include:
 <ul>
-<li><b>name:</b> Name of the model.</li>
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
-<li><b>metric_test:</b>Metric score on the test set.</li>
+<li><b>metric_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
 <li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
 <li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
@@ -703,7 +839,7 @@ inspect the pipeline.</p>
 
 <tr>
 <td><a href="#ATOMRegressor-scoring">scoring</a></td>
-<td>Print the scoring of the models for a specific metric.</td>
+<td>Returns the scores of the models for a specific metric.</td>
 </tr>
 
 <tr>
@@ -716,7 +852,7 @@ inspect the pipeline.</p>
 <p><br></p>
 <p><a name="ATOMRegressor-clear"></a>
 <pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L197">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Removes all traces of a model in the pipeline (except for the <code>errors</code>
  attribute). If all models in the pipeline are removed, the metric is reset.
@@ -759,7 +895,7 @@ Minimum verbosity level in order to print the message.
 <br /></p>
 <p><a name="ATOMRegressor-report"></a>
 <pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L250">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L260">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get an extensive profile analysis of the data. The report is rendered
  in HTML5 and CSS3 and saved to the <code>profile</code> attribute. Note that this method
@@ -812,9 +948,9 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <br></p>
 <p><a name="ATOMRegressor-scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L145">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
-Print the scoring of the models for a specific metric. If a model
+Returns the scores of the models for a specific metric. If a model
  shows a <code>XXX</code>, it means the metric failed for that specific model. This
  can happen if either the metric is unavailable for the task or if the
  model does not have a <code>predict_proba</code> method while the metric requires it.
@@ -826,7 +962,7 @@ Print the scoring of the models for a specific metric. If a model
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
 Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>.
- If None, returns the final results for the model (ignores the <code>dataset</code> parameter).
+ If None, returns the models' final results (ignores the <code>dataset</code> parameter).
 </blockquote>
 <strong>dataset: str, optional (default='test')</strong>
 <blockquote>
@@ -838,7 +974,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 <br /></p>
 <p><a name="ATOMRegressor-stats"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stats</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L168">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L178">[source]</a></div></pre>
 <div style="padding-left:3%">
 Print out a list of basic information on the dataset.
 </div>
@@ -878,14 +1014,14 @@ determine suitable parameters for the data cleaning methods.</p>
 <p><br></p>
 <p><a name="ATOMRegressor-scale"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L348">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L358">[source]</a></div></pre>
 <div style="padding-left:3%">
 Scale the features to mean=1 and std=0.
 </div>
 <br /><br /></p>
 <p><a name="ATOMRegressor-impute"></a>
 <pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L363">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L373">[source]</a></div></pre>
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
@@ -896,7 +1032,7 @@ Handle missing values according to the selected strategy. Also removes rows and
 <br /></p>
 <p><a name="ATOMRegressor-encode"></a>
 <pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L399">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L409">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the
  number of unique values in the column:
@@ -915,7 +1051,7 @@ Also replaces classes with low occurrences with the value 'other' in
 <br /></p>
 <p><a name="ATOMRegressor-outliers"></a>
 <pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L433">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L443">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the training set. Outliers are defined as values that
  lie further than <code>max_sigma</code> * standard_deviation away from the mean of the column.
@@ -1006,27 +1142,27 @@ Remove features according to the selected strategy. Ties between
 
 <p><br></p>
 <p><a name="ATOMRegressor-run"></a>
-<pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
-           needs_threshold=False, n_calls=10, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L664">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
+           n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L698">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a <a href="../../training/trainerregressor/">TrainerRegressor</a> instance.
- Using this class through <code>atom</code> allows subsequent runs with different models
- without losing previous information.
 </div>
 <br /></p>
 <p><a name="ATOMRegressor-successive-halving"></a>
-<pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-                          skip_iter=0, n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L713">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+                          needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
+                          est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L736">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a <a href="../../training/successivehalvingregressor/">SuccessiveHalvingRegressor</a> instance.
 </div>
 <br /></p>
 <p><a name="ATOMRegressor-train-sizing"></a>
-<pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-                    train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0, n_initial_points=5, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L754">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+                    needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
+                    n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L785">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a <a href="../../training/trainsizingregressor/">TrainSizingRegressor</a> instance.
 </div>
@@ -1045,12 +1181,14 @@ atom = ATOMRegressor(X, y, logger='auto', n_jobs=2, verbose=2)
 atom.outliers(strategy='min_max', max_sigma=2, include_target=True)
 
 # Fit the models to the data
-atom.run(models=['OLS', 'BR', 'CatB'],
-         metric='MSE',
-         n_calls=25,
-         n_initial_points=10,
-         bo_params={'cv': 1},
-         bagging=4)
+atom.run(
+    models=['OLS', 'BR', 'CatB'],
+    metric='MSE',
+    n_calls=25,
+    n_initial_points=10,
+    bo_params={'cv': 1},
+    bagging=4
+)
 
 # Analyze the results
 print(f&quot;The winning model is: {atom.winner.name}&quot;)
@@ -1062,12 +1200,14 @@ atom.plot_errors(figsize=(9, 6), filename='errors.png')
 atom.CatB.plot_feature_importance(filename='catboost_feature_importance.png')
 
 # Run an extra model
-atom.run(models='MLP',
-         metric='MSE',
-         n_calls=25,
-         n_initial_points=10,
-         bo_params={'cv': 1},
-         bagging=4)
+atom.run(
+    models='MLP',
+    metric='MSE',
+    n_calls=25,
+    n_initial_points=10,
+    bo_params={'cv': 1},
+    bagging=4
+)
 
 # Get the predictions for the best model on new data
 predictions = atom.predict(X_new)

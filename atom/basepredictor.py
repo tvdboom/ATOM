@@ -9,6 +9,7 @@ Description: Module containing the BasePredictor class.
 
 # Standard packages
 import numpy as np
+import pandas as pd
 from typing import Union, Optional, Sequence
 from typeguard import typechecked
 
@@ -36,8 +37,14 @@ class BasePredictor(object):
 
     @property
     def results(self):
-        """Return the _results dataframe without empty columns."""
-        return self._results.dropna(axis=1, how='all')
+        """Return the _results dataframe ordered and without empty columns."""
+        df = self._results
+
+        # If multi-index, invert the runs and reindex the models
+        if isinstance(df.index, pd.MultiIndex):
+            df = df.sort_index(level=0).reindex(self.models, level=1)
+
+        return df.dropna(axis=1, how='all')
 
     @property
     def winner(self):

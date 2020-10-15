@@ -96,7 +96,7 @@ def test_log_file_ends_with_log():
 def test_log_file_named_auto():
     """Assert that when log='auto', an automatic logging file is created."""
     BaseTransformer(logger=FILE_DIR + 'auto')
-    assert glob.glob(FILE_DIR + 'BaseTransformer_logger_*')
+    assert glob.glob(FILE_DIR + 'BaseTransformer_*')
 
 
 def test_logger_invalid_class():

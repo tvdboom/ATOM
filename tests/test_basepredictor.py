@@ -33,7 +33,22 @@ def test_models_property():
     assert atom.models_ == [atom.LR, atom.LDA]
 
 
-def test_results_property():
+def test_results_property_sorted():
+    """Assert that the results property returns sorted indices."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.train_sizing('lr')
+    atom.train_sizing('lda')
+    assert list(atom.results.index.get_level_values('frac'))[:2] == [0.2, 0.2]
+
+
+def test_results_property_reindex():
+    """Assert that the results property is reindexed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.successive_halving(['lr', 'lda', 'knn', 'rf'])
+    assert list(atom.results.index.get_level_values('model'))[-4:] == atom.models
+
+
+def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr')

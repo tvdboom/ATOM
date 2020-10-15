@@ -26,16 +26,16 @@ Strategy to crate new features. Choose from:
 </blockquote>
 <strong>n_features: int or None, optional (default=None)</strong>
 <blockquote>
-Number of newly generated features to add to the dataset (if strategy='genetic', no
- more than 1% of the population). If None, select all created.
+Number of newly generated features to add to the dataset. No more than
+ 1% of the population (for the genetic strategy). If None, select all created.
 </blockquote>
 <strong>generations: int, optional (default=20)</strong>
 <blockquote>
-Number of generations to evolve. Only if strategy='genetic'.
+Number of generations to evolve. Only for the genetic strategy.
 </blockquote>
 <strong>population: int, optional (default=500)</strong>
 <blockquote>
-Number of programs in each generation. Only if strategy='genetic'.
+Number of programs in each generation. Only for the genetic strategy.
 </blockquote>
 <strong>operators: str, sequence or None, optional (default=None)</strong>
 <blockquote>
@@ -114,11 +114,11 @@ Seed used by the random number generator. If None, the random number
 <blockquote>
 Instance used to calculate the genetic features, from
  [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
- Only if strategy='genetic'.
+ Only for the genetic strategy.
 </blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the newly created non-linear features. Only if strategy='genetic'. 
+Dataframe of the newly created non-linear features. Only for the genetic strategy.
  Columns include:
 <ul>
 <li><b>name:</b> Name of the feature (automatically created).</li>

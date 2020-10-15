@@ -36,7 +36,7 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    CAL, SCALAR, METRIC_ACRONYMS, lst, check_is_fitted, get_best_score,
+    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted, get_best_score,
     get_model_name, partial_dependence, composed, crash, plot_from_model
 )
 
@@ -329,7 +329,13 @@ class BasePlotter(object):
         if kwargs.get('title'):
             plt.title(kwargs.get('title'), fontsize=self.title_fontsize, pad=20)
         if kwargs.get('legend'):
-            plt.legend(loc=kwargs['legend'], fontsize=self.label_fontsize)
+            if len(self.models) < 6:
+                n_col = 1
+            elif len(self.models) < 9:
+                n_col = 2
+            else:
+                n_col = 3
+            plt.legend(loc=kwargs['legend'], ncol=n_col, fontsize=self.label_fontsize)
         if kwargs.get('xlabel'):
             plt.xlabel(kwargs['xlabel'], fontsize=self.label_fontsize, labelpad=12)
         if kwargs.get('ylabel'):
@@ -702,7 +708,7 @@ class BaseModelPlotter(BasePlotter):
         """Plot evaluation curves for the train and test set.
 
          Only for models that allow in-training evaluation (XGB, LGB, CastB). The
-         metric is provided by the model's package and is different for every model
+         metric is provided by the estimator's package and is different for every model
          and every task. For this reason, the method only allows plotting one model
          at a time.
 
@@ -748,7 +754,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             title="Evaluation curves" if not title else title,
             legend='best',
-            xlabel=m.get_domain()[0].name,  # First param is always the iter
+            xlabel=m.get_dimensions()[0].name,  # First param is always the iter
             ylabel=m.evals['metric'],
             filename=filename,
             display=display
@@ -2455,17 +2461,21 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             df = self._results.xs(m.name, level='model')
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
-            plt.plot(range(len(y)), y, lw=2, marker='o', label=m.name)
-            if not any(std.isna()):  # Plot fill if std is not all None
-                plt.fill_between(range(len(y)), y + std, y - std, alpha=0.3)
+            if any(std.isna()):  # Plot fill and errorbars if std is not all None
+                plt.plot(df.index.values, y, lw=2, marker='o', label=m.name)
+            else:
+                plt.plot(df.index.values, y, lw=2, marker='o')
+                plt.errorbar(df.index.values, y, std, lw=1, marker='o', label=m.name)
+                plt.fill_between(df.index.values, y + std, y - std, alpha=0.3)
 
-        plt.xlim(-0.1, max(self._results.index.get_level_values('run')) + 0.1)
-        ax.set_xticks(range(1 + max(self._results.index.get_level_values('run'))))
+        range_ = self._results.index.get_level_values('n_models')
+        plt.xlim(max(range_) + 0.1, min(range_) - 0.1)
+        ax.set_xticks(range(1, max(range_) + 1))
 
         self._plot(
             title="Successive halving results" if not title else title,
             legend='lower right',
-            xlabel='Iteration',
+            xlabel='n_models',
             ylabel=self.metric_[metric].name,
             filename=filename,
             display=display
@@ -2524,11 +2534,15 @@ class TrainSizingPlotter(BaseModelPlotter):
         for m in models:
             # Make df with rows for only that model
             df = self._results.xs(m.name, level='model')
+            x = np.multiply(df.index.values, len(self.train))
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
-            plt.plot(self._sizes, y, lw=2, marker='o', label=m.name)
-            if not any(std.isna()):  # Plot fill if std is not all None
-                plt.fill_between(self._sizes, y + std, y - std, alpha=0.3)
+            if any(std.isna()):  # Plot fill and errorbars if std is not all None
+                plt.plot(x, y, lw=2, marker='o', label=m.name)
+            else:
+                plt.plot(x, y, lw=2, marker='o')
+                plt.errorbar(x, y, std, lw=1, marker='o', label=m.name)
+                plt.fill_between(x, y + std, y - std, alpha=0.3)
 
         plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
         self._plot(
@@ -2634,16 +2648,13 @@ class ATOMPlotter(FeatureSelectorPlotter,
         # Calculate figure's limits
         params = []
         ylim = 30
-        for estimator in self.pipeline:
+        for est in self.pipeline:
             ylim += 15
             if show_params:
-                if estimator.__class__.__name__.startswith(('Train', 'Success')):
-                    params.append(['models', 'metric', 'n_calls',
-                                   'n_initial_points', 'bo_params', 'bagging'])
-                else:
-                    params.append(
-                        [key for key in inspect.getfullargspec(estimator.__init__)[0]
-                         if key not in BaseTransformer.attrs + ['self']])
+                params.append(
+                    [p for p in inspect.signature(est.__init__).parameters
+                     if p not in BaseTransformer.attrs + ['self']]
+                )
                 ylim += len(params[-1]) * 10
 
         sns.set_style('white')  # Only for this plot
@@ -2665,9 +2676,9 @@ class ATOMPlotter(FeatureSelectorPlotter,
         pos_param = ylim - 20
         pos_estimator = pos_param
 
-        for i, estimator in enumerate(self.pipeline):
+        for i, est in enumerate(self.pipeline):
             plt.annotate(
-                text=estimator.__class__.__name__,
+                text=est.__class__.__name__,
                 xy=(15, pos_estimator),
                 xytext=(30, pos_param - 3 - 15),
                 ha="left",
@@ -2681,7 +2692,7 @@ class ATOMPlotter(FeatureSelectorPlotter,
             if show_params:
                 for j, key in enumerate(params[i]):
                     plt.annotate(
-                        text=key + ': ' + str(estimator.get_params()[key]),
+                        text=key + ': ' + str(flt(getattr(est, key))),
                         xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
                         xytext=(40, pos_param - 12),
                         ha='left',

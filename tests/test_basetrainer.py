@@ -88,25 +88,41 @@ def test_bagging_parameter_to_list():
     assert trainer.bagging == [2, 2]
 
 
-def test_dimensions_is_array():
-    """Assert that the dimensions parameter works as array."""
-    dim = [Integer(100, 1000, name='max_iter')]
+def test_dimensions_all_models():
+    """Assert that the dimensions are passed to all models."""
+    dim = [Integer(10, 100, name='n_estimators')]
 
     # If more than one model
-    trainer = TrainerClassifier(['LR', 'LDA'], bo_params={'dimensions': dim})
-    pytest.raises(TypeError, trainer.run, bin_train, bin_test)
-
-    # For a single model
-    trainer = TrainerClassifier('LR', bo_params={'dimensions': {'LR': dim}})
-    assert trainer.bo_params == {'dimensions': {'LR': dim}}
+    trainer = TrainerClassifier(['XGB', 'LGB'], bo_params={'dimensions': dim})
+    trainer.run(bin_train, bin_test)
+    assert trainer.bo_params['dimensions'] == {'XGB': dim, 'LGB': dim}
 
 
-def test_dimensions_proper_naming():
-    """Assert that the correct model acronyms are used as keys."""
+def test_dimensions_per_model():
+    """Assert that the dimensions are passed per model."""
     dim = [Integer(100, 1000, name='max_iter')]
     trainer = TrainerClassifier('LR', bo_params={'dimensions': {'lr': dim}})
     trainer.run(bin_train, bin_test)
-    assert trainer.bo_params == {'dimensions': {'LR': dim}}
+    assert trainer.bo_params['dimensions'] == {'LR': dim}
+
+
+def test_est_params_all_models():
+    """Assert that est_params passes the parameters to all models."""
+    trainer = TrainerClassifier(['XGB', 'LGB'], est_params={'n_estimators': 220})
+    trainer.run(bin_train, bin_test)
+    assert trainer.lgb.estimator.get_params()['n_estimators'] == 220
+    assert trainer.xgb.estimator.get_params()['n_estimators'] == 220
+
+
+def test_est_params_per_model():
+    """Assert that est_params passes the parameters per model."""
+    trainer = TrainerClassifier(
+        models=['XGB', 'LGB'],
+        est_params={'lgb': {'n_estimators': 220}}
+    )
+    trainer.run(bin_train, bin_test)
+    assert trainer.lgb.estimator.get_params()['n_estimators'] == 220
+    assert trainer.xgb.estimator.get_params()['n_estimators'] != 220
 
 
 def test_default_metric():
@@ -135,22 +151,19 @@ def test_metric_to_list():
 
 def test_greater_is_better_parameter():
     """Assert that an error is raised if invalid length for greater_is_better."""
-    trainer = TrainerClassifier('LR', greater_is_better=[True, False])
-    trainer.run(bin_train, bin_test)
+    trainer = TrainerClassifier('LR', 'f1', greater_is_better=[True, False])
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_needs_proba_parameter():
     """Assert that an error is raised if invalid length for needs_proba."""
-    trainer = TrainerClassifier('LR', needs_proba=[True, False])
-    trainer.run(bin_train, bin_test)
+    trainer = TrainerClassifier('LR', 'f1', needs_proba=[True, False])
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
 def test_needs_threshold_parameter():
     """Assert that an error is raised if invalid length for needs_threshold."""
-    trainer = TrainerClassifier('LR', needs_threshold=[True, False])
-    trainer.run(bin_train, bin_test)
+    trainer = TrainerClassifier('LR', 'f1', needs_threshold=[True, False])
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
@@ -226,14 +239,16 @@ def test_invalid_input():
 
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
-    trainer = TrainerClassifier(['LR', 'LDA', 'LGB'],
-                                n_calls=(2, 3, 4),
-                                n_initial_points=(1, 2, 3),
-                                bagging=[2, 5, 7],
-                                random_state=1)
+    trainer = TrainerClassifier(
+        models=['LR', 'LDA', 'LGB'],
+        n_calls=(2, 3, 4),
+        n_initial_points=(1, 2, 3),
+        bagging=[2, 5, 7],
+        random_state=1
+    )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
-    assert sum(trainer.LDA.bo.index.str.startswith('Random')) == 2
+    assert sum(trainer.LDA.bo.index.str.startswith('Initial')) == 2
     assert len(trainer.lgb.metric_bagging) == 7
 
 

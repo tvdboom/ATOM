@@ -14,7 +14,7 @@ There is no magic formula in data science that can tell us which type of machine
  on how to approach problems with regard to which model to try on your data, but
  these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
- complicated models (e.g. logistic regression -> random forest -> multilayer perceptron)
+ complicated models (e.g. logistic regression -> random forest -> multi-layer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
  different data cleaning steps, different type/amount of features, tuning a new set
  of hyperparameters, etc. Refactoring the code for this purpose can be quite boring

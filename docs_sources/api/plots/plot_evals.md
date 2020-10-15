@@ -3,10 +3,10 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset='both', title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L695">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L701">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot evaluation curves for the train and test set. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). The metric is provided by the model's
+ in-training evaluation (XGB, LGB, CatB). The metric is provided by the estimator's
  package and is different for every model and every task. For this reason, the
  method only allows plotting one model at a time.
 <br /><br />

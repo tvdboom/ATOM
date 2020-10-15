@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">predict_log_proba</strong>(X, verbose=None, \*\*kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L127">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L134">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the data and make logarithmic probability predictions on new data. If
  called from a `training` instance, it will use the best model in the pipeline (under

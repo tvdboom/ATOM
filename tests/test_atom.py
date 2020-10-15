@@ -121,6 +121,13 @@ def test_train_test_split():
     assert len(atom.test) == round(test_size * len(X_bin)) - 1
 
 
+def test_repr():
+    """Assert that the repr method visualizes the pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('lr')
+    assert len(str(atom)) == 514
+
+
 # Test utility properties ================================================== >>
 
 def test_missing():
@@ -499,6 +506,7 @@ def test_call_SuccessiveHalving():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.successive_halving('lr')
+    atom.successive_halving('lda')
     assert type(atom.trainer).__name__ == 'SuccessiveHalvingClassifier'
 
     # For regression tasks
@@ -512,6 +520,7 @@ def test_call_TrainSizing():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing('lr')
+    atom.train_sizing('lda')
     assert type(atom.trainer).__name__ == 'TrainSizingClassifier'
 
     # For regression tasks

@@ -3,8 +3,9 @@
 
 As of the moment, ATOM supports Python
 [3.6](https://www.python.org/downloads/release/python-360/),
-[3.7](https://www.python.org/downloads/release/python-370/) and
-[3.8](https://www.python.org/downloads/release/python-380/).
+[3.7](https://www.python.org/downloads/release/python-370/),
+[3.8](https://www.python.org/downloads/release/python-380/) and
+[3.9](https://www.python.org/downloads/release/python-390/).
 
 <br><br>
 

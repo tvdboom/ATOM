@@ -8,7 +8,7 @@ There is no magic formula in data science that can tell us which type of machine
  on how to approach problems with regard to which model to try on your data, but
  these are often more confusing than helpful. Best practices tell
  us to start with a simple model (e.g. linear regression) and build up to more
- complicated models (e.g. logistic regression -> random forest -> multilayer perceptron)
+ complicated models (e.g. logistic regression -> random forest -> multi-layer perceptron)
  if you are not satisfied with the results. Unfortunately, different models require
  different data cleaning steps, different type/amount of features, tuning a new set
  of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
@@ -61,7 +61,8 @@ In this documentation we will consistently use terms to refer to certain concept
 * `atom`: Refers to an [ATOMClassifier](../API/ATOM/atomclassifier) or
  [ATOMRegressor](../API/ATOM/atomregressor) instance (note that all examples
  use it as variable name for the instance).
-* `model`: Refers to one of the [model](../API/models/) instances.
+* `model`: Refers to one of the [model](#models) instances.
+* **pipeline**: Refers to the collection of data cleaning, feature engineering and training steps performed by `atom`.
 * **estimator**: Actual estimator corresponding to a model. Implemented by an external package.
 * **BO**: Bayesian optimization algorithm used for hyperparameter optimization.
 * `training`: Refers to an instance of one of the classes that train and evaluate the
@@ -413,6 +414,60 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 
 
 <br><br>
+# Models
+--------
+
+ATOM provides 31 models for classification and regression tasks that can be used
+ to fit the data in the pipeline. After fitting, every model class is attached to
+ the `training` instance as an attribute. We refer to these "subclasses" as
+ `models` (see the [nomenclature](#nomenclature)). The classes contain a variety
+ of attributes and methods to help you understand how the underlying estimator
+ performed. They can be accessed using the models' acronyms, e.g. `atom.LGB` to
+ access the LightGBM's `model`. The available models and their corresponding
+ acronyms are: 
+
+* 'GP' for [Gaussian Process](../API/models/gp)
+* 'GNB' for [Gaussian Naive Bayes](../API/models/gnb)
+* 'MNB' for [Multinomial Naive Bayes](../API/models/mnb)
+* 'BNB' for [Bernoulli Naive Bayes](../API/models/bnb)
+* 'CatNB' for [Categorical Naive Bayes](../API/models/catnb)
+* 'CNB' for [Complement Naive Bayes](../API/models/cnb)
+* 'OLS' for [Ordinary Least Squares](../API/models/ols)
+* 'Ridge' for [Ridge Classification/Regression](../API/models/ridge)
+* 'Lasso' for [Lasso Regression](../API/models/lasso)
+* 'EN' for [Elastic Net](../API/models/en)
+* 'BR' for [Bayesian Ridge](../API/models/br)
+* 'ARD' for [Automated Relevance Determination](../API/models/ard)
+* 'LR' for [Logistic Regression](../API/models/lr)
+* 'LDA' for [Linear Discriminant Analysis](../API/models/lda)
+* 'QDA' for [Quadratic Discriminant Analysis](../API/models/qda)
+* 'KNN' for [K-Nearest Neighbors](../API/models/knn)
+* 'RNN' for [Radius Nearest Neighbors](../API/models/rnn)
+* 'Tree' for [Decision Tree](../API/models/tree)
+* 'Bag' for [Bagging](../API/models/bag)
+* 'ET' for [Extra-Trees](../API/models/et)
+* 'RF' for [Random Forest](../API/models/rf)
+* 'AdaB' for [AdaBoost](../API/models/adab)
+* 'GBM' for [Gradient Boosting Machine](../API/models/gbm)
+* 'XGB' for [XGBoost](../API/models/xgb)
+* 'LGB' for [LightGBM](../API/models/lgb)
+* 'CatB' for [CatBoost](../API/models/catb)
+* 'lSVM' for [Linear-SVM](../API/models/lsvm)
+* 'kSVM' for [Kernel-SVM](../API/models/ksvm)
+* 'PA' for [Passive Aggressive](../API/models/pa)
+* 'SGD' for [Stochastic Gradient Descent](../API/models/sgd)
+* 'MLP' for [Multi-layer Perceptron](../API/models/mlp)
+
+
+!!! tip
+    You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.
+
+!!! warning
+    The `models` should not be initialized by the user! Only use them through the
+    `training` instances.
+
+
+<br><br>
 # Training
 ----------
 
@@ -442,11 +497,35 @@ The direct fashion repeats the aforementioned steps only once, while the other t
  `atom` through the [run](../API/ATOM/atomclassifier/#atomclassifier-run),
  [successive_halving](../API/ATOM/atomclassifier/#atomclassifier-successive-halving)
  and [train_sizing](../API/ATOM/atomclassifier/#atomclassifier-train-sizing) methods
- respectively.
+ respectively. Every approach should be called from an independent instance of `atom`.
+ Subsequent runs from different approaches will remove all information from previous
+ trainings from the pipeline. You can, however, rerun the same approach multiple times.
+ In that case, the results are combined. Note that if you rerun the same model, only
+ the last `model` is saved.
+
+For example, here atom will "forget" the successive halving run.
+```python
+atom = ATOMClassifier(X, y)
+atom.successive_halving(['Tree', 'Bag'])
+atom.run('LGB') 
+```
+In this case, both the Ridge and Lasso regressors are kept in the pipeline.
+```python
+atom = ATOMRegressor(X, y)
+atom.run('Ridge')
+atom.run('Lasso')
+```
+
+!!!note
+    Reruns are only allowed if the same metric is used. Leaving the `metric` parameter
+    empty after the first run will automatically use the one in the pipeline.
+
 <br>
 
 Additional information:
 
+* Models are called through their [acronyms](#models), e.g. `atom.run(models='RF')`
+  will train a Random Forest.
 * If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
   in the `errors` attribute. Note that in that case there will be no `model` for
@@ -456,17 +535,6 @@ Additional information:
   least 20% higher than the test set).
 * The winning `model` (the one with the highest `mean_bagging` or `metric_test`)
   will be attached to the `winner` attribute.
-
-
-<br>
-
-### Models
-
-ATOM provides 27 models for classification and regression tasks that can be used
- to fit the data in the pipeline. After fitting, every [`model`](../API/models/) is
- attached to the `training` instance as an attribute. Models are called through the
- `models` parameter using their corresponding acronym's, e.g. `atom.run(models='RF')`
- to run a Random forest model.
 
 <br>
 
@@ -533,6 +601,32 @@ When fitting multi-metric runs, the resulting scores will return a list of metri
 
 <br>
 
+### Parameter customization
+
+By default, the parameters every estimator uses are the same default parameters they
+ get from their respective packages. To select different ones, use `est_params`. There
+ are two ways to add custom parameters to the models: adding them directly to the
+ dictionary as key-value pairs or through multiple dicts with the model names as keys.
+
+Adding the parameters directly to `est_params` will share them across all models
+ in the pipeline. In this example, both the XGBoost and the LightGBM model
+ will use n_estimators=200. Make sure all the models do have the specified parameters
+ or an exception will be raised!
+
+    atom.run(['XGB', 'LGB'], est_params={'n_estimators': 200})
+
+To specify parameters per model, use the model name as key and a dict of the
+ parameters as value. In this example, the XGBoost model will use n_estimators=200
+ and the Multi-layer Perceptron will use one hidden layer with 75 neurons.
+
+    atom.run(['XGB', 'MLP'], est_params={'XGB': {'n_estimators': 200}, 'MLP': {'hidden_layer_sizes': (75,)}})
+
+!!!note
+    If a parameter is specified through `est_params`, it will be ignored by the
+    bayesian optimization! 
+
+<br>
+
 ### Hyperparameter optimization
 
 In order to achieve maximum performance, we need to tune an estimator's hyperparameters
@@ -557,18 +651,22 @@ There are many possibilities to tune the BO to your liking. Use `n_calls` and
  performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf).
 
 !!!note
-    The `n_calls` parameter includes the iterations in `n_initial_points`. Calling
+    The `n_calls` parameter includes the iterations in `n_initial_points`, i.e. calling
     `atom.run('LR', n_calls=20, n_intial_points=10)` will run 20 iterations of which
     the first 10 are random.
+
+!!!note
+    If `n_initial_points=1`, the first trial will be equal to the estimator's
+    default parameters.
 
 Other settings can be changed through the `bo_params` parameter, a dictionary where
  every key-value combination can be used to further customize the BO.
 
 By default, the hyperparameters and corresponding dimensions per model are predefined
- by ATOM. Use the `dimensions` key to use custom ones. Use an array for only one model
- and a dictionary with the model names as keys if there are multiple models in the
- pipeline. Note that the provided search space dimensions must be compliant with
- skopt's API.
+ by ATOM. Use the `dimensions` key to use custom ones. Just like with `est_params`,
+ you can share the same dimensions across models or use a dictionary with the model
+ names as keys to specify the dimensions for every individual model. Note that the
+ provided search space dimensions must be compliant with skopt's API.
 
     atom.run('LR', n_calls=10, bo_params={'dimensions': [Integer(100, 1000, name='max_iter')]})
 
@@ -602,17 +700,15 @@ After fitting the estimator, you can asses the robustness of the model using
 
 ### Early stopping
 
-[XGBoost](https://xgboost.readthedocs.io/en/latest/python/python_api.html),
- [LighGBM](https://lightgbm.readthedocs.io/en/latest/) and
- [CatBoost](https://catboost.ai/) allow in-training evaluation. This means that the
- estimator is evaluated after every round of the training. Use the `early_stopping`
- key in `bo_params` to stop the training early if it didn't improve in the last
- `early_stopping` rounds. This can save the pipeline much time that would otherwise
- be wasted on an estimator that is unlikely to improve further. Note that this
- technique will be applied both during the BO and at the final fit on the complete
- training set. After fitting, the `model` will get the `evals` attribute, a
- dictionary of the train and test performances per round (also if early stopping 
- wasn't applied).
+[XGBoost](../API/models/xgb), [LighGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
+ allow in-training evaluation. This means that the estimator is evaluated after
+ every round of the training. Use the `early_stopping` key in `bo_params` to stop
+ the training early if it didn't improve in the last `early_stopping` rounds. This
+ can save the pipeline much time that would otherwise be wasted on an estimator
+ that is unlikely to improve further. Note that this technique will be applied
+ both during the BO and at the final fit on the complete training set. After
+ fitting, the `model` will get the `evals` attribute, a dictionary of the train
+ and test performances per round (also if early stopping wasn't applied).
 
 !!!tip
     Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training
@@ -720,7 +816,7 @@ The available prediction methods are a selection of the most common methods for
 </table>
 
 Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the `model`'s [prediction attributes](../API/models/#prediction-attributes),
+ set. You can access them through the `model`'s prediction attributes,
  e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -728,7 +824,7 @@ Except for transform, the prediction methods can be calculated on the train and 
 
 !!!note
     Many of the [plots](#plots) use the prediction attributes. This can considerably
-    increase the size of the class for large datasets. Use the [reset_prediction_attributes](../API/models/#models-reset-prediction-attributes)
+    increase the size of the class for large datasets. Use the `reset_prediction_attributes`
     method if you need to free some memory!
 
 

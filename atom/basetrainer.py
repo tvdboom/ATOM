@@ -18,8 +18,9 @@ from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, merge, to_df, to_series, get_best_score,
-    time_to_string, get_model_name, get_metric, get_default_metric, clear
+    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, merge, to_df,
+    to_series, get_best_score, time_to_string, get_model_name,
+    get_metric, get_default_metric, clear
 )
 
 
@@ -75,8 +76,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         technically be performing a random search. If sequence, the n-th
         value will apply to the n-th model in the pipeline.
 
+    est_params: dict, optional (default={})
+        Additional parameters for the estimators. See the corresponding
+        documentation for the available options. For multiple models, use
+        the acronyms as key and a dictionary of the parameters as value.
+
     bo_params: dict, optional (default={})
-        Dictionary of extra keyword arguments for the BO. See bayesian_optimization
+        Additional parameters to for the BO. See bayesian_optimization
         in basemodel.py for the available options.
 
     bagging: int, sequence or None, optional (default=None)
@@ -115,7 +121,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python `Logger` object'.
+        - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -124,7 +130,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     """
 
     def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, n_calls, n_initial_points, bo_params,
+                 needs_threshold, n_calls, n_initial_points, est_params, bo_params,
                  bagging, n_jobs, verbose, warnings, logger, random_state):
         super().__init__(n_jobs=n_jobs,
                          verbose=verbose,
@@ -134,12 +140,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Parameter attributes
         self.models = models
-        self.metric_ = metric
+        self.metric_ = lst(metric)
         self.greater_is_better = greater_is_better
         self.needs_proba = needs_proba
         self.needs_threshold = needs_threshold
         self.n_calls = n_calls
         self.n_initial_points = n_initial_points
+        self.est_params = est_params
         self.bo_params = bo_params
         self.bagging = bagging
 
@@ -153,9 +160,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Model attributes
         self.errors = {}
         self._results = pd.DataFrame(
-            columns=['name', 'metric_bo', 'time_bo',
-                     'metric_train', 'metric_test', 'time_fit',
-                     'mean_bagging', 'std_bagging', 'time_bagging', 'time'])
+            columns=['metric_bo', 'time_bo', 'metric_train',
+                     'metric_test', 'time_fit', 'mean_bagging',
+                     'std_bagging', 'time_bagging', 'time'])
 
     def _params_to_attr(self, *args):
         """Attach the provided data as attributes of the class."""
@@ -244,27 +251,44 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Check dimensions params =========================================== >>
 
         if self.bo_params.get('dimensions'):
-            # Dimensions can be array for one model or dict if more
-            if not isinstance(self.bo_params.get('dimensions'), dict):
-                if len(self.models) != 1:
-                    raise TypeError(
-                        "Invalid type for the dimensions parameter. For >1 "
-                        "models, use a dictionary with the model names as keys!")
-                else:
-                    self.bo_params['dimensions'] = \
-                        {self.models[0]: self.bo_params['dimensions']}
-
-            # Assign proper model name to key of dimensions dict
             dimensions = {}
-            for key in self.bo_params['dimensions']:
-                dimensions[get_model_name(key)] = self.bo_params['dimensions'][key]
+            for model in self.models:
+                # If not dict, the dimensions are for all models
+                if not isinstance(self.bo_params['dimensions'], dict):
+                    dimensions[model] = self.bo_params['dimensions']
+                else:
+                    # Dimensions for every specific model
+                    for key, value in self.bo_params['dimensions'].items():
+                        # Parameters for this model only
+                        if key.lower() == model.lower():
+                            dimensions[model] = value
+
             self.bo_params['dimensions'] = dimensions
+
+        # Prepare est_params ================================================ >>
+
+        if self.est_params:
+            est_params = {}
+            for model in self.models:
+                est_params[model] = {}
+
+                for key, value in self.est_params.items():
+                    # Parameters for this model only
+                    if key.lower() == model.lower():
+                        est_params[model].update(value)
+                    # Parameters for all models
+                    elif key.lower() not in map(str.lower, self.models):
+                        est_params[model].update({key: value})
+
+            self.est_params = est_params
 
         # Check validity metric ============================================= >>
 
-        if not self.metric_:
+        if not self.metric_[0]:
             self.metric_ = [get_default_metric(self.task)]
-        else:
+
+        # Ignore if it's the same metric as previous call
+        elif any([not hasattr(m, 'name') for m in self.metric_]):
             self.metric_ = self._prepare_metric(
                 metric=self.metric_,
                 gib=self.greater_is_better,
@@ -279,35 +303,31 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
-        """Return a list of metric scorers given the parameters."""
-        if not isinstance(metric, (list, tuple)):
-            metric = [metric]
-
-        # Check metric parameters
+        """Return a list of scorers given the parameters."""
         if isinstance(gib, (list, tuple)):
             if len(gib) != len(metric):
-                raise ValueError("Invalid value for the greater_is_better "
-                                 "parameter. Length should be equal to the number "
-                                 f"of metrics, got len(metric)={len(metric)} "
-                                 f"and len(greater_is_better)={len(gib)}.")
+                raise ValueError(
+                    "Invalid value for the greater_is_better parameter. Length "
+                    "should be equal to the number of metrics, got len(metric)="
+                    f"{len(metric)} and len(greater_is_better)={len(gib)}.")
         else:
             gib = [gib for _ in metric]
 
         if isinstance(needs_proba, (list, tuple)):
             if len(needs_proba) != len(metric):
-                raise ValueError("Invalid value for the needs_proba " +
-                                 "parameter. Length should be equal to the number "
-                                 f"of metrics, got len(metric)={len(metric)} "
-                                 f"and len(needs_proba)={len(needs_proba)}.")
+                raise ValueError(
+                    "Invalid value for the needs_proba parameter. Length should "
+                    "be equal to the number of metrics, got len(metric)="
+                    f"{len(metric)} and len(needs_proba)={len(needs_proba)}.")
         else:
             needs_proba = [needs_proba for _ in metric]
 
         if isinstance(needs_threshold, (list, tuple)):
             if len(needs_threshold) != len(metric):
-                raise ValueError("Invalid value for the needs_threshold "
-                                 "parameter. Length should be equal to the number "
-                                 f"of metrics, got len(metric)={len(metric)} "
-                                 f"and len(needs_threshold)={len(needs_threshold)}.")
+                raise ValueError(
+                    "Invalid value for the needs_threshold parameter. Length should "
+                    "be equal to the number of metrics, got len(metric)="
+                    f"{len(metric)} and len(needs_threshold)={len(needs_threshold)}.")
         else:
             needs_threshold = [needs_threshold for _ in metric]
 
@@ -340,9 +360,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             model_time = time()
 
-            # Define model class
-            setattr(self, m, MODEL_LIST[m](self))
-            subclass = getattr(self, m)
+            # Define model subclass
+            subclass = MODEL_LIST[m](self)
+            setattr(self, m, subclass)
             setattr(self, m.lower(), subclass)  # Lowercase as well
 
             # Create scaler if model needs scaling and data not already scaled
@@ -353,11 +373,15 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Run Bayesian Optimization
                 # Use copy of kwargs to not delete original in method
                 # Shallow copy is enough since we only delete entries in basemodel
-                if hasattr(subclass, 'get_domain') and n_calls > 0:
+                if hasattr(subclass, 'get_dimensions') and n_calls > 0:
                     subclass.bayesian_optimization(
-                        n_calls, n_initial_points, self.bo_params.copy())
+                        n_calls=n_calls,
+                        n_initial_points=n_initial_points,
+                        est_params=self.est_params.get(subclass.name, {}),
+                        bo_params=self.bo_params.copy()
+                    )
 
-                subclass.fit()
+                subclass.fit(self.est_params.get(subclass.name, {}))
 
                 if bagging:
                     subclass.bagging(bagging)
@@ -410,9 +434,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         for m in self.models_:
             # Append model row to results
-            values = [m.longname, m.metric_bo, m.time_bo,
-                      m.metric_train, m.metric_test, m.time_fit,
-                      m.mean_bagging, m.std_bagging, m.time_bagging, m.time]
+            values = [m.metric_bo, m.time_bo, m.metric_train,
+                      m.metric_test, m.time_fit, m.mean_bagging,
+                      m.std_bagging, m.time_bagging, m.time]
             m._results.loc[m.name] = values
             results.loc[m.name] = values
 

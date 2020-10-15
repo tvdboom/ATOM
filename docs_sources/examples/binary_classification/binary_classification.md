@@ -1,7 +1,7 @@
 # Binary classification
 ---------------------------------
 
-This example shows how we can use ATOM to perform a variety of data cleaning steps in order to prepare the data for modelling. Then, we compare the prediction performance of an Extra-Trees and a Random Forest.
+This example shows how we can use ATOM to perform a variety of data cleaning steps in order to prepare the data for modelling. Then, we compare the performances of two tree-based models.
 
 The data used is a variation on the Australian weather dataset from [https://www.kaggle.com/jsphyg/weather-dataset-rattle-package](https://www.kaggle.com/jsphyg/weather-dataset-rattle-package). The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target `RainTomorrow`.
 
@@ -11,7 +11,6 @@ The data used is a variation on the Australian weather dataset from [https://www
 ```python
 # Import packages
 import pandas as pd
-from sklearn.metrics import fbeta_score
 from atom import ATOMClassifier
 ```
 
@@ -57,59 +56,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>135379</th>
-      <td>AliceSprings</td>
-      <td>22.4</td>
-      <td>35.4</td>
-      <td>0.0</td>
-      <td>4.8</td>
-      <td>11.2</td>
+      <th>86261</th>
+      <td>Cairns</td>
+      <td>21.4</td>
+      <td>31.7</td>
+      <td>0.2</td>
+      <td>9.6</td>
+      <td>8.4</td>
       <td>ESE</td>
-      <td>33.0</td>
+      <td>35.0</td>
     </tr>
     <tr>
-      <th>55572</th>
-      <td>Ballarat</td>
-      <td>11.7</td>
-      <td>19.8</td>
+      <th>5406</th>
+      <td>BadgerysCreek</td>
+      <td>15.0</td>
+      <td>24.8</td>
       <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NNE</td>
-      <td>48.0</td>
+      <td>E</td>
+      <td>30.0</td>
     </tr>
     <tr>
-      <th>111664</th>
-      <td>Witchcliffe</td>
-      <td>3.9</td>
-      <td>15.4</td>
-      <td>5.6</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NW</td>
-      <td>43.0</td>
+      <th>38335</th>
+      <td>WaggaWagga</td>
+      <td>10.9</td>
+      <td>29.1</td>
+      <td>0.2</td>
+      <td>7.0</td>
+      <td>9.1</td>
+      <td>WSW</td>
+      <td>54.0</td>
     </tr>
     <tr>
-      <th>6661</th>
-      <td>Cobar</td>
-      <td>21.6</td>
-      <td>34.9</td>
-      <td>0.0</td>
-      <td>11.2</td>
-      <td>NaN</td>
-      <td>NNE</td>
-      <td>41.0</td>
-    </tr>
-    <tr>
-      <th>78634</th>
-      <td>Watsonia</td>
-      <td>13.6</td>
-      <td>33.3</td>
-      <td>0.0</td>
+      <th>60531</th>
+      <td>Sale</td>
       <td>8.0</td>
-      <td>12.3</td>
-      <td>N</td>
-      <td>37.0</td>
+      <td>29.1</td>
+      <td>0.0</td>
+      <td>4.4</td>
+      <td>10.6</td>
+      <td>ESE</td>
+      <td>35.0</td>
+    </tr>
+    <tr>
+      <th>105879</th>
+      <td>Woomera</td>
+      <td>15.0</td>
+      <td>28.2</td>
+      <td>0.0</td>
+      <td>14.2</td>
+      <td>NaN</td>
+      <td>S</td>
+      <td>31.0</td>
     </tr>
   </tbody>
 </table>
@@ -152,41 +151,30 @@ atom = ATOMClassifier(X, y='RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False
 
 
 ```python
-# We can change the data attributes in between the pipeline
-# Note that we can only replace it with a new dataframe!
-atom.X = atom.X.assign(AvgTemp=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
-
-# This will automatically update all other data attributes
-assert 'AvgTemp' in atom.dataset
-```
-
-
-```python
 # Impute missing values
 atom.impute(strat_num='knn', strat_cat='drop', min_frac_rows=0.8)
 ```
 
     Fitting Imputer...
     Imputing missing values...
-     --> Dropping 778 rows for containing less than 80% non-missing values.
-     --> Imputing 5 missing values using the KNN imputer in feature MinTemp.
-     --> Imputing 3 missing values using the KNN imputer in feature MaxTemp.
-     --> Imputing 31 missing values using the KNN imputer in feature Rainfall.
-     --> Imputing 2314 missing values using the KNN imputer in feature Evaporation.
-     --> Imputing 2645 missing values using the KNN imputer in feature Sunshine.
-     --> Dropping 201 rows due to missing values in feature WindGustDir.
+     --> Dropping 774 rows for containing less than 80% non-missing values.
+     --> Imputing 7 missing values using the KNN imputer in feature MinTemp.
+     --> Imputing 5 missing values using the KNN imputer in feature MaxTemp.
+     --> Imputing 33 missing values using the KNN imputer in feature Rainfall.
+     --> Imputing 2315 missing values using the KNN imputer in feature Evaporation.
+     --> Imputing 2648 missing values using the KNN imputer in feature Sunshine.
+     --> Dropping 202 rows due to missing values in feature WindGustDir.
      --> Dropping 358 rows due to missing values in feature WindDir9am.
      --> Dropping 15 rows due to missing values in feature WindDir3pm.
      --> Imputing 17 missing values using the KNN imputer in feature Humidity9am.
-     --> Imputing 52 missing values using the KNN imputer in feature Humidity3pm.
+     --> Imputing 54 missing values using the KNN imputer in feature Humidity3pm.
      --> Imputing 37 missing values using the KNN imputer in feature Pressure9am.
      --> Imputing 34 missing values using the KNN imputer in feature Pressure3pm.
      --> Imputing 1891 missing values using the KNN imputer in feature Cloud9am.
-     --> Imputing 1977 missing values using the KNN imputer in feature Cloud3pm.
+     --> Imputing 1979 missing values using the KNN imputer in feature Cloud3pm.
      --> Imputing 4 missing values using the KNN imputer in feature Temp9am.
-     --> Imputing 31 missing values using the KNN imputer in feature Temp3pm.
-     --> Dropping 30 rows due to missing values in feature RainToday.
-     --> Imputing 4 missing values using the KNN imputer in feature AvgTemp.
+     --> Imputing 33 missing values using the KNN imputer in feature Temp3pm.
+     --> Dropping 31 rows due to missing values in feature RainToday.
     
 
 
@@ -212,14 +200,14 @@ atom.stats()  # Note the balanced training set
 ```
 
     Oversampling with SMOTE...
-     --> Adding 2302 rows to category: Yes.
+     --> Adding 2303 rows to category: Yes.
     
     Dataset stats ================= >>
-    Shape: (8030, 23)
+    Shape: (8033, 22)
     Scaled: False
     ----------------------------------
-    Train set size: 6885
-    Test set size: 1145
+    Train set size: 6887
+    Test set size: 1146
     ----------------------------------
     Train set balance: No:Yes <==> 1.1:1.0
     Test set balance: No:Yes <==> 4.1:1.0
@@ -227,60 +215,52 @@ atom.stats()  # Note the balanced training set
     Instances in RainTomorrow per class:
     |        |    total |    train_set |    test_set |
     |:-------|---------:|-------------:|------------:|
-    | 0: No  |     4543 |         3624 |         919 |
-    | 1: Yes |     3487 |         3261 |         226 |
+    | 0: No  |     4545 |         3625 |         920 |
+    | 1: Yes |     3488 |         3262 |         226 |
     
     
 
 
 ```python
-# Define a custom metric
-def f2_score(y_true, y_pred):
-    return fbeta_score(y_true, y_pred, beta=2)
-
 # Fit the EXtra-Trees and Random Forest to the data
-atom.run(models=['et', 'rf'],
-         metric=f2_score,
-         n_calls=0,
-         bagging=5,
-         verbose=1)
+atom.run(models=['et', 'rf'], metric='f1', bagging=5, verbose=1)
 ```
 
     
     Running pipeline ============================= >>
     Models in pipeline: ET, RF
-    Metric: f2_score
+    Metric: f1
     
     
     Results for Extra-Trees:         
-    Fitting -----------------------------------------
-    Score on the train set --> f2_score: 1.0000
-    Score on the test set  --> f2_score: 0.5474
-    Time elapsed: 0.191s
+    Fit ---------------------------------------------
+    Score on the train set --> f1: 1.0000
+    Score on the test set  --> f1: 0.6099
+    Time elapsed: 0.218s
     Bagging -----------------------------------------
-    Score --> f2_score: 0.6027 ± 0.0190
-    Time elapsed: 0.843s
+    Score --> f1: 0.6158 ± 0.0159
+    Time elapsed: 0.874s
     -------------------------------------------------
-    Total time: 1.038s
+    Total time: 1.095s
     
     
     Results for Random Forest:         
-    Fitting -----------------------------------------
-    Score on the train set --> f2_score: 1.0000
-    Score on the test set  --> f2_score: 0.5959
-    Time elapsed: 0.295s
+    Fit ---------------------------------------------
+    Score on the train set --> f1: 1.0000
+    Score on the test set  --> f1: 0.6028
+    Time elapsed: 0.301s
     Bagging -----------------------------------------
-    Score --> f2_score: 0.6087 ± 0.0113
-    Time elapsed: 1.291s
+    Score --> f1: 0.6154 ± 0.0042
+    Time elapsed: 1.285s
     -------------------------------------------------
     Total time: 1.589s
     
     
     Final results ========================= >>
-    Duration: 2.627s
+    Duration: 2.686s
     ------------------------------------------
-    Extra-Trees   --> f2_score: 0.603 ± 0.019 ~
-    Random Forest --> f2_score: 0.609 ± 0.011 ~ !
+    Extra-Trees   --> f1: 0.616 ± 0.016 ~ !
+    Random Forest --> f1: 0.615 ± 0.004 ~
     
 
 ## Analyze the results
@@ -299,13 +279,13 @@ print('Score on the test set: ', atom.winner.metric_test)
 ```
 
     Results ===================== >>
-    Extra-Trees   --> f2_score: 0.603 ± 0.019 ~
-    Random Forest --> f2_score: 0.609 ± 0.011 ~
+    Extra-Trees   --> f1: 0.616 ± 0.016 ~
+    Random Forest --> f1: 0.615 ± 0.004 ~
     
     
-    And the winner is the Random Forest model!!
+    And the winner is the Extra-Trees model!!
     Score on the training set:  1.0
-    Score on the test set:  0.5958781362007168
+    Score on the test set:  0.6099290780141844
     
 
 **We can make many plots to check the performance of the models**
@@ -318,7 +298,7 @@ atom.winner.plot_probabilities()
 ```
 
 
-![png](output_14_0.png)
+![png](output_13_0.png)
 
 
 
@@ -329,7 +309,7 @@ atom.winner.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps
 ```
 
 
-![png](output_15_0.png)
+![png](output_14_0.png)
 
 
 
@@ -340,9 +320,9 @@ atom.plot_prc(title="PRC comparison of the models")
 ```
 
 
-![png](output_16_0.png)
+![png](output_15_0.png)
 
 
 
-![png](output_16_1.png)
+![png](output_15_1.png)
 

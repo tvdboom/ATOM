@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2607">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot a diagram of every estimator in `atom`'s pipeline.
  <br /><br />
@@ -48,17 +48,21 @@ atom = ATOMClassifier(X, y)
 atom.impute(strat_num='median', strat_cat='drop', min_frac_rows=0.8)
 atom.encode(strategy='LeaveOneOut', max_onehot=8, frac_to_other=0.02)
 atom.outliers(strategy='drop', max_sigma=4, include_target=False)
-atom.feature_selection(strategy='PCA',
-                       n_features=10,
-                       max_frac_repeated=1.,
-                       max_correlation=0.7)
+atom.feature_selection(
+    strategy='PCA',
+    n_features=10,
+    max_frac_repeated=1.,
+    max_correlation=0.7
+)
 
-atom.run(['GBM', 'LGB'],
-         metric='recall_weighted',
-         n_calls=(10, 20),
-         n_initial_points=(5, 12),
-         bo_params={'base_estimator': 'RF', 'cv': 1, 'max_time': 1000},
-         bagging=4)
+atom.run(
+    models=['GBM', 'LGB'],
+    metric='recall_weighted',
+    n_calls=(10, 20),
+    n_initial_points=(5, 12),
+    bo_params={'base_estimator': 'RF', 'cv': 1, 'max_time': 1000},
+    bagging=4
+)
 
 atom.plot_pipeline()
 ```

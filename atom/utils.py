@@ -72,8 +72,8 @@ OPTIONAL_PACKAGES = (
 )
 
 # List of models that only work for regression/classification tasks
-ONLY_CLASS = ['BNB', 'GNB', 'MNB', 'LR', 'LDA', 'QDA']
-ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR']
+ONLY_CLASS = ['GNB', 'MNB', 'BNB', 'CatNB', 'CNB', 'LR', 'LDA', 'QDA']
+ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR', 'ARD']
 
 METRIC_ACRONYMS = dict(
     ap='average_precision',
@@ -133,13 +133,13 @@ BALANCER_TYPES = dict(
 # Functions ================================================================= >>
 
 def flt(item):
-    """Return value if item is list of length 1."""
-    return item[0] if isinstance(item, list) and len(item) == 1 else item
+    """Return value if item is sequence of length 1."""
+    return item[0] if isinstance(item, (list, tuple)) and len(item) == 1 else item
 
 
 def lst(item):
-    """Return list if item is not a list."""
-    return [item] if not isinstance(item, list) else item
+    """Return list if item is not a sequence."""
+    return [item] if not isinstance(item, (list, tuple)) else item
 
 
 def merge(X, y):
@@ -280,7 +280,7 @@ def prepare_logger(logger, class_name):
         - If None: No logger.
         - If bool: True for logging file with default name. False for no logger.
         - If string: name of the logging file. 'auto' for default name.
-        - If class: python `Logger` object'.
+        - If class: python `Logger` object.
 
         The default name created by ATOM contains the class name followed by the
         timestamp  of the logger's creation, e.g. ATOMClassifier_
@@ -307,7 +307,7 @@ def prepare_logger(logger, class_name):
             logger += '.log'
         if logger == 'auto.log' or logger.endswith('/auto.log'):
             current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
-            logger = logger.replace('auto', class_name + '_logger_' + current)
+            logger = logger.replace('auto', class_name + '_' + current)
 
         # Define file handler and set formatter
         file_handler = logging.FileHandler(logger)
@@ -794,7 +794,6 @@ def method_to_log(f):
         logger = args[0].logger if hasattr(args[0], 'logger') else args[0].T.logger
 
         if logger is not None:
-            # For the __init__ method, call extra arguments from api.py
             if f.__name__ != '__init__':
                 logger.info('')
             logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")

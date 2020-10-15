@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None, **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L290">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L300">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform new data through all the pre-processing steps in the pipeline. By default,
  all transformers are included except [outliers](../../ATOM/atomclassifier/#atomclassifier-outliers)
