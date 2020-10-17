@@ -587,59 +587,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>3118</th>
-      <td>BadgerysCreek</td>
-      <td>11.7</td>
-      <td>23.2</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SW</td>
+      <th>131534</th>
+      <td>Launceston</td>
+      <td>13.3</td>
+      <td>16.7</td>
       <td>28.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NW</td>
+      <td>61.0</td>
     </tr>
     <tr>
-      <th>18965</th>
+      <th>20368</th>
       <td>NorahHead</td>
-      <td>10.2</td>
-      <td>19.4</td>
+      <td>15.1</td>
+      <td>23.1</td>
       <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
       <td>SSE</td>
-      <td>30.0</td>
-    </tr>
-    <tr>
-      <th>11196</th>
-      <td>CoffsHarbour</td>
-      <td>9.7</td>
-      <td>21.2</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>NW</td>
-      <td>26.0</td>
-    </tr>
-    <tr>
-      <th>62283</th>
-      <td>Sale</td>
-      <td>8.4</td>
-      <td>21.7</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>WSW</td>
       <td>41.0</td>
     </tr>
     <tr>
-      <th>92461</th>
-      <td>Townsville</td>
-      <td>11.1</td>
-      <td>27.1</td>
+      <th>13071</th>
+      <td>Moree</td>
+      <td>7.5</td>
+      <td>27.6</td>
       <td>0.0</td>
-      <td>7.6</td>
-      <td>10.7</td>
-      <td>ENE</td>
-      <td>37.0</td>
+      <td>5.2</td>
+      <td>10.2</td>
+      <td>WNW</td>
+      <td>39.0</td>
+    </tr>
+    <tr>
+      <th>73084</th>
+      <td>Portland</td>
+      <td>10.0</td>
+      <td>21.6</td>
+      <td>0.0</td>
+      <td>6.2</td>
+      <td>8.5</td>
+      <td>E</td>
+      <td>26.0</td>
+    </tr>
+    <tr>
+      <th>32906</th>
+      <td>SydneyAirport</td>
+      <td>19.6</td>
+      <td>29.3</td>
+      <td>0.0</td>
+      <td>4.0</td>
+      <td>6.4</td>
+      <td>WNW</td>
+      <td>69.0</td>
     </tr>
   </tbody>
 </table>
@@ -655,17 +655,19 @@ atom.encode()
 <pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
 Applying data cleaning...
+ --&gt; Label-encoding the target column.
 
 Dataset stats ================= &gt;&gt;
 Shape: (142193, 22)
-Missing values: 292032
+Missing values: 316559
 Categorical columns: 5
 Scaled: False
 ----------------------------------
-Size of training set: 113755
-Size of test set: 28438
+Train set size: 113755
+Test set size: 28438
 ----------------------------------
-Class balance: No:Yes &lt;==&gt; 3.5:1.0
+Dataset balance: No:Yes &lt;==&gt; 3.5:1.0
+----------------------------------
 Instances in RainTomorrow per class:
 |        |    total |    train_set |    test_set |
 |:-------|---------:|-------------:|------------:|
@@ -696,227 +698,232 @@ Imputing missing values...
  --&gt; Imputing 702 missing values with median in feature Temp3pm.
  --&gt; Imputing 640 missing values with most_frequent in feature RainToday.
 Fitting Encoder...
+
+
+A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().
+
+
 Encoding categorical columns...
- --&gt; Target-encoding feature Location. Contains 45 unique categories.
- --&gt; Target-encoding feature WindGustDir. Contains 16 unique categories.
- --&gt; Target-encoding feature WindDir9am. Contains 16 unique categories.
- --&gt; Target-encoding feature WindDir3pm. Contains 16 unique categories.
+ --&gt; LeaveOneOut-encoding feature Location. Contains 45 unique categories.
+ --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 unique categories.
+ --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 unique categories.
+ --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique categories.
  --&gt; Label-encoding feature RainToday. Contains 2 unique categories.
 </code></pre>
 <pre><code class="python"># We can analyze the impact of the training set's size on a LightGBM model
 atom.train_sizing('lgb', train_sizes=np.linspace(0.1, 1, 9), bagging=4)
 </code></pre>
 
-<pre><code>Running pipeline ============================= &gt;&gt;
-Models in pipeline: LGB
+<pre><code>Training ===================================== &gt;&gt;
+Models: LGB
 Metric: f1
 
 
-Run 0 (10% of set) ============================&gt;&gt;
-Size of training set: 11375
-Size of test set: 28438
+Run: 0 ================================ &gt;&gt;
+Size of training set: 10160 (10%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.8029
-Score on the test set  --&gt; f1: 0.6086
-Time elapsed: 0.998s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.8180
+Score on the test set  --&gt; f1: 0.6101
+Time elapsed: 0.729s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.5945 ± 0.0073
-Time elapsed: 2.229s
+Score --&gt; f1: 0.5947 ± 0.0046
+Time elapsed: 1.577s
 -------------------------------------------------
-Total time: 3.242s
+Total time: 2.317s
 
 
 Final results ========================= &gt;&gt;
-Duration: 3.244s
+Duration: 2.319s
 ------------------------------------------
-LightGBM --&gt; f1: 0.594 ± 0.007 ~
+LightGBM --&gt; f1: 0.595 ± 0.005 ~
 
 
-Run 1 (21% of set) ============================&gt;&gt;
-Size of training set: 24172
-Size of test set: 28438
+Run: 1 ================================ &gt;&gt;
+Size of training set: 21591 (21%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.7292
-Score on the test set  --&gt; f1: 0.6273
-Time elapsed: 1.244s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.7361
+Score on the test set  --&gt; f1: 0.6279
+Time elapsed: 0.946s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6166 ± 0.0053
-Time elapsed: 2.879s
+Score --&gt; f1: 0.6164 ± 0.0057
+Time elapsed: 2.057s
 -------------------------------------------------
-Total time: 4.129s
+Total time: 3.007s
 
 
 Final results ========================= &gt;&gt;
-Duration: 4.131s
+Duration: 3.009s
 ------------------------------------------
-LightGBM --&gt; f1: 0.617 ± 0.005
+LightGBM --&gt; f1: 0.616 ± 0.006
 
 
-Run 2 (32% of set) ============================&gt;&gt;
-Size of training set: 36970
-Size of test set: 28438
+Run: 2 ================================ &gt;&gt;
+Size of training set: 33022 (32%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6955
-Score on the test set  --&gt; f1: 0.6325
-Time elapsed: 1.533s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.7056
+Score on the test set  --&gt; f1: 0.6258
+Time elapsed: 1.163s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6199 ± 0.0038
-Time elapsed: 3.502s
+Score --&gt; f1: 0.6215 ± 0.0035
+Time elapsed: 2.506s
 -------------------------------------------------
-Total time: 5.039s
+Total time: 3.674s
 
 
 Final results ========================= &gt;&gt;
-Duration: 5.042s
+Duration: 3.676s
 ------------------------------------------
-LightGBM --&gt; f1: 0.620 ± 0.004
+LightGBM --&gt; f1: 0.622 ± 0.003
 
 
-Run 3 (44% of set) ============================&gt;&gt;
-Size of training set: 49767
-Size of test set: 28438
+Run: 3 ================================ &gt;&gt;
+Size of training set: 44453 (44%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6832
-Score on the test set  --&gt; f1: 0.6386
-Time elapsed: 1.825s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6900
+Score on the test set  --&gt; f1: 0.6392
+Time elapsed: 1.380s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6256 ± 0.0036
-Time elapsed: 4.148s
+Score --&gt; f1: 0.6267 ± 0.0028
+Time elapsed: 3.018s
 -------------------------------------------------
-Total time: 5.979s
+Total time: 4.402s
 
 
 Final results ========================= &gt;&gt;
-Duration: 5.981s
+Duration: 4.405s
 ------------------------------------------
-LightGBM --&gt; f1: 0.626 ± 0.004
+LightGBM --&gt; f1: 0.627 ± 0.003
 
 
-Run 4 (55% of set) ============================&gt;&gt;
-Size of training set: 62565
-Size of test set: 28438
+Run: 4 ================================ &gt;&gt;
+Size of training set: 55884 (55%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6818
-Score on the test set  --&gt; f1: 0.6391
-Time elapsed: 2.152s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6813
+Score on the test set  --&gt; f1: 0.6362
+Time elapsed: 1.648s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6271 ± 0.0025
-Time elapsed: 4.838s
+Score --&gt; f1: 0.6282 ± 0.0034
+Time elapsed: 3.556s
 -------------------------------------------------
-Total time: 6.996s
+Total time: 5.209s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.998s
+Duration: 5.212s
 ------------------------------------------
-LightGBM --&gt; f1: 0.627 ± 0.002
+LightGBM --&gt; f1: 0.628 ± 0.003
 
 
-Run 5 (66% of set) ============================&gt;&gt;
-Size of training set: 75362
-Size of test set: 28438
+Run: 5 ================================ &gt;&gt;
+Size of training set: 67315 (66%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6767
-Score on the test set  --&gt; f1: 0.6399
-Time elapsed: 2.418s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6794
+Score on the test set  --&gt; f1: 0.6397
+Time elapsed: 1.891s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6346 ± 0.0021
-Time elapsed: 5.622s
+Score --&gt; f1: 0.6352 ± 0.0027
+Time elapsed: 4.162s
 -------------------------------------------------
-Total time: 8.045s
+Total time: 6.058s
 
 
 Final results ========================= &gt;&gt;
-Duration: 8.047s
+Duration: 6.060s
 ------------------------------------------
-LightGBM --&gt; f1: 0.635 ± 0.002
+LightGBM --&gt; f1: 0.635 ± 0.003
 
 
-Run 6 (77% of set) ============================&gt;&gt;
-Size of training set: 88160
-Size of test set: 28438
+Run: 6 ================================ &gt;&gt;
+Size of training set: 78746 (77%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6665
-Score on the test set  --&gt; f1: 0.6384
-Time elapsed: 2.810s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6769
+Score on the test set  --&gt; f1: 0.6403
+Time elapsed: 2.053s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6342 ± 0.0021
-Time elapsed: 6.240s
+Score --&gt; f1: 0.6330 ± 0.0024
+Time elapsed: 4.509s
 -------------------------------------------------
-Total time: 9.058s
+Total time: 6.569s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.060s
+Duration: 6.571s
 ------------------------------------------
-LightGBM --&gt; f1: 0.634 ± 0.002
+LightGBM --&gt; f1: 0.633 ± 0.002
 
 
-Run 7 (89% of set) ============================&gt;&gt;
-Size of training set: 100957
-Size of test set: 28438
+Run: 7 ================================ &gt;&gt;
+Size of training set: 90177 (89%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6651
-Score on the test set  --&gt; f1: 0.6432
-Time elapsed: 3.063s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6687
+Score on the test set  --&gt; f1: 0.6422
+Time elapsed: 2.358s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6372 ± 0.0025
-Time elapsed: 6.888s
+Score --&gt; f1: 0.6354 ± 0.0041
+Time elapsed: 5.074s
 -------------------------------------------------
-Total time: 9.958s
+Total time: 7.439s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.960s
+Duration: 7.441s
 ------------------------------------------
-LightGBM --&gt; f1: 0.637 ± 0.003
+LightGBM --&gt; f1: 0.635 ± 0.004
 
 
-Run 8 (100% of set) ===========================&gt;&gt;
-Size of training set: 113755
-Size of test set: 28438
+Run: 8 ================================ &gt;&gt;
+Size of training set: 101609 (100%)
+Size of test set: 25402
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
-Score on the train set --&gt; f1: 0.6650
-Score on the test set  --&gt; f1: 0.6549
-Time elapsed: 3.379s
+Fit ---------------------------------------------
+Score on the train set --&gt; f1: 0.6669
+Score on the test set  --&gt; f1: 0.6449
+Time elapsed: 2.606s
 Bagging -----------------------------------------
-Score --&gt; f1: 0.6508 ± 0.0026
-Time elapsed: 7.621s
+Score --&gt; f1: 0.6374 ± 0.0023
+Time elapsed: 5.634s
 -------------------------------------------------
-Total time: 11.009s
+Total time: 8.247s
 
 
 Final results ========================= &gt;&gt;
-Duration: 11.012s
+Duration: 8.249s
 ------------------------------------------
-LightGBM --&gt; f1: 0.651 ± 0.003
+LightGBM --&gt; f1: 0.637 ± 0.002
 </code></pre>
 <h2 id="analyze-the-results">Analyze the results</h2>
 <pre><code class="python"># Note that the results dataframe now is multi-index
@@ -942,9 +949,8 @@ atom.results
     <tr style="text-align: right;">
       <th></th>
       <th></th>
-      <th>name</th>
-      <th>score_train</th>
-      <th>score_test</th>
+      <th>metric_train</th>
+      <th>metric_test</th>
       <th>time_fit</th>
       <th>mean_bagging</th>
       <th>std_bagging</th>
@@ -952,9 +958,8 @@ atom.results
       <th>time</th>
     </tr>
     <tr>
-      <th>run</th>
+      <th>frac</th>
       <th>model</th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -966,112 +971,103 @@ atom.results
   </thead>
   <tbody>
     <tr>
-      <th>0</th>
+      <th>0.100</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.802859</td>
-      <td>0.608590</td>
-      <td>0.998s</td>
-      <td>0.594472</td>
-      <td>0.007341</td>
-      <td>2.229s</td>
-      <td>3.242s</td>
+      <td>0.817968</td>
+      <td>0.610102</td>
+      <td>0.729s</td>
+      <td>0.594748</td>
+      <td>0.00457747</td>
+      <td>1.577s</td>
+      <td>2.317s</td>
     </tr>
     <tr>
-      <th>1</th>
+      <th>0.213</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.729212</td>
-      <td>0.627277</td>
-      <td>1.244s</td>
-      <td>0.616583</td>
-      <td>0.005321</td>
-      <td>2.879s</td>
-      <td>4.129s</td>
+      <td>0.736086</td>
+      <td>0.627931</td>
+      <td>0.946s</td>
+      <td>0.616375</td>
+      <td>0.00566304</td>
+      <td>2.057s</td>
+      <td>3.007s</td>
     </tr>
     <tr>
-      <th>2</th>
+      <th>0.325</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.695463</td>
-      <td>0.632544</td>
-      <td>1.533s</td>
-      <td>0.619899</td>
-      <td>0.003822</td>
-      <td>3.502s</td>
-      <td>5.039s</td>
+      <td>0.705598</td>
+      <td>0.625811</td>
+      <td>1.163s</td>
+      <td>0.621507</td>
+      <td>0.00349161</td>
+      <td>2.506s</td>
+      <td>3.674s</td>
     </tr>
     <tr>
-      <th>3</th>
+      <th>0.438</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.683228</td>
-      <td>0.638575</td>
-      <td>1.825s</td>
-      <td>0.625589</td>
-      <td>0.003608</td>
-      <td>4.148s</td>
-      <td>5.979s</td>
+      <td>0.689969</td>
+      <td>0.639192</td>
+      <td>1.380s</td>
+      <td>0.62671</td>
+      <td>0.0028187</td>
+      <td>3.018s</td>
+      <td>4.402s</td>
     </tr>
     <tr>
-      <th>4</th>
+      <th>0.550</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.681811</td>
-      <td>0.639062</td>
-      <td>2.152s</td>
-      <td>0.627105</td>
-      <td>0.002460</td>
-      <td>4.838s</td>
-      <td>6.996s</td>
+      <td>0.681329</td>
+      <td>0.636177</td>
+      <td>1.648s</td>
+      <td>0.628191</td>
+      <td>0.00342566</td>
+      <td>3.556s</td>
+      <td>5.209s</td>
     </tr>
     <tr>
-      <th>5</th>
+      <th>0.662</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.676747</td>
-      <td>0.639897</td>
-      <td>2.418s</td>
-      <td>0.634642</td>
-      <td>0.002138</td>
-      <td>5.622s</td>
-      <td>8.045s</td>
+      <td>0.679434</td>
+      <td>0.639664</td>
+      <td>1.891s</td>
+      <td>0.635238</td>
+      <td>0.00274304</td>
+      <td>4.162s</td>
+      <td>6.058s</td>
     </tr>
     <tr>
-      <th>6</th>
+      <th>0.775</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.666471</td>
-      <td>0.638376</td>
-      <td>2.810s</td>
-      <td>0.634245</td>
-      <td>0.002098</td>
-      <td>6.240s</td>
-      <td>9.058s</td>
+      <td>0.676917</td>
+      <td>0.640345</td>
+      <td>2.053s</td>
+      <td>0.63302</td>
+      <td>0.00235894</td>
+      <td>4.509s</td>
+      <td>6.569s</td>
     </tr>
     <tr>
-      <th>7</th>
+      <th>0.888</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.665065</td>
-      <td>0.643197</td>
-      <td>3.063s</td>
-      <td>0.637232</td>
-      <td>0.002537</td>
-      <td>6.888s</td>
-      <td>9.958s</td>
+      <td>0.668689</td>
+      <td>0.642228</td>
+      <td>2.358s</td>
+      <td>0.635387</td>
+      <td>0.00414126</td>
+      <td>5.074s</td>
+      <td>7.439s</td>
     </tr>
     <tr>
-      <th>8</th>
+      <th>1.000</th>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>0.665018</td>
-      <td>0.654904</td>
-      <td>3.379s</td>
-      <td>0.650772</td>
-      <td>0.002577</td>
-      <td>7.621s</td>
-      <td>11.009s</td>
+      <td>0.666853</td>
+      <td>0.644936</td>
+      <td>2.606s</td>
+      <td>0.637363</td>
+      <td>0.00233264</td>
+      <td>5.634s</td>
+      <td>8.247s</td>
     </tr>
   </tbody>
 </table>

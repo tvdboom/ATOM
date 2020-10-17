@@ -577,90 +577,90 @@ atom.successive_halving(
 )
 </code></pre>
 
-<pre><code>Running pipeline ============================= &gt;&gt;
+<pre><code>Training ===================================== &gt;&gt;
 Metric: neg_mean_absolute_error
 
 
-Run 0 (17% of set) ============================&gt;&gt;
-Models in pipeline: Tree, Bag, ET, RF, LGB, CatB
-Size of training set: 67
+Run: 0 ================================ &gt;&gt;
+Models: Tree, Bag, ET, RF, LGB, CatB
+Size of training set: 67 (17%)
 Size of test set: 101
 
 
 Results for Decision Tree:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.0000
 Score on the test set  --&gt; neg_mean_absolute_error: -3.3257
-Time elapsed: 0.007s
+Time elapsed: 0.006s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -4.3307 ± 0.5250
-Time elapsed: 0.018s
+Time elapsed: 0.021s
 -------------------------------------------------
-Total time: 0.027s
+Total time: 0.031s
 
 
 Results for Bagging Regressor:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -1.3054
 Score on the test set  --&gt; neg_mean_absolute_error: -2.6950
-Time elapsed: 0.018s
+Time elapsed: 0.021s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677
-Time elapsed: 0.079s
+Time elapsed: 0.080s
 -------------------------------------------------
-Total time: 0.100s
+Total time: 0.104s
 
 
 Results for Extra-Trees:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.0000
 Score on the test set  --&gt; neg_mean_absolute_error: -2.1541
 Time elapsed: 0.084s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708
-Time elapsed: 0.357s
+Time elapsed: 0.359s
 -------------------------------------------------
-Total time: 0.443s
+Total time: 0.447s
 
 
 Results for Random Forest:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -1.1509
 Score on the test set  --&gt; neg_mean_absolute_error: -2.4143
 Time elapsed: 0.109s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.9574 ± 0.2253
-Time elapsed: 0.509s
+Time elapsed: 0.502s
 -------------------------------------------------
-Total time: 0.621s
+Total time: 0.615s
 
 
 Results for LightGBM:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -3.4205
 Score on the test set  --&gt; neg_mean_absolute_error: -4.5600
-Time elapsed: 0.027s
+Time elapsed: 0.029s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -4.8393 ± 0.2682
-Time elapsed: 0.060s
+Time elapsed: 0.067s
 -------------------------------------------------
-Total time: 0.091s
+Total time: 0.101s
 
 
 Results for CatBoost:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.0806
 Score on the test set  --&gt; neg_mean_absolute_error: -2.3984
-Time elapsed: 0.846s
+Time elapsed: 1.245s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.9165 ± 0.2564
-Time elapsed: 2.764s
+Time elapsed: 3.917s
 -------------------------------------------------
-Total time: 3.611s
+Total time: 5.166s
 
 
 Final results ========================= &gt;&gt;
-Duration: 4.894s
+Duration: 6.466s
 ------------------------------------------
 Decision Tree     --&gt; neg_mean_absolute_error: -4.331 ± 0.525 ~
 Bagging Regressor --&gt; neg_mean_absolute_error: -3.096 ± 0.268 ~
@@ -670,76 +670,76 @@ LightGBM          --&gt; neg_mean_absolute_error: -4.839 ± 0.268 ~
 CatBoost          --&gt; neg_mean_absolute_error: -2.916 ± 0.256 ~
 
 
-Run 1 (33% of set) ============================&gt;&gt;
-Models in pipeline: ET, CatB, RF
-Size of training set: 135
+Run: 1 ================================ &gt;&gt;
+Models: ET, CatB, RF
+Size of training set: 135 (33%)
 Size of test set: 101
 
 
 Results for Extra-Trees:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.0000
 Score on the test set  --&gt; neg_mean_absolute_error: -2.2361
-Time elapsed: 0.098s
+Time elapsed: 0.093s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.6016 ± 0.2890
-Time elapsed: 0.414s
+Time elapsed: 0.392s
 -------------------------------------------------
-Total time: 0.514s
+Total time: 0.488s
 
 
 Results for CatBoost:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.2835
 Score on the test set  --&gt; neg_mean_absolute_error: -2.4196
-Time elapsed: 0.815s
+Time elapsed: 1.673s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.5681 ± 0.2119
-Time elapsed: 3.124s
+Time elapsed: 5.969s
 -------------------------------------------------
-Total time: 3.942s
+Total time: 7.647s
 
 
 Results for Random Forest:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.9820
 Score on the test set  --&gt; neg_mean_absolute_error: -2.5055
-Time elapsed: 0.129s
+Time elapsed: 0.123s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.6144 ± 0.1188
-Time elapsed: 0.590s
+Time elapsed: 0.563s
 -------------------------------------------------
-Total time: 0.721s
+Total time: 0.689s
 
 
 Final results ========================= &gt;&gt;
-Duration: 5.178s
+Duration: 8.825s
 ------------------------------------------
 Extra-Trees   --&gt; neg_mean_absolute_error: -2.602 ± 0.289 ~
 CatBoost      --&gt; neg_mean_absolute_error: -2.568 ± 0.212 ~ !
 Random Forest --&gt; neg_mean_absolute_error: -2.614 ± 0.119 ~
 
 
-Run 2 (100% of set) ===========================&gt;&gt;
-Models in pipeline: CatB
-Size of training set: 405
+Run: 2 ================================ &gt;&gt;
+Models: CatB
+Size of training set: 405 (100%)
 Size of test set: 101
 
 
 Results for CatBoost:         
-Fitting -----------------------------------------
+Fit ---------------------------------------------
 Score on the train set --&gt; neg_mean_absolute_error: -0.3978
 Score on the test set  --&gt; neg_mean_absolute_error: -1.8772
-Time elapsed: 1.207s
+Time elapsed: 3.054s
 Bagging -----------------------------------------
 Score --&gt; neg_mean_absolute_error: -2.0501 ± 0.0892
-Time elapsed: 5.234s
+Time elapsed: 13.691s
 -------------------------------------------------
-Total time: 6.444s
+Total time: 16.748s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.445s
+Duration: 16.750s
 ------------------------------------------
 CatBoost --&gt; neg_mean_absolute_error: -2.050 ± 0.089 ~
 </code></pre>
@@ -767,7 +767,6 @@ atom.results
     <tr style="text-align: right;">
       <th></th>
       <th></th>
-      <th>name</th>
       <th>metric_train</th>
       <th>metric_test</th>
       <th>time_fit</th>
@@ -777,9 +776,8 @@ atom.results
       <th>time</th>
     </tr>
     <tr>
-      <th>run</th>
+      <th>n_models</th>
       <th>model</th>
-      <th></th>
       <th></th>
       <th></th>
       <th></th>
@@ -791,117 +789,107 @@ atom.results
   </thead>
   <tbody>
     <tr>
-      <th rowspan="6" valign="top">0</th>
+      <th>1</th>
+      <th>CatB</th>
+      <td>-0.397799</td>
+      <td>-1.87721</td>
+      <td>3.054s</td>
+      <td>-2.05012</td>
+      <td>0.0891846</td>
+      <td>13.691s</td>
+      <td>16.748s</td>
+    </tr>
+    <tr>
+      <th rowspan="3" valign="top">3</th>
+      <th>ET</th>
+      <td>-2.31519e-14</td>
+      <td>-2.23608</td>
+      <td>0.093s</td>
+      <td>-2.60165</td>
+      <td>0.289034</td>
+      <td>0.392s</td>
+      <td>0.488s</td>
+    </tr>
+    <tr>
+      <th>RF</th>
+      <td>-0.981978</td>
+      <td>-2.50547</td>
+      <td>0.123s</td>
+      <td>-2.61442</td>
+      <td>0.118758</td>
+      <td>0.563s</td>
+      <td>0.689s</td>
+    </tr>
+    <tr>
+      <th>CatB</th>
+      <td>-0.28355</td>
+      <td>-2.41962</td>
+      <td>1.673s</td>
+      <td>-2.56808</td>
+      <td>0.211868</td>
+      <td>5.969s</td>
+      <td>7.647s</td>
+    </tr>
+    <tr>
+      <th rowspan="6" valign="top">6</th>
       <th>Tree</th>
-      <td>Decision Tree</td>
-      <td>-0.000000e+00</td>
-      <td>-3.325743</td>
-      <td>0.007s</td>
-      <td>-4.330693</td>
+      <td>-0</td>
+      <td>-3.32574</td>
+      <td>0.006s</td>
+      <td>-4.33069</td>
       <td>0.525026</td>
-      <td>0.018s</td>
-      <td>0.027s</td>
+      <td>0.021s</td>
+      <td>0.031s</td>
     </tr>
     <tr>
       <th>Bag</th>
-      <td>Bagging Regressor</td>
-      <td>-1.305373e+00</td>
-      <td>-2.695050</td>
-      <td>0.018s</td>
-      <td>-3.095663</td>
+      <td>-1.30537</td>
+      <td>-2.69505</td>
+      <td>0.021s</td>
+      <td>-3.09566</td>
       <td>0.267668</td>
-      <td>0.079s</td>
-      <td>0.100s</td>
+      <td>0.080s</td>
+      <td>0.104s</td>
     </tr>
     <tr>
       <th>ET</th>
-      <td>Extra-Trees</td>
-      <td>-2.256238e-14</td>
-      <td>-2.154089</td>
+      <td>-2.25624e-14</td>
+      <td>-2.15409</td>
       <td>0.084s</td>
-      <td>-2.555434</td>
+      <td>-2.55543</td>
       <td>0.170823</td>
-      <td>0.357s</td>
-      <td>0.443s</td>
+      <td>0.359s</td>
+      <td>0.447s</td>
     </tr>
     <tr>
       <th>RF</th>
-      <td>Random Forest</td>
-      <td>-1.150866e+00</td>
-      <td>-2.414297</td>
+      <td>-1.15087</td>
+      <td>-2.4143</td>
       <td>0.109s</td>
-      <td>-2.957400</td>
+      <td>-2.9574</td>
       <td>0.225311</td>
-      <td>0.509s</td>
-      <td>0.621s</td>
+      <td>0.502s</td>
+      <td>0.615s</td>
     </tr>
     <tr>
       <th>LGB</th>
-      <td>LightGBM</td>
-      <td>-3.420518e+00</td>
-      <td>-4.559962</td>
-      <td>0.027s</td>
-      <td>-4.839315</td>
+      <td>-3.42052</td>
+      <td>-4.55996</td>
+      <td>0.029s</td>
+      <td>-4.83931</td>
       <td>0.268167</td>
-      <td>0.060s</td>
-      <td>0.091s</td>
+      <td>0.067s</td>
+      <td>0.101s</td>
     </tr>
     <tr>
       <th>CatB</th>
-      <td>CatBoost</td>
-      <td>-8.055503e-02</td>
-      <td>-2.398431</td>
-      <td>0.846s</td>
-      <td>-2.916470</td>
+      <td>-0.080555</td>
+      <td>-2.39843</td>
+      <td>1.245s</td>
+      <td>-2.91647</td>
       <td>0.256428</td>
-      <td>2.764s</td>
-      <td>3.611s</td>
-    </tr>
-    <tr>
-      <th rowspan="3" valign="top">1</th>
-      <th>ET</th>
-      <td>Extra-Trees</td>
-      <td>-2.315185e-14</td>
-      <td>-2.236079</td>
-      <td>0.098s</td>
-      <td>-2.601648</td>
-      <td>0.289034</td>
-      <td>0.414s</td>
-      <td>0.514s</td>
-    </tr>
-    <tr>
-      <th>CatB</th>
-      <td>CatBoost</td>
-      <td>-2.835499e-01</td>
-      <td>-2.419625</td>
-      <td>0.815s</td>
-      <td>-2.568085</td>
-      <td>0.211868</td>
-      <td>3.124s</td>
-      <td>3.942s</td>
-    </tr>
-    <tr>
-      <th>RF</th>
-      <td>Random Forest</td>
-      <td>-9.819778e-01</td>
-      <td>-2.505465</td>
-      <td>0.129s</td>
-      <td>-2.614416</td>
-      <td>0.118758</td>
-      <td>0.590s</td>
-      <td>0.721s</td>
-    </tr>
-    <tr>
-      <th>2</th>
-      <th>CatB</th>
-      <td>CatBoost</td>
-      <td>-3.977985e-01</td>
-      <td>-1.877205</td>
-      <td>1.207s</td>
-      <td>-2.050118</td>
-      <td>0.089185</td>
-      <td>5.234s</td>
-      <td>6.444s</td>
+      <td>3.917s</td>
+      <td>5.166s</td>
     </tr>
   </tbody>
 </table>
