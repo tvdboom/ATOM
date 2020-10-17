@@ -14,6 +14,7 @@ import pytest
 from atom import ATOMClassifier, ATOMRegressor, ATOMLoader
 from atom.training import TrainerClassifier
 from atom.data_cleaning import Imputer
+from atom.utils import merge
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
 
 
@@ -38,7 +39,7 @@ def test_new_data():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
-    atom2 = ATOMLoader(FILE_DIR + 'atom', atom.dataset)
+    atom2 = ATOMLoader(FILE_DIR + 'atom', merge(X_bin, y_bin))
     assert atom2.dataset.equals(atom.dataset)
 
 
@@ -61,7 +62,16 @@ def test_data_is_X_y():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + 'atom', save_data=False)
 
-    atom2 = ATOMLoader(FILE_DIR + 'atom', atom.X, atom.y)
+    atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin)
+    assert atom2.dataset.equals(atom.dataset)
+
+
+def test_n_rows():
+    """Assert that the method when n_rows is provided."""
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=0.6, random_state=1)
+    atom.save(FILE_DIR + 'atom', save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + 'atom', X_bin, y_bin, n_rows=0.6)
     assert atom2.dataset.equals(atom.dataset)
 
 

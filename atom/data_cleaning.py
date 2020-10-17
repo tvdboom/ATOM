@@ -288,6 +288,8 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             task = infer_task(y) if self.map_target is None else 'regression'
             # Map the target column to numerical values
             if self.map_target or not task.startswith('reg'):
+                if y.dtype.kind not in 'ifu':
+                    self.log(f" --> Label-encoding the target column.", 2)
                 le = LabelEncoder()
                 y = to_series(le.fit_transform(y), index=y.index, name=y.name)
                 self.mapping = {str(v): i for i, v in enumerate(le.classes_)}

@@ -562,11 +562,13 @@ atom.encode(strategy='Target', max_onehot=8, frac_to_other=0.05)
 atom.feature_selection(strategy='PCA', n_features=12)
 </code></pre>
 <p>Train and evaluate the models you want to compare:</p>
-<pre><code>atom.run(models=['LR', 'LDA', 'XGB', 'lSVM'],
-         metric='f1',
-         n_calls=25,
-         n_initial_points=10,
-         bagging=4)
+<pre><code>atom.run(
+    models=['LR', 'LDA', 'XGB', 'lSVM'],
+    metric='f1',
+    n_calls=25,
+    n_initial_points=10,
+    bagging=4
+)
 </code></pre>
 <p>Make plots to analyze the results: </p>
 <pre><code>atom.plot_bagging(figsize=(9, 6), filename='bagging_results.png')  

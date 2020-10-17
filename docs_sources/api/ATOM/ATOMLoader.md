@@ -2,7 +2,7 @@
 ------------
 
 <a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename=None, X=None, y=-1, transform_data=True, verbose=None)
+<pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename=None, X=None, y=-1, n_rows=1, transform_data=True, verbose=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
 <div style="padding-left:3%">
 Load a class instance from a pickle file. If the file is a `training` instance that
@@ -30,6 +30,14 @@ Data containing the features, with shape=(n_samples, n_features). Only use this
 <li>If int: Index of the target column in X.</li>
 <li>If string: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
+</ul>
+This parameter is ignored if X=None.
+</blockquote>
+<strong>n_rows: int or float, optional (default=1)</strong>
+<blockquote>
+<ul>
+<li>if <=1: Fraction of the data to use.</li>
+<li>if >1: Number of rows to use.</li>
 </ul>
 This parameter is ignored if X=None.
 </blockquote>

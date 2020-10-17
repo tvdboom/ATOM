@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy='drop', max_sigma=3, include_target=False, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L752">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L754">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
@@ -239,7 +239,7 @@ Estimator instance.
 
 <a name="outliers-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L800">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L802">[source]</a></div></pre>
 <div style="padding-left:3%">
 Apply the outlier strategy on the data.
 <br><br>

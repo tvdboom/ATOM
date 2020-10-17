@@ -25,6 +25,7 @@ from .utils import X_TYPES, Y_TYPES, merge
 def ATOMLoader(filename: str,
                X: Optional[X_TYPES] = None,
                y: Y_TYPES = -1,
+               n_rows: Union[int, float] = 1,
                transform_data: bool = True,
                verbose: Optional[int] = None):
     """Load a class instance from a pickle file.
@@ -47,6 +48,12 @@ def ATOMLoader(filename: str,
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
         - Else: Target column with shape=(n_samples,).
+
+        This parameter is ignored if X=None.
+
+    n_rows: int or float, optional (default=1)
+        - If <=1: Fraction of the data to use.
+        - If >1: Number of rows to use.
 
         This parameter is ignored if X=None.
 
@@ -78,8 +85,13 @@ def ATOMLoader(filename: str,
             raise ValueError("The loaded {} instance already contains data!"
                              .format(cls_.__class__.__name__))
 
+        # Prepare the provided data
         X, y = BaseTransformer._prepare_input(X, y)
         cls_._data = X if y is None else merge(X, y)
+
+        # Get number of rows and shuffle the dataset
+        kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
+        cls_._data = cls_._data.sample(random_state=cls_.random_state, **kwargs)
 
         if hasattr(cls_, 'pipeline') and transform_data:
             # Transform the data through all transformers in the pipeline
@@ -92,14 +104,13 @@ def ATOMLoader(filename: str,
                 if estimator.__class__.__name__ in ['Outliers', 'Balancer']:
                     X, y = estimator.transform(cls_.X_train, cls_.y_train)
                     cls_._data = pd.concat([merge(X, y), cls_.test])
-                    cls_._data.reset_index(drop=True, inplace=True)
                 else:
                     X = estimator.transform(cls_.X, cls_.y)
 
                     # Data changes depending if the estimator returned X or X, y
-                    data = merge(*X) if isinstance(X, tuple) else merge(X, y)
-                    cls_._data = data.reset_index(drop=True)
+                    cls_._data = merge(*X) if isinstance(X, tuple) else merge(X, cls_.y)
 
+                cls_._data.reset_index(drop=True, inplace=True)
                 if verbose is not None:
                     estimator.verbose = vb  # Reset the original verbosity
 

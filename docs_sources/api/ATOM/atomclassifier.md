@@ -4,7 +4,7 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(X, y=-1, n_rows=1, test_size=0.2, logger=None,
                               n_jobs=1, warnings=True, verbose=0, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L116">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L127">[source]</a></div></pre>
 <div style="padding-left:3%">
 ATOMClassifier is ATOM's wrapper for binary and multiclass classification tasks. Use
  this class to easily apply all data transformations and model management provided by
@@ -431,7 +431,7 @@ Minimum verbosity level in order to print the message.
 
 <a name="atomclassifier-report"></a>
 <pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L260">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get an extensive profile analysis of the data. The report is rendered
  in HTML5 and CSS3 and saved to the `profile` attribute. Note that this method
@@ -527,7 +527,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 
 <a name="atomclassifier-stats"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stats</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L178">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L182">[source]</a></div></pre>
 <div style="padding-left:3%">
 Print out a list of basic information on the dataset.
 </div>
@@ -577,7 +577,7 @@ ATOM provides data cleaning methods to scale your features and handle missing va
 
 <a name="atomclassifier-scale"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L358">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L362">[source]</a></div></pre>
 <div style="padding-left:3%">
 Scale the features to mean=1 and std=0.
 </div>
@@ -586,7 +586,7 @@ Scale the features to mean=1 and std=0.
 
 <a name="atomclassifier-impute"></a>
 <pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L373">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L377">[source]</a></div></pre>
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
@@ -599,7 +599,7 @@ Handle missing values according to the selected strategy. Also removes rows and
 
 <a name="atomclassifier-encode"></a>
 <pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L409">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L413">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the
  number of unique values in the column:
@@ -620,7 +620,7 @@ Also replaces classes with low occurrences with the value 'other' in
 
 <a name="atomclassifier-outliers"></a>
 <pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L443">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L447">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the training set. Outliers are defined as values that
  lie further than `max_sigma` * standard_deviation away from the mean of the column.
@@ -633,7 +633,7 @@ Remove or replace outliers in the training set. Outliers are defined as values t
 
 <a name="atomclassifier-balance"></a>
 <pre><em>method</em> <strong style="color:#008AB8">balance</strong>(strategy='ADASYN', **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L473">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L477">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of instances per target category in the training set.
  Only the training set is balanced in order to maintain the original distribution
@@ -668,7 +668,7 @@ To further pre-process the data you can create new non-linear features transform
 
 <a name="atomclassifier-feature-generation"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy='DFS', n_features=None, generations=20, population=500, operators=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L507">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L511">[source]</a></div></pre>
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
@@ -682,7 +682,7 @@ Use Deep feature Synthesis or a genetic algorithm to create new combinations
 <a name="atomclassifier-feature-selection"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None, solver=None, n_features=None,
                          max_frac_repeated=1., max_correlation=1., **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L543">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L547">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
  features with equal scores will be broken in an unspecified way. Also
@@ -741,7 +741,7 @@ The training methods are where the models are fitted to the data and their
 <a name="atomclassifier-run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L698">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [TrainerClassifier](../training/trainerclassifier.md) instance.
 </div>
@@ -752,7 +752,7 @@ Runs a [TrainerClassifier](../training/trainerclassifier.md) instance.
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
                           est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L736">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L740">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
 </div>
@@ -763,7 +763,7 @@ Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md)
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
                     n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L785">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L789">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
 </div>

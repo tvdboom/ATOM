@@ -12,7 +12,7 @@ The data used is a variation on the Australian weather dataset from [https://www
 # Import packages
 import pandas as pd
 from sklearn.metrics import fbeta_score
-from atom import ATOMClassifier
+from atom import ATOMClassifier, ATOMLoader
 ```
 
 
@@ -57,59 +57,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>114293</th>
-      <td>PearceRAAF</td>
-      <td>3.1</td>
-      <td>20.3</td>
+      <th>85350</th>
+      <td>Cairns</td>
+      <td>21.1</td>
+      <td>30.6</td>
+      <td>0.0</td>
+      <td>6.4</td>
+      <td>11.0</td>
+      <td>ENE</td>
+      <td>30.0</td>
+    </tr>
+    <tr>
+      <th>84762</th>
+      <td>Brisbane</td>
+      <td>23.2</td>
+      <td>27.9</td>
+      <td>3.8</td>
+      <td>5.6</td>
+      <td>0.2</td>
+      <td>ENE</td>
+      <td>20.0</td>
+    </tr>
+    <tr>
+      <th>131267</th>
+      <td>Launceston</td>
+      <td>13.3</td>
+      <td>28.0</td>
       <td>0.2</td>
       <td>NaN</td>
-      <td>8.9</td>
-      <td>S</td>
+      <td>NaN</td>
+      <td>SSE</td>
       <td>28.0</td>
     </tr>
     <tr>
-      <th>94808</th>
-      <td>Adelaide</td>
-      <td>21.4</td>
-      <td>23.2</td>
-      <td>30.2</td>
+      <th>107223</th>
+      <td>Albany</td>
+      <td>8.5</td>
+      <td>19.3</td>
       <td>5.4</td>
-      <td>0.0</td>
-      <td>N</td>
-      <td>22.0</td>
+      <td>1.8</td>
+      <td>9.5</td>
+      <td>NaN</td>
+      <td>NaN</td>
     </tr>
     <tr>
-      <th>130362</th>
-      <td>Launceston</td>
-      <td>6.9</td>
-      <td>22.5</td>
+      <th>33917</th>
+      <td>SydneyAirport</td>
+      <td>21.3</td>
+      <td>24.9</td>
       <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>N</td>
-      <td>20.0</td>
-    </tr>
-    <tr>
-      <th>28536</th>
-      <td>Richmond</td>
-      <td>13.7</td>
-      <td>30.3</td>
-      <td>0.0</td>
-      <td>NaN</td>
+      <td>7.8</td>
       <td>NaN</td>
       <td>SSW</td>
-      <td>76.0</td>
-    </tr>
-    <tr>
-      <th>58618</th>
-      <td>Bendigo</td>
-      <td>4.0</td>
-      <td>16.6</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SE</td>
-      <td>20.0</td>
+      <td>48.0</td>
     </tr>
   </tbody>
 </table>
@@ -216,7 +216,7 @@ atom.stats()
 
 
 ```python
-# We can change atom's data mid-pipeline
+# We can change atom's data mid-pipeline, adding a column for example
 # Note that we can only replace a dataframe with a new dataframe!
 atom.X = atom.X.assign(AvgTemp=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 
@@ -246,7 +246,7 @@ atom.plot_pipeline()  # Using a plot
        >>> strat_cat: drop
        >>> min_frac_rows: 0.5
        >>> min_frac_cols: 0.5
-       >>> missing: {'', 'None', 'inf', 'NA', '?', 'nan', inf, -inf}
+       >>> missing: {'', inf, -inf, 'NA', 'nan', 'None', 'inf', '?'}
      --> Encoder
        >>> strategy: LeaveOneOut
        >>> max_onehot: 10
@@ -282,13 +282,13 @@ atom.run(models='lr', metric=f2_score)
     Fit ---------------------------------------------
     Score on the train set --> f2_score: 0.5678
     Score on the test set  --> f2_score: 0.5682
-    Time elapsed: 0.201s
+    Time elapsed: 0.209s
     -------------------------------------------------
-    Total time: 0.226s
+    Total time: 0.234s
     
     
     Final results ========================= >>
-    Duration: 0.228s
+    Duration: 0.236s
     ------------------------------------------
     Logistic Regression --> f2_score: 0.568
     
@@ -312,13 +312,13 @@ atom.run('AdaB', est_params={'base_estimator': atom.lr.estimator})
     Fit ---------------------------------------------
     Score on the train set --> f2_score: 0.5565
     Score on the test set  --> f2_score: 0.5482
-    Time elapsed: 2.024s
+    Time elapsed: 2.094s
     -------------------------------------------------
-    Total time: 2.027s
+    Total time: 2.098s
     
     
     Final results ========================= >>
-    Duration: 2.029s
+    Duration: 2.100s
     ------------------------------------------
     AdaBoost --> f2_score: 0.548
     
@@ -353,33 +353,83 @@ atom.run('tree', n_calls=3, n_initial_points=1, est_params={'max_depth': 2}, ver
     Initial point 1 ---------------------------------
     Parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
     Evaluation --> f2_score: 0.4936  Best f2_score: 0.4936
-    Time iteration: 0.383s   Total time: 0.397s
+    Time iteration: 0.383s   Total time: 0.396s
     Iteration 2 -------------------------------------
-    Parameters --> {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 4, 'min_samples_leaf': 20, 'max_features': 0.7, 'ccp_alpha': 0.014}
-    Evaluation --> f2_score: 0.0000  Best f2_score: 0.4936
-    Time iteration: 0.146s   Total time: 0.547s
+    Parameters --> {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 4, 'min_samples_leaf': 20, 'max_features': 0.5, 'ccp_alpha': 0.014}
+    Evaluation --> f2_score: 0.4441  Best f2_score: 0.4936
+    Time iteration: 0.137s   Total time: 0.537s
     Iteration 3 -------------------------------------
-    Parameters --> {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 3, 'min_samples_leaf': 6, 'max_features': None, 'ccp_alpha': 0.03}
-    Evaluation --> f2_score: 0.0000  Best f2_score: 0.4936
-    Time iteration: 0.159s   Total time: 0.942s
+    Parameters --> {'criterion': 'entropy', 'splitter': 'random', 'min_samples_split': 2, 'min_samples_leaf': 6, 'max_features': 0.5, 'ccp_alpha': 0.0}
+    Evaluation --> f2_score: 0.3050  Best f2_score: 0.4936
+    Time iteration: 0.140s   Total time: 0.927s
     
     Results for Decision Tree:         
     Bayesian Optimization ---------------------------
     Best parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
     Best evaluation --> f2_score: 0.4936
-    Time elapsed: 1.222s
+    Time elapsed: 1.229s
     Fit ---------------------------------------------
     Score on the train set --> f2_score: 0.4937
     Score on the test set  --> f2_score: 0.4878
-    Time elapsed: 0.106s
+    Time elapsed: 0.105s
     -------------------------------------------------
-    Total time: 1.339s
+    Total time: 1.344s
     
     
     Final results ========================= >>
-    Duration: 1.341s
+    Duration: 1.346s
     ------------------------------------------
     Decision Tree --> f2_score: 0.488
+    
+
+## Save & load
+
+
+```python
+# Save the atom instance as a pickle with the save method
+# Remember that the instance contains the data, use save_datad to save the instance without the data
+atom.save('atom', save_data=False)
+```
+
+    ATOMClassifier saved successfully!
+    
+
+
+```python
+# Load the instance again with ATOMLoader
+# No need to store the transformed data, providing the original dataset to the loader
+# will automatically transform it throigh all the steps in atom's pipeline
+atom_2 = ATOMLoader('atom', X, verbose=2)
+
+# Remember to also add the extra column!
+atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X['MaxTemp'] + atom_2.X['MinTemp'])/2)
+```
+
+    Applying data cleaning...
+     --> Label-encoding the target column.
+    Imputing missing values...
+     --> Dropping 1116 rows for containing less than 50% non-missing values.
+     --> Dropping 295 rows due to missing values in feature MinTemp.
+     --> Dropping 176 rows due to missing values in feature MaxTemp.
+     --> Dropping 1161 rows due to missing values in feature Rainfall.
+     --> Dropping 58505 rows due to missing values in feature Evaporation.
+     --> Dropping 10826 rows due to missing values in feature Sunshine.
+     --> Dropping 4153 rows due to missing values in feature WindGustDir.
+     --> Dropping 2199 rows due to missing values in feature WindDir9am.
+     --> Dropping 208 rows due to missing values in feature WindDir3pm.
+     --> Dropping 258 rows due to missing values in feature Humidity9am.
+     --> Dropping 56 rows due to missing values in feature Humidity3pm.
+     --> Dropping 53 rows due to missing values in feature Pressure9am.
+     --> Dropping 20 rows due to missing values in feature Pressure3pm.
+     --> Dropping 5361 rows due to missing values in feature Cloud9am.
+     --> Dropping 1386 rows due to missing values in feature Cloud3pm.
+    Encoding categorical columns...
+     --> LeaveOneOut-encoding feature Location. Contains 26 unique categories.
+     --> LeaveOneOut-encoding feature WindGustDir. Contains 16 unique categories.
+     --> LeaveOneOut-encoding feature WindDir9am. Contains 16 unique categories.
+     --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique categories.
+     --> Label-encoding feature RainToday. Contains 2 unique categories.
+    ATOMClassifier loaded successfully!
     
 
 ## Customize the plot aesthetics
@@ -387,12 +437,12 @@ atom.run('tree', n_calls=3, n_initial_points=1, est_params={'max_depth': 2}, ver
 
 ```python
 # Use the plotting attributes to further customize your plots!
-atom.palette= 'Blues'
-atom.style = 'white'
+atom_2.palette= 'Blues'
+atom_2.style = 'white'
 
-atom.plot_roc()
+atom_2.plot_roc()
 ```
 
 
-![png](output_19_0.png)
+![png](output_22_0.png)
 

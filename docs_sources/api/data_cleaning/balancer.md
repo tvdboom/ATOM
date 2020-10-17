@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L897">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target category. Use only for classification tasks.
 This class can be accessed from `atom` through the
@@ -268,7 +268,7 @@ Estimator instance.
 
 <a name="balancer-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L956">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L958">[source]</a></div></pre>
 <div style="padding-left:3%">
 Oversample or undersample the data.
 <br><br>

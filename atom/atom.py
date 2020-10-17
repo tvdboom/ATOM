@@ -98,10 +98,16 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self.log("<< ================== ATOM ================== >>", 1)
 
+        # Prepare the provided data
         X, y = self._prepare_input(X, y)
+        self._data = X if y is None else merge(X, y)
+
+        # Get number of rows and shuffle the dataset
+        kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
+        self._data = self._data.sample(random_state=self.random_state, **kwargs)
 
         # Assign the algorithm's task
-        self.task = infer_task(y, goal=self.goal)
+        self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
@@ -119,17 +125,15 @@ class ATOM(BasePredictor, ATOMPlotter):
             verbose=self.verbose,
             logger=self.logger
         )
-        X_y = merge(*standard_cleaner.transform(X, y))
+        X, y = standard_cleaner.transform(self.X, self.y)
+        self._data = merge(X, y).reset_index(drop=True)
         self.pipeline = self.pipeline.append(
             pd.Series([standard_cleaner]), ignore_index=True)
 
         # Add mapping attr to ATOM
         self.mapping = standard_cleaner.mapping
 
-        # Get number of rows, shuffle the dataset and reset indices
-        kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
-        self._data = X_y.sample(random_state=self.random_state, **kwargs)
-        self._data.reset_index(drop=True, inplace=True)
+        # Define train and test indices
         self._idx[1] = int(self._test_size * len(self.dataset))
         self._idx[0] = len(self.dataset) - self._idx[1]
         self.stats(1)  # Print data stats

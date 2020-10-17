@@ -94,11 +94,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._results.index.name = 'model'
 
     def __repr__(self):
-        repr_ = (
-            f"{self.longname}"
-            f"\n --> Estimator: {self.estimator.__class__.__name__}"
-            f"\n --> Score: {get_best_score(self)}"
-        )
+        repr_ = f"{self.longname}\n --> Estimator: {self.estimator.__class__.__name__}"
+        for i, metric in enumerate(self.T.metric_):
+            repr_ += f"\n --> {metric.name}: {get_best_score(self, i)}"
+
         return repr_
 
     def get_params(self, x):

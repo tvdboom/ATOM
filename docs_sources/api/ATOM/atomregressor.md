@@ -4,7 +4,7 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMRegressor</strong>(X, y=-1, n_rows=1, test_size=0.2, logger=None,
                              n_jobs=1, warnings=True, verbose=0, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L197">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L208">[source]</a></div></pre>
 <div style="padding-left:3%">
 ATOMRegressor is ATOM's wrapper for regression tasks. Use
  this class to easily apply all data transformations and model management provided by
@@ -366,7 +366,7 @@ Minimum verbosity level in order to print the message.
 
 <a name="ATOMRegressor-report"></a>
 <pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L260">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get an extensive profile analysis of the data. The report is rendered
  in HTML5 and CSS3 and saved to the `profile` attribute. Note that this method
@@ -451,7 +451,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 
 <a name="ATOMRegressor-stats"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stats</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L178">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L182">[source]</a></div></pre>
 <div style="padding-left:3%">
 Print out a list of basic information on the dataset.
 </div>
@@ -496,7 +496,7 @@ ATOM provides data cleaning methods to scale your features and handle missing va
 
 <a name="ATOMRegressor-scale"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L358">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L362">[source]</a></div></pre>
 <div style="padding-left:3%">
 Scale the features to mean=1 and std=0.
 </div>
@@ -505,7 +505,7 @@ Scale the features to mean=1 and std=0.
 
 <a name="ATOMRegressor-impute"></a>
 <pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L373">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L377">[source]</a></div></pre>
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
@@ -518,7 +518,7 @@ Handle missing values according to the selected strategy. Also removes rows and
 
 <a name="ATOMRegressor-encode"></a>
 <pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L409">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L413">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the
  number of unique values in the column:
@@ -539,7 +539,7 @@ Also replaces classes with low occurrences with the value 'other' in
 
 <a name="ATOMRegressor-outliers"></a>
 <pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L443">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L447">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the training set. Outliers are defined as values that
  lie further than `max_sigma` * standard_deviation away from the mean of the column.
@@ -648,7 +648,7 @@ The training methods are where the models are fitted to the data and their
 <a name="ATOMRegressor-run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L698">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [TrainerRegressor](../training/trainerregressor.md) instance.
 </div>
@@ -659,7 +659,7 @@ Runs a [TrainerRegressor](../training/trainerregressor.md) instance.
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
                           est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L736">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L740">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) instance.
 </div>
@@ -670,7 +670,7 @@ Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) i
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
                     n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L785">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L789">[source]</a></div></pre>
 <div style="padding-left:3%">
 Runs a [TrainSizingRegressor](../training/trainsizingregressor.md) instance.
 </div>

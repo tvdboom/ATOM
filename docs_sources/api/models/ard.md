@@ -205,7 +205,7 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 
 <a name="models-reset-prediction-attributes"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_prediction_attributes</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L655">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L654">[source]</a></div></pre>
 <div style="padding-left:3%">
 Clear all the prediction attributes. Use this method to free some memory before saving
  the class.
@@ -215,7 +215,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 
 <a name="models-scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L859">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the model's score for a specific metric.
 <br /><br />
@@ -240,7 +240,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 
 <a name="models-save-estimator"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L945">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L944">[source]</a></div></pre>
 <div style="padding-left:3%">
 Save the estimator to a pickle file.
 <br /><br />
