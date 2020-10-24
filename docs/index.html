@@ -58,6 +58,10 @@
 <li>
     <a href="API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="API/ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -512,6 +516,11 @@
               <ul class="nav flex-column">
               </ul>
             </li>
+            
+            <li class="nav-item" data-level="1"><a href="#release-history" class="nav-link">Release history</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
@@ -597,7 +606,76 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <p><br/><br/></p>
 <div align="center">
     <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
-</div></div>
+</div>
+
+<p><br><br><br><br></p>
+<h1 id="release-history">Release history</h1>
+<hr />
+<h3 id="version-420">Version 4.2.0</h3>
+<ul>
+<li>Possibility to add custom models to the pipeline using <a href="../API/ATOM/atommodel">ATOMModel</a>.</li>
+<li>New <a href="../API/ATOM/atomclassifier#get-class-weights">get_class_weights</a> and
+  <a href="../API/ATOM/atomclassifier#get-sample-weights">get_sample_weights</a> utility methods.</li>
+<li>Added the <code>sample_weight</code> parameter to the <a href="../API/predicting/score">score</a> method.</li>
+<li>New ways to initialize the data in the <code>training</code> instances.</li>
+<li>The <code>test_size</code> parameter also allows integer values.</li>
+<li>Renamed categories to classes to be consistent with sklearn's API.</li>
+<li>The class property now returns a pd.DataFrame of the number of rows per target class
+  in the train, test and complete dataset.</li>
+<li>Possibility to add custom parameters to an estimator's fit method through <code>est_params</code>.</li>
+<li><a href="../API/user_guide/#successive-halving">Successive halving</a> and <a href="../API/user_guide/#train-sizing">Train sizing</a>
+  now both allow subsequent runs from <code>atom</code> without losing previous information.</li>
+<li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
+<li>Added the <a href="../examples/utilities">Utilities</a> example notebook.</li>
+<li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
+</ul>
+<h3 id="version-410">Version 4.1.0</h3>
+<ul>
+<li>Added the <code>est_params</code> parameter to customize the parameters passed to every model's
+  estimator.</li>
+<li>Following skopt's API, the <code>n_random_starts</code> parameter is deprecated in favour of
+ <code>n_initial_points</code>.</li>
+<li>The <a href="../API/data_cleaning/balancer">Balancer</a> class now allows you to use any of the
+  strategies from <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imblearn</a>.</li>
+<li>New utility attributes to inspect the dataset.</li>
+<li>Four new models: <a href="../API/models/catnb">CatNB</a>, <a href="../API/models/cnb">CNB</a>,
+  <a href="../API/models/ard">ARD</a> and <a href="../API/models/rnn">RNN</a>.</li>
+<li>Added the models section to the documentation.</li>
+<li>Small changes in log outputs.</li>
+<li>Bug fixes and performance improvements.</li>
+</ul>
+<h3 id="version-401">Version 4.0.1</h3>
+<ul>
+<li>Bug fix where the DFS strategy in <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>
+  was not deterministic for a fixed random state.</li>
+<li>Bug fix where subsequent runs with the same metric failed.</li>
+<li>Added the <a href="../license">license</a> file to the package's installer.</li>
+<li>Typo fixes in documentation.</li>
+</ul>
+<h3 id="version-400">Version 4.0.0</h3>
+<ul>
+<li>Bayesian optimization package changed from <a href="http://sheffieldml.github.io/GPyOpt/">GpyOpt</a>
+  to <a href="https://scikit-optimize.github.io/stable/">skopt</a>.</li>
+<li>Complete revision of the model's hyperparameters.</li>
+<li>Four <a href="../user_guide/#shap">SHAP plots</a> can now be called directly from an ATOM pipeline.</li>
+<li>Two new plots for regression tasks.</li>
+<li>New <a href="../API/plots/plot_pipeline">plot_pipeline</a> and <code>pipeline</code> attribute to access all transformers. </li>
+<li>Possibility to determine transformer parameters per method.</li>
+<li>New <a href="../API/ATOM/atomclassifier/#calibrate">calibration</a> method and <a href="../API/plots/plot_calibration">plot</a>.</li>
+<li>Metrics can now be added as scorers or functions with signature metric(y, y_pred, **kwargs).</li>
+<li>Implementation of <a href="../user_guide/#metric">multi-metric</a> runs.</li>
+<li>Possibility to choose which metric to plot.</li>
+<li>Early stopping for models that allow in-training evaluation.</li>
+<li>Added the <a href="../API/ATOM/atomloader">ATOMLoader</a> function to load saved <code>atom</code> instances
+  and directly apply all data transformations.</li>
+<li>The 'remove' strategy in the data cleaning parameters is deprecated in favour of 'drop'.</li>
+<li>Implemented the DFS strategy in <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>.</li>
+<li>All training classes now inherit from BaseEstimator.</li>
+<li>Added multiple new example notebooks.</li>
+<li>Tests coverage up to 100%.</li>
+<li>Completely new documentation page.</li>
+<li>Bug fixes and performance improvements.</li>
+</ul></div>
             </div>
         </div>
 
@@ -682,5 +760,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-10-17 10:36:47.798245+00:00
+Build Date UTC : 2020-10-24 11:56:52.309607+00:00
 -->

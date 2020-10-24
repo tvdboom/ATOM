@@ -6,17 +6,17 @@
                       title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1607">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot a metric's performance against threshold values. Only for binary classification tasks.
+Plot metric performances against threshold values. Only for binary classification tasks.
 <br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
+<strong>models: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
-<strong>metric: str, callable, sequence or None, optional (default=None)</strong>
+<strong>metric: str, callable, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric function
  or a sklearn scorer object (see the [user guide](../../../user_guide/#metric)). If

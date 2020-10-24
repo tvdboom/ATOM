@@ -55,7 +55,8 @@ In this documentation we will consistently use terms to refer to certain concept
     - [binary classification](https://en.wikipedia.org/wiki/Binary_classification)
     - [multiclass classification](https://en.wikipedia.org/wiki/Multiclass_classification)
     - [regression](https://en.wikipedia.org/wiki/Regression_analysis)
-* **category**: Refers to one of the unique values in a column, i.e. a binary classifier has 2 categories in the target column.
+* **class**: Refers to one of the unique values in a column, e.g. a binary classifier has 2 classes in the target column.
+* **array-like**: One-dimensional array of variable type list, tuple, np.array or pd.Series.
 * **missing values**: Refers to `None`, `NaN` and `inf` values.
 * **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
 * `atom`: Refers to an [ATOMClassifier](../API/ATOM/atomclassifier) or
@@ -356,7 +357,7 @@ SFM uses an estimator with `feature_importances_` or `coef_` attributes to selec
  best features in a dataset based on importance weights. The estimator is provided
  through the `solver` parameter and can be already fitted. ATOM allows you to use one
  its pre-defined [models](#models), e.g. `solver='RF'`. If you didn't call the
- FeatureSeletor through `atom`, don't forget to indicate the estimator's task adding
+ FeatureSelector through `atom`, don't forget to indicate the estimator's task adding
  `_class` or `_reg` after the name, e.g. `RF_class` to use a random forest classifier.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
@@ -417,6 +418,8 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 # Models
 --------
 
+### Predefined models
+
 ATOM provides 31 models for classification and regression tasks that can be used
  to fit the data in the pipeline. After fitting, every model class is attached to
  the `training` instance as an attribute. We refer to these "subclasses" as
@@ -458,6 +461,55 @@ ATOM provides 31 models for classification and regression tasks that can be used
 * 'SGD' for [Stochastic Gradient Descent](../API/models/sgd)
 * 'MLP' for [Multi-layer Perceptron](../API/models/mlp)
 
+
+<br>
+
+### Custom models
+
+It is also possible to use your own models in ATOM's pipeline. For example, imagine
+ we want to use sklearn's [Lars](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html)
+ estimator (note that is not included in ATOM's [predefined models](#predefined-models)).
+ There are two ways to achieve this:
+
+Using [ATOMModel](../API/ATOM/atommodel) (recommended). With this approach you can
+ pass the required model characteristics to the pipeline.
+
+```python
+from sklearn.linear_model import Lars
+from atom import ATOMRegressor, ATOMModel
+
+model = ATOMModel(models=Lars, longname="Lars Regression", needs_scaling=True, type="linear")
+
+atom = ATOMRegressor(X, y)
+atom.run(model)
+```
+
+Using the estimator's class or an instance of the class. This approach will also call
+ [ATOMModel](../API/ATOM/atommodel) under the hood, but it will leave its parameters
+ to their default values.
+
+```python
+from sklearn.linear_model import Lars
+from atom import ATOMRegressor, ATOMModel
+
+atom = ATOMRegressor(X, y)
+atom.run(models=Lars)
+```
+
+Additional things to take into account:
+
+* Custom models are not restricted to sklearn estimators. Every class implementing
+  a fit and predict method can be used!
+* [Parameter customization](#parameter-customization) (for the initializer) is only
+  possible for custom models which provide an estimator's class or an instance that
+  has a `set_params()` method, i.e. its a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
+* [Hyperparameter optimization](#hyperparameter-optimization) for custom models is
+  ignored unless appropriate dimensions are provided through `bo_params`.
+* If the estimator has a `n_jobs` and/or `random_state` parameter that is left to its
+  default value, it will automatically adopt the values from the `training` instance
+  it's called from.
+
+<br>
 
 !!! tip
     You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.
@@ -521,7 +573,7 @@ atom.run('Lasso')
     empty after the first run will automatically use the one in the pipeline.
 
 
-Additional information:
+Additional things to take into account:
 
 * Models are called through their [acronyms](#models), e.g. `atom.run(models='RF')`
   will train a Random Forest.
@@ -620,9 +672,16 @@ To specify parameters per model, use the model name as key and a dict of the
 
     atom.run(['XGB', 'MLP'], est_params={'XGB': {'n_estimators': 200}, 'MLP': {'hidden_layer_sizes': (75,)}})
 
+Some estimators allow you to pass extra parameters to the fit method (besides X and y).
+ This can be done adding `_fit` at the end of the parameter. For example, to change
+ XGBoost's verbosity, we can run:
+
+    atom.run('XGB', est_params={'verbose_fit': True}
+
 !!!note
     If a parameter is specified through `est_params`, it will be ignored by the
     bayesian optimization! 
+
 
 <br>
 
@@ -699,7 +758,7 @@ After fitting the estimator, you can asses the robustness of the model using
 
 ### Early stopping
 
-[XGBoost](../API/models/xgb), [LighGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
+[XGBoost](../API/models/xgb), [LightGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
  allow in-training evaluation. This means that the estimator is evaluated after
  every round of the training. Use the `early_stopping` key in `bo_params` to stop
  the training early if it didn't improve in the last `early_stopping` rounds. This
@@ -999,12 +1058,12 @@ A list of available plots can be find hereunder. Note that not all plots can be
 
 <tr>
 <td width="15%"><a href="../API/plots/plot_threshold">plot_threshold</a></td>
-<td>Plot a metric's performance against threshold values.</td>
+<td>Plot metric performances against threshold values.</td>
 </tr>
 
 <tr>
 <td width="15%"><a href="../API/plots/plot_probabilities">plot_probabilities</a></td>
-<td>Plot the probability distribution of the categories in the target column.</td>
+<td>Plot the probability distribution of the classes in the target column.</td>
 </tr>
 
 <tr>

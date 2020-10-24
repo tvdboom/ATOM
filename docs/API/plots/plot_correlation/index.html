@@ -58,6 +58,10 @@
 <li>
     <a href="../../ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -571,7 +575,7 @@ Whether to render the plot.
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, y='RainTomorrow')
+atom = ATOMClassifier(X, 'RainTomorrow')
 atom.plot_correlation()
 </code></pre>
 

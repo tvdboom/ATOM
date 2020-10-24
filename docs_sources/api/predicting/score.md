@@ -2,7 +2,7 @@
 -------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, verbose=None, \*\*kwargs) 
+<pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, sample_weight=None, verbose=None, \*\*kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L146">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the data and return the model's score on new data. The score is a default
@@ -15,7 +15,7 @@ Transform the data and return the model's score on new data. The score is a defa
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
@@ -23,13 +23,17 @@ Data containing the features, with shape=(n_samples, n_features).
 <blockquote>
 <ul>
 <li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
+<strong>sample_weight: array-like or None, optional (default=None)</strong>
+<blockquote>
+Sample weights with shape=(n_samples,).
+</blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses ATOM's verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -47,7 +51,7 @@ Same keyword arguments as the [transform](transform.md) method to
 <br />
 
 !!! note
-    The returned metric is determined by each estimator's score method pre-defined
+    The returned metric is determined by each estimator's score method predefined
     by its respective package. See its corresponding documentation for further
     details.
 

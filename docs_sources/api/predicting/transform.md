@@ -14,7 +14,7 @@ Transform new data through all the pre-processing steps in the pipeline. By defa
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Features to transform, with shape=(n_samples, n_features).
 </blockquote>
@@ -23,13 +23,13 @@ Features to transform, with shape=(n_samples, n_features).
 <ul>
 <li>If None: y is ignored in the transformers.</li>
 <li>If int: Position of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses ATOM's verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>

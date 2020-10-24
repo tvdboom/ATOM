@@ -121,7 +121,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 # Initialize the ATOM class
-atom = ATOMClassifier(X, y='RainTomorrow', n_rows=1e4, verbose=1, warnings='ignore', random_state=1)
+atom = ATOMClassifier(X, 'RainTomorrow', n_rows=1e4, verbose=1, warnings='ignore', random_state=1)
 
 # Handle missing values and categorical columns in the dataset
 atom.impute(strat_num='median', strat_cat='most_frequent')

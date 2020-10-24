@@ -121,7 +121,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 # Call ATOM using only 5% of the complete dataset (for explanatory purposes)
-atom = ATOMClassifier(X, y='RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
+atom = ATOMClassifier(X, 'RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
 ```
 
     << ================== ATOM ================== >>
@@ -185,11 +185,11 @@ atom.encode(strategy='CatBoost', max_onehot=10, frac_to_other=0.04)
 
     Fitting Encoder...
     Encoding categorical columns...
-     --> CatBoost-encoding feature Location. Contains 1 unique categories.
-     --> CatBoost-encoding feature WindGustDir. Contains 16 unique categories.
-     --> CatBoost-encoding feature WindDir9am. Contains 16 unique categories.
-     --> CatBoost-encoding feature WindDir3pm. Contains 16 unique categories.
-     --> Label-encoding feature RainToday. Contains 2 unique categories.
+     --> CatBoost-encoding feature Location. Contains 1 unique classes.
+     --> CatBoost-encoding feature WindGustDir. Contains 16 unique classes.
+     --> CatBoost-encoding feature WindDir9am. Contains 16 unique classes.
+     --> CatBoost-encoding feature WindDir3pm. Contains 16 unique classes.
+     --> Label-encoding feature RainToday. Contains 2 unique classes.
     
 
 

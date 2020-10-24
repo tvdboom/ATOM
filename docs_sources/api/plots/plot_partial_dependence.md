@@ -17,11 +17,11 @@ Plot the partial dependence of features. The partial dependence of a feature (or
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
+<strong>models: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all the models in the pipeline are selected.
 </blockquote>
-<strong>features: int, str, sequence or None, optional (default=None)</strong>
+<strong>features: int, str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Features or feature pairs (name or index) to get the partial dependence from. Maximum
 of 3 allowed. If None, it uses the top 3 features if `feature_importance`

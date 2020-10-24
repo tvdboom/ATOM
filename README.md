@@ -5,7 +5,7 @@
 
 ## Automated Tool for Optimized Modelling
 
-Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com
+Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
 
 
 #### Repository:

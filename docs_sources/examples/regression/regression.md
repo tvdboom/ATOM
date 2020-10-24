@@ -143,7 +143,7 @@ atom.encode()
     
     Fitting Encoder...
     Encoding categorical columns...
-     --> OneHot-encoding feature Sex. Contains 3 unique categories.
+     --> OneHot-encoding feature Sex. Contains 3 unique classes.
     
 
     is_categorical is deprecated and will be removed in a future version.  Use is_categorical_dtype instead

@@ -18,17 +18,17 @@ Load a class instance from a pickle file. If the file is a `training` instance t
 <blockquote>
 Name of the pickle file to load.
 </blockquote>
-<strong>X: dict, sequence, np.array, pd.DataFrame or None, optional (default=None)</strong>
+<strong>X: dict, list, tuple,  np.array, pd.DataFrame or None, optional (default=None)</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features). Only use this
  parameter if the file is a `training` instance that was saved using
  `save_data=False`. See the [save](../atomclassifier/#atomclassifier-save) method.
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series, optional (default=-1)</strong>
+<strong>y: int, str, list, tuple,  np.array or pd.Series, optional (default=-1)</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 This parameter is ignored if X=None.
@@ -36,8 +36,8 @@ This parameter is ignored if X=None.
 <strong>n_rows: int or float, optional (default=1)</strong>
 <blockquote>
 <ul>
-<li>if <=1: Fraction of the data to use.</li>
-<li>if >1: Number of rows to use.</li>
+<li>if <=1: Fraction of the dataset to use.</li>
+<li>if >1: Number of rows to use (only if input is X, y).</li>
 </ul>
 This parameter is ignored if X=None.
 </blockquote>

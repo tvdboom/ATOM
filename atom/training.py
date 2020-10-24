@@ -18,7 +18,7 @@ from sklearn.base import BaseEstimator
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    CAL, TRAIN_TYPES, get_best_score, infer_task, composed, method_to_log, crash
+    CAL, TRAIN_TYPES, lst, get_best_score, infer_task, composed, method_to_log, crash
 )
 
 
@@ -46,8 +46,11 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
         Parameters
         ----------
-        *arrays: array-like
-            Either a train and test set or X_train, X_test, y_train, y_test.
+        *arrays: sequence of indexables
+            Training set and test set. Allowed input formats are:
+                - train, test
+                - X_train, X_test, y_train, y_test
+                - (X_train, y_train), (X_test, y_test)
 
         """
         self._params_to_attr(*arrays)
@@ -56,7 +59,7 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Models: {', '.join(self.models)}", 1)
-        self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
+        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         self._results = self._run()
         self._results.index.name = 'model'
@@ -99,8 +102,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
         Parameters
         ----------
-        *arrays: array-like
-            Either a train and test set or X_train, X_test, y_train, y_test.
+        *arrays: sequence of indexables
+            Training set and test set. Allowed input formats are:
+                - train, test
+                - X_train, X_test, y_train, y_test
+                - (X_train, y_train), (X_test, y_test)
 
         """
         self._params_to_attr(*arrays)
@@ -117,7 +123,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                              f"skip_runs={self.skip_runs}.")
 
         self.log("\nTraining ===================================== >>", 1)
-        self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
+        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
         results = []  # List of dataframes returned by self._run
@@ -168,7 +174,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
     Parameters
     ----------
-    train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))
+    train_sizes: array-like, optional (default=np.linspace(0.2, 1.0, 5))
         Sequence of training set sizes used to run the trainings.
              - If <=1: Fraction of the training set.
              - If >1: Total number of samples.
@@ -191,8 +197,11 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         Parameters
         ----------
-        *arrays: array-like
-            Either a train and test set or X_train, X_test, y_train, y_test.
+        *arrays: sequence of indexables
+            Training set and test set. Allowed input formats are:
+                - train, test
+                - X_train, X_test, y_train, y_test
+                - (X_train, y_train), (X_test, y_test)
 
         """
         self._params_to_attr(*arrays)
@@ -201,7 +210,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Models: {', '.join(self.models)}", 1)
-        self.log(f"Metric: {', '.join([m.name for m in self.metric_])}", 1)
+        self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         frac = []  # Fraction of the training set used in evey run
         results = []  # List of dataframes returned by self._run
@@ -239,7 +248,7 @@ class TrainerClassifier(Trainer):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
@@ -266,7 +275,7 @@ class TrainerRegressor(Trainer):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
@@ -293,7 +302,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
@@ -321,7 +330,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
@@ -349,7 +358,7 @@ class TrainSizingClassifier(TrainSizing):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,
@@ -377,7 +386,7 @@ class TrainSizingRegressor(TrainSizing):
 
     @typechecked
     def __init__(self,
-                 models: Union[str, Sequence[str]],
+                 models: Union[CAL, Sequence[CAL]],
                  metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                  greater_is_better: Union[bool, Sequence[bool]] = True,
                  needs_proba: Union[bool, Sequence[bool]] = False,

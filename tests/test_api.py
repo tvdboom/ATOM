@@ -7,15 +7,55 @@ Description: Unit tests for api.py
 
 """
 
-# Import packages
+# Standard packages
 import pytest
+from sklearn.linear_model import HuberRegressor
 
 # Own modules
-from atom import ATOMClassifier, ATOMRegressor, ATOMLoader
+from atom import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
 from atom.training import TrainerClassifier
 from atom.data_cleaning import Imputer
-from atom.utils import merge
+from atom.utils import merge, check_scaling
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
+
+
+# Test ATOMModel ============================================================ >>
+
+def test_name():
+    """Assert that the model's name is passed properly."""
+    model = ATOMModel(HuberRegressor, name='hub')
+
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.run(model)
+    assert hasattr(atom, 'hub')
+
+
+def test_longname():
+    """Assert that the model's longname is passed properly."""
+    model = ATOMModel(HuberRegressor, name='hub', longname='Hubber')
+
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.run(model)
+    assert atom.hub.longname == 'Hubber'
+
+
+def test_needs_scaling():
+    """Assert that the model's needs_scaling is passed properly."""
+    model = ATOMModel(HuberRegressor, name='hub', needs_scaling=False)
+
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.run(model)
+    assert not check_scaling(atom.hub.X)
+
+
+def test_type():
+    """Assert that the model's type is passed properly."""
+    pytest.raises(ValueError, ATOMModel, HuberRegressor, type='test')
+    model = ATOMModel(HuberRegressor, name='hub', type='linear')
+
+    atom = ATOMRegressor(X_reg, y_reg)
+    atom.run(model)
+    assert atom.hub.type == 'linear'
 
 
 # Test ATOMLoader =========================================================== >>

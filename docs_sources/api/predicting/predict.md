@@ -14,13 +14,13 @@ Transform the data and make predictions on new data. If called from a `training`
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses ATOM's verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>

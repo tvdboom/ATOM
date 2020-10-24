@@ -346,7 +346,7 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(features=[120, 2])
 
     # Invalid target int
-    with pytest.raises(ValueError, match=r".*categories, got .*"):
+    with pytest.raises(ValueError, match=r".*classes, got .*"):
         atom.plot_partial_dependence(target=5)
 
     # Invalid target str

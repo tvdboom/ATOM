@@ -62,7 +62,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
     population: int, optional (default=500)
         Number of programs in each generation. Only if strategy='genetic'.
 
-    operators: str, sequence or None, optional (default=None)
+    operators: str, list, tuple or None, optional (default=None)
         Mathematical operators to apply on the features. None for all. Choose from:
         'add', 'sub', 'mul', 'div', 'sqrt', 'log', 'inv', 'sin', 'cos', 'tan'.
 
@@ -84,7 +84,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
@@ -123,10 +123,10 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -276,10 +276,10 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -466,7 +466,7 @@ class FeatureSelector(BaseEstimator,
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
@@ -522,10 +522,10 @@ class FeatureSelector(BaseEstimator,
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -736,10 +736,10 @@ class FeatureSelector(BaseEstimator,
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
             Does nothing. Only for continuity of API.
 
         Returns

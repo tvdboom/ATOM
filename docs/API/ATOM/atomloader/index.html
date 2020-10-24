@@ -58,6 +58,10 @@
 <li>
     <a href="./" class="dropdown-item active">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="../atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -493,7 +497,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../data_cleaning/scaler/" class="nav-link">
+                                <a rel="next" href="../atommodel/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -550,17 +554,17 @@ Load a class instance from a pickle file. If the file is a <code>training</code>
 <blockquote>
 Name of the pickle file to load.
 </blockquote>
-<strong>X: dict, sequence, np.array, pd.DataFrame or None, optional (default=None)</strong>
+<strong>X: dict, list, tuple,  np.array, pd.DataFrame or None, optional (default=None)</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features). Only use this
  parameter if the file is a <code>training</code> instance that was saved using
  <code>save_data=False</code>. See the <a href="../atomclassifier/#atomclassifier-save">save</a> method.
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series, optional (default=-1)</strong>
+<strong>y: int, str, list, tuple,  np.array or pd.Series, optional (default=-1)</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 This parameter is ignored if X=None.
@@ -568,8 +572,8 @@ This parameter is ignored if X=None.
 <strong>n_rows: int or float, optional (default=1)</strong>
 <blockquote>
 <ul>
-<li>if &lt;=1: Fraction of the data to use.</li>
-<li>if &gt;1: Number of rows to use.</li>
+<li>if &lt;=1: Fraction of the dataset to use.</li>
+<li>if &gt;1: Number of rows to use (only if input is X, y).</li>
 </ul>
 This parameter is ignored if X=None.
 </blockquote>

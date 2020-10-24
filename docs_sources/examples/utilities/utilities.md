@@ -424,11 +424,11 @@ atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X['MaxTemp'] + atom_2.X['MinTemp'])/2
      --> Dropping 5361 rows due to missing values in feature Cloud9am.
      --> Dropping 1386 rows due to missing values in feature Cloud3pm.
     Encoding categorical columns...
-     --> LeaveOneOut-encoding feature Location. Contains 26 unique categories.
-     --> LeaveOneOut-encoding feature WindGustDir. Contains 16 unique categories.
-     --> LeaveOneOut-encoding feature WindDir9am. Contains 16 unique categories.
-     --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique categories.
-     --> Label-encoding feature RainToday. Contains 2 unique categories.
+     --> LeaveOneOut-encoding feature Location. Contains 26 unique classes.
+     --> LeaveOneOut-encoding feature WindGustDir. Contains 16 unique classes.
+     --> LeaveOneOut-encoding feature WindDir9am. Contains 16 unique classes.
+     --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique classes.
+     --> Label-encoding feature RainToday. Contains 2 unique classes.
     ATOMClassifier loaded successfully!
     
 

@@ -58,6 +58,10 @@
 <li>
     <a href="../../../API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="../../../API/ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -704,11 +708,11 @@ A column-vector y was passed when a 1d array was expected. Please change the sha
 
 
 Encoding categorical columns...
- --&gt; LeaveOneOut-encoding feature Location. Contains 45 unique categories.
- --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 unique categories.
- --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 unique categories.
- --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique categories.
- --&gt; Label-encoding feature RainToday. Contains 2 unique categories.
+ --&gt; LeaveOneOut-encoding feature Location. Contains 45 unique classes.
+ --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 unique classes.
+ --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 unique classes.
+ --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique classes.
+ --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
 </code></pre>
 <pre><code class="python"># We can analyze the impact of the training set's size on a LightGBM model
 atom.train_sizing('lgb', train_sizes=np.linspace(0.1, 1, 9), bagging=4)

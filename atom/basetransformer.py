@@ -20,7 +20,10 @@ from typeguard import typechecked
 from typing import Union, Optional
 
 # Own modules
-from .utils import prepare_logger, to_df, to_series, composed, method_to_log, crash
+from .utils import (
+    X_TYPES, Y_TYPES, prepare_logger, to_df, to_series,
+    composed, method_to_log, crash
+)
 
 
 class BaseTransformer(object):
@@ -129,7 +132,8 @@ class BaseTransformer(object):
     # Methods =============================================================== >>
 
     @staticmethod
-    def _prepare_input(X, y):
+    @typechecked
+    def _prepare_input(X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Prepare the input data.
 
         Copy X and y, convert to pandas (if not already) and perform standard
@@ -137,10 +141,10 @@ class BaseTransformer(object):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Dataset containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If None, y is not used in the estimator.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -157,12 +161,9 @@ class BaseTransformer(object):
         """
         X = to_df(deepcopy(X))  # Copy to not overwrite mutable variables
 
-        # Convert array to dataframe and target column to pandas series
+        # Convert target column to series
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
             y = deepcopy(y)
-            if len(X) != len(y):
-                raise ValueError("X and y don't have the same number of "
-                                 f"rows, got len(X)={len(X)} and len(y)={len(y)}.")
 
             # Convert y to pd.Series
             if not isinstance(y, pd.Series):
@@ -178,6 +179,11 @@ class BaseTransformer(object):
             elif not X.index.equals(y.index):  # Compare indices
                 raise ValueError("X and y don't have the same indices!")
 
+            # Check X and y have the same number of rows
+            if len(X) != len(y):
+                raise ValueError("X and y don't have the same number of "
+                                 f"rows, got len(X)={len(X)} and len(y)={len(y)}.")
+
             return X, y
 
         elif isinstance(y, str):
@@ -191,6 +197,9 @@ class BaseTransformer(object):
 
         elif y is None:
             return X, y
+
+        else:
+            raise ValueError(f"Invalid value for the y parameter, got {y}.")
 
     @composed(crash, typechecked)
     def log(self, msg: Union[int, float, str], level: int = 0):

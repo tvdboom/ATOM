@@ -12,11 +12,17 @@ Description: Module containing all available models. All classes must have the
 
         Attributes
         ----------
+        T: class
+            Training instance from which the model is called.
+
         name: str
             Short acronym of the model's longname for calling.
 
         longname: str
             Complete name of the model.
+
+        needs_scaling: bool
+            Whether the model needs scaled features.
 
         type: str
             Model type (to use in plots). Choose from: linear, tree, kernel.
@@ -31,7 +37,7 @@ Description: Module containing all available models. All classes must have the
 
         Methods
         -------
-        __init__(self, *args):
+        __init__(self, *arrays):
             Class initializer (contains super() to parent class).
 
         get_init_values(self):
@@ -46,7 +52,7 @@ Description: Module containing all available models. All classes must have the
         get_estimator(self, params={}):
             Return the model's estimator with unpacked parameters.
 
-        custom_fit(model, train, validation):
+        custom_fit(model, train, validation, est_params):
             If the direct fit method of the model is not enough and you desire to
             customize it a bit, make a custom_fit method. It will run instead.
 
@@ -98,6 +104,7 @@ List of available models:
 # Standard packages
 import random
 import numpy as np
+from inspect import signature
 from scipy.spatial.distance import minkowski
 
 # Others
@@ -144,32 +151,85 @@ from .basemodel import BaseModel
 
 # Classes =================================================================== >>
 
+class CustomModel(BaseModel):
+    """Custom model (estimator provided by user)."""
+
+    def __init__(self, *args):
+        self.est = args[1]  # Estimator provided by the user
+        if hasattr(self.est, 'longname'):
+            longname = self.est.longname
+        elif callable(self.est):
+            longname = self.est.__name__
+        else:
+            longname = self.est.__class__.__name__
+
+        super().__init__(
+            T=args[0],
+            name=getattr(self.est, 'name', longname),
+            longname=longname,
+            need_scaling=getattr(self.est, 'needs_scaling', True),
+            type=getattr(self.est, 'type', 'kernel'),
+            params={}
+        )
+
+    def get_estimator(self, params={}):
+        """Call the estimator object."""
+        parameters = signature(self.est.__init__).parameters
+
+        # The provided estimator can be a class or an instance
+        if callable(self.est):
+            # Add n_jobs and random_state to the estimator (if available)
+            for p in ['n_jobs', 'random_state']:
+                if p in parameters:
+                    params[p] = self._get_default([p], params)
+
+            return self.est(**params)
+
+        else:
+            # Update the parameters (only if it's a BaseEstimator)
+            if all(hasattr(self.est, attr) for attr in ['get_params', 'set_params']):
+                for p in ['n_jobs', 'random_state']:
+                    # If the class has the parameter and it's the default value
+                    if self.est.get_params().get(p, -99.99) == parameters[p]._default:
+                        params[p] = self._get_default([p], params)
+
+                self.est.set_params(**params)
+            return self.est
+
+
 class GaussianProcess(BaseModel):
     """Gaussian process."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'GP', 'Gaussian Process'
-        self.type = 'kernel'
+        super().__init__(
+            T=args[0],
+            name='GP',
+            longname='Gaussian Process',
+            need_scaling=False,
+            type='kernel'
+        )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        kwargs = dict(random_state=random_state, **params)
         if self.T.goal.startswith('class'):
-            estimator = GaussianProcessClassifier(n_jobs=self.T.n_jobs, **kwargs)
+            return GaussianProcessClassifier(n_jobs=n_jobs, **kwargs)
         else:
-            estimator = GaussianProcessRegressor(**kwargs)
-
-        return estimator
+            return GaussianProcessRegressor(**kwargs)
 
 
 class GaussianNaiveBayes(BaseModel):
     """Gaussian Naive Bayes."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'GNB', 'Gaussian Naive Bayes'
-        self.type = 'kernel'
+        super().__init__(
+            T=args[0],
+            name='GNB',
+            longname='Gaussian Naive Bayes',
+            need_scaling=False,
+            type='kernel'
+        )
 
     @staticmethod
     def get_estimator(params={}):
@@ -181,10 +241,14 @@ class MultinomialNaiveBayes(BaseModel):
     """Multinomial Naive Bayes."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'MNB', 'Multinomial Naive Bayes'
-        self.type = 'kernel'
-        self.params = dict(alpha=[1.0, 3], fit_prior=[True, 0])
+        super().__init__(
+            T=args[0],
+            name='MNB',
+            longname='Multinomial Naive Bayes',
+            need_scaling=False,
+            type='kernel',
+            params={'alpha': [1.0, 3], 'fit_prior': [True, 0]}
+        )
 
     @staticmethod
     def get_estimator(params={}):
@@ -204,10 +268,14 @@ class BernoulliNaiveBayes(BaseModel):
     """Bernoulli Naive Bayes."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'BNB', 'Bernoulli Naive Bayes'
-        self.type = 'kernel'
-        self.params = dict(alpha=[1.0, 3], fit_prior=[True, 0])
+        super().__init__(
+            T=args[0],
+            name='BNB',
+            longname='Bernoulli Naive Bayes',
+            need_scaling=False,
+            type='kernel',
+            params={'alpha': [1.0, 3], 'fit_prior': [True, 0]}
+         )
 
     @staticmethod
     def get_estimator(params={}):
@@ -227,10 +295,14 @@ class CategoricalNaiveBayes(BaseModel):
     """Categorical Naive Bayes."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'CatNB', 'Categorical Naive Bayes'
-        self.type = 'kernel'
-        self.params = dict(alpha=[1.0, 3], fit_prior=[True, 0])
+        super().__init__(
+            T=args[0],
+            name='CatNB',
+            longname='Categorical Naive Bayes',
+            need_scaling=False,
+            type='kernel',
+            params={'alpha': [1.0, 3], 'fit_prior': [True, 0]}
+        )
 
     @staticmethod
     def get_estimator(params={}):
@@ -250,10 +322,14 @@ class ComplementNaiveBayes(BaseModel):
     """Complement Naive Bayes."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'CNB', 'Complement Naive Bayes'
-        self.type = 'kernel'
-        self.params = dict(alpha=[1.0, 3], fit_prior=[True, 0], norm=[False, 0])
+        super().__init__(
+            T=args[0],
+            name='CNB',
+            longname='Complement Naive Bayes',
+            need_scaling=False,
+            type='kernel',
+            params={'alpha': [1.0, 3], 'fit_prior': [True, 0], 'norm': [False, 0]}
+        )
 
     @staticmethod
     def get_estimator(params={}):
@@ -274,36 +350,45 @@ class OrdinaryLeastSquares(BaseModel):
     """Linear Regression (without regularization)."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'OLS', 'Ordinary Least Squares'
-        self.type = 'linear'
+        super().__init__(
+            T=args[0],
+            name='OLS',
+            longname='Ordinary Least Squares',
+            need_scaling=True,
+            type='linear'
+        )
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        return LinearRegression(n_jobs=self.T.n_jobs, **params)
+        n_jobs = self._get_default(['n_jobs'], params)
+        return LinearRegression(n_jobs=n_jobs, **params)
 
 
 class Ridge(BaseModel):
     """Linear Regression/Classification with ridge regularization."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name = 'Ridge'
-        if self.T.goal.startswith('class'):
-            self.longname = 'Ridge Classification'
+        if args[0].goal.startswith('class'):
+            longname = 'Ridge Classification'
         else:
-            self.longname = 'Ridge Regression'
-        self.type = 'linear'
-        self.params = dict(alpha=[1.0, 3], solver=['auto', 0])
+            longname = 'Ridge Regression'
+
+        super().__init__(
+            T=args[0],
+            name='Ridge',
+            longname=longname,
+            need_scaling=True,
+            type='linear',
+            params={'alpha': [1.0, 3], 'solver': ['auto', 0]}
+        )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = RidgeClassifier(random_state=self.T.random_state, **params)
+            return RidgeClassifier(random_state=random_state, **params)
         else:
-            estimator = RidgeRegressor(random_state=self.T.random_state, **params)
-
-        return estimator
+            return RidgeRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -319,14 +404,19 @@ class Lasso(BaseModel):
     """Linear Regression with lasso regularization."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'Lasso', 'Lasso Regression'
-        self.type = 'linear'
-        self.params = dict(alpha=[1.0, 3], selection=['cyclic', 0])
+        super().__init__(
+            T=args[0],
+            name='Lasso',
+            longname='Lasso Regression',
+            need_scaling=True,
+            type='linear',
+            params={'alpha': [1.0, 3], 'selection': ['cyclic', 0]}
+        )
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        return LassoRegressor(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
+        return LassoRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -341,18 +431,23 @@ class ElasticNet(BaseModel):
     """Linear Regression with elasticnet regularization."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'EN', 'ElasticNet Regression'
-        self.type = 'linear'
-        self.params = dict(
-            alpha=[1.0, 3],
-            l1_ratio=[0.5, 1],
-            selection=['cyclic', 0]
+        super().__init__(
+            T=args[0],
+            name='EN',
+            longname='ElasticNet Regression',
+            need_scaling=True,
+            type='linear',
+            params={
+                'alpha': [1.0, 3],
+                'l1_ratio': [0.5, 1],
+                'selection': ['cyclic', 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        return ElasticNetRegressor(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
+        return ElasticNetRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -368,15 +463,19 @@ class BayesianRidge(BaseModel):
     """Bayesian ridge regression."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'BR', 'Bayesian Ridge'
-        self.type = 'linear'
-        self.params = dict(
-            n_iter=[300, 0],
-            alpha_1=[1e-6, 8],
-            alpha_2=[1e-6, 8],
-            lambda_1=[1e-6, 8],
-            lambda_2=[1e-6, 8]
+        super().__init__(
+            T=args[0],
+            name='BR',
+            longname='Bayesian Ridge',
+            need_scaling=True,
+            type='linear',
+            params={
+                'n_iter': [300, 0],
+                'alpha_1': [1e-6, 8],
+                'alpha_2': [1e-6, 8],
+                'lambda_1': [1e-6, 8],
+                'lambda_2': [1e-6, 8]
+            }
         )
 
     @staticmethod
@@ -400,15 +499,19 @@ class AutomaticRelevanceDetermination(BaseModel):
     """Automatic Relevance Determination."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'ARD', 'Automatic Relevance Determination'
-        self.type = 'linear'
-        self.params = dict(
-            n_iter=[300, 0],
-            alpha_1=[1e-6, 8],
-            alpha_2=[1e-6, 8],
-            lambda_1=[1e-6, 8],
-            lambda_2=[1e-6, 8]
+        super().__init__(
+            T=args[0],
+            name='ARD',
+            longname='Automatic Relevant Determination',
+            need_scaling=True,
+            type='linear',
+            params={
+                'n_iter': [300, 0],
+                'alpha_1': [1e-6, 8],
+                'alpha_2': [1e-6, 8],
+                'lambda_1': [1e-6, 8],
+                'lambda_2': [1e-6, 8]
+            }
         )
 
     @staticmethod
@@ -432,15 +535,19 @@ class LogisticRegression(BaseModel):
     """Logistic Regression."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'LR', 'Logistic Regression'
-        self.type = 'linear'
-        self.params = dict(
-            penalty=['l2', 0],
-            C=[1.0, 3],
-            solver=['lbfgs', 0],
-            max_iter=[100, 0],
-            l1_ratio=[0.5, 1]
+        super().__init__(
+            T=args[0],
+            name='LR',
+            longname='Logistic Regression',
+            need_scaling=True,
+            type='linear',
+            params={
+                'penalty': ['l2', 0],
+                'C': [1.0, 3],
+                'solver': ['lbfgs', 0],
+                'max_iter': [100, 0],
+                'l1_ratio': [0.5, 1]
+            }
         )
 
     def get_params(self, x):
@@ -465,7 +572,8 @@ class LogisticRegression(BaseModel):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        return LR(random_state=self.T.random_state, n_jobs=self.T.n_jobs, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        return LR(n_jobs=n_jobs, random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -484,10 +592,14 @@ class LinearDiscriminantAnalysis(BaseModel):
     """Linear Discriminant Analysis."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'LDA', 'Linear Discriminant Analysis'
-        self.type = 'kernel'
-        self.params = dict(solver=['svd', 0], shrinkage=[0, 1])
+        super().__init__(
+            T=args[0],
+            name='LDA',
+            longname='Linear Discriminant Analysis',
+            need_scaling=False,
+            type='kernel',
+            params={'solver': ['svd', 0], 'shrinkage': [0, 1]}
+        )
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -516,10 +628,14 @@ class QuadraticDiscriminantAnalysis(BaseModel):
     """Quadratic Discriminant Analysis."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'QDA', 'Quadratic Discriminant Analysis'
-        self.type = 'kernel'
-        self.params = dict(reg_param=[0, 1])
+        super().__init__(
+            T=args[0],
+            name='QDA',
+            longname='Quadratic Discriminant Analysis',
+            need_scaling=False,
+            type='kernel',
+            params={'reg_param': [0, 1]}
+        )
 
     @staticmethod
     def get_estimator(params={}):
@@ -536,25 +652,28 @@ class KNearestNeighbors(BaseModel):
     """K-Nearest Neighbors."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'KNN', 'K-Nearest Neighbors'
-        self.type = 'kernel'
-        self.params = dict(
-            n_neighbors=[5, 0],
-            weights=['uniform', 0],
-            algorithm=['auto', 0],
-            leaf_size=[30, 0],
-            p=[2, 0]
+        super().__init__(
+            T=args[0],
+            name='KNN',
+            longname='K-Nearest Neighbors',
+            need_scaling=True,
+            type='kernel',
+            params={
+                'n_neighbors': [5, 0],
+                'weights': ['uniform', 0],
+                'algorithm': ['auto', 0],
+                'leaf_size': [30, 0],
+                'p': [2, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
+        n_jobs = self._get_default(['n_jobs'], params)
         if self.T.goal.startswith('class'):
-            estimator = KNeighborsClassifier(n_jobs=self.T.n_jobs, **params)
+            return KNeighborsClassifier(n_jobs=n_jobs, **params)
         else:
-            estimator = KNeighborsRegressor(n_jobs=self.T.n_jobs, **params)
-
-        return estimator
+            return KNeighborsRegressor(n_jobs=n_jobs, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -572,16 +691,20 @@ class RadiusNearestNeighbors(BaseModel):
     """Radius Nearest Neighbors."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'RNN', 'Radius Nearest Neighbors'
-        self.type = 'kernel'
         self._distances = []
-        self.params = dict(
-            radius=[None, 3],  # We need the scaler to calculate the distances
-            weights=['uniform', 0],
-            algorithm=['auto', 0],
-            leaf_size=[30, 0],
-            p=[2, 0]
+        super().__init__(
+            T=args[0],
+            name='RNN',
+            longname='Radius Nearest Neighbors',
+            need_scaling=True,
+            type='kernel',
+            params={
+                'radius': [None, 3],  # We need the scaler to calculate the distances
+                'weights': ['uniform', 0],
+                'algorithm': ['auto', 0],
+                'leaf_size': [30, 0],
+                'p': [2, 0]
+            }
         )
 
     def get_init_values(self):
@@ -606,16 +729,12 @@ class RadiusNearestNeighbors(BaseModel):
             radius = params.pop('radius')
         else:
             radius = np.mean(self.distances)
-        kwargs = dict(radius=radius, n_jobs=self.T.n_jobs, **params)
+        n_jobs = self._get_default(['n_jobs'], params)
+        kwargs = dict(radius=radius, n_jobs=n_jobs, **params)
         if self.T.goal.startswith('class'):
-            estimator = RadiusNeighborsClassifier(
-                outlier_label='most_frequent',
-                **kwargs
-            )
+            return RadiusNeighborsClassifier(outlier_label='most_frequent', **kwargs)
         else:
-            estimator = RadiusNeighborsRegressor(**kwargs)
-
-        return estimator
+            return RadiusNeighborsRegressor(**kwargs)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -635,28 +754,35 @@ class DecisionTree(BaseModel):
     """Single Decision Tree."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'Tree', 'Decision Tree'
-        self.type = 'tree'
-        self.params = dict(
-            criterion=['gini' if self.T.goal.startswith('class') else 'mse', 0],
-            splitter=['best', 0],
-            max_depth=[None, 0],
-            min_samples_split=[2, 0],
-            min_samples_leaf=[1, 0],
-            max_features=[None, 0],
-            ccp_alpha=[0, 3]
+        if args[0].goal.startswith('class'):
+            criterion = 'gini'
+        else:
+            criterion = 'mse'
+
+        super().__init__(
+            T=args[0],
+            name='Tree',
+            longname='Decision Tree',
+            need_scaling=False,
+            type='tree',
+            params={
+                'criterion': [criterion, 0],
+                'splitter': ['best', 0],
+                'max_depth': [None, 0],
+                'min_samples_split': [2, 0],
+                'min_samples_leaf': [1, 0],
+                'max_features': [None, 0],
+                'ccp_alpha': [0, 3]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = DecisionTreeClassifier
+            return DecisionTreeClassifier(random_state=random_state, **params)
         else:
-            estimator = DecisionTreeRegressor
-
-        return estimator(**kwargs)
+            return DecisionTreeRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -681,30 +807,33 @@ class Bagging(BaseModel):
     """Bagging model (with decision tree as base estimator)."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name = 'Bag'
-        if self.T.goal.startswith('class'):
-            self.longname = 'Bagging Classifier'
+        if args[0].goal.startswith('class'):
+            longname = 'Bagging Classifier'
         else:
-            self.longname = 'Bagging Regressor'
-        self.type = 'tree'
-        self.params = dict(
-            n_estimators=[10, 0],
-            max_samples=[1.0, 1],
-            max_features=[1.0, 1],
-            bootstrap=[True, 0],
-            bootstrap_features=[False, 0]
+            longname = 'Bagging Regressor'
+
+        super().__init__(
+            T=args[0],
+            name='Bag',
+            longname=longname,
+            need_scaling=False,
+            type='tree',
+            params={
+                'n_estimators': [10, 0],
+                'max_samples': [1.0, 1],
+                'max_features': [1.0, 1],
+                'bootstrap': [True, 0],
+                'bootstrap_features': [False, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, n_jobs=self.T.n_jobs, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = BaggingClassifier
+            return BaggingClassifier(random_state=random_state, n_jobs=n_jobs, **params)
         else:
-            estimator = BaggingRegressor
-
-        return estimator(**kwargs)
+            return BaggingRegressor(random_state=random_state, n_jobs=n_jobs, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -722,19 +851,28 @@ class ExtraTrees(BaseModel):
     """Extremely Randomized Trees."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'ET', 'Extra-Trees'
-        self.type = 'tree'
-        self.params = dict(
-            n_estimators=[100, 0],
-            criterion=['gini' if self.T.goal.startswith('class') else 'mse', 0],
-            max_depth=[None, 0],
-            min_samples_split=[2, 0],
-            min_samples_leaf=[1, 0],
-            max_features=[None, 0],
-            bootstrap=[False, 0],
-            ccp_alpha=[0, 3],
-            max_samples=[0.9, 1]
+        if args[0].goal.startswith('class'):
+            criterion = 'gini'
+        else:
+            criterion = 'mse'
+
+        super().__init__(
+            T=args[0],
+            name='ET',
+            longname='Extra-Trees',
+            need_scaling=False,
+            type='tree',
+            params={
+                'n_estimators': [100, 0],
+                'criterion': [criterion, 0],
+                'max_depth': [None, 0],
+                'min_samples_split': [2, 0],
+                'min_samples_leaf': [1, 0],
+                'max_features': [None, 0],
+                'bootstrap': [False, 0],
+                'ccp_alpha': [0, 3],
+                'max_samples': [0.9, 1]
+            }
         )
 
     def get_params(self, x):
@@ -748,13 +886,12 @@ class ExtraTrees(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, n_jobs=self.T.n_jobs, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        kwargs = dict(random_state=random_state, n_jobs=n_jobs, **params)
         if self.T.goal.startswith('class'):
-            estimator = ExtraTreesClassifier
+            return ExtraTreesClassifier(**kwargs)
         else:
-            estimator = ExtraTreesRegressor
-
-        return estimator(**kwargs)
+            return ExtraTreesRegressor(**kwargs)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -781,19 +918,28 @@ class RandomForest(BaseModel):
     """Random Forest."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'RF', 'Random Forest'
-        self.type = 'tree'
-        self.params = dict(
-            n_estimators=[100, 0],
-            criterion=['gini' if self.T.goal.startswith('class') else 'mse', 0],
-            max_depth=[None, 0],
-            min_samples_split=[2, 0],
-            min_samples_leaf=[1, 0],
-            max_features=[None, 0],
-            bootstrap=[False, 0],
-            ccp_alpha=[0, 3],
-            max_samples=[0.9, 1]
+        if args[0].goal.startswith('class'):
+            criterion = 'gini'
+        else:
+            criterion = 'mse'
+
+        super().__init__(
+            T=args[0],
+            name='RF',
+            longname='Random Forest',
+            need_scaling=False,
+            type='tree',
+            params={
+                'n_estimators': [100, 0],
+                'criterion': [criterion, 0],
+                'max_depth': [None, 0],
+                'min_samples_split': [2, 0],
+                'min_samples_leaf': [1, 0],
+                'max_features': [None, 0],
+                'bootstrap': [False, 0],
+                'ccp_alpha': [0, 3],
+                'max_samples': [0.9, 1]
+            }
         )
 
     def get_params(self, x):
@@ -807,13 +953,12 @@ class RandomForest(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, n_jobs=self.T.n_jobs, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        kwargs = dict(random_state=random_state, n_jobs=n_jobs, **params)
         if self.T.goal.startswith('class'):
-            estimator = RandomForestClassifier
+            return RandomForestClassifier(**kwargs)
         else:
-            estimator = RandomForestRegressor
-
-        return estimator(**kwargs)
+            return RandomForestRegressor(**kwargs)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -840,14 +985,16 @@ class AdaBoost(BaseModel):
     """Adaptive Boosting (with decision tree as base estimator)."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'AdaB', 'AdaBoost'
-        self.type = 'tree'
-        self.params = dict(
-            n_estimators=[50, 0],
-            learning_rate=[1.0, 2],
+        super().__init__(
+            T=args[0],
+            name='AdaB',
+            longname='AdaBoost',
+            need_scaling=False,
+            type='tree',
+            params={'n_estimators': [50, 0], 'learning_rate': [1.0, 2]}
         )
 
+        # Add extra parameters depending on the task
         if self.T.goal.startswith('class'):
             self.params['algorithm'] = ['SAMME.R', 0]
         else:
@@ -855,13 +1002,11 @@ class AdaBoost(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = AdaBoostClassifier
+            return AdaBoostClassifier(random_state=random_state, **params)
         else:
-            estimator = AdaBoostRegressor
-
-        return estimator(**kwargs)
+            return AdaBoostRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -878,21 +1023,26 @@ class GradientBoostingMachine(BaseModel):
     """Gradient Boosting Machine."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=False)
-        self.name, self.longname = 'GBM', 'Gradient Boosting Machine'
-        self.type = 'tree'
-        self.params = dict(
-            learning_rate=[0.1, 2],
-            n_estimators=[100, 0],
-            subsample=[1.0, 1],
-            criterion=['friedman_mse', 0],
-            min_samples_split=[2, 0],
-            min_samples_leaf=[1, 0],
-            max_depth=[3, 0],
-            max_features=[None, 0],
-            ccp_alpha=[0, 3],
+        super().__init__(
+            T=args[0],
+            name='GBM',
+            longname='Gradient Boosting Machine',
+            need_scaling=False,
+            type='tree',
+            params={
+                'learning_rate': [0.1, 2],
+                'n_estimators': [100, 0],
+                'subsample': [1.0, 1],
+                'criterion': ['friedman_mse', 0],
+                'min_samples_split': [2, 0],
+                'min_samples_leaf': [1, 0],
+                'max_depth': [3, 0],
+                'max_features': [None, 0],
+                'ccp_alpha': [0, 3]
+            }
         )
 
+        # Add extra parameters depending on the task
         if self.T.task.startswith('bin'):
             self.params['loss'] = ['deviance', 0]
         elif self.T.task.startswith('reg'):
@@ -911,13 +1061,11 @@ class GradientBoostingMachine(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = GradientBoostingClassifier
+            return GradientBoostingClassifier(random_state=random_state, **params)
         else:
-            estimator = GradientBoostingRegressor
-
-        return estimator(**kwargs)
+            return GradientBoostingRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -946,45 +1094,39 @@ class XGBoost(BaseModel):
     """Extreme Gradient Boosting."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'XGB', 'XGBoost'
-        self.type = 'tree'
-        self.evals = {}
-        self.params = dict(
-            n_estimators=[100, 0],
-            learning_rate=[0.1, 2],
-            max_depth=[6, 0],
-            gamma=[0.0, 2],
-            min_child_weight=[1, 0],
-            subsample=[1.0, 1],
-            colsample_bytree=[1.0, 1],
-            reg_alpha=[0, 0],
-            reg_lambda=[1, 0]
+        super().__init__(
+            T=args[0],
+            name='XGB',
+            longname='XGBoost',
+            need_scaling=True,
+            type='tree',
+            evals={},
+            params={
+                'n_estimators': [100, 0],
+                'learning_rate': [0.1, 2],
+                'max_depth': [6, 0],
+                'gamma': [0.0, 2],
+                'min_child_weight': [1, 0],
+                'subsample': [1.0, 1],
+                'colsample_bytree': [1.0, 1],
+                'reg_alpha': [0, 0],
+                'reg_lambda': [1, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
         from xgboost import XGBClassifier, XGBRegressor
-        # XGBoost can't handle random_state to be None
-        if self.T.random_state is None:
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        if random_state is None:  # XGBoost can't handle random_state to be None
             random_state = random.randint(0, np.iinfo(np.int16).max)
-        else:
-            random_state = self.T.random_state
-
-        kwargs = dict(
-            n_jobs=self.T.n_jobs,
-            random_state=random_state,
-            verbosity=0,
-            **params
-        )
+        kwargs = dict(n_jobs=n_jobs, random_state=random_state, verbosity=0, **params)
         if self.T.goal.startswith('class'):
-            estimator = XGBClassifier
+            return XGBClassifier(**kwargs)
         else:
-            estimator = XGBRegressor
+            return XGBRegressor(**kwargs)
 
-        return estimator(**kwargs)
-
-    def custom_fit(self, model, train, validation):
+    def custom_fit(self, model, train, validation, est_params):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if not self._early_stopping or self._early_stopping >= 1:  # None or int
@@ -992,17 +1134,16 @@ class XGBoost(BaseModel):
         elif self._early_stopping < 1:
             rounds = int(model.get_params()['n_estimators'] * self._early_stopping)
 
-        # Fit the model
         model.fit(
             X=train[0],
             y=train[1],
             eval_set=[train, validation],
-            early_stopping_rounds=rounds,
-            verbose=False
+            early_stopping_rounds=est_params.pop('early_stopping_rounds', rounds),
+            verbose=est_params.pop('verbose', False),
+            **est_params
         )
 
         # Create evals attribute with train and validation scores
-        # Invert sign since XGBoost minimizes the metric
         metric_name = list(model.evals_result()['validation_0'])[0]
         self.evals = {
             'metric': metric_name,
@@ -1034,39 +1175,37 @@ class LightGBM(BaseModel):
     """Light Gradient Boosting Machine."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'LGB', 'LightGBM'
-        self.type = 'tree'
-        self.evals = {}
-        self.params = dict(
-            n_estimators=[100, 0],
-            learning_rate=[0.1, 2],
-            max_depth=[-1, 0],
-            num_leaves=[31, 0],
-            min_child_weight=[1, 0],
-            min_child_samples=[20, 0],
-            subsample=[1.0, 1],
-            colsample_bytree=[1.0, 1],
-            reg_alpha=[0, 0],
-            reg_lambda=[0, 0]
+        super().__init__(
+            T=args[0],
+            name='LGB',
+            longname='LightGBM',
+            need_scaling=True,
+            type='tree',
+            evals={},
+            params={
+                'n_estimators': [100, 0],
+                'learning_rate': [0.1, 2],
+                'max_depth': [-1, 0],
+                'num_leaves': [31, 0],
+                'min_child_weight': [1, 0],
+                'min_child_samples': [20, 0],
+                'subsample': [1.0, 1],
+                'colsample_bytree': [1.0, 1],
+                'reg_alpha': [0, 0],
+                'reg_lambda': [0, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
-        kwargs = dict(
-            n_jobs=self.T.n_jobs,
-            random_state=self.T.random_state,
-            ** params
-        )
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = LGBMClassifier
+            return LGBMClassifier(n_jobs=n_jobs, random_state=random_state, **params)
         else:
-            estimator = LGBMRegressor
+            return LGBMRegressor(n_jobs=n_jobs, random_state=random_state, **params)
 
-        return estimator(**kwargs)
-
-    def custom_fit(self, model, train, validation):
+    def custom_fit(self, model, train, validation, est_params):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if not self._early_stopping or self._early_stopping >= 1:  # None or int
@@ -1078,8 +1217,9 @@ class LightGBM(BaseModel):
             X=train[0],
             y=train[1],
             eval_set=[train, validation],
-            early_stopping_rounds=rounds,
-            verbose=False
+            early_stopping_rounds=est_params.pop('early_stopping_rounds', rounds),
+            verbose=est_params.pop('verbose', False),
+            **est_params
         )
 
         # Create evals attribute with train and validation scores
@@ -1115,40 +1255,43 @@ class CatBoost(BaseModel):
     """Categorical Boosting Machine."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'CatB', 'CatBoost'
-        self.type = 'tree'
-        self.evals = {}
-        self.params = dict(
-            n_estimators=[100, 0],
-            learning_rate=[0.1, 2],
-            max_depth=[None, 0],
-            subsample=[1.0, 1],
-            colsample_bylevel=[1.0, 1],
-            reg_lambda=[0, 0]
+        super().__init__(
+            T=args[0],
+            name='CatB',
+            longname='CatBoost',
+            need_scaling=True,
+            type='tree',
+            evals={},
+            params={
+                'n_estimators': [100, 0],
+                'learning_rate': [0.1, 2],
+                'max_depth': [None, 0],
+                'subsample': [1.0, 1],
+                'colsample_bylevel': [1.0, 1],
+                'reg_lambda': [0, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
         from catboost import CatBoostClassifier, CatBoostRegressor
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
         # The subsample parameter only works when bootstrap_type=Bernoulli
         kwargs = dict(
             bootstrap_type='Bernoulli',
             train_dir='',
             allow_writing_files=False,
-            thread_count=self.T.n_jobs,
-            random_state=self.T.random_state,
+            thread_count=n_jobs,
+            random_state=random_state,
             verbose=False,
             **params
         )
         if self.T.goal.startswith('class'):
-            estimator = CatBoostClassifier
+            return CatBoostClassifier(**kwargs)
         else:
-            estimator = CatBoostRegressor
+            return CatBoostRegressor(**kwargs)
 
-        return estimator(**kwargs)
-
-    def custom_fit(self, model, train, validation):
+    def custom_fit(self, model, train, validation, est_params):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if not self._early_stopping or self._early_stopping >= 1:  # None or int
@@ -1160,11 +1303,13 @@ class CatBoost(BaseModel):
             X=train[0],
             y=train[1],
             eval_set=validation,
-            early_stopping_rounds=rounds
+            early_stopping_rounds=est_params.pop('early_stopping_rounds', rounds),
+            **est_params
         )
 
         # Create evals attribute with train and validation scores
         metric_name = list(model.evals_result_['learn'])[0]  # Get first key
+        print(model.evals_result_)
         self.evals = {
             'metric': metric_name,
             'train': model.evals_result_['learn'][metric_name],
@@ -1193,10 +1338,14 @@ class LinearSVM(BaseModel):
     """Linear Support Vector Machine."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'lSVM', 'Linear-SVM'
-        self.type = 'kernel'
-        self.params = dict(loss=['epsilon_insensitive', 0], C=[1.0, 3])
+        super().__init__(
+            T=args[0],
+            name='lSVM',
+            longname='Linear-SVM',
+            need_scaling=True,
+            type='kernel',
+            params={'loss': ['epsilon_insensitive', 0], 'C': [1.0, 3]}
+        )
 
         # Different params for classification tasks
         if self.T.goal.startswith('class'):
@@ -1219,12 +1368,11 @@ class LinearSVM(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = LinearSVC(random_state=self.T.random_state, **params)
+            return LinearSVC(random_state=random_state, **params)
         else:
-            estimator = LinearSVR(random_state=self.T.random_state, **params)
-
-        return estimator
+            return LinearSVR(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1247,16 +1395,20 @@ class KernelSVM(BaseModel):
     """Kernel (non-linear) Support Vector Machine."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'kSVM', 'Kernel-SVM'
-        self.type = 'kernel'
-        self.params = dict(
-            C=[1.0, 3],
-            kernel=['rbf', 0],
-            degree=[3, 0],
-            gamma=['scale', 0],
-            coef0=[0, 2],
-            shrinking=[True, 0]
+        super().__init__(
+            T=args[0],
+            name='kSVM',
+            longname='Kernel-SVM',
+            need_scaling=True,
+            type='kernel',
+            params={
+                'C': [1.0, 3],
+                'kernel': ['rbf', 0],
+                'degree': [3, 0],
+                'gamma': ['scale', 0],
+                'coef0': [0, 2],
+                'shrinking': [True, 0]
+            }
         )
 
     def get_params(self, x):
@@ -1275,12 +1427,11 @@ class KernelSVM(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = SVC(random_state=self.T.random_state, **params)
+            return SVC(random_state=random_state, **params)
         else:
-            estimator = SVR(**params)
-
-        return estimator
+            return SVR(**params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1299,35 +1450,31 @@ class PassiveAggressive(BaseModel):
     """Passive Aggressive."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'PA', 'Passive Aggressive'
-        self.type = 'linear'
-
-        if self.T.goal.startswith('class'):
+        if args[0].goal.startswith('class'):
             loss = 'hinge'
         else:
             loss = 'epsilon_insensitive'
-        self.params = dict(
-            C=[1.0, 3],
-            loss=[loss, 0],
-            average=[False, 0]
+
+        super().__init__(
+            T=args[0],
+            name='PA',
+            longname='Passive Aggressive',
+            need_scaling=True,
+            params={
+                'C': [1.0, 3],
+                'loss': [loss, 0],
+                'average': [False, 0]
+            }
         )
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
+        kwargs = dict(random_state=random_state, **params)
         if self.T.goal.startswith('class'):
-            estimator = PassiveAggressiveClassifier(
-                random_state=self.T.random_state,
-                n_jobs=self.T.n_jobs,
-                **params
-            )
+            return PassiveAggressiveClassifier(n_jobs=n_jobs, **kwargs)
         else:
-            estimator = PassiveAggressiveRegressor(
-                random_state=self.T.random_state,
-                **params
-            )
-
-        return estimator
+            return PassiveAggressiveRegressor(**kwargs)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1348,19 +1495,28 @@ class StochasticGradientDescent(BaseModel):
     """Stochastic Gradient Descent."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'SGD', 'Stochastic Gradient Descent'
-        self.type = 'linear'
-        self.params = dict(
-            loss=['squared_loss' if self.T.task.startswith('reg') else 'hinge', 0],
-            penalty=['l2', 0],
-            alpha=[1e-4, 4],
-            l1_ratio=[0.15, 2],
-            epsilon=[0.1, 4],
-            learning_rate=['optimal', 0],
-            eta0=[0.01, 4],
-            power_t=[0.5, 1],
-            average=[False, 0]
+        if args[0].task.startswith('reg'):
+            loss = 'squared_loss'
+        else:
+            loss = 'hinge'
+
+        super().__init__(
+            T=args[0],
+            name='SGD',
+            longname='Stochastic Gradient Descent',
+            need_scaling=True,
+            type='linear',
+            params={
+                'loss': [loss, 0],
+                'penalty': ['l2', 0],
+                'alpha': [1e-4, 4],
+                'l1_ratio': [0.15, 2],
+                'epsilon': [0.1, 4],
+                'learning_rate': ['optimal', 0],
+                'eta0': [0.01, 4],
+                'power_t': [0.5, 1],
+                'average': [False, 0]
+            }
         )
 
     def get_params(self, x):
@@ -1377,13 +1533,11 @@ class StochasticGradientDescent(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        n_jobs, random_state = self._get_default(['n_jobs', 'random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = SGDClassifier(n_jobs=self.T.n_jobs, **kwargs)
+            return SGDClassifier(random_state=random_state, n_jobs=n_jobs, **params)
         else:
-            estimator = SGDRegressor(**kwargs)
-
-        return estimator
+            return SGDRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1419,19 +1573,23 @@ class MultilayerPerceptron(BaseModel):
     """Multi-layer Perceptron."""
 
     def __init__(self, *args):
-        super().__init__(T=args[0], need_scaling=True)
-        self.name, self.longname = 'MLP', 'Multi-layer Perceptron'
-        self.type = 'kernel'
-        self.params = dict(
-            hidden_layer_sizes=[(100, 0, 0), 0],
-            activation=['relu', 0],
-            solver=['adam', 0],
-            alpha=[1e-4, 4],
-            batch_size=[200, 0],
-            learning_rate=['constant', 0],
-            learning_rate_init=[0.001, 3],
-            power_t=[0.5, 1],
-            max_iter=[200, 0]
+        super().__init__(
+            T=args[0],
+            name='MLP',
+            longname='Multi-layer Perceptron',
+            need_scaling=True,
+            type='kernel',
+            params={
+                'hidden_layer_sizes': [(100, 0, 0), 0],
+                'activation': ['relu', 0],
+                'solver': ['adam', 0],
+                'alpha': [1e-4, 4],
+                'batch_size': [200, 0],
+                'learning_rate': ['constant', 0],
+                'learning_rate_init': [0.001, 3],
+                'power_t': [0.5, 1],
+                'max_iter': [200, 0]
+            }
         )
 
     def get_init_values(self):
@@ -1479,13 +1637,11 @@ class MultilayerPerceptron(BaseModel):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        kwargs = dict(random_state=self.T.random_state, **params)
+        random_state = self._get_default(['random_state'], params)
         if self.T.goal.startswith('class'):
-            estimator = MLPClassifier
+            return MLPClassifier(random_state=random_state, **params)
         else:
-            estimator = MLPRegressor
-
-        return estimator(**kwargs)
+            return MLPRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1509,6 +1665,7 @@ class MultilayerPerceptron(BaseModel):
 
 # List of all the available models
 MODEL_LIST = dict(
+    custom=CustomModel,
     GP=GaussianProcess,
     GNB=GaussianNaiveBayes,
     MNB=MultinomialNaiveBayes,

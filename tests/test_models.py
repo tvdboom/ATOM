@@ -7,9 +7,12 @@ Description: Unit tests for models.py
 
 """
 
-# Import packages
+# Standard packages
 import pytest
 import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+
+# Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.models import MODEL_LIST
 from atom.utils import ONLY_CLASS, ONLY_REG
@@ -18,12 +21,22 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 # Variables ================================================================= >>
 
-binary = [m for m in MODEL_LIST if m not in ONLY_REG and m != 'CatNB']
-multiclass = [m for m in MODEL_LIST if m not in ONLY_REG and m not in ['CatNB', 'CatB']]
-regression = [m for m in MODEL_LIST if m not in ONLY_CLASS]
+binary = [m for m in MODEL_LIST if m not in ['custom', 'CatNB'] + ONLY_REG]
+multiclass = [m for m in MODEL_LIST if m not in ['custom', 'CatNB', 'CatB'] + ONLY_REG]
+regression = [m for m in MODEL_LIST if m not in ['custom'] + ONLY_CLASS]
 
 
 # Tests ===================================================================== >>
+
+@pytest.mark.parametrize('model', [RandomForestRegressor, RandomForestRegressor()])
+def test_custom_models(model):
+    """Assert that ATOM works with custom models."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(models=model, n_calls=2, n_initial_points=1)
+    assert not atom.errors
+    assert hasattr(atom, 'RandomForestRegressor')
+    assert atom.RandomForestRegressor.estimator.get_params()['random_state'] == 1
+
 
 @pytest.mark.parametrize('model', binary)
 def test_models_binary(model):

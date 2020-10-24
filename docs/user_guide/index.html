@@ -58,6 +58,10 @@
 <li>
     <a href="../API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="../API/ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -619,7 +623,8 @@
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 </ul>
 </li>
-<li><strong>category</strong>: Refers to one of the unique values in a column, i.e. a binary classifier has 2 categories in the target column.</li>
+<li><strong>class</strong>: Refers to one of the unique values in a column, e.g. a binary classifier has 2 classes in the target column.</li>
+<li><strong>array-like</strong>: One-dimensional array of variable type list, tuple, np.array or pd.Series.</li>
 <li><strong>missing values</strong>: Refers to <code>None</code>, <code>NaN</code> and <code>inf</code> values.</li>
 <li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
 <li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
@@ -875,7 +880,7 @@ SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</cod
  best features in a dataset based on importance weights. The estimator is provided
  through the <code>solver</code> parameter and can be already fitted. ATOM allows you to use one
  its pre-defined <a href="#models">models</a>, e.g. <code>solver='RF'</code>. If you didn't call the
- FeatureSeletor through <code>atom</code>, don't forget to indicate the estimator's task adding
+ FeatureSelector through <code>atom</code>, don't forget to indicate the estimator's task adding
  <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a random forest classifier.</p>
 <p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
 <p><strong>Recursive feature elimination</strong><br>
@@ -924,6 +929,7 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <p><br><br></p>
 <h1 id="models">Models</h1>
 <hr />
+<h3 id="predefined-models">Predefined models</h3>
 <p>ATOM provides 31 models for classification and regression tasks that can be used
  to fit the data in the pipeline. After fitting, every model class is attached to
  the <code>training</code> instance as an attribute. We refer to these "subclasses" as
@@ -965,6 +971,47 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <li>'SGD' for <a href="../API/models/sgd">Stochastic Gradient Descent</a></li>
 <li>'MLP' for <a href="../API/models/mlp">Multi-layer Perceptron</a></li>
 </ul>
+<p><br></p>
+<h3 id="custom-models">Custom models</h3>
+<p>It is also possible to use your own models in ATOM's pipeline. For example, imagine
+ we want to use sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lars.html">Lars</a>
+ estimator (note that is not included in ATOM's <a href="#predefined-models">predefined models</a>).
+ There are two ways to achieve this:</p>
+<p>Using <a href="../API/ATOM/atommodel">ATOMModel</a> (recommended). With this approach you can
+ pass the required model characteristics to the pipeline.</p>
+<pre><code class="python">from sklearn.linear_model import Lars
+from atom import ATOMRegressor, ATOMModel
+
+model = ATOMModel(models=Lars, longname=&quot;Lars Regression&quot;, needs_scaling=True, type=&quot;linear&quot;)
+
+atom = ATOMRegressor(X, y)
+atom.run(model)
+</code></pre>
+
+<p>Using the estimator's class or an instance of the class. This approach will also call
+ <a href="../API/ATOM/atommodel">ATOMModel</a> under the hood, but it will leave its parameters
+ to their default values.</p>
+<pre><code class="python">from sklearn.linear_model import Lars
+from atom import ATOMRegressor, ATOMModel
+
+atom = ATOMRegressor(X, y)
+atom.run(models=Lars)
+</code></pre>
+
+<p>Additional things to take into account:</p>
+<ul>
+<li>Custom models are not restricted to sklearn estimators. Every class implementing
+  a fit and predict method can be used!</li>
+<li><a href="#parameter-customization">Parameter customization</a> (for the initializer) is only
+  possible for custom models which provide an estimator's class or an instance that
+  has a <code>set_params()</code> method, i.e. its a child class of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">BaseEstimator</a>.</li>
+<li><a href="#hyperparameter-optimization">Hyperparameter optimization</a> for custom models is
+  ignored unless appropriate dimensions are provided through <code>bo_params</code>.</li>
+<li>If the estimator has a <code>n_jobs</code> and/or <code>random_state</code> parameter that is left to its
+  default value, it will automatically adopt the values from the <code>training</code> instance
+  it's called from.</li>
+</ul>
+<p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>
@@ -1031,7 +1078,7 @@ atom.run('Lasso')
 <p>Reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
 empty after the first run will automatically use the one in the pipeline.</p>
 </div>
-<p>Additional information:</p>
+<p>Additional things to take into account:</p>
 <ul>
 <li>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models='RF')</code>
   will train a Random Forest.</li>
@@ -1118,6 +1165,11 @@ Sometimes it is useful to measure the performance of the models in more than one
  and the Multi-layer Perceptron will use one hidden layer with 75 neurons.</p>
 <pre><code>atom.run(['XGB', 'MLP'], est_params={'XGB': {'n_estimators': 200}, 'MLP': {'hidden_layer_sizes': (75,)}})
 </code></pre>
+<p>Some estimators allow you to pass extra parameters to the fit method (besides X and y).
+ This can be done adding <code>_fit</code> at the end of the parameter. For example, to change
+ XGBoost's verbosity, we can run:</p>
+<pre><code>atom.run('XGB', est_params={'verbose_fit': True}
+</code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter is specified through <code>est_params</code>, it will be ignored by the
@@ -1186,7 +1238,7 @@ in a convenient boxplot.</p>
 </div>
 <p><br></p>
 <h3 id="early-stopping">Early stopping</h3>
-<p><a href="../API/models/xgb">XGBoost</a>, <a href="../API/models/lgb">LighGBM</a> and <a href="../API/models/catb">CatBoost</a>
+<p><a href="../API/models/xgb">XGBoost</a>, <a href="../API/models/lgb">LightGBM</a> and <a href="../API/models/catb">CatBoost</a>
  allow in-training evaluation. This means that the estimator is evaluated after
  every round of the training. Use the <code>early_stopping</code> key in <code>bo_params</code> to stop
  the training early if it didn't improve in the last <code>early_stopping</code> rounds. This
@@ -1455,12 +1507,12 @@ with plot.</p>
 
 <tr>
 <td width="15%"><a href="../API/plots/plot_threshold">plot_threshold</a></td>
-<td>Plot a metric's performance against threshold values.</td>
+<td>Plot metric performances against threshold values.</td>
 </tr>
 
 <tr>
 <td width="15%"><a href="../API/plots/plot_probabilities">plot_probabilities</a></td>
-<td>Plot the probability distribution of the categories in the target column.</td>
+<td>Plot the probability distribution of the classes in the target column.</td>
 </tr>
 
 <tr>

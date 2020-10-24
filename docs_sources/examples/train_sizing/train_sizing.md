@@ -179,11 +179,11 @@ atom.encode()
     
 
     Encoding categorical columns...
-     --> LeaveOneOut-encoding feature Location. Contains 45 unique categories.
-     --> LeaveOneOut-encoding feature WindGustDir. Contains 16 unique categories.
-     --> LeaveOneOut-encoding feature WindDir9am. Contains 16 unique categories.
-     --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique categories.
-     --> Label-encoding feature RainToday. Contains 2 unique categories.
+     --> LeaveOneOut-encoding feature Location. Contains 45 unique classes.
+     --> LeaveOneOut-encoding feature WindGustDir. Contains 16 unique classes.
+     --> LeaveOneOut-encoding feature WindDir9am. Contains 16 unique classes.
+     --> LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique classes.
+     --> Label-encoding feature RainToday. Contains 2 unique classes.
     
 
 

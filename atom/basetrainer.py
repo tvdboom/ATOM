@@ -18,9 +18,8 @@ from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, merge, to_df,
-    to_series, get_best_score, time_to_string, get_model_name,
-    get_metric, get_default_metric, clear
+    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, merge, get_best_score,
+    time_to_string, get_model_name, get_metric, get_default_metric, clear
 )
 
 
@@ -31,9 +30,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     ----------
     models: string or sequence
         List of models to fit on the data. Use the predefined acronyms
-        in MODEL_LIST.
+        in MODEL_LIST or a custom model.
 
-    metric: str, callable or sequence, optional (default=None)
+    metric: str, callable or iterable, optional (default=None)
         Metric(s) on which the pipeline fits the models. Choose from any of
         the scorers predefined by sklearn, use a score (or loss) function with
         signature metric(y, y_pred, **kwargs) or use a scorer object.
@@ -43,37 +42,37 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             - 'f1_weighted' for multiclass classification
             - 'r2' for regression
 
-    greater_is_better: bool or sequence, optional (default=True)
+    greater_is_better: bool or iterable, optional (default=True)
         Whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Will be ignored if the metric is a string or a scorer.
-        If sequence, the n-th value will apply to the n-th metric in the
+        If iterable, the n-th value will apply to the n-th metric in the
         pipeline.
 
-    needs_proba: bool or sequence, optional (default=False)
+    needs_proba: bool or iterable, optional (default=False)
         Whether the metric function requires probability estimates out of a
         classifier. If True, make sure that every estimator in the pipeline has
         a `predict_proba` method. Will be ignored if the metric is a string
-        or a scorer. If sequence, the n-th value will apply to the n-th metric
+        or a scorer. If iterable, the n-th value will apply to the n-th metric
         in the pipeline.
 
-    needs_threshold: bool or sequence, optional (default=False)
+    needs_threshold: bool or iterable, optional (default=False)
         Whether the metric function takes a continuous decision certainty.
         This only works for binary classification using estimators that
         have either a `decision_function` or `predict_proba` method. Will
-        be ignored if the metric is a string or a scorer. If sequence, the
+        be ignored if the metric is a string or a scorer. If iterable, the
         n-th value will apply to the n-th metric in the pipeline.
 
-    n_calls: int or sequence, optional (default=0)
+    n_calls: int or iterable, optional (default=0)
         Maximum number of iterations of the BO (including `random starts`).
         If 0, skip the BO and fit the model on its default Parameters.
-        If sequence, the n-th value will apply to the n-th model in the
+        If iterable, the n-th value will apply to the n-th model in the
         pipeline.
 
-    n_initial_points: int or sequence, optional (default=5)
+    n_initial_points: int or iterable, optional (default=5)
         Initial number of random tests of the BO before fitting the
         surrogate function. If equal to `n_calls`, the optimizer will
-        technically be performing a random search. If sequence, the n-th
+        technically be performing a random search. If iterable, the n-th
         value will apply to the n-th model in the pipeline.
 
     est_params: dict, optional (default={})
@@ -85,10 +84,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Additional parameters to for the BO. See bayesian_optimization
         in basemodel.py for the available options.
 
-    bagging: int, sequence or None, optional (default=None)
+    bagging: int, iterable or None, optional (default=None)
         Number of data sets (bootstrapped from the training set) to use in
         the bagging algorithm. If None or 0, no bagging is performed.
-        If sequence, the n-th value will apply to the n-th model in the
+        If iterable, the n-th value will apply to the n-th model in the
         pipeline.
 
     n_jobs: int, optional (default=1)
@@ -120,7 +119,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
@@ -164,22 +163,29 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                      'metric_test', 'time_fit', 'mean_bagging',
                      'std_bagging', 'time_bagging', 'time'])
 
-    def _params_to_attr(self, *args):
+    def _params_to_attr(self, *arrays):
         """Attach the provided data as attributes of the class."""
-        # Data can be already in attrs
-        if len(args) == 0 and self._data is not None:
-            return
-        if len(args) == 2:
-            train, test = to_df(args[0]), to_df(args[1])
-        elif len(args) == 4:
-            train = merge(to_df(args[0]), to_series(args[2]))
-            test = merge(to_df(args[1]), to_series(args[3]))
+        if len(arrays) == 0 and self._data is not None:
+            return  # If data is already in attrs, skip
+        elif len(arrays) == 2:
+            if isinstance(arrays[0], (list, tuple)) and len(arrays[0]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test))
+                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
+                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
+            else:
+                # arrays=(train, test)
+                train, _ = self._prepare_input(arrays[0])
+                test, _ = self._prepare_input(arrays[1])
+        elif len(arrays) == 4:
+            # arrays=(X_train, X_test, y_train, y_test)
+            train = merge(*self._prepare_input(arrays[0], arrays[2]))
+            test = merge(*self._prepare_input(arrays[1], arrays[3]))
         else:
-            raise ValueError(
-                "Invalid parameters. Must be either of the form (train, "
-                "test) or (X_train, X_test, y_train, y_test).")
+            raise ValueError("Invalid parameters. Allowed input formats are: "
+                             "train, test; X_train, X_test, y_train, y_test "
+                             "or (X_train, y_train), (X_test, y_test).")
 
-        # Update the data attributes
+        # Update the data and indices
         self._data = pd.concat([train, test]).reset_index(drop=True)
         self._idx = [len(train), len(test)]
 
@@ -188,35 +194,45 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
-        if isinstance(self.models, str):
+        if not isinstance(self.models, (list, tuple)):
             self.models = [self.models]
 
-        # Set models to right name
-        models = [get_model_name(m) for m in self.models]
+        models = []
+        for m in self.models:
+            # Set models to right name
+            if isinstance(m, str):
+                m = get_model_name(m)
 
-        # Check for duplicates
-        if len(models) != len(set(models)):
-            raise ValueError("There are duplicate values in the models parameter!")
+                # Check if packages for not-sklearn models are available
+                if m in OPTIONAL_PACKAGES:
+                    try:
+                        importlib.import_module(OPTIONAL_PACKAGES[m])
+                    except ImportError:
+                        raise ValueError(f"Unable to import the {OPTIONAL_PACKAGES[m]}"
+                                         " package. Make sure it is installed.")
 
-        # Check if packages for not-sklearn models are available
-        for m, package in OPTIONAL_PACKAGES:
-            if m in models:
-                try:
-                    importlib.import_module(package)
-                except ImportError:
-                    raise ValueError(f"Unable to import {package}!")
-
-        # Remove regression/classification-only models from pipeline
-        if self.goal.startswith('class'):
-            for m in ONLY_REG:
-                if m in models:
+                # Remove regression/classification-only models from pipeline
+                if self.goal.startswith('class') and m in ONLY_REG:
                     raise ValueError(
                         f"The {m} model can't perform classification tasks!")
-        else:
-            for m in ONLY_CLASS:
-                if m in models:
+                elif self.goal.startswith('reg') and m in ONLY_CLASS:
                     raise ValueError(
                         f"The {m} model can't perform regression tasks!")
+
+                subclass = MODEL_LIST[m](self)
+
+            else:  # Model is custom estimator
+                subclass = MODEL_LIST['custom'](self, m)
+
+            # Add the model to the pipeline and check for duplicates
+            models.append(subclass.name)
+            if len(models) != len(set(models)):
+                raise ValueError("Invalid value for the models parameter. "
+                                 f"Duplicate model: {subclass.name}.")
+
+            # Attach the subclasses to the training instances
+            setattr(self, subclass.name, subclass)
+            setattr(self, subclass.name.lower(), subclass)  # Lowercase as well
 
         self.models = models
 
@@ -299,7 +315,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Assign mapping ==================================================== >>
 
         if not self.task.startswith('reg'):
-            self.mapping = {str(i): i for i in self.categories}
+            self.mapping = {str(i): i for i in range(self.n_classes)}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -359,21 +375,22 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                                  f"Value should be >=0, got {n_calls}.")
 
             model_time = time()
-
-            # Define model subclass
-            subclass = MODEL_LIST[m](self)
-            setattr(self, m, subclass)
-            setattr(self, m.lower(), subclass)  # Lowercase as well
+            subclass = getattr(self, m)
 
             # Create scaler if model needs scaling and data not already scaled
             if subclass.need_scaling and not self.scaler:
                 self.scaler = Scaler().fit(self.X_train)
 
             try:  # If errors occurs, skip the model
-                # Run Bayesian Optimization
+                # If it has custom dimensions, run the BO
+                bo = False
+                if self.bo_params.get('dimensions'):
+                    if self.bo_params['dimensions'].get(subclass.name):
+                        bo = True
+
                 # Use copy of kwargs to not delete original in method
                 # Shallow copy is enough since we only delete entries in basemodel
-                if hasattr(subclass, 'get_dimensions') and n_calls > 0:
+                if (bo or hasattr(subclass, 'get_dimensions')) and n_calls > 0:
                     subclass.bayesian_optimization(
                         n_calls=n_calls,
                         n_initial_points=n_initial_points,

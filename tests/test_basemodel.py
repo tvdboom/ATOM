@@ -7,7 +7,7 @@ Description: Unit tests for basemodel.py
 
 """
 
-# Import packages
+# Standard packages
 import glob
 import pytest
 import numpy as np
@@ -21,6 +21,23 @@ from skopt.space.space import Integer
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, X10_str, y10
+
+
+# Test utilities ============================================================ >>
+
+def test_repr_method():
+    """Assert that the __repr__ method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('lda')
+    assert len(str(atom.lda)) == 99
+
+
+def test_get_default_method():
+    """Assert that the _get_default method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('rf', est_params={'n_jobs': 3})
+    assert atom.rf.estimator.get_params()['n_jobs'] == 3
+    assert atom.rf.estimator.get_params()['random_state'] == 1
 
 
 # Test bayesian_optimization ================================================ >>
@@ -138,16 +155,30 @@ def test_invalid_base_estimator():
     pytest.raises(RuntimeError, atom.run, **kwargs)
 
 
-def test_early_stopping():
-    """Assert than early stopping works."""
+def test_sample_weights_fit():
+    """Assert that sample weights can be used with the BO."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(
-        models=['XGB', 'LGB', 'CatB'],
+        models='LGB',
         n_calls=5,
-        bo_params={'early_stopping': 0.1, 'cv': 1}
+        est_params={'sample_weight_fit': atom.get_sample_weights()}
     )
-    for model in atom.models_:
-        assert isinstance(model.evals, dict)
+    assert not atom.errors
+
+
+@pytest.mark.parametrize('model', ['XGB', 'LGB', 'CatB'])
+def test_early_stopping(model):
+    """Assert than early stopping works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(model, n_calls=5, bo_params={'early_stopping': 0.1, 'cv': 1})
+    assert isinstance(getattr(atom, model).evals, dict)
+
+
+def test_est_params_for_fit():
+    """Assert that est_params is used for fit if ends in _fit."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('XGB', est_params={'early_stopping_rounds_fit': 20})
+    assert atom.xgb._stopped
 
 
 def test_est_params_removed_from_bo():
@@ -207,6 +238,14 @@ def test_transformations_first():
     atom.encode(max_onehot=None)
     atom.run('Tree')
     assert isinstance(atom.Tree.predict(X10_str), np.ndarray)
+
+
+def test_score_with_sample_weights():
+    """Assert that the score method works when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('Tree')
+    score = atom.tree.score(X_bin, y_bin, sample_weight=list(range(len(y_bin))))
+    assert isinstance(score, np.float64)
 
 
 # Test properties =========================================================== >>
@@ -327,18 +366,18 @@ def test_target_property():
     assert atom.lr.target == atom.target
 
 
-def test_categories_property():
-    """Assert that the categories property returns the unique categories."""
+def test_classes_property():
+    """Assert that the classes property returns the unique target classes."""
     atom = ATOMClassifier(X_bin, random_state=1)
     atom.run('LR')
-    assert atom.lr.categories == atom.categories
+    assert atom.lr.classes.equals(atom.classes)
 
 
-def test_n_categories_property():
-    """Assert that the n_categories property returns the unique categories."""
+def test_n_classes_property():
+    """Assert that the n_classes property returns the number of target classes."""
     atom = ATOMClassifier(X_bin, random_state=1)
     atom.run('LR')
-    assert atom.lr.n_categories == atom.n_categories
+    assert atom.lr.n_classes == atom.n_classes
 
 
 # Test utility methods ====================================================== >>
@@ -426,11 +465,20 @@ def test_scoring_custom_metrics(on_set):
         assert isinstance(atom.mnb.scoring(metric, on_set), float)
 
 
-def test_invalid_metric():
+def test_scoring_invalid_metric():
     """Assert that invalid metrics return a string."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run('OLS')
     assert isinstance(atom.ols.scoring('roc_auc'), str)
+
+
+def test_scoring_kwargs():
+    """Assert that the scoring functions uses the kwargs."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    score_1 = atom.lr.scoring('accuracy')
+    score_2 = atom.lr.scoring('accuracy', normalize=False)
+    assert score_1 != score_2
 
 
 def test_save_estimator():

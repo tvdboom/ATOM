@@ -8,10 +8,10 @@ Description: Module containing the plotting classes.
 """
 
 # Standard packages
-import inspect
 import numpy as np
 import pandas as pd
 from itertools import chain
+from inspect import signature
 from typeguard import typechecked
 from joblib import Parallel, delayed
 from scipy.stats.mstats import mquantiles
@@ -249,9 +249,9 @@ class BasePlotter(object):
             return tgt_int, target
 
         else:
-            if not 0 <= target < self.n_categories:
+            if not 0 <= target < self.n_classes:
                 raise ValueError("Invalid value for the target parameter. There are "
-                                 f"{self.n_categories} categories, got {target}.")
+                                 f"{self.n_classes} classes, got {target}.")
             tgt_str = list(self.mapping)[list(self.mapping.values()).index(target)]
             return target, tgt_str
 
@@ -302,7 +302,7 @@ class BasePlotter(object):
 
         # Select the target expected value or return all
         if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == self.n_categories:
+            if len(expected_value) == self.n_classes:
                 expected_value = expected_value[target]
 
         return shap_values, expected_value
@@ -1059,10 +1059,11 @@ class BaseModelPlotter(BasePlotter):
         df = pd.DataFrame(index=self.X.columns)
 
         for m in models:
-            if m.type != 'tree':
+            # Bagging is a special case where we use the feature_importance per est
+            if not hasattr(m.estimator, 'feature_importances_') and m.name != 'Bag':
                 raise PermissionError(
                     "The plot_feature_importance method is only available for "
-                    f"tree-based models, got {m.longname}!")
+                    f"models with the feature_importances_ attribute!")
 
             # Bagging has no direct feature importance implementation
             if m.name == 'Bag':
@@ -1126,7 +1127,7 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        features: int, str, sequence or None, optional (default=None)
+        features: int, str, list, tuple or None, optional (default=None)
             Features or feature pairs (name or index) to get the partial
             dependence from. Maximum of 3 allowed. If None, it uses the best
             3 features if the `feature_importance` attribute is defined (see
@@ -1613,7 +1614,7 @@ class BaseModelPlotter(BasePlotter):
                        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
                        filename: Optional[str] = None,
                        display: bool = True):
-        """Plot a metric's performance against threshold values.
+        """Plot metric performances against threshold values.
 
         Only for binary classification tasks.
 
@@ -1721,7 +1722,7 @@ class BaseModelPlotter(BasePlotter):
                            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
                            filename: Optional[str] = None,
                            display: bool = True):
-        """Plot the probability distribution of the categories in the target column.
+        """Plot the probability distribution of the classes in the target column.
 
         Only for binary classification tasks.
 
@@ -2102,8 +2103,8 @@ class BaseModelPlotter(BasePlotter):
             selected. Note that selecting multiple models will raise an exception.
             To avoid this, call the plot from a `model`.
 
-        index: int, sequence or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If tuple (n, m), select
+        index: int, list, tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If (n, m), select
             rows n until m. If None, select all rows in the test set.
 
         target: int or str, optional (default=1)
@@ -2344,8 +2345,8 @@ class BaseModelPlotter(BasePlotter):
             selected. Note that selecting multiple models will raise an exception.
             To avoid this, call the plot from a `model`.
 
-        index: int, sequence or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If tuple (n, m), select
+        index: int, list, tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If shape (n, m), select
             rows n until m. If None, select all rows in the test set.
 
         show: int or None, optional (default=None)
@@ -2652,7 +2653,7 @@ class ATOMPlotter(FeatureSelectorPlotter,
             ylim += 15
             if show_params:
                 params.append(
-                    [p for p in inspect.signature(est.__init__).parameters
+                    [p for p in signature(est.__init__).parameters
                      if p not in BaseTransformer.attrs + ['self']]
                 )
                 ylim += len(params[-1]) * 10

@@ -24,6 +24,7 @@ nav:
         - ATOMClassifier: API/ATOM/atomclassifier.md
         - ATOMRegressor: API/ATOM/atomregressor.md
         - ATOMLoader: API/ATOM/atomloader.md
+        - ATOMModel: API/ATOM/atommodel.md
     - Data cleaning:
          - Scaler: API/data_cleaning/scaler.md
          - StandardCleaner: API/data_cleaning/standard_cleaner.md

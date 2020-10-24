@@ -23,7 +23,7 @@ Just like `atom`, you can [predict](../../../user_guide/#predicting),
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>models: str or sequence</strong>
+<strong>models: str or iterable</strong>
 <blockquote>
 Models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
@@ -55,7 +55,7 @@ Models to fit on the data. Use the predefined acronyms to select the models. Pos
 <li>'MLP' for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html">Multi-layer Perceptron</a></li> 
 </ul>
 </blockquote>
-<strong>metric: str, callable or sequence, optional (default=None)</strong>
+<strong>metric: str, callable or iterable, optional (default=None)</strong>
 <blockquote>
 Metric(s) on which the pipeline fits the models. Choose from any of sklearn's predefined
  <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">scorers</a>,
@@ -68,31 +68,31 @@ Metric(s) on which the pipeline fits the models. Choose from any of sklearn's pr
 <li>'r2' for regression</li>
 </ul>
 </blockquote>
-<strong>greater_is_better: bool or sequence, optional (default=True)</strong>
+<strong>greater_is_better: bool or iterable, optional (default=True)</strong>
 <blockquote>
 Whether the metric is a score function or a loss function,
  i.e. if True, a higher score is better and if False, lower is
  better. Will be ignored if the metric is a string or a scorer.
- If sequence, the n-th value will apply to the n-th metric in the
+ If iterable, the n-th value will apply to the n-th metric in the
  pipeline.
 </blockquote>
-<strong> needs_proba: bool or sequence, optional (default=False)</strong>
+<strong> needs_proba: bool or iterable, optional (default=False)</strong>
 <blockquote>
 Whether the metric function requires probability estimates out of a
  classifier. If True, make sure that every model in the pipeline has
  a `predict_proba` method. Will be ignored if the metric is a string
- or a scorer. If sequence, the n-th value will apply to the n-th metric
+ or a scorer. If iterable, the n-th value will apply to the n-th metric
  in the pipeline.
 </blockquote>
-<strong> needs_threshold: bool or sequence, optional (default=False)</strong>
+<strong> needs_threshold: bool or iterable, optional (default=False)</strong>
 <blockquote>
 Whether the metric function takes a continuous decision certainty.
  This only works for binary classification using estimators that
  have either a `decision_function` or `predict_proba` method. Will
- be ignored if the metric is a string or a scorer. If sequence, the
+ be ignored if the metric is a string or a scorer. If iterable, the
  n-th value will apply to the n-th metric in the pipeline.
 </blockquote>
-<strong>train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))</strong>
+<strong>train_sizes: array-like, optional (default=np.linspace(0.2, 1.0, 5))</strong>
 <blockquote>
 Sequence of training set sizes used to run the trainings.
 <ul>
@@ -100,17 +100,17 @@ Sequence of training set sizes used to run the trainings.
 <li>If >1: Total number of samples.</li>
 </ul>
 </blockquote>
-<strong>n_calls: int or sequence, optional (default=0)</strong>
+<strong>n_calls: int or iterable, optional (default=0)</strong>
 <blockquote>
 Maximum number of iterations of the BO (including `n_initial_points`).
  If 0, skip the BO and fit the model on its default parameters.
- If sequence, the n-th value will apply to the n-th model in the pipeline.
+ If iterable, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
-<strong>n_initial_points: int or sequence, optional (default=5)</strong>
+<strong>n_initial_points: int or iterable, optional (default=5)</strong>
 <blockquote>
 Initial number of random tests of the BO before fitting the
  surrogate function. If equal to `n_calls`, the optimizer will
- technically be performing a random search. If sequence, the n-th
+ technically be performing a random search. If iterable, the n-th
  value will apply to the n-th model in the pipeline.
 </blockquote>
 <strong>est_params: dict, optional (default={}})</strong>
@@ -152,11 +152,11 @@ Additional parameters to for the BO. These can include:
 <li><b>Additional keyword argument for skopt's optimizer.</b></li>                
 </ul>
 </blockquote>
-<strong>bagging: int or None, optional (default=None)</strong>
+<strong>bagging: int, iterable or None, optional (default=None)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in
  the bagging algorithm. If None or 0, no bagging is performed.
- If sequence, the n-th value will apply to the n-th model in the pipeline.
+ If iterable, the n-th value will apply to the n-th model in the pipeline.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -263,13 +263,13 @@ List of columns in the dataset.
 <blockquote>
 Name of the target column.
 </blockquote>
-<strong>categories: list</strong>
+<strong>classes: pd.DataFrame</strong>
 <blockquote>
-Sorted list of the unique categories in the target column.
+Dataframe of the number of rows per target class in the train, test and complete dataset.
 </blockquote>
-<strong>n_categories: int</strong>
+<strong>n_classes: int</strong>
 <blockquote>
-Number of unique categories in the target column.
+Number of unique classes in the target column.
 </blockquote>
 </td></tr>
 </table>
@@ -360,49 +360,59 @@ Fontsize for the ticks along the plot's axes.
 <table width="100%">
 
 <tr>
-<td><a href="#TrainSizingClassifier-calibrate">calibrate</a></td>
+<td><a href="#calibrate">calibrate</a></td>
 <td>Calibrate the winning model.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#TrainSizingClassifier-clear">clear</a></td>
+<td width="15%"><a href="#clear">clear</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
 
 <tr>
-<td><a href="#TrainSizingClassifier-get-params">get_params</a></td>
+<td width="15%"><a href="#get-class-weights">get_class_weights</a></td>
+<td>Return class weights for a balanced data set.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#get-sample-weights">get_sample_weights</a></td>
+<td>Return sample weights for a balanced data set.</td>
+</tr>
+
+<tr>
+<td><a href="#get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#TrainSizingClassifier-log">log</a></td>
+<td width="15%"><a href="#log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
 </tr>
 
 <tr>
-<td><a href="#TrainSizingClassifier-run">run</a></td>
+<td><a href="#run">run</a></td>
 <td>Fit and evaluate the models.</td>
 </tr>
 
 <tr>
-<td><a href="#TrainSizingClassifier-save">save</a></td>
+<td><a href="#save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#TrainSizingClassifier-scoring">scoring</a></td>
+<td><a href="#scoring">scoring</a></td>
 <td>Returns the scores of the models for a specific metric.</td>
 </tr>
 
 <tr>
-<td><a href="#TrainSizingClassifier-set-params">set_params</a></td>
+<td><a href="#set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 </table>
 <br>
 
-<a name="TrainSizingClassifier-calibrate"></a>
+<a name="calibrate"></a>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(\*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L116">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -429,7 +439,7 @@ Additional keyword arguments for the [CalibratedClassifierCV](https://scikit-lea
 </div>
 <br />
 
-<a name="TrainSizingClassifier-clear"></a>
+<a name="clear"></a>
 <pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -442,7 +452,7 @@ Removes all traces of a model in the pipeline (except for the `errors`
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str or sequence, optional (default='all')</strong>
+<strong>models: str or iterable, optional (default='all')</strong>
 <blockquote>
 Model(s) to clear from the pipeline. If 'all', clear all models.
 </blockquote>
@@ -452,7 +462,54 @@ Model(s) to clear from the pipeline. If 'all', clear all models.
 <br />
 
 
-<a name="TrainSizingClassifier-get-params"></a>
+<a name="get-class-weights"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset='train')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
+<div style="padding-left:3%">
+Return class weights for a balanced data set. Statistically, the class weights
+ re-balance the data set so that the sampled data set represents the target
+ population as closely as reasonably possible. The returned weights are inversely
+ proportional to class frequencies in the selected data set. 
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: str, optional (default='train')</strong>
+<blockquote>
+Data set from which to get the weights. Choose between 'train', 'test' or 'dataset'.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="get-sample-weights"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_sample_weights</strong>(dataset='train')
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
+<div style="padding-left:3%">
+Return sample weights for a balanced data set. Statistically, the sampling weights
+ re-balance the data set so that the sampled data set represents the target
+ population as closely as reasonably possible. The returned weights are the
+ reciprocal of the likelihood of being sampled (i.e. selection probability) of
+ the sampling unit.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: str, optional (default='train')</strong>
+<blockquote>
+Data set from which to get the weights. Choose between 'train', 'test' or 'dataset'.
+</blockquote>
+</tr>
+</table>
+</div>
+<br />
+
+
+<a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -480,7 +537,7 @@ Dictionary of the parameter names mapped to their values.
 <br />
 
 
-<a name="TrainSizingClassifier-log"></a>
+<a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -504,7 +561,7 @@ Minimum verbosity level in order to print the message.
 <br />
 
 
-<a name="TrainSizingClassifier-run"></a>
+<a name="run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(\*arrays)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -515,9 +572,14 @@ Fit and evaluate the models.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>*arrays: array-like</strong>
+<strong>*arrays: sequence of indexables</strong>
 <blockquote>
-Either a train and test set or X_train, X_test, y_train, y_test.
+Training set and test set. Allowed input formats are:
+<ul>
+<li>train, test</li>
+<li>X_train, X_test, y_train, y_test</li>
+<li>(X_train, y_train), (X_test, y_test)</li>
+</ul>
 </blockquote>
 </td>
 </tr>
@@ -525,7 +587,7 @@ Either a train and test set or X_train, X_test, y_train, y_test.
 <br />
 
 
-<a name="TrainSizingClassifier-save"></a>
+<a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -551,12 +613,12 @@ Whether to save the data as an attribute of the instance. If False, remember to
 </div>
 <br>
 
-<a name="TrainSizingClassifier-scoring"></a>
+<a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the scores of the models for a specific metric. If a model
- shows a `XXX`, it means the metric failed for that specific model. This
+ returns `XXX`, it means the metric failed for that specific model. This
  can happen if either the metric is unavailable for the task or if the
  model does not have a `predict_proba` method while the metric requires it.
 <br /><br />
@@ -589,7 +651,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 </div>
 <br />
 
-<a name="TrainSizingClassifier-set-params"></a>
+<a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">

@@ -7,12 +7,13 @@ Description: Unit tests for basepredictor.py
 
 """
 
-# Import packages
+# Standard packages
 import pytest
 import numpy as np
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
+from atom.training import TrainerClassifier
 from atom.utils import NotFittedError
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
@@ -24,6 +25,12 @@ def test_metric_property():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr', metric='f1')
     assert atom.metric == 'f1'
+
+
+def test_metric_property_no_run():
+    """Assert that the metric property doesn't crash when Trainer is not fit."""
+    trainer = TrainerClassifier('lr', metric='r2', random_state=1)
+    assert trainer.metric == 'r2'
 
 
 def test_models_property():
@@ -80,19 +87,19 @@ def test_target_property():
     assert atom.target == 'mean radius'
 
 
-def test_categories_property():
-    """Assert that the categories property returns the categories in y."""
+def test_classes_property():
+    """Assert that the classes property returns a df of the classes in y."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert atom.categories == [0, 1, 2]
+    assert list(atom.classes.index) == [0, 1, 2]
 
 
-def test_n_categories_property():
-    """Assert that the n_categories property returns the number of categories."""
+def test_n_classes_property():
+    """Assert that the n_classes property returns the number of classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert atom.n_categories == 3
+    assert atom.n_classes == 3
 
 
-# data attributes =========================================================== >>
+# Data attributes =========================================================== >>
 
 def test_dataset_property():
     """Assert that the dataset property returns the _data attribute."""
@@ -154,17 +161,6 @@ def test_y_test_property():
     assert atom.y_test.shape == (int(test_size*len(X_bin)),)
 
 
-# Test calibrate ============================================================ >>
-
-def test_calibrate_method():
-    """Assert that the calibrate method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.calibrate)  # When not yet fitted
-    atom.run('LR')
-    atom.calibrate()
-    assert atom.winner.estimator.__class__.__name__ == 'CalibratedClassifierCV'
-
-
 # Test prediction methods =================================================== >>
 
 def test_predict_method():
@@ -207,7 +203,52 @@ def test_score_method():
     assert isinstance(atom.score(X_bin, y_bin), float)
 
 
-# Test scoring ============================================================== >>
+def test_score_method_sample_weights():
+    """Assert that the score method works with sample weights."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run('LR')
+    score = atom.score(X_bin, y_bin, sample_weight=atom.get_sample_weights('dataset'))
+    assert isinstance(score, float)
+
+
+# Test utility methods ====================================================== >>
+
+def test_class_weights_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.get_class_weights, 'invalid')
+
+
+@pytest.mark.parametrize('dataset', ['train', 'test', 'dataset'])
+def test_class_weights_method(dataset):
+    """Assert that the get_class_weight method returns a dict of the classes."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    class_weight = atom.get_class_weights(dataset)
+    assert list(class_weight.keys()) == [0, 1, 2]
+
+
+def test_sample_weights_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.get_sample_weights, 'invalid')
+
+
+@pytest.mark.parametrize('dataset', ['train', 'test', 'dataset'])
+def test_sample_weights_method(dataset):
+    """Assert that the get_sample_weight method returns a list of the weights."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    sample_weight = atom.get_sample_weights(dataset)
+    assert isinstance(sample_weight, list)
+
+
+def test_calibrate_method():
+    """Assert that the calibrate method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.calibrate)  # When not yet fitted
+    atom.run('LR')
+    atom.calibrate()
+    assert atom.winner.estimator.__class__.__name__ == 'CalibratedClassifierCV'
+
 
 def test_not_fitted():
     """Assert that an error is raised when the class is not fitted."""
@@ -238,8 +279,6 @@ def test_metric_is_given():
     atom.scoring('auc')
     assert 1 == 1  # Ran without errors
 
-
-# Test clear ================================================================ >>
 
 def test_models_is_all():
     """Assert that the whole pipeline is cleared for models='all'."""

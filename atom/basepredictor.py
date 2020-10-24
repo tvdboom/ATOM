@@ -15,20 +15,20 @@ from typeguard import typechecked
 
 # Own modules
 from .utils import (
-    X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted, get_best_score,
-    get_model_name, clear, method_to_log, composed, crash
+    ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted,
+    get_best_score, get_model_name, clear, method_to_log, composed, crash
 )
 
 
 class BasePredictor(object):
     """Properties and shared methods for the training classes."""
 
-    # Utility properties ==================================================== >>
+    # Utility properties =================================================== >>
 
     @property
     def metric(self):
         """Return a list of the model subclasses."""
-        return flt([metric.name for metric in self.metric_])
+        return flt([getattr(metric, 'name', metric) for metric in self.metric_])
 
     @property
     def models_(self):
@@ -52,7 +52,7 @@ class BasePredictor(object):
         if self.models:  # Returns None if not fitted
             return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
 
-    # data attributes ======================================================= >>
+    # Data properties ====================================================== >>
 
     @property
     def dataset(self):
@@ -103,20 +103,20 @@ class BasePredictor(object):
         return self.columns[-1]
 
     @property
-    def categories(self):
-        return list(sorted(self.y.unique()))
+    def classes(self):
+        idx = [v if k == str(v) else f"{str(v)}: {k}" for k, v in self.mapping.items()]
+        df = pd.DataFrame({
+            'dataset': self.y.value_counts(sort=False),
+            'train': self.y_train.value_counts(sort=False),
+            'test': self.y_test.value_counts(sort=False)
+        })
+        return df.set_index([idx])
 
     @property
-    def n_categories(self):
-        return len(self.categories)
+    def n_classes(self):
+        return len(self.y.unique())
 
-    # Methods =============================================================== >>
-
-    @composed(crash, method_to_log)
-    def calibrate(self, **kwargs):
-        """Calibrate the winning model."""
-        check_is_fitted(self, 'results')
-        return self.winner.calibrate(**kwargs)
+    # Prediction methods =================================================== >>
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
@@ -143,16 +143,81 @@ class BasePredictor(object):
         return self.winner.decision_function(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def score(self, X: X_TYPES, y: Y_TYPES, **kwargs):
+    def score(self,
+              X: X_TYPES,
+              y: Y_TYPES,
+              sample_weight: Optional[ARRAY_TYPES] = None,
+              **kwargs):
         """Get the score function on new data."""
         check_is_fitted(self, 'results')
-        return self.winner.score(X, y, **kwargs)
+        return self.winner.score(X, y, sample_weight, **kwargs)
+
+    # Utility methods ====================================================== >>
+
+    @composed(crash, typechecked)
+    def get_class_weights(self, dataset: str = 'train'):
+        """Return class weights for a balanced data set.
+
+        Statistically, the class weights re-balance the data set so that the
+        sampled data set represents the target population as closely as reasonably
+        possible. The returned weights are inversely proportional to class
+        frequencies in the selected data set.
+
+        Parameters
+        ----------
+        dataset: str, optional (default='train')
+            Data set from which to get the weights. Choose between 'train',
+            'test' or 'dataset'.
+
+        """
+        if dataset not in ('train', 'test', 'dataset'):
+            raise ValueError("Invalid value for the dataset parameter. "
+                             "Choose between 'train', 'test' or 'dataset'.")
+
+        y = self.classes[dataset]
+        return {idx: sum(y)/value for idx, value in y.iteritems()}
+
+    @composed(crash, typechecked)
+    def get_sample_weights(self, dataset: str = 'train'):
+        """Return sample weights for a balanced data set.
+
+        Statistically, the sampling weights re-balance the data set so that the
+        sampled data set represents the target population as closely as reasonably
+        possible. The returned weights are the reciprocal of the likelihood of
+        being sampled (i.e. selection probability) of the sampling unit.
+
+        Parameters
+        ----------
+        dataset: str, optional (default='train')
+            Data set from which to get the weights. Choose between 'train',
+            'test' or 'dataset'.
+
+        """
+        if dataset in ('train', 'test'):
+            y = getattr(self, f"y_{dataset}")
+        elif dataset.lower() == 'dataset':
+            y = self.y
+        else:
+            raise ValueError("Invalid value for the dataset parameter. "
+                             "Choose between 'train', 'test' or 'dataset'.")
+
+        sample_weights = []
+        for value in y:
+            sample_weights.append(np.divide(len(y), self.classes.at[value, dataset]))
+
+        return sample_weights
+
+    @composed(crash, method_to_log)
+    def calibrate(self, **kwargs):
+        """Calibrate the winning model."""
+        check_is_fitted(self, 'results')
+        return self.winner.calibrate(**kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
+    def scoring(self, metric: Optional[str] = None, dataset: str = 'test', **kwargs):
         """Print the final scoring for a specific metric.
 
-        If a model shows a `XXX`, it means the metric failed for that specific
+        If a model returns `XXX`, it means the metric failed for that specific
         model. This can happen if either the metric is unavailable for the task
         or if the model does not have a `predict_proba` method while the metric
         requires it.
@@ -167,6 +232,9 @@ class BasePredictor(object):
         dataset: str, optional (default='test')
             Data set on which to calculate the metric. Options are 'train' or 'test'.
 
+        **kwargs
+            Additional keyword arguments for the metric function.
+
         """
         check_is_fitted(self, 'results')
 
@@ -178,7 +246,7 @@ class BasePredictor(object):
         maxlen = max([len(m.longname) for m in self.models_])
 
         # Get list of scores
-        all_scores = [m.scoring(metric, dataset) for m in self.models_]
+        all_scores = [m.scoring(metric, dataset, **kwargs) for m in self.models_]
 
         # Raise an error if the metric was invalid for all models
         if metric and all([isinstance(score, str) for score in all_scores]):
@@ -190,7 +258,7 @@ class BasePredictor(object):
             if not metric:
                 out = f"{m.longname:{maxlen}s} --> {m._final_output()}"
             else:
-                score = m.scoring(metric, dataset)
+                score = m.scoring(metric, dataset, **kwargs)
 
                 # Create string of the score (if wrong metric for model -> XXX)
                 if isinstance(score, str):
@@ -211,7 +279,7 @@ class BasePredictor(object):
 
         Parameters
         ----------
-        models: str or sequence, optional (default='all')
+        models: str or iterable, optional (default='all')
             Model(s) to clear from the pipeline. If 'all', clear all models.
 
         """

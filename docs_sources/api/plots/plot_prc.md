@@ -12,7 +12,7 @@ Plot the precision-recall curve. The legend shows the average precision (AP) sco
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
+<strong>models: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>

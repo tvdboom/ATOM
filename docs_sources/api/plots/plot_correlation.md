@@ -43,7 +43,7 @@ Whether to render the plot.
 ```python
 from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, y='RainTomorrow')
+atom = ATOMClassifier(X, 'RainTomorrow')
 atom.plot_correlation()
 ```
 <div align="center">

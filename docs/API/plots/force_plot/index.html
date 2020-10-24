@@ -58,6 +58,10 @@
 <li>
     <a href="../../ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
+            
+<li>
+    <a href="../../ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
+</li>
     </ul>
   </li>
                                     
@@ -547,13 +551,13 @@ Plot SHAP's force plot. Visualize the given SHAP values with an additive force l
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
+<strong>models: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected. Note
  that selecting multiple models will raise an exception. To avoid this, call the
  plot from a <code>model</code>.
 </blockquote>
-<strong>index: int, sequence or None, optional (default=None)</strong>
+<strong>index: int, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Indices of the rows in the dataset to plot. If tuple (n, m), select rows n until m.
  If None, select all rows in the test set.

@@ -42,10 +42,10 @@ class BaseCleaner(object):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -79,7 +79,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     """
@@ -97,10 +97,10 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -119,10 +119,10 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -151,7 +151,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    prohibited_types: str or sequence, optional (default=[])
+    prohibited_types: str or iterable, optional (default=[])
         Columns with any of these types will be removed from the dataset.
 
     strip_categorical: bool, optional (default=True)
@@ -185,7 +185,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     """
@@ -215,10 +215,10 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -268,7 +268,7 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
                 self.log(f" --> Dropping feature {col} due to minimum "
-                         f"cardinality. Contains only 1 value: {unique[0]}.", 2)
+                         f"cardinality. Contains only 1 class: {unique[0]}.", 2)
                 X.drop(col, axis=1, inplace=True)
 
         if y is not None:
@@ -343,7 +343,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     """
@@ -372,10 +372,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -447,10 +447,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -556,7 +556,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
     Also replaces classes with low occurrences with the value `other` in order to
     prevent too high cardinality. Categorical features are defined as all columns
     whose dtype.kind not in `ifu`. Will raise an error if it encounters missing
-    values or unknown categories when transforming.
+    values or unknown classes when transforming.
 
     Parameters
     ----------
@@ -571,7 +571,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         If None, it will always use `strategy` when n_unique > 2.
 
     frac_to_other: float, optional (default=None)
-        Categories with less occurrences than n_rows * fraction_to_other are
+        Classes with less occurrences than n_rows * fraction_to_other are
         replaced with the string `other`. If None, this skip this step.
 
     verbose: int, optional (default=0)
@@ -583,7 +583,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     **kwargs
@@ -614,10 +614,10 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, list, tuple,  np.array or pd.Series
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -654,7 +654,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         for col in X:
             self._to_other[col] = []
             if X[col].dtype.kind not in 'ifu':  # If column is categorical
-                # Group uncommon categories into 'other'
+                # Group uncommon classes into 'other'
                 if self.frac_to_other:
                     for category, count in X[col].value_counts().items():
                         if count < self.frac_to_other * len(X[col]):
@@ -713,7 +713,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         for col in X:
             if X[col].dtype.kind not in 'ifu':  # If column is categorical
-                # Convert categories to 'other'
+                # Convert classes to 'other'
                 for category in self._to_other[col]:
                     X[col].replace(category, 'other', inplace=True)
 
@@ -726,9 +726,8 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Get index of the column
                 idx = X.columns.get_loc(col)
 
-                self.log(f" --> {self._encoders[col].__class__.__name__[:-7]}"
-                         f"-encoding feature {col}. Contains {n_unique} unique "
-                         "categories.", 2)
+                self.log(f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding"
+                         f" feature {col}. Contains {n_unique} unique classes.", 2)
                 # Perform encoding type dependent on number of unique values
                 if self._encoders[col].__class__.__name__[:-7] == 'Label':
                     X[col] = self._encoders[col].transform(values)
@@ -782,7 +781,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     """
@@ -925,7 +924,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)

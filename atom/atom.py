@@ -9,11 +9,11 @@ Description: Module containing the main ATOM class.
 
 
 # Standard packages
-import inspect
 import numpy as np
 import pandas as pd
+from inspect import signature
 from typeguard import typechecked
-from typing import Union, Optional, Sequence, List, Tuple
+from typing import Union, Optional, Sequence
 from pandas_profiling import ProfileReport
 
 # Own modules
@@ -43,36 +43,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     and training methods in this package. Provide the dataset to the class, and apply
     all transformations and model management from here.
 
-    Parameters
-    ----------
-    X: dict, sequence, np.array or pd.DataFrame
-        Dataset containing the features, with shape=(n_samples, n_features)
-
-    y: int, str, sequence, np.array or pd.Series
-        - If int: Index of the column of X which is selected as target.
-        - If str: Name of the target column in X.
-        - Else: Data target column with shape=(n_samples,).
-
-    n_rows: int or float
-        - If <=1: Fraction of the data to use.
-        - If >1: Number of rows to use.
-
-    test_size: float
-        Split fraction for the training and test set.
-
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, X, y, n_rows, test_size):
+    def __init__(self, *arrays, n_rows, test_size):
         """Prepare input, run StandardCleaner and split data in train/test sets."""
-        # Data attributes
-        self._idx = [None, None]  # Train and test set sizes
-
-        # Pipeline attributes
-        self.profile = None
-        self.pipeline = pd.Series(dtype='object')
-
-        # Training attributes
         self.trainer = None
         self.models = []
         self.metric_ = []
@@ -84,27 +59,66 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Check input Parameters ============================================ >>
 
-        if n_rows <= 0:
-            raise ValueError("Invalid value for the n_rows parameter. "
-                             f"Value should be >0, got {n_rows}.")
-        elif n_rows > len(X):
-            n_rows = len(X)
-
-        if test_size <= 0 or test_size >= 1:
-            raise ValueError("Invalid value for the test_size parameter. "
-                             f"Value should be between 0 and 1, got {test_size}.")
-        else:
-            self._test_size = test_size
-
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        X, y = self._prepare_input(X, y)
-        self._data = X if y is None else merge(X, y)
+        try:
+            if len(arrays) == 1:
+                # arrays=(X,)
+                self._data, _ = self._prepare_input(arrays[0])
+            elif len(arrays) == 2:
+                # arrays=(X, y)
+                self._data = merge(*self._prepare_input(arrays[0], arrays[1]))
 
-        # Get number of rows and shuffle the dataset
-        kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
-        self._data = self._data.sample(random_state=self.random_state, **kwargs)
+            # Select subsample, shuffle the dataset and reset the indices
+            kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
+            self._data = self._data.sample(random_state=self.random_state, **kwargs)
+            self._data.reset_index(drop=True, inplace=True)
+
+            if test_size <= 0 or test_size >= len(self.dataset):
+                raise ValueError(
+                    "Invalid value for the test_size parameter. Value "
+                    f"should lie between 0 and len(X), got {test_size}.")
+
+            # Define train and test indices
+            if test_size < 1:
+                test_idx = int(test_size * len(self.dataset))
+            else:
+                test_idx = test_size
+            self._idx = [len(self.dataset) - test_idx, test_idx]
+
+        except (TypeError, ValueError, AttributeError):
+            if isinstance(arrays[0], (list, tuple)) and len(arrays[0]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test))
+                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
+                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
+            elif len(arrays) == 2:
+                # arrays=(train, test)
+                train, _ = self._prepare_input(arrays[0])
+                test, _ = self._prepare_input(arrays[1])
+            elif len(arrays) == 4:
+                # arrays=(X_train, X_test, y_train, y_test)
+                train = merge(*self._prepare_input(arrays[0], arrays[2]))
+                test = merge(*self._prepare_input(arrays[1], arrays[3]))
+            else:
+                raise ValueError("Invalid parameters. Allowed input formats are: "
+                                 "X, y; train, test; X_train, X_test, y_train, "
+                                 "y_test or (X_train, y_train), (X_test, y_test).")
+
+            # Select same subsample of train and test set and shuffle the dataset
+            if n_rows <= 1:
+                train = train.sample(frac=n_rows, random_state=self.random_state)
+                test = test.sample(frac=n_rows, random_state=self.random_state)
+            else:
+                raise ValueError("Invalid value for the n_rows parameter. value "
+                                 "should be <=1 when train and test are provided.")
+
+            # Update the data and reset the indices
+            self._data = pd.concat([train, test]).reset_index(drop=True)
+            self._idx = [len(train), len(test)]
+
+        # Save the test_size fraction for later use
+        self._test_size = self._idx[1] / len(self.dataset)
 
         # Assign the algorithm's task
         self.task = infer_task(self.y, goal=self.goal)
@@ -127,22 +141,20 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
         X, y = standard_cleaner.transform(self.X, self.y)
         self._data = merge(X, y).reset_index(drop=True)
-        self.pipeline = self.pipeline.append(
-            pd.Series([standard_cleaner]), ignore_index=True)
 
         # Add mapping attr to ATOM
         self.mapping = standard_cleaner.mapping
 
-        # Define train and test indices
-        self._idx[1] = int(self._test_size * len(self.dataset))
-        self._idx[0] = len(self.dataset) - self._idx[1]
+        # Create a pipeline attr and attach the first step
+        self.pipeline = pd.Series([standard_cleaner])
+
         self.stats(1)  # Print data stats
 
     def __repr__(self):
         repr_ = f"{self.__class__.__name__}"
         for est in self.pipeline:
             repr_ += f"\n --> {est.__class__.__name__}"
-            for param in inspect.signature(est.__init__).parameters:
+            for param in signature(est.__init__).parameters:
                 if param not in BaseTransformer.attrs + ['self']:
                     repr_ += f"\n   >>> {param}: {str(flt(getattr(est, param)))}"
 
@@ -188,7 +200,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             Internal parameter to always print if the user calls this method.
 
         """
-        self.log("\nDataset stats ================= >>", _vb)
+        self.log("\nDataset stats ================== >>", _vb)
         self.log(f"Shape: {self.dataset.shape}", _vb)
 
         if self.n_missing:
@@ -197,68 +209,26 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log(f"Categorical columns: {self.n_categorical}", _vb)
 
         self.log(f"Scaled: {self.scaled}", _vb)
-        self.log("----------------------------------", _vb)
+        self.log("-----------------------------------", _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
 
-        # Print count of target classes
+        # Print count and balance of classes for classification tasks
         if self.task != 'regression':
-            # Create dataframe with stats per target class
-            index = []
-            for key, value in self.mapping.items():
-                try:
-                    if list(map(int, self.mapping)) != list(self.mapping.values()):
-                        index.append(str(value) + ': ' + key)
-                    else:
-                        index.append(value)
-                except ValueError:
-                    index.append(str(value) + ': ' + key)
-
-            stats = pd.DataFrame(columns=[' total', ' train_set', ' test_set'])
-
-            # Count number of occurrences in all sets
-            uq_train, c_train = np.unique(self.y_train, return_counts=True)
-            uq_test, c_test = np.unique(self.y_test, return_counts=True)
-            keys = ''
-            train_val, test_val = [], []
-            for key, value in self.mapping.items():
-                # If set has 0 instances of that class the array is empty
-                idx_train = np.where(uq_train == value)[0]
-                train = c_train[idx_train[0]] if len(idx_train) != 0 else 0
-                idx_test = np.where(uq_test == value)[0]
-                test = c_test[idx_test[0]] if len(idx_test) != 0 else 0
-                stats = stats.append({
-                    ' total': train + test,
-                    ' train_set': train,
-                    ' test_set': test
-                }, ignore_index=True)
-
-                keys += key + ':'
-                train_val.append(train)
-                test_val.append(test)
-
-            stats.set_index(pd.Index(index), inplace=True)
-
-            if len(self.mapping) <= 5:  # Gets ugly for too many classes
-                train_str = test_str = ''  # Class balance string for values
-                for i, j in zip(train_val, test_val):
-                    train_str += str(round(i / train, 1)) + ':'
-                    test_str += str(round(j / test, 1)) + ':'
-
-                # [-1] to remove last colon
-                keys, train_str, test_str = keys[:-1], train_str[:-1], test_str[:-1]
-                self.log("----------------------------------", _vb + 1)
-                if train_str == test_str:
-                    self.log(f"Dataset balance: {keys} <==> {train_str}", _vb + 1)
-                else:
-                    self.log(f"Train set balance: {keys} <==> {train_str}", _vb + 1)
-                    self.log(f"Test set balance: {keys} <==> {test_str}", _vb + 1)
-
-            self.log("----------------------------------", _vb + 1)
-            self.log(f"Instances in {self.target} per class:", _vb + 1)
-            self.log(stats.to_markdown(), _vb + 1)
-
-        self.log('', _vb)  # Add always an empty line at the end
+            balance = {}
+            keys = ':'.join(self.mapping.keys())
+            for set_ in ('train', 'test'):
+                balance[set_] = ':'.join(
+                    round(self.classes[set_]/min(self.classes[set_]), 1).astype(str))
+            self.log("-----------------------------------", _vb + 1)
+            if balance['train'] == balance['test']:
+                self.log(f"Dataset balance: {keys} <==> {balance['train']}", _vb + 1)
+            else:
+                self.log(f"Train set balance: {keys} <==> {balance['train']}", _vb + 1)
+                self.log(f"Test set balance: {keys} <==> {balance['test']}", _vb + 1)
+            self.log("-----------------------------------", _vb + 1)
+            self.log(f"Distribution of classes:", _vb + 1)
+            self.log(self.classes.to_markdown(), _vb + 1)
 
     @composed(crash, method_to_log, typechecked)
     def report(self,
@@ -283,21 +253,21 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         # If rows=None, select all rows in the dataframe
-        rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
+        n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
 
         self.log("Creating profile report...", 1)
 
-        self.profile = ProfileReport(getattr(self, dataset).sample(rows))
+        profile = ProfileReport(getattr(self, dataset).sample(n_rows))
         try:  # Render if possible (for notebooks)
             from IPython.display import display
-            display(self.profile)
+            display(profile)
         except ModuleNotFoundError:
             pass
 
         if filename:
             if not filename.endswith('.html'):
                 filename = filename + '.html'
-            self.profile.to_file(filename)
+            profile.to_file(filename)
             self.log("Report saved successfully!", 1)
 
     @composed(crash, method_to_log, typechecked)
@@ -317,17 +287,17 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array, pd.Series or None, optional (default=None)
+        y: int, str, list, tuple,  np.array, pd.Series or None, optional (default=None)
             - If None: y is ignored in the transformers.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
         verbose: int or None, optional (default=None)
-            Verbosity level of the transformers. If None, it uses ATOM's verbosity.
+            Verbosity level of the transformers. If None, it uses the `training`'s verbosity.
 
         **kwargs
             Additional keyword arguments to customize which transformers to apply.
@@ -425,7 +395,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Also replaces classes with low occurrences with the value 'other' in
         order to prevent too high cardinality. Categorical features are defined as
         all columns whose dtype.kind not in 'ifu'. Will raise an error if it
-        encounters missing values or unknown categories when transforming. The
+        encounters missing values or unknown classes when transforming. The
         encoder is fitted only on the training set to avoid data leakage.
 
         See the data_cleaning.py module for a description of the parameters.
@@ -475,11 +445,11 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def balance(self, strategy: str = 'ADASYN', **kwargs):
-        """Balance the target categories in the training set.
+        """Balance the target classes in the training set.
 
         Balance the number of instances per target category in the training set.
         Only the training set is balanced in order to maintain the original
-        distribution of target categories in the test set. Use only for
+        distribution of target classes in the test set. Use only for
         classification tasks.
 
         See the data_cleaning.py module for a description of the parameters.
@@ -700,7 +670,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def run(self,
-            models: Union[str, List[str], Tuple[str]],
+            models: Union[CAL, Sequence[CAL]],
             metric: Optional[Union[CAL, Sequence[CAL]]] = None,
             greater_is_better: Union[bool, Sequence[bool]] = True,
             needs_proba: Union[bool, Sequence[bool]] = False,
@@ -739,7 +709,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def successive_halving(
             self,
-            models: Union[str, List[str], Tuple[str]],
+            models: Union[CAL, Sequence[CAL]],
             metric: Optional[Union[CAL, Sequence[CAL]]] = None,
             greater_is_better: Union[bool, Sequence[bool]] = True,
             needs_proba: Union[bool, Sequence[bool]] = False,
@@ -787,7 +757,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def train_sizing(self,
-                     models: Union[str, List[str], Tuple[str]],
+                     models: Union[CAL, Sequence[CAL]],
                      metric: Optional[Union[CAL, Sequence[CAL]]] = None,
                      greater_is_better: Union[bool, Sequence[bool]] = True,
                      needs_proba: Union[bool, Sequence[bool]] = False,

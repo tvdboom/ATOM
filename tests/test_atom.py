@@ -12,33 +12,110 @@ import glob
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge, check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X_bin_array, y_bin_array, X10_nan, X10_str, y10, y10_str
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_bin_array, y_bin_array,
+    X10_nan, X10_str, y10, y10_str, bin_train, bin_test
     )
 
 
 # Test __init__ ============================================================= >>
 
-def test_n_rows_parameter():
-    """Assert that an error is raised when n_rows is <=0."""
-    pytest.raises(ValueError, ATOMClassifier, X_bin, y_bin, n_rows=0, random_state=1)
+def test_input_is_X():
+    """Assert that input X works as intended."""
+    atom = ATOMClassifier(X_bin, random_state=1)
+    assert atom.dataset.shape == X_bin.shape
 
 
-def test_n_rows_parameter_too_large():
-    """Assert that when n_rows is too large, whole X is selected."""
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=1e5, n_jobs=2, random_state=1)
-    assert len(atom.dataset) == len(X_bin)
+def test_input_is_X_y():
+    """Assert that input X, y works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.dataset.shape == merge(X_bin, y_bin).shape
 
 
-def test_test_size_parameter():
+@pytest.mark.parametrize('n_rows', [0.7, 0.8, 1])
+def test_n_rows_X_y_fraction(n_rows):
+    """Assert that n_rows<=1 work for input X and X, y."""
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=n_rows, random_state=1)
+    assert len(atom.dataset) == int(len(X_bin) * n_rows)
+
+
+def test_n_rows_X_y_int():
+    """Assert that n_rows>1 work for input X and X, y."""
+    atom = ATOMClassifier(X_bin, y_bin, n_rows=200, random_state=1)
+    assert len(atom.dataset) == 200
+
+
+@pytest.mark.parametrize('ts', [-2, 0, 1000])
+def test_test_size_parameter(ts):
     """Assert that the test_size parameter is in correct range."""
-    for s in [0., -3.1, 12.2]:
-        pytest.raises(ValueError, ATOMClassifier, X_bin, test_size=s, random_state=1)
+    pytest.raises(ValueError, ATOMClassifier, X_bin, test_size=ts, random_state=1)
+
+
+def test_test_size_fraction():
+    """Assert that the test_size parameters splits the sets correctly when <1."""
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.2, random_state=1)
+    assert len(atom.test) == int(0.2 * len(X_bin))
+    assert len(atom.train) == len(X_bin) - int(0.2 * len(X_bin))
+
+
+def test_test_size_int():
+    """Assert that the test_size parameters splits the sets correctly when >=1."""
+    atom = ATOMClassifier(X_bin, y_bin, test_size=100, random_state=1)
+    assert len(atom.test) == 100
+    assert len(atom.train) == len(X_bin) - 100
+
+
+def test_input_is_double_tuple():
+    """Assert that input (X_train, y_train), (X_test, y_test) works as intended."""
+    X_train, X_test, y_train, y_test = train_test_split(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier((X_train, y_train), (X_test, y_test), random_state=1)
+    assert atom.dataset.shape == merge(X_bin, y_bin).shape
+
+
+def test_input_is_train_test():
+    """Assert that input train, test works as intended."""
+    atom = ATOMClassifier(bin_train, bin_test, random_state=1)
+    assert atom.dataset.shape == pd.concat([bin_train, bin_test]).shape
+    assert len(atom.train) == len(bin_train)
+    assert len(atom.test) == len(bin_test)
+
+
+def test_input_is_length_4():
+    """Assert that input X_train, X_test, y_train, y_test works as intended."""
+    X_train, X_test, y_train, y_test = train_test_split(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_train, X_test, y_train, y_test, random_state=1)
+    assert atom.dataset.shape == merge(X_bin, y_bin).shape
+    assert len(atom.train) == len(X_train)
+    assert len(atom.test) == len(X_test)
+
+
+def test_invalid_input():
+    """Assert that an error is raised when the input data is invalid."""
+    X_train, X_test, y_train, y_test = train_test_split(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, ATOMClassifier, X_train, y_train, X_test, random_state=1)
+
+
+def test_n_rows_train_test_fraction():
+    """Assert that n_rows>1 work when a test set is provided."""
+    atom = ATOMClassifier(bin_train, bin_test, n_rows=0.75, random_state=1)
+    assert len(atom.train) == int(len(bin_train) * 0.75)
+    assert len(atom.test) == int(len(bin_test) * 0.75)
+
+
+def test_n_rows_train_test_int():
+    """Assert that an error is raised when n_rows >1 for a test set is provided."""
+    pytest.raises(ValueError, ATOMClassifier, bin_train, bin_test, n_rows=100)
+
+
+def test_dataset_is_shuffled():
+    """Assert that the dataset is shuffled before splitting."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not X_bin.equals(atom.X)
 
 
 def test_input_is_prepared():
@@ -46,6 +123,33 @@ def test_input_is_prepared():
     atom = ATOMClassifier(X_bin_array, y_bin_array, random_state=1)
     assert isinstance(atom.X, pd.DataFrame)
     assert isinstance(atom.y, pd.Series)
+
+
+def test_merger_to_dataset():
+    """Assert that the merger between X and y was successful."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    merger = X_bin.merge(
+        y_bin.astype(np.int64).to_frame(), left_index=True, right_index=True
+        )
+
+    # Order of rows can be different
+    df1 = merger.sort_values(by=merger.columns.tolist())
+    df1.reset_index(drop=True, inplace=True)
+    df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
+    df2.reset_index(drop=True, inplace=True)
+    assert df1.equals(df2)
+
+
+def test_reset_index():
+    """Assert that the indices are reset for the whole dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert list(atom.dataset.index) == list(range(len(X_bin)))
+
+
+def test_test_size_attribute():
+    """Assert that the _test_size attribute is created."""
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom._test_size == len(atom.test) / len(atom.dataset)
 
 
 def test_raise_one_target_value():
@@ -72,57 +176,16 @@ def test_mapping_assignment():
     assert atom.mapping is atom.pipeline[0].mapping
 
 
-def test_n_rows_fraction():
-    """Assert that the n_rows selects a fraction of the dataset when <=1."""
-    n_rows = 0.5
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=n_rows, random_state=1)
-    assert len(atom.dataset) == int(n_rows * len(X_bin))
-
-
-def test_n_rows_int():
-    """Assert that the n_rows selects n rows of the dataset when >1."""
-    n_rows = 400
-    atom = ATOMClassifier(X_bin, y_bin, n_rows=n_rows, random_state=1)
-    assert len(atom.dataset) == n_rows
-
-
-def test_dataset_is_shuffled():
-    """Assert that the dataset is shuffled before splitting."""
+def test_pipeline_creation():
+    """Assert that a pipeline attr is created with the StandardCleaner class."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert not X_bin.equals(atom.X)
+    assert atom.pipeline[0].__class__.__name__ == 'StandardCleaner'
 
 
-def test_merger_to_dataset():
-    """Assert that the merger between X and y was successful."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    merger = X_bin.merge(
-        y_bin.astype(np.int64).to_frame(), left_index=True, right_index=True
-        )
-
-    # Order of rows can be different
-    df1 = merger.sort_values(by=merger.columns.tolist())
-    df1.reset_index(drop=True, inplace=True)
-    df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
-    df2.reset_index(drop=True, inplace=True)
-    assert df1.equals(df2)
-
-
-def test_reset_index():
-    """Assert that the indices are reset for the whole dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert list(atom.dataset.index) == list(range(len(X_bin)))
-
-
-def test_train_test_split():
-    """Assert that the train/test split is made."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert len(atom.train) == round((1 - test_size) * len(X_bin)) + 1
-    assert len(atom.test) == round(test_size * len(X_bin)) - 1
-
+# Test __repr__ ==================================================-========= >>
 
 def test_repr():
-    """Assert that the repr method visualizes the pipeline."""
+    """Assert that the __repr__ method visualizes the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run('lr')
     assert len(str(atom)) == 514
@@ -168,7 +231,6 @@ def test_creates_report():
     """Assert that the report attribute and file are created."""
     atom = ATOMClassifier(X_reg, y_reg, random_state=1)
     atom.report(n_rows=10, filename=FILE_DIR + 'report')
-    assert hasattr(atom, 'report')
     assert glob.glob(FILE_DIR + 'report.html')
 
 

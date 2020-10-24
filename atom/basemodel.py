@@ -16,6 +16,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 from typeguard import typechecked
 from typing import Optional
+from inspect import signature
 
 # Sklearn
 from sklearn.utils import resample
@@ -32,12 +33,12 @@ from skopt.optimizer import (
 )
 
 # Own modules
-from .utils import (
-    X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst, merge, check_scaling,
-    time_to_string, catch_return, transform, composed, get_best_score,
-    crash, method_to_log, PlotCallback
-)
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
+from .utils import (
+    ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst, merge,
+    check_scaling, time_to_string, catch_return, transform, composed,
+    get_best_score, fit_init, crash, method_to_log, PlotCallback
+)
 
 
 # Classes =================================================================== >>
@@ -57,9 +58,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     """
 
     def __init__(self, **kwargs):
-        # Set attributes from ATOM to the model's parent class
         self.__dict__.update(kwargs)
-        self.name, self.longname = None, None
 
         # BO attributes
         self._iter = 0
@@ -100,8 +99,36 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         return repr_
 
+    def _get_default(self, x, params):
+        """Return the standard parameter from params or the training instance.
+
+        Parameters
+        ----------
+        x: list
+            Standard parameter name(s). Can be n_jobs and/or random_state.
+
+        params: dict
+            Parameters for the estimator provided by the BO and est_params.
+
+        """
+        args = []
+        for i in x:
+            args.append(params.pop(i) if params.get(i) else getattr(self.T, i))
+
+        if len(args) == 1:
+            return args[0]
+        else:
+            return args[0], args[1]
+
     def get_params(self, x):
-        """Return a dictionary of the model´s hyperparameters."""
+        """Return a dictionary of the model´s hyperparameters.
+
+        Parameters
+        ----------
+        x: list
+            Hyperparameters returned by the BO, in order of self.params.
+
+        """
         params = {}
         for i, (key, value) in enumerate(self.params.items()):
             if value[1]:  # If it has decimals...
@@ -129,20 +156,21 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Parameters
         ----------
-        n_calls: int or sequence, optional (default=15)
+        n_calls: int, list or tuple, optional (default=15)
             Maximum number of iterations of the BO (including `n_initial_points`).
             If 0, skip the BO and fit the model on its default Parameters.
-            If sequence, the n-th value will apply to the n-th model in the
+            If iterable, the n-th value will apply to the n-th model in the
             pipeline.
 
-        n_initial_points: int or sequence, optional (default=5)
+        n_initial_points: int, list or tuple, optional (default=5)
             Initial number of random tests of the BO before fitting the
             surrogate function. If equal to `n_calls`, the optimizer will
-            technically be performing a random search. If sequence, the n-th
+            technically be performing a random search. If iterable, the n-th
             value will apply to the n-th model in the pipeline.
 
         est_params: dict, optional (default={})
-            Additional parameters for the estimator.
+            Additional parameters for the estimator. If the parameter ends with _fit,
+            it is passed to the fit method instead of the initializer.
 
         bo_params: dict, optional (default={})
             Additional parameters to for the BO. These can include:
@@ -197,7 +225,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 Score achieved by the model.
 
             """
-            def fit_model(train_idx, val_idx, estimator):
+            def fit_model(train_idx, val_idx):
                 """Fit the model. Function for parallelization.
 
                 Divide the training set in a (sub)train and validation set for this
@@ -212,9 +240,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 val_idx: list
                     Indices for the validation set.
 
-                estimator: class
-                    Estimator's instance.
-
                 Returns
                 -------
                 score: float
@@ -226,16 +251,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 X_val = self.X_train.loc[val_idx]
                 y_val = self.y_train.loc[val_idx]
 
+                # Match the sample_weights with the length of the subtrain set
+                # Make copy of est_params to not alter the mutable variable
+                est_copy = est_params.copy()
+                if 'sample_weight_fit' in est_params:
+                    est_copy['sample_weight_fit'] = [
+                        est_params['sample_weight_fit'][i] for i in train_idx
+                        ]
+
                 if hasattr(self, 'custom_fit'):
                     train, test = (X_subtrain, y_subtrain), (X_val, y_val)
-                    self.custom_fit(estimator, train, test)
+                    self.custom_fit(estimator, train, test, fit_init(est_copy, True))
 
                     # Alert if early stopping was applied
                     if self._cv == 1 and self._stopped:
                         self.T.log("Early stop at iteration {} of {}."
                                    .format(self._stopped[0], self._stopped[1]), 2)
                 else:
-                    estimator.fit(X_subtrain, y_subtrain)
+                    estimator.fit(X_subtrain, y_subtrain, **fit_init(est_copy, True))
 
                 # Calculate metrics on the validation set
                 return [metric(estimator, X_val, y_val) for metric in self.T.metric_]
@@ -255,8 +288,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log(f"{call} {len_}", 2)
             self.T.log(f"Parameters --> {params}", 2)
 
-            estimator = self.get_estimator(params)
-            estimator.set_params(**est_params)
+            estimator = self.get_estimator({**fit_init(est_params), **params})
 
             # Same splits per model, but different for every iteration of the BO
             rs = self.T.random_state + self._iter if self.T.random_state else None
@@ -272,7 +304,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     split = ShuffleSplit(1, **kwargs)
 
                 train_idx, val_idx = next(split.split(self.X_train, self.y_train))
-                scores = fit_model(train_idx, val_idx, estimator)
+                scores = fit_model(train_idx, val_idx)
 
             else:  # Use cross validation to get the score
                 kwargs = dict(n_splits=self._cv, shuffle=True, random_state=rs)
@@ -284,8 +316,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 # Parallel loop over fit_model
                 jobs = Parallel(self.T.n_jobs)(
-                           delayed(fit_model)(i, j, estimator)
-                           for i, j in k_fold.split(self.X_train, self.y_train))
+                    delayed(fit_model)(i, j)
+                    for i, j in k_fold.split(self.X_train, self.y_train)
+                )
                 scores = list(np.mean(jobs, axis=0))
 
             # Append row to the bo attribute
@@ -380,8 +413,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             bo_params.pop('early_stopping')
 
         # Drop dimensions from BO if already in est_params
-        for param in est_params:
-            if param not in self.get_estimator().get_params().keys():
+        for param in fit_init(est_params):
+            if param not in signature(self.get_estimator().__init__).parameters:
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got {param} "
                     f"for estimator {self.get_estimator().__class__.__name__}.")
@@ -392,8 +425,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         def pre_defined_hyperparameters(x):
             return optimize(**self.get_params(x))
 
-        dimensions = self.get_dimensions()
-        func = pre_defined_hyperparameters  # Default optimization func
+        # Get custom dimensions (if provided)
+        dimensions = None
         if bo_params.get('dimensions'):
             if bo_params['dimensions'].get(self.name):
                 dimensions = bo_params.get('dimensions')[self.name]
@@ -404,8 +437,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 func = custom_hyperparameters  # Use custom hyperparameters
             bo_params.pop('dimensions')
 
+        # If there were no custom dimensions, use the default
+        if not dimensions:
+            dimensions = self.get_dimensions()
+            func = pre_defined_hyperparameters  # Default optimization func
+
         # If only 1 initial point, use the model's default parameters
-        if n_initial_points == 1:
+        if n_initial_points == 1 and hasattr(self, 'get_init_values'):
             bo_params['x0'] = self.get_init_values()
 
         # Choose base estimator (GP is chosen as default)
@@ -457,8 +495,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.metric_bo = self.bo.score.max(axis=0)
 
         # Save best model (not yet fitted)
-        self.estimator = self.get_estimator(self.best_params)
-        self.estimator.set_params(**est_params)
+        self.estimator = self.get_estimator(
+            {**fit_init(est_params), **self.best_params})
 
         # Get the BO duration
         self.time_bo = time_to_string(self._init_bo)
@@ -486,15 +524,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
-            self.estimator = self.get_estimator()
-            self.estimator.set_params(**est_params)
+            self.estimator = self.get_estimator(fit_init(est_params))
 
         # Fit the selected model on the complete training set
         if hasattr(self, 'custom_fit'):
             train, test = (self.X_train, self.y_train), (self.X_test, self.y_test)
-            self.custom_fit(self.estimator, train, test)
+            self.custom_fit(self.estimator, train, test, fit_init(est_params, True))
         else:
-            self.estimator.fit(self.X_train, self.y_train)
+            self.estimator.fit(self.X_train, self.y_train, **fit_init(est_params, True))
 
         # Save metric scores on complete training and test set
         self.metric_train = flt([metric(self.estimator, self.X_train, self.y_train)
@@ -576,7 +613,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     # Prediction methods ==================================================== >>
 
-    def _prediction_methods(self, X, y=None, method='predict', **kwargs):
+    def _prediction(self, X, y=None, sample_weight=None, method='predict', **kwargs):
         """Apply prediction methods on new data.
 
         First transform the new data and apply the attribute on the best model.
@@ -584,14 +621,17 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, list, tuple, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array, pd.Series, optional (default=None)
+        y: int, str, list, tuple, np.array, pd.Series, optional (default=None)
             - If None, the target column is not used in the attribute
             - If int: index of the column of X which is selected as target
-            - If string: name of the target column in X
+            - If str: name of the target column in X
             - Else: data target column with shape=(n_samples,)
+
+        sample_weight: array-like or None, optional (default=None)
+            Sample weights for the score method.
 
         method: str, optional (default='predict')
             Method of the model to be applied.
@@ -609,7 +649,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             raise AttributeError(f"The {self.estimator.__class__.__name__} "
                                  f"estimator doesn't have a {method} method!")
 
-        # When called from the ATOM class, apply all data transformations first
+        # When there is a pipeline, apply all data transformations first
         if hasattr(self, 'pipeline'):
             if kwargs.get('verbose') is None:
                 kwargs['verbose'] = self.T.verbose
@@ -622,32 +662,36 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if y is None:
             return getattr(self.estimator, method)(X)
         else:
-            return getattr(self.estimator, method)(X, y)
+            return getattr(self.estimator, method)(X, y, sample_weight)
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
         """Get predictions on new data."""
-        return self._prediction_methods(X, method='predict', **kwargs)
+        return self._prediction(X, method='predict', **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(self, X: X_TYPES, **kwargs):
         """Get probability predictions on new data."""
-        return self._prediction_methods(X, method='predict_proba', **kwargs)
+        return self._prediction(X, method='predict_proba', **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(self, X: X_TYPES, **kwargs):
         """Get log probability predictions on new data."""
-        return self._prediction_methods(X, method='predict_log_proba', **kwargs)
+        return self._prediction(X, method='predict_log_proba', **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(self, X: X_TYPES, **kwargs):
         """Get the decision function on new data."""
-        return self._prediction_methods(X, method='decision_function', **kwargs)
+        return self._prediction(X, method='decision_function', **kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def score(self, X: X_TYPES, y: Y_TYPES, **kwargs):
+    def score(self,
+              X: X_TYPES,
+              y: Y_TYPES,
+              sample_weight: Optional[ARRAY_TYPES] = None,
+              **kwargs):
         """Get the score function on new data."""
-        return self._prediction_methods(X, y, method='score', **kwargs)
+        return self._prediction(X, y, sample_weight, method='score', **kwargs)
 
     # Prediction properties ================================================= >>
 
@@ -793,12 +837,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         return self.T.target
 
     @property
-    def categories(self):
-        return self.T.categories
+    def classes(self):
+        return self.T.classes
 
     @property
-    def n_categories(self):
-        return self.T.n_categories
+    def n_classes(self):
+        return self.T.n_classes
 
     # Utility methods ======================================================= >>
 
@@ -855,7 +899,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.reset_prediction_attributes()
 
     @composed(crash, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = 'test'):
+    def scoring(self, metric: Optional[str] = None, dataset: str = 'test', **kwargs):
         """Get the scoring of a specific metric on the test set.
 
         Parameters
@@ -868,6 +912,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         dataset: str, optional (default='test')
             Data set on which to calculate the metric. Options are 'train' or 'test'.
+
+        **kwargs
+            Additional keyword arguments for the metric function.
 
         """
         metric_opts = ['cm', 'confusion_matrix', 'tn', 'fp', 'fn',
@@ -914,7 +961,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 return float((tp + fp) / (tp + fp + fn + tn))
 
             # Calculate the scorer via _score_func to use the prediction properties
-            if type(SCORERS[metric]).__name__ == '_ThresholdScorer':
+            scorer = SCORERS[metric]
+            if type(scorer).__name__ == '_ThresholdScorer':
                 if self.T.task.startswith('reg'):
                     y_pred = getattr(self, f'predict_{dataset}')
                 elif hasattr(self.estimator, 'decision_function'):
@@ -923,7 +971,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
                         y_pred = y_pred[:, 1]
-            elif type(SCORERS[metric]).__name__ == '_ProbaScorer':
+            elif type(scorer).__name__ == '_ProbaScorer':
                 if hasattr(self.estimator, 'predict_proba'):
                     y_pred = getattr(self, f'predict_proba_{dataset}')
                     if self.T.task.startswith('bin'):
@@ -933,9 +981,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             else:
                 y_pred = getattr(self, f'predict_{dataset}')
 
-            # Calculate metric on the test set
-            return SCORERS[metric]._sign * SCORERS[metric]._score_func(
-                getattr(self, f'y_{dataset}'), y_pred, **SCORERS[metric]._kwargs)
+            return scorer._sign * scorer._score_func(
+                getattr(self, f'y_{dataset}'), y_pred, **scorer._kwargs, **kwargs)
 
         except (ValueError, TypeError):
             return f"Invalid metric for a {self.name} model with {self.T.task} task!"

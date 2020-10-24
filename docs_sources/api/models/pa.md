@@ -175,11 +175,11 @@ Decision function scores on the test set (only if classifier).
 </blockquote>
 <strong>score_train: np.float64</strong>
 <blockquote>
-Model's score on the training set.
+Model's score on the training set (no sample_weights applied).
 </blockquote>
 <strong>score_test: np.float64</strong>
 <blockquote>
-Model's score on the test set.
+Model's score on the test set (no sample_weights applied).
 </blockquote>
 </tr>
 </table>
@@ -196,29 +196,29 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 
 <table>
 <tr>
-<td width="15%"><a href="#models-calibrate">calibrate</a></td>
+<td width="15%"><a href="#calibrate">calibrate</a></td>
 <td>Calibrate the model.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#models-reset-prediction-attributes">reset_prediction_attributes</a></td>
+<td width="15%"><a href="#reset-prediction-attributes">reset_prediction_attributes</a></td>
 <td>Clear all the prediction attributes.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#models-scoring">scoring</a></td>
+<td width="15%"><a href="#scoring">scoring</a></td>
 <td>Get the scoring of a specific metric on the test set.</td>
 </tr>
 
 <tr>
-<td><a href="#models-save-estimator">save_estimator</a></td>
+<td><a href="#save-estimator">save_estimator</a></td>
 <td>Save the estimator to a pickle file.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="models-calibrate"></a>
+<a name="calibrate"></a>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(\*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L826">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -246,7 +246,7 @@ test set. Use this only if you have another, independent set for testing.
 <br />
 
 
-<a name="models-reset-prediction-attributes"></a>
+<a name="reset-prediction-attributes"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_prediction_attributes</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L654">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -256,7 +256,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 <br />
 
 
-<a name="models-scoring"></a>
+<a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -292,7 +292,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 <br />
 
 
-<a name="models-save-estimator"></a>
+<a name="save-estimator"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L944">[source]</a></div></pre>
 <div style="padding-left:3%">

@@ -2,7 +2,7 @@
 ----------------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMRegressor</strong>(X, y=-1, n_rows=1, test_size=0.2, logger=None,
+<pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMRegressor</strong>(*arrays, n_rows=1, test_size=0.2, logger=None,
                              n_jobs=1, warnings=True, verbose=0, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L208">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -23,28 +23,40 @@ You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>*arrays: sequence of indexables</strong>
 <blockquote>
-Dataset containing the features, with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series, optional (default=-1)</strong>
-<blockquote>
+Dataset containing the features and target. Allowed formats are:
 <ul>
-<li>If int: Position of the target column in X. The default value selects the last column.</li>
-<li>If string: Name of the target column in X</li>
+<li>X, y</li>
+<li>train, test</li>
+<li>X_train, X_test, y_train, y_test</li>
+<li>(X_train, y_train), (X_test, y_test)</li>
+</ul>
+X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
+&nbsp;&nbsp;&nbsp;&nbsp;
+Feature set with shape=(n_features, n_samples). If no y is provided, the
+ last column is used as target.<br><br>
+y: int, str, list, tuple,  np.array or pd.Series<br>
+<ul>
+<li>If int: Position of the target column in X.</li>
+<li>If str: Name of the target column in X</li>
 <li>Else: Data target column with shape=(n_samples,)</li>
 </ul>
 </blockquote>
 <strong>n_rows: int or float, optional (default=1)</strong>
 <blockquote>
 <ul>
-<li>if <=1: Fraction of the data to use.</li>
-<li>if >1: Number of rows to use.</li>
+<li>If <=1: Fraction of the dataset to use.</li>
+<li>If >1: Number of rows to use (only if input is X, y).</li>
 </ul>
 </blockquote>
-<strong>test_size: float, optional (default=0.2)</strong>
+<strong>test_size: int, float, optional (default=0.2)</strong>
 <blockquote>
-Split fraction for the training and test set.
+<ul>
+<li>If <=1: Fraction of the dataset to include in the test set.</li>
+<li>If >1: Number of rows to include in the test set.</li>
+</ul>
+Is ignored if the train and test set are provided.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -175,13 +187,9 @@ Name of the target column.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>profile: ProfileReport</strong>
-<blockquote>
-Profile created by pandas-profiling after calling the report method.
-</blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the non-linear features created by the <a href="#ATOMRegressor-feature-generation">feature_generation</a> method.
+Dataframe of the non-linear features created by the <a href="#feature-generation">feature_generation</a> method.
  Columns include:
 <ul>
 <li><b>name:</b> Name of the feature (automatically created).</li>
@@ -191,7 +199,7 @@ Dataframe of the non-linear features created by the <a href="#ATOMRegressor-feat
 </blockquote>
 <strong>collinear: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the collinear features removed by the <a href="#ATOMRegressor-feature-selection">feature_selection</a> method.
+Dataframe of the collinear features removed by the <a href="#feature-selection">feature_selection</a> method.
  Columns include:
 <ul>
 <li><b>drop_feature:</b> name of the feature dropped by the method.</li>
@@ -283,33 +291,33 @@ inspect the pipeline.
 
 <table>
 <tr>
-<td width="15%"><a href="#ATOMRegressor-clear">clear</a></td>
+<td width="15%"><a href="#clear">clear</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#ATOMRegressor-log">log</a></td>
+<td width="15%"><a href="#log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-report">report</a></td>
+<td><a href="#report">report</a></td>
 <td>Get an extensive profile analysis of the data.</td>
 </tr>
 
 
 <tr>
-<td><a href="#ATOMRegressor-save">save</a></td>
+<td><a href="#save">save</a></td>
 <td>Save the ATOMRegressor instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-scoring">scoring</a></td>
+<td><a href="#scoring">scoring</a></td>
 <td>Returns the scores of the models for a specific metric.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#ATOMRegressor-stats">stats</a></td>
+<td width="15%"><a href="#stats">stats</a></td>
 <td>Print out a list of basic statistics on the dataset.</td>
 </tr>
 
@@ -317,7 +325,7 @@ inspect the pipeline.
 <br>
 
 
-<a name="ATOMRegressor-clear"></a>
+<a name="clear"></a>
 <pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -330,7 +338,7 @@ Removes all traces of a model in the pipeline (except for the `errors`
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str or sequence, optional (default='all')</strong>
+<strong>models: str, list or tuple, optional (default='all')</strong>
 <blockquote>
 Model(s) to clear from the pipeline. If 'all', clear all models.
 </blockquote>
@@ -340,7 +348,7 @@ Model(s) to clear from the pipeline. If 'all', clear all models.
 <br />
 
 
-<a name="ATOMRegressor-log"></a>
+<a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -364,7 +372,7 @@ Minimum verbosity level in order to print the message.
 <br />
 
 
-<a name="ATOMRegressor-report"></a>
+<a name="report"></a>
 <pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -394,7 +402,7 @@ Name of the file when saved (as .html). None to not save anything.
 <br />
 
 
-<a name="ATOMRegressor-save"></a>
+<a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -421,12 +429,12 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <br>
 
 
-<a name="ATOMRegressor-scoring"></a>
+<a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the scores of the models for a specific metric. If a model
- shows a `XXX`, it means the metric failed for that specific model. This
+ returns `XXX`, it means the metric failed for that specific model. This
  can happen if either the metric is unavailable for the task or if the
  model does not have a `predict_proba` method while the metric requires it.
 <br /><br />
@@ -449,7 +457,7 @@ Data set on which to calculate the metric. Options are 'train' or 'test'.
 <br />
 
 
-<a name="ATOMRegressor-stats"></a>
+<a name="stats"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stats</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L182">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -466,35 +474,35 @@ ATOM provides data cleaning methods to scale your features and handle missing va
  the method on the dataset in the pipeline.
 
 !!! tip
-    Use the [report](#ATOMRegressor-report) method to examine the data and help you
+    Use the [report](#report) method to examine the data and help you
     determine suitable parameters for the data cleaning methods.
     
 
 <table>
 <tr>
-<td><a href="#ATOMRegressor-scale">scale</a></td>
+<td><a href="#scale">scale</a></td>
 <td>Scale all the features to mean=1 and std=0.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-impute">impute</a></td>
+<td><a href="#impute">impute</a></td>
 <td>Handle missing values in the dataset.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-encode">encode</a></td>
+<td><a href="#encode">encode</a></td>
 <td>Encode categorical features.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-outliers">outliers</a></td>
+<td><a href="#outliers">outliers</a></td>
 <td>Remove or replace outliers in the training set.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="ATOMRegressor-scale"></a>
+<a name="scale"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L362">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -503,7 +511,7 @@ Scale the features to mean=1 and std=0.
 <br /><br />
 
 
-<a name="ATOMRegressor-impute"></a>
+<a name="impute"></a>
 <pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L377">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -516,7 +524,7 @@ Handle missing values according to the selected strategy. Also removes rows and
 <br />
 
 
-<a name="ATOMRegressor-encode"></a>
+<a name="encode"></a>
 <pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L413">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -530,14 +538,14 @@ Perform encoding of categorical features. The encoding type depends on the
 Also replaces classes with low occurrences with the value 'other' in
  order to prevent too high cardinality. Categorical features are defined as
  all columns whose dtype.kind not in 'ifu'. Will raise an error if it encounters
- missing values or unknown categories when transforming. The encoder is fitted only
+ missing values or unknown classes when transforming. The encoder is fitted only
  on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
  for a description of the parameters.
 </div>
 <br />
 
 
-<a name="ATOMRegressor-outliers"></a>
+<a name="outliers"></a>
 <pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L447">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -560,12 +568,12 @@ To further pre-process the data you can create new non-linear features transform
 
 <table>
 <tr>
-<td><a href="#ATOMRegressor-feature-generation">feature_generation</a></td>
+<td><a href="#feature-generation">feature_generation</a></td>
 <td>Create new features from combinations of existing ones.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-feature-selection">feature_selection</a></td>
+<td><a href="#feature-selection">feature_selection</a></td>
 <td>Remove features according to the selected strategy.</td>
 </tr>
 </table>
@@ -573,7 +581,7 @@ To further pre-process the data you can create new non-linear features transform
 
 
 
-<a name="ATOMRegressor-feature-generation"></a>
+<a name="feature-generation"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy='DFS', n_features=None, generations=20, population=500, operators=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L504">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -586,7 +594,7 @@ Use Deep feature Synthesis or a genetic algorithm to create new combinations
 <br />
 
 
-<a name="ATOMRegressor-feature-selection"></a>
+<a name="feature-selection"></a>
 <pre><em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None, solver=None, n_features=None,
                          max_frac_repeated=1., max_correlation=1., **kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L540">[source]</a></div></pre>
@@ -628,24 +636,24 @@ The training methods are where the models are fitted to the data and their
 
 <table>
 <tr>
-<td><a href="#ATOMRegressor-run">run</a></td>
+<td><a href="#run">run</a></td>
 <td>Fit the models to the data in a direct fashion.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-successive-halving">successive_halving</a></td>
+<td><a href="#successive-halving">successive_halving</a></td>
 <td>Fit the models to the data in a successive halving fashion.</td>
 </tr>
 
 <tr>
-<td><a href="#ATOMRegressor-train-sizing">train_sizing</a></td>
+<td><a href="#train-sizing">train_sizing</a></td>
 <td>Fit the models to the data in a train sizing fashion.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="ATOMRegressor-run"></a>
+<a name="run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
@@ -655,7 +663,7 @@ Runs a [TrainerRegressor](../training/trainerregressor.md) instance.
 <br />
 
 
-<a name="ATOMRegressor-successive-halving"></a>
+<a name="successive-halving"></a>
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
                           est_params={}, bo_params={}, bagging=None) 
@@ -666,7 +674,7 @@ Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) i
 <br />
 
 
-<a name="ATOMRegressor-train-sizing"></a>
+<a name="train-sizing"></a>
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
                     n_initial_points=5, est_params={}, bo_params={}, bagging=None) 

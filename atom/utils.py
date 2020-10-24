@@ -60,15 +60,16 @@ from matplotlib.gridspec import GridSpec
 # Variable types
 CAL = Union[str, callable]
 SCALAR = Union[int, float]
-X_TYPES = Union[dict, Sequence[Sequence], np.ndarray, pd.DataFrame]
-Y_TYPES = Union[int, str, list, tuple, dict, np.ndarray, pd.Series]
-TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray]
+ARRAY_TYPES = Union[list, tuple, np.ndarray, pd.Series]
+X_TYPES = Union[dict, ARRAY_TYPES, pd.DataFrame]
+Y_TYPES = Union[int, str, dict, ARRAY_TYPES]
+TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
 
 # Tuple of models that need to import an extra package
-OPTIONAL_PACKAGES = (
-    ('XGB', 'xgboost'),
-    ('LGB', 'lightgbm'),
-    ('CatB', 'catboost')
+OPTIONAL_PACKAGES = dict(
+    XGB='xgboost',
+    LGB='lightgbm',
+    CatB='catboost'
 )
 
 # List of models that only work for regression/classification tasks
@@ -148,7 +149,7 @@ def merge(X, y):
 
 
 def catch_return(args):
-    """Returns always two arguments independent of length args."""
+    """Returns always two arguments independent of length arrays."""
     if not isinstance(args, tuple):
         return args, None
     else:
@@ -198,6 +199,11 @@ def time_to_string(t_init):
     ----------
     t_init: float
         Time to convert (in seconds).
+
+    Returns
+    -------
+    time: str
+        Time representation.
 
     """
     t = time() - t_init  # Total time in seconds
@@ -279,7 +285,7 @@ def prepare_logger(logger, class_name):
     logger: bool, str, class or None
         - If None: No logger.
         - If bool: True for logging file with default name. False for no logger.
-        - If string: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. 'auto' for default name.
         - If class: python `Logger` object.
 
         The default name created by ATOM contains the class name followed by the
@@ -408,7 +414,7 @@ def check_is_fitted(estimator, attributes=None, msg=None):
     estimator: class
         Class instance for which the check is performed.
 
-    attributes: str, sequence or None, optional (default=None)
+    attributes: str, list, tuple or None, optional (default=None)
         Attribute value_name(s) to check. If None, estimator is considered fitted if
         there exist an attribute that ends with a underscore and does not
         start with double underscore.
@@ -433,6 +439,26 @@ def check_is_fitted(estimator, attributes=None, msg=None):
 
     if all([check_attr(attr) for attr in attributes]):
         raise NotFittedError(msg)
+
+
+def fit_init(est_params, fit=False):
+    """Return the est_params for the __init__ or fit method.
+
+    Select parameters that end with _fit for the fit method, else for __init__.
+
+    Parameters
+    ----------
+    est_params: dict
+        Parameters that need to be classified.
+
+    fit: bool, optional (default=False)
+        Whether the parameters are for the fit method.
+
+    """
+    if fit:
+        return {k[:-4]: v for k, v in est_params.items() if k.endswith("_fit")}
+    else:
+        return {k: v for k, v in est_params.items() if not k.endswith("_fit")}
 
 
 def get_model_name(model):

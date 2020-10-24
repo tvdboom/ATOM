@@ -37,7 +37,7 @@ Number of generations to evolve. Only for the genetic strategy.
 <blockquote>
 Number of programs in each generation. Only for the genetic strategy.
 </blockquote>
-<strong>operators: str, sequence or None, optional (default=None)</strong>
+<strong>operators: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the operators to be used on the features (for both strategies). None to use all.
  Valid options are: 'add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan'.
@@ -138,44 +138,44 @@ Dataframe of the newly created non-linear features. Only for the genetic strateg
 
 <table width="100%">
 <tr>
-<td><a href="#featuregenerator-fit">fit</a></td>
+<td><a href="#fit">fit</a></td>
 <td>Fit the class.</td>
 </tr>
 
 <tr>
-<td><a href="#featuregenerator-fit-transform">fit_transform</a></td>
+<td><a href="#fit-transform">fit_transform</a></td>
 <td>Fit the class and return the transformed data.</td>
 </tr>
 
 <tr>
-<td><a href="#featuregenerator-get-params">get_params</a></td>
+<td><a href="#get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#featuregenerator-log">log</a></td>
+<td width="15%"><a href="#log">log</a></td>
 <td>Write information to the logger and print to stdout.</td>
 </tr>
 
 <tr>
-<td><a href="#featuregenerator-save">save</a></td>
+<td><a href="#save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
 
 <tr>
-<td><a href="#featuregenerator-set-params">set_params</a></td>
+<td><a href="#set-params">set_params</a></td>
 <td>Set the parameters of this estimator.</td>
 </tr>
 
 <tr>
-<td><a href="#featuregenerator-transform">transform</a></td>
+<td><a href="#transform">transform</a></td>
 <td>Transform the data.</td>
 </tr>
 </table>
 <br>
 
 
-<a name="featuregenerator-fit"></a>
+<a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L121">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -186,15 +186,15 @@ Fit the class.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series</strong>
+<strong>y: int, str, list, tuple,  np.array or pd.Series</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
@@ -211,7 +211,7 @@ Fitted instance of self.
 <br />
 
 
-<a name="featuregenerator-fit-transform"></a>
+<a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -222,15 +222,15 @@ Fit the FeatureGenerator and return the transformed data.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series</strong>
+<strong>y: int, str, list, tuple,  np.array, pd.Series</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
-<li>If string: Name of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
@@ -246,7 +246,7 @@ Feature set with the newly generated features.
 </table>
 <br />
 
-<a name="featuregenerator-get-params"></a>
+<a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -274,7 +274,7 @@ Dictionary of the parameter names mapped to their values.
 <br />
 
 
-<a name="featuregenerator-log"></a>
+<a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -298,7 +298,7 @@ Minimum verbosity level in order to print the message.
 <br />
 
 
-<a name="featuregenerator-save"></a>
+<a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -318,7 +318,7 @@ Name to save the file with. None to save with default name.
 <br>
 
 
-<a name="featuregenerator-set-params"></a>
+<a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -346,7 +346,7 @@ Estimator instance.
 <br />
 
 
-<a name="featuregenerator-transform"></a>
+<a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L274">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -357,11 +357,11 @@ Generate new features.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, sequence, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, list, tuple,  np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>
