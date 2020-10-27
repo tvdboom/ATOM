@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -538,7 +538,7 @@
 <h1 id="plot_roc">plot_roc</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L764">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the Receiver Operating Characteristics curve. The legend shows the Area Under
@@ -552,9 +552,9 @@ Plot the Receiver Operating Characteristics curve. The legend shows the Area Und
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+Data set on which to calculate the metric. Options are "train", "test" or "both".
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -580,8 +580,8 @@ Whether to render the plot.
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
-atom.run(['LR', 'RF', 'LGB'], metric='roc_auc')
-atom.plot_roc(filename='roc_curve.png')
+atom.run([&quot;LR&quot;, &quot;RF&quot;, &quot;LGB&quot;], metric=&quot;roc_auc&quot;)
+atom.plot_roc(filename=&quot;roc_curve.png&quot;)
 </code></pre>
 
 <div align="center">

@@ -25,8 +25,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
   See the [user guide](../../../user_guide/#parameter-customization) on how to
   customize them.
 * The MLP optimizes between one and three hidden layers with the BO. For more layers, use `est_params`.
-* The `learning_rate` and `power_t` parameters are only used when solver = 'lbfgs'.
-* The `learning_rate_init` parameter is only used when solver != 'lbfgs'.
+* The `learning_rate` and `power_t` parameters are only used when solver = "lbfgs".
+* The `learning_rate_init` parameter is only used when solver != "lbfgs".
 * The `random_state` parameter is set equal to that of the `training` instance.
 
 <a name="atom"></a>
@@ -36,41 +36,41 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 <td width="75%" style="background:white;">
 <strong>hidden_layer_sizes: tuple, default=(100,)</strong>
 <blockquote>
-Integer(10, 100, name='hidden_layer_1')<br>
-Integer(0, 100, name='hidden_layer_2')<br>
-Integer(0, 100, name='hidden_layer_3')
+Integer(10, 100, name="hidden_layer_1")<br>
+Integer(0, 100, name="hidden_layer_2")<br>
+Integer(0, 100, name="hidden_layer_3")
 </blockquote>
-<strong>activation: str, default='relu'</strong>
+<strong>activation: str, default="relu"</strong>
 <blockquote>
-Categorical(['identity', 'logistic', 'tanh', 'relu'], name='activation')
+Categorical(["identity", "logistic", "tanh", "relu"], name="activation")
 </blockquote>
-<strong>solver: str, default='adam'</strong>
+<strong>solver: str, default="adam"</strong>
 <blockquote>
-Categorical(['lbfgs', 'sgd', 'adam'], name='solver')
+Categorical(["lbfgs", "sgd", "adam"], name="solver")
 </blockquote>
 <strong>alpha: float, default=1e-4</strong>
 <blockquote>
-Real(1e-4, 0.1, 'log-uniform', name='alpha')
+Real(1e-4, 0.1, "log-uniform", name="alpha")
 </blockquote>
 <strong>batch_size: int, default=200</strong>
 <blockquote>
-Integer(8, 250, name='batch_size')
+Integer(8, 250, name="batch_size")
 </blockquote>
-<strong>learning_rate: str, default='constant'</strong>
+<strong>learning_rate: str, default="constant"</strong>
 <blockquote>
-Categorical(['constant', 'invscaling', 'adaptive'], name='learning_rate').
+Categorical(["constant", "invscaling", "adaptive"], name="learning_rate").
 </blockquote>
 <strong>learning_rate_init: float, default=1e-3</strong>
 <blockquote>
-Real(1e-3, 0.1, 'log-uniform', name='learning_rate_init').
+Real(1e-3, 0.1, "log-uniform", name="learning_rate_init").
 </blockquote>
 <strong>power_t: float, default=0.5</strong>
 <blockquote>
-Categorical(np.linspace(0.1, 0.9, 9), name='power_t').
+Categorical(np.linspace(0.1, 0.9, 9), name="power_t").
 </blockquote>
 <strong>max_iter: int, default=200</strong>
 <blockquote>
-Integer(50, 500, name='max_iter')
+Integer(50, 500, name="max_iter")
 </blockquote>
 </td></tr>
 </table>
@@ -86,7 +86,7 @@ Integer(50, 500, name='max_iter')
 You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
  as the `training` instances to check the dataset that was used to fit a particular
  model. These can differ from each other if the model needs scaled features and the
- data wasn't already scaled. Note that, unlike with the `training` instances, these
+ data wasn"t already scaled. Note that, unlike with the `training` instances, these
  attributes not be updated (i.e. they have no `@setter`).
 <br><br>
 
@@ -102,11 +102,11 @@ You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes
 <blockquote>
 Dataframe containing the information of every step taken by the BO. Columns include:
 <ul>
-<li>'params': Parameters used in the model.</li>
-<li>'estimator': Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>'score': Score of the chosen metric. List of scores for multi-metric.</li>
-<li>'time_iteration': Time spent on this iteration.</li>
-<li>'time': Total time spent since the start of the BO.</li>
+<li>"params": Parameters used in the model.</li>
+<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
+<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
+<li>"time_iteration": Time spent on this iteration.</li>
+<li>"time": Total time spent since the start of the BO.</li>
 </ul>
 </blockquote>
 <strong>best_params: dict</strong>
@@ -143,9 +143,9 @@ Metric score(s) on the test set.
 Dictionary of the metric calculated during training. The metric is provided by the estimator's
  package and is different for every task. Available keys are:
 <ul>
-<li>'metric': Name of the metric. </li>
-<li>'train': List of scores calculated on the training set.</li>
-<li>'test': List of scores calculated on the test set.</li>
+<li>"metric": Name of the metric. </li>
+<li>"train": List of scores calculated on the training set.</li>
+<li>"test": List of scores calculated on the test set.</li>
 </ul>
 </blockquote>
 <strong>metric_bagging: list</strong>
@@ -279,7 +279,7 @@ Applies probability calibration on the estimator. The calibration is done using 
 <strong>**kwargs</strong>
 <blockquote>
 Additional keyword arguments for the CalibratedClassifierCV instance.
-Using cv='prefit' will use the trained model and fit the calibrator on
+Using cv="prefit" will use the trained model and fit the calibrator on
 the test set. Note that doing this will result in data leakage in the
 test set. Use this only if you have another, independent set for testing.
 </blockquote>
@@ -300,7 +300,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the model's score for a specific metric.
@@ -314,20 +314,21 @@ Returns the model's score for a specific metric.
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
  or one of the following custom metrics (only if classifier):
 <ul>
-<li>'cm' or 'confusion_matrix' for an array of the confusion matrix.</li>
-<li>'tn' for true negatives.</li>
-<li>'fp' for false positives.</li>
-<li>'fn' for false negatives.</li>
-<li>'lift' for the lift metric.</li>
-<li>'fpr' for the false positive rate.</li>
-<li>'tpr' for true positive rate.</li>
-<li>'sup' for the support metric.</li>
+<li>"cm" for the confusion matrix.</li>
+<li>"tn" for true negatives.</li>
+<li>"fp" for false positives.</li>
+<li>"fn" for false negatives.</li>
+<li>"tp" for true positives.</li>
+<li>"lift" for the lift metric.</li>
+<li>"fpr" for the false positive rate.</li>
+<li>"tpr" for true positive rate.</li>
+<li>"sup" for the support metric.</li>
 </ul>
 If None, returns the final results for this model (ignores the `dataset` parameter).
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train' or 'test'.
+Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
 </tr>
 </table>
@@ -347,7 +348,7 @@ Save the estimator to a pickle file.
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None or 'auto', the estimator's name is used.
+Name of the file to save. If None or "auto", the estimator's name is used.
 </blockquote>
 </tr>
 </table>
@@ -362,5 +363,5 @@ Name of the file to save. If None or 'auto', the estimator's name is used.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(models='MLP', n_calls=20, est_params={'solver': 'sgd', 'activation': 'relu'})
+atom.run(models="MLP", n_calls=20, est_params={"solver": "sgd", "activation": "relu"})
 ```

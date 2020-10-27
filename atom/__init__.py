@@ -3,9 +3,10 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Import api module and declare version.
+Description: Import API and declare version.
 
 """
 
 from .api import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
-__version__ = '4.2.0'
+
+__version__ = "4.2.0"

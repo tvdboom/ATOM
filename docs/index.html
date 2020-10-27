@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -555,7 +555,7 @@
  on which algorithms perform best for the task at hand and provide an indication of
  the feasibility of the ML solution.</p>
 <p>It is important to realize that ATOM is not here to replace all the work a data
- scientist has to do before getting his model into production. ATOM doesn't spit out
+ scientist has to do before getting his model into production. ATOM doesn"t spit out
  production-ready models just by tuning some parameters in its API. After helping you
  to determine the right model, you will most probably need to fine-tune it using
  use-case specific features and data cleaning steps in order to achieve maximum performance.</p>
@@ -618,14 +618,16 @@ usecase-specific feature engineering or data cleaning steps! </p>
   <a href="../API/ATOM/atomclassifier#get-sample-weights">get_sample_weights</a> utility methods.</li>
 <li>Added the <code>sample_weight</code> parameter to the <a href="../API/predicting/score">score</a> method.</li>
 <li>New ways to initialize the data in the <code>training</code> instances.</li>
-<li>The <code>test_size</code> parameter also allows integer values.</li>
+<li>The <code>n_rows</code> parameter in <a href="../API/ATOM/atomloader">ATOMLoader</a> is deprecated in
+  favour of the new data input formats.</li>
+<li>The <code>test_size</code> parameter now also allows integer values.</li>
 <li>Renamed categories to classes to be consistent with sklearn's API.</li>
 <li>The class property now returns a pd.DataFrame of the number of rows per target class
   in the train, test and complete dataset.</li>
 <li>Possibility to add custom parameters to an estimator's fit method through <code>est_params</code>.</li>
 <li><a href="../API/user_guide/#successive-halving">Successive halving</a> and <a href="../API/user_guide/#train-sizing">Train sizing</a>
   now both allow subsequent runs from <code>atom</code> without losing previous information.</li>
-<li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
+<li>Bug fix where ATOMLoader wouldn"t encode the target column during transformation.</li>
 <li>Added the <a href="../examples/utilities">Utilities</a> example notebook.</li>
 <li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
 </ul>
@@ -668,7 +670,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Early stopping for models that allow in-training evaluation.</li>
 <li>Added the <a href="../API/ATOM/atomloader">ATOMLoader</a> function to load saved <code>atom</code> instances
   and directly apply all data transformations.</li>
-<li>The 'remove' strategy in the data cleaning parameters is deprecated in favour of 'drop'.</li>
+<li>The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".</li>
 <li>Implemented the DFS strategy in <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>.</li>
 <li>All training classes now inherit from BaseEstimator.</li>
 <li>Added multiple new example notebooks.</li>
@@ -760,5 +762,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-10-24 11:56:52.309607+00:00
+Build Date UTC : 2020-10-27 19:05:23.443692+00:00
 -->

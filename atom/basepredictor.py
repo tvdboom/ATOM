@@ -16,7 +16,7 @@ from typeguard import typechecked
 # Own modules
 from .utils import (
     ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted,
-    get_best_score, get_model_name, clear, method_to_log, composed, crash
+    get_best_score, get_model_name, clear, method_to_log, composed, crash,
 )
 
 
@@ -28,7 +28,7 @@ class BasePredictor(object):
     @property
     def metric(self):
         """Return a list of the model subclasses."""
-        return flt([getattr(metric, 'name', metric) for metric in self.metric_])
+        return flt([getattr(metric, "name", metric) for metric in self.metric_])
 
     @property
     def models_(self):
@@ -44,7 +44,7 @@ class BasePredictor(object):
         if isinstance(df.index, pd.MultiIndex):
             df = df.sort_index(level=0).reindex(self.models, level=1)
 
-        return df.dropna(axis=1, how='all')
+        return df.dropna(axis=1, how="all")
 
     @property
     def winner(self):
@@ -60,7 +60,7 @@ class BasePredictor(object):
 
     @property
     def train(self):
-        return self._data[:self._idx[0]]
+        return self._data[: self._idx[0]]
 
     @property
     def test(self):
@@ -106,9 +106,9 @@ class BasePredictor(object):
     def classes(self):
         idx = [v if k == str(v) else f"{str(v)}: {k}" for k, v in self.mapping.items()]
         df = pd.DataFrame({
-            'dataset': self.y.value_counts(sort=False),
-            'train': self.y_train.value_counts(sort=False),
-            'test': self.y_test.value_counts(sort=False)
+            "dataset": self.y.value_counts(sort=False, dropna=False),
+            "train": self.y_train.value_counts(sort=False, dropna=False),
+            "test": self.y_test.value_counts(sort=False, dropna=False),
         })
         return df.set_index([idx])
 
@@ -121,41 +121,43 @@ class BasePredictor(object):
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
         """Get predictions on new data."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.predict(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(self, X: X_TYPES, **kwargs):
         """Get probability predictions on new data."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.predict_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(self, X: X_TYPES, **kwargs):
         """Get log probability predictions on new data."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.predict_log_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(self, X: X_TYPES, **kwargs):
         """Get the decision function on new data."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.decision_function(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def score(self,
-              X: X_TYPES,
-              y: Y_TYPES,
-              sample_weight: Optional[ARRAY_TYPES] = None,
-              **kwargs):
+    def score(
+        self,
+        X: X_TYPES,
+        y: Y_TYPES,
+        sample_weight: Optional[Union[ARRAY_TYPES]] = None,
+        **kwargs,
+    ):
         """Get the score function on new data."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.score(X, y, sample_weight, **kwargs)
 
     # Utility methods ====================================================== >>
 
     @composed(crash, typechecked)
-    def get_class_weights(self, dataset: str = 'train'):
+    def get_class_weights(self, dataset: str = "train"):
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so that the
@@ -165,20 +167,22 @@ class BasePredictor(object):
 
         Parameters
         ----------
-        dataset: str, optional (default='train')
-            Data set from which to get the weights. Choose between 'train',
-            'test' or 'dataset'.
+        dataset: str, optional (default="train")
+            Data set from which to get the weights. Choose between "train",
+            "test" or "dataset".
 
         """
-        if dataset not in ('train', 'test', 'dataset'):
-            raise ValueError("Invalid value for the dataset parameter. "
-                             "Choose between 'train', 'test' or 'dataset'.")
+        if dataset not in ("train", "test", "dataset"):
+            raise ValueError(
+                "Invalid value for the dataset parameter. "
+                "Choose between 'train', 'test' or 'dataset'."
+            )
 
         y = self.classes[dataset]
-        return {idx: sum(y)/value for idx, value in y.iteritems()}
+        return {idx: sum(y) / value for idx, value in y.iteritems()}
 
     @composed(crash, typechecked)
-    def get_sample_weights(self, dataset: str = 'train'):
+    def get_sample_weights(self, dataset: str = "train"):
         """Return sample weights for a balanced data set.
 
         Statistically, the sampling weights re-balance the data set so that the
@@ -188,18 +192,20 @@ class BasePredictor(object):
 
         Parameters
         ----------
-        dataset: str, optional (default='train')
-            Data set from which to get the weights. Choose between 'train',
-            'test' or 'dataset'.
+        dataset: str, optional (default="train")
+            Data set from which to get the weights. Choose between "train",
+            "test" or "dataset".
 
         """
-        if dataset in ('train', 'test'):
+        if dataset in ("train", "test"):
             y = getattr(self, f"y_{dataset}")
-        elif dataset.lower() == 'dataset':
+        elif dataset.lower() == "dataset":
             y = self.y
         else:
-            raise ValueError("Invalid value for the dataset parameter. "
-                             "Choose between 'train', 'test' or 'dataset'.")
+            raise ValueError(
+                "Invalid value for the dataset parameter. "
+                "Choose between 'train', 'test' or 'dataset'."
+            )
 
         sample_weights = []
         for value in y:
@@ -210,11 +216,11 @@ class BasePredictor(object):
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the winning model."""
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
         return self.winner.calibrate(**kwargs)
 
     @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = 'test', **kwargs):
+    def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
         """Print the final scoring for a specific metric.
 
         If a model returns `XXX`, it means the metric failed for that specific
@@ -229,47 +235,51 @@ class BasePredictor(object):
             used to fit the trainer is selected and the bagging results will be
             showed (if used).
 
-        dataset: str, optional (default='test')
-            Data set on which to calculate the metric. Options are 'train' or 'test'.
+        dataset: str, optional (default="test")
+            Data set on which to calculate the metric. Options are "train" or "test".
 
         **kwargs
             Additional keyword arguments for the metric function.
 
         """
-        check_is_fitted(self, 'results')
+        check_is_fitted(self, "results")
 
         # If a metric_ acronym is used, assign the correct name
         if metric and metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
 
         # Get max length of the model names
-        maxlen = max([len(m.longname) for m in self.models_])
+        maxlen = max([len(m.fullname) for m in self.models_])
 
         # Get list of scores
         all_scores = [m.scoring(metric, dataset, **kwargs) for m in self.models_]
 
         # Raise an error if the metric was invalid for all models
         if metric and all([isinstance(score, str) for score in all_scores]):
-            raise ValueError("Invalid metric_ selected!")
+            raise ValueError("Invalid metric selected!")
 
         self.log("Results ===================== >>", -2)
 
         for m in self.models_:
             if not metric:
-                out = f"{m.longname:{maxlen}s} --> {m._final_output()}"
+                out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
             else:
                 score = m.scoring(metric, dataset, **kwargs)
 
                 # Create string of the score (if wrong metric for model -> XXX)
                 if isinstance(score, str):
-                    out = f"{m.longname:{maxlen}s} --> XXX"
+                    out = f"{m.fullname:{maxlen}s} --> XXX"
                 else:
-                    out = f"{m.longname:{maxlen}s} --> {metric}: {round(score, 3)}"
+                    if isinstance(score, float):
+                        out_score = round(score, 3)
+                    else:  # If confusion matrix...
+                        out_score = list(score.ravel())
+                    out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
 
             self.log(out, -2)  # Always print
 
     @composed(crash, method_to_log, typechecked)
-    def clear(self, models: Union[str, Sequence[str]] = 'all'):
+    def clear(self, models: Union[str, Sequence[str]] = "all"):
         """Clear models from the trainer.
 
         Removes all traces of a model in the pipeline (except for the `errors`
@@ -279,25 +289,25 @@ class BasePredictor(object):
 
         Parameters
         ----------
-        models: str or iterable, optional (default='all')
-            Model(s) to clear from the pipeline. If 'all', clear all models.
+        models: str or iterable, optional (default="all")
+            Model(s) to clear from the pipeline. If "all", clear all models.
 
         """
         # Prepare the models parameter
-        if models == 'all':
-            keyword = 'Pipeline'
+        if models == "all":
+            keyword = "Pipeline"
             models = self.models.copy()
         elif isinstance(models, str):
             models = [get_model_name(models)]
-            keyword = 'Model ' + models[0]
+            keyword = "Model " + models[0]
         else:
             models = [get_model_name(m) for m in models]
-            keyword = 'Models ' + ', '.join(models) + ' were'
+            keyword = "Models " + ", ".join(models) + " were"
 
         clear(self, models)
 
         # If called from atom, clear also all traces from the trainer
-        if hasattr(self, 'trainer'):
+        if hasattr(self, "trainer"):
             clear(self.trainer, [m for m in models if m in self.trainer.models])
             if not self.models:
                 self.trainer = None

@@ -27,11 +27,11 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 <td width="75%" style="background:white;">
 <strong>alpha: float, default=1.0</strong>
 <blockquote>
-Real(1e-3, 10, 'log-uniform', name='alpha')
+Real(1e-3, 10, "log-uniform", name="alpha")
 </blockquote>
-<strong>selection: str, default='cyclic'</strong>
+<strong>selection: str, default="cyclic"</strong>
 <blockquote>
-Categorical(['cyclic', 'random'], name='selection')
+Categorical(["cyclic", "random"], name="selection")
 </blockquote>
 </td></tr>
 </table>
@@ -61,11 +61,11 @@ You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes
 <blockquote>
 Dataframe containing the information of every step taken by the BO. Columns include:
 <ul>
-<li>'params': Parameters used in the estimator.</li>
-<li>'estimator': Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>'score': Score of the chosen metric. List of scores for multi-metric.</li>
-<li>'time_iteration': Time spent on this iteration.</li>
-<li>'time': Total time spent since the start of the BO.</li>
+<li>"params": Parameters used in the estimator.</li>
+<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
+<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
+<li>"time_iteration": Time spent on this iteration.</li>
+<li>"time": Total time spent since the start of the BO.</li>
 </ul>
 </blockquote>
 <strong>best_params: dict</strong>
@@ -200,7 +200,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the model's score for a specific metric.
@@ -214,9 +214,9 @@ Returns the model's score for a specific metric.
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules).
  If None, returns the final results for this model (ignores the `dataset` parameter).
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train' or 'test'.
+Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
 </tr>
 </table>
@@ -236,7 +236,7 @@ Save the estimator to a pickle file.
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None or 'auto', the estimator's name is used.
+Name of the file to save. If None or "auto", the estimator's name is used.
 </blockquote>
 </tr>
 </table>
@@ -251,5 +251,5 @@ Name of the file to save. If None or 'auto', the estimator's name is used.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(models='Lasso')
+atom.run(models="Lasso")
 ```

@@ -2,7 +2,7 @@
 -----------------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset='test', normalize=False,
+<pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset="test", normalize=False,
                              title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1469">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -19,9 +19,9 @@ Plot a model's confusion matrix. Only for classification tasks.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the confusion matrix. Options are 'train' or 'test'.
+Data set on which to calculate the confusion matrix. Options are "train" or "test".
 </blockquote>
 <strong>normalize: bool, optional (default=False)</strong>
 <blockquote>
@@ -56,7 +56,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['Tree', 'Bag'])
+atom.run(["Tree", "Bag"])
 atom.Tree.plot_confusion_matrix(normalize=True)
 ```
 <div align="center">

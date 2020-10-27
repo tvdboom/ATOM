@@ -120,15 +120,15 @@ X.sample(frac=1).iloc[:5, :8]
 
 
 ```python
-atom = ATOMClassifier(X, y, n_jobs=-1, warnings='ignore', verbose=2, random_state=1)
+atom = ATOMClassifier(X, y, n_jobs=-1, warnings="ignore", verbose=2, random_state=1)
 
 # Fit the pipeline with the selected models
 atom.run(
-    models=['LR','LDA', 'RF'],
-    metric='roc_auc_ovr',
+    models=["LR","LDA", "RF"],
+    metric="roc_auc_ovr",
     n_calls=4,
     n_initial_points=3,
-    bo_params={'base_estimator': 'rf', 'max_time': 100},
+    bo_params={"base_estimator": "rf", "max_time": 100},
     bagging=5
 )
 ```
@@ -163,25 +163,25 @@ atom.run(
     
     Running BO for Logistic Regression...
     Initial point 1 ---------------------------------
-    Parameters --> {'penalty': 'l2', 'C': 46.003, 'solver': 'lbfgs', 'max_iter': 745}
+    Parameters --> {"penalty": "l2", "C": 46.003, "solver": "lbfgs", "max_iter": 745}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
     Time iteration: 3.672s   Total time: 3.676s
     Initial point 2 ---------------------------------
-    Parameters --> {'penalty': 'none', 'solver': 'newton-cg', 'max_iter': 490}
+    Parameters --> {"penalty": "none", "solver": "newton-cg", "max_iter": 490}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
     Time iteration: 3.177s   Total time: 6.859s
     Initial point 3 ---------------------------------
-    Parameters --> {'penalty': 'l2', 'C': 0.037, 'solver': 'liblinear', 'max_iter': 352}
+    Parameters --> {"penalty": "l2", "C": 0.037, "solver": "liblinear", "max_iter": 352}
     Evaluation --> roc_auc_ovr: 0.9993  Best roc_auc_ovr: 1.0000
     Time iteration: 3.195s   Total time: 10.059s
     Iteration 4 -------------------------------------
-    Parameters --> {'penalty': 'none', 'solver': 'newton-cg', 'max_iter': 378}
+    Parameters --> {"penalty": "none", "solver": "newton-cg", "max_iter": 378}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
     Time iteration: 2.641s   Total time: 12.912s
     
     Results for Logistic Regression:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'penalty': 'l2', 'C': 46.003, 'solver': 'lbfgs', 'max_iter': 745}
+    Best parameters --> {"penalty": "l2", "C": 46.003, "solver": "lbfgs", "max_iter": 745}
     Best evaluation --> roc_auc_ovr: 1.0000
     Time elapsed: 13.115s
     Fit ---------------------------------------------
@@ -197,25 +197,25 @@ atom.run(
     
     Running BO for Linear Discriminant Analysis...
     Initial point 1 ---------------------------------
-    Parameters --> {'solver': 'eigen', 'shrinkage': 1.0}
+    Parameters --> {"solver": "eigen", "shrinkage": 1.0}
     Evaluation --> roc_auc_ovr: 0.8975  Best roc_auc_ovr: 0.8975
     Time iteration: 0.040s   Total time: 0.042s
     Initial point 2 ---------------------------------
-    Parameters --> {'solver': 'svd'}
+    Parameters --> {"solver": "svd"}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
     Time iteration: 0.026s   Total time: 0.072s
     Initial point 3 ---------------------------------
-    Parameters --> {'solver': 'svd'}
+    Parameters --> {"solver": "svd"}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
     Time iteration: 0.023s   Total time: 0.098s
     Iteration 4 -------------------------------------
-    Parameters --> {'solver': 'lsqr', 'shrinkage': 0.7}
+    Parameters --> {"solver": "lsqr", "shrinkage": 0.7}
     Evaluation --> roc_auc_ovr: 0.8996  Best roc_auc_ovr: 1.0000
     Time iteration: 0.021s   Total time: 0.298s
     
     Results for Linear Discriminant Analysis:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'solver': 'svd'}
+    Best parameters --> {"solver": "svd"}
     Best evaluation --> roc_auc_ovr: 1.0000
     Time elapsed: 0.477s
     Fit ---------------------------------------------
@@ -231,25 +231,25 @@ atom.run(
     
     Running BO for Random Forest...
     Initial point 1 ---------------------------------
-    Parameters --> {'n_estimators': 245, 'criterion': 'entropy', 'max_depth': None, 'min_samples_split': 13, 'min_samples_leaf': 6, 'max_features': 0.6, 'bootstrap': True, 'ccp_alpha': 0.007, 'max_samples': 0.6}
+    Parameters --> {"n_estimators": 245, "criterion": "entropy", "max_depth": None, "min_samples_split": 13, "min_samples_leaf": 6, "max_features": 0.6, "bootstrap": True, "ccp_alpha": 0.007, "max_samples": 0.6}
     Evaluation --> roc_auc_ovr: 0.9950  Best roc_auc_ovr: 0.9950
     Time iteration: 0.388s   Total time: 0.393s
     Initial point 2 ---------------------------------
-    Parameters --> {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 7, 'min_samples_leaf': 19, 'max_features': 0.9, 'bootstrap': True, 'ccp_alpha': 0.008, 'max_samples': 0.7}
+    Parameters --> {"n_estimators": 400, "criterion": "entropy", "max_depth": 8, "min_samples_split": 7, "min_samples_leaf": 19, "max_features": 0.9, "bootstrap": True, "ccp_alpha": 0.008, "max_samples": 0.7}
     Evaluation --> roc_auc_ovr: 0.9914  Best roc_auc_ovr: 0.9950
     Time iteration: 0.526s   Total time: 0.925s
     Initial point 3 ---------------------------------
-    Parameters --> {'n_estimators': 78, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 14, 'max_features': None, 'bootstrap': False, 'ccp_alpha': 0.003}
+    Parameters --> {"n_estimators": 78, "criterion": "gini", "max_depth": 5, "min_samples_split": 2, "min_samples_leaf": 14, "max_features": None, "bootstrap": False, "ccp_alpha": 0.003}
     Evaluation --> roc_auc_ovr: 0.9671  Best roc_auc_ovr: 0.9950
     Time iteration: 0.117s   Total time: 1.046s
     Iteration 4 -------------------------------------
-    Parameters --> {'n_estimators': 394, 'criterion': 'entropy', 'max_depth': 3, 'min_samples_split': 19, 'min_samples_leaf': 14, 'max_features': None, 'bootstrap': False, 'ccp_alpha': 0.015}
+    Parameters --> {"n_estimators": 394, "criterion": "entropy", "max_depth": 3, "min_samples_split": 19, "min_samples_leaf": 14, "max_features": None, "bootstrap": False, "ccp_alpha": 0.015}
     Evaluation --> roc_auc_ovr: 0.9477  Best roc_auc_ovr: 0.9950
     Time iteration: 0.460s   Total time: 1.810s
     
     Results for Random Forest:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'n_estimators': 245, 'criterion': 'entropy', 'max_depth': None, 'min_samples_split': 13, 'min_samples_leaf': 6, 'max_features': 0.6, 'bootstrap': True, 'ccp_alpha': 0.007, 'max_samples': 0.6}
+    Best parameters --> {"n_estimators": 245, "criterion": "entropy", "max_depth": None, "min_samples_split": 13, "min_samples_leaf": 6, "max_features": 0.6, "bootstrap": True, "ccp_alpha": 0.007, "max_samples": 0.6}
     Best evaluation --> roc_auc_ovr: 0.9950
     Time elapsed: 2.124s
     Fit ---------------------------------------------
@@ -374,7 +374,7 @@ atom.results
 
 ```python
 # Show the scoring for a different metric than the one we trained on
-atom.scoring('precision_macro')
+atom.scoring("precision_macro")
 ```
 
     Results ===================== >>
@@ -388,8 +388,8 @@ atom.scoring('precision_macro')
 
 ```python
 # Get the results on some other metrics
-print('Jaccard score:', atom.rf.scoring('jaccard_weighted'))
-print('Recall score:', atom.rf.scoring('recall_macro'))
+print("Jaccard score:", atom.rf.scoring("jaccard_weighted"))
+print("Recall score:", atom.rf.scoring("recall_macro"))
 ```
 
     Jaccard score: 0.7957142857142857
@@ -409,7 +409,7 @@ atom.RF.plot_confusion_matrix(figsize=(9, 9))
 
 ```python
 # Save the estimator as a pickle file
-atom.RF.save_estimator('Random_Forest_model')
+atom.RF.save_estimator("Random_Forest_model")
 ```
 
     Random Forest estimator saved successfully!

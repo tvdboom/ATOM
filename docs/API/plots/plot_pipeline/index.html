@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -541,7 +541,7 @@
 <pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot a diagram of every estimator in <code>atom</code>'s pipeline.
+Plot a diagram of every estimator in <code>atom</code>"s pipeline.
  <br /><br />
 <table width="100%">
 <tr>
@@ -576,22 +576,22 @@ Whether to render the plot.
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num='median', strat_cat='drop', min_frac_rows=0.8)
-atom.encode(strategy='LeaveOneOut', max_onehot=8, frac_to_other=0.02)
-atom.outliers(strategy='drop', max_sigma=4, include_target=False)
+atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;drop&quot;, min_frac_rows=0.8)
+atom.encode(strategy=&quot;LeaveOneOut&quot;, max_onehot=8, frac_to_other=0.02)
+atom.outliers(strategy=&quot;drop&quot;, max_sigma=4, include_target=False)
 atom.feature_selection(
-    strategy='PCA',
+    strategy=&quot;PCA&quot;,
     n_features=10,
     max_frac_repeated=1.,
     max_correlation=0.7
 )
 
 atom.run(
-    models=['GBM', 'LGB'],
-    metric='recall_weighted',
+    models=[&quot;GBM&quot;, &quot;LGB&quot;],
+    metric=&quot;recall_weighted&quot;,
     n_calls=(10, 20),
     n_initial_points=(5, 12),
-    bo_params={'base_estimator': 'RF', 'cv': 1, 'max_time': 1000},
+    bo_params={&quot;base_estimator&quot;: &quot;RF&quot;, &quot;cv&quot;: 1, &quot;max_time&quot;: 1000},
     bagging=4
 )
 

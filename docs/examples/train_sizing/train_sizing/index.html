@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -555,7 +555,7 @@ from atom import ATOMClassifier
 </code></pre>
 
 <pre><code class="python"># Load the Australian weather dataset
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv(&quot;./datasets/weatherAUS.csv&quot;)
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -652,7 +652,7 @@ X.sample(frac=1).iloc[:5, :8]
 <h2 id="run-the-pipeline">Run the pipeline</h2>
 <pre><code class="python"># Initialize ATOM and prepare the data
 atom = ATOMClassifier(X, verbose=2, random_state=1)
-atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.8)
+atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.8)
 atom.encode()
 </code></pre>
 
@@ -715,7 +715,7 @@ Encoding categorical columns...
  --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
 </code></pre>
 <pre><code class="python"># We can analyze the impact of the training set's size on a LightGBM model
-atom.train_sizing('lgb', train_sizes=np.linspace(0.1, 1, 9), bagging=4)
+atom.train_sizing(&quot;lgb&quot;, train_sizes=np.linspace(0.1, 1, 9), bagging=4)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;

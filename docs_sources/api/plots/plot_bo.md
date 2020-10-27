@@ -6,7 +6,7 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L615">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the bayesian optimization scoring. Only for models that ran the hyperparameter
- optimization. This is the same plot as the one produced by `bo_params={'plot_bo': True}`
+ optimization. This is the same plot as the one produced by `bo_params={"plot_bo": True}`
  while running the optimization. Creates a canvas with two plots: the first plot shows
  the score of every trial and the second shows the distance between the last
  consecutive steps.
@@ -54,7 +54,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['LDA', 'LGB'], metric='f1', n_calls=24, n_initial_points=10)
+atom.run(["LDA", "LGB"], metric="f1", n_calls=24, n_initial_points=10)
 atom.plot_bo()
 ```
 <div align="center">

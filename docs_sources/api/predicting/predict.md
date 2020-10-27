@@ -20,7 +20,7 @@ Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`"s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -45,7 +45,7 @@ Same keyword arguments as the [transform](transform.md) method to
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['Tree', 'AdaB'], metric='AP', n_calls=10)
+atom.run(["Tree", "AdaB"], metric="AP", n_calls=10)
 
 # Make predictions on new data
 predictions = atom.adab.predict(X_new)

@@ -35,7 +35,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
  as the `training` instances to check the dataset that was used to fit a particular
  model. These can differ from each other if the model needs scaled features and the
- data wasn't already scaled. Note that, unlike with the `training` instances, these
+ data wasn"t already scaled. Note that, unlike with the `training` instances, these
  attributes not be updated (i.e. they have no `@setter`).
 <br><br>
 
@@ -166,7 +166,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the model's score for a specific metric.
@@ -179,9 +179,9 @@ Returns the model's score for a specific metric.
 <blockquote>
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules).
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train' or 'test'.
+Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
 </tr>
 </table>
@@ -201,7 +201,7 @@ Save the estimator to a pickle file.
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None or 'auto', the estimator's name is used.
+Name of the file to save. If None or "auto", the estimator's name is used.
 </blockquote>
 </tr>
 </table>
@@ -216,5 +216,5 @@ Name of the file to save. If None or 'auto', the estimator's name is used.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(models='OLS')
+atom.run(models="OLS")
 ```

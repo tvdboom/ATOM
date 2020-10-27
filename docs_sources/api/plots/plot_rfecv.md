@@ -42,7 +42,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy='RFECV', solver='LGB', scoring='precision')
+atom.feature_selection(strategy="RFECV", solver="LGB", scoring="precision")
 atom.plot_rfecv()
 ```
 <div align="center">

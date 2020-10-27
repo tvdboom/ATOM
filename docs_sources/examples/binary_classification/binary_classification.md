@@ -17,7 +17,7 @@ from atom import ATOMClassifier
 
 ```python
 # Load data
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv("./datasets/weatherAUS.csv")
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -121,7 +121,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 # Call ATOM using only 5% of the complete dataset (for explanatory purposes)
-atom = ATOMClassifier(X, 'RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
+atom = ATOMClassifier(X, "RainTomorrow", n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
 ```
 
     << ================== ATOM ================== >>
@@ -152,7 +152,7 @@ atom = ATOMClassifier(X, 'RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False, 
 
 ```python
 # Impute missing values
-atom.impute(strat_num='knn', strat_cat='drop', min_frac_rows=0.8)
+atom.impute(strat_num="knn", strat_cat="drop", min_frac_rows=0.8)
 ```
 
     Fitting Imputer...
@@ -180,7 +180,7 @@ atom.impute(strat_num='knn', strat_cat='drop', min_frac_rows=0.8)
 
 ```python
 # Encode the categorical features
-atom.encode(strategy='CatBoost', max_onehot=10, frac_to_other=0.04)
+atom.encode(strategy="CatBoost", max_onehot=10, frac_to_other=0.04)
 ```
 
     Fitting Encoder...
@@ -195,7 +195,7 @@ atom.encode(strategy='CatBoost', max_onehot=10, frac_to_other=0.04)
 
 ```python
 # Perform undersampling of the majority class
-atom.balance(strategy='smote', sampling_strategy=0.9)
+atom.balance(strategy="smote", sampling_strategy=0.9)
 atom.stats()  # Note the balanced training set
 ```
 
@@ -223,7 +223,7 @@ atom.stats()  # Note the balanced training set
 
 ```python
 # Fit the EXtra-Trees and Random Forest to the data
-atom.run(models=['et', 'rf'], metric='f1', bagging=5, verbose=1)
+atom.run(models=["et", "rf"], metric="f1", bagging=5, verbose=1)
 ```
 
     
@@ -273,9 +273,9 @@ atom.scoring()
 # The winning model is indicated with a ! and can be accessed through the winner attribute
 # The ~ indicates that the model is probably overfitting. If we look at the train and test
 # score we see a difference of more than 20%
-print(f'\n\nAnd the winner is the {atom.winner.longname} model!!')
-print('Score on the training set: ', atom.winner.metric_train)
-print('Score on the test set: ', atom.winner.metric_test)
+print(f"\n\nAnd the winner is the {atom.winner.fullname} model!!")
+print("Score on the training set: ", atom.winner.metric_train)
+print("Score on the test set: ", atom.winner.metric_test)
 ```
 
     Results ===================== >>
@@ -305,7 +305,7 @@ atom.winner.plot_probabilities()
 ```python
 # The threshold plot let us compare how different metrics
 # perform for different thresholds
-atom.winner.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=50, filename='thresholds.png')
+atom.winner.plot_threshold(metric=["f1", "accuracy", "average_precision"], steps=50, filename="thresholds.png")
 ```
 
 

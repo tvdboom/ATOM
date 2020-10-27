@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -542,7 +542,7 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L615">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the bayesian optimization scoring. Only for models that ran the hyperparameter
- optimization. This is the same plot as the one produced by <code>bo_params={'plot_bo': True}</code>
+ optimization. This is the same plot as the one produced by <code>bo_params={"plot_bo": True}</code>
  while running the optimization. Creates a canvas with two plots: the first plot shows
  the score of every trial and the second shows the distance between the last
  consecutive steps.
@@ -585,7 +585,7 @@ Whether to render the plot.
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['LDA', 'LGB'], metric='f1', n_calls=24, n_initial_points=10)
+atom.run([&quot;LDA&quot;, &quot;LGB&quot;], metric=&quot;f1&quot;, n_calls=24, n_initial_points=10)
 atom.plot_bo()
 </code></pre>
 

@@ -8,7 +8,7 @@
 Scales data to mean=0 and std=1. This method is equal to sklearn's
  [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
  except that it returns a dataframe when provided. This class can be accessed from
- `atom` through the [scale](../../ATOM/atomclassifier/#atomclassifier-scale)
+ `atom` through the [scale](../../ATOM/atomclassifier/#scale)
  method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
 <br /><br />
 <table>
@@ -27,9 +27,9 @@ Verbosity level of the class. Possible values are:
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: Doesn't save a logging file.</li>
+<li>If None: Doesn"t save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>

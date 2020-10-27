@@ -30,35 +30,35 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/t
 <strong>criterion: str</strong>
 <blockquote>
 <ul>
-<li>classifier: default='gini'<br>
- Categorical(['gini', 'entropy'], name='criterion')</li>
-<li>regressor: default='mse'<br>
- Categorical(['mse', 'mae', 'friedman_mse'], name='criterion')</li>
+<li>classifier: default="gini"<br>
+ Categorical(["gini", "entropy"], name="criterion")</li>
+<li>regressor: default="mse"<br>
+ Categorical(["mse", "mae", "friedman_mse"], name="criterion")</li>
 </ul>
 </blockquote>
-<strong>splitter: str, default='best'</strong>
+<strong>splitter: str, default="best"</strong>
 <blockquote>
-Categorical(['best', 'random'], name='splitter')
+Categorical(["best", "random"], name="splitter")
 </blockquote>
 <strong>max_depth: int or None, default=None</strong>
 <blockquote>
-Categorical([None, \*list(range(1, 10))], name='max_depth')
+Categorical([None, \*list(range(1, 10))], name="max_depth")
 </blockquote>
 <strong>min_samples_split: int, default=2</strong>
 <blockquote>
-Integer(2, 20, name='min_samples_split')
+Integer(2, 20, name="min_samples_split")
 </blockquote>
 <strong>min_samples_leaf: int, default=1</strong>
 <blockquote>
-Integer(1, 20, name='min_samples_leaf')
+Integer(1, 20, name="min_samples_leaf")
 </blockquote>
 <strong>max_features: float or None, default=None</strong>
 <blockquote>
-Categorical([None, \*np.linspace(0.5, 0.9, 5)], name='max_features')
+Categorical([None, \*np.linspace(0.5, 0.9, 5)], name="max_features")
 </blockquote>
 <strong>ccp_alpha: float, default=0.0</strong>
 <blockquote>
-Real(0, 0.035, name='ccp_alpha')
+Real(0, 0.035, name="ccp_alpha")
 </blockquote>
 </td></tr>
 </table>
@@ -90,11 +90,11 @@ You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes
 <blockquote>
 Dataframe containing the information of every step taken by the BO. Columns include:
 <ul>
-<li>'params': Parameters used in the model.</li>
-<li>'estimator': Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>'score': Score of the chosen metric. List of scores for multi-metric.</li>
-<li>'time_iteration': Time spent on this iteration.</li>
-<li>'time': Total time spent since the start of the BO.</li>
+<li>"params": Parameters used in the model.</li>
+<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
+<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
+<li>"time_iteration": Time spent on this iteration.</li>
+<li>"time": Total time spent since the start of the BO.</li>
 </ul>
 </blockquote>
 <strong>best_params: dict</strong>
@@ -257,7 +257,7 @@ Applies probability calibration on the estimator. The calibration is done using 
 <strong>**kwargs</strong>
 <blockquote>
 Additional keyword arguments for the CalibratedClassifierCV instance.
-Using cv='prefit' will use the trained model and fit the calibrator on
+Using cv="prefit" will use the trained model and fit the calibrator on
 the test set. Note that doing this will result in data leakage in the
 test set. Use this only if you have another, independent set for testing.
 </blockquote>
@@ -278,7 +278,7 @@ Clear all the prediction attributes. Use this method to free some memory before 
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the model's score for a specific metric.
@@ -292,20 +292,21 @@ Returns the model's score for a specific metric.
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
  or one of the following custom metrics (only if classifier):
 <ul>
-<li>'cm' or 'confusion_matrix' for an array of the confusion matrix.</li>
-<li>'tn' for true negatives.</li>
-<li>'fp' for false positives.</li>
-<li>'fn' for false negatives.</li>
-<li>'lift' for the lift metric.</li>
-<li>'fpr' for the false positive rate.</li>
-<li>'tpr' for true positive rate.</li>
-<li>'sup' for the support metric.</li>
+<li>"cm" for the confusion matrix.</li>
+<li>"tn" for true negatives.</li>
+<li>"fp" for false positives.</li>
+<li>"fn" for false negatives.</li>
+<li>"tp" for true positives.</li>
+<li>"lift" for the lift metric.</li>
+<li>"fpr" for the false positive rate.</li>
+<li>"tpr" for true positive rate.</li>
+<li>"sup" for the support metric.</li>
 </ul>
 If None, returns the final results for this model (ignores the `dataset` parameter).
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train' or 'test'.
+Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
 </tr>
 </table>
@@ -325,7 +326,7 @@ Save the estimator to a pickle file.
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None or 'auto', the estimator's name is used.
+Name of the file to save. If None or "auto", the estimator's name is used.
 </blockquote>
 </tr>
 </table>
@@ -340,5 +341,5 @@ Name of the file to save. If None or 'auto', the estimator's name is used.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(models='Tree', metric='MSLE')
+atom.run(models="Tree", metric="MSLE")
 ```

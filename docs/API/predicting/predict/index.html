@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -556,7 +556,7 @@ Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the <code>training</code>'s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the <code>training</code>"s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -577,7 +577,7 @@ Same keyword arguments as the <a href="../transform/">transform</a> method to
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['Tree', 'AdaB'], metric='AP', n_calls=10)
+atom.run([&quot;Tree&quot;, &quot;AdaB&quot;], metric=&quot;AP&quot;, n_calls=10)
 
 # Make predictions on new data
 predictions = atom.adab.predict(X_new)

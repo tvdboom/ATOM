@@ -31,7 +31,7 @@ ATOM is here to help us solve these issues. With just a few lines of code, you c
  the feasibility of the ML solution.
 
 It is important to realize that ATOM is not here to replace all the work a data
- scientist has to do before getting his model into production. ATOM doesn't spit out
+ scientist has to do before getting his model into production. ATOM doesn"t spit out
  production-ready models just by tuning some parameters in its API. After helping you
  to determine the right model, you will most probably need to fine-tune it using
  use-case specific features and data cleaning steps in order to achieve maximum performance.
@@ -94,14 +94,16 @@ Example steps taken by ATOM's pipeline:
   [get_sample_weights](../API/ATOM/atomclassifier#get-sample-weights) utility methods.
 * Added the `sample_weight` parameter to the [score](../API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
-* The `test_size` parameter also allows integer values.
+* The `n_rows` parameter in [ATOMLoader](../API/ATOM/atomloader) is deprecated in
+  favour of the new data input formats.
+* The `test_size` parameter now also allows integer values.
 * Renamed categories to classes to be consistent with sklearn's API.
 * The class property now returns a pd.DataFrame of the number of rows per target class
   in the train, test and complete dataset.
 * Possibility to add custom parameters to an estimator's fit method through `est_params`.
 * [Successive halving](../API/user_guide/#successive-halving) and [Train sizing](../API/user_guide/#train-sizing)
   now both allow subsequent runs from `atom` without losing previous information.
-* Bug fix where ATOMLoader wouldn't encode the target column during transformation.
+* Bug fix where ATOMLoader wouldn"t encode the target column during transformation.
 * Added the [Utilities](../examples/utilities) example notebook.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
@@ -142,7 +144,7 @@ Example steps taken by ATOM's pipeline:
 * Early stopping for models that allow in-training evaluation.
 * Added the [ATOMLoader](../API/ATOM/atomloader) function to load saved `atom` instances
   and directly apply all data transformations.
-* The 'remove' strategy in the data cleaning parameters is deprecated in favour of 'drop'.
+* The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
 * Implemented the DFS strategy in [FeatureGenerator](../API/feature_engineering/feature_generator).
 * All training classes now inherit from BaseEstimator.
 * Added multiple new example notebooks.

@@ -18,11 +18,10 @@ from sklearn.base import BaseEstimator
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    CAL, TRAIN_TYPES, lst, get_best_score, infer_task, composed, method_to_log, crash
+    CAL, TRAIN_TYPES, lst, get_best_score, infer_task,
+    composed, method_to_log, crash,
 )
 
-
-# Classes =================================================================== >>
 
 class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
     """Fit and evaluate the models in a direct fashion.
@@ -31,14 +30,16 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
     """
 
-    def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, n_calls, n_initial_points, est_params,
-                 bo_params, bagging, n_jobs, verbose, warnings, logger,
-                 random_state):
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self, models, metric, greater_is_better, needs_proba, needs_threshold,
+        n_calls, n_initial_points, est_params, bo_params, bagging, n_jobs,
+        verbose, warnings, logger, random_state
+    ):
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            n_calls, n_initial_points, est_params, bo_params, bagging,
+            n_jobs, verbose, warnings, logger, random_state
+        )
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -62,7 +63,7 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         self._results = self._run()
-        self._results.index.name = 'model'
+        self._results.index.name = "model"
 
 
 class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
@@ -86,15 +87,17 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
     """
 
-    def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, skip_runs, n_calls, n_initial_points,
-                 est_params, bo_params, bagging, n_jobs, verbose, warnings,
-                 logger, random_state):
+    def __init__(
+        self, models, metric, greater_is_better, needs_proba, needs_threshold,
+        skip_runs, n_calls, n_initial_points, est_params, bo_params, bagging,
+        n_jobs, verbose, warnings, logger, random_state
+    ):
         self.skip_runs = skip_runs
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            n_calls, n_initial_points, est_params, bo_params, bagging,
+            n_jobs, verbose, warnings, logger, random_state
+        )
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -115,12 +118,16 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         n_models = len(self.models)
 
         if self.skip_runs < 0:
-            raise ValueError("Invalid value for the skip_runs parameter."
-                             f"Value should be >=0, got {self.skip_runs}.")
-        elif self.skip_runs >= int(n_models/2) + 1:
-            raise ValueError("Invalid value for the skip_runs parameter. Less than 1 "
-                             f"run remaining, got n_runs={int(n_models/2) + 1} and " 
-                             f"skip_runs={self.skip_runs}.")
+            raise ValueError(
+                "Invalid value for the skip_runs parameter."
+                f"Value should be >=0, got {self.skip_runs}."
+            )
+        elif self.skip_runs >= int(n_models / 2) + 1:
+            raise ValueError(
+                "Invalid value for the skip_runs parameter. Less than 1 "
+                f"run remaining, got n_runs={int(n_models/2) + 1} and "
+                f"skip_runs={self.skip_runs}."
+            )
 
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
@@ -130,10 +137,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         _train_idx = self._idx[0]  # Save the size of the original training set
         while len(self.models) > 2 ** self.skip_runs - 1:
             # Select 1/N of training set to use for this iteration
-            self._idx[0] = int(1./len(self.models) * _train_idx)
+            self._idx[0] = int(1.0 / len(self.models) * _train_idx)
 
             # Print stats for this subset of the data
-            p = round(100. / len(self.models))
+            p = round(100.0 / len(self.models))
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
             self.log(f"Models: {', '.join(self.models)}", 1)
             self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
@@ -145,7 +152,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
             # Select best models for halving
             best = df.apply(lambda row: get_best_score(row), axis=1)
-            best = best.nlargest(n=int(len(self.models) / 2), keep='first')
+            best = best.nlargest(n=int(len(self.models) / 2), keep="first")
             self.models = list(best.index.values)
 
             run += 1
@@ -154,7 +161,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         self._results = pd.concat(
             objs=[df for df in results],
             keys=[len(df) for df in results],
-            names=('n_models', 'model')
+            names=("n_models", "model"),
         )
 
         # Renew self.models and restore the training set
@@ -181,15 +188,17 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
     """
 
-    def __init__(self, models, metric, greater_is_better, needs_proba,
-                 needs_threshold, train_sizes, n_calls, n_initial_points,
-                 est_params, bo_params, bagging, n_jobs, verbose, warnings,
-                 logger, random_state):
+    def __init__(
+        self, models, metric, greater_is_better, needs_proba, needs_threshold,
+        train_sizes, n_calls, n_initial_points, est_params, bo_params, bagging,
+        n_jobs, verbose, warnings, logger, random_state
+    ):
         self.train_sizes = train_sizes
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            n_calls, n_initial_points, est_params, bo_params, bagging,
+            n_jobs, verbose, warnings, logger, random_state
+        )
 
     @composed(crash, method_to_log)
     def run(self, *arrays):
@@ -221,11 +230,11 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
                 frac.append(round(size, 3))
                 self._idx[0] = int(size * _train_idx)
             else:
-                frac.append(round(size/_train_idx, 3))
+                frac.append(round(size / _train_idx, 3))
                 self._idx[0] = size
 
             # Print stats for this subset of the data
-            p = round(len(self.train) * 100. / _train_idx)
+            p = round(len(self.train) * 100.0 / _train_idx)
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
             self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
@@ -235,9 +244,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         # Concatenate all resulting dataframes with multi-index
         self._results = pd.concat(
-            objs=[df for df in results],
-            keys=frac,
-            names=('frac', 'model')
+            objs=[df for df in results], keys=frac, names=("frac", "model")
         )
 
         self._idx[0] = _train_idx  # Restore original training set
@@ -247,163 +254,181 @@ class TrainerClassifier(Trainer):
     """Trainer class for classification tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'classification'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "classification"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            n_calls, n_initial_points, est_params, bo_params, bagging,
+            n_jobs, verbose, warnings, logger, random_state
+        )
 
 
 class TrainerRegressor(Trainer):
     """Trainer class for regression tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'regression'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "regression"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            n_calls, n_initial_points, est_params, bo_params, bagging,
+            n_jobs, verbose, warnings, logger, random_state
+        )
 
 
 class SuccessiveHalvingClassifier(SuccessiveHalving):
     """SuccessiveHalving class for classification tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 skip_runs: int = 0,
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'classification'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, skip_runs, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        skip_runs: int = 0,
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "classification"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            skip_runs, n_calls, n_initial_points, est_params, bo_params,
+            bagging, n_jobs, verbose, warnings, logger, random_state
+        )
 
 
 class SuccessiveHalvingRegressor(SuccessiveHalving):
     """SuccessiveHalving class for regression tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 skip_runs: int = 0,
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'regression'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, skip_runs, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        skip_runs: int = 0,
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "regression"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            skip_runs, n_calls, n_initial_points, est_params, bo_params,
+            bagging, n_jobs, verbose, warnings, logger, random_state
+        )
 
 
 class TrainSizingClassifier(TrainSizing):
     """TrainSizing class for classification tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'classification'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, train_sizes, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "classification"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            train_sizes, n_calls, n_initial_points, est_params, bo_params,
+            bagging, n_jobs, verbose, warnings, logger, random_state
+        )
 
 
 class TrainSizingRegressor(TrainSizing):
     """TrainSizing class for regression tasks."""
 
     @typechecked
-    def __init__(self,
-                 models: Union[CAL, Sequence[CAL]],
-                 metric: Optional[Union[CAL, Sequence[CAL]]] = None,
-                 greater_is_better: Union[bool, Sequence[bool]] = True,
-                 needs_proba: Union[bool, Sequence[bool]] = False,
-                 needs_threshold: Union[bool, Sequence[bool]] = False,
-                 train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
-                 n_calls: Union[int, Sequence[int]] = 0,
-                 n_initial_points: Union[int, Sequence[int]] = 5,
-                 est_params: dict = {},
-                 bo_params: dict = {},
-                 bagging: Optional[Union[int, Sequence[int]]] = None,
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 warnings: Union[bool, str] = True,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        self.goal = 'regression'
-        super().__init__(models, metric, greater_is_better, needs_proba,
-                         needs_threshold, train_sizes, n_calls, n_initial_points,
-                         est_params, bo_params, bagging, n_jobs, verbose,
-                         warnings, logger, random_state)
+    def __init__(
+        self,
+        models: Union[CAL, Sequence[CAL]],
+        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        greater_is_better: Union[bool, Sequence[bool]] = True,
+        needs_proba: Union[bool, Sequence[bool]] = False,
+        needs_threshold: Union[bool, Sequence[bool]] = False,
+        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        n_calls: Union[int, Sequence[int]] = 0,
+        n_initial_points: Union[int, Sequence[int]] = 5,
+        est_params: dict = {},
+        bo_params: dict = {},
+        bagging: Optional[Union[int, Sequence[int]]] = None,
+        n_jobs: int = 1,
+        verbose: int = 0,
+        warnings: Union[bool, str] = True,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        self.goal = "regression"
+        super().__init__(
+            models, metric, greater_is_better, needs_proba, needs_threshold,
+            train_sizes, n_calls, n_initial_points, est_params, bo_params,
+            bagging, n_jobs, verbose, warnings, logger, random_state
+        )

@@ -99,9 +99,9 @@ These two classes are convenient wrappers for all the possibilities this package
  different parameters. There are some important differences with sklearn's API:
  
 1. `atom` is initialized with the data you want to manipulate. This data can be accessed
- at any moment through `atom`'s [data attributes](../API/ATOM/atomclassifier/#data-properties).
-2. The classes in ATOM's API are reached through `atom`'s methods. For example, calling
- the [encode](../API/ATOM/atomclassifier/#atomclassifier-encode) method, will initialize
+ at any moment through `atom`"s [data attributes](../API/ATOM/atomclassifier/#data-properties).
+2. The classes in ATOM's API are reached through `atom`"s methods. For example, calling
+ the [encode](../API/ATOM/atomclassifier/#encode) method, will initialize
  an [Encoder](../API/data_cleaning/encoder) instance, fit it on the training set and
  transform the whole dataset.
 3. The transformations are applied immediately after calling the method (there is no
@@ -112,24 +112,26 @@ These two classes are convenient wrappers for all the possibilities this package
 
 Let's get started with an example!
 
-First, initialize `atom` and provide it the data you want to use.
+First, initialize `atom` and provide it the data you want to use. You can either
+ input a dataset and let ATOM split the train and test set or provide a train and
+ test set already splitted.
 
-    atom = ATOMClassifier(X, y)
+    atom = ATOMClassifier(X, y, test_size=0.25)
 
 Apply data cleaning methods through the class. For example, calling the
- [impute](../API/ATOM/atomclassifier/#atomclassifier-impute) method will
+ [impute](../API/ATOM/atomclassifier/#impute) method will
  handle all missing values in the dataset.
 
-    atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.1)
+    atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
 
 Select the best hyperparameters and fit a Random Forest and AdaBoost model.
 
-    atom.run(['RF', 'AdaB'], metric='accuracy', n_calls=25, n_initial_points=10)
+    atom.run(["RF", "AdaB"], metric="accuracy", n_calls=25, n_initial_points=10)
 
 Analyze the results:
 
-    atom.feature_importances(show=10, filename='feature_importance_plot')
-    atom.plot_prc(title='Precision-recall curve comparison plot')
+    atom.feature_importances(show=10, filename="feature_importance_plot")
+    atom.plot_prc(title="Precision-recall curve comparison plot")
 
 
 <br><br>
@@ -150,7 +152,7 @@ Standardization of a dataset is a common requirement for many machine learning
  estimators: they might behave badly if the individual features do not more or less
  look like standard normally distributed data (e.g. Gaussian with 0 mean and unit
  variance). The [Scaler](API/data_cleaning/scaler.md) class scales data to mean=0 and
- std=1. It can be accessed from `atom` through the [scale](../API/ATOM/atomclassifier/#atomclassifier-scale)
+ std=1. It can be accessed from `atom` through the [scale](../API/ATOM/atomclassifier/#scale)
  method. 
 
 <br>
@@ -158,10 +160,11 @@ Standardization of a dataset is a common requirement for many machine learning
 ### Standard data cleaning
 
 There are many data cleaning steps that are useful to perform on any dataset before
- modelling. These are general rules that apply on every use-case and every task. The
- [StandardCleaner](API/data_cleaning/standard_cleaner.md) class is a convenient tool
- to apply such steps. It is automatically called when initializing `atom`. Use the
- class' parameters to choose which transformations to perform. The available steps are:
+ modelling. These are general rules that apply almost on every use-case and every
+ task. The [Cleaner](API/data_cleaning/cleaner.md) class is a convenient tool
+ to apply such steps. It can be accessed from `atom` through the
+ [clean](../API/ATOM/atomclassifier/#clean) method. Use the class' parameters to
+ choose which transformations to perform. The available steps are:
 
 * Remove columns with prohibited data types.
 * Strip categorical features from white spaces.
@@ -170,7 +173,7 @@ There are many data cleaning steps that are useful to perform on any dataset bef
 * Remove rows with missing values in the target column.
 * Label-encode the target column.
 
-<br> 
+<br>
 
 ### Imputing missing values
 
@@ -179,11 +182,11 @@ For various reasons, many real world datasets contain missing values, often enco
  ATOM's models which assume that all values in an array are numerical, and that all
  have and hold meaning. The [Imputer](API/data_cleaning/imputer.md) class handles
  missing values in the dataset by either dropping or imputing the value. It can be
- accessed from `atom` through the [impute](../API/ATOM/atomclassifier/#atomclassifier-impute)
+ accessed from `atom` through the [impute](../API/ATOM/atomclassifier/#impute)
  method.
 
 !!!tip
-    Use `atom`'s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`"s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -197,10 +200,10 @@ Many datasets will contain categorical features. Their variables are typically s
  determining how to use this data in the analysis. ATOM's models don't support
  direct manipulation of this kind of data. Use the [Encoder](API/data_cleaning/encoder.md)
  class to encode categorical features to numerical values. It can be accessed from
- `atom` through the [encode](../API/ATOM/atomclassifier/#atomclassifier-encode) method.
+ `atom` through the [encode](../API/ATOM/atomclassifier/#encode) method.
 
 !!!tip
-    Use `atom`'s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`"s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br> 
@@ -213,7 +216,7 @@ When modeling, it is important to clean the data sample to ensure that the obser
  outliers. Often, machine learning modeling and model skill in general can be improved
  by understanding and even removing these outlier values. The [Outliers](API/data_cleaning/outliers.md) 
  class can drop or impute outliers in the dataset. It can be accessed from `atom`
- through the [outliers](../API/ATOM/atomclassifier/#atomclassifier-outliers) method.
+ through the [outliers](../API/ATOM/atomclassifier/#outliers) method.
 
 <br> 
 
@@ -226,7 +229,7 @@ One of the common issues found in datasets that are used for classification is
  us with a very unbalanced ratio of fraud vs non-fraud cases. The
  [Balancer](API/data_cleaning/balancer.md) class can oversample the minority category
  or undersample the majority category. It can be accessed from `atom` through the
- [balance](../API/ATOM/atomclassifier/#atomclassifier-balance) method.
+ [balance](../API/ATOM/atomclassifier/#balance) method.
 
 
 
@@ -262,15 +265,15 @@ Feature engineering is the process of creating new features from the existing on
 
 The [FeatureGenerator](API/feature_engineering/feature_generator.md) class creates
  new non-linear features based on the original feature set. It can be accessed from
- `atom` through the [feature_generation](../API/ATOM/atomclassifier/#atomclassifier-feature-generation)
+ `atom` through the [feature_generation](../API/ATOM/atomclassifier/#feature-generation)
  method. You can choose between two strategies: Deep Feature Synthesis and Genetic
  Feature Generation.
 
 
 **Deep Feature Synthesis**<br>
 Deep feature synthesis (DFS) applies the selected operators on the features in
- the dataset. For example, if the operator is 'log', it will create the new feature
- `LOG(old_feature)` and if the operator is 'mul', it will create the new feature
+ the dataset. For example, if the operator is "log", it will create the new feature
+ `LOG(old_feature)` and if the operator is "mul", it will create the new feature
  `old_feature_1 x old_feature_2`. The operators can be chosen through the `operators`
  parameter. Available options are:
 <ul>
@@ -294,7 +297,7 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`'s
+    `NaN` values. Check the warnings that may pop up or use `atom`"s
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
@@ -309,7 +312,7 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 **Genetic Feature Generation**<br>
 Genetic feature generation (GFG) uses [genetic programming](https://en.wikipedia.org/wiki/Genetic_programming),
  a branch of evolutionary programming, to determine which features are successful and
- create new ones based on those. Where DFS' method can be seen as some kind of "brute
+ create new ones based on those. Where DFS" method can be seen as some kind of "brute
  force" for feature engineering, GFG tries to improve its features with every
  generation of the algorithm. GFG uses the same operators as DFS, but instead of only
  applying the transformations once, it evolves them further, creating complicated
@@ -332,7 +335,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 
 The [FeatureSelector](API/feature_engineering/feature_selector.md) class provides
  tooling to select the relevant features from a dataset. It can be accessed from `atom`
- through the [feature_selection](../API/ATOM/atomclassifier/#atomclassifier-feature-selection)
+ through the [feature_selection](../API/ATOM/atomclassifier/#feature-selection)
  method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.
 
 
@@ -356,8 +359,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/d
 SFM uses an estimator with `feature_importances_` or `coef_` attributes to select the
  best features in a dataset based on importance weights. The estimator is provided
  through the `solver` parameter and can be already fitted. ATOM allows you to use one
- its pre-defined [models](#models), e.g. `solver='RF'`. If you didn't call the
- FeatureSelector through `atom`, don't forget to indicate the estimator's task adding
+ its pre-defined [models](#models), e.g. `solver="RF"`. If you didn't call the
+ FeatureSelector through `atom`, don"t forget to indicate the estimator's task adding
  `_class` or `_reg` after the name, e.g. `RF_class` to use a random forest classifier.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
@@ -406,11 +409,11 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 !!! tip
     Use the [plot_feature_importance](API/plots/plot_feature_importance.md) method to
     examine how much a specific feature contributes to the final predictions. If the
-    model doesn't have a `feature_importances_` attribute, use 
+    model doesn"t have a `feature_importances_` attribute, use 
     [plot_permutation_importance](API/plots/plot_permutation_importance.md) instead.
 
 !!!warning
-    The RFE and RFECV strategies don't work when the solver is a 
+    The RFE and RFECV strategies don"t work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility of the APIs.
 
 
@@ -425,41 +428,41 @@ ATOM provides 31 models for classification and regression tasks that can be used
  the `training` instance as an attribute. We refer to these "subclasses" as
  `models` (see the [nomenclature](#nomenclature)). The classes contain a variety
  of attributes and methods to help you understand how the underlying estimator
- performed. They can be accessed using the models' acronyms, e.g. `atom.LGB` to
+ performed. They can be accessed using the models" acronyms, e.g. `atom.LGB` to
  access the LightGBM's `model`. The available models and their corresponding
  acronyms are: 
 
-* 'GP' for [Gaussian Process](../API/models/gp)
-* 'GNB' for [Gaussian Naive Bayes](../API/models/gnb)
-* 'MNB' for [Multinomial Naive Bayes](../API/models/mnb)
-* 'BNB' for [Bernoulli Naive Bayes](../API/models/bnb)
-* 'CatNB' for [Categorical Naive Bayes](../API/models/catnb)
-* 'CNB' for [Complement Naive Bayes](../API/models/cnb)
-* 'OLS' for [Ordinary Least Squares](../API/models/ols)
-* 'Ridge' for [Ridge Classification/Regression](../API/models/ridge)
-* 'Lasso' for [Lasso Regression](../API/models/lasso)
-* 'EN' for [Elastic Net](../API/models/en)
-* 'BR' for [Bayesian Ridge](../API/models/br)
-* 'ARD' for [Automated Relevance Determination](../API/models/ard)
-* 'LR' for [Logistic Regression](../API/models/lr)
-* 'LDA' for [Linear Discriminant Analysis](../API/models/lda)
-* 'QDA' for [Quadratic Discriminant Analysis](../API/models/qda)
-* 'KNN' for [K-Nearest Neighbors](../API/models/knn)
-* 'RNN' for [Radius Nearest Neighbors](../API/models/rnn)
-* 'Tree' for [Decision Tree](../API/models/tree)
-* 'Bag' for [Bagging](../API/models/bag)
-* 'ET' for [Extra-Trees](../API/models/et)
-* 'RF' for [Random Forest](../API/models/rf)
-* 'AdaB' for [AdaBoost](../API/models/adab)
-* 'GBM' for [Gradient Boosting Machine](../API/models/gbm)
-* 'XGB' for [XGBoost](../API/models/xgb)
-* 'LGB' for [LightGBM](../API/models/lgb)
-* 'CatB' for [CatBoost](../API/models/catb)
-* 'lSVM' for [Linear-SVM](../API/models/lsvm)
-* 'kSVM' for [Kernel-SVM](../API/models/ksvm)
-* 'PA' for [Passive Aggressive](../API/models/pa)
-* 'SGD' for [Stochastic Gradient Descent](../API/models/sgd)
-* 'MLP' for [Multi-layer Perceptron](../API/models/mlp)
+* "GP" for [Gaussian Process](../API/models/gp)
+* "GNB" for [Gaussian Naive Bayes](../API/models/gnb)
+* "MNB" for [Multinomial Naive Bayes](../API/models/mnb)
+* "BNB" for [Bernoulli Naive Bayes](../API/models/bnb)
+* "CatNB" for [Categorical Naive Bayes](../API/models/catnb)
+* "CNB" for [Complement Naive Bayes](../API/models/cnb)
+* "OLS" for [Ordinary Least Squares](../API/models/ols)
+* "Ridge" for [Ridge Classification/Regression](../API/models/ridge)
+* "Lasso" for [Lasso Regression](../API/models/lasso)
+* "EN" for [Elastic Net](../API/models/en)
+* "BR" for [Bayesian Ridge](../API/models/br)
+* "ARD" for [Automated Relevance Determination](../API/models/ard)
+* "LR" for [Logistic Regression](../API/models/lr)
+* "LDA" for [Linear Discriminant Analysis](../API/models/lda)
+* "QDA" for [Quadratic Discriminant Analysis](../API/models/qda)
+* "KNN" for [K-Nearest Neighbors](../API/models/knn)
+* "RNN" for [Radius Nearest Neighbors](../API/models/rnn)
+* "Tree" for [Decision Tree](../API/models/tree)
+* "Bag" for [Bagging](../API/models/bag)
+* "ET" for [Extra-Trees](../API/models/et)
+* "RF" for [Random Forest](../API/models/rf)
+* "AdaB" for [AdaBoost](../API/models/adab)
+* "GBM" for [Gradient Boosting Machine](../API/models/gbm)
+* "XGB" for [XGBoost](../API/models/xgb)
+* "LGB" for [LightGBM](../API/models/lgb)
+* "CatB" for [CatBoost](../API/models/catb)
+* "lSVM" for [Linear-SVM](../API/models/lsvm)
+* "kSVM" for [Kernel-SVM](../API/models/ksvm)
+* "PA" for [Passive Aggressive](../API/models/pa)
+* "SGD" for [Stochastic Gradient Descent](../API/models/sgd)
+* "MLP" for [Multi-layer Perceptron](../API/models/mlp)
 
 
 <br>
@@ -478,7 +481,7 @@ Using [ATOMModel](../API/ATOM/atommodel) (recommended). With this approach you c
 from sklearn.linear_model import Lars
 from atom import ATOMRegressor, ATOMModel
 
-model = ATOMModel(models=Lars, longname="Lars Regression", needs_scaling=True, type="linear")
+model = ATOMModel(models=Lars, fullname="Lars Regression", needs_scaling=True, type="linear")
 
 atom = ATOMRegressor(X, y)
 atom.run(model)
@@ -546,9 +549,9 @@ There are three approaches to run the training.
 
 The direct fashion repeats the aforementioned steps only once, while the other two
  approaches repeats them more than once. Every approach can be directly called from
- `atom` through the [run](../API/ATOM/atomclassifier/#atomclassifier-run),
- [successive_halving](../API/ATOM/atomclassifier/#atomclassifier-successive-halving)
- and [train_sizing](../API/ATOM/atomclassifier/#atomclassifier-train-sizing) methods
+ `atom` through the [run](../API/ATOM/atomclassifier/#run),
+ [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
+ and [train_sizing](../API/ATOM/atomclassifier/#train-sizing) methods
  respectively. Every approach should be called from an independent instance of `atom`.
  Subsequent runs from different approaches will remove all information from previous
  trainings from the pipeline. You can, however, rerun the same approach multiple times.
@@ -558,14 +561,14 @@ The direct fashion repeats the aforementioned steps only once, while the other t
 For example, here atom will "forget" the successive halving run.
 ```python
 atom = ATOMClassifier(X, y)
-atom.successive_halving(['Tree', 'Bag'])
-atom.run('LGB') 
+atom.successive_halving(["Tree", "Bag"])
+atom.run("LGB") 
 ```
 In this case, both the Ridge and Lasso regressors are kept in the pipeline.
 ```python
 atom = ATOMRegressor(X, y)
-atom.run('Ridge')
-atom.run('Lasso')
+atom.run("Ridge")
+atom.run("Lasso")
 ```
 
 !!!note
@@ -575,7 +578,7 @@ atom.run('Lasso')
 
 Additional things to take into account:
 
-* Models are called through their [acronyms](#models), e.g. `atom.run(models='RF')`
+* Models are called through their [acronyms](#models), e.g. `atom.run(models="RF")`
   will train a Random Forest.
 * If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
@@ -615,28 +618,28 @@ Note that all scorers follow the convention that higher return values are better
 Since some of sklearn's scorers have quite long names and ATOM is all about <s>lazy</s>fast
  experimentation, the package provides acronyms for some of the most commonly used ones.
  These acronyms are case insensitive can be used for the `metric` parameter instead of the
- scorer's full name, e.g. `atom.run('LR', metric='BA')` will use `balanced_accuracy`.
+ scorer's full name, e.g. `atom.run("LR", metric="BA")` will use `balanced_accuracy`.
  The available acronyms are:
 
-* 'AP' for 'average_precision'
-* 'BA' for 'balanced_accuracy'
-* 'AUC' for 'roc_auc'
-* 'EV' for 'explained_variance'
-* 'ME' for 'max_error'
-* 'MAE' for 'neg_mean_absolute_error'
-* 'MSE' for 'neg_mean_squared_error'
-* 'RMSE' for 'neg_root_mean_squared_error'
-* 'MSLE' for 'neg_mean_squared_log_error'
-* 'MEDAE' for 'neg_median_absolute_error'
-* 'POISSON' for 'neg_mean_poisson_deviance'
-* 'GAMMA' for 'neg_mean_gamma_deviance'
+* "AP" for "average_precision"
+* "BA" for "balanced_accuracy"
+* "AUC" for "roc_auc"
+* "EV" for "explained_variance"
+* "ME" for "max_error"
+* "MAE" for "neg_mean_absolute_error"
+* "MSE" for "neg_mean_squared_error"
+* "RMSE" for "neg_root_mean_squared_error"
+* "MSLE" for "neg_mean_squared_log_error"
+* "MEDAE" for "neg_median_absolute_error"
+* "POISSON" for "neg_mean_poisson_deviance"
+* "GAMMA" for "neg_mean_gamma_deviance"
 
 
 **Multi-metric runs**<br>
 Sometimes it is useful to measure the performance of the models in more than one way.
  ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
- provide the `metric` parameter with a list of desired metrics, e.g. `atom.run('LDA', metric=['r2', 'mse'])`.
- If you provide metric functions, don't forget to also provide lists to the
+ provide the `metric` parameter with a list of desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`.
+ If you provide metric functions, don"t forget to also provide lists to the
  `greater_is_better`, `needs_proba` and `needs_threshold` parameters, where the n-th
  value in the list corresponds to the n-th function. If you leave them as a single value,
  that value will apply to every provided metric.
@@ -664,19 +667,19 @@ Adding the parameters directly to `est_params` will share them across all models
  will use n_estimators=200. Make sure all the models do have the specified parameters
  or an exception will be raised!
 
-    atom.run(['XGB', 'LGB'], est_params={'n_estimators': 200})
+    atom.run(["XGB", "LGB"], est_params={"n_estimators": 200})
 
 To specify parameters per model, use the model name as key and a dict of the
  parameters as value. In this example, the XGBoost model will use n_estimators=200
  and the Multi-layer Perceptron will use one hidden layer with 75 neurons.
 
-    atom.run(['XGB', 'MLP'], est_params={'XGB': {'n_estimators': 200}, 'MLP': {'hidden_layer_sizes': (75,)}})
+    atom.run(["XGB", "MLP"], est_params={"XGB": {"n_estimators": 200}, "MLP": {"hidden_layer_sizes": (75,)}})
 
 Some estimators allow you to pass extra parameters to the fit method (besides X and y).
  This can be done adding `_fit` at the end of the parameter. For example, to change
  XGBoost's verbosity, we can run:
 
-    atom.run('XGB', est_params={'verbose_fit': True}
+    atom.run("XGB", est_params={"verbose_fit": True}
 
 !!!note
     If a parameter is specified through `est_params`, it will be ignored by the
@@ -710,7 +713,7 @@ There are many possibilities to tune the BO to your liking. Use `n_calls` and
 
 !!!note
     The `n_calls` parameter includes the iterations in `n_initial_points`, i.e. calling
-    `atom.run('LR', n_calls=20, n_intial_points=10)` will run 20 iterations of which
+    `atom.run("LR", n_calls=20, n_intial_points=10)` will run 20 iterations of which
     the first 10 are random.
 
 !!!note
@@ -726,16 +729,16 @@ By default, the hyperparameters and corresponding dimensions per model are prede
  names as keys to specify the dimensions for every individual model. Note that the
  provided search space dimensions must be compliant with skopt's API.
 
-    atom.run('LR', n_calls=10, bo_params={'dimensions': [Integer(100, 1000, name='max_iter')]})
+    atom.run("LR", n_calls=10, bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]})
 
 The majority of skopt's callbacks to stop the optimizer early can be accessed
  through `bo_params`. You can include other callbacks using the `callbacks` key.
   
-    atom.run('LR', n_calls=10, bo_params={'max_time': 1000, 'callbacks': custom_callback()})
+    atom.run("LR", n_calls=10, bo_params={"max_time": 1000, "callbacks": custom_callback()})
 
 You can also include other optimizer's parameters as key-value pairs.
 
-    atom.run('LR', n_calls=10, bo_params={'acq_func': 'EI'})
+    atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
 
 
 <br>
@@ -761,12 +764,12 @@ After fitting the estimator, you can asses the robustness of the model using
 [XGBoost](../API/models/xgb), [LightGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
  allow in-training evaluation. This means that the estimator is evaluated after
  every round of the training. Use the `early_stopping` key in `bo_params` to stop
- the training early if it didn't improve in the last `early_stopping` rounds. This
+ the training early if it didn"t improve in the last `early_stopping` rounds. This
  can save the pipeline much time that would otherwise be wasted on an estimator
  that is unlikely to improve further. Note that this technique will be applied
  both during the BO and at the final fit on the complete training set. After
  fitting, the `model` will get the `evals` attribute, a dictionary of the train
- and test performances per round (also if early stopping wasn't applied).
+ and test performances per round (also if early stopping wasn"t applied).
 
 !!!tip
     Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training
@@ -786,7 +789,7 @@ Successive halving is a bandit-based algorithm that fits N models to 1/N of the 
  
 Use successive halving through the [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)/
  [SuccessiveHalvingRegressor](../API/training/successivehalvingregressor) classes
- or from `atom` via the [successive_halving](../API/ATOM/atomclassifier/#atomclassifier-successive-halving)
+ or from `atom` via the [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
  method. After running the pipeline, the `results` attribute will be multi-index,
  where the first index indicates the iteration and the second the model's acronym.
 
@@ -806,7 +809,7 @@ When training models, there is usually a trade-off between model performance and
 
 Use train sizing through the [TrainSizingClassifier](../API/training/trainsizingclassifier)/
 [TrainSizingRegressor](../API/training/trainsizingregressor) classes or from `atom`
- via the [train_sizing](../API/ATOM/atomclassifier/#atomclassifier-train-sizing)
+ via the [train_sizing](../API/ATOM/atomclassifier/#train-sizing)
  method. The number of iterations and the number of samples per training can be
  specified with the `train_sizes` parameter. After running the pipeline, the `results`
  attribute will be multi-index, where the first index indicates the iteration and the
@@ -874,7 +877,7 @@ The available prediction methods are a selection of the most common methods for
 </table>
 
 Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the `model`'s prediction attributes,
+ set. You can access them through the `model`"s prediction attributes,
  e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -921,13 +924,13 @@ Apart from the plot-specific parameters they may have, all plots have four param
 ### Aesthetics
 
 The plot aesthetics can be customized using the plot attributes, e.g.
- `atom.style = 'white'`. These attributes can be called from any instance with
+ `atom.style = "white"`. These attributes can be called from any instance with
  plotting methods. Note that the plot attributes are attached to the class and not
  the instance. This means that changing the attribute will also change it for all
  other instances in the module. ATOM's default values are:
 
-* style: 'darkgrid'
-* palette: 'GnBu_r_d'
+* style: "darkgrid"
+* palette: "GnBu_r_d"
 * title_fontsize: 20
 * label_fontsize: 16
 * tick_fontsize: 12
@@ -950,7 +953,7 @@ The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations) py
  [dependence_plot](../API/plots/dependence_plot), [summary_plot](../API/plots/summary_plot)
  and [decision_plot](../API/plots/decision_plot).
 
-Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
+Since the plots are not made by ATOM, we can"t draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a `model`, e.g. `atom.xgb.force_plot()`.
 
@@ -993,7 +996,7 @@ A list of available plots can be find hereunder. Note that not all plots can be
 
 <tr>
 <td width="15%"><a href="../API/plots/plot_successive_halving">plot_successive_halving</a></td>
-<td>Plot of the models' scores per iteration of the successive halving.</td>
+<td>Plot of the models" scores per iteration of the successive halving.</td>
 </tr>
 
 <tr>

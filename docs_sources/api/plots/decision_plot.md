@@ -72,7 +72,7 @@ Additional keyword arguments for shap's decision_plot.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run('RF')
+atom.run("RF")
 atom.decision_plot(index=(120, 140))
 ```
 <div align="center">

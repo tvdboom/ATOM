@@ -17,7 +17,7 @@ from atom import ATOMClassifier
 
 ```python
 # Get the dataset's features and targets
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv("./datasets/weatherAUS.csv")
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -121,14 +121,14 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 # Initialize the ATOM class
-atom = ATOMClassifier(X, 'RainTomorrow', n_rows=1e4, verbose=1, warnings='ignore', random_state=1)
+atom = ATOMClassifier(X, "RainTomorrow", n_rows=1e4, verbose=1, warnings="ignore", random_state=1)
 
 # Handle missing values and categorical columns in the dataset
-atom.impute(strat_num='median', strat_cat='most_frequent')
-atom.encode(strategy='target', max_onehot=5, frac_to_other=0.05)
+atom.impute(strat_num="median", strat_cat="most_frequent")
+atom.encode(strategy="target", max_onehot=5, frac_to_other=0.05)
 
 # Fit a linear SVM to the data
-atom.run('lsvm')
+atom.run("lsvm")
 ```
 
     << ================== ATOM ================== >>
@@ -184,7 +184,7 @@ atom.plot_calibration()
 
 ```python
 # Let's try to improve it using the calibrate method
-atom.calibrate(method='isotonic', cv=5)
+atom.calibrate(method="isotonic", cv=5)
 atom.plot_calibration()
 ```
 

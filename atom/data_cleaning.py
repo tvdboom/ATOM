@@ -25,13 +25,10 @@ from category_encoders.one_hot import OneHotEncoder
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, variable_return,
-    to_df, to_series, merge, check_is_fitted, infer_task, composed,
-    crash, method_to_log
+    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, variable_return, to_df,
+    to_series, merge, check_is_fitted, infer_task, composed, crash, method_to_log,
 )
 
-
-# Classes =================================================================== >>
 
 class BaseCleaner(object):
     """Base class for the data_cleaning and feature_engineering methods."""
@@ -77,17 +74,17 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     """
 
     @typechecked
-    def __init__(self,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None):
+    def __init__(
+        self, verbose: int = 0, logger: Optional[Union[bool, str, callable]] = None
+    ):
         super().__init__(verbose=verbose, logger=logger)
         self.standard_scaler = None
 
@@ -131,14 +128,14 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             Scaled dataframe.
 
         """
-        check_is_fitted(self, 'standard_scaler')
+        check_is_fitted(self, "standard_scaler")
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
         return to_df(self.standard_scaler.transform(X), X.index, X.columns)
 
 
-class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
+class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
     """Applies standard data cleaning steps on a dataset.
 
      These steps can include:
@@ -183,22 +180,24 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     """
 
-    def __init__(self,
-                 prohibited_types: Union[str, Sequence[str]] = [],
-                 strip_categorical: bool = True,
-                 maximum_cardinality: bool = True,
-                 minimum_cardinality: bool = True,
-                 missing_target: bool = True,
-                 map_target: Optional[bool] = None,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None):
+    def __init__(
+        self,
+        prohibited_types: Optional[Union[str, Sequence[str]]] = None,
+        strip_categorical: bool = True,
+        maximum_cardinality: bool = True,
+        minimum_cardinality: bool = True,
+        missing_target: bool = True,
+        map_target: Optional[bool] = None,
+        verbose: int = 0,
+        logger: Optional[Union[bool, str, callable]] = None,
+    ):
         super().__init__(verbose=verbose, logger=logger)
         self.prohibited_types = prohibited_types
         self.strip_categorical = strip_categorical
@@ -235,8 +234,10 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
-        # Make a list from the prohibited types if a str was provided
-        if isinstance(self.prohibited_types, str):
+        # Prepare the type of prohibited_types
+        if not self.prohibited_types:
+            self.prohibited_types = []
+        elif isinstance(self.prohibited_types, str):
             self.prohibited_types = [self.prohibited_types]
 
         self.log("Applying data cleaning...", 1)
@@ -248,27 +249,33 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             # Drop features with invalid data type
             dtype = str(X[col].dtype)
             if dtype in self.prohibited_types:
-                self.log(f" --> Dropping feature {col} for having a "
-                         f"prohibited type: {dtype}.", 2)
+                self.log(
+                    f" --> Dropping feature {col} for having a "
+                    f"prohibited type: {dtype}.", 2
+                )
                 X.drop(col, axis=1, inplace=True)
                 continue
 
-            elif dtype in ('object', 'category'):  # If non-numerical feature...
+            elif dtype in ("object", "category"):  # If non-numerical feature...
                 if self.strip_categorical:
                     # Strip strings from blank spaces
                     X[col] = X[col].apply(
-                        lambda val: val.strip() if isinstance(val, str) else val)
+                        lambda val: val.strip() if isinstance(val, str) else val
+                    )
 
                 # Drop features where all values are different
                 if self.maximum_cardinality and n_unique == len(X):
-                    self.log(f" --> Dropping feature {col} "
-                             "due to maximum cardinality.", 2)
+                    self.log(
+                        f" --> Dropping feature {col} due to maximum cardinality.", 2
+                    )
                     X.drop(col, axis=1, inplace=True)
 
             # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
-                self.log(f" --> Dropping feature {col} due to minimum "
-                         f"cardinality. Contains only 1 class: {unique[0]}.", 2)
+                self.log(
+                    f" --> Dropping feature {col} due to minimum "
+                    f"cardinality. Contains only 1 class: {unique[0]}.", 2
+                )
                 X.drop(col, axis=1, inplace=True)
 
         if y is not None:
@@ -282,13 +289,15 @@ class StandardCleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     # Reset indices for the merger
                     X.reset_index(drop=True, inplace=True)
                     y.reset_index(drop=True, inplace=True)
-                    self.log(f" --> Dropping {diff} rows with "
-                             "missing values in target column.", 2)
+                    self.log(
+                        f" --> Dropping {diff} rows with "
+                        "missing values in target column.", 2
+                    )
 
-            task = infer_task(y) if self.map_target is None else 'regression'
+            task = infer_task(y) if self.map_target is None else "regression"
             # Map the target column to numerical values
-            if self.map_target or not task.startswith('reg'):
-                if y.dtype.kind not in 'ifu':
+            if self.map_target or not task.startswith("reg"):
+                if y.dtype.kind not in "ifu":
                     self.log(f" --> Label-encoding the target column.", 2)
                 le = LabelEncoder()
                 y = to_series(le.fit_transform(y), index=y.index, name=y.name)
@@ -305,19 +314,19 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    strat_num: str, int or float, optional (default='drop')
+    strat_num: str, int or float, optional (default="drop")
         Imputing strategy for numerical columns. Choose from:
-            - 'drop': Drop rows containing missing values.
-            - 'mean': Impute with mean of column.
-            - 'median': Impute with median of column.
-            - 'knn': Impute using a K-Nearest Neighbors approach.
-            - 'most_frequent': Impute with most frequent value.
+            - "drop": Drop rows containing missing values.
+            - "mean": Impute with mean of column.
+            - "median": Impute with median of column.
+            - "knn": Impute using a K-Nearest Neighbors approach.
+            - "most_frequent": Impute with most frequent value.
             - int or float: Impute with provided numerical value.
 
-    strat_cat: str, optional (default='drop')
+    strat_cat: str, optional (default="drop")
         Imputing strategy for categorical columns. Choose from:
-            - 'drop': Drop rows containing missing values.
-            - 'most_frequent': Impute with most frequent value.
+            - "drop": Drop rows containing missing values.
+            - "most_frequent": Impute with most frequent value.
             - str: Impute with provided string.
 
     min_frac_rows: float, optional (default=0.5)
@@ -329,8 +338,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         the column is removed.
 
     missing: int, float or list, optional (default=None)
-        List of values to treat as 'missing'. None to use the default
-        values: [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf'].
+        List of values to treat as "missing". None to use the default
+        values: [None, np.NaN, np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"].
         Note that np.NaN, None, np.inf and -np.inf will always be imputed since they
         are incompatible with most estimators.
 
@@ -341,21 +350,23 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     """
 
-    def __init__(self,
-                 strat_num: Union[int, float, str] = 'drop',
-                 strat_cat: str = 'drop',
-                 min_frac_rows: float = 0.5,
-                 min_frac_cols: float = 0.5,
-                 missing: Optional[Union[int, float, str, list]] = None,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None):
+    def __init__(
+        self,
+        strat_num: Union[int, float, str] = "drop",
+        strat_cat: str = "drop",
+        min_frac_rows: float = 0.5,
+        min_frac_cols: float = 0.5,
+        missing: Optional[Union[int, float, str, list]] = None,
+        verbose: int = 0,
+        logger: Optional[Union[bool, str, callable]] = None,
+    ):
         super().__init__(verbose=verbose, logger=logger)
         self.strat_num = strat_num
         self.strat_cat = strat_cat
@@ -386,20 +397,26 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         X, y = self._prepare_input(X, y)
 
         # Check input Parameters
-        strats = ['drop', 'mean', 'median', 'knn', 'most_frequent']
+        strats = ["drop", "mean", "median", "knn", "most_frequent"]
         if isinstance(self.strat_num, str) and self.strat_num.lower() not in strats:
-            raise ValueError("Unknown strategy for the strat_num parameter, got "
-                             f"{self.strat_num}. Choose from: {', '.join(strats)}.")
+            raise ValueError(
+                "Unknown strategy for the strat_num parameter, got "
+                f"{self.strat_num}. Choose from: {', '.join(strats)}."
+            )
         if self.min_frac_rows <= 0 or self.min_frac_rows >= 1:
-            raise ValueError("Invalid value for the min_frac_rows parameter. Value "
-                             f"should be between 0 and 1, got {self.min_frac_rows}.")
+            raise ValueError(
+                "Invalid value for the min_frac_rows parameter. Value "
+                f"should be between 0 and 1, got {self.min_frac_rows}."
+            )
         if self.min_frac_cols <= 0 or self.min_frac_cols >= 1:
-            raise ValueError("Invalid value for the min_frac_cols parameter. Value "
-                             f"should be between 0 and 1, got {self.min_frac_cols}.")
+            raise ValueError(
+                "Invalid value for the min_frac_cols parameter. Value "
+                f"should be between 0 and 1, got {self.min_frac_cols}."
+            )
 
         # Set default missing list
         if self.missing is None:
-            self.missing = [np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']
+            self.missing = [np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"]
         elif not isinstance(self.missing, list):
             self.missing = [self.missing]  # Has to be an iterable for loop
 
@@ -423,20 +440,22 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             values = X[col].values.reshape(-1, 1)
 
             # Column is numerical
-            if X[col].dtype.kind in 'ifu':
+            if X[col].dtype.kind in "ifu":
                 if isinstance(self.strat_num, str):
-                    if self.strat_num.lower() == 'knn':
+                    if self.strat_num.lower() == "knn":
                         self._imputers[col] = KNNImputer().fit(values)
 
                     # Strategies: mean, median or most_frequent.
-                    elif self.strat_num.lower() != 'drop':
+                    elif self.strat_num.lower() != "drop":
                         self._imputers[col] = SimpleImputer(
-                            strategy=self.strat_num.lower()).fit(values)
+                            strategy=self.strat_num.lower()
+                        ).fit(values)
 
             # Column is categorical
-            elif self.strat_cat.lower() == 'most_frequent':
+            elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[col] = SimpleImputer(
-                    strategy=self.strat_cat.lower()).fit(values)
+                    strategy=self.strat_cat.lower()
+                ).fit(values)
 
         self._is_fitted = True
         return self
@@ -465,7 +484,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Target column corresponding to X.
 
         """
-        check_is_fitted(self, '_is_fitted')
+        check_is_fitted(self, "_is_fitted")
         X, y = self._prepare_input(X, y)
 
         self.log("Imputing missing values...", 1)
@@ -483,8 +502,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             y = y[y.index.isin(X.index)]  # Select only indices that remain
         diff = length - len(X)
         if diff > 0:
-            self.log(f" --> Dropping {diff} rows for containing less than "
-                     f"{int(self.min_frac_rows*100)}% non-missing values.", 2)
+            self.log(
+                f" --> Dropping {diff} rows for containing less than "
+                f"{int(self.min_frac_rows*100)}% non-missing values.", 2
+            )
 
         # Loop over all columns to apply strategy dependent on type
         for col in X:
@@ -492,54 +513,70 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Drop columns with too many NaN values
             nans = X[col].isna().sum()  # Number of missing values in column
-            p_nans = int(nans/len(X) * 100)  # Percentage of NaNs
-            if (len(X) - nans)/len(X) < self.min_frac_cols:
-                self.log(f" --> Dropping feature {col} for containing "
-                         f"{nans} ({p_nans}%) missing values.", 2)
+            p_nans = int(nans / len(X) * 100)  # Percentage of NaNs
+            if (len(X) - nans) / len(X) < self.min_frac_cols:
+                self.log(
+                    f" --> Dropping feature {col} for containing "
+                    f"{nans} ({p_nans}%) missing values.", 2
+                )
                 X.drop(col, axis=1, inplace=True)
                 continue  # Skip to side column
 
             # Column is numerical and contains missing values
-            if X[col].dtype.kind in 'ifu' and nans > 0:
+            if X[col].dtype.kind in "ifu" and nans > 0:
                 if not isinstance(self.strat_num, str):
-                    self.log(f" --> Imputing {nans} missing values with number "
-                             f"{str(self.strat_num)} in feature {col}.", 2)
+                    self.log(
+                        f" --> Imputing {nans} missing values with number "
+                        f"{str(self.strat_num)} in feature {col}.", 2
+                    )
                     X[col].replace(np.NaN, self.strat_num, inplace=True)
 
-                elif self.strat_num.lower() == 'drop':
+                elif self.strat_num.lower() == "drop":
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(f" --> Dropping {nans} rows due to missing "
-                             f"values in feature {col}.", 2)
+                    self.log(
+                        f" --> Dropping {nans} rows due to missing "
+                        f"values in feature {col}.", 2
+                    )
 
-                elif self.strat_num.lower() == 'knn':
-                    self.log(f" --> Imputing {nans} missing values using "
-                             f"the KNN imputer in feature {col}.", 2)
+                elif self.strat_num.lower() == "knn":
+                    self.log(
+                        f" --> Imputing {nans} missing values using "
+                        f"the KNN imputer in feature {col}.", 2
+                    )
                     X[col] = self._imputers[col].transform(values)
 
                 else:  # Strategies: mean, median or most_frequent.
-                    self.log(f" --> Imputing {nans} missing values with "
-                             f"{self.strat_num.lower()} in feature {col}.", 2)
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"{self.strat_num.lower()} in feature {col}.", 2
+                    )
                     X[col] = self._imputers[col].transform(values)
 
             # Column is categorical and contains missing values
             elif nans > 0:
-                if self.strat_cat.lower() not in ['drop', 'most_frequent']:
-                    self.log(f" --> Imputing {nans} missing values with "
-                             f"'{self.strat_cat}' in feature {col}.", 2)
+                if self.strat_cat.lower() not in ["drop", "most_frequent"]:
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"{self.strat_cat} in feature {col}.", 2
+                    )
                     X[col].replace(np.NaN, self.strat_cat, inplace=True)
 
-                elif self.strat_cat.lower() == 'drop':
+                elif self.strat_cat.lower() == "drop":
                     X.dropna(subset=[col], axis=0, inplace=True)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
-                    self.log(f" --> Dropping {nans} rows due to missing "
-                             f"values in feature {col}.", 2)
+                    self.log(
+                        f" --> Dropping {nans} rows due to missing "
+                        f"values in feature {col}.", 2
+                    )
 
-                elif self.strat_cat.lower() == 'most_frequent':
-                    self.log(f" --> Imputing {nans} missing values with "
-                             f"most_frequent in feature {col}.", 2)
+                elif self.strat_cat.lower() == "most_frequent":
+                    self.log(
+                        f" --> Imputing {nans} missing values with "
+                        f"most_frequent in feature {col}.", 2
+                    )
                     X[col] = self._imputers[col].transform(values)
 
         return variable_return(X, y)
@@ -560,7 +597,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    strategy: str, optional (default='LeaveOneOut')
+    strategy: str, optional (default="LeaveOneOut")
         Type of encoding to use for high cardinality features. Choose from one of
         the estimators available in the category-encoders package except for:
             - OneHotEncoder: Use the `max_onehot` parameter.
@@ -581,9 +618,9 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     **kwargs
@@ -591,13 +628,15 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
-    def __init__(self,
-                 strategy: str = 'LeaveOneOut',
-                 max_onehot: Optional[int] = 10,
-                 frac_to_other: Optional[float] = None,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None,
-                 **kwargs):
+    def __init__(
+        self,
+        strategy: str = "LeaveOneOut",
+        max_onehot: Optional[int] = 10,
+        frac_to_other: Optional[float] = None,
+        verbose: int = 0,
+        logger: Optional[Union[bool, str, callable]] = None,
+        **kwargs,
+    ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
         self.max_onehot = max_onehot
@@ -630,36 +669,40 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         X, y = self._prepare_input(X, y)
 
         # Check Parameters
-        if self.strategy.lower().endswith('encoder'):
+        if self.strategy.lower().endswith("encoder"):
             self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
         if self.strategy.lower() not in ENCODER_TYPES:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {' '.join(ENCODER_TYPES)}.")
+                f"Choose from: {', '.join(ENCODER_TYPES)}."
+            )
         strategy = ENCODER_TYPES[self.strategy.lower()]
 
         if self.max_onehot is None:
             self.max_onehot = 0
         elif self.max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
-            raise ValueError("Invalid value for the max_onehot parameter."
-                             f"Value should be >= 0, got {self.max_onehot}.")
+            raise ValueError(
+                "Invalid value for the max_onehot parameter."
+                f"Value should be >= 0, got {self.max_onehot}."
+            )
         if self.frac_to_other:
             if self.frac_to_other <= 0 or self.frac_to_other >= 1:
                 raise ValueError(
                     "Invalid value for the frac_to_other parameter. Value "
-                    f"should be between 0 and 1, got {self.frac_to_other}.")
+                    f"should be between 0 and 1, got {self.frac_to_other}."
+                )
 
         self.log("Fitting Encoder...", 1)
 
         for col in X:
             self._to_other[col] = []
-            if X[col].dtype.kind not in 'ifu':  # If column is categorical
-                # Group uncommon classes into 'other'
+            if X[col].dtype.kind not in "ifu":  # If column is categorical
+                # Group uncommon classes into "other"
                 if self.frac_to_other:
                     for category, count in X[col].value_counts().items():
                         if count < self.frac_to_other * len(X[col]):
                             self._to_other[col].append(category)
-                            X[col].replace(category, 'other', inplace=True)
+                            X[col].replace(category, "other", inplace=True)
 
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
@@ -673,16 +716,14 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._encoders[col] = OneHotEncoder(
-                        handle_missing='error',
-                        handle_unknown='error',
-                        use_cat_names=True
+                        handle_missing="error",
+                        handle_unknown="error",
+                        use_cat_names=True,
                     ).fit(values)
 
                 else:
                     self._encoders[col] = strategy(
-                        handle_missing='error',
-                        handle_unknown='error',
-                        **self.kwargs
+                        handle_missing="error", handle_unknown="error", **self.kwargs
                     ).fit(values, y)
 
         self._is_fitted = True
@@ -706,16 +747,16 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             Encoded dataframe.
 
         """
-        check_is_fitted(self, '_is_fitted')
+        check_is_fitted(self, "_is_fitted")
         X, y = self._prepare_input(X, y)
 
         self.log("Encoding categorical columns...", 1)
 
         for col in X:
-            if X[col].dtype.kind not in 'ifu':  # If column is categorical
-                # Convert classes to 'other'
+            if X[col].dtype.kind not in "ifu":  # If column is categorical
+                # Convert classes to "other"
                 for category in self._to_other[col]:
-                    X[col].replace(category, 'other', inplace=True)
+                    X[col].replace(category, "other", inplace=True)
 
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
@@ -726,13 +767,15 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Get index of the column
                 idx = X.columns.get_loc(col)
 
-                self.log(f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding"
-                         f" feature {col}. Contains {n_unique} unique classes.", 2)
+                self.log(
+                    f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding"
+                    f" feature {col}. Contains {n_unique} unique classes.", 2
+                )
                 # Perform encoding type dependent on number of unique values
-                if self._encoders[col].__class__.__name__[:-7] == 'Label':
+                if self._encoders[col].__class__.__name__[:-7] == "Label":
                     X[col] = self._encoders[col].transform(values)
 
-                elif self._encoders[col].__class__.__name__[:-7] == 'OneHot':
+                elif self._encoders[col].__class__.__name__[:-7] == "OneHot":
                     onehot_cols = self._encoders[col].transform(values)
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
@@ -745,7 +788,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     X = X.drop(col, axis=1)  # Drop the original column
                     # Insert the new columns at old location
                     for i, column in enumerate(rest_cols):
-                        X.insert(idx+i, column, rest_cols[column])
+                        X.insert(idx + i, column, rest_cols[column])
 
         return X
 
@@ -758,10 +801,10 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    strategy: int, float or str, optional (default='drop')
+    strategy: int, float or str, optional (default="drop")
         Strategy to apply on the outliers. Choose from:
-            - 'drop': Drop any row with outliers.
-            - 'min_max': Replace the outlier with the min or max of the column.
+            - "drop": Drop any row with outliers.
+            - "min_max": Replace the outlier with the min or max of the column.
             - Any numerical value with which to replace the outliers.
 
     max_sigma: int or float, optional (default=3)
@@ -779,19 +822,21 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     """
 
-    def __init__(self,
-                 strategy: Union[int, float, str] = 'drop',
-                 max_sigma: Union[int, float] = 3,
-                 include_target: bool = False,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None):
+    def __init__(
+        self,
+        strategy: Union[int, float, str] = "drop",
+        max_sigma: Union[int, float] = 3,
+        include_target: bool = False,
+        verbose: int = 0,
+        logger: Optional[Union[bool, str, callable]] = None,
+    ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
         self.max_sigma = max_sigma
@@ -825,30 +870,36 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         # Check Parameters
         if isinstance(self.strategy, str):
-            if self.strategy.lower() not in ['drop', 'min_max']:
-                raise ValueError("Invalid value for the strategy parameter."
-                                 f"Choose from: 'drop', 'min_max'.")
+            if self.strategy.lower() not in ["drop", "min_max"]:
+                raise ValueError(
+                    "Invalid value for the strategy parameter."
+                    f"Choose from: 'drop', 'min_max'."
+                )
         if self.max_sigma <= 0:
-            raise ValueError("Invalid value for the max_sigma parameter."
-                             f"Value should be > 0, got {self.max_sigma}.")
+            raise ValueError(
+                "Invalid value for the max_sigma parameter."
+                f"Value should be > 0, got {self.max_sigma}."
+            )
 
-        self.log('Handling outliers...', 1)
+        self.log("Handling outliers...", 1)
 
         # Prepare dataset (merge with y and exclude categorical columns)
         objective = merge(X, y) if self.include_target and y is not None else X
-        objective = objective.select_dtypes(exclude=['category', 'object'])
+        objective = objective.select_dtypes(exclude=["category", "object"])
 
         # Get z-scores
-        z_scores = zscore(objective, nan_policy='propagate')
+        z_scores = zscore(objective, nan_policy="propagate")
 
         if not isinstance(self.strategy, str):
             cond = np.abs(z_scores) > self.max_sigma
             objective.mask(cond, self.strategy, inplace=True)
             if cond.sum() > 0:
-                self.log(f" --> Replacing {cond.sum()} outliers with "
-                         f"value {self.strategy}.", 2)
+                self.log(
+                    f" --> Replacing {cond.sum()} outliers with "
+                    f"value {self.strategy}.", 2
+                )
 
-        elif self.strategy.lower() == 'min_max':
+        elif self.strategy.lower() == "min_max":
             counts = 0
             for i, col in enumerate(objective):
                 # Replace outliers with NaN and after that with max,
@@ -866,10 +917,12 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
                 counts += cond1.sum() + cond2.sum()
 
             if counts > 0:
-                self.log(f" --> Replacing {counts} outliers with the min "
-                         "or max of the column.", 2)
+                self.log(
+                    f" --> Replacing {counts} outliers with the min "
+                    "or max of the column.", 2
+                )
 
-        elif self.strategy.lower() == 'drop':
+        elif self.strategy.lower() == "drop":
             ix = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
             delete = len(ix) - ix.sum()  # Number of False values in index
             if delete > 0:
@@ -902,7 +955,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    strategy: str, optional (default='ADASYN')
+    strategy: str, optional (default="ADASYN")
         Type of algorithm to use for oversampling or undersampling. Choose from one
         of the estimators available in the imbalanced-learn package.
 
@@ -922,9 +975,9 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn't save a logging file.
+        - If None: Doesn"t save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
     random_state: int or None, optional (default=None)
@@ -936,17 +989,18 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
-    def __init__(self,
-                 strategy: str = 'ADASYN',
-                 n_jobs: int = 1,
-                 verbose: int = 0,
-                 logger: Optional[Union[bool, str, callable]] = None,
-                 random_state: Optional[int] = None,
-                 **kwargs):
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         logger=logger,
-                         random_state=random_state)
+    def __init__(
+        self,
+        strategy: str = "ADASYN",
+        n_jobs: int = 1,
+        verbose: int = 0,
+        logger: Optional[Union[bool, str, callable]] = None,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ):
+        super().__init__(
+            n_jobs=n_jobs, verbose=verbose, logger=logger, random_state=random_state
+        )
         self.strategy = strategy
         self.kwargs = kwargs
 
@@ -982,7 +1036,8 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         if self.strategy.lower() not in BALANCER_TYPES:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {' '.join(BALANCER_TYPES)}.")
+                f"Choose from: {', '.join(BALANCER_TYPES)}."
+            )
         strategy = BALANCER_TYPES[self.strategy.lower()]
 
         # Save index and columns for later
@@ -997,14 +1052,14 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         for key, value in self.mapping.items():
             counts[key] = np.sum(y == value)
 
-        if 'over_sampling' in strategy.__module__:
+        if "over_sampling" in strategy.__module__:
             self.log(f"Oversampling with {strategy.__name__}...", 1)
         else:
             self.log(f"Undersampling with {strategy.__name__}...", 1)
         estimator = strategy(**self.kwargs)
 
         # Add n_jobs or random_state if its one of the balancer's parameters
-        for param in ['n_jobs', 'random_state']:
+        for param in ["n_jobs", "random_state"]:
             if param in estimator.get_params():
                 estimator.set_params(**{param: getattr(self, param)})
 

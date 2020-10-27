@@ -4,7 +4,7 @@ site_author: tvdboom
 site_description: Documentation for ATOM, a Python AutoML package for fast exploration and experimentation of supervised machine learning pipelines.
 
 repo_url: https://github.com/tvdboom/ATOM
-edit_uri: ''
+edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
 theme: lumen
@@ -27,7 +27,7 @@ nav:
         - ATOMModel: API/ATOM/atommodel.md
     - Data cleaning:
          - Scaler: API/data_cleaning/scaler.md
-         - StandardCleaner: API/data_cleaning/standard_cleaner.md
+         - Cleaner: API/data_cleaning/cleaner.md
          - Imputer: API/data_cleaning/imputer.md
          - Encoder: API/data_cleaning/encoder.md
          - Outliers: API/data_cleaning/outliers.md
@@ -114,12 +114,12 @@ nav:
         - decision_plot: API/plots/decision_plot.md
 - Examples:
     - Binary classification: examples/binary_classification/binary_classification.md
-    - Multiclass_classification: examples/multiclass_classification/multiclass_classification.md
+    - Multiclass classification: examples/multiclass_classification/multiclass_classification.md
     - Regression: examples/regression/regression.md
     - Successive halving: examples/successive_halving/successive_halving.md
     - Train sizing: examples/train_sizing/train_sizing.md
     - Feature engineering: examples/feature_engineering/feature_engineering.md
-    - Multi-metric: examples/multi_metric/multi_metric.md
+    - Multi-metric runs: examples/multi_metric/multi_metric.md
     - Early stopping: examples/early_stopping/early_stopping.md
     - Calibration: examples/calibration/calibration.md
     - Utilities: examples/utilities/utilities.md

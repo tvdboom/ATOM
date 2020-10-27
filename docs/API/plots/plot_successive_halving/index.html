@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -542,7 +542,7 @@
                                figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2413">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot of the models' scores per iteration of the successive halving. Only
+Plot of the models" scores per iteration of the successive halving. Only
  available if the models were fitted using <a href="../../../user_guide/#successive-halving">successive halving</a>.
 <br /><br />
 <table width="100%">
@@ -582,8 +582,8 @@ Whether to render the plot.
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.successive_halving(['bag', 'adab', 'et', 'lgb'], metric='accuracy', bagging=5)
-atom.plot_successive_halving(filename='plot_successive_halving')
+atom.successive_halving([&quot;bag&quot;, &quot;adab&quot;, &quot;et&quot;, &quot;lgb&quot;], metric=&quot;accuracy&quot;, bagging=5)
+atom.plot_successive_halving(filename=&quot;plot_successive_halving&quot;)
 </code></pre>
 
 <div align="center">

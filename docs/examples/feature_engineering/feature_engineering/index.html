@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -550,7 +550,7 @@ from atom import ATOMClassifier
 </code></pre>
 
 <pre><code class="python"># Load data
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv(&quot;./datasets/weatherAUS.csv&quot;)
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -647,11 +647,11 @@ X.sample(frac=1).iloc[:5, :8]
 <h2 id="run-the-pipeline">Run the pipeline</h2>
 <pre><code class="python"># Initiate ATOM and apply data cleaning
 atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;remove&quot;, min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
 # Let's see how a LightGBM model performs without adding additional features
-atom.run('LGB', metric='auc')
+atom.run(&quot;LGB&quot;, metric=&quot;auc&quot;)
 atom.scoring()
 </code></pre>
 
@@ -670,7 +670,7 @@ atom.plot_feature_importance(show=10)
 <pre><code class="python">atom.verbose = 2  # Increase verbosity to see the output
 
 # Create 100 new features using DFS
-atom.feature_generation(strategy='dfs', n_features=100, operators=['add', 'sub', 'log', 'sqrt'])
+atom.feature_generation(strategy=&quot;dfs&quot;, n_features=100, operators=[&quot;add&quot;, &quot;sub&quot;, &quot;log&quot;, &quot;sqrt&quot;])
 </code></pre>
 
 <pre><code>Fitting FeatureGenerator...
@@ -690,7 +690,7 @@ atom.warnings = False
 </code></pre>
 
 <pre><code class="python"># We can use the impute method again
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;remove&quot;, min_frac_rows=0.8)
 </code></pre>
 
 <pre><code>Fitting Imputer...
@@ -703,7 +703,7 @@ Imputing missing values...
 </code></pre>
 <pre><code class="python"># 100 new features may be to much...
 # Let's check for multicollinearity and use RFECV to reduce the number even further
-atom.feature_selection(strategy='RFECV', solver='lgb', n_features=30, scoring='auc', max_correlation=0.98)
+atom.feature_selection(strategy=&quot;RFECV&quot;, solver=&quot;lgb&quot;, n_features=30, scoring=&quot;auc&quot;, max_correlation=0.98)
 </code></pre>
 
 <pre><code>Fitting FeatureSelector...
@@ -1112,7 +1112,7 @@ atom.plot_rfecv()
 
 <p><img alt="png" src="../output_13_0.png" /></p>
 <pre><code class="python"># Let's see how the model performs now
-atom.run('LGB')
+atom.run(&quot;LGB&quot;)
 </code></pre>
 
 <pre><code>Running pipeline ============================= &gt;&gt;
@@ -1141,14 +1141,14 @@ atom.plot_feature_importance(show=10)
 <p><img alt="png" src="../output_15_0.png" /></p>
 <p><strong>Lets try the same using Genetic Feature Generation</strong></p>
 <pre><code class="python">atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, warnings=False, random_state=1)
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;remove&quot;, min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
 # Change verbosity to print extended info
 atom.verbose = 2
 
 # Create new features using Genetic Programming
-atom.feature_generation(strategy='genetic', n_features=20, generations=10, population=2000)
+atom.feature_generation(strategy=&quot;genetic&quot;, n_features=20, generations=10, population=2000)
 </code></pre>
 
 <pre><code>Fitting FeatureGenerator...
@@ -1231,7 +1231,7 @@ atom.genetic_features
 </div>
 
 <pre><code class="python"># And fit the model again
-atom.run('LGB', metric='auc')
+atom.run(&quot;LGB&quot;, metric=&quot;auc&quot;)
 </code></pre>
 
 <pre><code>Running pipeline ============================= &gt;&gt;

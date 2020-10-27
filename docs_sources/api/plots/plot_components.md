@@ -46,7 +46,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy='PCA', n_features=11)
+atom.feature_selection(strategy="PCA", n_features=11)
 atom.plot_components()
 ```
 <div align="center">

@@ -64,8 +64,8 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(strategy='PCA', n_features=6)
-atom.run(['Tree', 'Bag'], metric='precision')
+atom.feature_selection(strategy="PCA", n_features=6)
+atom.run(["Tree", "Bag"], metric="precision")
 atom.Tree.plot_partial_dependence(features=[0, 1, (1, 3)])
 ```
 <div align="center">

@@ -6,14 +6,11 @@
                              n_jobs=1, warnings=True, verbose=0, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L208">[source]</a></div></pre>
 <div style="padding-left:3%">
-ATOMRegressor is ATOM's wrapper for regression tasks. Use
- this class to easily apply all data transformations and model management provided by
- the package on a given dataset. Note that contrary to scikit-learn's API, the
- ATOMRegressor object already contains the dataset on which we want to perform the
- analysis. Calling a method will automatically apply it on the dataset it contains.
- The class initializer always calls [StandardCleaner](../data_cleaning/standard_cleaner.md)
- with default parameters. The following data types can't (yet) be handled properly
- and are therefore removed: 'datetime64', 'datetime64[ns]', 'timedelta[ns]'. 
+ATOMRegressor is ATOM's wrapper for regression tasks. Use this class to easily apply
+ all data transformations and model management provided by the package on a given
+ dataset. Note that contrary to scikit-learn's API, the ATOMRegressor object already
+ contains the dataset on which we want to perform the analysis. Calling a method will
+ automatically apply it on the dataset it contains.
  
 You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#plots)
  and call any [`model`](../../../user_guide/#models) from the ATOMRegressor instance.
@@ -39,8 +36,8 @@ Feature set with shape=(n_features, n_samples). If no y is provided, the
 y: int, str, list, tuple,  np.array or pd.Series<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
-<li>If str: Name of the target column in X</li>
-<li>Else: Data target column with shape=(n_samples,)</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Data target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>n_rows: int or float, optional (default=1)</strong>
@@ -56,7 +53,7 @@ y: int, str, list, tuple,  np.array or pd.Series<br>
 <li>If <=1: Fraction of the dataset to include in the test set.</li>
 <li>If >1: Number of rows to include in the test set.</li>
 </ul>
-Is ignored if the train and test set are provided.
+This parameter is ignored if the train and test set are provided.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -81,8 +78,8 @@ Verbosity level of the class. Possible values are:
 <strong>warnings: bool or str, optional (default=True)</strong>
 <blockquote>
 <ul>
-<li>If True: Default warning action (equal to 'default' when string).</li>
-<li>If False: Suppress all warnings (equal to 'ignore' when string).</li>
+<li>If True: Default warning action (equal to "default" when string).</li>
+<li>If False: Suppress all warnings (equal to "ignore" when string).</li>
 <li>If str: One of the possible actions in python's warnings environment.</li>
 </ul>
 Note that changing this parameter will affect the `PYTHONWARNINGS` environment.<br>
@@ -94,7 +91,7 @@ Note that changing this parameter will affect the `PYTHONWARNINGS` environment.<
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' for default name.</li>
+<li>If str: Name of the logging file. "auto" for default name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 Note that warnings will not be saved to the logger in any case.
@@ -226,7 +223,7 @@ Model subclass that performed best on the test set.
 <strong>pipeline: pd.Series</strong>
 <blockquote>
 Series containing all classes fitted in the pipeline. Use this attribute only to
- access the individual classes. To visualize the pipeline, use `atom`'s \_\_repr__
+ access the individual classes. To visualize the pipeline, use `atom`"s \_\_repr__
  or [plot_pipeline](../../plots/plot_pipeline).
 </blockquote>
 <strong>results: pd.DataFrame</strong>
@@ -308,7 +305,12 @@ inspect the pipeline.
 
 <tr>
 <td><a href="#save">save</a></td>
-<td>Save the ATOMRegressor instance to a pickle file.</td>
+<td>Save the instance to a pickle file.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#save-data">save_data</a></td>
+<td>Save data to a csv file.</td>
 </tr>
 
 <tr>
@@ -326,7 +328,7 @@ inspect the pipeline.
 
 
 <a name="clear"></a>
-<pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models='all')
+<pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models="all")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Removes all traces of a model in the pipeline (except for the `errors`
@@ -338,9 +340,9 @@ Removes all traces of a model in the pipeline (except for the `errors`
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list or tuple, optional (default='all')</strong>
+<strong>models: str, list or tuple, optional (default="all")</strong>
 <blockquote>
-Model(s) to clear from the pipeline. If 'all', clear all models.
+Model(s) to clear from the pipeline. If "all", clear all models.
 </blockquote>
 </tr>
 </table>
@@ -373,7 +375,7 @@ Minimum verbosity level in order to print the message.
 
 
 <a name="report"></a>
-<pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset='dataset', n_rows=None, filename=None)
+<pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset="dataset", n_rows=None, filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
 <div style="padding-left:3%">
 Get an extensive profile analysis of the data. The report is rendered
@@ -384,7 +386,7 @@ Get an extensive profile analysis of the data. The report is rendered
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>df: str, optional (default='dataset')</strong>
+<strong>df: str, optional (default="dataset")</strong>
 <blockquote>
 Name of the data set to get the profile from.
 </blockquote>
@@ -416,7 +418,7 @@ Save the instance to a pickle file. Remember that the class contains the complet
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. If None or 'auto', use the name of the class.
+Name to save the file with. If None or "auto", use the name of the class.
 </blockquote>
 <strong>save_data: bool, optional (default=True)</strong>
 <blockquote>
@@ -429,8 +431,32 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <br>
 
 
+<a name="save-data"></a>
+<pre><em>method</em> <strong style="color:#008AB8">save_data</strong>(filename=None, dataset="dataset")
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L220">[source]</a></div></pre>
+<div style="padding-left:3%">
+Save data to a csv file.
+<br><br>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>filename: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the saved file. None to use default name.
+</blockquote>
+<strong>dataset: str, optional (default="dataset")</strong>
+<blockquote>
+Data set to save.
+</blockquote>
+</tr>
+</table>
+</div>
+<br>
+
+
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset='test')
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
 Returns the scores of the models for a specific metric. If a model
@@ -445,11 +471,11 @@ Returns the scores of the models for a specific metric. If a model
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
 Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules).
- If None, returns the models' final results (ignores the `dataset` parameter).
+ If None, returns the models" final results (ignores the `dataset` parameter).
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train' or 'test'.
+Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
 </tr>
 </table>
@@ -469,9 +495,9 @@ Print out a list of basic information on the dataset.
 ## Data cleaning
 ----------------
 
-ATOM provides data cleaning methods to scale your features and handle missing values,
- categorical columns and outliers. Calling on one of them will automatically apply
- the method on the dataset in the pipeline.
+ATOMRegressor provides data cleaning methods to scale your features and handle
+ missing values, categorical columns and outliers. Calling on one of them will
+ automatically apply the method on the dataset in the pipeline.
 
 !!! tip
     Use the [report](#report) method to examine the data and help you
@@ -482,6 +508,11 @@ ATOM provides data cleaning methods to scale your features and handle missing va
 <tr>
 <td><a href="#scale">scale</a></td>
 <td>Scale all the features to mean=1 and std=0.</td>
+</tr>
+
+<tr>
+<td><a href="#clean">clean</a></td>
+<td>Applies standard data cleaning steps on the dataset.</td>
 </tr>
 
 <tr>
@@ -511,8 +542,28 @@ Scale the features to mean=1 and std=0.
 <br /><br />
 
 
+<a name="clean"></a>
+<pre><em>method</em> <strong style="color:#008AB8">clean</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
+             minimum_cardinality=True, missing_target=True, map_target=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L377">[source]</a></div></pre>
+<div style="padding-left:3%">
+Applies standard data cleaning steps on the dataset. These steps can include:
+
+* Strip categorical features from white spaces.
+* Removing columns with prohibited data types.
+* Removing categorical columns with maximal cardinality.
+* Removing columns with minimum cardinality.
+* Removing rows with missing values in the target column.
+* Encode the target column.
+
+See [Cleaner](../data_cleaning/cleaner.md) for a description of the parameters.
+
+</div>
+<br />
+
+
 <a name="impute"></a>
-<pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
+<pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L377">[source]</a></div></pre>
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
@@ -525,7 +576,7 @@ Handle missing values according to the selected strategy. Also removes rows and
 
 
 <a name="encode"></a>
-<pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy='LeaveOneOut', max_onehot=10, frac_to_other=None)
+<pre><em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut", max_onehot=10, frac_to_other=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L413">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the
@@ -535,9 +586,9 @@ Perform encoding of categorical features. The encoding type depends on the
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>
-Also replaces classes with low occurrences with the value 'other' in
+Also replaces classes with low occurrences with the value "other" in
  order to prevent too high cardinality. Categorical features are defined as
- all columns whose dtype.kind not in 'ifu'. Will raise an error if it encounters
+ all columns whose dtype.kind not in "ifu". Will raise an error if it encounters
  missing values or unknown classes when transforming. The encoder is fitted only
  on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
  for a description of the parameters.
@@ -546,7 +597,7 @@ Also replaces classes with low occurrences with the value 'other' in
 
 
 <a name="outliers"></a>
-<pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy='drop', max_sigma=3, include_target=False) 
+<pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy="drop", max_sigma=3, include_target=False) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L447">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the training set. Outliers are defined as values that
@@ -582,7 +633,7 @@ To further pre-process the data you can create new non-linear features transform
 
 
 <a name="feature-generation"></a>
-<pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy='DFS', n_features=None, generations=20, population=500, operators=None)
+<pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS", n_features=None, generations=20, population=500, operators=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L504">[source]</a></div></pre>
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
@@ -609,13 +660,13 @@ Remove features according to the selected strategy. Ties between
 
 !!! note
     <ul>
-    <li>When strategy='univariate' and solver=None, [f_regression](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html)
+    <li>When strategy="univariate" and solver=None, [f_regression](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_regression.html)
         will be used as default solver.</li>
-    <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and the solver is one of 
+    <li>When strategy is one of "SFM", "RFE" or "RFECV" and the solver is one of 
         ATOM's models, the algorithm will automatically select the classifier (no need to add `_reg` to the solver).</li>
-    <li>When strategy is one of 'SFM', 'RFE' or 'RFECV' and solver=None, ATOM will
+    <li>When strategy is one of "SFM", "RFE" or "RFECV" and solver=None, ATOM will
          use the winning model (if it exists) as solver.</li>
-    <li>When strategy='RFECV', ATOM will use the metric in the pipeline (if it exists)
+    <li>When strategy="RFECV", ATOM will use the metric in the pipeline (if it exists)
         as the scoring parameter (only if not specified manually).</li>
 
 </div>
@@ -629,9 +680,11 @@ Remove features according to the selected strategy. Ties between
 The training methods are where the models are fitted to the data and their
  performance is evaluated according to the selected metric. ATOMRegressor contains
  three methods to call the training classes from the ATOM package. All relevant
- attributes and methods from the training classes are attached to ATOMRegressor for
- convenience. These include the errors, winner and results attributes, the `models`,
- and the [prediction](../../../user_guide/#predicting) and [plotting](#plots) methods.
+ attributes and methods from the training classes are attached to ATOMClassifier for
+ convenience. These include the errors, winner and results attributes, the
+ [`models`](../../../user_guide/#models), and the
+ [prediction](../../../user_guide/#predicting) and
+ [plotting](../../../user_guide/#plots) methods.
 
 
 <table>
@@ -695,18 +748,18 @@ from atom import ATOMRegressor
 X, y = load_boston(return_X_y=True)
 
 # Initialize class
-atom = ATOMRegressor(X, y, logger='auto', n_jobs=2, verbose=2)
+atom = ATOMRegressor(X, y, logger="auto", n_jobs=2, verbose=2)
 
 # Apply data cleaning methods
-atom.outliers(strategy='min_max', max_sigma=2, include_target=True)
+atom.outliers(strategy="min_max", max_sigma=2, include_target=True)
 
 # Fit the models to the data
 atom.run(
-    models=['OLS', 'BR', 'CatB'],
-    metric='MSE',
+    models=["OLS", "BR", "CatB"],
+    metric="MSE",
     n_calls=25,
     n_initial_points=10,
-    bo_params={'cv': 1},
+    bo_params={"cv": 1},
     bagging=4
 )
 
@@ -715,17 +768,17 @@ print(f"The winning model is: {atom.winner.name}")
 print(atom.results)
 
 # Make some plots
-atom.palette = 'Blues'
-atom.plot_errors(figsize=(9, 6), filename='errors.png')  
-atom.CatB.plot_feature_importance(filename='catboost_feature_importance.png')
+atom.palette = "Blues"
+atom.plot_errors(figsize=(9, 6), filename="errors.png")  
+atom.CatB.plot_feature_importance(filename="catboost_feature_importance.png")
 
 # Run an extra model
 atom.run(
-    models='MLP',
-    metric='MSE',
+    models="MLP",
+    metric="MSE",
     n_calls=25,
     n_initial_points=10,
-    bo_params={'cv': 1},
+    bo_params={"cv": 1},
     bagging=4
 )
 

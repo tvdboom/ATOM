@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -558,25 +558,25 @@
 from atom import ATOMClassifier
 
 X, y = load_breast_cancer(return_X_y)
-atom = ATOMClassifier(X, y, logger='auto', n_jobs=2, verbose=2)
+atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
 </code></pre>
 <p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<pre><code>atom.impute(strat_num='knn', strat_cat='most_frequent', min_frac_rows=0.1)  
-atom.encode(strategy='Target', max_onehot=8, frac_to_other=0.05)  
-atom.feature_selection(strategy='PCA', n_features=12)
+<pre><code>atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
+atom.encode(strategy="Target", max_onehot=8, frac_to_other=0.05)  
+atom.feature_selection(strategy="PCA", n_features=12)
 </code></pre>
 <p>Train and evaluate the models you want to compare:</p>
 <pre><code>atom.run(
-    models=['LR', 'LDA', 'XGB', 'lSVM'],
-    metric='f1',
+    models=["LR", "LDA", "XGB", "lSVM"],
+    metric="f1",
     n_calls=25,
     n_initial_points=10,
     bagging=4
 )
 </code></pre>
 <p>Make plots to analyze the results: </p>
-<pre><code>atom.plot_bagging(figsize=(9, 6), filename='bagging_results.png')  
-atom.LDA.plot_confusion_matrix(normalize=True, filename='cm.png')
+<pre><code>atom.plot_bagging(figsize=(9, 6), filename="bagging_results.png")  
+atom.LDA.plot_confusion_matrix(normalize=True, filename="cm.png")
 </code></pre></div>
             </div>
         </div>

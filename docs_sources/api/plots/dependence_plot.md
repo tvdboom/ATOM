@@ -2,7 +2,7 @@
 -----------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">dependence_plot</strong>(models=None, index='rank(1)', target=1,
+<pre><em>method</em> <strong style="color:#008AB8">dependence_plot</strong>(models=None, index="rank(1)", target=1,
                        title=None, figsize=(10, 6), filename=None, display=True, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2167">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -24,11 +24,11 @@ Name of the models to plot. If None, all models in the pipeline are selected. No
  that selecting multiple models will raise an exception. To avoid this, call the
  plot from a `model`.
 </blockquote>
-<strong>index: int, list, tuple or None, optional (default='rank(1)')</strong>
+<strong>index: int, list, tuple or None, optional (default="rank(1)")</strong>
 <blockquote>
 If this is an int, it is the index of the feature to plot. If this is a
  string it is either the name of the feature to plot, or it can have the
- form 'rank(int)' to specify the feature with that rank (ordered by mean
+ form "rank(int)" to specify the feature with that rank (ordered by mean
  absolute SHAP value over all the samples).
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
@@ -70,8 +70,8 @@ Additional keyword arguments for shap's dependence_plot.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run('RF')
-atom.dependence_plot(index='rank(3)')
+atom.run("RF")
+atom.dependence_plot(index="rank(3)")
 ```
 <div align="center">
     <img src="../../../img/plots/dependence_plot.png" alt="dependence_plot" width="700" height="420"/>

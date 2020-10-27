@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -542,7 +542,7 @@
 <h1 id="encoder">Encoder</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy='LeaveOneOut', max_onehot=10,
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L548">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -557,14 +557,14 @@ Perform encoding of categorical features. The encoding type depends on the numbe
  order to prevent too high cardinality. Categorical features are defined as
  all columns whose dtype.kind not in <code>ifu</code>. Will raise an error if it encounters
  missing values or unknown classes when transforming. This class can be accessed
- from <code>atom</code> through the <a href="../../ATOM/atomclassifier/#atomclassifier-encode">encode</a>
+ from <code>atom</code> through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
  method. Read more in the <a href="../../../user_guide/#encoding-categorical-features">user guide</a>.
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default='LeaveOneOut')</strong>
+<strong>strategy: str, optional (default="LeaveOneOut")</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
  estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
@@ -598,7 +598,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 </blockquote>
@@ -613,7 +613,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use <code>atom</code>'s <a href="../../ATOM/atomclassifier/#data-attributes">categorical</a> attribute
+<p>Use <code>atom</code>"s <a href="../../ATOM/atomclassifier/#data-attributes">categorical</a> attribute
 for a list of the categorical columns in the dataset.</p>
 </div>
 <p><br></p>
@@ -853,13 +853,13 @@ Transformed feature set.
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.encode(strategy='CatBoost', max_onehot=5)
+atom.encode(strategy=&quot;CatBoost&quot;, max_onehot=5)
 </code></pre>
 
 <p>or</p>
 <pre><code class="python">from atom.data_cleaning import Encoder
 
-encoder = Encoder(strategy='CatBoost', max_onehot=5)
+encoder = Encoder(strategy=&quot;CatBoost&quot;, max_onehot=5)
 encoder.fit(X_train, y_train)
 X = encoder.transform(X)
 </code></pre></div>

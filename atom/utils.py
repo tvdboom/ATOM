@@ -34,20 +34,34 @@ from category_encoders.woe import WOEEncoder
 
 # Balancers
 from imblearn.under_sampling import (
-    ClusterCentroids, CondensedNearestNeighbour, EditedNearestNeighbours,
-    RepeatedEditedNearestNeighbours, AllKNN, InstanceHardnessThreshold,
-    NearMiss, NeighbourhoodCleaningRule, OneSidedSelection, RandomUnderSampler,
-    TomekLinks
+    ClusterCentroids,
+    CondensedNearestNeighbour,
+    EditedNearestNeighbours,
+    RepeatedEditedNearestNeighbours,
+    AllKNN,
+    InstanceHardnessThreshold,
+    NearMiss,
+    NeighbourhoodCleaningRule,
+    OneSidedSelection,
+    RandomUnderSampler,
+    TomekLinks,
 )
 from imblearn.over_sampling import (
-    ADASYN, BorderlineSMOTE, KMeansSMOTE, RandomOverSampler, SMOTE, SMOTENC, SVMSMOTE
+    ADASYN,
+    BorderlineSMOTE,
+    KMeansSMOTE,
+    RandomOverSampler,
+    SMOTE,
+    SMOTENC,
+    SVMSMOTE,
 )
 
 # Sklearn
 from sklearn.metrics import SCORERS, get_scorer, make_scorer
 from sklearn.utils import _safe_indexing
 from sklearn.inspection._partial_dependence import (
-    _grid_from_X, _partial_dependence_brute
+    _grid_from_X,
+    _partial_dependence_brute,
 )
 
 # Plotting
@@ -60,37 +74,38 @@ from matplotlib.gridspec import GridSpec
 # Variable types
 CAL = Union[str, callable]
 SCALAR = Union[int, float]
-ARRAY_TYPES = Union[list, tuple, np.ndarray, pd.Series]
-X_TYPES = Union[dict, ARRAY_TYPES, pd.DataFrame]
-Y_TYPES = Union[int, str, dict, ARRAY_TYPES]
+ARRAY_TYPES = (list, tuple, np.ndarray, pd.Series)  # Note tuple to use in isinstance
+X_TYPES = Union[dict, Union[ARRAY_TYPES], pd.DataFrame]
+Y_TYPES = Union[int, str, dict, Union[ARRAY_TYPES]]
 TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
 
-# Tuple of models that need to import an extra package
-OPTIONAL_PACKAGES = dict(
-    XGB='xgboost',
-    LGB='lightgbm',
-    CatB='catboost'
-)
+# Non-sklearn models
+OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
 
 # List of models that only work for regression/classification tasks
-ONLY_CLASS = ['GNB', 'MNB', 'BNB', 'CatNB', 'CNB', 'LR', 'LDA', 'QDA']
-ONLY_REG = ['OLS', 'Lasso', 'EN', 'BR', 'ARD']
+ONLY_CLASS = ["GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA"]
+ONLY_REG = ["OLS", "Lasso", "EN", "BR", "ARD"]
 
+# List of custom metrics for the scoring method
+CUSTOM_METRICS = ["cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "sup"]
+
+# Acronyms for some common sklearn metrics
 METRIC_ACRONYMS = dict(
-    ap='average_precision',
-    ba='balanced_accuracy',
-    auc='roc_auc',
-    ev='explained_variance',
-    me='max_error',
-    mae='neg_mean_absolute_error',
-    mse='neg_mean_squared_error',
-    rmse='neg_root_mean_squared_error',
-    msle='neg_mean_squared_log_error',
-    medae='neg_median_absolute_error',
-    poisson='neg_mean_poisson_deviance',
-    gamma='neg_mean_gamma_deviance'
+    ap="average_precision",
+    ba="balanced_accuracy",
+    auc="roc_auc",
+    ev="explained_variance",
+    me="max_error",
+    mae="neg_mean_absolute_error",
+    mse="neg_mean_squared_error",
+    rmse="neg_root_mean_squared_error",
+    msle="neg_mean_squared_log_error",
+    medae="neg_median_absolute_error",
+    poisson="neg_mean_poisson_deviance",
+    gamma="neg_mean_gamma_deviance",
 )
 
+# All available encoding strategies
 ENCODER_TYPES = dict(
     backwarddifference=BackwardDifferenceEncoder,
     basen=BaseNEncoder,
@@ -106,9 +121,10 @@ ENCODER_TYPES = dict(
     polynomial=PolynomialEncoder,
     sum=SumEncoder,
     target=TargetEncoder,
-    woe=WOEEncoder
+    woe=WOEEncoder,
 )
 
+# All available balancing strategies
 BALANCER_TYPES = dict(
     clustercentroids=ClusterCentroids,
     condensednearestneighbour=CondensedNearestNeighbour,
@@ -127,7 +143,7 @@ BALANCER_TYPES = dict(
     randomoversampler=RandomOverSampler,
     smote=SMOTE,
     smotenc=SMOTENC,
-    svmsmote=SVMSMOTE
+    svmsmote=SVMSMOTE,
 )
 
 
@@ -207,9 +223,9 @@ def time_to_string(t_init):
 
     """
     t = time() - t_init  # Total time in seconds
-    h = int(t/3600.)
-    m = int(t/60.) - h*60
-    s = t - h*3600 - m*60
+    h = int(t / 3600.0)
+    m = int(t / 60.0) - h * 60
+    s = t - h * 3600 - m * 60
     if h < 1 and m < 1:  # Only seconds
         return f"{s:.3f}s"
     elif h < 1:  # Also minutes
@@ -245,13 +261,13 @@ def to_df(data, index=None, columns=None, pca=False):
         return data
     else:
         if columns is None and not pca:
-            columns = ['Feature ' + str(i) for i in range(len(data[0]))]
+            columns = ["Feature " + str(i) for i in range(len(data[0]))]
         elif columns is None:
-            columns = ['Component ' + str(i) for i in range(len(data[0]))]
+            columns = ["Component " + str(i) for i in range(len(data[0]))]
         return pd.DataFrame(data, index=index, columns=columns)
 
 
-def to_series(data, index=None, name='target'):
+def to_series(data, index=None, name="target"):
     """Convert a column to pd.Series.
 
     Parameters
@@ -260,9 +276,9 @@ def to_series(data, index=None, name='target'):
         Data to convert.
 
     index: array or Index, optional (default=None)
-        Values for the series' index.
+        Values for the series" index.
 
-    name: string, optional (default='target')
+    name: string, optional (default="target")
         Name of the target column.
 
     Returns
@@ -285,7 +301,7 @@ def prepare_logger(logger, class_name):
     logger: bool, str, class or None
         - If None: No logger.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
+        - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
         The default name created by ATOM contains the class name followed by the
@@ -293,7 +309,7 @@ def prepare_logger(logger, class_name):
 
     class_name: str
         Name of the class from which the function is called.
-        Used for default name creation when log='auto'.
+        Used for default name creation when log="auto".
 
     Returns
     -------
@@ -302,42 +318,44 @@ def prepare_logger(logger, class_name):
 
     """
     if logger is True:
-        logger = 'auto'
+        logger = "auto"
 
     if not logger:  # Empty string, False or None
         return
 
     elif isinstance(logger, str):
         # Prepare the FileHandler's name
-        if not logger.endswith('.log'):
-            logger += '.log'
-        if logger == 'auto.log' or logger.endswith('/auto.log'):
+        if not logger.endswith(".log"):
+            logger += ".log"
+        if logger == "auto.log" or logger.endswith("/auto.log"):
             current = datetime.now().strftime("%d%b%y_%Hh%Mm%Ss")
-            logger = logger.replace('auto', class_name + '_' + current)
+            logger = logger.replace("auto", class_name + "_" + current)
 
         # Define file handler and set formatter
         file_handler = logging.FileHandler(logger)
-        formatter = logging.Formatter('%(asctime)s: %(message)s')
+        formatter = logging.Formatter("%(asctime)s: %(message)s")
         file_handler.setFormatter(formatter)
 
         # Define logger
-        logger = logging.getLogger(class_name + '_logger')
+        logger = logging.getLogger(class_name + "_logger")
         logger.setLevel(logging.DEBUG)
         logger.propagate = False
         if logger.hasHandlers():  # Remove existing handlers
             logger.handlers.clear()
         logger.addHandler(file_handler)  # Add file handler to logger
 
-    elif type(logger) != logging.Logger:  # Should be python 'Logger' object'
-        raise TypeError("Invalid value for the logger parameter. Should be a "
-                        f"python logging.Logger object, got {type(logger)}!")
+    elif type(logger) != logging.Logger:  # Should be python "Logger" object"
+        raise TypeError(
+            "Invalid value for the logger parameter. Should be a "
+            f"python logging.Logger object, got {type(logger)}!"
+        )
 
     return logger
 
 
-def check_property(value, value_name,
-                   side=None, side_name=None,
-                   under=None, under_name=None):
+def check_property(
+    value, value_name, side=None, side_name=None, under=None, under_name=None
+):
     """Check the property setter on type and dimensions.
 
     Convert the property to a pandas object and compare with other
@@ -365,8 +383,8 @@ def check_property(value, value_name,
 
     """
     index = side.index if side_name else None
-    if 'y' in value_name:
-        name = under.name if under_name else 'target'
+    if "y" in value_name:
+        name = under.name if under_name else "target"
         value = to_series(value, index=index, name=name)
     else:
         columns = under.columns if under_name else None
@@ -376,29 +394,34 @@ def check_property(value, value_name,
         if len(value) != len(side):
             raise ValueError(
                 f"The {value_name} and {side_name} properties need to have the "
-                f"same number of rows, got {len(value)} != {len(side)}.")
+                f"same number of rows, got {len(value)} != {len(side)}."
+            )
         if not value.index.equals(side.index):
             raise ValueError(
                 f"The {value_name} and {side_name} properties need to have the "
-                f"same indices, got {value.index} != {side.index}.")
+                f"same indices, got {value.index} != {side.index}."
+            )
 
     if under_name:  # Check they have the same columns
-        if 'y' in value_name:
+        if "y" in value_name:
             if value.name != under.name:
                 raise ValueError(
                     f"The {value_name} and {under_name} properties need to have "
-                    f"the same name, got {value.name} != {under.name}.")
+                    f"the same name, got {value.name} != {under.name}."
+                )
         else:
             if value.shape[1] != under.shape[1]:
                 raise ValueError(
                     f"The {value_name} and {under_name} properties need to have "
                     f"the same number of columns, got {value.shape[1]} != "
-                    f"{under.shape[1]}.")
+                    f"{under.shape[1]}."
+                )
 
             if list(value.columns) != list(under.columns):
                 raise ValueError(
                     f"The {value_name} and {under_name} properties need to have "
-                    f"the same columns , got {value.columns} != {under.columns}.")
+                    f"the same columns , got {value.columns} != {under.columns}."
+                )
 
     return value
 
@@ -423,6 +446,7 @@ def check_is_fitted(estimator, attributes=None, msg=None):
         Default error message.
 
     """
+
     def check_attr(attr):
         """Return empty pandas or None/empty sequence."""
         if isinstance(getattr(estimator, attr), (pd.DataFrame, pd.Series)):
@@ -431,8 +455,10 @@ def check_is_fitted(estimator, attributes=None, msg=None):
             return not getattr(estimator, attr)
 
     if msg is None:
-        msg = (f"This {type(estimator).__name__} instance is not fitted yet. "
-               "Call 'fit' with appropriate arguments before using this estimator.")
+        msg = (
+            f"This {type(estimator).__name__} instance is not fitted yet. "
+            "Call 'fit' with appropriate arguments before using this estimator."
+        )
 
     if not isinstance(attributes, (list, tuple)):
         attributes = [attributes]
@@ -481,7 +507,8 @@ def get_model_name(model):
     # Compare strings case insensitive
     if model.lower() not in map(str.lower, MODEL_LIST):
         raise ValueError(
-            f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}.")
+            f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}."
+        )
     else:
         for name in MODEL_LIST:
             if model.lower() == name.lower():
@@ -515,6 +542,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         Scorer object.
 
     """
+
     def get_scorer_name(scorer):
         """Return the name of the provided scorer."""
         for key, value in SCORERS.items():
@@ -525,12 +553,14 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         if metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
         elif metric not in SCORERS:
-            raise ValueError("Unknown value for the metric parameter, got "
-                             f"{metric}. Try one of: {', '.join(SCORERS)}.")
+            raise ValueError(
+                "Unknown value for the metric parameter, got "
+                f"{metric}. Try one of: {', '.join(SCORERS)}."
+            )
         metric = get_scorer(metric)
         metric.name = get_scorer_name(metric)
 
-    elif hasattr(metric, '_score_func'):  # Provided metric is scoring
+    elif hasattr(metric, "_score_func"):  # Provided metric is scoring
         metric.name = get_scorer_name(metric)
 
     else:  # Metric is a function with signature metric(y, y_pred)
@@ -538,7 +568,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
             score_func=metric,
             greater_is_better=greater_is_better,
             needs_proba=needs_proba,
-            needs_threshold=needs_threshold
+            needs_threshold=needs_threshold,
         )
         metric.name = metric._score_func.__name__
 
@@ -554,15 +584,15 @@ def get_default_metric(task):
         One of binary classification, multiclass classification or regression.
 
     """
-    if task.startswith('bin'):
-        return get_metric('f1', True, False, False)
-    elif task.startswith('multi'):
-        return get_metric('f1_weighted', True, False, False)
+    if task.startswith("bin"):
+        return get_metric("f1", True, False, False)
+    elif task.startswith("multi"):
+        return get_metric("f1_weighted", True, False, False)
     else:
-        return get_metric('r2', True, False, False)
+        return get_metric("r2", True, False, False)
 
 
-def infer_task(y, goal=''):
+def infer_task(y, goal=""):
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to determine the
@@ -575,7 +605,7 @@ def infer_task(y, goal=''):
     y: pd.Series
         Target column from which to infer the task.
 
-    goal: str, optional (default='')
+    goal: str, optional (default="")
         Classification or regression goal. Empty to infer the task from
         the number of unique values in y.
 
@@ -589,22 +619,22 @@ def infer_task(y, goal=''):
     if len(unique) == 1:
         raise ValueError(f"Only found 1 target value: {unique[0]}")
 
-    if goal.startswith('reg'):
-        return 'regression'
+    if goal.startswith("reg"):
+        return "regression"
 
-    if goal.startswith('class'):
+    if goal.startswith("class"):
         if len(unique) == 2:
-            return 'binary classification'
+            return "binary classification"
         else:
-            return 'multiclass classification'
+            return "multiclass classification"
 
     if not goal:
         if len(unique) == 2:
-            return 'binary classification'
+            return "binary classification"
         elif len(unique) < 0.1 * len(y) and len(unique) < 30:
-            return 'multiclass classification'
+            return "multiclass classification"
         else:
-            return 'regression'
+            return "regression"
 
 
 def partial_dependence(estimator, X, features):
@@ -613,7 +643,7 @@ def partial_dependence(estimator, X, features):
     Partial dependence of a feature (or a set of features) corresponds to the
     average response of an estimator for each possible value of the feature.
     Code from sklearn's _partial_dependence.py.
-    Note that this implementation always uses method='brute', grid_resolution=100
+    Note that this implementation always uses method="brute", grid_resolution=100
     and percentiles=(0.05, 0.95).
 
     Parameters
@@ -639,15 +669,16 @@ def partial_dependence(estimator, X, features):
         Values used for the predictions.
 
     """
-    grid, values = _grid_from_X(
-        _safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
+    grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
 
     averaged_predictions = _partial_dependence_brute(
-        estimator, grid, features, X, 'auto')
+        estimator, grid, features, X, "auto"
+    )
 
     # Reshape averaged_predictions to (n_outputs, n_values_feature_0, ...)
     averaged_predictions = averaged_predictions.reshape(
-        -1, *[val.shape[0] for val in values])
+        -1, *[val.shape[0] for val in values]
+    )
 
     return averaged_predictions, values
 
@@ -694,34 +725,36 @@ def transform(pl, X, y, verbose, **kwargs):
     """
     # Check verbose parameter
     if verbose < 0 or verbose > 2:
-        raise ValueError("Invalid value for the verbose parameter."
-                         f"Value should be between 0 and 2, got {verbose}.")
+        raise ValueError(
+            "Invalid value for the verbose parameter."
+            f"Value should be between 0 and 2, got {verbose}."
+        )
 
     # All data cleaning and feature selection methods and their classes
     steps = dict(
-        standard_cleaner='StandardCleaner',
-        scale='Scaler',
-        impute='Imputer',
-        encode='Encoder',
-        outliers='Outliers',
-        balance='Balancer',
-        feature_generation='FeatureGenerator',
-        feature_selection='FeatureSelector'
+        cleaner="Cleaner",
+        scale="Scaler",
+        impute="Imputer",
+        encode="Encoder",
+        outliers="Outliers",
+        balance="Balancer",
+        feature_generation="FeatureGenerator",
+        feature_selection="FeatureSelector",
     )
 
     # Set default values if pipeline is not provided
-    if not kwargs.get('pipeline'):
+    if not kwargs.get("pipeline"):
         for key, value in steps.items():
             if key not in kwargs:
-                kwargs[value] = False if key in ['outliers', 'balance'] else True
+                kwargs[value] = False if key in ["outliers", "balance"] else True
             else:
                 kwargs[value] = kwargs.pop(key)
 
     # Loop over classes in pipeline with a transform method (exclude trainers)
-    transformers = [est for est in pl if hasattr(est, 'transform')]
+    transformers = [est for est in pl if hasattr(est, "transform")]
     for i, estimator in enumerate(transformers):
         class_name = estimator.__class__.__name__
-        if i in kwargs.get('pipeline', []) or kwargs.get(class_name):
+        if i in kwargs.get("pipeline", []) or kwargs.get(class_name):
             # If verbose is specified, change the class verbosity
             if verbose is not None:
                 estimator.verbose = verbose
@@ -756,9 +789,10 @@ def clear(self, models):
 
             if isinstance(self._results.index, pd.MultiIndex):
                 self._results = self._results.iloc[
-                    ~self._results.index.get_level_values(1).str.contains(model)]
+                    ~self._results.index.get_level_values(1).str.contains(model)
+                ]
             else:
-                self._results.drop(model, axis=0, inplace=True, errors='ignore')
+                self._results.drop(model, axis=0, inplace=True, errors="ignore")
 
             if not self.models:  # No more models in the pipeline
                 self.metric_ = []
@@ -778,14 +812,16 @@ def composed(*decs):
         Decorators to run.
 
     """
+
     def decorator(f):
         for dec in reversed(decs):
             f = dec(f)
         return f
+
     return decorator
 
 
-def crash(f, cache={'last_exception': None}):
+def crash(f, cache={"last_exception": None}):
     """Save program crashes to log file.
 
     We use a mutable argument to cache the last exception raised. If the current
@@ -793,8 +829,9 @@ def crash(f, cache={'last_exception': None}):
     to crash), its not re-written in the logger.
 
     """
+
     def wrapper(*args, **kwargs):
-        logger = args[0].logger if hasattr(args[0], 'logger') else args[0].T.logger
+        logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
 
         if logger is not None:
             try:  # Run the function
@@ -802,8 +839,8 @@ def crash(f, cache={'last_exception': None}):
 
             except Exception as exception:
                 # If exception is not same as last, write to log
-                if exception is not cache['last_exception']:
-                    cache['last_exception'] = exception
+                if exception is not cache["last_exception"]:
+                    cache["last_exception"] = exception
                     logger.exception("Exception encountered:")
 
                 raise exception  # Always raise it
@@ -815,13 +852,14 @@ def crash(f, cache={'last_exception': None}):
 
 def method_to_log(f):
     """Save function's parameters to log file."""
+
     def wrapper(*args, **kwargs):
         # Get logger (for model subclasses called from BasePredictor)
-        logger = args[0].logger if hasattr(args[0], 'logger') else args[0].T.logger
+        logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
 
         if logger is not None:
-            if f.__name__ != '__init__':
-                logger.info('')
+            if f.__name__ != "__init__":
+                logger.info("")
             logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
         result = f(*args, **kwargs)
@@ -832,9 +870,10 @@ def method_to_log(f):
 
 def plot_from_model(f):
     """If a plot is called from a model subclass, adapt the models parameter."""
+
     def wrapper(*args, **kwargs):
-        if hasattr(args[0], 'T'):
-            result = f(args[0].T, args[0].name, *args[1:], **kwargs)
+        if hasattr(args[0], "T"):
+            result = f(args[0].T, args[0].acronym, *args[1:], **kwargs)
         else:
             result = f(*args, **kwargs)
         return result
@@ -846,6 +885,7 @@ def plot_from_model(f):
 
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted."""
+
     pass
 
 
@@ -865,7 +905,7 @@ class PlotCallback(object):
 
         # Plot attributes
         max_len = 15  # Maximum steps to show at once in the plot
-        self.x = deque(list(range(1, max_len+1)), maxlen=max_len)
+        self.x = deque(list(range(1, max_len + 1)), maxlen=max_len)
         self.y1 = deque([np.NaN for _ in self.x], maxlen=max_len)
         self.y2 = deque([np.NaN for _ in self.x], maxlen=max_len)
 
@@ -904,43 +944,37 @@ class PlotCallback(object):
         # First subplot (without xtick labels)
         ax1 = plt.subplot(gs[0])
         # Create a variable for the line so we can later update it
-        line1, = ax1.plot(self.x, self.y1, '-o', alpha=0.8)
+        (line1,) = ax1.plot(self.x, self.y1, "-o", alpha=0.8)
         ax1.set_title(
-            label=f"Bayesian Optimization for {self.M.longname}",
+            label=f"Bayesian Optimization for {self.M.fullname}",
             fontsize=self.M.T.title_fontsize,
-            pad=20
+            pad=20,
         )
         ax1.set_ylabel(
             ylabel=self.M.T.metric_[0].name,
             fontsize=self.M.T.label_fontsize,
-            labelpad=12
+            labelpad=12,
         )
-        ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+        ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
 
         # Second subplot
         ax2 = plt.subplot(gs[1], sharex=ax1)
-        line2, = ax2.plot(self.x, self.y2, '-o', alpha=0.8)
+        (line2,) = ax2.plot(self.x, self.y2, "-o", alpha=0.8)
         ax2.set_title(
             label="Distance between last consecutive iterations",
             fontsize=self.M.T.title_fontsize,
-            pad=20
+            pad=20,
         )
         ax2.set_xlabel(
-            xlabel='Iteration',
-            fontsize=self.M.T.label_fontsize,
-            labelpad=12
+            xlabel="Iteration", fontsize=self.M.T.label_fontsize, labelpad=12
         )
-        ax2.set_ylabel(
-            ylabel='d',
-            fontsize=self.M.T.label_fontsize,
-            labelpad=12
-        )
+        ax2.set_ylabel(ylabel="d", fontsize=self.M.T.label_fontsize, labelpad=12)
         ax2.set_xticks(self.x)
-        ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+        ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
         ax2.set_ylim([-0.05, 0.1])
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        plt.subplots_adjust(hspace=.0)
+        plt.subplots_adjust(hspace=0.0)
         plt.xticks(fontsize=self.M.T.tick_fontsize)
         plt.yticks(fontsize=self.M.T.tick_fontsize)
         fig.tight_layout()
@@ -954,16 +988,18 @@ class PlotCallback(object):
         self.line1.set_ydata(self.y1)
         self.line2.set_xdata(self.x)
         self.line2.set_ydata(self.y2)
-        self.ax1.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
-        self.ax2.set_xlim(min(self.x)-0.5, max(self.x)+0.5)
+        self.ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
+        self.ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
         self.ax1.set_xticks(self.x)
         self.ax2.set_xticks(self.x)
 
         # Adjust y limits if new data goes beyond bounds
         lim = self.line1.axes.get_ylim()
         if np.nanmin(self.y1) <= lim[0] or np.nanmax(self.y1) >= lim[1]:
-            self.ax1.set_ylim([np.nanmin(self.y1) - np.nanstd(self.y1),
-                               np.nanmax(self.y1) + np.nanstd(self.y1)])
+            self.ax1.set_ylim([
+                np.nanmin(self.y1) - np.nanstd(self.y1),
+                np.nanmax(self.y1) + np.nanstd(self.y1),
+            ])
         lim = self.line2.axes.get_ylim()
         if np.nanmax(self.y2) >= lim[1]:
             self.ax2.set_ylim([-0.05, np.nanmax(self.y2) + np.nanstd(self.y2)])

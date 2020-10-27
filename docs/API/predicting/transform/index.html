@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -542,8 +542,8 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L304">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform new data through all the pre-processing steps in the pipeline. By default,
- all transformers are included except <a href="../../ATOM/atomclassifier/#atomclassifier-outliers">outliers</a>
- and <a href="../../ATOM/atomclassifier/#atomclassifier-balance">balance</a> since they should
+ all transformers are included except <a href="../../ATOM/atomclassifier/#outliers">outliers</a>
+ and <a href="../../ATOM/atomclassifier/#balance">balance</a> since they should
  only be applied on the training set. Can only be called from <code>atom</code>.
 <br /><br />
 <table>
@@ -565,7 +565,7 @@ Features to transform, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the <code>training</code>'s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the <code>training</code>"s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -586,8 +586,8 @@ Additional keyword arguments to customize which transformers to apply. You can
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When using the pipeline parameter to include/exclude transformers, remember
-that the first transformer (index 0) in <code>atom</code>'s pipeline is always the
-<a href="../../data_cleaning/standard_cleaner/">StandardCleaner</a> called during
+that the first transformer (index 0) in <code>atom</code>"s pipeline is always the
+<a href="../../data_cleaning/cleaner/">Cleaner</a> called during
 initialization.</p>
 </div>
 <p><br></p>
@@ -596,11 +596,11 @@ initialization.</p>
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num='knn', strat_cat='drop')
-atom.outliers(strategy='min_max', max_sigma=2)
-atom.feature_generation(strategy='gfg', n_features=3, generations=10, population=1000)
+atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;drop&quot;)
+atom.outliers(strategy=&quot;min_max&quot;, max_sigma=2)
+atom.feature_generation(strategy=&quot;gfg&quot;, n_features=3, generations=10, population=1000)
 
-# Apply only the StandardCleaner and Imputer on new data
+# Apply only the Cleaner and Imputer on new data
 X_transformed = atom.transform(X_new, pipeline=[0, 1])
 </code></pre></div>
             </div>

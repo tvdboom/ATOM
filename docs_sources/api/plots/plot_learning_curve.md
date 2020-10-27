@@ -51,7 +51,7 @@ import numpy as np
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.train_sizing(['GNB', 'LDA'], metric='accuracy', train_sizes=np.linspace(0.1, 1.0, 9), bagging=5)
+atom.train_sizing(["GNB", "LDA"], metric="accuracy", train_sizes=np.linspace(0.1, 1.0, 9), bagging=5)
 atom.plot_learning_curve()
 ```
 <div align="center">

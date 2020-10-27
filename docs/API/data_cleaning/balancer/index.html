@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -546,19 +546,19 @@
 <h1 id="balancer">Balancer</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target category. Use only for classification tasks.
 This class can be accessed from <code>atom</code> through the
- <a href="../../ATOM/atomclassifier/#atomclassifier-balance">balance</a> method. Read more in
+ <a href="../../ATOM/atomclassifier/#balance">balance</a> method. Read more in
  the <a href="../../../user_guide/#balancing-the-data">user guide</a>.
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default='ADASYN')</strong>
+<strong>strategy: str, optional (default="ADASYN")</strong>
 <blockquote>
 Type of algorithm to use for oversampling or undersampling. Choose from one
  of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
@@ -589,7 +589,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 </blockquote>
@@ -835,13 +835,13 @@ Transformed target column.
 <pre><code class="python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.balance(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+atom.balance(strategy=&quot;NearMiss&quot;, sampling_strategy=0.7, n_neighbors=10)
 </code></pre>
 
 <p>or</p>
 <pre><code class="python">from atom.data_cleaning import Balancer
 
-balancer = Balancer(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+balancer = Balancer(strategy=&quot;NearMiss&quot;, sampling_strategy=0.7, n_neighbors=10)
 X_train, y_train = balancer.transform(X_train, y_train)
 </code></pre></div>
             </div>

@@ -16,17 +16,19 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import X_TYPES, Y_TYPES, merge
+from .utils import ARRAY_TYPES, merge
 
 
 # Functions ================================================================= >>
 
 @typechecked
-def ATOMModel(estimator,
-              name: str = None,
-              longname: str = None,
-              needs_scaling: bool = True,
-              type: str = 'kernel'):
+def ATOMModel(
+    estimator,
+    acronym: str = None,
+    fullname: str = None,
+    needs_scaling: bool = True,
+    type: str = "kernel",
+):
     """Convert an estimator to a model that can be ingested by ATOM's pipeline.
 
     Add the relevant attributes to the estimator so that they can be used
@@ -37,31 +39,33 @@ def ATOMModel(estimator,
     estimator: class
         Model's estimator. Can be a class or an instance.
 
-    name: str, optional (default=None)
+    acronym: str, optional (default=None)
         Model's acronym. Used to call the `model` from the training instance.
         If None, the estimator's name will be used (not recommended).
 
-    longname: str, optional (default=None)
+    fullname: str, optional (default=None)
         Full model's name. If None, the estimator's name will be used.
 
     needs_scaling: bool, optional (default=True)
         Whether the model needs scaled features.
 
-    type: str, optional (default='kernel')
+    type: str, optional (default="kernel")
         Model's type. Choose from:
-            - 'linear' for linear models.
-            - 'tree' for tree-based models.
-            - 'kernel' for the remaining models.
+            - "linear" for linear models.
+            - "tree" for tree-based models.
+            - "kernel" for the remaining models.
 
     """
-    if name:
-        estimator.name = name
-    if longname:
-        estimator.longname = longname
+    if acronym:
+        estimator.acronym = acronym
+    if fullname:
+        estimator.fullname = fullname
     estimator.needs_scaling = needs_scaling
-    if type not in ('linear', 'tree', 'kernel'):
-        raise ValueError("Invalid value for the type parameter. "
-                         "Choose from: linear, tree, kernel.")
+    if type not in ("linear", "tree", "kernel"):
+        raise ValueError(
+            "Invalid value for the type parameter."
+            " Choose from: linear, tree or kernel."
+        )
     else:
         estimator.type = type
 
@@ -69,12 +73,12 @@ def ATOMModel(estimator,
 
 
 @typechecked
-def ATOMLoader(filename: str,
-               X: Optional[X_TYPES] = None,
-               y: Y_TYPES = -1,
-               n_rows: Union[int, float] = 1,
-               transform_data: bool = True,
-               verbose: Optional[int] = None):
+def ATOMLoader(
+    filename: str,
+    data: Optional[Union[ARRAY_TYPES]] = None,
+    transform_data: bool = True,
+    verbose: Optional[int] = None,
+):
     """Load a class instance from a pickle file.
 
     If the file is a `training` instance that was saved using `save_data=False`,
@@ -86,69 +90,69 @@ def ATOMLoader(filename: str,
     filename: str
         Name of the pickle file to load.
 
-    X: dict, list, tuple, np.array, pd.DataFrame or None, optional (default=None)
-        Data containing the features, with shape=(n_samples, n_features). Only
-        use this parameter for `training` instances saved using `save_data=False`.
-        See the save method in basetransformer.py.
+    data: tuple of indexables or None, optional (default=None)
+        Tuple containing the features and target. Only use this parameter if the
+        file is a `training` instance that was saved using `save_data=False`.
+        Allowed formats are:
+            - X, y
+            - train, test
+            - X_train, X_test, y_train, y_test
+            - (X_train, y_train), (X_test, y_test)
 
-    y: int, str, dict or array-like, optional (default=-1)
-        - If int: Index of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
+        X, train, test: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_features, n_samples). If no
+            y is provided, the last column is used as target.
 
-        This parameter is ignored if X=None.
-
-    n_rows: int or float, optional (default=1)
-        - If <=1: Fraction of the data to use.
-        - If >1: Number of rows to use.
-
-        This parameter is ignored if X=None.
+        y: int, str, dict or array-like
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
 
     transform_data: bool, optional (default=True)
-        Whether to transform the provided data through all the steps in the
-        instance's pipeline. This parameter is ignored if the loaded file is
-        not an `atom` instance.
+        If False, the `data` is left as provided. If True, the `data` is transformed
+        through all the steps in the instance's pipeline. This parameter is ignored
+        if the loaded file is not an `atom` instance.
 
     verbose: int or None, optional (default=None)
         Verbosity level of the transformations applied on the new data. If None,
         use the verbosity from the loaded instance. This parameter is ignored if
-        the loaded file is not an `atom` instance.
+        `transform_data=False`.
 
     """
     # Check verbose parameter
     if verbose and (verbose < 0 or verbose > 2):
-        raise ValueError("Invalid value for the verbose parameter." +
-                         f"Value should be between 0 and 2, got {verbose}.")
+        raise ValueError(
+            "Invalid value for the verbose parameter."
+            f"Value should be between 0 and 2, got {verbose}."
+        )
 
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         cls_ = pickle.load(f)
 
-    if X is not None:
-        if not hasattr(cls_, '_data'):
-            raise TypeError("X is provided but the class is not an ATOM nor " +
-                            f"training instance, got {cls_.__class__.__name__}.")
+    if data is not None:
+        if not hasattr(cls_, "_data"):
+            raise TypeError(
+                "Data is provided but the class is not an ATOM nor "
+                f"training instance, got {cls_.__class__.__name__}."
+            )
 
         elif cls_._data is not None:
-            raise ValueError("The loaded {} instance already contains data!"
-                             .format(cls_.__class__.__name__))
+            raise ValueError(
+                f"The loaded {cls_.__class__.__name__} instance already contains data!"
+            )
 
         # Prepare the provided data
-        X, y = BaseTransformer._prepare_input(X, y)
-        cls_._data = X if y is None else merge(X, y)
+        cls_._data, cls_._idx = cls_._get_data_and_idx(data, use_n_rows=transform_data)
 
-        # Get number of rows and shuffle the dataset
-        kwargs = {'frac': n_rows} if n_rows <= 1 else {'n': int(n_rows)}
-        cls_._data = cls_._data.sample(random_state=cls_.random_state, **kwargs)
-
-        if hasattr(cls_, 'pipeline') and transform_data:
+        if hasattr(cls_, "pipeline") and transform_data:
             # Transform the data through all transformers in the pipeline
-            for estimator in [i for i in cls_.pipeline if hasattr(i, 'transform')]:
+            for estimator in [i for i in cls_.pipeline if hasattr(i, "transform")]:
                 if verbose is not None:
-                    vb = estimator.get_params()['verbose']  # Save original verbosity
+                    vb = estimator.get_params()["verbose"]  # Save original verbosity
                     estimator.set_params(verbose=verbose)
 
                 # Some transformations are only applied on the training set
-                if estimator.__class__.__name__ in ['Outliers', 'Balancer']:
+                if estimator.__class__.__name__ in ["Outliers", "Balancer"]:
                     X, y = estimator.transform(cls_.X_train, cls_.y_train)
                     cls_._data = pd.concat([merge(X, y), cls_.test])
                 else:
@@ -161,7 +165,7 @@ def ATOMLoader(filename: str,
                 if verbose is not None:
                     estimator.verbose = vb  # Reset the original verbosity
 
-        if getattr(cls_, 'trainer', None):
+        if getattr(cls_, "trainer", None):
             cls_.trainer._data = cls_._data
 
     cls_.log(f"{cls_.__class__.__name__} loaded successfully!", 1)
@@ -200,7 +204,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        Is ignored if the train and test set are provided.
+        This parameter is ignored if the train and test set are provided.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -218,8 +222,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - 2 to print detailed information.
 
     warnings: bool or str, optional (default=True)
-        - If True: Default warning action (equal to 'default' when string).
-        - If False: Suppress all warnings (equal to 'ignore' when string).
+        - If True: Default warning action (equal to "default" when string).
+        - If False: Suppress all warnings (equal to "ignore" when string).
         - If str: One of the possible actions in python's warnings environment.
 
         Note that changing this parameter will affect the `PYTHONWARNINGS`
@@ -231,8 +235,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
-        - If class: python 'Logger' object.
+        - If str: name of the logging file. "auto" for default name.
+        - If class: python "Logger" object.
 
         Note that warnings will not be saved to the logger in any case.
 
@@ -243,23 +247,27 @@ class ATOMClassifier(BaseTransformer, ATOM):
     """
 
     @typechecked
-    def __init__(self,
-                 *arrays,
-                 n_rows: Union[int, float] = 1,
-                 test_size: float = 0.2,
-                 logger: Optional[Union[str, callable]] = None,
-                 n_jobs: int = 1,
-                 warnings: Union[bool, str] = True,
-                 verbose: int = 0,
-                 random_state: Optional[int] = None):
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         warnings=warnings,
-                         logger=logger,
-                         random_state=random_state)
+    def __init__(
+        self,
+        *arrays,
+        n_rows: Union[int, float] = 1,
+        test_size: float = 0.2,
+        logger: Optional[Union[str, callable]] = None,
+        n_jobs: int = 1,
+        warnings: Union[bool, str] = True,
+        verbose: int = 0,
+        random_state: Optional[int] = None,
+    ):
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            random_state=random_state,
+        )
 
-        self.goal = 'classification'
-        ATOM.__init__(self, *arrays, n_rows=n_rows, test_size=test_size)
+        self.goal = "classification"
+        ATOM.__init__(self, arrays, n_rows=n_rows, test_size=test_size)
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -291,7 +299,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        Is ignored if the train and test set are provided.
+        This parameter is ignored if the train and test set are provided.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -309,8 +317,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - 2 to print detailed information.
 
     warnings: bool or str, optional (default=True)
-        - If True: Default warning action (equal to 'default' when string).
-        - If False: Suppress all warnings (equal to 'ignore' when string).
+        - If True: Default warning action (equal to "default" when string).
+        - If False: Suppress all warnings (equal to "ignore" when string).
         - If str: One of the possible actions in python's warnings environment.
 
         Note that changing this parameter will affect the `PYTHONWARNINGS`
@@ -322,8 +330,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
     logger: bool, str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. 'auto' for default name.
-        - If class: python 'Logger' object.
+        - If str: name of the logging file. "auto" for default name.
+        - If class: python "Logger" object.
 
         Note that warnings will not be saved to the logger in any case.
 
@@ -334,20 +342,24 @@ class ATOMRegressor(BaseTransformer, ATOM):
     """
 
     @typechecked
-    def __init__(self,
-                 *arrays,
-                 n_rows: Union[int, float] = 1,
-                 test_size: float = 0.2,
-                 n_jobs: int = 1,
-                 warnings: Union[bool, str] = True,
-                 verbose: int = 0,
-                 logger: Optional[Union[str, callable]] = None,
-                 random_state: Optional[int] = None):
-        super().__init__(n_jobs=n_jobs,
-                         verbose=verbose,
-                         warnings=warnings,
-                         logger=logger,
-                         random_state=random_state)
+    def __init__(
+        self,
+        *arrays,
+        n_rows: Union[int, float] = 1,
+        test_size: float = 0.2,
+        n_jobs: int = 1,
+        warnings: Union[bool, str] = True,
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+    ):
+        super().__init__(
+            n_jobs=n_jobs,
+            verbose=verbose,
+            warnings=warnings,
+            logger=logger,
+            random_state=random_state,
+        )
 
-        self.goal = 'regression'
-        ATOM.__init__(self, *arrays, n_rows=n_rows, test_size=test_size)
+        self.goal = "regression"
+        ATOM.__init__(self, arrays, n_rows=n_rows, test_size=test_size)

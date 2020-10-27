@@ -6,7 +6,7 @@
                                figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2413">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot of the models' scores per iteration of the successive halving. Only
+Plot of the models" scores per iteration of the successive halving. Only
  available if the models were fitted using [successive halving](../../../user_guide/#successive-halving).
 <br /><br />
 <table width="100%">
@@ -51,8 +51,8 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.successive_halving(['bag', 'adab', 'et', 'lgb'], metric='accuracy', bagging=5)
-atom.plot_successive_halving(filename='plot_successive_halving')
+atom.successive_halving(["bag", "adab", "et", "lgb"], metric="accuracy", bagging=5)
+atom.plot_successive_halving(filename="plot_successive_halving")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_successive_halving.png" alt="plot_successive_halving" width="700" height="420"/>

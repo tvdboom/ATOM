@@ -27,7 +27,7 @@ X, y = load_breast_cancer(return_X_y=True)
 # Call ATOM and run the pipeline using multipe metrics
 # Note that for every step of the BO, both metrics are calculated, but only the first is used for optimization!
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
-atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1, bagging=4)
+atom.run(["MNB", "QDA"], metric=("f1", "recall"), n_calls=3, n_initial_points=1, bagging=4)
 ```
 
     << ================== ATOM ================== >>
@@ -59,21 +59,21 @@ atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1,
     
     Running BO for Multinomial Naive Bayes...
     Random start 1 ----------------------------------
-    Parameters --> {'alpha': 1, 'fit_prior': True}
+    Parameters --> {"alpha": 1, "fit_prior": True}
     Evaluation --> f1: 0.9260  Best f1: 0.9260   recall: 0.9722  Best recall: 0.9722
     Time iteration: 3.108s   Total time: 3.124s
     Iteration 2 -------------------------------------
-    Parameters --> {'alpha': 9.744, 'fit_prior': True}
+    Parameters --> {"alpha": 9.744, "fit_prior": True}
     Evaluation --> f1: 0.9225  Best f1: 0.9260   recall: 0.9688  Best recall: 0.9722
     Time iteration: 0.048s   Total time: 3.172s
     Iteration 3 -------------------------------------
-    Parameters --> {'alpha': 0.66, 'fit_prior': False}
+    Parameters --> {"alpha": 0.66, "fit_prior": False}
     Evaluation --> f1: 0.9223  Best f1: 0.9260   recall: 0.9655  Best recall: 0.9722
     Time iteration: 0.044s   Total time: 3.357s
     
     Results for Multinomial Naive Bayes:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'alpha': 1, 'fit_prior': True}
+    Best parameters --> {"alpha": 1, "fit_prior": True}
     Best evaluation --> f1: 0.9260   recall: 0.9722
     Time elapsed: 3.494s
     Fitting -----------------------------------------
@@ -89,21 +89,21 @@ atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1,
     
     Running BO for Quadratic Discriminant Analysis...
     Random start 1 ----------------------------------
-    Parameters --> {'reg_param': 0}
+    Parameters --> {"reg_param": 0}
     Evaluation --> f1: 0.9654  Best f1: 0.9654   recall: 0.9619  Best recall: 0.9619
     Time iteration: 0.031s   Total time: 0.031s
     Iteration 2 -------------------------------------
-    Parameters --> {'reg_param': 1.0}
+    Parameters --> {"reg_param": 1.0}
     Evaluation --> f1: 0.9245  Best f1: 0.9654   recall: 0.9897  Best recall: 0.9897
     Time iteration: 0.031s   Total time: 0.063s
     Iteration 3 -------------------------------------
-    Parameters --> {'reg_param': 0.0}
+    Parameters --> {"reg_param": 0.0}
     Evaluation --> f1: 0.9633  Best f1: 0.9654   recall: 0.9549  Best recall: 0.9897
     Time iteration: 0.031s   Total time: 0.188s
     
     Results for Quadratic Discriminant Analysis:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'reg_param': 0}
+    Best parameters --> {"reg_param": 0}
     Best evaluation --> f1: 0.9654   recall: 0.9619
     Time elapsed: 0.297s
     Fitting -----------------------------------------
@@ -130,7 +130,7 @@ atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1,
 ```python
 # Note that some columns in the results dataframe now contain a list of scores,
 # one for each metric, in the same order as you called them
-atom.results[['metric_bo', 'metric_train', 'metric_test']]
+atom.results[["metric_bo", "metric_train", "metric_test"]]
 ```
 
 
@@ -187,7 +187,7 @@ atom.results[['metric_bo', 'metric_train', 'metric_test']]
 
 ```python
 # Some plots allow us to choose the metric we want to show
-atom.plot_bagging(metric='recall')
+atom.plot_bagging(metric="recall")
 ```
 
 

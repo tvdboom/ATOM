@@ -17,7 +17,7 @@ from atom import ATOMClassifier
 
 ```python
 # Load data
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv("./datasets/weatherAUS.csv")
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -122,11 +122,11 @@ X.sample(frac=1).iloc[:5, :8]
 ```python
 # Initiate ATOM and apply data cleaning
 atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, random_state=1)
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num="knn", strat_cat="remove", min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
 # Let's see how a LightGBM model performs without adding additional features
-atom.run('LGB', metric='auc')
+atom.run("LGB", metric="auc")
 atom.scoring()
 ```
 
@@ -154,7 +154,7 @@ atom.plot_feature_importance(show=10)
 atom.verbose = 2  # Increase verbosity to see the output
 
 # Create 100 new features using DFS
-atom.feature_generation(strategy='dfs', n_features=100, operators=['add', 'sub', 'log', 'sqrt'])
+atom.feature_generation(strategy="dfs", n_features=100, operators=["add", "sub", "log", "sqrt"])
 ```
 
     Fitting FeatureGenerator...
@@ -179,7 +179,7 @@ atom.warnings = False
 
 ```python
 # We can use the impute method again
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num="knn", strat_cat="remove", min_frac_rows=0.8)
 ```
 
     Fitting Imputer...
@@ -195,7 +195,7 @@ atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
 ```python
 # 100 new features may be to much...
 # Let's check for multicollinearity and use RFECV to reduce the number even further
-atom.feature_selection(strategy='RFECV', solver='lgb', n_features=30, scoring='auc', max_correlation=0.98)
+atom.feature_selection(strategy="RFECV", solver="lgb", n_features=30, scoring="auc", max_correlation=0.98)
 ```
 
     Fitting FeatureSelector...
@@ -619,7 +619,7 @@ atom.plot_rfecv()
 
 ```python
 # Let's see how the model performs now
-atom.run('LGB')
+atom.run("LGB")
 ```
 
     
@@ -658,14 +658,14 @@ atom.plot_feature_importance(show=10)
 
 ```python
 atom = ATOMClassifier(X, n_rows=1e4, test_size=0.2, verbose=0, warnings=False, random_state=1)
-atom.impute(strat_num='knn', strat_cat='remove', min_frac_rows=0.8)
+atom.impute(strat_num="knn", strat_cat="remove", min_frac_rows=0.8)
 atom.encode(max_onehot=10, frac_to_other=0.04)
 
 # Change verbosity to print extended info
 atom.verbose = 2
 
 # Create new features using Genetic Programming
-atom.feature_generation(strategy='genetic', n_features=20, generations=10, population=2000)
+atom.feature_generation(strategy="genetic", n_features=20, generations=10, population=2000)
 ```
 
     Fitting FeatureGenerator...
@@ -758,7 +758,7 @@ atom.genetic_features
 
 ```python
 # And fit the model again
-atom.run('LGB', metric='auc')
+atom.run("LGB", metric="auc")
 ```
 
     

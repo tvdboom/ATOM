@@ -1,10 +1,10 @@
-# StandardCleaner
+# Cleaner
 -----------------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">StandardCleaner</strong>(prohibited_types=[], strip_categorical=True, maximum_cardinality=True,
-                                         minimum_cardinality=True, missing_target=True, map_target=None,
-                                         verbose=0, logger=None)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
+                                 minimum_cardinality=True, missing_target=True, map_target=None,
+                                 verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L141">[source]</a></div></pre>
 <div style="padding-left:3%">
 Performs standard data cleaning steps on a dataset. Use the parameters to choose
@@ -17,13 +17,13 @@ Performs standard data cleaning steps on a dataset. Use the parameters to choose
   * Remove rows with missing values in the target column.
   * Label-encode the target column.
 
-This class is automatically called when initializing `atom`. Read more in the
- [user guide](../../../user_guide/#standard-data-cleaning).
+This class can be accessed from `atom` through the [clean](../../ATOM/atomclassifier/#clean)
+ method. Read more in the [user guide](../../../user_guide/#standard-data-cleaning).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>prohibited_types: str or iterable, optional (default=[])</strong>
+<strong>prohibited_types: str, iterable or None, optional (default=None)</strong>
 <blockquote>
 Columns with any of these types will be removed from the dataset.
 </blockquote>
@@ -68,7 +68,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -268,7 +268,7 @@ Estimator parameters.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="75%" style="background:white;">
-<strong>self: StandardCleaner</strong>
+<strong>self: Cleaner</strong>
 <blockquote>
 Estimator instance.
 </blockquote>
@@ -324,13 +324,13 @@ Transformed target column. Only returned if provided.
 ```python
 from atom import ATOMClassifier
 
-# ATOM's initializer calls StandardCleaner automatically
 atom = ATOMClassifier(X, y)
+atom.clean()
 ```
 or
 ```python
-from atom.data_cleaning import StandardCleaner
+from atom.data_cleaning import Cleaner
 
-cleaner = StandardCleaner(prohibited_types=['str'], missing_target=True)
+cleaner = Cleaner(prohibited_types="datetime64", maximum_cardinality=False)
 X, y = cleaner.transform(X, y)
 ```

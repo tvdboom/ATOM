@@ -62,7 +62,7 @@ Additional keyword arguments for shap's summary_plot.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run('RF')
+atom.run("RF")
 atom.summary_plot(show=11)
 ```
 <div align="center">

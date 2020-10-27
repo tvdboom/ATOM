@@ -50,7 +50,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['LR', 'Tree', 'LGB', 'MLP'], metric='accuracy', bagging=5)
+atom.run(["LR", "Tree", "LGB", "MLP"], metric="accuracy", bagging=5)
 atom.plot_bagging()
 ```
 <div align="center">

@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -554,7 +554,7 @@ from atom import ATOMClassifier
 </code></pre>
 
 <pre><code class="python"># Get the dataset's features and targets
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv(&quot;./datasets/weatherAUS.csv&quot;)
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -650,14 +650,14 @@ X.sample(frac=1).iloc[:5, :8]
 
 <h2 id="run-the-pipeline">Run the pipeline</h2>
 <pre><code class="python"># Initialize the ATOM class
-atom = ATOMClassifier(X, 'RainTomorrow', n_rows=1e4, verbose=1, warnings='ignore', random_state=1)
+atom = ATOMClassifier(X, &quot;RainTomorrow&quot;, n_rows=1e4, verbose=1, warnings=&quot;ignore&quot;, random_state=1)
 
 # Handle missing values and categorical columns in the dataset
-atom.impute(strat_num='median', strat_cat='most_frequent')
-atom.encode(strategy='target', max_onehot=5, frac_to_other=0.05)
+atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;most_frequent&quot;)
+atom.encode(strategy=&quot;target&quot;, max_onehot=5, frac_to_other=0.05)
 
 # Fit a linear SVM to the data
-atom.run('lsvm')
+atom.run(&quot;lsvm&quot;)
 </code></pre>
 
 <pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
@@ -704,7 +704,7 @@ atom.plot_calibration()
 
 <p><img alt="png" src="../output_7_0.png" /></p>
 <pre><code class="python"># Let's try to improve it using the calibrate method
-atom.calibrate(method='isotonic', cv=5)
+atom.calibrate(method=&quot;isotonic&quot;, cv=5)
 atom.plot_calibration()
 </code></pre>
 

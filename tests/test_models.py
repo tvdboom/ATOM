@@ -21,58 +21,64 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 # Variables ================================================================= >>
 
-binary = [m for m in MODEL_LIST if m not in ['custom', 'CatNB'] + ONLY_REG]
-multiclass = [m for m in MODEL_LIST if m not in ['custom', 'CatNB', 'CatB'] + ONLY_REG]
-regression = [m for m in MODEL_LIST if m not in ['custom'] + ONLY_CLASS]
+binary = [m for m in MODEL_LIST if m not in ["custom", "CatNB"] + ONLY_REG]
+multiclass = [m for m in MODEL_LIST if m not in ["custom", "CatNB", "CatB"] + ONLY_REG]
+regression = [m for m in MODEL_LIST if m not in ["custom"] + ONLY_CLASS]
 
 
 # Tests ===================================================================== >>
 
-@pytest.mark.parametrize('model', [RandomForestRegressor, RandomForestRegressor()])
+@pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
     """Assert that ATOM works with custom models."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(models=model, n_calls=2, n_initial_points=1)
     assert not atom.errors
-    assert hasattr(atom, 'RandomForestRegressor')
-    assert atom.RandomForestRegressor.estimator.get_params()['random_state'] == 1
+    assert hasattr(atom, "RandomForestRegressor")
+    assert atom.RandomForestRegressor.estimator.get_params()["random_state"] == 1
 
 
-@pytest.mark.parametrize('model', binary)
+@pytest.mark.parametrize("model", binary)
 def test_models_binary(model):
     """Assert that all models work with binary classification."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.24, random_state=1)
-    atom.run(models=model,
-             metric='auc',
-             n_calls=2,
-             n_initial_points=1,
-             bo_params={'base_estimator': 'rf', 'cv': 1})
+    atom.run(
+        models=model,
+        metric="auc",
+        n_calls=2,
+        n_initial_points=1,
+        bo_params={"base_estimator": "rf", "cv": 1},
+    )
     assert not atom.errors  # Assert that the model ran without errors
     assert hasattr(atom, model) and hasattr(atom, model.lower())
 
 
-@pytest.mark.parametrize('model', multiclass)
+@pytest.mark.parametrize("model", multiclass)
 def test_models_multiclass(model):
     """Assert that all models work with multiclass classification."""
     atom = ATOMClassifier(X_class2, y_class2, test_size=0.24, random_state=1)
-    atom.run(models=model,
-             metric='f1_micro',
-             n_calls=2,
-             n_initial_points=1,
-             bo_params={'base_estimator': 'rf', 'cv': 1})
+    atom.run(
+        models=model,
+        metric="f1_micro",
+        n_calls=2,
+        n_initial_points=1,
+        bo_params={"base_estimator": "rf", "cv": 1},
+    )
     assert not atom.errors
     assert hasattr(atom, model) and hasattr(atom, model.lower())
 
 
-@pytest.mark.parametrize('model', regression)
+@pytest.mark.parametrize("model", regression)
 def test_models_regression(model):
     """Assert that all models work with regression."""
     atom = ATOMRegressor(X_reg, y_reg, test_size=0.24, random_state=1)
-    atom.run(models=model,
-             metric='neg_mean_absolute_error',
-             n_calls=2,
-             n_initial_points=1,
-             bo_params={'base_estimator': 'gbrt', 'cv': 1})
+    atom.run(
+        models=model,
+        metric="neg_mean_absolute_error",
+        n_calls=2,
+        n_initial_points=1,
+        bo_params={"base_estimator": "gbrt", "cv": 1},
+    )
     assert not atom.errors
     assert hasattr(atom, model) and hasattr(atom, model.lower())
 
@@ -83,6 +89,6 @@ def test_CatNB():
     y = np.random.randint(2, size=100)
 
     atom = ATOMClassifier(X, y, random_state=1)
-    atom.run(models='CatNB', n_calls=2, n_initial_points=1)
+    atom.run(models="CatNB", n_calls=2, n_initial_points=1)
     assert not atom.errors
-    assert hasattr(atom, 'CatNB') and hasattr(atom, 'catnb')
+    assert hasattr(atom, "CatNB") and hasattr(atom, "catnb")

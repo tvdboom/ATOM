@@ -58,7 +58,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['LR', 'LDA'], metric='average_precision')
+atom.run(["LR", "LDA"], metric="average_precision")
 atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
 ```
 <div align="center">

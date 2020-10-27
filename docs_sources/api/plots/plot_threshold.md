@@ -2,7 +2,7 @@
 ----------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset='test', steps=100,
+<pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset="test", steps=100,
                       title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1607">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -22,9 +22,9 @@ Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric f
  or a sklearn scorer object (see the [user guide](../../../user_guide/#metric)). If
  None, the metric used to run the pipeline is used.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+Data set on which to calculate the metric. Options are "train", "test" or "both".
 </blockquote>
 <strong>steps: int, optional (default=100)</strong>
 <blockquote>
@@ -61,8 +61,8 @@ from atom import ATOMClassifier
 from sklearn.metrics import recall_score
 
 atom = ATOMClassifier(X, y)
-atom.run('LGB')
-atom.plot_threshold(metric=['accuracy', 'f1', recall_score])
+atom.run("LGB")
+atom.plot_threshold(metric=["accuracy", "f1", recall_score])
 ```
 <div align="center">
     <img src="../../../img/plots/plot_threshold.png" alt="plot_threshold" width="700" height="420"/>

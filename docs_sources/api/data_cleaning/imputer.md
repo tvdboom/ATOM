@@ -2,37 +2,37 @@
 ---------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num='drop', strat_cat='drop', min_frac_rows=0.5,
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
                                  min_frac_cols=0.5, missing=None, verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L300">[source]</a></div></pre>
 <div style="padding-left:3%">
 Impute or remove missing values according to the selected strategy. Also removes rows
  and columns with too many missing values. This class can be accessed from `atom`
- through the [impute](../../ATOM/atomclassifier/#atomclassifier-impute) method. Read
+ through the [impute](../../ATOM/atomclassifier/#impute) method. Read
  more in the [user guide](../../../user_guide/#imputing-missing-values).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strat_num: str, int or float, optional (default='drop')</strong>
+<strong>strat_num: str, int or float, optional (default="drop")</strong>
 <blockquote>
 Imputing strategy for numerical columns. Choose from:
 <ul>
-<li>'drop': Drop rows containing missing values.</li>
-<li>'mean': Impute with mean of column.</li>
-<li>'median': Impute with median of column.</li>
-<li>'knn': Impute using a K-Nearest Neighbors approach.</li>
-<li>'most_frequent': Impute with most frequent value.</li>
+<li>"drop": Drop rows containing missing values.</li>
+<li>"mean": Impute with mean of column.</li>
+<li>"median": Impute with median of column.</li>
+<li>"knn": Impute using a K-Nearest Neighbors approach.</li>
+<li>"most_frequent": Impute with most frequent value.</li>
 <li>int or float: Impute with provided numerical value.</li>
 </ul>
 </blockquote>
-<strong>strat_cat: str, optional (default='drop')</strong>
+<strong>strat_cat: str, optional (default="drop")</strong>
 <blockquote>
 Imputing strategy for categorical columns. Choose from:
 <ul>
-<li>'drop': Drop rows containing missing values.</li>
-<li>'most_frequent': Impute with most frequent value.</li>
+<li>"drop": Drop rows containing missing values.</li>
+<li>"most_frequent": Impute with most frequent value.</li>
 <li>str: Impute with provided string.</li>
 </ul>
 </blockquote>
@@ -46,8 +46,8 @@ Minimum fraction of non-missing values in a column. If less, the column is remov
 </blockquote>
 <strong>missing: int, float or list, optional (default=None)</strong>
 <blockquote>
-List of values to treat as 'missing'. None to use the default values:
- [None, np.NaN, np.inf, -np.inf, '', '?', 'NA', 'nan', 'None', 'inf']. Note that
+List of values to treat as "missing". None to use the default values:
+ [None, np.NaN, np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"]. Note that
  `np.NaN`, `None`, `np.inf` and `-np.inf` will always be imputed since they are
  incompatible with most estimators.
 </blockquote>
@@ -65,7 +65,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -76,7 +76,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 !!!tip
-    Use `atom`'s [missing](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`"s [missing](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -354,13 +354,13 @@ Transformed target column. Only returned if provided.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num='knn', strat_cat='drop', min_frac_cols=0.8)
+atom.impute(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)
 ```
 or
 ```Python
 from atom.data_cleaning import Imputer
 
-imputer = Imputer(strat_num='knn', strat_cat='drop', min_frac_cols=0.8)
+imputer = Imputer(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)
 imputer.fit(X_train, y_train)
 X = imputer.transform(X)
 ```

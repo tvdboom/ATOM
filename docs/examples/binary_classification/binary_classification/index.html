@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -554,7 +554,7 @@ from atom import ATOMClassifier
 </code></pre>
 
 <pre><code class="python"># Load data
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv(&quot;./datasets/weatherAUS.csv&quot;)
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -650,7 +650,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 <h2 id="run-the-pipeline">Run the pipeline</h2>
 <pre><code class="python"># Call ATOM using only 5% of the complete dataset (for explanatory purposes)
-atom = ATOMClassifier(X, 'RainTomorrow', n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
+atom = ATOMClassifier(X, &quot;RainTomorrow&quot;, n_rows=0.05, n_jobs=8, warnings=False, verbose=2, random_state=1)
 </code></pre>
 
 <pre><code>&lt;&lt; ================== ATOM ================== &gt;&gt;
@@ -677,7 +677,7 @@ Instances in RainTomorrow per class:
 | 1: Yes |     1495 |         1215 |         280 |
 </code></pre>
 <pre><code class="python"># Impute missing values
-atom.impute(strat_num='knn', strat_cat='drop', min_frac_rows=0.8)
+atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;drop&quot;, min_frac_rows=0.8)
 </code></pre>
 
 <pre><code>Fitting Imputer...
@@ -702,7 +702,7 @@ Imputing missing values...
  --&gt; Dropping 31 rows due to missing values in feature RainToday.
 </code></pre>
 <pre><code class="python"># Encode the categorical features
-atom.encode(strategy='CatBoost', max_onehot=10, frac_to_other=0.04)
+atom.encode(strategy=&quot;CatBoost&quot;, max_onehot=10, frac_to_other=0.04)
 </code></pre>
 
 <pre><code>Fitting Encoder...
@@ -714,7 +714,7 @@ Encoding categorical columns...
  --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
 </code></pre>
 <pre><code class="python"># Perform undersampling of the majority class
-atom.balance(strategy='smote', sampling_strategy=0.9)
+atom.balance(strategy=&quot;smote&quot;, sampling_strategy=0.9)
 atom.stats()  # Note the balanced training set
 </code></pre>
 
@@ -738,7 +738,7 @@ Instances in RainTomorrow per class:
 | 1: Yes |     3488 |         3262 |         226 |
 </code></pre>
 <pre><code class="python"># Fit the EXtra-Trees and Random Forest to the data
-atom.run(models=['et', 'rf'], metric='f1', bagging=5, verbose=1)
+atom.run(models=[&quot;et&quot;, &quot;rf&quot;], metric=&quot;f1&quot;, bagging=5, verbose=1)
 </code></pre>
 
 <pre><code>Running pipeline ============================= &gt;&gt;
@@ -783,9 +783,9 @@ atom.scoring()
 # The winning model is indicated with a ! and can be accessed through the winner attribute
 # The ~ indicates that the model is probably overfitting. If we look at the train and test
 # score we see a difference of more than 20%
-print(f'\n\nAnd the winner is the {atom.winner.longname} model!!')
-print('Score on the training set: ', atom.winner.metric_train)
-print('Score on the test set: ', atom.winner.metric_test)
+print(f&quot;\n\nAnd the winner is the {atom.winner.fullname} model!!&quot;)
+print(&quot;Score on the training set: &quot;, atom.winner.metric_train)
+print(&quot;Score on the test set: &quot;, atom.winner.metric_test)
 </code></pre>
 
 <pre><code>Results ===================== &gt;&gt;
@@ -806,7 +806,7 @@ atom.winner.plot_probabilities()
 <p><img alt="png" src="../output_13_0.png" /></p>
 <pre><code class="python"># The threshold plot let us compare how different metrics
 # perform for different thresholds
-atom.winner.plot_threshold(metric=['f1', 'accuracy', 'average_precision'], steps=50, filename='thresholds.png')
+atom.winner.plot_threshold(metric=[&quot;f1&quot;, &quot;accuracy&quot;, &quot;average_precision&quot;], steps=50, filename=&quot;thresholds.png&quot;)
 </code></pre>
 
 <p><img alt="png" src="../output_14_0.png" /></p>

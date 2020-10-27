@@ -18,7 +18,7 @@ from atom import ATOMClassifier
 
 ```python
 # Load the Australian weather dataset
-X = pd.read_csv('./datasets/weatherAUS.csv')
+X = pd.read_csv("./datasets/weatherAUS.csv")
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -123,7 +123,7 @@ X.sample(frac=1).iloc[:5, :8]
 ```python
 # Initialize ATOM and prepare the data
 atom = ATOMClassifier(X, verbose=2, random_state=1)
-atom.impute(strat_num='median', strat_cat='most_frequent', min_frac_rows=0.8)
+atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.8)
 atom.encode()
 ```
 
@@ -189,7 +189,7 @@ atom.encode()
 
 ```python
 # We can analyze the impact of the training set's size on a LightGBM model
-atom.train_sizing('lgb', train_sizes=np.linspace(0.1, 1, 9), bagging=4)
+atom.train_sizing("lgb", train_sizes=np.linspace(0.1, 1, 9), bagging=4)
 ```
 
     

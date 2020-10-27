@@ -2,26 +2,26 @@
 ------------------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy='DFS', n_features=None, generations=20, population=500,
+<pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS", n_features=None, generations=20, population=500,
                                                 operators=None, n_jobs=1, verbose=0, logger=None, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
  features. This class can be accessed from `atom` through the
- [feature_generation](../../ATOM/atomclassifier/#atomclassifier-feature-generation)
+ [feature_generation](../../ATOM/atomclassifier/#feature-generation)
  method. Read more in the [user guide](../../../user_guide/#generating-new-features).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default='DFS')</strong>
+<strong>strategy: str, optional (default="DFS")</strong>
 <blockquote>
 Strategy to crate new features. Choose from:
 <ul>
-<li>'DFS' to use Deep Feature Synthesis.</li>
-<li>'GFG' or 'genetic' to use Genetic Feature Generation.</li>
+<li>"DFS" to use Deep Feature Synthesis.</li>
+<li>"GFG" or "genetic" to use Genetic Feature Generation.</li>
 </ul>
 </blockquote>
 <strong>n_features: int or None, optional (default=None)</strong>
@@ -40,7 +40,7 @@ Number of programs in each generation. Only for the genetic strategy.
 <strong>operators: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the operators to be used on the features (for both strategies). None to use all.
- Valid options are: 'add', 'sub', 'mul', 'div', 'sqrt', 'log', 'sin', 'cos', 'tan'.
+ Valid options are: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -67,7 +67,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -90,7 +90,7 @@ Seed used by the random number generator. If None, the random number
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`'s
+    `NaN` values. Check the warnings that may pop up or use `atom`"s
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
@@ -385,13 +385,13 @@ Feature set with the newly generated features.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_generation(strategy='genetic', n_features=3, generations=30, population=400)
+atom.feature_generation(strategy="genetic", n_features=3, generations=30, population=400)
 ```
 or
 ```python
 from atom.feature_engineering import FeatureGenerator
 
-feature_generator = FeatureGenerator(strategy='genetic', n_features=3, generations=30, population=400)
+feature_generator = FeatureGenerator(strategy="genetic", n_features=3, generations=30, population=400)
 feature_generator.fit(X_train, y_train)
 X = feature_generator.transform(X)
 ```

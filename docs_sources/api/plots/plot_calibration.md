@@ -63,7 +63,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X)
-atom.run(['GNB', 'LR', 'LGB'], metric='average_precision')
+atom.run(["GNB", "LR", "LGB"], metric="average_precision")
 atom.plot_calibration()
 ```
 <div align="center">

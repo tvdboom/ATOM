@@ -13,7 +13,7 @@ Remove features according to the selected strategy. Ties between
  collinear features based on the Pearson correlation coefficient. For
  each pair above the specified limit (in terms of absolute value), it
  removes one of the two. This class can be accessed from `atom`
- through the [feature_selection](../../ATOM/atomclassifier/#atomclassifier-feature-selection)
+ through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
  method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
 <br /><br />
 <table>
@@ -25,11 +25,11 @@ Remove features according to the selected strategy. Ties between
 Feature selection strategy to use. Choose from:
 <ul>
 <li>None: Do not perform any feature selection algorithm.</li>
-<li>'univariate': Select best features according to a univariate F-test.</li>
-<li>'PCA': Perform principal component analysis.</li>
-<li>'SFM': Select best features according to a model.</li>
-<li>'RFE': Perform recursive feature elimination.</li>
-<li>'RFECV': Perform RFE with cross-validated selection.</li>
+<li>"univariate": Select best features according to a univariate F-test.</li>
+<li>"PCA": Perform principal component analysis.</li>
+<li>"SFM": Select best features according to a model.</li>
+<li>"RFE": Perform recursive feature elimination.</li>
+<li>"RFECV": Perform RFE with cross-validated selection.</li>
 </ul>
 </blockquote>
 <strong>solver: string, callable or None, optional (default=None)</strong>
@@ -39,28 +39,28 @@ sklearn documentation for an extended description of the choices.
 Select None for the default option per strategy (not applicable
 for SFM, RFE and RFECV).
 <ul>
-<li>for 'univariate', choose from:
+<li>for "univariate", choose from:
     <ul>
-    <li>'f_classif'</li>
-    <li>'f_regression'</li>
-    <li>'mutual_info_classif'</li>
-    <li>'mutual_info_regression'</li>
-    <li>'chi2'</li>
+    <li>"f_classif"</li>
+    <li>"f_regression"</li>
+    <li>"mutual_info_classif"</li>
+    <li>"mutual_info_regression"</li>
+    <li>"chi2"</li>
     <li>Any function taking two arrays (X, y), and returning
         arrays (scores, p-values). See the sklearn <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</li>
     </ul></li>
-<li>for 'PCA', choose from:
+<li>for "PCA", choose from:
     <ul>
-    <li>'auto' (default)</li>
-    <li>'full'</li>
-    <li>'arpack'</li>
-    <li>'randomized'</li>
+    <li>"auto" (default)</li>
+    <li>"full"</li>
+    <li>"arpack"</li>
+    <li>"randomized"</li>
     </ul></li>
-<li>for 'SFM', 'RFE' and 'RFECV:<br>
+<li>for "SFM", "RFE" and "RFECV:<br>
 Estimator with either a `feature_importances_` or `coef_` attribute after fitting.
  You can use one of ATOM's pre-defined [models](../../../user_guide/#models). Add
  `_class` or `_reg` after the model's name to specify a classification or regression
- task, e.g. `solver='LGB_reg'` (not necessary if called from an `atom` instance. No
+ task, e.g. `solver="LGB_reg"` (not necessary if called from an `atom` instance. No
  default option.</li>
 </ul>
 </blockquote>
@@ -72,9 +72,9 @@ Number of features to select. Choose from:
 <li>if < 1: Fraction of the total features to select.</li>
 <li>if >= 1: Number of features to select.</li>
 </ul>
-If strategy='SFM' and the threshold parameter is not specified, the threshold will be
+If strategy="SFM" and the threshold parameter is not specified, the threshold will be
  set to `-np.inf` in order to make this parameter the number of features to select.<br>
-If strategy='RFECV', it's the minimum number of features to select.
+If strategy="RFECV", it's the minimum number of features to select.
 </blockquote>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong>
 <blockquote>
@@ -115,7 +115,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -171,39 +171,39 @@ Dataframe of the removed collinear features.
 </blockquote>
 <strong>feature_importance: list</strong>
 <blockquote>
-Remaining features ordered by importance. Only if strategy in ['univariate', 'SFM,
- 'RFE', 'RFECV']. For RFE and RFECV, the importance is extracted from the external
+Remaining features ordered by importance. Only if strategy in ["univariate", "SFM,
+ "RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
  estimator fitted on the reduced set. 
 </blockquote>
 <strong>univariate: class</strong>
 <blockquote>
 [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
- instance used to fit the estimator. Only if strategy='univariate'.
+ instance used to fit the estimator. Only if strategy="univariate".
 </blockquote>
 <strong>scaler: class</strong>
 <blockquote>
 [Scaler](../../data_cleaning/scaler/) instance used to scale the data.
- Only if strategy='PCA' and the data was not already scaled.
+ Only if strategy="PCA" and the data was not already scaled.
 </blockquote>
 <strong>pca: class</strong>
 <blockquote>
 [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
- instance used to fit the estimator. Only if strategy='PCA'.
+ instance used to fit the estimator. Only if strategy="PCA".
 </blockquote>
 <strong>sfm: class</strong>
 <blockquote>
 [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)
- instance used to fit the estimator. Only if strategy='SFM'.
+ instance used to fit the estimator. Only if strategy="SFM".
 </blockquote>
 <strong>rfe: class</strong>
 <blockquote>
 [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)
- instance used to fit the estimator. Only if strategy='RFE'.
+ instance used to fit the estimator. Only if strategy="RFE".
 </blockquote>
 <strong>rfecv: class</strong>
 <blockquote>
 [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)
- instance used to fit the estimator. Only if strategy='RFECV'.
+ instance used to fit the estimator. Only if strategy="RFECV".
 </blockquote>
 </td>
 </tr>
@@ -548,17 +548,17 @@ Transformed feature set.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.feature_selection(stratgey='pca', n_features=12, whiten=True, max_correlation=0.96)
+atom.feature_selection(stratgey="pca", n_features=12, whiten=True, max_correlation=0.96)
 
-atom.plot_pca(filename='pca', figsize=(8, 5))
+atom.plot_pca(filename="pca", figsize=(8, 5))
 ```
 or
 ```python
 from atom.feature_engineering import FeatureSelector
 
-feature_selector = FeatureSelector(stratgey='pca', n_features=12, whiten=True, max_correlation=0.96)
+feature_selector = FeatureSelector(stratgey="pca", n_features=12, whiten=True, max_correlation=0.96)
 feature_selector.fit(X_train, y_train)
 X = feature_selector.transform(X, y)
 
-feature_selector.plot_pca(filename='pca', figsize=(8, 5))
+feature_selector.plot_pca(filename="pca", figsize=(8, 5))
 ```

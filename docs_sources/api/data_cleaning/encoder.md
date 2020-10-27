@@ -2,29 +2,29 @@
 --------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy='LeaveOneOut', max_onehot=10,
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L548">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the number
  of unique values in the column:
 
-- If n_unique=2, use Label-encoding.
-- If 2 < n_unique <= max_onehot, use OneHot-encoding.
-- If n_unique > max_onehot, use `strategy`-encoding.
+* If n_unique=2, use Label-encoding.
+* If 2 < n_unique <= max_onehot, use OneHot-encoding.
+* If n_unique > max_onehot, use `strategy`-encoding.
 
 Also replaces classes with low occurrences with the value `other` in
  order to prevent too high cardinality. Categorical features are defined as
  all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
  missing values or unknown classes when transforming. This class can be accessed
- from `atom` through the [encode](../../ATOM/atomclassifier/#atomclassifier-encode)
+ from `atom` through the [encode](../../ATOM/atomclassifier/#encode)
  method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default='LeaveOneOut')</strong>
+<strong>strategy: str, optional (default="LeaveOneOut")</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
  estimators available in the [category-encoders](http://contrib.scikit-learn.org/category_encoders/)
@@ -58,7 +58,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -73,7 +73,7 @@ Additional keyword arguments passed to the `strategy` estimator.
 <br>
 
 !!!tip
-    Use `atom`'s [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`"s [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br>
@@ -332,13 +332,13 @@ Transformed feature set.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.encode(strategy='CatBoost', max_onehot=5)
+atom.encode(strategy="CatBoost", max_onehot=5)
 ```
 or
 ```python
 from atom.data_cleaning import Encoder
 
-encoder = Encoder(strategy='CatBoost', max_onehot=5)
+encoder = Encoder(strategy="CatBoost", max_onehot=5)
 encoder.fit(X_train, y_train)
 X = encoder.transform(X)
 ```

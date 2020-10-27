@@ -14,7 +14,7 @@ import pandas as pd
 from atom import ATOMRegressor
 
 # Load the abalone dataset
-X = pd.read_csv('./datasets/abalone.csv')
+X = pd.read_csv("./datasets/abalone.csv")
 ```
 
 
@@ -176,7 +176,7 @@ atom.feature_selection(strategy="pca", n_features=6)
 ```python
 # Use the plotting methods to see the retained variance ratio
 atom.plot_pca()
-atom.plot_components(figsize=(8, 6), filename='atom_PCA_plot')
+atom.plot_components(figsize=(8, 6), filename="atom_PCA_plot")
 ```
 
 
@@ -192,11 +192,11 @@ atom.plot_components(figsize=(8, 6), filename='atom_PCA_plot')
 
 ```python
 atom.run(
-    models=['Tree', 'Bag', 'ET'],
-    metric='MSE',
+    models=["Tree", "Bag", "ET"],
+    metric="MSE",
     n_calls=5,
     n_initial_points=2,
-    bo_params={'base_estimator': 'GBRT', 'cv': 1},
+    bo_params={"base_estimator": "GBRT", "cv": 1},
     bagging=5
 )
 ```
@@ -209,29 +209,29 @@ atom.run(
     
     Running BO for Decision Tree...
     Random start 1 ----------------------------------
-    Parameters --> {'criterion': 'mae', 'splitter': 'random', 'max_depth': 5, 'max_features': 0.9, 'min_samples_split': 8, 'min_samples_leaf': 19, 'ccp_alpha': 0.003}
+    Parameters --> {"criterion": "mae", "splitter": "random", "max_depth": 5, "max_features": 0.9, "min_samples_split": 8, "min_samples_leaf": 19, "ccp_alpha": 0.003}
     Evaluation --> neg_mean_squared_error: -7.8759  Best neg_mean_squared_error: -7.8759
     Time iteration: 0.043s   Total time: 0.048s
     Random start 2 ----------------------------------
-    Parameters --> {'criterion': 'mae', 'splitter': 'best', 'max_depth': 10, 'max_features': 0.9, 'min_samples_split': 3, 'min_samples_leaf': 12, 'ccp_alpha': 0.033}
+    Parameters --> {"criterion": "mae", "splitter": "best", "max_depth": 10, "max_features": 0.9, "min_samples_split": 3, "min_samples_leaf": 12, "ccp_alpha": 0.033}
     Evaluation --> neg_mean_squared_error: -9.1854  Best neg_mean_squared_error: -7.8759
     Time iteration: 0.181s   Total time: 0.233s
     Iteration 3 -------------------------------------
-    Parameters --> {'criterion': 'friedman_mse', 'splitter': 'random', 'max_depth': 7, 'max_features': 0.6, 'min_samples_split': 17, 'min_samples_leaf': 19, 'ccp_alpha': 0.015}
+    Parameters --> {"criterion": "friedman_mse", "splitter": "random", "max_depth": 7, "max_features": 0.6, "min_samples_split": 17, "min_samples_leaf": 19, "ccp_alpha": 0.015}
     Evaluation --> neg_mean_squared_error: -8.2130  Best neg_mean_squared_error: -7.8759
     Time iteration: 0.007s   Total time: 0.428s
     Iteration 4 -------------------------------------
-    Parameters --> {'criterion': 'friedman_mse', 'splitter': 'best', 'max_depth': 4, 'max_features': 0.9, 'min_samples_split': 3, 'min_samples_leaf': 12, 'ccp_alpha': 0.006}
+    Parameters --> {"criterion": "friedman_mse", "splitter": "best", "max_depth": 4, "max_features": 0.9, "min_samples_split": 3, "min_samples_leaf": 12, "ccp_alpha": 0.006}
     Evaluation --> neg_mean_squared_error: -6.7540  Best neg_mean_squared_error: -6.7540
     Time iteration: 0.010s   Total time: 0.533s
     Iteration 5 -------------------------------------
-    Parameters --> {'criterion': 'mae', 'splitter': 'best', 'max_depth': 3, 'max_features': 0.9, 'min_samples_split': 7, 'min_samples_leaf': 6, 'ccp_alpha': 0.007}
+    Parameters --> {"criterion": "mae", "splitter": "best", "max_depth": 3, "max_features": 0.9, "min_samples_split": 7, "min_samples_leaf": 6, "ccp_alpha": 0.007}
     Evaluation --> neg_mean_squared_error: -7.2855  Best neg_mean_squared_error: -6.7540
     Time iteration: 0.132s   Total time: 0.757s
     
     Results for Decision Tree:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'criterion': 'friedman_mse', 'splitter': 'best', 'max_depth': 4, 'max_features': 0.9, 'min_samples_split': 3, 'min_samples_leaf': 12, 'ccp_alpha': 0.006}
+    Best parameters --> {"criterion": "friedman_mse", "splitter": "best", "max_depth": 4, "max_features": 0.9, "min_samples_split": 3, "min_samples_leaf": 12, "ccp_alpha": 0.006}
     Best evaluation --> neg_mean_squared_error: -6.7540
     Time elapsed: 0.855s
     Fitting -----------------------------------------
@@ -247,29 +247,29 @@ atom.run(
     
     Running BO for Bagging Regressor...
     Random start 1 ----------------------------------
-    Parameters --> {'n_estimators': 112, 'max_samples': 0.9, 'max_features': 0.6, 'bootstrap': False, 'bootstrap_features': False}
+    Parameters --> {"n_estimators": 112, "max_samples": 0.9, "max_features": 0.6, "bootstrap": False, "bootstrap_features": False}
     Evaluation --> neg_mean_squared_error: -5.7680  Best neg_mean_squared_error: -5.7680
     Time iteration: 0.877s   Total time: 0.881s
     Random start 2 ----------------------------------
-    Parameters --> {'n_estimators': 131, 'max_samples': 0.5, 'max_features': 0.5, 'bootstrap': False, 'bootstrap_features': False}
+    Parameters --> {"n_estimators": 131, "max_samples": 0.5, "max_features": 0.5, "bootstrap": False, "bootstrap_features": False}
     Evaluation --> neg_mean_squared_error: -6.8254  Best neg_mean_squared_error: -5.7680
     Time iteration: 0.585s   Total time: 1.471s
     Iteration 3 -------------------------------------
-    Parameters --> {'n_estimators': 50, 'max_samples': 0.9, 'max_features': 0.6, 'bootstrap': False, 'bootstrap_features': True}
+    Parameters --> {"n_estimators": 50, "max_samples": 0.9, "max_features": 0.6, "bootstrap": False, "bootstrap_features": True}
     Evaluation --> neg_mean_squared_error: -5.4895  Best neg_mean_squared_error: -5.4895
     Time iteration: 0.389s   Total time: 1.953s
     Iteration 4 -------------------------------------
-    Parameters --> {'n_estimators': 74, 'max_samples': 0.5, 'max_features': 0.5, 'bootstrap': False, 'bootstrap_features': True}
+    Parameters --> {"n_estimators": 74, "max_samples": 0.5, "max_features": 0.5, "bootstrap": False, "bootstrap_features": True}
     Evaluation --> neg_mean_squared_error: -6.0363  Best neg_mean_squared_error: -5.4895
     Time iteration: 0.330s   Total time: 2.381s
     Iteration 5 -------------------------------------
-    Parameters --> {'n_estimators': 36, 'max_samples': 0.9, 'max_features': 0.6, 'bootstrap': True, 'bootstrap_features': False}
+    Parameters --> {"n_estimators": 36, "max_samples": 0.9, "max_features": 0.6, "bootstrap": True, "bootstrap_features": False}
     Evaluation --> neg_mean_squared_error: -6.0037  Best neg_mean_squared_error: -5.4895
     Time iteration: 0.194s   Total time: 2.668s
     
     Results for Bagging Regressor:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'n_estimators': 50, 'max_samples': 0.9, 'max_features': 0.6, 'bootstrap': False, 'bootstrap_features': True}
+    Best parameters --> {"n_estimators": 50, "max_samples": 0.9, "max_features": 0.6, "bootstrap": False, "bootstrap_features": True}
     Best evaluation --> neg_mean_squared_error: -5.4895
     Time elapsed: 2.764s
     Fitting -----------------------------------------
@@ -285,29 +285,29 @@ atom.run(
     
     Running BO for Extra-Trees...
     Random start 1 ----------------------------------
-    Parameters --> {'n_estimators': 112, 'max_depth': 6, 'max_features': 1.0, 'criterion': 'mae', 'min_samples_split': 8, 'min_samples_leaf': 19, 'ccp_alpha': 0.003, 'bootstrap': True, 'max_samples': 0.6}
+    Parameters --> {"n_estimators": 112, "max_depth": 6, "max_features": 1.0, "criterion": "mae", "min_samples_split": 8, "min_samples_leaf": 19, "ccp_alpha": 0.003, "bootstrap": True, "max_samples": 0.6}
     Evaluation --> neg_mean_squared_error: -7.1995  Best neg_mean_squared_error: -7.1995
     Time iteration: 1.034s   Total time: 1.040s
     Random start 2 ----------------------------------
-    Parameters --> {'n_estimators': 369, 'max_depth': 10, 'max_features': 0.8, 'criterion': 'mse', 'min_samples_split': 13, 'min_samples_leaf': 6, 'ccp_alpha': 0.0, 'bootstrap': False}
+    Parameters --> {"n_estimators": 369, "max_depth": 10, "max_features": 0.8, "criterion": "mse", "min_samples_split": 13, "min_samples_leaf": 6, "ccp_alpha": 0.0, "bootstrap": False}
     Evaluation --> neg_mean_squared_error: -6.9525  Best neg_mean_squared_error: -6.9525
     Time iteration: 0.495s   Total time: 1.538s
     Iteration 3 -------------------------------------
-    Parameters --> {'n_estimators': 481, 'max_depth': 10, 'max_features': 0.8, 'criterion': 'mse', 'min_samples_split': 7, 'min_samples_leaf': 2, 'ccp_alpha': 0.001, 'bootstrap': False}
+    Parameters --> {"n_estimators": 481, "max_depth": 10, "max_features": 0.8, "criterion": "mse", "min_samples_split": 7, "min_samples_leaf": 2, "ccp_alpha": 0.001, "bootstrap": False}
     Evaluation --> neg_mean_squared_error: -5.0279  Best neg_mean_squared_error: -5.0279
     Time iteration: 0.744s   Total time: 2.388s
     Iteration 4 -------------------------------------
-    Parameters --> {'n_estimators': 460, 'max_depth': 5, 'max_features': 1.0, 'criterion': 'mae', 'min_samples_split': 5, 'min_samples_leaf': 4, 'ccp_alpha': 0.034, 'bootstrap': True, 'max_samples': 0.6}
+    Parameters --> {"n_estimators": 460, "max_depth": 5, "max_features": 1.0, "criterion": "mae", "min_samples_split": 5, "min_samples_leaf": 4, "ccp_alpha": 0.034, "bootstrap": True, "max_samples": 0.6}
     Evaluation --> neg_mean_squared_error: -7.3319  Best neg_mean_squared_error: -5.0279
     Time iteration: 5.020s   Total time: 7.517s
     Iteration 5 -------------------------------------
-    Parameters --> {'n_estimators': 474, 'max_depth': 4, 'max_features': 0.8, 'criterion': 'mae', 'min_samples_split': 20, 'min_samples_leaf': 1, 'ccp_alpha': 0.018, 'bootstrap': True, 'max_samples': 0.6}
+    Parameters --> {"n_estimators": 474, "max_depth": 4, "max_features": 0.8, "criterion": "mae", "min_samples_split": 20, "min_samples_leaf": 1, "ccp_alpha": 0.018, "bootstrap": True, "max_samples": 0.6}
     Evaluation --> neg_mean_squared_error: -7.5183  Best neg_mean_squared_error: -5.0279
     Time iteration: 4.067s   Total time: 11.690s
     
     Results for Extra-Trees:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {'n_estimators': 481, 'max_depth': 10, 'max_features': 0.8, 'criterion': 'mse', 'min_samples_split': 7, 'min_samples_leaf': 2, 'ccp_alpha': 0.001, 'bootstrap': False}
+    Best parameters --> {"n_estimators": 481, "max_depth": 10, "max_features": 0.8, "criterion": "mse", "min_samples_split": 7, "min_samples_leaf": 2, "ccp_alpha": 0.001, "bootstrap": False}
     Best evaluation --> neg_mean_squared_error: -5.0279
     Time elapsed: 11.801s
     Fitting -----------------------------------------

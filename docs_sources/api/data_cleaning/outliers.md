@@ -2,25 +2,25 @@
 ----------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy='drop', max_sigma=3, include_target=False, verbose=0, logger=None)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy="drop", max_sigma=3, include_target=False, verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L754">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
  Ignores categorical columns. This class can be accessed from `atom` through the
- [outliers](../../ATOM/atomclassifier/#atomclassifier-outliers) method. Read more
+ [outliers](../../ATOM/atomclassifier/#outliers) method. Read more
  in the [user guide](../../../user_guide/#handling-outliers).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: int, float or str, optional (default='drop')</strong>
+<strong>strategy: int, float or str, optional (default="drop")</strong>
 <blockquote>
 Strategy to apply on the outliers. Choose from:
 <ul>
-<li>'drop': Drop any row with outliers.</li>
-<li>'min_max': Replace the outlier with the min or max of the column.</li>
+<li>"drop": Drop any row with outliers.</li>
+<li>"min_max": Replace the outlier with the min or max of the column.</li>
 <li>Any numerical value with which to replace the outliers.</li>
 </ul>
 </blockquote>
@@ -46,9 +46,9 @@ Verbosity level of the class. Possible values are:
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: Doesn't save a logging file.</li>
+<li>If None: Doesn"t save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -285,12 +285,12 @@ Transformed target column. Only returned if provided.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.outliers(strategy='min_max', max_sigma=2, include_target=True)
+atom.outliers(strategy="min_max", max_sigma=2, include_target=True)
 ```
 or
 ```python
 from atom.data_cleaning import Outliers
 
-outliers = Outliers(strategy='min_max', max_sigma=2, include_target=True)
+outliers = Outliers(strategy="min_max", max_sigma=2, include_target=True)
 X_train, y_train = outliers.transform(X_train, y_train)
 ```

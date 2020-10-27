@@ -2,7 +2,7 @@
 -----------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L834">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the precision-recall curve. The legend shows the average precision (AP) score. 
@@ -16,9 +16,9 @@ Plot the precision-recall curve. The legend shows the average precision (AP) sco
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+Data set on which to calculate the metric. Options are "train", "test" or "both".
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -50,7 +50,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['LR', 'RF', 'LGB'], metric='average_precision')
+atom.run(["LR", "RF", "LGB"], metric="average_precision")
 atom.plot_prc()
 ```
 <div align="center">

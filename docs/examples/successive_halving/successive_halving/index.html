@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../../API/data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../../API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -575,8 +575,8 @@ Test set size: 101
 </code></pre>
 <pre><code class="python"># We can compare tree-based models via successive halving
 atom.successive_halving(
-    models=['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
-    metric='mae',
+    models=[&quot;tree&quot;, &quot;bag&quot;, &quot;et&quot;, &quot;rf&quot;, &quot;lgb&quot;, &quot;catb&quot;],
+    metric=&quot;mae&quot;,
     bagging=5
 )
 </code></pre>

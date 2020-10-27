@@ -45,8 +45,8 @@ atom = ATOMRegressor(X, y, verbose=1, random_state=1)
 ```python
 # We can compare tree-based models via successive halving
 atom.successive_halving(
-    models=['tree', 'bag', 'et', 'rf', 'lgb', 'catb'],
-    metric='mae',
+    models=["tree", "bag", "et", "rf", "lgb", "catb"],
+    metric="mae",
     bagging=5
 )
 ```

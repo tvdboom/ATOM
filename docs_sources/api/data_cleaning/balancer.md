@@ -2,19 +2,19 @@
 ----------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy='ADASYN', n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target category. Use only for classification tasks.
 This class can be accessed from `atom` through the
- [balance](../../ATOM/atomclassifier/#atomclassifier-balance) method. Read more in
+ [balance](../../ATOM/atomclassifier/#balance) method. Read more in
  the [user guide](../../../user_guide/#balancing-the-data).
 <br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default='ADASYN')</strong>
+<strong>strategy: str, optional (default="ADASYN")</strong>
 <blockquote>
 Type of algorithm to use for oversampling or undersampling. Choose from one
  of the estimators available in the [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/index.html)
@@ -45,7 +45,7 @@ Verbosity level of the class. Possible values are:
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. 'auto' to create an automatic name.</li>
+<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
@@ -313,12 +313,12 @@ Transformed target column.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.balance(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+atom.balance(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
 ```
 or
 ```python
 from atom.data_cleaning import Balancer
 
-balancer = Balancer(strategy='NearMiss', sampling_strategy=0.7, n_neighbors=10)
+balancer = Balancer(strategy="NearMiss", sampling_strategy=0.7, n_neighbors=10)
 X_train, y_train = balancer.transform(X_train, y_train)
 ```

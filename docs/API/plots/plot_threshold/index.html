@@ -74,7 +74,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/standard_cleaner/" class="dropdown-item">StandardCleaner</a>
+    <a href="../../data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
 </li>
             
 <li>
@@ -441,7 +441,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass_classification</a>
+    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
@@ -461,7 +461,7 @@
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric</a>
+    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -538,7 +538,7 @@
 <h1 id="plot_threshold">plot_threshold</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset='test', steps=100,
+<pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset="test", steps=100,
                       title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1607">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -558,9 +558,9 @@ Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric f
  or a sklearn scorer object (see the <a href="../../../user_guide/#metric">user guide</a>). If
  None, the metric used to run the pipeline is used.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are 'train', 'test' or 'both'.
+Data set on which to calculate the metric. Options are "train", "test" or "both".
 </blockquote>
 <strong>steps: int, optional (default=100)</strong>
 <blockquote>
@@ -592,8 +592,8 @@ Whether to render the plot.
 from sklearn.metrics import recall_score
 
 atom = ATOMClassifier(X, y)
-atom.run('LGB')
-atom.plot_threshold(metric=['accuracy', 'f1', recall_score])
+atom.run(&quot;LGB&quot;)
+atom.plot_threshold(metric=[&quot;accuracy&quot;, &quot;f1&quot;, recall_score])
 </code></pre>
 
 <div align="center">

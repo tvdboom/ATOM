@@ -2,7 +2,7 @@
 ------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_lift</strong>(models=None, dataset='test', title=None, figsize=(10, 6), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_lift</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1993">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the lift curve. Only for binary classification.
@@ -15,9 +15,9 @@ Plot the lift curve. Only for binary classification.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
-<strong>dataset: str, optional (default='test')</strong>
+<strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the lift curve. Options are 'train', 'test' or 'both'.
+Data set on which to calculate the lift curve. Options are "train", "test" or "both".
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -49,8 +49,8 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(['GNB', 'RF', 'LGB'], metric='roc_auc')
-atom.plot_lift(filename='lift_curve.png')
+atom.run(["GNB", "RF", "LGB"], metric="roc_auc")
+atom.plot_lift(filename="lift_curve.png")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_lift.png" alt="plot_lift" width="700" height="420"/>

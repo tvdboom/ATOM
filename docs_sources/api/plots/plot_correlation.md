@@ -2,7 +2,7 @@
 ------------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(method='pearson', title=None, figsize=(8, 8), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(method="pearson", title=None, figsize=(8, 8), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2564">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the data's correlation matrix. Ignores non-numeric columns.
@@ -11,9 +11,9 @@ Plot the data's correlation matrix. Ignores non-numeric columns.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>method: str, optional (default='pearson')</strong>
+<strong>method: str, optional (default="pearson")</strong>
 <blockquote>
-Method of correlation. Choose from 'pearson', 'kendall' or 'spearman'.
+Method of correlation. Choose from "pearson", "kendall" or "spearman".
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -43,7 +43,7 @@ Whether to render the plot.
 ```python
 from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, 'RainTomorrow')
+atom = ATOMClassifier(X, "RainTomorrow")
 atom.plot_correlation()
 ```
 <div align="center">
