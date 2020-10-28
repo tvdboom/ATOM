@@ -244,7 +244,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 trans_primitives=trans_primitives,
             )
 
-            # Since dfs doesn"t return a specific order in the features and we need
+            # Since dfs doesn't return a specific order in the features and we need
             # an order for the selection to be deterministic, order by name
             new_dfs = []
             for feature in sorted(map(str, self._dfs_features[X.shape[1] - 1:])):
@@ -413,7 +413,7 @@ class FeatureSelector(
             - "RFE": Recursive feature eliminator.
             - "RFECV": RFE with cross-validated selection.
 
-        Note that the RFE and RFECV strategies don"t work when the solver is a
+        Note that the RFE and RFECV strategies don't work when the solver is a
         CatBoost model due to incompatibility of the APIs.
 
     solver: string, callable or None, optional (default=None)
@@ -480,7 +480,7 @@ class FeatureSelector(
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.

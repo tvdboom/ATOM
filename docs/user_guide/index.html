@@ -668,8 +668,8 @@
  different parameters. There are some important differences with sklearn's API:</p>
 <ol>
 <li><code>atom</code> is initialized with the data you want to manipulate. This data can be accessed
- at any moment through <code>atom</code>"s <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
-<li>The classes in ATOM's API are reached through <code>atom</code>"s methods. For example, calling
+ at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
+<li>The classes in ATOM's API are reached through <code>atom</code>'s methods. For example, calling
  the <a href="../API/ATOM/atomclassifier/#encode">encode</a> method, will initialize
  an <a href="../API/data_cleaning/encoder">Encoder</a> instance, fit it on the training set and
  transform the whole dataset.</li>
@@ -727,7 +727,7 @@ atom.plot_prc(title="Precision-recall curve comparison plot")
 <li>Remove categorical columns with maximal cardinality.</li>
 <li>Remove columns with minimum cardinality.</li>
 <li>Remove rows with missing values in the target column.</li>
-<li>Label-encode the target column.</li>
+<li>Encode the target column.</li>
 </ul>
 <p><br></p>
 <h3 id="imputing-missing-values">Imputing missing values</h3>
@@ -740,7 +740,7 @@ atom.plot_prc(title="Precision-recall curve comparison plot")
  method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use <code>atom</code>"s <a href="../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
 for an overview of the missing values in the dataset.</p>
 </div>
 <p><br></p>
@@ -755,7 +755,7 @@ for an overview of the missing values in the dataset.</p>
  <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#encode">encode</a> method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use <code>atom</code>"s <a href="../API/ATOM/atomclassifier/#data-attributes">categorical</a> attribute
+<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">categorical</a> attribute
 for a list of the categorical columns in the dataset.</p>
 </div>
 <p><br> </p>
@@ -831,7 +831,7 @@ the number of features!</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
-<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>"s
+<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>'s
 <a href="/API/ATOM/atomclassifier/#properties">missing</a> property.</p>
 </div>
 <div class="admonition warning">
@@ -883,7 +883,7 @@ SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</cod
  best features in a dataset based on importance weights. The estimator is provided
  through the <code>solver</code> parameter and can be already fitted. ATOM allows you to use one
  its pre-defined <a href="#models">models</a>, e.g. <code>solver="RF"</code>. If you didn't call the
- FeatureSelector through <code>atom</code>, don"t forget to indicate the estimator's task adding
+ FeatureSelector through <code>atom</code>, don't forget to indicate the estimator's task adding
  <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a random forest classifier.</p>
 <p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
 <p><strong>Recursive feature elimination</strong><br>
@@ -921,12 +921,12 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_feature_importance/">plot_feature_importance</a> method to
 examine how much a specific feature contributes to the final predictions. If the
-model doesn"t have a <code>feature_importances_</code> attribute, use 
+model doesn't have a <code>feature_importances_</code> attribute, use 
 <a href="../API/plots/plot_permutation_importance/">plot_permutation_importance</a> instead.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The RFE and RFECV strategies don"t work when the solver is a 
+<p>The RFE and RFECV strategies don't work when the solver is a 
 <a href="https://catboost.ai/">CatBoost</a> model due to incompatibility of the APIs.</p>
 </div>
 <p><br><br></p>
@@ -1138,7 +1138,7 @@ Since some of sklearn's scorers have quite long names and ATOM is all about <s>l
 Sometimes it is useful to measure the performance of the models in more than one way.
  ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
  provide the <code>metric</code> parameter with a list of desired metrics, e.g. <code>atom.run("LDA", metric=["r2", "mse"])</code>.
- If you provide metric functions, don"t forget to also provide lists to the
+ If you provide metric functions, don't forget to also provide lists to the
  <code>greater_is_better</code>, <code>needs_proba</code> and <code>needs_threshold</code> parameters, where the n-th
  value in the list corresponds to the n-th function. If you leave them as a single value,
  that value will apply to every provided metric.</p>
@@ -1244,12 +1244,12 @@ in a convenient boxplot.</p>
 <p><a href="../API/models/xgb">XGBoost</a>, <a href="../API/models/lgb">LightGBM</a> and <a href="../API/models/catb">CatBoost</a>
  allow in-training evaluation. This means that the estimator is evaluated after
  every round of the training. Use the <code>early_stopping</code> key in <code>bo_params</code> to stop
- the training early if it didn"t improve in the last <code>early_stopping</code> rounds. This
+ the training early if it didn't improve in the last <code>early_stopping</code> rounds. This
  can save the pipeline much time that would otherwise be wasted on an estimator
  that is unlikely to improve further. Note that this technique will be applied
  both during the BO and at the final fit on the complete training set. After
  fitting, the <code>model</code> will get the <code>evals</code> attribute, a dictionary of the train
- and test performances per round (also if early stopping wasn"t applied).</p>
+ and test performances per round (also if early stopping wasn't applied).</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
@@ -1342,7 +1342,7 @@ the model's performance per size of the training set.</p>
 </table>
 
 <p>Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the <code>model</code>"s prediction attributes,
+ set. You can access them through the <code>model</code>'s prediction attributes,
  e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -1405,7 +1405,7 @@ method if you need to free some memory!</p>
  The four plots are: <a href="../API/plots/force_plot">force_plot</a>,
  <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>
  and <a href="../API/plots/decision_plot">decision_plot</a>.</p>
-<p>Since the plots are not made by ATOM, we can"t draw multiple models in the same figure.
+<p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a <code>model</code>, e.g. <code>atom.xgb.force_plot()</code>.</p>
 <div class="admonition note">

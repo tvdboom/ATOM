@@ -29,7 +29,7 @@ Features to transform, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the `training`"s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -50,7 +50,7 @@ Additional keyword arguments to customize which transformers to apply. You can
 
 !!! note
     When using the pipeline parameter to include/exclude transformers, remember
-    that the first transformer (index 0) in `atom`"s pipeline is always the
+    that the first transformer (index 0) in `atom`'s pipeline is always the
     [Cleaner](../data_cleaning/cleaner.md) called during
     initialization.
 

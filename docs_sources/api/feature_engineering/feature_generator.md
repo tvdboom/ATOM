@@ -90,7 +90,7 @@ Seed used by the random number generator. If None, the random number
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`"s
+    `NaN` values. Check the warnings that may pop up or use `atom`'s
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning

@@ -255,7 +255,7 @@ Model subclass that performed best on the test set.
 <strong>pipeline: pd.Series</strong>
 <blockquote>
 Series containing all classes fitted in the pipeline. Use this attribute only to
- access the individual classes. To visualize the pipeline, use `atom`"s \_\_repr__
+ access the individual classes. To visualize the pipeline, use `atom`'s \_\_repr__
  or [plot_pipeline](../../plots/plot_pipeline).
 </blockquote>
 <strong>results: pd.DataFrame</strong>

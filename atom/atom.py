@@ -89,8 +89,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Assign the algorithm's task
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
-        if self.task.startswith('multi'):
-            self.log(f" --> Number of classes: {self.n_classes}.", 2)
         if self.n_jobs > 1:
             self.log(f"Parallel processing with {self.n_jobs} cores.", 1)
 
@@ -101,7 +99,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             classes = self.y.unique()
         self.mapping = {str(value): value for value in classes}
 
+        self.log('')  # Add empty rows around for cleaner look
         self.stats(1)  # Print data stats
+        self.log('')
 
     def __repr__(self):
         repr_ = f"{self.__class__.__name__}"
@@ -153,7 +153,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             Internal parameter to always print if the user calls this method.
 
         """
-        self.log("\nDataset stats ================== >>", _vb)
+        self.log("Dataset stats ================== >>", _vb)
         self.log(f"Shape: {self.dataset.shape}", _vb)
 
         if self.n_missing:
@@ -237,7 +237,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         they should only be applied on the training set.
 
         When using the pipeline parameter to include/exclude transformers, remember
-        that the first transformer (index 0) in `atom`"s pipeline is always the
+        that the first transformer (index 0) in `atom`'s pipeline is always the
         Cleaner called during initialization.
 
         Parameters
@@ -252,7 +252,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             - Else: Target column with shape=(n_samples,).
 
         verbose: int or None, optional (default=None)
-            Verbosity level of the transformers. If None, it uses the `training`"s verbosity.
+            Verbosity level of the transformers. If None, it uses the `training`'s verbosity.
 
         **kwargs
             Additional keyword arguments to customize which transformers to apply.
@@ -322,7 +322,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         maximum_cardinality: bool = True,
         minimum_cardinality: bool = True,
         missing_target: bool = True,
-        map_target: Optional[bool] = None,
+        encode_target: bool = True,
         **kwargs,
     ):
         """Applies standard data cleaning steps on the dataset.
@@ -345,7 +345,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             maximum_cardinality=maximum_cardinality,
             minimum_cardinality=minimum_cardinality,
             missing_target=missing_target,
-            map_target=map_target,
+            encode_target=encode_target,
             **kwargs,
         )
         X, y = cleaner.transform(self.X, self.y)

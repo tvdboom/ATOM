@@ -5,7 +5,7 @@
 <pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot a diagram of every estimator in `atom`"s pipeline.
+Plot a diagram of every estimator in `atom`'s pipeline.
  <br /><br />
 <table width="100%">
 <tr>

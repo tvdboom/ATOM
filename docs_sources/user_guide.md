@@ -99,8 +99,8 @@ These two classes are convenient wrappers for all the possibilities this package
  different parameters. There are some important differences with sklearn's API:
  
 1. `atom` is initialized with the data you want to manipulate. This data can be accessed
- at any moment through `atom`"s [data attributes](../API/ATOM/atomclassifier/#data-properties).
-2. The classes in ATOM's API are reached through `atom`"s methods. For example, calling
+ at any moment through `atom`'s [data attributes](../API/ATOM/atomclassifier/#data-properties).
+2. The classes in ATOM's API are reached through `atom`'s methods. For example, calling
  the [encode](../API/ATOM/atomclassifier/#encode) method, will initialize
  an [Encoder](../API/data_cleaning/encoder) instance, fit it on the training set and
  transform the whole dataset.
@@ -171,7 +171,7 @@ There are many data cleaning steps that are useful to perform on any dataset bef
 * Remove categorical columns with maximal cardinality.
 * Remove columns with minimum cardinality.
 * Remove rows with missing values in the target column.
-* Label-encode the target column.
+* Encode the target column.
 
 <br>
 
@@ -186,7 +186,7 @@ For various reasons, many real world datasets contain missing values, often enco
  method.
 
 !!!tip
-    Use `atom`"s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`'s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -203,7 +203,7 @@ Many datasets will contain categorical features. Their variables are typically s
  `atom` through the [encode](../API/ATOM/atomclassifier/#encode) method.
 
 !!!tip
-    Use `atom`"s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`'s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br> 
@@ -297,7 +297,7 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`"s
+    `NaN` values. Check the warnings that may pop up or use `atom`'s
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
@@ -360,7 +360,7 @@ SFM uses an estimator with `feature_importances_` or `coef_` attributes to selec
  best features in a dataset based on importance weights. The estimator is provided
  through the `solver` parameter and can be already fitted. ATOM allows you to use one
  its pre-defined [models](#models), e.g. `solver="RF"`. If you didn't call the
- FeatureSelector through `atom`, don"t forget to indicate the estimator's task adding
+ FeatureSelector through `atom`, don't forget to indicate the estimator's task adding
  `_class` or `_reg` after the name, e.g. `RF_class` to use a random forest classifier.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
@@ -409,11 +409,11 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 !!! tip
     Use the [plot_feature_importance](API/plots/plot_feature_importance.md) method to
     examine how much a specific feature contributes to the final predictions. If the
-    model doesn"t have a `feature_importances_` attribute, use 
+    model doesn't have a `feature_importances_` attribute, use 
     [plot_permutation_importance](API/plots/plot_permutation_importance.md) instead.
 
 !!!warning
-    The RFE and RFECV strategies don"t work when the solver is a 
+    The RFE and RFECV strategies don't work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility of the APIs.
 
 
@@ -639,7 +639,7 @@ Since some of sklearn's scorers have quite long names and ATOM is all about <s>l
 Sometimes it is useful to measure the performance of the models in more than one way.
  ATOM lets you run the pipeline with multiple metrics at the same time. To do so,
  provide the `metric` parameter with a list of desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`.
- If you provide metric functions, don"t forget to also provide lists to the
+ If you provide metric functions, don't forget to also provide lists to the
  `greater_is_better`, `needs_proba` and `needs_threshold` parameters, where the n-th
  value in the list corresponds to the n-th function. If you leave them as a single value,
  that value will apply to every provided metric.
@@ -764,12 +764,12 @@ After fitting the estimator, you can asses the robustness of the model using
 [XGBoost](../API/models/xgb), [LightGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
  allow in-training evaluation. This means that the estimator is evaluated after
  every round of the training. Use the `early_stopping` key in `bo_params` to stop
- the training early if it didn"t improve in the last `early_stopping` rounds. This
+ the training early if it didn't improve in the last `early_stopping` rounds. This
  can save the pipeline much time that would otherwise be wasted on an estimator
  that is unlikely to improve further. Note that this technique will be applied
  both during the BO and at the final fit on the complete training set. After
  fitting, the `model` will get the `evals` attribute, a dictionary of the train
- and test performances per round (also if early stopping wasn"t applied).
+ and test performances per round (also if early stopping wasn't applied).
 
 !!!tip
     Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training
@@ -877,7 +877,7 @@ The available prediction methods are a selection of the most common methods for
 </table>
 
 Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the `model`"s prediction attributes,
+ set. You can access them through the `model`'s prediction attributes,
  e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -953,7 +953,7 @@ The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations) py
  [dependence_plot](../API/plots/dependence_plot), [summary_plot](../API/plots/summary_plot)
  and [decision_plot](../API/plots/decision_plot).
 
-Since the plots are not made by ATOM, we can"t draw multiple models in the same figure.
+Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a `model`, e.g. `atom.xgb.force_plot()`.
 

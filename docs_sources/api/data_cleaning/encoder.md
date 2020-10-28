@@ -73,7 +73,7 @@ Additional keyword arguments passed to the `strategy` estimator.
 <br>
 
 !!!tip
-    Use `atom`"s [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`'s [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br>

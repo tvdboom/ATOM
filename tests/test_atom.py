@@ -74,7 +74,7 @@ def test_repr():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.run("lr")
-    assert len(str(atom)) == 459
+    assert len(str(atom)) == 462
 
 
 # Test utility properties ================================================== >>
@@ -359,7 +359,7 @@ def test_errors_are_passed_to_ATOM():
 
 
 def test_models_and_metric_are_updated():
-    """Assert that the models and metric_ attributes are updated correctly."""
+    """Assert that the models and metric attributes are updated correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["LGB", "CatB"], metric="max_error")
     assert atom.models == ["LGB", "CatB"]

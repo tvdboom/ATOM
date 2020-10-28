@@ -560,7 +560,7 @@ X, y = load_breast_cancer(return_X_y=True)
 <h2 id="run-the-pipeline">Run the pipeline</h2>
 <pre><code class="python"># Start ATOM and fit the models using early stopping
 # An early stopping of 0.1 means that the model will stop if it
-# didn&quot;t improve in the last 10% of it's iterations.
+# didn't improve in the last 10% of it's iterations.
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
 atom.run(&quot;LGB&quot;, metric=&quot;ap&quot;, n_calls=7, n_initial_points=3, bo_params={&quot;early_stopping&quot;: 0.1, &quot;cv&quot;: 1})
 </code></pre>

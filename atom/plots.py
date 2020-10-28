@@ -1426,7 +1426,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
+                    label = f"{m.acronym}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
                 plt.scatter(
                     x=getattr(self, f"y_{set_}"),

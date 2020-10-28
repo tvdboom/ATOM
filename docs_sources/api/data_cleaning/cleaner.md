@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
-                                 minimum_cardinality=True, missing_target=True, map_target=None,
+                                 minimum_cardinality=True, missing_target=True, encode_target=True,
                                  verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L141">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -15,7 +15,7 @@ Performs standard data cleaning steps on a dataset. Use the parameters to choose
   * Remove categorical columns with maximal cardinality.
   * Remove columns with minimum cardinality.
   * Remove rows with missing values in the target column.
-  * Label-encode the target column.
+  * Encode the target column.
 
 This class can be accessed from `atom` through the [clean](../../ATOM/atomclassifier/#clean)
  method. Read more in the [user guide](../../../user_guide/#standard-data-cleaning).
@@ -47,12 +47,9 @@ Whether to remove columns with minimum cardinality, i.e. all values in the
 Whether to remove rows with missing values in the target column.
  Ignored if y is not provided.
 </blockquote>
-<strong>map_target: bool or None, optional (default=None)</strong>
+<strong>encode_target: bool, optional (default=True)</strong>
 <blockquote>
-Whether to map the target column to numerical values. Should only
- be used for classification tasks. If None, infer task from the
- provided target column and set to True if it is classification.
- Ignored if y is not provided or if it already consists of ordered integers.
+Whether to Label-encode the target column.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>

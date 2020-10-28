@@ -68,7 +68,7 @@ def test_n_features_above_maximum():
 
 
 def test_genetic_non_improving_features():
-    """Assert that the code doesn"t fail if there are no new improving features."""
+    """Assert that the code doesn't fail if there are no new improving features."""
     generator = FeatureGenerator(
         strategy="gfg", generations=5, population=300, operators="sqrt", random_state=1
     )

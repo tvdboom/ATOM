@@ -194,8 +194,6 @@ class BaseTransformer(object):
             elif not X.index.equals(y.index):  # Compare indices
                 raise ValueError("X and y don't have the same indices!")
 
-            return X, y
-
         elif isinstance(y, str):
             if y not in X.columns:
                 raise ValueError(f"Column {y} not found in X!")
@@ -205,8 +203,7 @@ class BaseTransformer(object):
         elif isinstance(y, int):
             return X.drop(X.columns[y], axis=1), X[X.columns[y]]
 
-        else:  # y is None
-            return X, y
+        return X, y
 
     def _get_data_and_idx(self, arrays, use_n_rows=True):
         """Get the dataset and indices from a sequence of indexables.

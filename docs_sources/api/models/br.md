@@ -59,7 +59,7 @@ Categorical([1e-8, 1e-6, 1e-4, 1e-2], name="lambda_2")
 You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
  as the `training` instances to check the dataset that was used to fit a particular
  model. These can differ from each other if the model needs scaled features and the
- data wasn"t already scaled. Note that, unlike with the `training` instances, these
+ data wasn't already scaled. Note that, unlike with the `training` instances, these
  attributes not be updated (i.e. they have no `@setter`).
 <br><br>
 

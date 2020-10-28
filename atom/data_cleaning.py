@@ -26,7 +26,7 @@ from category_encoders.one_hot import OneHotEncoder
 from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, variable_return, to_df,
-    to_series, merge, check_is_fitted, infer_task, composed, crash, method_to_log,
+    to_series, merge, check_is_fitted, composed, crash, method_to_log,
 )
 
 
@@ -74,7 +74,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
@@ -144,7 +144,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         - Removing categorical columns with maximal cardinality.
         - Removing columns with minimum cardinality.
         - Removing rows with missing values in the target column.
-        - Label-encode the target column.
+        - Encode the target column.
 
     Parameters
     ----------
@@ -167,11 +167,8 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         Whether to remove rows with missing values in the target column.
         Ignored if y is not provided.
 
-    map_target: bool or None, optional (default=None)
-        Whether to map the target column to numerical values. Should only
-        be used for classification tasks. If None, infer task from the
-        provided target column. Ignored if y is not provided or if it already
-        consists of ordered integers.
+    encode_target: bool, optional (default=True)
+        Whether to Label-encode the target column.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -180,7 +177,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
@@ -194,7 +191,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         maximum_cardinality: bool = True,
         minimum_cardinality: bool = True,
         missing_target: bool = True,
-        map_target: Optional[bool] = None,
+        encode_target: bool = True,
         verbose: int = 0,
         logger: Optional[Union[bool, str, callable]] = None,
     ):
@@ -204,7 +201,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         self.maximum_cardinality = maximum_cardinality
         self.minimum_cardinality = minimum_cardinality
         self.missing_target = missing_target
-        self.map_target = map_target
+        self.encode_target = encode_target
 
         self.mapping = {}
 
@@ -294,14 +291,12 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                         "missing values in target column.", 2
                     )
 
-            task = infer_task(y) if self.map_target is None else "regression"
-            # Map the target column to numerical values
-            if self.map_target or not task.startswith("reg"):
-                if y.dtype.kind not in "ifu":
-                    self.log(f" --> Label-encoding the target column.", 2)
-                le = LabelEncoder()
-                y = to_series(le.fit_transform(y), index=y.index, name=y.name)
-                self.mapping = {str(v): i for i, v in enumerate(le.classes_)}
+            # Label-encode the target column
+            if self.encode_target:
+                self.log(f" --> Label-encoding the target column.", 2)
+                encoder = LabelEncoder()
+                y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
+                self.mapping = {str(v): i for i, v in enumerate(encoder.classes_)}
 
         return variable_return(X, y)
 
@@ -350,7 +345,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
@@ -618,7 +613,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
@@ -822,7 +817,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
@@ -975,7 +970,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 2 to print detailed information.
 
     logger: bool, str, class or None, optional (default=None)
-        - If None: Doesn"t save a logging file.
+        - If None: Doesn't save a logging file.
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.

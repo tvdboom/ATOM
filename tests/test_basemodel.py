@@ -212,15 +212,15 @@ def test_bagging_attribute_types():
     """Assert that the bagging attributes have python types (not numpy)."""
     # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", bagging=5)
-    assert isinstance(atom.lr.metric_bagging, list)
-    assert isinstance(atom.lr.mean_bagging, float)
+    atom.run("LGB", n_calls=5, bagging=5)
+    assert isinstance(atom.lgb.metric_bagging, list)
+    assert isinstance(atom.lgb.mean_bagging, float)
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", metric=("f1", "auc", "recall"), bagging=5)
-    assert isinstance(atom.lr.metric_bagging, list)
-    assert isinstance(atom.lr.mean_bagging, list)
+    atom.run("XGB", metric=("f1", "auc", "recall"), bagging=5)
+    assert isinstance(atom.xgb.metric_bagging, list)
+    assert isinstance(atom.xgb.mean_bagging, list)
 
 
 # Test prediction methods =================================================== >>

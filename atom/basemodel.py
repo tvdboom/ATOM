@@ -19,6 +19,7 @@ from typing import Optional, Union
 from inspect import signature
 
 # Sklearn
+from sklearn.base import clone
 from sklearn.utils import resample
 from sklearn.metrics import SCORERS, confusion_matrix
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
@@ -35,7 +36,7 @@ from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
     ARRAY_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS, flt, lst,
     merge, check_scaling, time_to_string, catch_return, transform, composed,
-    get_best_score, fit_init, crash, method_to_log, PlotCallback,
+    get_best_score, crash, method_to_log, PlotCallback,
 )
 
 
@@ -69,6 +70,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             columns=["params", "model", "score", "time_iteration", "time"]
         )
         self.bo.index.name = "call"
+
+        # Parameter attributes
+        self._est_params = {}
+        self._est_params_fit = {}
 
         # BaseModel attributes
         self.best_params = None
@@ -155,7 +160,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self,
         n_calls: int = 15,
         n_initial_points: int = 5,
-        est_params: dict = {},
         bo_params: dict = {},
     ):
         """Run the bayesian optimization algorithm.
@@ -178,10 +182,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             technically be performing a random search. If iterable, the n-th
             value will apply to the n-th model in the pipeline.
 
-        est_params: dict, optional (default={})
-            Additional parameters for the estimator. If the parameter ends with _fit,
-            it is passed to the fit method instead of the initializer.
-
         bo_params: dict, optional (default={})
             Additional parameters to for the BO. These can include:
                 - base_estimator: str, optional (default="GP")
@@ -197,7 +197,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 - delta_y: int or float, optional (default=0)
                     Stop the optimization if the 5 minima are within `delta_y`.
                 - early stopping: int, float or None, optional (default=None)
-                    Training will stop if the model didn"t improve in last
+                    Training will stop if the model didn't improve in last
                     `early_stopping` rounds. If <1, fraction of rounds from the
                     total. If None, no early stopping is performed. Only available
                     for models that allow in-training evaluation.
@@ -216,7 +216,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     Whether to plot the BO's progress as it runs. Creates a canvas
                     with two plots: the first plot shows the score of every trial
                     and the second shows the distance between the last consecutive
-                    steps. Don"t forget to call `%matplotlib` at the start of the
+                    steps. Don't forget to call `%matplotlib` at the start of the
                     cell if you are using an interactive notebook!
                 - Any other parameter for skopt's optimizer.
 
@@ -265,24 +265,28 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 # Match the sample_weights with the length of the subtrain set
                 # Make copy of est_params to not alter the mutable variable
-                est_copy = est_params.copy()
-                if "sample_weight_fit" in est_params:
-                    est_copy["sample_weight_fit"] = [
-                        est_params["sample_weight_fit"][i] for i in train_idx
+                est_copy = self._est_params_fit.copy()
+                if "sample_weight" in est_copy:
+                    est_copy["sample_weight"] = [
+                        self._est_params_fit["sample_weight"][i] for i in train_idx
                     ]
 
                 if hasattr(self, "custom_fit"):
-                    train, test = (X_subtrain, y_subtrain), (X_val, y_val)
-                    self.custom_fit(estimator, train, test, fit_init(est_copy, True))
+                    self.custom_fit(
+                        estimator=estimator,
+                        train=(X_subtrain, y_subtrain),
+                        validation=(X_val, y_val),
+                        est_params_fit=est_copy
+                    )
 
-                    # Alert if early stopping was applied
+                    # Alert if early stopping was applied (only for cv=1)
                     if self._cv == 1 and self._stopped:
                         self.T.log(
                             f"Early stop at iteration {self._stopped[0]} "
                             f"of {self._stopped[1]}.", 2
                         )
                 else:
-                    estimator.fit(X_subtrain, y_subtrain, **fit_init(est_copy, True))
+                    estimator.fit(X_subtrain, y_subtrain, **est_copy)
 
                 # Calculate metrics on the validation set
                 return [metric(estimator, X_val, y_val) for metric in self.T.metric_]
@@ -302,7 +306,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log(f"{call} {len_}", 2)
             self.T.log(f"Parameters --> {params}", 2)
 
-            estimator = self.get_estimator({**fit_init(est_params), **params})
+            estimator = self.get_estimator({**self._est_params, **params})
 
             # Same splits per model, but different for every iteration of the BO
             rs = self.T.random_state + self._iter if self.T.random_state else None
@@ -442,7 +446,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             bo_params.pop("early_stopping")
 
         # Drop dimensions from BO if already in est_params
-        for param in fit_init(est_params):
+        for param in self._est_params:
             if param not in signature(self.get_estimator().__init__).parameters:
                 raise ValueError(
                     f"Invalid value for the est_params parameter. Got {param} "
@@ -528,9 +532,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.metric_bo = self.bo.score.max(axis=0)
 
         # Save best model (not yet fitted)
-        self.estimator = self.get_estimator(
-            {**fit_init(est_params), **self.best_params}
-        )
+        self.estimator = self.get_estimator({**self._est_params, **self.best_params})
 
         # Get the BO duration
         self.time_bo = time_to_string(self._init_bo)
@@ -547,27 +549,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log(f"Time elapsed: {self.time_bo}", 1)
 
     @composed(crash, method_to_log)
-    def fit(self, est_params: dict = {}):
-        """Fit to the complete training set and get the score on the test set.
-
-        Parameters
-        ----------
-        est_params: dict, optional (default={})
-            Additional parameters for the estimator.
-
-        """
+    def fit(self):
+        """Fit to the complete training set and get the score on the test set."""
         t_init = time()
 
-        # In case the bayesian_optimization method wasn"t called
+        # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
-            self.estimator = self.get_estimator(fit_init(est_params))
+            self.estimator = self.get_estimator(self._est_params)
 
         # Fit the selected model on the complete training set
         if hasattr(self, "custom_fit"):
-            train, test = (self.X_train, self.y_train), (self.X_test, self.y_test)
-            self.custom_fit(self.estimator, train, test, fit_init(est_params, True))
+            self.custom_fit(
+                estimator=self.estimator,
+                train=(self.X_train, self.y_train),
+                validation=(self.X_test, self.y_test),
+                est_params_fit=self._est_params_fit.copy()
+            )
         else:
-            self.estimator.fit(self.X_train, self.y_train, **fit_init(est_params, True))
+            self.estimator.fit(self.X_train, self.y_train, **self._est_params_fit)
 
         # Save metric scores on complete training and test set
         self.metric_train = flt([
@@ -622,7 +621,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         if bagging < 0:
             raise ValueError(
                 "Invalid value for the bagging parameter."
-                + f"Value should be >=0, got {bagging}."
+                f"Value should be >=0, got {bagging}."
             )
 
         self.metric_bagging = []
@@ -630,10 +629,22 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.y_train)
 
+            # Make a clone to not overwrite when fitting
+            estimator = clone(self.estimator)
+
             # Fit on bootstrapped set and predict on the independent test set
-            algorithm = self.estimator.fit(sample_x, sample_y)
+            if hasattr(self, "custom_fit"):
+                self.custom_fit(
+                    estimator=estimator,
+                    train=(sample_x, sample_y),
+                    validation=None,
+                    est_params_fit=self._est_params_fit.copy()
+                )
+            else:
+                estimator.fit(sample_x, sample_y, **self._est_params_fit)
+
             scores = flt([
-                metric(algorithm, self.X_test, self.y_test)
+                metric(estimator, self.X_test, self.y_test)
                 for metric in self.T.metric_
             ])
 
@@ -709,7 +720,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             X, y = catch_return(transform(self.pipeline, X, y, **kwargs))
 
         # Scale the data if needed
-        if self.need_scaling and not check_scaling(X):
+        if self.needs_scaling and not check_scaling(X):
             X = self.T.scaler.transform(X)
 
         if y is None:
@@ -827,28 +838,28 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @property
     def dataset(self):
-        if self.need_scaling and not check_scaling(self.T.X):
+        if self.needs_scaling and not check_scaling(self.T.X):
             return merge(self.T.scaler.transform(self.T.X), self.y)
         else:
             return self.T.dataset
 
     @property
     def train(self):
-        if self.need_scaling and not check_scaling(self.T.X):
-            return merge(self.T.scaler.transform(self.T.X_train), self.T.y_train)
+        if self.needs_scaling and not check_scaling(self.T.X):
+            return merge(self.T.scaler.transform(self.T.X_train), self.y_train)
         else:
             return self.T.train
 
     @property
     def test(self):
-        if self.need_scaling and not check_scaling(self.T.X):
+        if self.needs_scaling and not check_scaling(self.T.X):
             return merge(self.T.scaler.transform(self.T.X_test), self.y_test)
         else:
             return self.T.test
 
     @property
     def X(self):
-        if self.need_scaling and not check_scaling(self.T.X):
+        if self.needs_scaling and not check_scaling(self.T.X):
             return self.T.scaler.transform(self.T.X)
         else:
             return self.T.X
@@ -859,14 +870,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @property
     def X_train(self):
-        if self.need_scaling and not check_scaling(self.T.X):
+        if self.needs_scaling and not check_scaling(self.T.X):
             return self.T.scaler.transform(self.T.X_train)
         else:
             return self.T.X_train
 
     @property
     def X_test(self):
-        if self.need_scaling and not check_scaling(self.T.X):
+        if self.needs_scaling and not check_scaling(self.T.X):
             return self.T.scaler.transform(self.T.X_test)
         else:
             return self.T.X_test

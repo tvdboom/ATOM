@@ -45,7 +45,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/g
 You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
  as the `training` instances to check the dataset that was used to fit a particular
  model. These can differ from each other if the model needs scaled features and the
- data wasn"t already scaled. Note that, unlike with the `training` instances, these
+ data wasn't already scaled. Note that, unlike with the `training` instances, these
  attributes not be updated (i.e. they have no `@setter`).
 <br><br>
 

@@ -19,7 +19,7 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
     OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score, time_to_string,
-    get_model_name, get_metric, get_default_metric, clear,
+    get_model_name, get_metric, get_default_metric, fit_init, clear
 )
 
 
@@ -181,7 +181,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if len(arrays) > 0 or self._data is None:
             self._data, self._idx = self._get_data_and_idx(arrays)
 
-            # Reset data scaler in case of a rerun with new data
+            # Reset scaler in case of a rerun with new data
             self.scaler = None
 
     def _check_parameters(self):
@@ -232,7 +232,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         self.models = models
 
-        # Check validity BO parameters ======================================= >>
+        # Check validity BO parameters ===================================== >>
 
         if isinstance(self.n_calls, (list, tuple)):
             if len(self.n_calls) != len(self.models):
@@ -263,7 +263,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         else:
             self.bagging = [self.bagging for _ in self.models]
 
-        # Check dimensions params =========================================== >>
+        # Check dimensions params ========================================== >>
 
         if self.bo_params.get("dimensions"):
             dimensions = {}
@@ -280,7 +280,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             self.bo_params["dimensions"] = dimensions
 
-        # Prepare est_params ================================================ >>
+        # Prepare est_params =============================================== >>
 
         if self.est_params:
             est_params = {}
@@ -297,7 +297,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             self.est_params = est_params
 
-        # Check validity metric ============================================= >>
+        # Check validity metric ============================================ >>
 
         if not self.metric_[0]:
             self.metric_ = [get_default_metric(self.task)]
@@ -310,6 +310,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 needs_proba=self.needs_proba,
                 needs_threshold=self.needs_threshold,
             )
+
+        # Assign mapping =================================================== >>
+
+        self.mapping = {str(value): value for value in sorted(self.y.unique())}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -374,42 +378,45 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
 
             model_time = time()
-            subclass = getattr(self, m)
+            mdl = getattr(self, m)
+
+            # Add est_params to the model
+            mdl._est_params = fit_init(self.est_params.get(mdl.acronym, {}), False)
+            mdl._est_params_fit = fit_init(self.est_params.get(mdl.acronym, {}), True)
 
             # Create scaler if model needs scaling and data not already scaled
-            if subclass.need_scaling and not self.scaler:
+            if mdl.needs_scaling and not self.scaler:
                 self.scaler = Scaler().fit(self.X_train)
 
             try:  # If errors occurs, skip the model
                 # If it has custom dimensions, run the BO
                 bo = False
                 if self.bo_params.get("dimensions"):
-                    if self.bo_params["dimensions"].get(subclass.acronym):
+                    if self.bo_params["dimensions"].get(mdl.acronym):
                         bo = True
 
                 # Use copy of kwargs to not delete original in method
                 # Shallow copy is enough since we only delete entries in basemodel
-                if (bo or hasattr(subclass, "get_dimensions")) and n_calls > 0:
-                    subclass.bayesian_optimization(
+                if (bo or hasattr(mdl, "get_dimensions")) and n_calls > 0:
+                    mdl.bayesian_optimization(
                         n_calls=n_calls,
                         n_initial_points=n_initial_points,
-                        est_params=self.est_params.get(subclass.acronym, {}),
                         bo_params=self.bo_params.copy(),
                     )
 
-                subclass.fit(self.est_params.get(subclass.acronym, {}))
+                mdl.fit()
 
                 if bagging:
-                    subclass.bagging(bagging)
+                    mdl.bagging(bagging)
 
                 # Get the total time spend on this model
                 total_time = time_to_string(model_time)
-                setattr(subclass, "time", total_time)
+                setattr(mdl, "time", total_time)
                 self.log("-" * 49, 1)
                 self.log(f"Total time: {total_time}", 1)
 
             except Exception as ex:
-                if idx != 0 or (hasattr(subclass, "get_domain") and n_calls > 0):
+                if idx != 0 or (hasattr(mdl, "get_domain") and n_calls > 0):
                     self.log("", 1)  # Add extra line
                 self.log(
                     f"Exception encountered while running the {m} model. Removing "
@@ -434,7 +441,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if not self.models:
             raise RuntimeError("It appears all models failed to run...")
 
-        # Print final results =============================================== >>
+        # Print final results ============================================== >>
 
         # Create dataframe with final results
         results = pd.DataFrame(columns=self._results.columns)

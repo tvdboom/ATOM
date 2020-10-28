@@ -41,12 +41,12 @@ Description: Module containing all available models. All classes must have the
             Class initializer (contains super() to parent class).
 
         get_init_values(self):
-            Return the initial values for the estimator. Don"t implement if
+            Return the initial values for the estimator. Don't implement if
             parent method in BaseModel (default behaviour) is sufficient.
 
         get_params(self, x):
             Return the parameters with rounded decimals and (optional) custom
-            changes to the params. Don"t implement if parent method in BaseModel
+            changes to the params. Don't implement if parent method in BaseModel
             (default behaviour) is sufficient.
 
         get_estimator(self, params={}):
@@ -183,7 +183,7 @@ class CustomModel(BaseModel):
             T=args[0],
             acronym=getattr(self.est, "acronym", fullname),
             fullname=fullname,
-            need_scaling=getattr(self.est, "needs_scaling", True),
+            needs_scaling=getattr(self.est, "needs_scaling", True),
             type=getattr(self.est, "type", "kernel"),
             params={},
         )
@@ -205,9 +205,10 @@ class CustomModel(BaseModel):
             # Update the parameters (only if it's a BaseEstimator)
             if all(hasattr(self.est, attr) for attr in ["get_params", "set_params"]):
                 for p in ["n_jobs", "random_state"]:
-                    # If the class has the parameter and it's the default value
-                    if self.est.get_params().get(p, -99.99) == parameters[p]._default:
-                        params[p] = self._get_default([p], params)
+                    if p in parameters and p in self.est.get_params():
+                        # If the class has the parameter and it's the default value
+                        if self.est.get_params()[p] == parameters[p]._default:
+                            params[p] = self._get_default([p], params)
 
                 self.est.set_params(**params)
             return self.est
@@ -221,7 +222,7 @@ class GaussianProcess(BaseModel):
             T=args[0],
             acronym="GP",
             fullname="Gaussian Process",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
         )
 
@@ -243,7 +244,7 @@ class GaussianNaiveBayes(BaseModel):
             T=args[0],
             acronym="GNB",
             fullname="Gaussian Naive Bayes",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
         )
 
@@ -261,7 +262,7 @@ class MultinomialNaiveBayes(BaseModel):
             T=args[0],
             acronym="MNB",
             fullname="Multinomial Naive Bayes",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
         )
@@ -288,7 +289,7 @@ class BernoulliNaiveBayes(BaseModel):
             T=args[0],
             acronym="BNB",
             fullname="Bernoulli Naive Bayes",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
         )
@@ -315,7 +316,7 @@ class CategoricalNaiveBayes(BaseModel):
             T=args[0],
             acronym="CatNB",
             fullname="Categorical Naive Bayes",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
         )
@@ -342,7 +343,7 @@ class ComplementNaiveBayes(BaseModel):
             T=args[0],
             acronym="CNB",
             fullname="Complement Naive Bayes",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"alpha": [1.0, 3], "fit_prior": [True, 0], "norm": [False, 0]},
         )
@@ -370,7 +371,7 @@ class OrdinaryLeastSquares(BaseModel):
             T=args[0],
             acronym="OLS",
             fullname="Ordinary Least Squares",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
         )
 
@@ -393,7 +394,7 @@ class Ridge(BaseModel):
             T=args[0],
             acronym="Ridge",
             fullname=fullname,
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={"alpha": [1.0, 3], "solver": ["auto", 0]},
         )
@@ -424,7 +425,7 @@ class Lasso(BaseModel):
             T=args[0],
             acronym="Lasso",
             fullname="Lasso Regression",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={"alpha": [1.0, 3], "selection": ["cyclic", 0]},
         )
@@ -451,7 +452,7 @@ class ElasticNet(BaseModel):
             T=args[0],
             acronym="EN",
             fullname="ElasticNet Regression",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={
                 "alpha": [1.0, 3],
@@ -483,7 +484,7 @@ class BayesianRidge(BaseModel):
             T=args[0],
             acronym="BR",
             fullname="Bayesian Ridge",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={
                 "n_iter": [300, 0],
@@ -519,7 +520,7 @@ class AutomaticRelevanceDetermination(BaseModel):
             T=args[0],
             acronym="ARD",
             fullname="Automatic Relevant Determination",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={
                 "n_iter": [300, 0],
@@ -555,7 +556,7 @@ class LogisticRegression(BaseModel):
             T=args[0],
             acronym="LR",
             fullname="Logistic Regression",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={
                 "penalty": ["l2", 0],
@@ -612,7 +613,7 @@ class LinearDiscriminantAnalysis(BaseModel):
             T=args[0],
             acronym="LDA",
             fullname="Linear Discriminant Analysis",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"solver": ["svd", 0], "shrinkage": [0, 1]},
         )
@@ -648,7 +649,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
             T=args[0],
             acronym="QDA",
             fullname="Quadratic Discriminant Analysis",
-            need_scaling=False,
+            needs_scaling=False,
             type="kernel",
             params={"reg_param": [0, 1]},
         )
@@ -672,7 +673,7 @@ class KNearestNeighbors(BaseModel):
             T=args[0],
             acronym="KNN",
             fullname="K-Nearest Neighbors",
-            need_scaling=True,
+            needs_scaling=True,
             type="kernel",
             params={
                 "n_neighbors": [5, 0],
@@ -712,7 +713,7 @@ class RadiusNearestNeighbors(BaseModel):
             T=args[0],
             acronym="RNN",
             fullname="Radius Nearest Neighbors",
-            need_scaling=True,
+            needs_scaling=True,
             type="kernel",
             params={
                 "radius": [None, 3],  # We need the scaler to calculate the distances
@@ -780,7 +781,7 @@ class DecisionTree(BaseModel):
             T=args[0],
             acronym="Tree",
             fullname="Decision Tree",
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={
                 "criterion": [criterion, 0],
@@ -833,7 +834,7 @@ class Bagging(BaseModel):
             T=args[0],
             acronym="Bag",
             fullname=fullname,
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={
                 "n_estimators": [10, 0],
@@ -877,7 +878,7 @@ class ExtraTrees(BaseModel):
             T=args[0],
             acronym="ET",
             fullname="Extra-Trees",
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={
                 "n_estimators": [100, 0],
@@ -944,7 +945,7 @@ class RandomForest(BaseModel):
             T=args[0],
             acronym="RF",
             fullname="Random Forest",
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={
                 "n_estimators": [100, 0],
@@ -1006,7 +1007,7 @@ class AdaBoost(BaseModel):
             T=args[0],
             acronym="AdaB",
             fullname="AdaBoost",
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={"n_estimators": [50, 0], "learning_rate": [1.0, 2]},
         )
@@ -1044,7 +1045,7 @@ class GradientBoostingMachine(BaseModel):
             T=args[0],
             acronym="GBM",
             fullname="Gradient Boosting Machine",
-            need_scaling=False,
+            needs_scaling=False,
             type="tree",
             params={
                 "learning_rate": [0.1, 2],
@@ -1115,7 +1116,7 @@ class XGBoost(BaseModel):
             T=args[0],
             acronym="XGB",
             fullname="XGBoost",
-            need_scaling=True,
+            needs_scaling=True,
             type="tree",
             evals={},
             params={
@@ -1136,7 +1137,7 @@ class XGBoost(BaseModel):
         from xgboost import XGBClassifier, XGBRegressor
 
         n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
-        if random_state is None:  # XGBoost can"t handle random_state to be None
+        if random_state is None:  # XGBoost can't handle random_state to be None
             random_state = random.randint(0, np.iinfo(np.int16).max)
         kwargs = dict(n_jobs=n_jobs, random_state=random_state, verbosity=0, **params)
         if self.T.goal.startswith("class"):
@@ -1144,34 +1145,37 @@ class XGBoost(BaseModel):
         else:
             return XGBRegressor(**kwargs)
 
-    def custom_fit(self, model, train, validation, est_params):
+    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+        if "early_stopping_rounds" in est_params_fit:
+            rounds = est_params_fit.pop("early_stopping_rounds")
+        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
-            rounds = int(model.get_params()["n_estimators"] * self._early_stopping)
+            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
 
-        model.fit(
+        estimator.fit(
             X=train[0],
             y=train[1],
-            eval_set=[train, validation],
-            early_stopping_rounds=est_params.pop("early_stopping_rounds", rounds),
-            verbose=est_params.pop("verbose", False),
-            **est_params
+            eval_set=[train, validation] if validation else None,
+            early_stopping_rounds=rounds,
+            verbose=est_params_fit.pop("verbose", False),
+            **est_params_fit
         )
 
-        # Create evals attribute with train and validation scores
-        metric_name = list(model.evals_result()["validation_0"])[0]
-        self.evals = {
-            "metric": metric_name,
-            "train": model.evals_result()["validation_0"][metric_name],
-            "test": model.evals_result()["validation_1"][metric_name],
-        }
+        if validation:
+            # Create evals attribute with train and validation scores
+            metric_name = list(estimator.evals_result()["validation_0"])[0]
+            self.evals = {
+                "metric": metric_name,
+                "train": estimator.evals_result()["validation_0"][metric_name],
+                "test": estimator.evals_result()["validation_1"][metric_name],
+            }
 
-        iters = len(self.evals["train"])  # Iterations reached
-        tot = int(model.get_params()["n_estimators"])  # Total iterations in params
-        self._stopped = (iters, tot) if iters < tot else None
+            iters = len(self.evals["train"])  # Iterations reached
+            tot = int(estimator.get_params()["n_estimators"])  # Iterations in params
+            self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1197,7 +1201,7 @@ class LightGBM(BaseModel):
             T=args[0],
             acronym="LGB",
             fullname="LightGBM",
-            need_scaling=True,
+            needs_scaling=True,
             type="tree",
             evals={},
             params={
@@ -1224,34 +1228,37 @@ class LightGBM(BaseModel):
         else:
             return LGBMRegressor(n_jobs=n_jobs, random_state=random_state, **params)
 
-    def custom_fit(self, model, train, validation, est_params):
+    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+        if "early_stopping_rounds" in est_params_fit:
+            rounds = est_params_fit.pop("early_stopping_rounds")
+        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
-            rounds = int(model.get_params()["n_estimators"] * self._early_stopping)
+            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
 
-        model.fit(
+        estimator.fit(
             X=train[0],
             y=train[1],
-            eval_set=[train, validation],
-            early_stopping_rounds=est_params.pop("early_stopping_rounds", rounds),
-            verbose=est_params.pop("verbose", False),
-            **est_params
+            eval_set=[train, validation] if validation else None,
+            early_stopping_rounds=rounds,
+            verbose=est_params_fit.pop("verbose", False),
+            **est_params_fit
         )
 
-        # Create evals attribute with train and validation scores
-        metric_name = list(model.evals_result_["training"])[0]  # Get first key
-        self.evals = {
-            "metric": metric_name,
-            "train": model.evals_result_["training"][metric_name],
-            "test": model.evals_result_["valid_1"][metric_name],
-        }
+        if validation:
+            # Create evals attribute with train and validation scores
+            metric_name = list(estimator.evals_result_["training"])[0]  # Get first key
+            self.evals = {
+                "metric": metric_name,
+                "train": estimator.evals_result_["training"][metric_name],
+                "test": estimator.evals_result_["valid_1"][metric_name],
+            }
 
-        iters = len(self.evals["train"])  # Iterations reached
-        tot = int(model.get_params()["n_estimators"])  # Total iterations in params
-        self._stopped = (iters, tot) if iters < tot else None
+            iters = len(self.evals["train"])  # Iterations reached
+            tot = int(estimator.get_params()["n_estimators"])  # Iterations in params
+            self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1278,7 +1285,7 @@ class CatBoost(BaseModel):
             T=args[0],
             acronym="CatB",
             fullname="CatBoost",
-            need_scaling=True,
+            needs_scaling=True,
             type="tree",
             evals={},
             params={
@@ -1311,34 +1318,36 @@ class CatBoost(BaseModel):
         else:
             return CatBoostRegressor(**kwargs)
 
-    def custom_fit(self, model, train, validation, est_params):
+    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if not self._early_stopping or self._early_stopping >= 1:  # None or int
+        if "early_stopping_rounds" in est_params_fit:
+            rounds = est_params_fit.pop("early_stopping_rounds")
+        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
-            rounds = int(model.get_params()["n_estimators"] * self._early_stopping)
+            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
 
-        model.fit(
+        estimator.fit(
             X=train[0],
             y=train[1],
             eval_set=validation,
-            early_stopping_rounds=est_params.pop("early_stopping_rounds", rounds),
-            **est_params
+            early_stopping_rounds=rounds,
+            **est_params_fit
         )
 
-        # Create evals attribute with train and validation scores
-        metric_name = list(model.evals_result_["learn"])[0]  # Get first key
-        print(model.evals_result_)
-        self.evals = {
-            "metric": metric_name,
-            "train": model.evals_result_["learn"][metric_name],
-            "test": model.evals_result_["validation"][metric_name],
-        }
+        if validation:
+            # Create evals attribute with train and validation scores
+            metric_name = list(estimator.evals_result_["learn"])[0]  # Get first key
+            self.evals = {
+                "metric": metric_name,
+                "train": estimator.evals_result_["learn"][metric_name],
+                "test": estimator.evals_result_["validation"][metric_name],
+            }
 
-        iters = len(self.evals["train"])  # Iterations reached
-        tot = int(model.get_all_params()["iterations"])  # Total iterations in params
-        self._stopped = (iters, tot) if iters < tot else None
+            iters = len(self.evals["train"])  # Iterations reached
+            tot = int(estimator.get_all_params()["iterations"])  # Iterations in params
+            self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
         """Return a list of the bounds for the hyperparameters."""
@@ -1362,7 +1371,7 @@ class LinearSVM(BaseModel):
             T=args[0],
             acronym="lSVM",
             fullname="Linear-SVM",
-            need_scaling=True,
+            needs_scaling=True,
             type="kernel",
             params={"loss": ["epsilon_insensitive", 0], "C": [1.0, 3]},
         )
@@ -1376,8 +1385,8 @@ class LinearSVM(BaseModel):
         """Return a dictionary of the model´s hyperparameters."""
         params = super().get_params(x)
 
-        # l1 regularization can"t be combined with hinge
-        # l1 regularization can"t be combined with squared_hinge when dual=True
+        # l1 regularization can't be combined with hinge
+        # l1 regularization can't be combined with squared_hinge when dual=True
         if self.T.goal.startswith("class"):
             if params.get("loss") == "hinge":
                 params["penalty"] = "l2"
@@ -1420,7 +1429,7 @@ class KernelSVM(BaseModel):
             T=args[0],
             acronym="kSVM",
             fullname="Kernel-SVM",
-            need_scaling=True,
+            needs_scaling=True,
             type="kernel",
             params={
                 "C": [1.0, 3],
@@ -1480,7 +1489,7 @@ class PassiveAggressive(BaseModel):
             T=args[0],
             acronym="PA",
             fullname="Passive Aggressive",
-            need_scaling=True,
+            needs_scaling=True,
             params={"C": [1.0, 3], "loss": [loss, 0], "average": [False, 0]},
         )
 
@@ -1521,7 +1530,7 @@ class StochasticGradientDescent(BaseModel):
             T=args[0],
             acronym="SGD",
             fullname="Stochastic Gradient Descent",
-            need_scaling=True,
+            needs_scaling=True,
             type="linear",
             params={
                 "loss": [loss, 0],
@@ -1594,7 +1603,7 @@ class MultilayerPerceptron(BaseModel):
             T=args[0],
             acronym="MLP",
             fullname="Multi-layer Perceptron",
-            need_scaling=True,
+            needs_scaling=True,
             type="kernel",
             params={
                 "hidden_layer_sizes": [(100, 0, 0), 0],
