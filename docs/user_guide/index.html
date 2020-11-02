@@ -623,19 +623,20 @@
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 </ul>
 </li>
-<li><strong>class</strong>: Refers to one of the unique values in a column, e.g. a binary classifier has 2 classes in the target column.</li>
+<li><strong>class</strong>: Refers to one of the unique values in a column, e.g. a binary classifier
+  has 2 classes in the target column.</li>
 <li><strong>array-like</strong>: One-dimensional array of variable type list, tuple, np.array or pd.Series.</li>
-<li><strong>missing values</strong>: Refers to <code>None</code>, <code>NaN</code> and <code>inf</code> values.</li>
-<li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
 <li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
  <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
  use it as variable name for the instance).</li>
 <li><code>model</code>: Refers to one of the <a href="#models">model</a> instances.</li>
 <li><strong>pipeline</strong>: Refers to the collection of data cleaning, feature engineering and training steps performed by <code>atom</code>.</li>
+<li><strong>missing values</strong>: Refers to the values in the <code>missing</code> attribute.</li>
+<li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
 <li><strong>estimator</strong>: Actual estimator corresponding to a model. Implemented by an external package.</li>
 <li><strong>BO</strong>: Bayesian optimization algorithm used for hyperparameter optimization.</li>
 <li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
- models. The classes are:<ul>
+  models. The classes are:<ul>
 <li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a></li>
 <li><a href="../API/ATOM/atomregressor">ATOMRegressor</a></li>
 <li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
@@ -682,7 +683,8 @@
 <p>Let's get started with an example!</p>
 <p>First, initialize <code>atom</code> and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
- test set already splitted.</p>
+ test set already splitted. Note that if a dataframe is provided, the indices will
+ be reset by <code>atom</code>.</p>
 <pre><code>atom = ATOMClassifier(X, y, test_size=0.25)
 </code></pre>
 <p>Apply data cleaning methods through the class. For example, calling the

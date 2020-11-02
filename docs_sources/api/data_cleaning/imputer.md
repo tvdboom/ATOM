@@ -3,13 +3,14 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
-                                 min_frac_cols=0.5, missing=None, verbose=0, logger=None)
+                                 min_frac_cols=0.5, verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L300">[source]</a></div></pre>
 <div style="padding-left:3%">
-Impute or remove missing values according to the selected strategy. Also removes rows
- and columns with too many missing values. This class can be accessed from `atom`
- through the [impute](../../ATOM/atomclassifier/#impute) method. Read
- more in the [user guide](../../../user_guide/#imputing-missing-values).
+Impute or remove missing values according to the selected strategy.
+ Also removes rows and columns with too many missing values. Use the
+ `missing` attribute to customize what are considered "missing values".
+ This class can be accessed from `atom` through the [impute](../../ATOM/atomclassifier/#impute)
+ method. Read more in the [user guide](../../../user_guide/#imputing-missing-values).
 <br /><br />
 <table>
 <tr>
@@ -44,13 +45,6 @@ Minimum fraction of non-missing values in a row. If less, the row is removed.
 <blockquote>
 Minimum fraction of non-missing values in a column. If less, the column is removed.
 </blockquote>
-<strong>missing: int, float or list, optional (default=None)</strong>
-<blockquote>
-List of values to treat as "missing". None to use the default values:
- [None, np.NaN, np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"]. Note that
- `np.NaN`, `None`, `np.inf` and `-np.inf` will always be imputed since they are
- incompatible with most estimators.
-</blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -76,9 +70,31 @@ Verbosity level of the class. Possible values are:
 <br>
 
 !!!tip
-    Use `atom`'s [missing](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use `atom`'s [nans](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
+<br>
+
+
+
+## Attributes
+-------------
+
+<a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>missing: list</strong>
+<blockquote>
+List of values that are considered "missing". Default values are: "", "?",
+ "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf`
+ are always considered missing since they are incompatible with sklearn
+ estimators.
+</blockquote>
+</td>
+</tr>
+</table>
 <br>
 
 

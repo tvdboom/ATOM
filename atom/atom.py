@@ -58,6 +58,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.n_rows = n_rows
         self.test_size = test_size
         self.pipeline = pd.Series([], name="pipeline", dtype="object")
+        self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Training attributes
         self.trainer = None
@@ -116,15 +117,15 @@ class ATOM(BasePredictor, ATOMPlotter):
     # Utility properties ==================================================== >>
 
     @property
-    def missing(self):
+    def nans(self):
         """Returns columns with missing + inf values."""
-        missing = self.dataset.replace([-np.inf, np.inf], np.NaN).isna().sum()
-        return missing[missing > 0]
+        nans = self.dataset.replace(self.missing, np.NaN).isna().sum()
+        return nans[nans > 0]
 
     @property
-    def n_missing(self):
+    def n_nans(self):
         """Returns the total number of missing values in the dataset."""
-        return self.missing.sum()
+        return self.nans.sum()
 
     @property
     def categorical(self):
@@ -156,8 +157,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Dataset stats ================== >>", _vb)
         self.log(f"Shape: {self.dataset.shape}", _vb)
 
-        if self.n_missing:
-            self.log(f"Missing values: {self.n_missing}", _vb)
+        if self.n_nans:
+            self.log(f"Missing values: {self.n_nans}", _vb)
         if self.n_categorical:
             self.log(f"Categorical columns: {self.n_categorical}", _vb)
 
@@ -348,17 +349,21 @@ class ATOM(BasePredictor, ATOMPlotter):
             encode_target=encode_target,
             **kwargs,
         )
+        # Pass atom's missing values to the cleaner before transforming
+        cleaner.missing = self.missing
+
         X, y = cleaner.transform(self.X, self.y)
         self.dataset = merge(X, y).reset_index(drop=True)
+
+        # Since Cleaner can remove rows from train and test, reset indices
+        self._idx[1] = len(X[X.index >= self._idx[0]])
+        self._idx[0] = len(X[X.index < self._idx[0]])
+
         self.pipeline = self.pipeline.append(pd.Series([cleaner]), ignore_index=True)
 
         # Assign mapping (if it changed)
         if cleaner.mapping:
             self.mapping = cleaner.mapping
-
-        # Since Cleaner can remove from train and test set, reset indices
-        self._idx[1] = int(self._test_size * len(self.dataset))
-        self._idx[0] = len(self.dataset) - self._idx[1]
 
     @composed(crash, method_to_log, typechecked)
     def impute(
@@ -367,14 +372,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         strat_cat: str = "drop",
         min_frac_rows: float = 0.5,
         min_frac_cols: float = 0.5,
-        missing: Optional[Union[int, float, str, list]] = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
 
         Impute or remove missing values according to the selected strategy.
-        Also removes rows and columns with too many missing values. The imputer
-        is fitted only on the training set to avoid data leakage.
+        Also removes rows and columns with too many missing values. The
+        imputer is fitted only on the training set to avoid data leakage.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -385,17 +389,19 @@ class ATOM(BasePredictor, ATOMPlotter):
             strat_cat=strat_cat,
             min_frac_rows=min_frac_rows,
             min_frac_cols=min_frac_cols,
-            missing=missing,
             **kwargs,
-        ).fit(self.X_train, self.y_train)
+        )
+        imputer.missing = self.missing  # Pass missing values to the imputer
 
+        imputer.fit(self.X_train, self.y_train)
         X, y = imputer.transform(self.X, self.y)
         self.dataset = merge(X, y).reset_index(drop=True)
-        self.pipeline = self.pipeline.append(pd.Series([imputer]), ignore_index=True)
 
-        # Since Imputer can remove from train and test set, reset indices
-        self._idx[1] = int(self._test_size * len(self.dataset))
-        self._idx[0] = len(self.dataset) - self._idx[1]
+        # Since Imputer can remove rows from train and test, reset indices
+        self._idx[1] = len(X[X.index >= self._idx[0]])
+        self._idx[0] = len(X[X.index < self._idx[0]])
+
+        self.pipeline = self.pipeline.append(pd.Series([imputer]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
     def encode(
@@ -430,6 +436,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         ).fit(self.X_train, self.y_train)
 
         self.X = encoder.transform(self.X)
+
         self.pipeline = self.pipeline.append(pd.Series([encoder]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
@@ -458,9 +465,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        X_train, y_train = outliers.transform(self.X_train, self.y_train)
-        self.train = merge(X_train, y_train)
+        self.train = merge(*outliers.transform(self.X_train, self.y_train))
         self.dataset.reset_index(drop=True, inplace=True)
+
         self.pipeline = self.pipeline.append(pd.Series([outliers]), ignore_index=True)
 
     @composed(crash, method_to_log, typechecked)
@@ -486,14 +493,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Add mapping from ATOM to balancer for cleaner printing
         balancer.mapping = self.mapping
 
-        X_train, y_train = balancer.transform(self.X_train, self.y_train)
+        self.train = merge(*balancer.transform(self.X_train, self.y_train))
+        self.dataset.reset_index(drop=True, inplace=True)
+
+        self.pipeline = self.pipeline.append(pd.Series([balancer]), ignore_index=True)
 
         # Attach the estimator attribute to ATOM
         setattr(self, strategy.lower(), getattr(balancer, strategy.lower()))
-
-        self.train = merge(X_train, y_train)
-        self.dataset.reset_index(drop=True, inplace=True)
-        self.pipeline = self.pipeline.append(pd.Series([balancer]), ignore_index=True)
 
     # Feature engineering methods =========================================== >>
 

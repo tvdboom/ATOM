@@ -103,7 +103,7 @@ def ATOMLoader(
             Feature set with shape=(n_features, n_samples). If no
             y is provided, the last column is used as target.
 
-        y: int, str, dict or array-like
+        y: int, str or array-like
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -191,7 +191,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             Feature set with shape=(n_features, n_samples). If
             no y is provided, the last column is used as target.
 
-        y: int, str, dict or array-like
+        y: int, str or array-like
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -286,7 +286,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             Feature set with shape=(n_features, n_samples). If no
             y is provided, the last column is used as target.
 
-        y: int, str, dict or array-like
+        y: int, str or array-like
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).

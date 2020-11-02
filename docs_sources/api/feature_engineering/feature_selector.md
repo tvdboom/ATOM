@@ -164,7 +164,7 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
 Dataframe of the removed collinear features.
  Columns include:
 <ul>
-<li><b>drop_feature:</b> name of the feature dropped by the method.</li>
+<li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
 <li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
 </ul>
@@ -175,40 +175,35 @@ Remaining features ordered by importance. Only if strategy in ["univariate", "SF
  "RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
  estimator fitted on the reduced set. 
 </blockquote>
-<strong>univariate: class</strong>
+<strong>univariate: [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)</strong>
 <blockquote>
-[SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)
- instance used to fit the estimator. Only if strategy="univariate".
+Instance used to fit the estimator. Only if strategy="univariate".
 </blockquote>
-<strong>scaler: class</strong>
+<strong>scaler: [Scaler](../../data_cleaning/scaler/)</strong>
 <blockquote>
-[Scaler](../../data_cleaning/scaler/) instance used to scale the data.
- Only if strategy="PCA" and the data was not already scaled.
+Instance used to scale the data. Only if strategy="PCA" and the data was not already scaled.
 </blockquote>
-<strong>pca: class</strong>
+<strong>pca: [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</strong>
 <blockquote>
-[PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)
- instance used to fit the estimator. Only if strategy="PCA".
+Instance used to fit the estimator. Only if strategy="PCA".
 </blockquote>
-<strong>sfm: class</strong>
+<strong>sfm: [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</strong>
 <blockquote>
-[SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)
- instance used to fit the estimator. Only if strategy="SFM".
+Instance used to fit the estimator. Only if strategy="SFM".
 </blockquote>
-<strong>rfe: class</strong>
+<strong>rfe: [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</strong>
 <blockquote>
-[RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)
- instance used to fit the estimator. Only if strategy="RFE".
+Instance used to fit the estimator. Only if strategy="RFE".
 </blockquote>
-<strong>rfecv: class</strong>
+<strong>rfecv: [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)</strong>
 <blockquote>
-[RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)
- instance used to fit the estimator. Only if strategy="RFECV".
+Instance used to fit the estimator. Only if strategy="RFECV".
 </blockquote>
 </td>
 </tr>
 </table>
 <br>
+
 
 ### Plot attributes
  
@@ -240,6 +235,7 @@ Fontsize for the ticks along the plot's axes.
 </td></tr>
 </table>
 <br><br><br>
+
 
 
 ## Methods

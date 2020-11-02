@@ -25,8 +25,8 @@ from category_encoders.one_hot import OneHotEncoder
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, variable_return, to_df,
-    to_series, merge, check_is_fitted, composed, crash, method_to_log,
+    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, it, variable_return,
+    to_df, to_series, merge, check_is_fitted, composed, crash, method_to_log
 )
 
 
@@ -78,6 +78,11 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
+
+    Attributes
+    ----------
+    standard_scaler: StandardScaler
+        Instance with which the data is scaled.
 
     """
 
@@ -168,7 +173,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         Ignored if y is not provided.
 
     encode_target: bool, optional (default=True)
-        Whether to Label-encode the target column.
+        Whether to Label-encode the target column. Ignored if y is not provided.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -181,6 +186,18 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         - If bool: True for logging file with default name. False for no logger.
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
+
+    Attributes
+    ----------
+    missing: list
+        List of values that are considered "missing". Default values are: "", "?",
+        "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and
+        `-inf` are always considered missing since they are incompatible with
+        sklearn estimators.
+
+    mapping: dict
+        Dictionary of the target values mapped to their respective encoded integer.
+        Only available if encode_target=True.
 
     """
 
@@ -204,6 +221,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         self.encode_target = encode_target
 
         self.mapping = {}
+        self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -278,14 +296,11 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         if y is not None:
             # Delete rows with NaN in target
             if self.missing_target:
-                length = len(y)
-                y.dropna(inplace=True)
+                length = len(y)  # Save original length to count deleted rows later
+                y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
                 X = X[X.index.isin(y.index)]  # Select only indices that remain
-                diff = length - len(y)  # Difference in side
+                diff = length - len(y)  # Difference in size
                 if diff > 0:
-                    # Reset indices for the merger
-                    X.reset_index(drop=True, inplace=True)
-                    y.reset_index(drop=True, inplace=True)
                     self.log(
                         f" --> Dropping {diff} rows with "
                         "missing values in target column.", 2
@@ -293,10 +308,13 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Label-encode the target column
             if self.encode_target:
-                self.log(f" --> Label-encoding the target column.", 2)
                 encoder = LabelEncoder()
                 y = to_series(encoder.fit_transform(y), index=y.index, name=y.name)
-                self.mapping = {str(v): i for i, v in enumerate(encoder.classes_)}
+                self.mapping = {str(it(v)): i for i, v in enumerate(encoder.classes_)}
+
+                # Only print if the target column wasn't already encoded
+                if any([key != str(value) for key, value in self.mapping.items()]):
+                    self.log(f" --> Label-encoding the target column.", 2)
 
         return variable_return(X, y)
 
@@ -305,7 +323,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
     """Handle missing values in the data.
 
     Impute or remove missing values according to the selected strategy.
-    Also removes rows and columns with too many missing values.
+    Also removes rows and columns with too many missing values. Use the
+    `missing` attribute to customize what are considered "missing values".
 
     Parameters
     ----------
@@ -332,12 +351,6 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         Minimum fraction of non-missing values in a column. If less,
         the column is removed.
 
-    missing: int, float or list, optional (default=None)
-        List of values to treat as "missing". None to use the default
-        values: [None, np.NaN, np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"].
-        Note that np.NaN, None, np.inf and -np.inf will always be imputed since they
-        are incompatible with most estimators.
-
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -350,6 +363,14 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: name of the logging file. "auto" for default name.
         - If class: python `Logger` object.
 
+    Attributes
+    ----------
+    missing: list
+        List of values that are considered "missing". Default values are: "", "?",
+        "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and
+        `-inf` are always considered missing since they are incompatible with
+        sklearn estimators.
+
     """
 
     def __init__(
@@ -358,7 +379,6 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         strat_cat: str = "drop",
         min_frac_rows: float = 0.5,
         min_frac_cols: float = 0.5,
-        missing: Optional[Union[int, float, str, list]] = None,
         verbose: int = 0,
         logger: Optional[Union[bool, str, callable]] = None,
     ):
@@ -367,8 +387,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         self.strat_cat = strat_cat
         self.min_frac_rows = min_frac_rows
         self.min_frac_cols = min_frac_cols
-        self.missing = missing
 
+        self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
         self._imputers = {}
         self._is_fitted = False
 
@@ -409,22 +429,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                 f"should be between 0 and 1, got {self.min_frac_cols}."
             )
 
-        # Set default missing list
-        if self.missing is None:
-            self.missing = [np.inf, -np.inf, "", "?", "NA", "nan", "None", "inf"]
-        elif not isinstance(self.missing, list):
-            self.missing = [self.missing]  # Has to be an iterable for loop
-
-        # Some values must always be imputed (but can be double)
-        self.missing.extend([np.inf, -np.inf])
-        self.missing = set(self.missing)
-
-        self.log("Fitting Imputer...", 1)
-
-        # Replace missing values with NaN
-        X.fillna(value=np.NaN, inplace=True)  # Replace None first
-        for to_replace in self.missing:
-            X.replace(to_replace, np.NaN, inplace=True)
+        # Replace all missing values with NaN
+        X.replace(self.missing + [np.inf, -np.inf], np.NaN, inplace=True)
 
         # Drop rows with too many NaN values
         min_frac_rows = int(self.min_frac_rows * X.shape[1])
@@ -981,6 +987,16 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     **kwargs
         Additional keyword arguments passed to the `strategy` estimator.
+
+    Attributes
+    ----------
+    <estimator_name>: class
+        Estimator instance (attribute name in all lowercase) used to
+        oversample/undersample the data, e.g. `balancer.adasyn` for the
+        default option.
+
+    mapping: dict
+        Dictionary of the target values mapped to their respective encoded integer.
 
     """
 

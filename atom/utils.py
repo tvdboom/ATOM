@@ -75,8 +75,8 @@ from matplotlib.gridspec import GridSpec
 CAL = Union[str, callable]
 SCALAR = Union[int, float]
 ARRAY_TYPES = (list, tuple, np.ndarray, pd.Series)  # Note tuple to use in isinstance
-X_TYPES = Union[dict, Union[ARRAY_TYPES], pd.DataFrame]
-Y_TYPES = Union[int, str, dict, Union[ARRAY_TYPES]]
+X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
+Y_TYPES = Union[int, str, Union[ARRAY_TYPES]]
 TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
 
 # Non-sklearn models
@@ -157,6 +157,16 @@ def flt(item):
 def lst(item):
     """Return list if item is not a sequence."""
     return [item] if not isinstance(item, (list, tuple)) else item
+
+
+def it(item):
+    """Return int if it's a rounded float, else item."""
+    try:
+        is_equal = int(item) == float(item)
+    except ValueError:
+        return item
+
+    return int(item) if is_equal else item
 
 
 def merge(X, y):

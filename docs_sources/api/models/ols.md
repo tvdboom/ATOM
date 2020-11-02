@@ -117,11 +117,11 @@ Predictions of the model on the test set.
 </blockquote>
 <strong>score_train: np.float64</strong>
 <blockquote>
-Model's score on the training set (no sample_weights applied).
+Model's score on the training set.
 </blockquote>
 <strong>score_test: np.float64</strong>
 <blockquote>
-Model's score on the test set (no sample_weights applied).
+Model's score on the test set.
 </blockquote>
 </tr>
 </table>

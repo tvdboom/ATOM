@@ -206,7 +206,7 @@ def test_score_method_sample_weights():
     """Assert that the score method works with sample weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    score = atom.score(X_bin, y_bin, sample_weight=atom.get_sample_weights("dataset"))
+    score = atom.score(X_bin, y_bin, sample_weight=atom.get_sample_weight("dataset"))
     assert isinstance(score, float)
 
 
@@ -215,28 +215,28 @@ def test_score_method_sample_weights():
 def test_class_weights_invalid_dataset():
     """Assert that an error is raised if invalid value for dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_class_weights, "invalid")
+    pytest.raises(ValueError, atom.get_class_weight, "invalid")
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
 def test_class_weights_method(dataset):
     """Assert that the get_class_weight method returns a dict of the classes."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    class_weight = atom.get_class_weights(dataset)
+    class_weight = atom.get_class_weight(dataset)
     assert list(class_weight.keys()) == [0, 1, 2]
 
 
 def test_sample_weights_invalid_dataset():
     """Assert that an error is raised if invalid value for dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_sample_weights, "invalid")
+    pytest.raises(ValueError, atom.get_sample_weight, "invalid")
 
 
 @pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
 def test_sample_weights_method(dataset):
     """Assert that the get_sample_weight method returns a list of the weights."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
-    sample_weight = atom.get_sample_weights(dataset)
+    sample_weight = atom.get_sample_weight(dataset)
     assert isinstance(sample_weight, list)
 
 

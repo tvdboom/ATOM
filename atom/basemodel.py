@@ -591,7 +591,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             f"{m.name}: {lst(self.metric_train)[i]:.4f}"
             for i, m in enumerate(self.T.metric_)
         ]
-        self.T.log(f"Training evaluation --> {'   '.join(out_train)}", 1)
+        self.T.log(f"Train evaluation --> {'   '.join(out_train)}", 1)
         out_test = [
             f"{m.name}: {lst(self.metric_test)[i]:.4f}"
             for i, m in enumerate(self.T.metric_)
@@ -820,13 +820,27 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     @property
     def score_train(self):
         if self._score_train is None:
-            self._score_train = self.estimator.score(self.X_train, self.y_train)
+            samples_as_list = list(self._est_params_fit.get("sample_weight", []))
+            if samples_as_list == self.T.get_sample_weight():
+                sample_weight = self._est_params_fit.get("sample_weight")
+            else:
+                sample_weight = None
+            self._score_train = self.estimator.score(
+                self.X_train, self.y_train, sample_weight=sample_weight
+            )
         return self._score_train
 
     @property
     def score_test(self):
         if self._score_test is None:
-            self._score_test = self.estimator.score(self.X_test, self.y_test)
+            samples_as_list = list(self._est_params_fit.get("sample_weight", []))
+            if samples_as_list == self.T.get_sample_weight():
+                sample_weight = self.T.get_sample_weight("test")
+            else:
+                sample_weight = None
+            self._score_test = self.estimator.score(
+                self.X_test, self.y_test, sample_weight=sample_weight
+            )
         return self._score_test
 
     # Properties ==================================================== >>

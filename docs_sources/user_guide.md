@@ -55,19 +55,20 @@ In this documentation we will consistently use terms to refer to certain concept
     - [binary classification](https://en.wikipedia.org/wiki/Binary_classification)
     - [multiclass classification](https://en.wikipedia.org/wiki/Multiclass_classification)
     - [regression](https://en.wikipedia.org/wiki/Regression_analysis)
-* **class**: Refers to one of the unique values in a column, e.g. a binary classifier has 2 classes in the target column.
+* **class**: Refers to one of the unique values in a column, e.g. a binary classifier
+  has 2 classes in the target column.
 * **array-like**: One-dimensional array of variable type list, tuple, np.array or pd.Series.
-* **missing values**: Refers to `None`, `NaN` and `inf` values.
-* **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
 * `atom`: Refers to an [ATOMClassifier](../API/ATOM/atomclassifier) or
  [ATOMRegressor](../API/ATOM/atomregressor) instance (note that all examples
  use it as variable name for the instance).
 * `model`: Refers to one of the [model](#models) instances.
 * **pipeline**: Refers to the collection of data cleaning, feature engineering and training steps performed by `atom`.
+* **missing values**: Refers to the values in the `missing` attribute.
+* **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
 * **estimator**: Actual estimator corresponding to a model. Implemented by an external package.
 * **BO**: Bayesian optimization algorithm used for hyperparameter optimization.
 * `training`: Refers to an instance of one of the classes that train and evaluate the
- models. The classes are:
+  models. The classes are:
     - [ATOMClassifier](../API/ATOM/atomclassifier)
     - [ATOMRegressor](../API/ATOM/atomregressor)
     - [TrainerClassifier](../API/training/trainerclassifier)
@@ -114,7 +115,8 @@ Let's get started with an example!
 
 First, initialize `atom` and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
- test set already splitted.
+ test set already splitted. Note that if a dataframe is provided, the indices will
+ be reset by `atom`.
 
     atom = ATOMClassifier(X, y, test_size=0.25)
 

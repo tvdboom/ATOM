@@ -112,7 +112,8 @@ X10_sn = [
     [1, 2, "d"],
 ]
 
-# Target columns (int, missing and categorical)
+# Target columns (int, missing, categorical and mixed)
 y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
 y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
+y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]

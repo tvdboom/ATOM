@@ -90,8 +90,8 @@ Example steps taken by ATOM's pipeline:
 ### Version 4.2.0
 
 * Possibility to add custom models to the pipeline using [ATOMModel](../API/ATOM/atommodel).
-* New [get_class_weights](../API/ATOM/atomclassifier#get-class-weights) and
-  [get_sample_weights](../API/ATOM/atomclassifier#get-sample-weights) utility methods.
+* New [get_class_weight](../API/ATOM/atomclassifier#get-class-weight) and
+  [get_sample_weight](../API/ATOM/atomclassifier#get-sample-weight) utility methods.
 * Added the `sample_weight` parameter to the [score](../API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
 * The `n_rows` parameter in [ATOMLoader](../API/ATOM/atomloader) is deprecated in

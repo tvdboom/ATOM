@@ -366,12 +366,12 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
-<td width="15%"><a href="#get-class-weights">get_class_weights</a></td>
+<td width="15%"><a href="#get-class-weight">get_class_weight</a></td>
 <td>Return class weights for a balanced data set.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#get-sample-weights">get_sample_weights</a></td>
+<td width="15%"><a href="#get-sample-weight">get_sample_weight</a></td>
 <td>Return sample weights for a balanced data set.</td>
 </tr>
 
@@ -458,8 +458,8 @@ Model(s) to clear from the pipeline. If "all", clear all models.
 <br />
 
 
-<a name="get-class-weights"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
+<a name="get-class-weight"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Return class weights for a balanced data set. Statistically, the class weights
@@ -481,8 +481,8 @@ Data set from which to get the weights. Choose between "train", "test" or "datas
 <br />
 
 
-<a name="get-sample-weights"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_sample_weights</strong>(dataset="train")
+<a name="get-sample-weight"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_sample_weight</strong>(dataset="train")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Return sample weights for a balanced data set. Statistically, the sampling weights

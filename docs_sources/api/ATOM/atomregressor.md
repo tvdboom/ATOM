@@ -33,7 +33,7 @@ X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
 Feature set with shape=(n_features, n_samples). If no y is provided, the
  last column is used as target.<br><br>
-y: int, str, list, tuple,  np.array or pd.Series<br>
+y: int, str or array-like<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
@@ -568,7 +568,8 @@ See [Cleaner](../data_cleaning/cleaner.md) for a description of the parameters.
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
- to avoid data leakage. See [Imputer](../data_cleaning/imputer.md) for a description
+ to avoid data leakage. Use the `missing` attribute to customize what are considered
+ "missing values". See [Imputer](../data_cleaning/imputer.md) for a description
  of the parameters. Note that since the Imputer can remove rows from both train and
  test set, the set's sizes may change to keep ATOM's `test_size` ratio.
 </div>

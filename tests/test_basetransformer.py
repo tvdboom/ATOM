@@ -176,6 +176,12 @@ def test_target_is_none():
 
 # Test _get_data_and_idx ==================================================== >>
 
+def test_empty_data_arrays():
+    """Assert that an error is raised when no data is provided."""
+    with pytest.raises(ValueError, match=r".*data arrays are empty.*"):
+        ATOMClassifier(n_rows=100, random_state=1)
+
+
 def test_input_is_X():
     """Assert that input X works as intended."""
     atom = ATOMClassifier(X_bin, random_state=1)
@@ -221,12 +227,6 @@ def test_test_size_int():
     assert len(atom.train) == len(X_bin) - 100
 
 
-def test_empty_data_arrays():
-    """Assert that an error is raised when no data is provided."""
-    with pytest.raises(ValueError, match=r".*data arrays are empty.*"):
-        ATOMClassifier(n_rows=100, random_state=1)
-
-
 def test_train_test_provided():
     """Assert that it runs when train and test are provided."""
     dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
@@ -263,9 +263,9 @@ def test_4_data_provided():
 
 
 def test_invalid_input():
-    """Assert that an error is raised for an invalid input."""
+    """Assert that an error is raised when input arrays are invalid."""
     trainer = TrainerClassifier("LR", random_state=1)
-    pytest.raises(ValueError, trainer.run, bin_train)
+    pytest.raises(ValueError, trainer.run, X_bin, bin_train, bin_test)
 
 
 def test_n_rows_train_test_frac():

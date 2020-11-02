@@ -98,6 +98,19 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         Seed used by the random number generator. If None, the random
         number generator is the `RandomState` instance used by `numpy.random`.
 
+    Attributes
+    ----------
+    symbolic_transformer: SymbolicTransformer
+        Instance used to calculate the genetic features. Only for
+        the genetic strategy.
+
+    genetic_features: pd.DataFrame
+        Dataframe of the newly created non-linear features. Only
+        for the genetic strategy. Columns include:
+            - name: Name of the feature (automatically created).
+            - description: Operators used to create this feature.
+            - fitness: Fitness score.
+
     """
 
     def __init__(
@@ -493,6 +506,40 @@ class FeatureSelector(
         Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
         See the corresponding sklearn documentation for the available options.
 
+    Attributes
+    ----------
+    collinear: pd.DataFrame
+        Dataframe of the removed collinear features. Columns include:
+            - drop_feature: Name of the feature dropped by the method.
+            - correlated feature: Name of the correlated feature(s).
+            - correlation_value: Pearson correlation coefficient(s)
+                                 of the feature pairs.
+
+    feature_importance: list
+        Remaining features ordered by importance. Only if strategy in
+        ["univariate", "SFM, "RFE", "RFECV"]. For RFE and RFECV, the
+        importance is extracted from the external estimator fitted on
+        the reduced set.
+
+    univariate: SelectKBest
+        Instance used to fit the estimator. Only if strategy="univariate".
+
+    scaler: Scaler
+        Instance used to scale the data. Only if strategy="PCA" and the
+        data was not already scaled.
+
+    pca: PCA
+        Instance used to fit the estimator. Only if strategy="PCA".
+
+    sfm: SelectFromModel
+        Instance used to fit the estimator. Only if strategy="SFM".
+
+    rfe: RFE
+        Instance used to fit the estimator. Only if strategy="RFE".
+
+    rfecv: RFECV
+        Instance used to fit the estimator. Only if strategy="RFECV".
+
     """
 
     def __init__(
@@ -518,18 +565,18 @@ class FeatureSelector(
         self.max_correlation = max_correlation
         self.kwargs = kwargs
 
-        self._low_variance = {}
         self.collinear = pd.DataFrame(
             columns=["drop_feature", "correlated_feature", "correlation_value"]
         )
+        self.feature_importance = None
         self.univariate = None
         self.scaler = None
         self.pca = None
         self.sfm = None
         self.rfe = None
         self.rfecv = None
-        self.feature_importance = None
         self._is_fitted = False
+        self._low_variance = {}
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):

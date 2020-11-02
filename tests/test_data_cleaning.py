@@ -144,13 +144,15 @@ def test_drop_minimum_cardinality():
     assert "invalid_column" not in X.columns
 
 
-def test_drop_rows_nan_target():
-    """Assert that self.dataset drops rows with NaN in target column."""
+def test_drop_missing_target():
+    """Assert that rows with missing values in the target column are dropped."""
     y = y_bin.copy()
-    length = len(X_bin)  # Save number of rows
-    y[0], y[21] = np.NaN, np.NaN  # Set NaN to target column for 2 rows
-    _, y = Cleaner().transform(X_bin, y)
-    assert length == len(y) + 2
+    length = len(X_bin)
+    y[0], y[21], y[41] = np.NaN, 99, np.inf  # Set missing to target column
+    cleaner = Cleaner()
+    cleaner.missing.append(99)
+    _, y = cleaner.transform(X_bin, y)
+    assert length == len(y) + 3
 
 
 def test_label_encoder_target_column():
@@ -192,30 +194,6 @@ def test_min_frac_cols_parameter():
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_missing_parameter_is_string():
-    """Assert that the missing parameter works when it's a string."""
-    X = [[4, 1, 2], [3, 1, 2], ["r", "a", "b"], [2, 1, 1]]
-    y = [1, 0, 0, 1]
-    imputer = Imputer(strat_num="drop", strat_cat="drop", missing="a")
-    X, y = imputer.fit_transform(X, y)
-    assert X.isna().sum().sum() == 0
-
-
-def test_missing_parameter_adds_extra_values():
-    """Assert that the missing parameter adds obligatory values."""
-    X = [[1, 1, 2], [None, 1, 2], ["a", "a", "b"], [2, np.inf, 1]]
-    y = [1, 1, 0, 0]
-    impute = Imputer(
-        strat_num="drop",
-        strat_cat="drop",
-        missing=["O", "N"],
-        min_frac_rows=0.1,
-        min_frac_cols=0.1,
-    )
-    X, y = impute.fit_transform(X, y)
-    assert X.isna().sum().sum() == 0
-
-
 def test_is_fitted():
     """Assert that an error is raised if class is not fitted."""
     pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
@@ -223,10 +201,11 @@ def test_is_fitted():
 
 def test_imputing_all_missing_values_numeric():
     """Assert that all missing values are imputed in numeric columns."""
-    for v in [None, np.NaN, np.inf, -np.inf]:
+    imputer = Imputer(strat_num="mean")
+    imputer.missing.append(99)
+    for v in [None, np.NaN, np.inf, -np.inf, 99]:
         X = [[v, 1, 1], [2, 5, 2], [4, v, 1], [2, 1, 1]]
         y = [1, 1, 0, 0]
-        imputer = Imputer(strat_num="mean")
         X, y = imputer.fit_transform(X, y)
         assert X.isna().sum().sum() == 0
 

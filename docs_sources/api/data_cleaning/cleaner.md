@@ -49,7 +49,7 @@ Whether to remove rows with missing values in the target column.
 </blockquote>
 <strong>encode_target: bool, optional (default=True)</strong>
 <blockquote>
-Whether to Label-encode the target column.
+Whether to Label-encode the target column. Ignored if y is not provided.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -84,10 +84,17 @@ Verbosity level of the class. Possible values are:
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
+<strong>missing: list</strong>
+<blockquote>
+List of values that are considered "missing". Default values are: "", "?",
+ "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf`
+ are always considered missing since they are incompatible with sklearn
+ estimators.
+</blockquote>
 <strong>mapping: dict</strong>
 <blockquote>
 Dictionary of the target values mapped to their respective encoded integer.
- Only available if `map_target` was performed.
+ Only available if encode_target=True.
 </blockquote>
 </td>
 </tr>

@@ -110,11 +110,9 @@ Seed used by the random number generator. If None, the random number
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>symbolic_transformer: class</strong>
+<strong>symbolic_transformer: [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer)</strong>
 <blockquote>
-Instance used to calculate the genetic features, from
- [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer).
- Only for the genetic strategy.
+Instance used to calculate the genetic features. Only for the genetic strategy.
 </blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>

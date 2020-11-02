@@ -33,7 +33,7 @@ X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
 Feature set with shape=(n_features, n_samples). If no y is provided, the
  last column is used as target.<br><br>
-y: int, str, list, tuple,  np.array or pd.Series<br>
+y: int, str or array-like<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
@@ -184,11 +184,11 @@ Number of unique classes in the target column.
 <blockquote>
 Dictionary of the target classes mapped to their respective encoded integer.
 </blockquote>
-<strong>missing: pd.Series</strong>
+<strong>nans: pd.Series</strong>
 <blockquote>
 Returns columns with number of missing values.
 </blockquote>
-<strong>n_missing: int</strong>
+<strong>n_nans: int</strong>
 <blockquote>
 Number of columns with missing values.
 </blockquote>
@@ -216,6 +216,12 @@ Returns whether the feature set is scaled.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
+<strong>missing: list</strong>
+<blockquote>
+List of values that are considered "missing". Default values are: "", "?", "None", "NA",
+ "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf` are always
+ considered missing since they are incompatible with sklearn estimators.
+</blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>
 Dataframe of the non-linear features created by the <a href="#feature-generation">feature_generation</a> method.
@@ -330,12 +336,12 @@ inspect the pipeline.
 </tr>
 
 <tr>
-<td width="15%"><a href="#get-class-weights">get_class_weights</a></td>
+<td width="15%"><a href="#get-class-weight">get_class_weight</a></td>
 <td>Return class weights for a balanced data set.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#get-sample-weights">get_sample_weights</a></td>
+<td width="15%"><a href="#get-sample-weight">get_sample_weight</a></td>
 <td>Return sample weights for a balanced data set.</td>
 </tr>
 
@@ -424,8 +430,8 @@ Model(s) to clear from the pipeline. If "all", clear all models.
 <br />
 
 
-<a name="get-class-weights"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
+<a name="get-class-weight"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Return class weights for a balanced data set. Statistically, the class weights
@@ -447,8 +453,8 @@ Data set from which to get the weights. Choose between "train", "test" or "datas
 <br />
 
 
-<a name="get-sample-weights"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_sample_weights</strong>(dataset="train")
+<a name="get-sample-weight"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_sample_weight</strong>(dataset="train")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
 <div style="padding-left:3%">
 Return sample weights for a balanced data set. Statistically, the sampling weights
@@ -706,9 +712,10 @@ See [Cleaner](../data_cleaning/cleaner.md) for a description of the parameters.
 <div style="padding-left:3%">
 Handle missing values according to the selected strategy. Also removes rows and
  columns with too many missing values. The imputer is fitted only on the training set
- to avoid data leakage. See [Imputer](../data_cleaning/imputer.md) for a description
+ to avoid data leakage. Use the `missing` attribute to customize what are considered
+ "missing values". See [Imputer](../data_cleaning/imputer.md) for a description
  of the parameters. Note that since the Imputer can remove rows from both train and
- test set, the set's sizes may change to keep ATOM's `test_size` ratio.
+ test set, the set's sizes may change size.
 </div>
 <br />
 

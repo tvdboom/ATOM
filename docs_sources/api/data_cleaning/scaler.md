@@ -40,6 +40,24 @@ Verbosity level of the class. Possible values are:
 <br>
 
 
+## Attributes
+-------------
+
+<a name="atom"></a>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>standard_scaler: [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)</strong>
+<blockquote>
+Instance with which the data is scaled.
+</blockquote>
+</td>
+</tr>
+</table>
+<br>
+
+
 ## Methods
 ---------
 

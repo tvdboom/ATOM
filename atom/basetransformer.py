@@ -173,14 +173,10 @@ class BaseTransformer(object):
 
             # Convert y to pd.Series
             if not isinstance(y, pd.Series):
-                if not isinstance(y, np.ndarray):
-                    y = np.array(y)
-
                 # Check that y is one-dimensional
-                if y.ndim != 1:
-                    raise ValueError(
-                        f"y should be one-dimensional, got y.ndim={y.ndim}."
-                    )
+                ndim = np.array(y).ndim
+                if ndim != 1:
+                    raise ValueError(f"y should be one-dimensional, got ndim={ndim}.")
 
                 # Check X and y have the same number of rows
                 if len(X) != len(y):
@@ -217,14 +213,8 @@ class BaseTransformer(object):
             Whether to use the n_rows parameter on the dataset.
 
         """
-        try:
-            if len(arrays) == 1:
-                # arrays=(X,)
-                data, _ = self._prepare_input(arrays[0])
-            elif len(arrays) == 2:
-                # arrays=(X, y)
-                data = merge(*self._prepare_input(arrays[0], arrays[1]))
-
+        def _no_train_test(data):
+            """Path to follow when no train and test are provided."""
             # Select subsample while shuffling the dataset
             if use_n_rows:
                 if self.n_rows <= 1:
@@ -249,31 +239,11 @@ class BaseTransformer(object):
                 test_idx = self.test_size
             idx = [len(data) - test_idx, test_idx]
 
-        except (UnboundLocalError, TypeError, ValueError, AttributeError):
-            if len(arrays) == 0:
-                raise ValueError(
-                    "The data arrays are empty! Provide the data to run the pipeline "
-                    "successfully. See the documentation for the allowed formats."
-                )
-            elif isinstance(arrays[0], ARRAY_TYPES) and len(arrays[0]) == 2:
-                # arrays=((X_train, y_train), (X_test, y_test))
-                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
-                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
-            elif len(arrays) == 2:
-                # arrays=(train, test)
-                train, _ = self._prepare_input(arrays[0])
-                test, _ = self._prepare_input(arrays[1])
-            elif len(arrays) == 4:
-                # arrays=(X_train, X_test, y_train, y_test)
-                train = merge(*self._prepare_input(arrays[0], arrays[2]))
-                test = merge(*self._prepare_input(arrays[1], arrays[3]))
-            else:
-                raise ValueError(
-                    "Invalid data arrays. See the documentation "
-                    "for the allowed formats."
-                )
+            return data, idx
 
-            # Skip this if called from training instance
+        def _has_train_test(train, test):
+            """Path to follow when train and test are provided."""
+            # Skip the n_rows step if not called from `atom`
             if hasattr(self, "n_rows") and use_n_rows:
                 # Select same subsample of train and test set
                 if self.n_rows <= 1:
@@ -289,6 +259,47 @@ class BaseTransformer(object):
             # Update the data and reset the indices
             data = pd.concat([train, test]).reset_index(drop=True)
             idx = [len(train), len(test)]
+
+            return data, idx
+
+        # Process input arrays ============================================= >>
+
+        if len(arrays) == 0:
+            raise ValueError(
+                "The data arrays are empty! Provide the data to run the pipeline "
+                "successfully. See the documentation for the allowed formats."
+            )
+
+        elif len(arrays) == 1:
+            # arrays=(X,)
+            data, _ = self._prepare_input(arrays[0])
+            data, idx = _no_train_test(data)
+
+        elif len(arrays) == 2:
+            if len(arrays[0]) == len(arrays[1]) == 2:
+                # arrays=((X_train, y_train), (X_test, y_test))
+                train = merge(*self._prepare_input(arrays[0][0], arrays[0][1]))
+                test = merge(*self._prepare_input(arrays[1][0], arrays[1][1]))
+                data, idx = _has_train_test(train, test)
+            elif isinstance(arrays[1], (int, str)) or np.array(arrays[1]).ndim == 1:
+                # arrays=(X, y)
+                data = merge(*self._prepare_input(arrays[0], arrays[1]))
+                data, idx = _no_train_test(data)
+            else:
+                # arrays=(train, test)
+                train, _ = self._prepare_input(arrays[0])
+                test, _ = self._prepare_input(arrays[1])
+                data, idx = _has_train_test(train, test)
+
+        elif len(arrays) == 4:
+            # arrays=(X_train, X_test, y_train, y_test)
+            train = merge(*self._prepare_input(arrays[0], arrays[2]))
+            test = merge(*self._prepare_input(arrays[1], arrays[3]))
+            data, idx = _has_train_test(train, test)
+
+        else:
+            raise ValueError(
+                "Invalid data arrays. See the documentation for the allowed formats.")
 
         return data, idx
 

@@ -10,6 +10,7 @@ Description: Unit tests for atom.py
 # Standard packages
 import glob
 import pytest
+import numpy as np
 import pandas as pd
 
 # Own modules
@@ -17,7 +18,7 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import merge, check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_bin_array,
-    y_bin_array, X10, X10_nan, X10_str, y10, y10_nan, y10_str
+    y_bin_array, X10, X10_nan, X10_str, y10, y10_nan, y10_str, y10_sn
 )
 
 
@@ -55,6 +56,18 @@ def test_raise_one_target_value():
     pytest.raises(ValueError, ATOMClassifier, X_bin, y, random_state=1)
 
 
+def test_mapping_assignment():
+    """Assert that the mapping attribute is created."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.mapping == {'0': 0, '1': 1}
+
+
+def test_mapping_with_nans():
+    """Assert that the mapping attribute is created when str and nans are mixed."""
+    atom = ATOMClassifier(X10, y10_sn, random_state=1)
+    assert atom.mapping == {'n': 'n', 'nan': np.NaN, 'y': 'y'}
+
+
 def test_task_assigning():
     """Assert that the task attribute is assigned correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -79,16 +92,16 @@ def test_repr():
 
 # Test utility properties ================================================== >>
 
-def test_missing():
-    """Assert that missing returns a series of missing values."""
+def test_nans():
+    """Assert that nans returns a series of missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    assert atom.missing.sum() == 1
+    assert atom.nans.sum() == 1
 
 
-def test_n_missing():
-    """Assert that n_missing returns the number of missing values."""
+def test_n_nans():
+    """Assert that n_nans returns the number of missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    assert atom.n_missing == 1
+    assert atom.n_nans == 1
 
 
 def test_categorical():

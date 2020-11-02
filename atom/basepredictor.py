@@ -60,7 +60,7 @@ class BasePredictor(object):
 
     @property
     def train(self):
-        return self._data[: self._idx[0]]
+        return self._data[:self._idx[0]]
 
     @property
     def test(self):
@@ -109,7 +109,7 @@ class BasePredictor(object):
             "dataset": self.y.value_counts(sort=False, dropna=False),
             "train": self.y_train.value_counts(sort=False, dropna=False),
             "test": self.y_test.value_counts(sort=False, dropna=False),
-        })
+        }).fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
         return df.set_index([idx])
 
     @property
@@ -157,7 +157,7 @@ class BasePredictor(object):
     # Utility methods ====================================================== >>
 
     @composed(crash, typechecked)
-    def get_class_weights(self, dataset: str = "train"):
+    def get_class_weight(self, dataset: str = "train"):
         """Return class weights for a balanced data set.
 
         Statistically, the class weights re-balance the data set so that the
@@ -182,7 +182,7 @@ class BasePredictor(object):
         return {idx: sum(y) / value for idx, value in y.iteritems()}
 
     @composed(crash, typechecked)
-    def get_sample_weights(self, dataset: str = "train"):
+    def get_sample_weight(self, dataset: str = "train"):
         """Return sample weights for a balanced data set.
 
         Statistically, the sampling weights re-balance the data set so that the
