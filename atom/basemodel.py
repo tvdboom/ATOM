@@ -276,7 +276,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                         estimator=estimator,
                         train=(X_subtrain, y_subtrain),
                         validation=(X_val, y_val),
-                        est_params_fit=est_copy
+                        params=est_copy
                     )
 
                     # Alert if early stopping was applied (only for cv=1)
@@ -563,7 +563,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 estimator=self.estimator,
                 train=(self.X_train, self.y_train),
                 validation=(self.X_test, self.y_test),
-                est_params_fit=self._est_params_fit.copy()
+                params=self._est_params_fit
             )
         else:
             self.estimator.fit(self.X_train, self.y_train, **self._est_params_fit)
@@ -638,7 +638,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     estimator=estimator,
                     train=(sample_x, sample_y),
                     validation=None,
-                    est_params_fit=self._est_params_fit.copy()
+                    params=self._est_params_fit
                 )
             else:
                 estimator.fit(sample_x, sample_y, **self._est_params_fit)

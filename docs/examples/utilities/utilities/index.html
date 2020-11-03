@@ -457,6 +457,10 @@
 </li>
                                     
 <li>
+    <a href="../../imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+</li>
+                                    
+<li>
     <a href="../../feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
 </li>
                                     
@@ -579,7 +583,7 @@ from atom import ATOMClassifier, ATOMLoader
 </code></pre>
 
 <pre><code class="python"># Load data
-X = pd.read_csv(&quot;./datasets/weatherAUS.csv&quot;)
+X = pd.read_csv('./datasets/weatherAUS.csv')
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -675,6 +679,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 <h2 id="use-the-utility-attributes">Use the utility attributes</h2>
 <pre><code class="python">atom = ATOMClassifier(X, warnings=False, random_state=1)
+atom.clean()
 
 # We can quickly check what columns have missing values
 print(&quot;Columns with missing values:\n&quot;, atom.missing)
@@ -709,7 +714,7 @@ Temp3pm           2726
 RainToday         1406
 dtype: int64
 
-Categorical columns: ["Location", "WindGustDir", "WindDir9am", "WindDir3pm", "RainToday"]
+Categorical columns: ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm', 'RainToday']
 
 Is the dataset scaled? False
 </code></pre>
@@ -761,10 +766,10 @@ Instances in RainTomorrow per class:
 <h2 id="change-the-data-mid-pipeline">Change the data mid-pipeline</h2>
 <pre><code class="python"># We can change atom's data mid-pipeline, adding a column for example
 # Note that we can only replace a dataframe with a new dataframe!
-atom.X = atom.X.assign(AvgTemp=(atom.X[&quot;MaxTemp&quot;] + atom.X[&quot;MinTemp&quot;])/2)
+atom.X = atom.X.assign(AvgTemp=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 
 # This will automatically update all other data attributes
-assert &quot;AvgTemp&quot; in atom.dataset
+assert 'AvgTemp' in atom.dataset
 </code></pre>
 
 <h2 id="visualize-the-pipeline">Visualize the pipeline</h2>
@@ -775,7 +780,7 @@ atom.plot_pipeline()  # Using a plot
 
 <pre><code>ATOMClassifier
  --&gt; Cleaner
-   &gt;&gt;&gt; prohibited_types: ["datetime64", "datetime64[ns]", "timedelta[ns]"]
+   &gt;&gt;&gt; prohibited_types: ['datetime64', 'datetime64[ns]', 'timedelta[ns]']
    &gt;&gt;&gt; strip_categorical: True
    &gt;&gt;&gt; maximum_cardinality: True
    &gt;&gt;&gt; minimum_cardinality: True
@@ -786,7 +791,7 @@ atom.plot_pipeline()  # Using a plot
    &gt;&gt;&gt; strat_cat: drop
    &gt;&gt;&gt; min_frac_rows: 0.5
    &gt;&gt;&gt; min_frac_cols: 0.5
-   &gt;&gt;&gt; missing: {"", inf, -inf, "NA", "nan", "None", "inf", "?"}
+   &gt;&gt;&gt; missing: {'', inf, -inf, 'NA', 'nan', 'None', 'inf', '?'}
  --&gt; Encoder
    &gt;&gt;&gt; strategy: LeaveOneOut
    &gt;&gt;&gt; max_onehot: 10
@@ -802,7 +807,7 @@ def f2_score(y_true, y_pred):
     return fbeta_score(y_true, y_pred, beta=2)
 
 # Remember to use the greater_is_better, needs_proba and needs_threshold parameters if necessary!
-atom.run(models=&quot;lr&quot;, metric=f2_score)
+atom.run(models='lr', metric=f2_score)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
@@ -827,7 +832,7 @@ Logistic Regression --&gt; f2_score: 0.568
 <h2 id="customize-the-estimators-parameters">Customize the estimator's parameters</h2>
 <pre><code class="python"># You can use the est_params parameter to customize the estimator
 # Let's run AdaBoost using LR instead of a decision tree as base estimator
-atom.run(&quot;AdaB&quot;, est_params={&quot;base_estimator&quot;: atom.lr.estimator})
+atom.run('AdaB', est_params={'base_estimator': atom.lr.estimator})
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
@@ -857,7 +862,7 @@ AdaBoost --&gt; f2_score: 0.548
 </code></pre>
 <pre><code class="python"># Note that parameters specified by est_params are not optimized in the BO
 # (also, we can change the verbosity per method)
-atom.run(&quot;tree&quot;, n_calls=3, n_initial_points=1, est_params={&quot;max_depth&quot;: 2}, verbose=2)
+atom.run('tree', n_calls=3, n_initial_points=1, est_params={'max_depth': 2}, verbose=2)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
@@ -867,21 +872,21 @@ Metric: f2_score
 
 Running BO for Decision Tree...
 Initial point 1 ---------------------------------
-Parameters --&gt; {"criterion": "gini", "splitter": "best", "min_samples_split": 2, "min_samples_leaf": 1, "max_features": None, "ccp_alpha": 0}
+Parameters --&gt; {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
 Evaluation --&gt; f2_score: 0.4936  Best f2_score: 0.4936
 Time iteration: 0.383s   Total time: 0.396s
 Iteration 2 -------------------------------------
-Parameters --&gt; {"criterion": "gini", "splitter": "random", "min_samples_split": 4, "min_samples_leaf": 20, "max_features": 0.5, "ccp_alpha": 0.014}
+Parameters --&gt; {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 4, 'min_samples_leaf': 20, 'max_features': 0.5, 'ccp_alpha': 0.014}
 Evaluation --&gt; f2_score: 0.4441  Best f2_score: 0.4936
 Time iteration: 0.137s   Total time: 0.537s
 Iteration 3 -------------------------------------
-Parameters --&gt; {"criterion": "entropy", "splitter": "random", "min_samples_split": 2, "min_samples_leaf": 6, "max_features": 0.5, "ccp_alpha": 0.0}
+Parameters --&gt; {'criterion': 'entropy', 'splitter': 'random', 'min_samples_split': 2, 'min_samples_leaf': 6, 'max_features': 0.5, 'ccp_alpha': 0.0}
 Evaluation --&gt; f2_score: 0.3050  Best f2_score: 0.4936
 Time iteration: 0.140s   Total time: 0.927s
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
-Best parameters --&gt; {"criterion": "gini", "splitter": "best", "min_samples_split": 2, "min_samples_leaf": 1, "max_features": None, "ccp_alpha": 0}
+Best parameters --&gt; {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
 Best evaluation --&gt; f2_score: 0.4936
 Time elapsed: 1.229s
 Fit ---------------------------------------------
@@ -900,7 +905,7 @@ Decision Tree --&gt; f2_score: 0.488
 <h2 id="save-load">Save &amp; load</h2>
 <pre><code class="python"># Save the atom instance as a pickle with the save method
 # Remember that the instance contains the data, use save_datad to save the instance without the data
-atom.save(&quot;atom&quot;, save_data=False)
+atom.save('atom', save_data=False)
 </code></pre>
 
 <pre><code>ATOMClassifier saved successfully!
@@ -908,10 +913,10 @@ atom.save(&quot;atom&quot;, save_data=False)
 <pre><code class="python"># Load the instance again with ATOMLoader
 # No need to store the transformed data, providing the original dataset to the loader
 # will automatically transform it throigh all the steps in atom's pipeline
-atom_2 = ATOMLoader(&quot;atom&quot;, X, verbose=2)
+atom_2 = ATOMLoader('atom', X, verbose=2)
 
 # Remember to also add the extra column!
-atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X[&quot;MaxTemp&quot;] + atom_2.X[&quot;MinTemp&quot;])/2)
+atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X['MaxTemp'] + atom_2.X['MinTemp'])/2)
 </code></pre>
 
 <pre><code>Applying data cleaning...
@@ -942,8 +947,8 @@ ATOMClassifier loaded successfully!
 </code></pre>
 <h2 id="customize-the-plot-aesthetics">Customize the plot aesthetics</h2>
 <pre><code class="python"># Use the plotting attributes to further customize your plots!
-atom_2.palette= &quot;Blues&quot;
-atom_2.style = &quot;white&quot;
+atom_2.palette= 'Blues'
+atom_2.style = 'white'
 
 atom_2.plot_roc()
 </code></pre>

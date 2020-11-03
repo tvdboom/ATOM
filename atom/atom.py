@@ -474,7 +474,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def balance(self, strategy: str = "ADASYN", **kwargs):
         """Balance the target classes in the training set.
 
-        Balance the number of instances per target category in the training set.
+        Balance the number of instances per target class in the training set.
         Only the training set is balanced in order to maintain the original
         distribution of target classes in the test set. Use only for
         classification tasks.

@@ -169,6 +169,11 @@ def it(item):
     return int(item) if is_equal else item
 
 
+def divide(a, b):
+    """Divide two numbers and return 0 if division by zero."""
+    return np.divide(a, b) if b != 0 else 0
+
+
 def merge(X, y):
     """Merge a pd.DataFrame and pd.Series into one dataframe."""
     return X.merge(y.to_frame(), left_index=True, right_index=True)

@@ -229,8 +229,8 @@ One of the common issues found in datasets that are used for classification is
  classes within a dataset. For example, in a credit card fraud detection dataset,
  most of the transactions are non-fraud and a very few cases are fraud. This leaves
  us with a very unbalanced ratio of fraud vs non-fraud cases. The
- [Balancer](API/data_cleaning/balancer.md) class can oversample the minority category
- or undersample the majority category. It can be accessed from `atom` through the
+ [Balancer](API/data_cleaning/balancer.md) class can oversample the minority class
+ or undersample the majority class. It can be accessed from `atom` through the
  [balance](../API/ATOM/atomclassifier/#balance) method.
 
 
@@ -765,13 +765,24 @@ After fitting the estimator, you can asses the robustness of the model using
 
 [XGBoost](../API/models/xgb), [LightGBM](../API/models/lgb) and [CatBoost](../API/models/catb)
  allow in-training evaluation. This means that the estimator is evaluated after
- every round of the training. Use the `early_stopping` key in `bo_params` to stop
- the training early if it didn't improve in the last `early_stopping` rounds. This
- can save the pipeline much time that would otherwise be wasted on an estimator
- that is unlikely to improve further. Note that this technique will be applied
- both during the BO and at the final fit on the complete training set. After
- fitting, the `model` will get the `evals` attribute, a dictionary of the train
- and test performances per round (also if early stopping wasn't applied).
+ every round of the training, and that the training is stopped early if it didn't
+ improve in the last `early_stopping` rounds. This can save the pipeline much time
+ that would otherwise be wasted on an estimator that is unlikely to improve further.
+ Note that this technique will be applied both during the BO and at the final fit
+ on the complete training set.
+
+There are two ways to apply early stopping on these models:
+
+* Through the `early_stopping` key in `bo_params`. This approach applies early
+  stopping to all models in the pipeline and allows the input of a fraction
+  of the total number of rounds.
+* Filling the `early_stopping_rounds` parameter directly in `est_params`. Don't
+  forget to add `_fit` to the parameter to call it from the fit method.
+ 
+After fitting, the `model` will get the `evals` attribute, a dictionary of the train
+ and test performances per round (also if early stopping wasn't applied). Click
+ [here](../examples/early_stopping/early_stopping) for an example pipeline using
+ early stopping.
 
 !!!tip
     Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training

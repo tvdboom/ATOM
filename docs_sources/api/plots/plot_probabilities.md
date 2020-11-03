@@ -22,7 +22,7 @@ Data set on which to calculate the metric. Options are "train", "test" or "both"
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Probability of being that category in the target column as index or name.
+Probability of being that class in the target column as index or name.
  Only for multiclass classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
@@ -56,7 +56,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, "RainTomorrow")
 atom.run("rf")
-atom.plot_probabilities(target="Yes", filenmae="probabilities_category_yes")
+atom.plot_probabilities(target="Yes", filename="probabilities_class_yes")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>

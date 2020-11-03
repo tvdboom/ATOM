@@ -1145,23 +1145,24 @@ class XGBoost(BaseModel):
         else:
             return XGBRegressor(**kwargs)
 
-    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
+    def custom_fit(self, estimator, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if "early_stopping_rounds" in est_params_fit:
-            rounds = est_params_fit.pop("early_stopping_rounds")
+        if "early_stopping_rounds" in params:
+            rounds = params["early_stopping_rounds"]
         elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
             rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
 
+        pre_defined_params = ["early_stopping_rounds", "verbose"]
         estimator.fit(
             X=train[0],
             y=train[1],
             eval_set=[train, validation] if validation else None,
             early_stopping_rounds=rounds,
-            verbose=est_params_fit.pop("verbose", False),
-            **est_params_fit
+            verbose=params.get("verbose", False),
+            **{k: v for k, v in params.items() if k not in pre_defined_params}
         )
 
         if validation:
@@ -1228,23 +1229,24 @@ class LightGBM(BaseModel):
         else:
             return LGBMRegressor(n_jobs=n_jobs, random_state=random_state, **params)
 
-    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
+    def custom_fit(self, estimator, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if "early_stopping_rounds" in est_params_fit:
-            rounds = est_params_fit.pop("early_stopping_rounds")
+        if "early_stopping_rounds" in params:
+            rounds = params["early_stopping_rounds"]
         elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
             rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
 
+        pre_defined_params = ["early_stopping_rounds", "verbose"]
         estimator.fit(
             X=train[0],
             y=train[1],
             eval_set=[train, validation] if validation else None,
             early_stopping_rounds=rounds,
-            verbose=est_params_fit.pop("verbose", False),
-            **est_params_fit
+            verbose=params.get("verbose", False),
+            **{k: v for k, v in params.items() if k not in pre_defined_params}
         )
 
         if validation:
@@ -1318,11 +1320,11 @@ class CatBoost(BaseModel):
         else:
             return CatBoostRegressor(**kwargs)
 
-    def custom_fit(self, estimator, train, validation=None, est_params_fit={}):
+    def custom_fit(self, estimator, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
-        if "early_stopping_rounds" in est_params_fit:
-            rounds = est_params_fit.pop("early_stopping_rounds")
+        if "early_stopping_rounds" in params:
+            rounds = params["early_stopping_rounds"]
         elif not self._early_stopping or self._early_stopping >= 1:  # None or int
             rounds = self._early_stopping
         elif self._early_stopping < 1:
@@ -1333,7 +1335,7 @@ class CatBoost(BaseModel):
             y=train[1],
             eval_set=validation,
             early_stopping_rounds=rounds,
-            **est_params_fit
+            **{k: v for k, v in params.items() if k != "early_stopping_rounds"}
         )
 
         if validation:

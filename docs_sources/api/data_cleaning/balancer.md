@@ -5,7 +5,7 @@
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
-Balance the number of rows per target category. Use only for classification tasks.
+Balance the number of rows per target class. Use only for classification tasks.
 This class can be accessed from `atom` through the
  [balance](../../ATOM/atomclassifier/#balance) method. Read more in
  the [user guide](../../../user_guide/#balancing-the-data).

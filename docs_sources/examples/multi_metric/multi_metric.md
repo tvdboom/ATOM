@@ -27,98 +27,97 @@ X, y = load_breast_cancer(return_X_y=True)
 # Call ATOM and run the pipeline using multipe metrics
 # Note that for every step of the BO, both metrics are calculated, but only the first is used for optimization!
 atom = ATOMClassifier(X, y, n_jobs=2, verbose=2, warnings=False, random_state=1)
-atom.run(["MNB", "QDA"], metric=("f1", "recall"), n_calls=3, n_initial_points=1, bagging=4)
+atom.run(['MNB', 'QDA'], metric=('f1', 'recall'), n_calls=3, n_initial_points=1, bagging=4)
 ```
 
     << ================== ATOM ================== >>
     Algorithm task: binary classification.
     Parallel processing with 2 cores.
-    Applying data cleaning...
     
-    Dataset stats ================= >>
+    Dataset stats ================== >>
     Shape: (569, 31)
     Scaled: False
-    ----------------------------------
+    -----------------------------------
     Train set size: 456
     Test set size: 113
-    ----------------------------------
-    Train set balance: 0:1 <==> 0.6:1.0
-    Test set balance: 0:1 <==> 0.7:1.0
-    ----------------------------------
-    Instances in target per class:
-    |    |    total |    train_set |    test_set |
-    |---:|---------:|-------------:|------------:|
-    |  0 |      212 |          167 |          45 |
-    |  1 |      357 |          289 |          68 |
+    -----------------------------------
+    Train set balance: 0:1 <==> 1.0:1.7
+    Test set balance: 0:1 <==> 1.0:1.5
+    -----------------------------------
+    Distribution of classes:
+    |    |   dataset |   train |   test |
+    |---:|----------:|--------:|-------:|
+    |  0 |       212 |     167 |     45 |
+    |  1 |       357 |     289 |     68 |
     
     
-    Running pipeline ============================= >>
-    Models in pipeline: MNB, QDA
+    Training ===================================== >>
+    Models: MNB, QDA
     Metric: f1, recall
     
     
     Running BO for Multinomial Naive Bayes...
-    Random start 1 ----------------------------------
-    Parameters --> {"alpha": 1, "fit_prior": True}
+    Initial point 1 ---------------------------------
+    Parameters --> {'alpha': 1.0, 'fit_prior': True}
     Evaluation --> f1: 0.9260  Best f1: 0.9260   recall: 0.9722  Best recall: 0.9722
-    Time iteration: 3.108s   Total time: 3.124s
+    Time iteration: 3.553s   Total time: 3.559s
     Iteration 2 -------------------------------------
-    Parameters --> {"alpha": 9.744, "fit_prior": True}
+    Parameters --> {'alpha': 9.744, 'fit_prior': True}
     Evaluation --> f1: 0.9225  Best f1: 0.9260   recall: 0.9688  Best recall: 0.9722
-    Time iteration: 0.048s   Total time: 3.172s
+    Time iteration: 0.031s   Total time: 3.595s
     Iteration 3 -------------------------------------
-    Parameters --> {"alpha": 0.66, "fit_prior": False}
+    Parameters --> {'alpha': 0.66, 'fit_prior': False}
     Evaluation --> f1: 0.9223  Best f1: 0.9260   recall: 0.9655  Best recall: 0.9722
-    Time iteration: 0.044s   Total time: 3.357s
+    Time iteration: 0.031s   Total time: 3.758s
     
     Results for Multinomial Naive Bayes:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"alpha": 1, "fit_prior": True}
+    Best parameters --> {'alpha': 1.0, 'fit_prior': True}
     Best evaluation --> f1: 0.9260   recall: 0.9722
-    Time elapsed: 3.494s
-    Fitting -----------------------------------------
-    Score on the train set --> f1: 0.9243   recall: 0.9723
-    Score on the test set  --> f1: 0.9103   recall: 0.9706
-    Time elapsed: 0.004s
+    Time elapsed: 3.879s
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9243   recall: 0.9723
+    Test evaluation --> f1: 0.9103   recall: 0.9706
+    Time elapsed: 0.012s
     Bagging -----------------------------------------
-    Score --> f1: 0.9100 ± 0.0005   recall: 0.9669 ± 0.0064
-    Time elapsed: 0.031s
+    Evaluation --> f1: 0.9100 ± 0.0005   recall: 0.9669 ± 0.0064
+    Time elapsed: 0.028s
     -------------------------------------------------
-    Total time: 3.531s
+    Total time: 3.921s
     
     
     Running BO for Quadratic Discriminant Analysis...
-    Random start 1 ----------------------------------
-    Parameters --> {"reg_param": 0}
+    Initial point 1 ---------------------------------
+    Parameters --> {'reg_param': 0}
     Evaluation --> f1: 0.9654  Best f1: 0.9654   recall: 0.9619  Best recall: 0.9619
-    Time iteration: 0.031s   Total time: 0.031s
+    Time iteration: 0.039s   Total time: 0.042s
     Iteration 2 -------------------------------------
-    Parameters --> {"reg_param": 1.0}
+    Parameters --> {'reg_param': 1.0}
     Evaluation --> f1: 0.9245  Best f1: 0.9654   recall: 0.9897  Best recall: 0.9897
-    Time iteration: 0.031s   Total time: 0.063s
+    Time iteration: 0.034s   Total time: 0.080s
     Iteration 3 -------------------------------------
-    Parameters --> {"reg_param": 0.0}
+    Parameters --> {'reg_param': 0.0}
     Evaluation --> f1: 0.9633  Best f1: 0.9654   recall: 0.9549  Best recall: 0.9897
-    Time iteration: 0.031s   Total time: 0.188s
+    Time iteration: 0.034s   Total time: 0.211s
     
     Results for Quadratic Discriminant Analysis:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"reg_param": 0}
+    Best parameters --> {'reg_param': 0}
     Best evaluation --> f1: 0.9654   recall: 0.9619
-    Time elapsed: 0.297s
-    Fitting -----------------------------------------
-    Score on the train set --> f1: 0.9828   recall: 0.9896
-    Score on the test set  --> f1: 0.9710   recall: 0.9853
-    Time elapsed: 0.016s
+    Time elapsed: 0.315s
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.9828   recall: 0.9896
+    Test evaluation --> f1: 0.9710   recall: 0.9853
+    Time elapsed: 0.014s
     Bagging -----------------------------------------
-    Score --> f1: 0.9606 ± 0.0081   recall: 0.9853 ± 0.0104
-    Time elapsed: 0.031s
+    Evaluation --> f1: 0.9606 ± 0.0081   recall: 0.9853 ± 0.0104
+    Time elapsed: 0.033s
     -------------------------------------------------
-    Total time: 0.344s
+    Total time: 0.363s
     
     
     Final results ========================= >>
-    Duration: 3.875s
+    Duration: 4.286s
     ------------------------------------------
     Multinomial Naive Bayes         --> f1: 0.910 ± 0.001   recall: 0.967 ± 0.006
     Quadratic Discriminant Analysis --> f1: 0.961 ± 0.008   recall: 0.985 ± 0.010 !
@@ -130,7 +129,7 @@ atom.run(["MNB", "QDA"], metric=("f1", "recall"), n_calls=3, n_initial_points=1,
 ```python
 # Note that some columns in the results dataframe now contain a list of scores,
 # one for each metric, in the same order as you called them
-atom.results[["metric_bo", "metric_train", "metric_test"]]
+atom.results[['metric_bo', 'metric_train', 'metric_test']]
 ```
 
 
@@ -187,7 +186,7 @@ atom.results[["metric_bo", "metric_train", "metric_test"]]
 
 ```python
 # Some plots allow us to choose the metric we want to show
-atom.plot_bagging(metric="recall")
+atom.plot_bagging(metric='recall')
 ```
 
 

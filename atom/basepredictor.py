@@ -15,7 +15,7 @@ from typeguard import typechecked
 
 # Own modules
 from .utils import (
-    ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, check_is_fitted,
+    ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide, check_is_fitted,
     get_best_score, get_model_name, clear, method_to_log, composed, crash,
 )
 
@@ -104,13 +104,13 @@ class BasePredictor(object):
 
     @property
     def classes(self):
-        idx = [v if k == str(v) else f"{str(v)}: {k}" for k, v in self.mapping.items()]
         df = pd.DataFrame({
             "dataset": self.y.value_counts(sort=False, dropna=False),
             "train": self.y_train.value_counts(sort=False, dropna=False),
             "test": self.y_test.value_counts(sort=False, dropna=False),
-        }).fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-        return df.set_index([idx])
+        }, index=self.mapping.values())
+
+        return df.fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
 
     @property
     def n_classes(self):
@@ -179,7 +179,7 @@ class BasePredictor(object):
             )
 
         y = self.classes[dataset]
-        return {idx: sum(y) / value for idx, value in y.iteritems()}
+        return {idx: divide(sum(y), value) for idx, value in y.iteritems()}
 
     @composed(crash, typechecked)
     def get_sample_weight(self, dataset: str = "train"):
@@ -207,11 +207,8 @@ class BasePredictor(object):
                 "Choose between 'train', 'test' or 'dataset'."
             )
 
-        sample_weights = []
-        for value in y:
-            sample_weights.append(np.divide(len(y), self.classes.at[value, dataset]))
-
-        return sample_weights
+        classes = self.classes  # Get classes to not recalculate in loop
+        return [divide((len(y)), classes.at[value, dataset]) for value in y]
 
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):

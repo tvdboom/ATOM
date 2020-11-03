@@ -758,7 +758,7 @@ Remove or replace outliers in the training set. Outliers are defined as values t
 <pre><em>method</em> <strong style="color:#008AB8">balance</strong>(strategy="ADASYN", **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L477">[source]</a></div></pre>
 <div style="padding-left:3%">
-Balance the number of instances per target category in the training set.
+Balance the number of instances per target class in the training set.
  Only the training set is balanced in order to maintain the original distribution
  of target classes in the test set. See [Balancer](../data_cleaning/balancer.md)
  for a description of the parameters.

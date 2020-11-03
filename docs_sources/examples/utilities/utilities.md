@@ -18,7 +18,7 @@ from atom import ATOMClassifier, ATOMLoader
 
 ```python
 # Load data
-X = pd.read_csv("./datasets/weatherAUS.csv")
+X = pd.read_csv('./datasets/weatherAUS.csv')
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -122,6 +122,7 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 atom = ATOMClassifier(X, warnings=False, random_state=1)
+atom.clean()
 
 # We can quickly check what columns have missing values
 print("Columns with missing values:\n", atom.missing)
@@ -156,7 +157,7 @@ print("\nIs the dataset scaled?", atom.scaled)
     RainToday         1406
     dtype: int64
     
-    Categorical columns: ["Location", "WindGustDir", "WindDir9am", "WindDir3pm", "RainToday"]
+    Categorical columns: ['Location', 'WindGustDir', 'WindDir9am', 'WindDir3pm', 'RainToday']
     
     Is the dataset scaled? False
     
@@ -218,10 +219,10 @@ atom.stats()
 ```python
 # We can change atom's data mid-pipeline, adding a column for example
 # Note that we can only replace a dataframe with a new dataframe!
-atom.X = atom.X.assign(AvgTemp=(atom.X["MaxTemp"] + atom.X["MinTemp"])/2)
+atom.X = atom.X.assign(AvgTemp=(atom.X['MaxTemp'] + atom.X['MinTemp'])/2)
 
 # This will automatically update all other data attributes
-assert "AvgTemp" in atom.dataset
+assert 'AvgTemp' in atom.dataset
 ```
 
 ## Visualize the pipeline
@@ -235,7 +236,7 @@ atom.plot_pipeline()  # Using a plot
 
     ATOMClassifier
      --> Cleaner
-       >>> prohibited_types: ["datetime64", "datetime64[ns]", "timedelta[ns]"]
+       >>> prohibited_types: ['datetime64', 'datetime64[ns]', 'timedelta[ns]']
        >>> strip_categorical: True
        >>> maximum_cardinality: True
        >>> minimum_cardinality: True
@@ -246,7 +247,7 @@ atom.plot_pipeline()  # Using a plot
        >>> strat_cat: drop
        >>> min_frac_rows: 0.5
        >>> min_frac_cols: 0.5
-       >>> missing: {"", inf, -inf, "NA", "nan", "None", "inf", "?"}
+       >>> missing: {'', inf, -inf, 'NA', 'nan', 'None', 'inf', '?'}
      --> Encoder
        >>> strategy: LeaveOneOut
        >>> max_onehot: 10
@@ -269,7 +270,7 @@ def f2_score(y_true, y_pred):
     return fbeta_score(y_true, y_pred, beta=2)
 
 # Remember to use the greater_is_better, needs_proba and needs_threshold parameters if necessary!
-atom.run(models="lr", metric=f2_score)
+atom.run(models='lr', metric=f2_score)
 ```
 
     
@@ -299,7 +300,7 @@ atom.run(models="lr", metric=f2_score)
 ```python
 # You can use the est_params parameter to customize the estimator
 # Let's run AdaBoost using LR instead of a decision tree as base estimator
-atom.run("AdaB", est_params={"base_estimator": atom.lr.estimator})
+atom.run('AdaB', est_params={'base_estimator': atom.lr.estimator})
 ```
 
     
@@ -340,7 +341,7 @@ atom.adab.estimator
 ```python
 # Note that parameters specified by est_params are not optimized in the BO
 # (also, we can change the verbosity per method)
-atom.run("tree", n_calls=3, n_initial_points=1, est_params={"max_depth": 2}, verbose=2)
+atom.run('tree', n_calls=3, n_initial_points=1, est_params={'max_depth': 2}, verbose=2)
 ```
 
     
@@ -351,21 +352,21 @@ atom.run("tree", n_calls=3, n_initial_points=1, est_params={"max_depth": 2}, ver
     
     Running BO for Decision Tree...
     Initial point 1 ---------------------------------
-    Parameters --> {"criterion": "gini", "splitter": "best", "min_samples_split": 2, "min_samples_leaf": 1, "max_features": None, "ccp_alpha": 0}
+    Parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
     Evaluation --> f2_score: 0.4936  Best f2_score: 0.4936
     Time iteration: 0.383s   Total time: 0.396s
     Iteration 2 -------------------------------------
-    Parameters --> {"criterion": "gini", "splitter": "random", "min_samples_split": 4, "min_samples_leaf": 20, "max_features": 0.5, "ccp_alpha": 0.014}
+    Parameters --> {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 4, 'min_samples_leaf': 20, 'max_features': 0.5, 'ccp_alpha': 0.014}
     Evaluation --> f2_score: 0.4441  Best f2_score: 0.4936
     Time iteration: 0.137s   Total time: 0.537s
     Iteration 3 -------------------------------------
-    Parameters --> {"criterion": "entropy", "splitter": "random", "min_samples_split": 2, "min_samples_leaf": 6, "max_features": 0.5, "ccp_alpha": 0.0}
+    Parameters --> {'criterion': 'entropy', 'splitter': 'random', 'min_samples_split': 2, 'min_samples_leaf': 6, 'max_features': 0.5, 'ccp_alpha': 0.0}
     Evaluation --> f2_score: 0.3050  Best f2_score: 0.4936
     Time iteration: 0.140s   Total time: 0.927s
     
     Results for Decision Tree:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"criterion": "gini", "splitter": "best", "min_samples_split": 2, "min_samples_leaf": 1, "max_features": None, "ccp_alpha": 0}
+    Best parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
     Best evaluation --> f2_score: 0.4936
     Time elapsed: 1.229s
     Fit ---------------------------------------------
@@ -388,7 +389,7 @@ atom.run("tree", n_calls=3, n_initial_points=1, est_params={"max_depth": 2}, ver
 ```python
 # Save the atom instance as a pickle with the save method
 # Remember that the instance contains the data, use save_datad to save the instance without the data
-atom.save("atom", save_data=False)
+atom.save('atom', save_data=False)
 ```
 
     ATOMClassifier saved successfully!
@@ -399,10 +400,10 @@ atom.save("atom", save_data=False)
 # Load the instance again with ATOMLoader
 # No need to store the transformed data, providing the original dataset to the loader
 # will automatically transform it throigh all the steps in atom's pipeline
-atom_2 = ATOMLoader("atom", X, verbose=2)
+atom_2 = ATOMLoader('atom', X, verbose=2)
 
 # Remember to also add the extra column!
-atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X["MaxTemp"] + atom_2.X["MinTemp"])/2)
+atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X['MaxTemp'] + atom_2.X['MinTemp'])/2)
 ```
 
     Applying data cleaning...
@@ -437,8 +438,8 @@ atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X["MaxTemp"] + atom_2.X["MinTemp"])/2
 
 ```python
 # Use the plotting attributes to further customize your plots!
-atom_2.palette= "Blues"
-atom_2.style = "white"
+atom_2.palette= 'Blues'
+atom_2.style = 'white'
 
 atom_2.plot_roc()
 ```

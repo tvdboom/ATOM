@@ -17,7 +17,7 @@ from atom import ATOMClassifier
 
 ```python
 # Get the dataset's features and targets
-X = pd.read_csv("./datasets/weatherAUS.csv")
+X = pd.read_csv('./datasets/weatherAUS.csv')
 
 # Let's have a look at a subset of the data
 X.sample(frac=1).iloc[:5, :8]
@@ -56,59 +56,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>40667</th>
-      <td>Williamtown</td>
-      <td>10.0</td>
-      <td>20.4</td>
+      <th>83031</th>
+      <td>Brisbane</td>
+      <td>15.1</td>
+      <td>24.4</td>
       <td>0.0</td>
-      <td>5.4</td>
-      <td>NaN</td>
-      <td>NW</td>
-      <td>48.0</td>
-    </tr>
-    <tr>
-      <th>43490</th>
-      <td>Wollongong</td>
-      <td>15.0</td>
-      <td>22.0</td>
-      <td>0.4</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SSW</td>
-      <td>59.0</td>
-    </tr>
-    <tr>
-      <th>102419</th>
-      <td>Nuriootpa</td>
-      <td>2.6</td>
-      <td>23.9</td>
-      <td>0.0</td>
-      <td>8.0</td>
-      <td>12.8</td>
+      <td>7.8</td>
+      <td>8.7</td>
       <td>ESE</td>
-      <td>35.0</td>
+      <td>31.0</td>
     </tr>
     <tr>
-      <th>123437</th>
-      <td>SalmonGums</td>
-      <td>3.4</td>
-      <td>18.0</td>
+      <th>129973</th>
+      <td>Launceston</td>
+      <td>14.3</td>
+      <td>27.2</td>
       <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>WSW</td>
-      <td>33.0</td>
+      <td>SSE</td>
+      <td>28.0</td>
     </tr>
     <tr>
-      <th>18121</th>
-      <td>NorahHead</td>
-      <td>16.5</td>
-      <td>22.3</td>
+      <th>94080</th>
+      <td>Adelaide</td>
+      <td>14.4</td>
+      <td>29.5</td>
       <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>S</td>
-      <td>46.0</td>
+      <td>7.6</td>
+      <td>11.9</td>
+      <td>SSE</td>
+      <td>31.0</td>
+    </tr>
+    <tr>
+      <th>105091</th>
+      <td>Woomera</td>
+      <td>15.6</td>
+      <td>30.7</td>
+      <td>0.0</td>
+      <td>15.4</td>
+      <td>12.5</td>
+      <td>SSW</td>
+      <td>54.0</td>
+    </tr>
+    <tr>
+      <th>83682</th>
+      <td>Brisbane</td>
+      <td>20.1</td>
+      <td>28.8</td>
+      <td>0.0</td>
+      <td>5.2</td>
+      <td>5.2</td>
+      <td>NNE</td>
+      <td>24.0</td>
     </tr>
   </tbody>
 </table>
@@ -121,52 +121,53 @@ X.sample(frac=1).iloc[:5, :8]
 
 ```python
 # Initialize the ATOM class
-atom = ATOMClassifier(X, "RainTomorrow", n_rows=1e4, verbose=1, warnings="ignore", random_state=1)
+atom = ATOMClassifier(X, 'RainTomorrow', n_rows=1e4, verbose=1, warnings='ignore', random_state=1)
+atom.clean()
 
 # Handle missing values and categorical columns in the dataset
-atom.impute(strat_num="median", strat_cat="most_frequent")
-atom.encode(strategy="target", max_onehot=5, frac_to_other=0.05)
+atom.impute(strat_num='median', strat_cat='most_frequent')
+atom.encode(strategy='target', max_onehot=5, frac_to_other=0.05)
 
 # Fit a linear SVM to the data
-atom.run("lsvm")
+atom.run('lsvm')
 ```
 
     << ================== ATOM ================== >>
     Algorithm task: binary classification.
-    Applying data cleaning...
     
-    Dataset stats ================= >>
+    Dataset stats ================== >>
     Shape: (10000, 22)
     Missing values: 22613
     Categorical columns: 5
     Scaled: False
-    ----------------------------------
+    -----------------------------------
     Train set size: 8000
     Test set size: 2000
     
+    Applying data cleaning...
     Fitting Imputer...
     Imputing missing values...
     Fitting Encoder...
     Encoding categorical columns...
     
-    Running pipeline ============================= >>
-    Models in pipeline: lSVM
+    Training ===================================== >>
+    Models: lSVM
     Metric: f1
     
     
-    Results for Linear SVM:         
-    Fitting -----------------------------------------
-    Score on the train set --> f1: 0.5639
-    Score on the test set  --> f1: 0.5929
-    Time elapsed: 0.444s
+    Results for Linear-SVM:         
+    Fit ---------------------------------------------
+    Train evaluation --> f1: 0.5634
+    Test evaluation --> f1: 0.5898
+    Time elapsed: 0.495s
     -------------------------------------------------
-    Total time: 0.444s
+    Total time: 0.500s
     
     
     Final results ========================= >>
-    Duration: 0.444s
+    Duration: 0.502s
     ------------------------------------------
-    Linear SVM --> f1: 0.593
+    Linear-SVM --> f1: 0.590
     
 
 ## Analyze the results
@@ -184,7 +185,7 @@ atom.plot_calibration()
 
 ```python
 # Let's try to improve it using the calibrate method
-atom.calibrate(method="isotonic", cv=5)
+atom.calibrate(method='isotonic', cv=5)
 atom.plot_calibration()
 ```
 

@@ -21,7 +21,7 @@ from typing import Union, Optional
 
 # Own modules
 from .utils import (
-    ARRAY_TYPES, X_TYPES, Y_TYPES, to_df, to_series, merge,
+    X_TYPES, Y_TYPES, to_df, to_series, merge,
     prepare_logger, composed, method_to_log, crash
 )
 

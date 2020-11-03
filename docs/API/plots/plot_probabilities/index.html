@@ -457,6 +457,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
 </li>
                                     
@@ -558,7 +562,7 @@ Data set on which to calculate the metric. Options are "train", "test" or "both"
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Probability of being that category in the target column as index or name.
+Probability of being that class in the target column as index or name.
  Only for multiclass classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
@@ -587,7 +591,7 @@ Whether to render the plot.
 
 atom = ATOMClassifier(X, &quot;RainTomorrow&quot;)
 atom.run(&quot;rf&quot;)
-atom.plot_probabilities(target=&quot;Yes&quot;, filenmae=&quot;probabilities_category_yes&quot;)
+atom.plot_probabilities(target=&quot;Yes&quot;, filename=&quot;probabilities_class_yes&quot;)
 </code></pre>
 
 <div align="center">

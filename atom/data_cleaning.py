@@ -429,6 +429,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                 f"should be between 0 and 1, got {self.min_frac_cols}."
             )
 
+        self.log("Fitting Imputer...", 1)
+
         # Replace all missing values with NaN
         X.replace(self.missing + [np.inf, -np.inf], np.NaN, inplace=True)
 
@@ -708,24 +710,21 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
 
-                # Convert series to dataframe for ingestion of package
-                values = pd.DataFrame(X[col])
-
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
-                    self._encoders[col] = LabelEncoder().fit(values)
+                    self._encoders[col] = LabelEncoder().fit(X[col])
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._encoders[col] = OneHotEncoder(
                         handle_missing="error",
                         handle_unknown="error",
                         use_cat_names=True,
-                    ).fit(values)
+                    ).fit(pd.DataFrame(X[col]))
 
                 else:
                     self._encoders[col] = strategy(
                         handle_missing="error", handle_unknown="error", **self.kwargs
-                    ).fit(values, y)
+                    ).fit(pd.DataFrame(X[col]), y)
 
         self._is_fitted = True
         return self
@@ -753,31 +752,23 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         self.log("Encoding categorical columns...", 1)
 
-        for col in X:
+        for idx, col in enumerate(X):
             if X[col].dtype.kind not in "ifu":  # If column is categorical
                 # Convert classes to "other"
                 for category in self._to_other[col]:
                     X[col].replace(category, "other", inplace=True)
 
-                # Count number of unique values in the column
-                n_unique = len(X[col].unique())
-
-                # Convert series to dataframe for ingestion of package
-                values = pd.DataFrame(X[col])
-
-                # Get index of the column
-                idx = X.columns.get_loc(col)
-
                 self.log(
-                    f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding"
-                    f" feature {col}. Contains {n_unique} unique classes.", 2
+                    f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
+                    f"feature {col}. Contains {len(X[col].unique())} unique classes.", 2
                 )
+
                 # Perform encoding type dependent on number of unique values
                 if self._encoders[col].__class__.__name__[:-7] == "Label":
-                    X[col] = self._encoders[col].transform(values)
+                    X[col] = self._encoders[col].transform(X[col])
 
                 elif self._encoders[col].__class__.__name__[:-7] == "OneHot":
-                    onehot_cols = self._encoders[col].transform(values)
+                    onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
                         X.insert(idx + i, column, onehot_cols[column])
@@ -785,7 +776,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
                 else:
-                    rest_cols = self._encoders[col].transform(values)
+                    rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
                     X = X.drop(col, axis=1)  # Drop the original column
                     # Insert the new columns at old location
                     for i, column in enumerate(rest_cols):
@@ -950,7 +941,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
 
 class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
-    """Balance the number of rows per target category.
+    """Balance the number of rows per target class.
 
     Use only for classification tasks.
 
@@ -1056,7 +1047,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         columns = X.columns
         name = y.name
 
-        # Create dict of category counts in y
+        # Create dict of class counts in y
         counts = {}
         if not self.mapping:
             self.mapping = {str(i): v for i, v in enumerate(y.unique())}
@@ -1083,11 +1074,11 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         for key, value in self.mapping.items():
             diff = counts[key] - np.sum(y == value)
             if diff > 0:
-                self.log(f" --> Removing {diff} rows from category: {key}.", 2)
+                self.log(f" --> Removing {diff} rows from class: {key}.", 2)
             elif diff < 0:
                 # Add new indices to the total index
                 index = list(index) + list(np.arange(len(index) + diff))
-                self.log(f" --> Adding {-diff} rows to category: {key}.", 2)
+                self.log(f" --> Adding {-diff} rows to class: {key}.", 2)
 
         X = to_df(X, index=index, columns=columns)
         y = to_series(y, index=index, name=name)

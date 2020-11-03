@@ -285,12 +285,12 @@ class BasePlotter(object):
             Data on which to calculate the shap values.
 
         target: int
-            Index of the category in the target column.
+            Index of the class in the target column.
 
         Returns
         -------
         shap_values: np.ndarray
-            SHAP values for the target category.
+            SHAP values for the target class.
 
         expected_value: float
             Difference between the model output for that sample and the expected
@@ -1842,7 +1842,7 @@ class BaseModelPlotter(BasePlotter):
             "test" or "both".
 
         target: int or str, optional (default=1)
-            Probability of being that category in the target column as index or name.
+            Probability of being that class in the target column as index or name.
             Only for multiclass classification.
 
         title: str or None, optional (default=None)

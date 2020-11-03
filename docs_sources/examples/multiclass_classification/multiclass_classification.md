@@ -56,59 +56,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>57</th>
-      <td>13.29</td>
-      <td>1.97</td>
-      <td>2.68</td>
-      <td>16.8</td>
-      <td>102.0</td>
-      <td>3.00</td>
-      <td>3.23</td>
-      <td>0.31</td>
+      <th>134</th>
+      <td>12.51</td>
+      <td>1.24</td>
+      <td>2.25</td>
+      <td>17.5</td>
+      <td>85.0</td>
+      <td>2.00</td>
+      <td>0.58</td>
+      <td>0.60</td>
     </tr>
     <tr>
-      <th>65</th>
-      <td>12.37</td>
-      <td>1.21</td>
-      <td>2.56</td>
-      <td>18.1</td>
-      <td>98.0</td>
-      <td>2.42</td>
-      <td>2.65</td>
+      <th>70</th>
+      <td>12.29</td>
+      <td>1.61</td>
+      <td>2.21</td>
+      <td>20.4</td>
+      <td>103.0</td>
+      <td>1.10</td>
+      <td>1.02</td>
       <td>0.37</td>
     </tr>
     <tr>
-      <th>14</th>
-      <td>14.38</td>
-      <td>1.87</td>
-      <td>2.38</td>
-      <td>12.0</td>
-      <td>102.0</td>
-      <td>3.30</td>
-      <td>3.64</td>
-      <td>0.29</td>
-    </tr>
-    <tr>
-      <th>102</th>
-      <td>12.34</td>
-      <td>2.45</td>
-      <td>2.46</td>
-      <td>21.0</td>
-      <td>98.0</td>
-      <td>2.56</td>
-      <td>2.11</td>
-      <td>0.34</td>
-    </tr>
-    <tr>
-      <th>89</th>
-      <td>12.08</td>
-      <td>1.33</td>
-      <td>2.30</td>
-      <td>23.6</td>
-      <td>70.0</td>
+      <th>95</th>
+      <td>12.47</td>
+      <td>1.52</td>
       <td>2.20</td>
-      <td>1.59</td>
-      <td>0.42</td>
+      <td>19.0</td>
+      <td>162.0</td>
+      <td>2.50</td>
+      <td>2.27</td>
+      <td>0.32</td>
+    </tr>
+    <tr>
+      <th>59</th>
+      <td>12.37</td>
+      <td>0.94</td>
+      <td>1.36</td>
+      <td>10.6</td>
+      <td>88.0</td>
+      <td>1.98</td>
+      <td>0.57</td>
+      <td>0.28</td>
+    </tr>
+    <tr>
+      <th>115</th>
+      <td>11.03</td>
+      <td>1.51</td>
+      <td>2.20</td>
+      <td>21.5</td>
+      <td>85.0</td>
+      <td>2.46</td>
+      <td>2.17</td>
+      <td>0.52</td>
     </tr>
   </tbody>
 </table>
@@ -120,15 +120,15 @@ X.sample(frac=1).iloc[:5, :8]
 
 
 ```python
-atom = ATOMClassifier(X, y, n_jobs=-1, warnings="ignore", verbose=2, random_state=1)
+atom = ATOMClassifier(X, y, n_jobs=-1, warnings='ignore', verbose=2, random_state=1)
 
 # Fit the pipeline with the selected models
 atom.run(
-    models=["LR","LDA", "RF"],
-    metric="roc_auc_ovr",
+    models=['LR','LDA', 'RF'],
+    metric='roc_auc_ovr',
     n_calls=4,
     n_initial_points=3,
-    bo_params={"base_estimator": "rf", "max_time": 100},
+    bo_params={'base_estimator': 'rf', 'max_time': 100},
     bagging=5
 )
 ```
@@ -136,139 +136,138 @@ atom.run(
     << ================== ATOM ================== >>
     Algorithm task: multiclass classification.
     Parallel processing with 16 cores.
-    Applying data cleaning...
     
-    Dataset stats ================= >>
+    Dataset stats ================== >>
     Shape: (178, 14)
     Scaled: False
-    ----------------------------------
+    -----------------------------------
     Train set size: 143
     Test set size: 35
-    ----------------------------------
+    -----------------------------------
     Train set balance: 0:1:2 <==> 1.4:1.7:1.0
-    Test set balance: 0:1:2 <==> 0.7:1.0:1.0
-    ----------------------------------
-    Instances in target per class:
-    |    |    total |    train_set |    test_set |
-    |---:|---------:|-------------:|------------:|
-    |  0 |       59 |           50 |           9 |
-    |  1 |       71 |           58 |          13 |
-    |  2 |       48 |           35 |          13 |
+    Test set balance: 0:1:2 <==> 1.0:1.4:1.4
+    -----------------------------------
+    Distribution of classes:
+    |    |   dataset |   train |   test |
+    |---:|----------:|--------:|-------:|
+    |  0 |        59 |      50 |      9 |
+    |  1 |        71 |      58 |     13 |
+    |  2 |        48 |      35 |     13 |
     
     
-    Running pipeline ============================= >>
-    Models in pipeline: LR, LDA, RF
+    Training ===================================== >>
+    Models: LR, LDA, RF
     Metric: roc_auc_ovr
     
     
     Running BO for Logistic Regression...
     Initial point 1 ---------------------------------
-    Parameters --> {"penalty": "l2", "C": 46.003, "solver": "lbfgs", "max_iter": 745}
+    Parameters --> {'penalty': 'l2', 'C': 46.003, 'solver': 'lbfgs', 'max_iter': 745}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-    Time iteration: 3.672s   Total time: 3.676s
+    Time iteration: 3.985s   Total time: 4.078s
     Initial point 2 ---------------------------------
-    Parameters --> {"penalty": "none", "solver": "newton-cg", "max_iter": 490}
+    Parameters --> {'penalty': 'none', 'solver': 'newton-cg', 'max_iter': 490}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-    Time iteration: 3.177s   Total time: 6.859s
+    Time iteration: 3.537s   Total time: 7.620s
     Initial point 3 ---------------------------------
-    Parameters --> {"penalty": "l2", "C": 0.037, "solver": "liblinear", "max_iter": 352}
+    Parameters --> {'penalty': 'l2', 'C': 0.037, 'solver': 'liblinear', 'max_iter': 352}
     Evaluation --> roc_auc_ovr: 0.9993  Best roc_auc_ovr: 1.0000
-    Time iteration: 3.195s   Total time: 10.059s
+    Time iteration: 3.675s   Total time: 11.302s
     Iteration 4 -------------------------------------
-    Parameters --> {"penalty": "none", "solver": "newton-cg", "max_iter": 378}
+    Parameters --> {'penalty': 'none', 'solver': 'newton-cg', 'max_iter': 378}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-    Time iteration: 2.641s   Total time: 12.912s
+    Time iteration: 3.007s   Total time: 14.545s
     
     Results for Logistic Regression:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"penalty": "l2", "C": 46.003, "solver": "lbfgs", "max_iter": 745}
+    Best parameters --> {'penalty': 'l2', 'C': 46.003, 'solver': 'lbfgs', 'max_iter': 745}
     Best evaluation --> roc_auc_ovr: 1.0000
-    Time elapsed: 13.115s
+    Time elapsed: 14.760s
     Fit ---------------------------------------------
-    Score on the train set --> roc_auc_ovr: 1.0000
-    Score on the test set  --> roc_auc_ovr: 0.9965
-    Time elapsed: 0.024s
+    Train evaluation --> roc_auc_ovr: 1.0000
+    Test evaluation --> roc_auc_ovr: 0.9965
+    Time elapsed: 0.025s
     Bagging -----------------------------------------
-    Score --> roc_auc_ovr: 0.9942 ± 0.0026
-    Time elapsed: 0.084s
+    Evaluation --> roc_auc_ovr: 0.9942 ± 0.0026
+    Time elapsed: 0.097s
     -------------------------------------------------
-    Total time: 13.229s
+    Total time: 14.886s
     
     
     Running BO for Linear Discriminant Analysis...
     Initial point 1 ---------------------------------
-    Parameters --> {"solver": "eigen", "shrinkage": 1.0}
+    Parameters --> {'solver': 'eigen', 'shrinkage': 1.0}
     Evaluation --> roc_auc_ovr: 0.8975  Best roc_auc_ovr: 0.8975
-    Time iteration: 0.040s   Total time: 0.042s
+    Time iteration: 0.030s   Total time: 0.032s
     Initial point 2 ---------------------------------
-    Parameters --> {"solver": "svd"}
+    Parameters --> {'solver': 'svd'}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-    Time iteration: 0.026s   Total time: 0.072s
+    Time iteration: 0.030s   Total time: 0.066s
     Initial point 3 ---------------------------------
-    Parameters --> {"solver": "svd"}
+    Parameters --> {'solver': 'svd'}
     Evaluation --> roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-    Time iteration: 0.023s   Total time: 0.098s
+    Time iteration: 0.028s   Total time: 0.099s
     Iteration 4 -------------------------------------
-    Parameters --> {"solver": "lsqr", "shrinkage": 0.7}
+    Parameters --> {'solver': 'lsqr', 'shrinkage': 0.7}
     Evaluation --> roc_auc_ovr: 0.8996  Best roc_auc_ovr: 1.0000
-    Time iteration: 0.021s   Total time: 0.298s
+    Time iteration: 0.024s   Total time: 0.309s
     
     Results for Linear Discriminant Analysis:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"solver": "svd"}
+    Best parameters --> {'solver': 'svd'}
     Best evaluation --> roc_auc_ovr: 1.0000
-    Time elapsed: 0.477s
+    Time elapsed: 0.502s
     Fit ---------------------------------------------
-    Score on the train set --> roc_auc_ovr: 1.0000
-    Score on the test set  --> roc_auc_ovr: 1.0000
-    Time elapsed: 0.015s
+    Train evaluation --> roc_auc_ovr: 1.0000
+    Test evaluation --> roc_auc_ovr: 1.0000
+    Time elapsed: 0.077s
     Bagging -----------------------------------------
-    Score --> roc_auc_ovr: 0.9998 ± 0.0005
-    Time elapsed: 0.026s
+    Evaluation --> roc_auc_ovr: 0.9998 ± 0.0005
+    Time elapsed: 0.037s
     -------------------------------------------------
-    Total time: 0.523s
+    Total time: 0.617s
     
     
     Running BO for Random Forest...
     Initial point 1 ---------------------------------
-    Parameters --> {"n_estimators": 245, "criterion": "entropy", "max_depth": None, "min_samples_split": 13, "min_samples_leaf": 6, "max_features": 0.6, "bootstrap": True, "ccp_alpha": 0.007, "max_samples": 0.6}
-    Evaluation --> roc_auc_ovr: 0.9950  Best roc_auc_ovr: 0.9950
-    Time iteration: 0.388s   Total time: 0.393s
+    Parameters --> {'n_estimators': 245, 'criterion': 'entropy', 'max_depth': None, 'min_samples_split': 13, 'min_samples_leaf': 6, 'max_features': None, 'bootstrap': True, 'ccp_alpha': 0.007, 'max_samples': 0.6}
+    Evaluation --> roc_auc_ovr: 0.9921  Best roc_auc_ovr: 0.9921
+    Time iteration: 0.441s   Total time: 0.449s
     Initial point 2 ---------------------------------
-    Parameters --> {"n_estimators": 400, "criterion": "entropy", "max_depth": 8, "min_samples_split": 7, "min_samples_leaf": 19, "max_features": 0.9, "bootstrap": True, "ccp_alpha": 0.008, "max_samples": 0.7}
-    Evaluation --> roc_auc_ovr: 0.9914  Best roc_auc_ovr: 0.9950
-    Time iteration: 0.526s   Total time: 0.925s
+    Parameters --> {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 7, 'min_samples_leaf': 19, 'max_features': 0.7, 'bootstrap': True, 'ccp_alpha': 0.008, 'max_samples': 0.7}
+    Evaluation --> roc_auc_ovr: 0.9927  Best roc_auc_ovr: 0.9927
+    Time iteration: 0.648s   Total time: 1.102s
     Initial point 3 ---------------------------------
-    Parameters --> {"n_estimators": 78, "criterion": "gini", "max_depth": 5, "min_samples_split": 2, "min_samples_leaf": 14, "max_features": None, "bootstrap": False, "ccp_alpha": 0.003}
-    Evaluation --> roc_auc_ovr: 0.9671  Best roc_auc_ovr: 0.9950
-    Time iteration: 0.117s   Total time: 1.046s
+    Parameters --> {'n_estimators': 78, 'criterion': 'gini', 'max_depth': 5, 'min_samples_split': 2, 'min_samples_leaf': 14, 'max_features': 0.8, 'bootstrap': False, 'ccp_alpha': 0.003}
+    Evaluation --> roc_auc_ovr: 0.9851  Best roc_auc_ovr: 0.9927
+    Time iteration: 0.129s   Total time: 1.236s
     Iteration 4 -------------------------------------
-    Parameters --> {"n_estimators": 394, "criterion": "entropy", "max_depth": 3, "min_samples_split": 19, "min_samples_leaf": 14, "max_features": None, "bootstrap": False, "ccp_alpha": 0.015}
-    Evaluation --> roc_auc_ovr: 0.9477  Best roc_auc_ovr: 0.9950
-    Time iteration: 0.460s   Total time: 1.810s
+    Parameters --> {'n_estimators': 394, 'criterion': 'entropy', 'max_depth': 3, 'min_samples_split': 19, 'min_samples_leaf': 14, 'max_features': 0.8, 'bootstrap': False, 'ccp_alpha': 0.015}
+    Evaluation --> roc_auc_ovr: 0.9897  Best roc_auc_ovr: 0.9927
+    Time iteration: 0.497s   Total time: 2.036s
     
     Results for Random Forest:         
     Bayesian Optimization ---------------------------
-    Best parameters --> {"n_estimators": 245, "criterion": "entropy", "max_depth": None, "min_samples_split": 13, "min_samples_leaf": 6, "max_features": 0.6, "bootstrap": True, "ccp_alpha": 0.007, "max_samples": 0.6}
-    Best evaluation --> roc_auc_ovr: 0.9950
-    Time elapsed: 2.124s
+    Best parameters --> {'n_estimators': 400, 'criterion': 'entropy', 'max_depth': 8, 'min_samples_split': 7, 'min_samples_leaf': 19, 'max_features': 0.7, 'bootstrap': True, 'ccp_alpha': 0.008, 'max_samples': 0.7}
+    Best evaluation --> roc_auc_ovr: 0.9927
+    Time elapsed: 2.333s
     Fit ---------------------------------------------
-    Score on the train set --> roc_auc_ovr: 0.9999
-    Score on the test set  --> roc_auc_ovr: 0.9767
-    Time elapsed: 0.354s
+    Train evaluation --> roc_auc_ovr: 0.9997
+    Test evaluation --> roc_auc_ovr: 0.9802
+    Time elapsed: 0.605s
     Bagging -----------------------------------------
-    Score --> roc_auc_ovr: 0.9751 ± 0.0127
-    Time elapsed: 1.568s
+    Evaluation --> roc_auc_ovr: 0.9740 ± 0.0074
+    Time elapsed: 2.643s
     -------------------------------------------------
-    Total time: 4.050s
+    Total time: 5.583s
     
     
     Final results ========================= >>
-    Duration: 17.804s
+    Duration: 21.088s
     ------------------------------------------
     Logistic Regression          --> roc_auc_ovr: 0.994 ± 0.003
     Linear Discriminant Analysis --> roc_auc_ovr: 1.000 ± 0.000 !
-    Random Forest                --> roc_auc_ovr: 0.975 ± 0.013
+    Random Forest                --> roc_auc_ovr: 0.974 ± 0.007
     
 
 ## Analyze the results
@@ -300,7 +299,6 @@ atom.results
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th>name</th>
       <th>metric_bo</th>
       <th>time_bo</th>
       <th>metric_train</th>
@@ -322,48 +320,44 @@ atom.results
       <th></th>
       <th></th>
       <th></th>
-      <th></th>
     </tr>
   </thead>
   <tbody>
     <tr>
       <th>LR</th>
-      <td>Logistic Regression</td>
-      <td>1.00000</td>
-      <td>13.115s</td>
-      <td>1.000000</td>
+      <td>1</td>
+      <td>14.760s</td>
+      <td>1</td>
       <td>0.996503</td>
-      <td>0.024s</td>
+      <td>0.025s</td>
       <td>0.994172</td>
-      <td>0.002553</td>
-      <td>0.084s</td>
-      <td>13.229s</td>
+      <td>0.00255349</td>
+      <td>0.097s</td>
+      <td>14.886s</td>
     </tr>
     <tr>
       <th>LDA</th>
-      <td>Linear Discriminant Analysis</td>
-      <td>1.00000</td>
-      <td>0.477s</td>
-      <td>1.000000</td>
-      <td>1.000000</td>
-      <td>0.015s</td>
+      <td>1</td>
+      <td>0.502s</td>
+      <td>1</td>
+      <td>1</td>
+      <td>0.077s</td>
       <td>0.999767</td>
-      <td>0.000466</td>
-      <td>0.026s</td>
-      <td>0.523s</td>
+      <td>0.0004662</td>
+      <td>0.037s</td>
+      <td>0.617s</td>
     </tr>
     <tr>
       <th>RF</th>
-      <td>Random Forest</td>
-      <td>0.99499</td>
-      <td>2.124s</td>
-      <td>0.999928</td>
-      <td>0.976690</td>
-      <td>0.354s</td>
-      <td>0.975058</td>
-      <td>0.012652</td>
-      <td>1.568s</td>
-      <td>4.050s</td>
+      <td>0.992716</td>
+      <td>2.333s</td>
+      <td>0.999654</td>
+      <td>0.980186</td>
+      <td>0.605s</td>
+      <td>0.974022</td>
+      <td>0.00735105</td>
+      <td>2.643s</td>
+      <td>5.583s</td>
     </tr>
   </tbody>
 </table>
@@ -374,13 +368,13 @@ atom.results
 
 ```python
 # Show the scoring for a different metric than the one we trained on
-atom.scoring("precision_macro")
+atom.scoring('precision_macro')
 ```
 
     Results ===================== >>
-    Logistic Regression          --> precision_macro: 0.956
-    Linear Discriminant Analysis --> precision_macro: 0.976
-    Random Forest                --> precision_macro: 0.9
+    Logistic Regression          --> precision_macro: 0.949
+    Linear Discriminant Analysis --> precision_macro: 1.0
+    Random Forest                --> precision_macro: 0.919
     
 
 **Let's have a closer look at the Random Forest**
@@ -388,12 +382,12 @@ atom.scoring("precision_macro")
 
 ```python
 # Get the results on some other metrics
-print("Jaccard score:", atom.rf.scoring("jaccard_weighted"))
-print("Recall score:", atom.rf.scoring("recall_macro"))
+print('Jaccard score:', atom.rf.scoring('jaccard_weighted'))
+print('Recall score:', atom.rf.scoring('recall_macro'))
 ```
 
-    Jaccard score: 0.7957142857142857
-    Recall score: 0.8974358974358975
+    Jaccard score: 0.8428571428571429
+    Recall score: 0.923076923076923
     
 
 
@@ -409,7 +403,7 @@ atom.RF.plot_confusion_matrix(figsize=(9, 9))
 
 ```python
 # Save the estimator as a pickle file
-atom.RF.save_estimator("Random_Forest_model")
+atom.RF.save_estimator('Random_Forest_model')
 ```
 
     Random Forest estimator saved successfully!
