@@ -118,6 +118,7 @@ nav:
     - Regression: examples/regression/regression.md
     - Successive halving: examples/successive_halving/successive_halving.md
     - Train sizing: examples/train_sizing/train_sizing.md
+    - Deep learning: examples/deep_learning/deep_learning.md
     - Imbalanced datasets: examples/imbalanced_datasets/imbalanced_datasets.md
     - Feature engineering: examples/feature_engineering/feature_engineering.md
     - Multi-metric runs: examples/multi_metric/multi_metric.md

@@ -26,7 +26,7 @@ def ATOMModel(
     estimator,
     acronym: str = None,
     fullname: str = None,
-    needs_scaling: bool = True,
+    needs_scaling: bool = False,
     type: str = "kernel",
 ):
     """Convert an estimator to a model that can be ingested by ATOM's pipeline.
@@ -46,11 +46,11 @@ def ATOMModel(
     fullname: str, optional (default=None)
         Full model's name. If None, the estimator's name will be used.
 
-    needs_scaling: bool, optional (default=True)
+    needs_scaling: bool, optional (default=False)
         Whether the model needs scaled features.
 
     type: str, optional (default="kernel")
-        Model's type. Choose from:
+        Model's type. Used to select shap's explainer. Choose from:
             - "linear" for linear models.
             - "tree" for tree-based models.
             - "kernel" for the remaining models.

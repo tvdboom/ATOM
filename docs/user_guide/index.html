@@ -457,6 +457,10 @@
 </li>
                                     
 <li>
+    <a href="../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+</li>
+                                    
+<li>
     <a href="../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
@@ -1020,6 +1024,20 @@ atom.run(models=Lars)
   default value, it will automatically adopt the values from the <code>training</code> instance
   it's called from.</li>
 </ul>
+<p><br></p>
+<h3 id="deep-learning">Deep learning</h3>
+<p>Deep learning models can be used through ATOM's <a href="#custom-models">custom models</a> as
+ long as they follow sklearn's API. For example, use the sklearn wrappers
+ <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier">KerasClassifier</a>
+ and <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor">kerasRegressor</a>
+ for models implemented with the Keras package.</p>
+<p>Many deep learning models, for example for computer vision or natural language
+ processing, use datasets with more than 2 dimensions, e.g. image data can have
+ shape (n_samples, length, width, rgba). These data structures are not intended
+ to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
+ instance for the dataset, multidimensional data sets are stored in a single column
+ called "features" where every row contains one sample. Click <a href="../examples/deep_learning/deep_learning">here</a>
+ for an example.</p>
 <p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

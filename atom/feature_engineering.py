@@ -40,7 +40,7 @@ from .data_cleaning import BaseCleaner, Scaler
 from .plots import FeatureSelectorPlotter
 from .utils import (
     METRIC_ACRONYMS, X_TYPES, Y_TYPES, to_df, check_scaling, check_is_fitted,
-    get_model_name, composed, crash, method_to_log
+    get_model_acronym, composed, crash, method_to_log
 )
 
 
@@ -661,7 +661,7 @@ class FeatureSelector(
                             f"{self.solver}. Try one of {list(MODEL_LIST)}."
                         )
                     else:  # Set to right model name and call model's method
-                        model_class = MODEL_LIST[get_model_name(self.solver)]
+                        model_class = MODEL_LIST[get_model_acronym(self.solver)]
                         self.solver = model_class(self).get_estimator()
 
         if self.n_features is not None and self.n_features <= 0:

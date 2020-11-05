@@ -259,8 +259,8 @@ def test_all_prediction_properties():
     assert atom.lr.predict_test is atom.lr._predict_test
     assert atom.lr.predict_proba_train is atom.lr._predict_proba_train
     assert atom.lr.predict_proba_test is atom.lr._predict_proba_test
-    assert atom.lr.predict_log_proba_train is atom.lr._predict_log_proba_train
-    assert atom.lr.predict_log_proba_test is atom.lr._predict_log_proba_test
+    assert atom.lr.predict_log_proba_train is atom.lr._log_proba_train
+    assert atom.lr.predict_log_proba_test is atom.lr._log_proba_test
     assert atom.sgd.decision_function_train is atom.sgd._dec_func_train
     assert atom.sgd.decision_function_test is atom.sgd._dec_func_test
     assert atom.sgd.score_train is atom.sgd._score_train

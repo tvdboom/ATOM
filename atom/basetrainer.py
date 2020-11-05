@@ -19,7 +19,7 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
     OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score, time_to_string,
-    get_model_name, get_metric, get_default_metric, fit_init, clear
+    get_model_acronym, get_metric, get_default_metric, fit_init, clear
 )
 
 
@@ -193,7 +193,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         for m in self.models:
             # Set models to right name
             if isinstance(m, str):
-                m = get_model_name(m)
+                m = get_model_acronym(m)
 
                 # Check if packages for not-sklearn models are available
                 if m in OPTIONAL_PACKAGES:
@@ -416,7 +416,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self.log(f"Total time: {total_time}", 1)
 
             except Exception as ex:
-                if idx != 0 or (hasattr(mdl, "get_domain") and n_calls > 0):
+                if idx != 0 or ((bo or hasattr(mdl, "get_dimensions")) and n_calls > 0):
                     self.log("", 1)  # Add extra line
                 self.log(
                     f"Exception encountered while running the {m} model. Removing "

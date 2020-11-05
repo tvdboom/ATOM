@@ -457,6 +457,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
@@ -542,7 +546,7 @@
 <h1 id="atommodel">ATOMModel</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, name=None, fullname=None, needs_scaling=True, type="kernel")
+<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, name=None, fullname=None, needs_scaling=False, type="kernel")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
 <div style="padding-left:3%">
 Convert an estimator to a model that can be ingested by ATOM's pipeline.
@@ -564,13 +568,14 @@ Model's acronym. Used to call the <code>model</code> from the training instance.
 <blockquote>
 Full model's name. If None, the estimator's name will be used.
 </blockquote>
-<strong>needs_scaling: bool, optional (default=True)</strong>
+<strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
 Whether the model needs scaled features.
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>
-Model's type. Choose from:
+Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.html#core-explainers">shap's explainer</a>.
+ Choose from:
 <ul>
 <li>"linear" for linear models.</li>
 <li>"tree" for tree-based models.</li>
@@ -586,7 +591,7 @@ Model's type. Choose from:
 <pre><code class="python">from atom import ATOMRegressor, ATOMModel
 from sklearn.linear_model import HuberRegressor
 
-model =  ATOMModel(HuberRegressor, name=&quot;hub&quot;, fullname=&quot;Huber&quot;, type=&quot;linear&quot;)
+model =  ATOMModel(HuberRegressor, name=&quot;hub&quot;, fullname=&quot;Huber&quot;, needs_scaling=True, type=&quot;linear&quot;)
 
 atom = ATOMRegressor(X, y)
 atom.run(model)

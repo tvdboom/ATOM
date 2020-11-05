@@ -272,14 +272,14 @@ def to_df(data, index=None, columns=None, pca=False):
         Transformed dataframe.
 
     """
-    if isinstance(data, pd.DataFrame):
-        return data
-    else:
+    if not isinstance(data, pd.DataFrame):
         if columns is None and not pca:
             columns = ["Feature " + str(i) for i in range(len(data[0]))]
         elif columns is None:
             columns = ["Component " + str(i) for i in range(len(data[0]))]
-        return pd.DataFrame(data, index=index, columns=columns)
+        data = pd.DataFrame(data, index=index, columns=columns)
+
+    return data
 
 
 def to_series(data, index=None, name="target"):
@@ -302,10 +302,24 @@ def to_series(data, index=None, name="target"):
         Transformed series.
 
     """
-    if isinstance(data, pd.Series):
-        return data
+    if not isinstance(data, pd.Series):
+        data = pd.Series(data, index=index, name=name)
+
+    return data
+
+
+def arr(df):
+    """From dataframe to multidimensional array (for deep learning pipelines).
+
+    When the data consist of more than 2 dimensions, ATOM stores
+    it in a df with a single column, "Features". This function
+    extracts the arrays from every row and returns them stacked.
+
+     """
+    if list(df.columns) == ["Features"]:
+        return np.stack(df["Features"].values)
     else:
-        return pd.Series(data, index=index, name=name)
+        return df
 
 
 def prepare_logger(logger, class_name):
@@ -502,13 +516,19 @@ def fit_init(est_params, fit=False):
         return {k: v for k, v in est_params.items() if not k.endswith("_fit")}
 
 
-def get_model_name(model):
+def get_model_acronym(model, models_in_pipeline=[]):
     """Get the right model acronym.
+
+    If a list of the models in the pipeline is given, search there.
+    If not, Search between all ATOM's predefined models.
 
     Parameters
     ----------
     model: str
         Acronym of the model, case insensitive.
+
+    models_in_pipeline: list, optional (default=[])
+        List of models in the pipeline.
 
     Returns
     -------
@@ -516,18 +536,31 @@ def get_model_name(model):
         Correct model name acronym as present in the MODEL_LIST constant.
 
     """
-    # Not imported on top of file because of module interconnection
-    from .models import MODEL_LIST
+    if models_in_pipeline:
+        if model in models_in_pipeline:  # If written correctly, return as is
+            return model
+        else:
+            for acronym in models_in_pipeline:
+                if model.lower() == acronym.lower():
+                    return acronym
 
-    # Compare strings case insensitive
-    if model.lower() not in map(str.lower, MODEL_LIST):
         raise ValueError(
-            f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}."
+            f"Model {model} not found in the pipeline! Available "
+            f"models are: {', '.join(models_in_pipeline)}."
         )
+
     else:
-        for name in MODEL_LIST:
-            if model.lower() == name.lower():
-                return name
+        # Not imported on top of file because of module interconnection
+        from .models import MODEL_LIST
+
+        model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
+        for acronym in model_list:
+            if model.lower() == acronym.lower():
+                return acronym
+
+        raise ValueError(
+            f"Unknown model: {model}! Choose from: {', '.join(model_list)}."
+        )
 
 
 def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
@@ -607,22 +640,19 @@ def get_default_metric(task):
         return get_metric("r2", True, False, False)
 
 
-def infer_task(y, goal=""):
+def infer_task(y, goal="classification"):
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to determine the
-    classification task. If not, returns binary for 2 unique values, multiclass
-    if the number of unique values in y is <10% of the values and values>100,
-    else returns regression.
+    classification task.
 
     Parameters
     ----------
     y: pd.Series
         Target column from which to infer the task.
 
-    goal: str, optional (default="")
-        Classification or regression goal. Empty to infer the task from
-        the number of unique values in y.
+    goal: str, optional (default="classification")
+        Classification or regression goal.
 
     Returns
     -------
@@ -642,14 +672,6 @@ def infer_task(y, goal=""):
             return "binary classification"
         else:
             return "multiclass classification"
-
-    if not goal:
-        if len(unique) == 2:
-            return "binary classification"
-        elif len(unique) < 0.1 * len(y) and len(unique) < 30:
-            return "multiclass classification"
-        else:
-            return "regression"
 
 
 def partial_dependence(estimator, X, features):

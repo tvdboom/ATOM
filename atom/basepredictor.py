@@ -16,7 +16,7 @@ from typeguard import typechecked
 # Own modules
 from .utils import (
     ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide, check_is_fitted,
-    get_best_score, get_model_name, clear, method_to_log, composed, crash,
+    get_best_score, get_model_acronym, clear, method_to_log, composed, crash,
 )
 
 
@@ -295,10 +295,10 @@ class BasePredictor(object):
             keyword = "Pipeline"
             models = self.models.copy()
         elif isinstance(models, str):
-            models = [get_model_name(models)]
+            models = [get_model_acronym(models, self.models)]
             keyword = "Model " + models[0]
         else:
-            models = [get_model_name(m) for m in models]
+            models = [get_model_acronym(m, self.models) for m in models]
             keyword = "Models " + ", ".join(models) + " were"
 
         clear(self, models)

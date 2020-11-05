@@ -36,8 +36,8 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted, get_best_score,
-    get_model_name, partial_dependence, composed, crash, plot_from_model
+    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted, get_best_score,
+    get_model_acronym, partial_dependence, composed, crash, plot_from_model
 )
 
 
@@ -164,14 +164,9 @@ class BasePlotter(object):
         if models is None:
             models = self.models
         elif isinstance(models, str):
-            models = [get_model_name(models)]
+            models = [get_model_acronym(models, self.models)]
         else:
-            models = [get_model_name(m) for m in models]
-
-        # Check that all models are in the pipeline
-        for model in models:
-            if model not in self.models:
-                raise ValueError(f"Model {model} not found in the pipeline!")
+            models = [get_model_acronym(m, self.models) for m in models]
 
         model_subclasses = [m for m in self.models_ if m.acronym in models]
 
@@ -298,17 +293,15 @@ class BasePlotter(object):
 
         """
         if model.type == "tree":
-            explainer = shap.TreeExplainer(
-                model=model.estimator, feature_perturbation="tree_path_dependent"
-            )
+            explainer = shap.TreeExplainer(model.estimator, self.X_train)
         elif model.type == "linear":
-            explainer = shap.LinearExplainer(model.estimator, data=self.X_train)
+            explainer = shap.LinearExplainer(model.estimator, self.X_train)
         else:
             if len(self.X_train) <= 100:
-                k_data = self.X_train
+                k_data = arr(self.X_train)
             else:
-                k_data = shap.kmeans(self.X_train, 100)
-            explainer = shap.KernelExplainer(model.estimator.predict, data=k_data)
+                k_data = shap.kmeans(arr(self.X_train), 100)
+            explainer = shap.KernelExplainer(model.estimator.predict, k_data)
 
         shap_values = explainer.shap_values(data)
         expected_value = explainer.expected_value
@@ -1247,8 +1240,7 @@ class BaseModelPlotter(BasePlotter):
             else:
                 # If feature_importance does exist, select the best 3
                 features = [
-                    idx
-                    for idx, column in enumerate(self.columns)
+                    idx for idx, column in enumerate(self.columns)
                     if column in self.feature_importance[:3]
                 ]
         elif not isinstance(features, (list, tuple)):

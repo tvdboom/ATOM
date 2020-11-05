@@ -183,7 +183,7 @@ class CustomModel(BaseModel):
             T=args[0],
             acronym=getattr(self.est, "acronym", fullname),
             fullname=fullname,
-            needs_scaling=getattr(self.est, "needs_scaling", True),
+            needs_scaling=getattr(self.est, "needs_scaling", False),
             type=getattr(self.est, "type", "kernel"),
             params={},
         )

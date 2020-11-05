@@ -8,7 +8,7 @@
 Transform the data and make logarithmic probability predictions on new data. If
  called from a `training` instance, it will use the best model in the pipeline (under
  the `winner` attribute). If called from a `model`, it will use that model. The
- estimator must have a `predict_proba` method.
+ estimator must have a `predict_log_proba` method.
 <br /><br />
 <table>
 <tr>

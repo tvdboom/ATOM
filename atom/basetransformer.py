@@ -142,7 +142,7 @@ class BaseTransformer(object):
     def _prepare_input(X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Prepare the input data.
 
-        Copy X and y, convert to pandas (if not already) and perform standard
+        Convert X and y to pandas (if not already) and perform standard
         compatibility checks (dimensions, length, indices, etc...).
 
         Parameters
@@ -159,18 +159,20 @@ class BaseTransformer(object):
         Returns
         -------
         X: pd.DataFrame
-            Copy of the feature dataset.
+            Feature dataset.
 
         y: pd.Series
-            Copy of the target column corresponding to X.
+            Target column corresponding to X.
 
         """
-        X = to_df(deepcopy(X))  # Copy to not overwrite mutable variables
+        # If multidimensional, create dataframe with one column
+        if np.array(X).ndim > 2:
+            X = pd.DataFrame({"Features": [row for row in X]})
+        else:
+            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
         # Convert target column to series
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
-            y = deepcopy(y)
-
             # Convert y to pd.Series
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional

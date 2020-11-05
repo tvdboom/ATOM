@@ -46,9 +46,13 @@ from .utils import (
 class ATOM(BasePredictor, ATOMPlotter):
     """ATOM base class.
 
-    The ATOM class is a convenient wrapper for all data_cleaning, feature_engineering
-    and training methods in this package. Provide the dataset to the class, and apply
-    all transformations and model management from here.
+    The ATOM class is a convenient wrapper for all data_cleaning,
+    feature_engineering and training methods in this package.
+    Provide the dataset to the class, and apply all transformations
+    and model management from here.
+
+    Warning: This class should not be used directly. Use descendant
+    classes instead.
 
     """
 
@@ -645,7 +649,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         else:
             if metric is None:  # Assign the existing metric
                 metric = self.metric_
-            else:  # Check that the selected metric is the same as previous run
+
+            # Check that the selected metric is the same as previous run
+            # If the pipeline failed before, metric_ is still empty
+            elif self.metric:
                 metric_ = BaseTrainer._prepare_metric(
                     lst(metric), gib, proba, threshold
                 )

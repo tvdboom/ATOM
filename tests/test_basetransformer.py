@@ -12,6 +12,7 @@ import glob
 import pytest
 import pandas as pd
 import multiprocessing
+from tensorflow.keras.datasets import mnist
 
 # Own modules
 from atom import ATOMClassifier
@@ -19,7 +20,7 @@ from atom.training import TrainerClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, X10, bin_train, bin_test
+    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, X10, y10, bin_train, bin_test
 )
 
 
@@ -118,10 +119,28 @@ def test_random_state_setter():
 
 # Test _prepare_input ======================================================= >>
 
-def test_copy_input_data():
-    """Assert that the prepare_input method uses copies of the data."""
-    X, y = BaseTransformer()._prepare_input(X_bin, y_bin)
-    assert X is not X_bin and y is not y_bin
+def test_input_data_in_atom():
+    """Assert that the data does not change once in an atom pipeline."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    X10[3][2] = 99  # Change an item of the original variable
+    assert 99 not in atom.dataset  # Is unchanged in the pipeline
+
+
+def test_input_data_in_training():
+    """Assert that the data does not change once in a training pipeline."""
+    train = bin_train.copy()
+    trainer = TrainerClassifier("LR", random_state=1)
+    trainer.run(train, bin_test)
+    train.iloc[3, 2] = 99  # Change an item of the original variable
+    assert 99 not in trainer.dataset  # Is unchanged in the pipeline
+
+
+def test_multidimensional_X():
+    """Assert that more than two dimensional datasets are handled correctly."""
+    train, test = mnist.load_data()
+    atom = ATOMClassifier(train, test, random_state=1)
+    assert atom.X.columns == ['Features']
+    assert atom.X.iloc[0, 0].shape == (28, 28)
 
 
 def test_to_pandas():

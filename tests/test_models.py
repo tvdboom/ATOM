@@ -12,6 +12,12 @@ import pytest
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
+# Keras
+from keras.datasets import mnist
+from keras.models import Sequential
+from keras.layers import Dense, Flatten, Conv2D
+from keras.wrappers.scikit_learn import KerasClassifier
+
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.models import MODEL_LIST
@@ -26,7 +32,21 @@ multiclass = [m for m in MODEL_LIST if m not in ["custom", "CatNB", "CatB"] + ON
 regression = [m for m in MODEL_LIST if m not in ["custom"] + ONLY_CLASS]
 
 
-# Tests ===================================================================== >>
+# Functions ================================================================ >>
+
+def neural_network():
+    """Create a convolutional neural network in Keras."""
+    model = Sequential()
+    model.add(Conv2D(64, kernel_size=3, activation="relu", input_shape=(28, 28, 1)))
+    model.add(Conv2D(64, kernel_size=3, activation="relu"))
+    model.add(Flatten())
+    model.add(Dense(10, activation="softmax"))
+    model.compile(optimizer='adam', loss='categorical_crossentropy')
+
+    return model
+
+# Tests ==================================================================== >>
+
 
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
@@ -36,6 +56,23 @@ def test_custom_models(model):
     assert not atom.errors
     assert hasattr(atom, "RandomForestRegressor")
     assert atom.RandomForestRegressor.estimator.get_params()["random_state"] == 1
+
+
+def test_deep_learning_models():
+    """Assert that ATOM works with deep learning models."""
+    # Since ATOM uses sklearn's API, use Keras' wrapper
+    model = KerasClassifier(neural_network, epochs=1, batch_size=512, verbose=0)
+
+    # Download the MNIST dataset
+    (X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+    # Reshape data to fit model
+    X_train = X_train.reshape(60000, 28, 28, 1)
+    X_test = X_test.reshape(10000, 28, 28, 1)
+
+    atom = ATOMClassifier((X_train, y_train), (X_test, y_test), random_state=1, verbose=2)
+    atom.run(models=model)
+    assert not atom.errors
 
 
 @pytest.mark.parametrize("model", binary)

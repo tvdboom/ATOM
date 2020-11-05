@@ -169,6 +169,79 @@ Make plots to analyze the results:
 <br><br>
 
 
+
+# Release history
+-----------------
+
+### Version 4.2.0
+
+* Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/ATOM/atommodel).
+* Compatibility with deep learning models.
+* New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-class-weight) and
+  [get_sample_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-sample-weight) utility methods.
+* Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
+* New ways to initialize the data in the `training` instances.
+* The `n_rows` parameter in [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) is deprecated in
+  favour of the new data input formats.
+* The `test_size` parameter now also allows integer values.
+* Renamed categories to classes to be consistent with sklearn's API.
+* The class property now returns a pd.DataFrame of the number of rows per target class
+  in the train, test and complete dataset.
+* Possibility to add custom parameters to an estimator's fit method through `est_params`.
+* [Successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving) and [Train sizing](https://tvdboom.github.io/ATOM/API/user_guide/#train-sizing)
+  now both allow subsequent runs from `atom` without losing previous information.
+* Bug fix where ATOMLoader wouldn't encode the target column during transformation.
+* Added the [Utilities](https://tvdboom.github.io/ATOM/examples/utilities/utilities) example notebook.
+* Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
+
+
+### Version 4.1.0
+* Added the `est_params` parameter to customize the parameters passed to every model's
+  estimator.
+* Following skopt's API, the `n_random_starts` parameter is deprecated in favour of
+ `n_initial_points`.
+* The [Balancer](https://tvdboom.github.io/ATOM/API/data_cleaning/balancer) class now allows you to use any of the
+  strategies from [imblearn](https://imbalanced-learn.readthedocs.io/en/stable/index.html).
+* New utility attributes to inspect the dataset.
+* Four new models: [CatNB](https://tvdboom.github.io/ATOM/API/models/catnb), [CNB](https://tvdboom.github.io/ATOM/API/models/cnb),
+  [ARD](https://tvdboom.github.io/ATOM/API/models/ard) and [RNN](https://tvdboom.github.io/ATOM/API/models/rnn).
+* Added the models section to the documentation.
+* Small changes in log outputs.
+* Bug fixes and performance improvements.
+
+### Version 4.0.1
+* Bug fix where the DFS strategy in [FeatureGenerator](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator)
+  was not deterministic for a fixed random state.
+* Bug fix where subsequent runs with the same metric failed.
+* Added the [license](https://tvdboom.github.io/ATOM/license) file to the package's installer.
+* Typo fixes in documentation.
+
+### Version 4.0.0
+* Bayesian optimization package changed from [GpyOpt](http://sheffieldml.github.io/GPyOpt/)
+  to [skopt](https://scikit-optimize.github.io/stable/).
+* Complete revision of the model's hyperparameters.
+* Four [SHAP plots](https://tvdboom.github.io/ATOM/user_guide/#shap) can now be called directly from an ATOM pipeline.
+* Two new plots for regression tasks.
+* New [plot_pipeline](https://tvdboom.github.io/ATOM/API/plots/plot_pipeline) and `pipeline` attribute to access all transformers. 
+* Possibility to determine transformer parameters per method.
+* New [calibration](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#calibrate) method and [plot](https://tvdboom.github.io/ATOM/API/plots/plot_calibration).
+* Metrics can now be added as scorers or functions with signature metric(y, y_pred, **kwargs).
+* Implementation of [multi-metric](https://tvdboom.github.io/ATOM/user_guide/#metric) runs.
+* Possibility to choose which metric to plot.
+* Early stopping for models that allow in-training evaluation.
+* Added the [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) function to load saved `atom` instances
+  and directly apply all data transformations.
+* The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
+* Implemented the DFS strategy in [FeatureGenerator](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator).
+* All training classes now inherit from BaseEstimator.
+* Added multiple new example notebooks.
+* Tests coverage up to 100%.
+* Completely new documentation page.
+* Bug fixes and performance improvements.
+
+
+<br><br>
+
 Documentation
 -----------------
   

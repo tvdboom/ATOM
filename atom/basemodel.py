@@ -35,8 +35,8 @@ from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_mi
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
     ARRAY_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS, flt, lst,
-    merge, check_scaling, time_to_string, catch_return, transform, composed,
-    get_best_score, crash, method_to_log, PlotCallback,
+    merge, arr, check_scaling, time_to_string, catch_return, transform,
+    composed, get_best_score, crash, method_to_log, PlotCallback,
 )
 
 
@@ -273,7 +273,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 if hasattr(self, "custom_fit"):
                     self.custom_fit(
-                        estimator=estimator,
+                        estimator=est,
                         train=(X_subtrain, y_subtrain),
                         validation=(X_val, y_val),
                         params=est_copy
@@ -286,10 +286,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                             f"of {self._stopped[1]}.", 2
                         )
                 else:
-                    estimator.fit(X_subtrain, y_subtrain, **est_copy)
+                    est.fit(arr(X_subtrain), y_subtrain, **est_copy)
 
                 # Calculate metrics on the validation set
-                return [metric(estimator, X_val, y_val) for metric in self.T.metric_]
+                return [metric(est, arr(X_val), y_val) for metric in self.T.metric_]
 
             t_iter = time()  # Get current time for start of the iteration
 
@@ -306,7 +306,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.T.log(f"{call} {len_}", 2)
             self.T.log(f"Parameters --> {params}", 2)
 
-            estimator = self.get_estimator({**self._est_params, **params})
+            est = self.get_estimator({**self._est_params, **params})
 
             # Same splits per model, but different for every iteration of the BO
             rs = self.T.random_state + self._iter if self.T.random_state else None
@@ -321,8 +321,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 else:
                     split = ShuffleSplit(1, **kwargs)
 
-                train_idx, val_idx = next(split.split(self.X_train, self.y_train))
-                scores = fit_model(train_idx, val_idx)
+                scores = fit_model(*next(split.split(self.X_train, self.y_train)))
 
             else:  # Use cross validation to get the score
                 kwargs = dict(n_splits=self._cv, shuffle=True, random_state=rs)
@@ -344,7 +343,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             t_tot = time_to_string(self._init_bo)
             self.bo.loc[call] = {
                 "params": params,
-                "estimator": estimator,
+                "estimator": est,
                 "score": flt(scores),
                 "time_iteration": t,
                 "time": t_tot,
@@ -507,8 +506,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 optimizer = gbrt_minimize(**kwargs)
             else:
                 raise ValueError(
-                    f"Invalid value for the base_estimator parameter, got {base}. "
-                    "Value should be one of: 'GP', 'ET', 'RF', 'GBRT'."
+                    f"Invalid value for the base_estimator parameter, got {base}."
+                    " Value should be one of: 'GP', 'ET', 'RF', 'GBRT'."
                 )
         else:
             optimizer = base_minimize(base_estimator=base, **kwargs)
@@ -566,15 +565,15 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 params=self._est_params_fit
             )
         else:
-            self.estimator.fit(self.X_train, self.y_train, **self._est_params_fit)
+            self.estimator.fit(arr(self.X_train), self.y_train, **self._est_params_fit)
 
         # Save metric scores on complete training and test set
         self.metric_train = flt([
-            metric(self.estimator, self.X_train, self.y_train)
+            metric(self.estimator, arr(self.X_train), self.y_train)
             for metric in self.T.metric_
         ])
         self.metric_test = flt([
-            metric(self.estimator, self.X_test, self.y_test)
+            metric(self.estimator, arr(self.X_test), self.y_test)
             for metric in self.T.metric_
         ])
 
@@ -641,10 +640,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     params=self._est_params_fit
                 )
             else:
-                estimator.fit(sample_x, sample_y, **self._est_params_fit)
+                estimator.fit(arr(sample_x), sample_y, **self._est_params_fit)
 
             scores = flt([
-                metric(estimator, self.X_test, self.y_test)
+                metric(estimator, arr(self.X_test), self.y_test)
                 for metric in self.T.metric_
             ])
 
@@ -765,56 +764,56 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Clear all the prediction attributes."""
         self._predict_train, self._predict_test = None, None
         self._predict_proba_train, self._predict_proba_test = None, None
-        self._predict_log_proba_train, self._predict_log_proba_test = None, None
+        self._log_proba_train, self._log_proba_test = None, None
         self._dec_func_train, self._dec_func_test = None, None
         self._score_train, self._score_test = None, None
 
     @property
     def predict_train(self):
         if self._predict_train is None:
-            self._predict_train = self.estimator.predict(self.X_train)
+            self._predict_train = self.estimator.predict(arr(self.X_train))
         return self._predict_train
 
     @property
     def predict_test(self):
         if self._predict_test is None:
-            self._predict_test = self.estimator.predict(self.X_test)
+            self._predict_test = self.estimator.predict(arr(self.X_test))
         return self._predict_test
 
     @property
     def predict_proba_train(self):
         if self._predict_proba_train is None:
-            self._predict_proba_train = self.estimator.predict_proba(self.X_train)
+            self._predict_proba_train = self.estimator.predict_proba(arr(self.X_train))
         return self._predict_proba_train
 
     @property
     def predict_proba_test(self):
         if self._predict_proba_test is None:
-            self._predict_proba_test = self.estimator.predict_proba(self.X_test)
+            self._predict_proba_test = self.estimator.predict_proba(arr(self.X_test))
         return self._predict_proba_test
 
     @property
     def predict_log_proba_train(self):
-        if self._predict_log_proba_train is None:
-            self._predict_log_proba_train = np.log(self.predict_proba_train)
-        return self._predict_log_proba_train
+        if self._log_proba_train is None:
+            self._log_proba_train = self.estimator.predict_log_proba(arr(self.X_train))
+        return self._log_proba_train
 
     @property
     def predict_log_proba_test(self):
-        if self._predict_log_proba_test is None:
-            self._predict_log_proba_test = np.log(self.predict_proba_test)
-        return self._predict_log_proba_test
+        if self._log_proba_test is None:
+            self._log_proba_test = self.estimator.predict_log_proba(arr(self.X_test))
+        return self._log_proba_test
 
     @property
     def decision_function_train(self):
         if self._dec_func_train is None:
-            self._dec_func_train = self.estimator.decision_function(self.X_train)
+            self._dec_func_train = self.estimator.decision_function(arr(self.X_train))
         return self._dec_func_train
 
     @property
     def decision_function_test(self):
         if self._dec_func_test is None:
-            self._dec_func_test = self.estimator.decision_function(self.X_test)
+            self._dec_func_test = self.estimator.decision_function(arr(self.X_test))
         return self._dec_func_test
 
     @property
@@ -826,7 +825,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             else:
                 sample_weight = None
             self._score_train = self.estimator.score(
-                self.X_train, self.y_train, sample_weight=sample_weight
+                arr(self.X_train), self.y_train, sample_weight=sample_weight
             )
         return self._score_train
 
@@ -839,7 +838,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             else:
                 sample_weight = None
             self._score_test = self.estimator.score(
-                self.X_test, self.y_test, sample_weight=sample_weight
+                arr(self.X_test), self.y_test, sample_weight=sample_weight
             )
         return self._score_test
 

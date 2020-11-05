@@ -516,12 +516,36 @@ Additional things to take into account:
 
 <br>
 
+
+### Deep learning
+
+Deep learning models can be used through ATOM's [custom models](#custom-models) as
+ long as they follow sklearn's API. For example, use the sklearn wrappers
+ [KerasClassifier](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier)
+ and [kerasRegressor](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor)
+ for models implemented with the Keras package.
+ 
+Many deep learning models, for example for computer vision or natural language
+ processing, use datasets with more than 2 dimensions, e.g. image data can have
+ shape (n_samples, length, width, rgba). These data structures are not intended
+ to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
+ instance for the dataset, multidimensional data sets are stored in a single column
+ called "features" where every row contains one sample. Click [here](../examples/deep_learning/deep_learning)
+ for an example.
+
+
+
+
+<br>
+
 !!! tip
     You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.
 
 !!! warning
     The `models` should not be initialized by the user! Only use them through the
     `training` instances.
+
+
 
 
 <br><br>

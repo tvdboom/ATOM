@@ -2,7 +2,7 @@
 -----------
 
 <a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, name=None, fullname=None, needs_scaling=True, type="kernel")
+<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, name=None, fullname=None, needs_scaling=False, type="kernel")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
 <div style="padding-left:3%">
 Convert an estimator to a model that can be ingested by ATOM's pipeline.
@@ -24,13 +24,14 @@ Model's acronym. Used to call the `model` from the training instance.
 <blockquote>
 Full model's name. If None, the estimator's name will be used.
 </blockquote>
-<strong>needs_scaling: bool, optional (default=True)</strong>
+<strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
 Whether the model needs scaled features.
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>
-Model's type. Choose from:
+Model's type. Used to select [shap's explainer](https://shap.readthedocs.io/en/latest/api.html#core-explainers).
+ Choose from:
 <ul>
 <li>"linear" for linear models.</li>
 <li>"tree" for tree-based models.</li>
@@ -51,7 +52,7 @@ Model's type. Choose from:
 from atom import ATOMRegressor, ATOMModel
 from sklearn.linear_model import HuberRegressor
 
-model =  ATOMModel(HuberRegressor, name="hub", fullname="Huber", type="linear")
+model =  ATOMModel(HuberRegressor, name="hub", fullname="Huber", needs_scaling=True, type="linear")
 
 atom = ATOMRegressor(X, y)
 atom.run(model)
