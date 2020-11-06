@@ -26,7 +26,7 @@ Full model's name. If None, the estimator's name will be used.
 </blockquote>
 <strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
-Whether the model needs scaled features.
+Whether the model needs scaled features. Can not be True for deep learning datasets.
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>

@@ -8,6 +8,7 @@ Description: Module containing the plotting classes.
 """
 
 # Standard packages
+import random
 import numpy as np
 import pandas as pd
 from itertools import chain
@@ -36,8 +37,9 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted, get_best_score,
-    get_model_acronym, partial_dependence, composed, crash, plot_from_model
+    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted,
+    check_dim, get_best_score, get_model_acronym, partial_dependence,
+    composed, crash, plot_from_model
 )
 
 
@@ -293,7 +295,9 @@ class BasePlotter(object):
 
         """
         if model.type == "tree":
-            explainer = shap.TreeExplainer(model.estimator, self.X_train)
+            explainer = shap.TreeExplainer(
+                model.estimator, feature_perturbation="tree_path_dependent"
+            )
         elif model.type == "linear":
             explainer = shap.LinearExplainer(model.estimator, self.X_train)
         else:
@@ -391,6 +395,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_pca")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_pca method is only available "
@@ -455,6 +460,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_pca")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_components method is only available "
@@ -522,6 +528,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_pca")
         if not hasattr(self, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
@@ -774,6 +781,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_evals")
         check_is_fitted(self, "results")
         m = self._get_models(models, max_one=True)
         dataset = self._get_set(dataset)
@@ -988,6 +996,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_permutation_importance")
         check_is_fitted(self, "results")
         models = self._get_models(models)
         show = self._get_show(show)
@@ -1104,6 +1113,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        check_dim(self, "plot_feature_importance")
         check_is_fitted(self, "results")
         models = self._get_models(models)
         show = self._get_show(show)
@@ -1207,7 +1217,6 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-
         def convert_feature(feature):
             if isinstance(feature, str):
                 try:
@@ -1224,6 +1233,7 @@ class BaseModelPlotter(BasePlotter):
                 )
             return int(feature)
 
+        check_dim(self, "plot_partial_dependence")
         check_is_fitted(self, "results")
         models = self._get_models(models)
         tgt_int, tgt_str = self._get_target(target)
@@ -2241,6 +2251,7 @@ class BaseModelPlotter(BasePlotter):
             Additional keyword arguments for shap's force_plot.
 
         """
+        check_dim(self, "force_plot")
         check_is_fitted(self, "results")
         m = self._get_models(models, max_one=True)
         rows = self._get_index(index)
@@ -2329,6 +2340,7 @@ class BaseModelPlotter(BasePlotter):
             Additional keyword arguments for shap's dependence_plot.
 
         """
+        check_dim(self, "dependence_plot")
         check_is_fitted(self, "results")
         m = self._get_models(models, max_one=True)
         tgt_int, tgt_str = self._get_target(target)
@@ -2400,6 +2412,7 @@ class BaseModelPlotter(BasePlotter):
             Additional keyword arguments for shap's summary_plot.
 
         """
+        check_dim(self, "summary_plot")
         check_is_fitted(self, "results")
         m = self._get_models(models, max_one=True)
         show = self._get_show(show)
@@ -2484,6 +2497,7 @@ class BaseModelPlotter(BasePlotter):
             Additional keyword arguments for shap's decision_plot.
 
         """
+        check_dim(self, "decision_plot")
         check_is_fitted(self, "results")
         m = self._get_models(models, max_one=True)
         rows = self._get_index(index)
@@ -2508,6 +2522,95 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         if not title:
             title = "Decision plot"
+            if tgt_int == 0 or self.task.startswith("multi"):
+                title += f" for {m.y.name}={tgt_str}"
+        self._plot(title=title, filename=filename, display=display)
+
+    @composed(crash, plot_from_model, typechecked)
+    def waterfall_plot(
+        self,
+        models: Union[None, str, Sequence[str]] = None,
+        index: Optional[int] = None,
+        show: Optional[int] = None,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[int, int]] = None,
+        filename: Optional[str] = None,
+        display: bool = True,
+    ):
+        """Plot SHAP's waterfall plot for a single prediction.
+
+        The SHAP value of a feature represents the impact of the evidence
+        provided by that feature on the model’s output. The waterfall plot
+        is designed to visually display how the SHAP values (evidence) of
+        each feature move the model output from our prior expectation under
+        the background data distribution, to the final model prediction
+        given the evidence of all the features. Features are sorted by
+        the magnitude of their SHAP values with the smallest magnitude
+        features grouped together at the bottom of the plot when the
+        number of features in the models exceeds the `show` parameter.
+
+        Parameters
+        ----------
+        models: str, list, tuple or None, optional (default=None)
+            Name of the models to plot. If None, all models in the pipeline are
+            selected. Note that selecting multiple models will raise an exception.
+            To avoid this, call the plot from a `model`.
+
+        index: int or None, optional (default=None)
+            Index of the row in the dataset to plot. If None,
+            selects a random row in the test set.
+
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show in the plot.
+            None to show all.
+
+        target: int or str, optional (default=1)
+            Category to look at in the target class as index or name.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=None)
+            Figure's size, format as (x, y). If None, adapts size to the
+            number of features.
+
+        filename: str or None, optional (default=None)
+            Name of the file (to save). If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        """
+        check_dim(self, "waterfall_plot")
+        check_is_fitted(self, "results")
+        m = self._get_models(models, max_one=True)
+
+        # If index is left to default, give a random index of the test set
+        if index is None:
+            index = random.randint(len(self.train), len(self.dataset))
+
+        rows = self._get_index(index)
+        show = self._get_show(show)
+        tgt_int, tgt_str = self._get_target(target)
+        shap_values, expected_value = self._get_shap(m, rows, tgt_int)
+
+        if figsize is None:  # Default figsize depends on features shown
+            figsize = (10, int(4 + show / 2))
+
+        # Use legacy for consistency with other plot methods
+        shap.plots._waterfall.waterfall_legacy(
+            expected_value=expected_value,
+            shap_values=shap_values[0],
+            features=rows.iloc[0],
+            max_display=show,
+            show=False,
+        )
+
+        plt.gcf().set_size_inches(*figsize)  # Set figure size after creation
+        if not title:
+            title = "Waterfall plot"
             if tgt_int == 0 or self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
         self._plot(title=title, filename=filename, display=display)

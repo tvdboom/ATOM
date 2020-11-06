@@ -170,13 +170,13 @@ Make plots to analyze the results:
 
 
 
-# Release history
+Release history
 -----------------
 
 ### Version 4.2.0
 
-* Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/ATOM/atommodel).
-* Compatibility with deep learning models.
+* Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
+* Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-class-weight) and
   [get_sample_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-sample-weight) utility methods.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
@@ -191,7 +191,8 @@ Make plots to analyze the results:
 * [Successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving) and [Train sizing](https://tvdboom.github.io/ATOM/API/user_guide/#train-sizing)
   now both allow subsequent runs from `atom` without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
-* Added the [Utilities](https://tvdboom.github.io/ATOM/examples/utilities/utilities) example notebook.
+* Added the [Utilities](https://tvdboom.github.io/ATOM/examples/utilities/utilities)
+  and [Deep learning](https://tvdboom.github.io/ATOM/examples/deep_learning/deep_learning) example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 

@@ -47,7 +47,8 @@ def ATOMModel(
         Full model's name. If None, the estimator's name will be used.
 
     needs_scaling: bool, optional (default=False)
-        Whether the model needs scaled features.
+        Whether the model needs scaled features. Can not be True for
+        deep learning datasets.
 
     type: str, optional (default="kernel")
         Model's type. Used to select shap's explainer. Choose from:
@@ -127,50 +128,50 @@ def ATOMLoader(
         )
 
     with open(filename, "rb") as f:
-        cls_ = pickle.load(f)
+        cls = pickle.load(f)
 
     if data is not None:
-        if not hasattr(cls_, "_data"):
+        if not hasattr(cls, "_data"):
             raise TypeError(
                 "Data is provided but the class is not an ATOM nor "
-                f"training instance, got {cls_.__class__.__name__}."
+                f"training instance, got {cls.__class__.__name__}."
             )
 
-        elif cls_._data is not None:
+        elif cls._data is not None:
             raise ValueError(
-                f"The loaded {cls_.__class__.__name__} instance already contains data!"
+                f"The loaded {cls.__class__.__name__} instance already contains data!"
             )
 
         # Prepare the provided data
-        cls_._data, cls_._idx = cls_._get_data_and_idx(data, use_n_rows=transform_data)
+        cls._data, cls._idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
 
-        if hasattr(cls_, "pipeline") and transform_data:
+        if hasattr(cls, "pipeline") and transform_data:
             # Transform the data through all transformers in the pipeline
-            for estimator in [i for i in cls_.pipeline if hasattr(i, "transform")]:
+            for estimator in [i for i in cls.pipeline if hasattr(i, "transform")]:
                 if verbose is not None:
                     vb = estimator.get_params()["verbose"]  # Save original verbosity
                     estimator.set_params(verbose=verbose)
 
                 # Some transformations are only applied on the training set
                 if estimator.__class__.__name__ in ["Outliers", "Balancer"]:
-                    X, y = estimator.transform(cls_.X_train, cls_.y_train)
-                    cls_._data = pd.concat([merge(X, y), cls_.test])
+                    X, y = estimator.transform(cls.X_train, cls.y_train)
+                    cls._data = pd.concat([merge(X, y), cls.test])
                 else:
-                    X = estimator.transform(cls_.X, cls_.y)
+                    X = estimator.transform(cls.X, cls.y)
 
                     # Data changes depending if the estimator returned X or X, y
-                    cls_._data = merge(*X) if isinstance(X, tuple) else merge(X, cls_.y)
+                    cls._data = merge(*X) if isinstance(X, tuple) else merge(X, cls.y)
 
-                cls_._data.reset_index(drop=True, inplace=True)
+                cls._data.reset_index(drop=True, inplace=True)
                 if verbose is not None:
                     estimator.verbose = vb  # Reset the original verbosity
 
-        if getattr(cls_, "trainer", None):
-            cls_.trainer._data = cls_._data
+        if getattr(cls, "trainer", None):
+            cls.trainer._data = cls._data
 
-    cls_.log(f"{cls_.__class__.__name__} loaded successfully!", 1)
+    cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
 
-    return cls_
+    return cls
 
 
 # Classes =================================================================== >>

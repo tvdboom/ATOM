@@ -147,7 +147,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple,  np.array or pd.Series
+        y: int, str or array-like
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -309,7 +309,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
+        y: int, str or array-like, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -590,7 +590,7 @@ class FeatureSelector(
         X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple,  np.array or pd.Series
+        y: int, str or array-like
             - If None: y is ignored in the transformation.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -815,7 +815,7 @@ class FeatureSelector(
         X: dict, list, tuple,  np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple,  np.array or pd.Series, optional (default=None)
+        y: int, str or array-like, optional (default=None)
             Does nothing. Only for continuity of API.
 
         Returns

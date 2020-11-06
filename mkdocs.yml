@@ -112,6 +112,7 @@ nav:
         - dependence_plot: API/plots/dependence_plot.md
         - summary_plot: API/plots/summary_plot.md
         - decision_plot: API/plots/decision_plot.md
+        - waterfall_plot: API/plots/waterfall_plot.md
 - Examples:
     - Binary classification: examples/binary_classification/binary_classification.md
     - Multiclass classification: examples/multiclass_classification/multiclass_classification.md

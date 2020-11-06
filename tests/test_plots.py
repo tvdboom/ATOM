@@ -607,7 +607,7 @@ def test_summary_plot():
 
 @pytest.mark.parametrize("index", [12, (30, 32), -5, None])
 def test_decision_plot(index):
-    """Assert that the decision_plot method work as intended for binary tasks."""
+    """Assert that the decision_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.summary_plot)
     atom.run(["LR", "Tree"], metric="f1_macro")
@@ -615,3 +615,12 @@ def test_decision_plot(index):
         index=index, filename=FILE_DIR + f"decision_{index}_1", display=False
     )
     assert glob.glob(FILE_DIR + f"decision_{index}_1.png")
+
+
+def test_waterfall_plot():
+    """Assert that the waterfall_plot method work as intended."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    pytest.raises(NotFittedError, atom.waterfall_plot)
+    atom.run(["LR", "Tree"], metric="f1_macro")
+    atom.lr.waterfall_plot(index=-3, filename=FILE_DIR + f"waterfall_1", display=False)
+    assert glob.glob(FILE_DIR + f"waterfall_1.png")

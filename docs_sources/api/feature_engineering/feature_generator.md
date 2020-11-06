@@ -188,7 +188,7 @@ Fit the class.
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, list, tuple,  np.array or pd.Series</strong>
+<strong>y: int, str or array-like</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -224,7 +224,7 @@ Fit the FeatureGenerator and return the transformed data.
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, list, tuple,  np.array, pd.Series</strong>
+<strong>y: int, str or array-like</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -359,7 +359,7 @@ Generate new features.
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, list, tuple,  np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, array-like or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>

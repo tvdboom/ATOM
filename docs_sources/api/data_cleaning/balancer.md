@@ -142,7 +142,7 @@ Oversample or undersample the data.
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, list, tuple,  np.array or pd.Series</strong>
+<strong>y: int, str or array-like</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -281,7 +281,7 @@ Oversample or undersample the data.
 <blockquote>
 Data containing the features, with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, list, tuple,  np.array or pd.Series</strong>
+<strong>y: int, str or array-like</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>

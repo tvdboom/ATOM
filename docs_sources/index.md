@@ -90,7 +90,7 @@ Example steps taken by ATOM's pipeline:
 ### Version 4.2.0
 
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
-* Compatibility with deep learning models.
+* Compatibility with [deep learning](./user_guide/#deep-learning) models.
 * New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) and
   [get_sample_weight](./API/ATOM/atomclassifier#get-sample-weight) utility methods.
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
@@ -105,7 +105,7 @@ Example steps taken by ATOM's pipeline:
 * [Successive halving](./user_guide/#successive-halving) and [Train sizing](./API/user_guide/#train-sizing)
   now both allow subsequent runs from `atom` without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
-* Added the [Utilities](./examples/utilities/utilities) example notebook.
+* Added the [Utilities](./examples/utilities/utilities) and [Deep learning](./examples/deep_learning/deep_learning) example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 

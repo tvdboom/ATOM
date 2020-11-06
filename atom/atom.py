@@ -39,7 +39,7 @@ from .training import (
 from .plots import ATOMPlotter
 from .utils import (
     CAL, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, merge, check_property, infer_task,
-    check_scaling, transform, clear, method_to_log, composed, crash,
+    check_dim, check_scaling, transform, clear, method_to_log, composed, crash
 )
 
 
@@ -247,17 +247,18 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
+        X: dict, list, tuple, np.array or pd.DataFrame
             Data containing the features, with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple,  np.array, pd.Series or None, optional (default=None)
+        y: int, str, array-like or None, optional (default=None)
             - If None: y is ignored in the transformers.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
         verbose: int or None, optional (default=None)
-            Verbosity level of the transformers. If None, it uses the `training`'s verbosity.
+            Verbosity level of the transformers. If None, it uses
+            the `training`'s verbosity.
 
         **kwargs
             Additional keyword arguments to customize which transformers to apply.
@@ -313,6 +314,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         fitted only on the training set to avoid data leakage.
 
         """
+        check_dim(self, "scale")
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
         scaler = Scaler(**kwargs).fit(self.X_train)
 
@@ -343,6 +345,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
+        check_dim(self, "clean")
         kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
         cleaner = Cleaner(
             prohibited_types=prohibited_types,
@@ -387,6 +390,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
+        check_dim(self, "impute")
         kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
         imputer = Imputer(
             strat_num=strat_num,
@@ -431,6 +435,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
+        check_dim(self, "encode")
         kwargs = self._prepare_kwargs(kwargs, Encoder().get_params())
         encoder = Encoder(
             strategy=strategy,
@@ -461,6 +466,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
+        check_dim(self, "outliers")
         kwargs = self._prepare_kwargs(kwargs, Outliers().get_params())
         outliers = Outliers(
             strategy=strategy,
@@ -486,6 +492,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
+        check_dim(self, "balance")
         if not self.goal.startswith("class"):
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
@@ -526,6 +533,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the feature_engineering.py module for a description of the parameters.
 
         """
+        check_dim(self, "feature_generation")
         kwargs = self._prepare_kwargs(kwargs, FeatureGenerator().get_params())
         feature_generator = FeatureGenerator(
             strategy=strategy,
@@ -571,11 +579,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         to the selected metric (if not explicitly provided).
 
         After running the method, the created attributes and methods are attached
-        to `the instance.
+        to the instance.
 
         See the feature_engineering.py module for a description of the parameters.
 
         """
+        check_dim(self, "feature_selection")
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 if self.goal.startswith("reg"):

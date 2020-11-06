@@ -428,6 +428,10 @@
 <li>
     <a href="../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
 </li>
+            
+<li>
+    <a href="../API/plots/waterfall_plot/" class="dropdown-item">waterfall_plot</a>
+</li>
     </ul>
   </li>
                                 </ul>
@@ -1027,17 +1031,19 @@ atom.run(models=Lars)
 <p><br></p>
 <h3 id="deep-learning">Deep learning</h3>
 <p>Deep learning models can be used through ATOM's <a href="#custom-models">custom models</a> as
- long as they follow sklearn's API. For example, use the sklearn wrappers
+ long as they follow sklearn's API. For example, models implemented with the
+ Keras package should use the sklearn wrappers
  <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier">KerasClassifier</a>
- and <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor">kerasRegressor</a>
- for models implemented with the Keras package.</p>
-<p>Many deep learning models, for example for computer vision or natural language
+ and <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor">kerasRegressor</a>.</p>
+<p>Many deep learning models, for example in computer vision and natural language
  processing, use datasets with more than 2 dimensions, e.g. image data can have
- shape (n_samples, length, width, rgba). These data structures are not intended
+ shape (n_samples, length, width, rgb). These data structures are not intended
  to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
  instance for the dataset, multidimensional data sets are stored in a single column
- called "features" where every row contains one sample. Click <a href="../examples/deep_learning/deep_learning">here</a>
- for an example.</p>
+ called "Features" where every row contains one (multidimensional) sample. Click
+ <a href="../examples/deep_learning/deep_learning">here</a> for an example. Note that, because
+ of this, the <a href="#data-cleaning">data cleaning</a>, <a href="#feature-engineering">feature engineering</a>
+ and some of the <a href="#plots">plotting</a> methods are unavailable for deep learning datasets.</p>
 <p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1431,14 +1437,14 @@ method if you need to free some memory!</p>
  package uses a game theoretic approach to explain the output of any machine
  learning model. It connects optimal credit allocation with local explanations
  using the classic Shapley values from game theory and their related extensions.
- ATOM implements methods to plot 4 of shap's plotting functions directly from its
+ ATOM implements methods to plot 5 of shap's plotting functions directly from its
  API. The explainer will be chosen automatically based on the model's type. For 
  kernelExplainer, the data used to estimate the expected values is the complete
  training set when &lt;100 rows, else its summarized with a set of 10 weighted K-means,
  each weighted by the number of points they represent.
- The four plots are: <a href="../API/plots/force_plot">force_plot</a>,
- <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>
- and <a href="../API/plots/decision_plot">decision_plot</a>.</p>
+ The five plots are: <a href="../API/plots/force_plot">force_plot</a>,
+ <a href="../API/plots/dependence_plot">dependence_plot</a>, <a href="../API/plots/summary_plot">summary_plot</a>,
+ <a href="../API/plots/decision_plot">decision_plot</a> and <a href="../API/plots/waterfall_plot">waterfall_plot</a>.</p>
 <p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a <code>model</code>, e.g. <code>atom.xgb.force_plot()</code>.</p>
@@ -1585,6 +1591,11 @@ with plot.</p>
 <tr>
 <td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
 <td>Plot SHAP's decision plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/waterfall_plot">waterfall_plot</a></td>
+<td>Plot SHAP's waterfall plot.</td>
 </tr>
 </table></div>
             </div>

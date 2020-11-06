@@ -520,21 +520,20 @@ Additional things to take into account:
 ### Deep learning
 
 Deep learning models can be used through ATOM's [custom models](#custom-models) as
- long as they follow sklearn's API. For example, use the sklearn wrappers
+ long as they follow sklearn's API. For example, models implemented with the
+ Keras package should use the sklearn wrappers
  [KerasClassifier](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier)
- and [kerasRegressor](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor)
- for models implemented with the Keras package.
- 
-Many deep learning models, for example for computer vision or natural language
+ and [kerasRegressor](https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor).
+
+Many deep learning models, for example in computer vision and natural language
  processing, use datasets with more than 2 dimensions, e.g. image data can have
- shape (n_samples, length, width, rgba). These data structures are not intended
+ shape (n_samples, length, width, rgb). These data structures are not intended
  to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
  instance for the dataset, multidimensional data sets are stored in a single column
- called "features" where every row contains one sample. Click [here](../examples/deep_learning/deep_learning)
- for an example.
-
-
-
+ called "Features" where every row contains one (multidimensional) sample. Click
+ [here](../examples/deep_learning/deep_learning) for an example. Note that, because
+ of this, the [data cleaning](#data-cleaning), [feature engineering](#feature-engineering)
+ and some of the [plotting](#plots) methods are unavailable for deep learning datasets.
 
 <br>
 
@@ -981,14 +980,14 @@ The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations) py
  package uses a game theoretic approach to explain the output of any machine
  learning model. It connects optimal credit allocation with local explanations
  using the classic Shapley values from game theory and their related extensions.
- ATOM implements methods to plot 4 of shap's plotting functions directly from its
+ ATOM implements methods to plot 5 of shap's plotting functions directly from its
  API. The explainer will be chosen automatically based on the model's type. For 
  kernelExplainer, the data used to estimate the expected values is the complete
  training set when <100 rows, else its summarized with a set of 10 weighted K-means,
  each weighted by the number of points they represent.
- The four plots are: [force_plot](../API/plots/force_plot),
- [dependence_plot](../API/plots/dependence_plot), [summary_plot](../API/plots/summary_plot)
- and [decision_plot](../API/plots/decision_plot).
+ The five plots are: [force_plot](../API/plots/force_plot),
+ [dependence_plot](../API/plots/dependence_plot), [summary_plot](../API/plots/summary_plot),
+ [decision_plot](../API/plots/decision_plot) and [waterfall_plot](../API/plots/waterfall_plot).
 
 Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
@@ -1139,5 +1138,10 @@ A list of available plots can be find hereunder. Note that not all plots can be
 <tr>
 <td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
 <td>Plot SHAP's decision plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/waterfall_plot">waterfall_plot</a></td>
+<td>Plot SHAP's waterfall plot.</td>
 </tr>
 </table>

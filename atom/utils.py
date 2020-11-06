@@ -195,6 +195,14 @@ def variable_return(X, y):
         return X, y
 
 
+def check_dim(cls, method):
+    """Raise an error if the instance contains a deep learning dataset."""
+    if list(cls.X.columns) == ["Features"]:
+        raise PermissionError(
+            f"The {method} method is not available for deep learning datasets!"
+        )
+
+
 def check_scaling(X):
     """Check if the provided data is scaled to mean=0 and std=1."""
     mean = X.mean(axis=1).mean()

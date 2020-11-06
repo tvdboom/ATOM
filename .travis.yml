@@ -7,11 +7,13 @@ before_install:
   - pip install -U pip
   - pip install -U pytest
   - pip install -U coverage
-  - pip install codecov
+  - pip install -U codecov
+  - pip install -U tensorflow
+  - pip install -U keras
 install:  # Install dependencies
   - pip install -r requirements.txt
 # Command to run tests
-# travis_wait because some tests take longer than 10min
+# travis_wait because the tests take longer than 10min
 script: travis_wait 50 coverage run -m pytest  # Max 50min run
 after_success:  # Submit coverage
   - codecov
