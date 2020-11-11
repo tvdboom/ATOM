@@ -83,11 +83,56 @@ def test_task_assigning():
 # Test __repr__ ============================================================ >>
 
 def test_repr():
-    """Assert that the __repr__ method visualizes the pipeline."""
+    """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert str(atom).startswith("ATOMClassifier")
+
+
+# Test pipeline properties ================================================= >>
+
+def test_branches():
+    """Assert that pipelines returns the names of all pipelines in atom."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    assert atom.pipelines == ["main"]
+
+
+def test_pipeline_setter_invalid():
+    """Assert that an error is raised when the name is empty."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*Can't create a pipeline.*"):
+        atom.pipeline = ""
+
+
+def test_pipeline_setter_change():
+    """Assert that we can change to an old pipeline."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.pipeline = "pipe_2"
     atom.clean()
-    atom.run("lr")
-    assert len(str(atom)) == 462
+    atom.pipeline = "main"
+    assert atom.pipeline.estimators.empty  # Has no clean estimator
+
+
+def test_pipeline_setter_new():
+    """Assert that we can create a new pipeline."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.clean()
+    atom.pipeline = "pipe_2"
+    assert atom.pipelines == ["main", "pipe_2"]
+
+
+def test_pipeline_deleter():
+    """Assert that we can delete a pipeline."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.pipeline = "pipe_2"
+    del atom.pipeline
+    assert atom.pipelines == ["main"]
+
+
+def test_pipeline_deleter_invalid():
+    """Assert that an error is raised when we try to delete the last pipeline."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    with pytest.raises(PermissionError, match=r".*Can't clear this pipeline!.*"):
+        del atom.pipeline
 
 
 # Test utility properties ================================================== >>
@@ -162,7 +207,7 @@ def test_verbose_in_transform():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     _ = atom.transform(X_bin, verbose=2)
-    assert atom.pipeline[0].verbose == 2
+    assert atom.pipeline.estimators[0].verbose == 2
 
 
 def test_pipeline_parameter():
@@ -213,14 +258,14 @@ def test_ATOM_params_to_method():
     """Assert that the ATOM parameters are passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale()
-    assert atom.pipeline[0].verbose == 1
+    assert atom.pipeline.estimators[0].verbose == 1
 
 
 def test_custom_params_to_method():
     """Assert that a custom parameter is passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale(verbose=2)
-    assert atom.pipeline[0].verbose == 2
+    assert atom.pipeline.estimators[0].verbose == 2
 
 
 def test_scale():
@@ -277,7 +322,7 @@ def test_balance_mapping():
     """Assert that the balance method gets the mapping attribute from ATOM."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
-    assert atom.pipeline[0].mapping == atom.mapping
+    assert atom.pipeline.estimators[0].mapping == atom.pipeline.mapping
 
 
 def test_balance_attribute():
@@ -316,12 +361,12 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].solver.__name__ == "f_classif"
+    assert atom.pipeline.estimators[0].solver.__name__ == "f_classif"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].solver.__name__ == "f_regression"
+    assert atom.pipeline.estimators[0].solver.__name__ == "f_regression"
 
 
 def test_winner_solver_after_run():
@@ -331,7 +376,7 @@ def test_winner_solver_after_run():
     atom.feature_selection(
         strategy="SFM", solver=None, n_features=8, max_correlation=None
     )
-    assert atom.pipeline[1].solver is atom.winner.estimator
+    assert atom.pipeline.estimators[1].solver is atom.winner.estimator
 
 
 def test_default_solver_from_task():
@@ -339,12 +384,12 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert type(atom.pipeline[0].solver).__name__ == "LGBMClassifier"
+    assert type(atom.pipeline.estimators[0].solver).__name__ == "LGBMClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
+    assert type(atom.pipeline.estimators[0].solver).__name__ == "LGBMRegressor"
 
 
 def test_default_scoring_RFECV():
@@ -352,7 +397,7 @@ def test_default_scoring_RFECV():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
     atom.feature_selection(strategy="rfecv", solver="lgb", n_features=8)
-    assert atom.pipeline[1].kwargs["scoring"].name == "recall"
+    assert atom.pipeline.estimators[1].kwargs["scoring"].name == "recall"
 
 
 def test_plot_methods_attached():
@@ -419,12 +464,12 @@ def test_model_subclasses_are_attached():
     assert hasattr(atom, "OLS") and hasattr(atom, "ols")
 
 
-def test_pipeline_attr_is_attached():
-    """Assert that the transform method is attached to the model subclasses."""
+def test_pipeline_estimators_are_attached():
+    """Assert that the pipeline estimators are attached to the `models`."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    assert hasattr(atom.OLS, "pipeline")
-    assert hasattr(atom.ols, "pipeline")
+    assert hasattr(atom.OLS, "_est_pipeline")
+    assert hasattr(atom.ols, "_est_pipeline")
 
 
 def test_errors_are_updated():

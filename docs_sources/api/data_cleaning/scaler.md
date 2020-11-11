@@ -5,11 +5,11 @@
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L69">[source]</a></div></pre>
 <div style="padding-left:3%">
-Scales data to mean=0 and std=1. This method is equal to sklearn's
+Scales data to mean=0 and std=1. This class is equal to sklearn's
  [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
- except that it returns a dataframe when provided. This class can be accessed from
- `atom` through the [scale](../../ATOM/atomclassifier/#scale)
- method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
+ except that it returns a dataframe when provided and it ignores non-numerical columns
+ (instead of raising an exception). This class can be accessed from `atom` through the
+ [scale](../../ATOM/atomclassifier/#scale) method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
 <br /><br />
 <table>
 <tr>

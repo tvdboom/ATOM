@@ -14,12 +14,13 @@ from time import time
 import matplotlib.pyplot as plt
 
 # Own modules
+from .pipeline import Pipeline
 from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score, time_to_string,
-    get_model_acronym, get_metric, get_default_metric, fit_init, clear
+    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score,
+    time_to_string, get_metric, get_default_metric, fit_init, clear
 )
 
 
@@ -153,9 +154,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.bo_params = bo_params
         self.bagging = bagging
 
-        # Data attributes
-        self._data = None
-        self._idx = [None, None]
+        # Pipeline attributes
+        self._pipe = "main"  # Current (and only) pipeline
+        self._branches = {self._pipe: Pipeline(self, self._pipe)}
         self.scaler = None
         self.task = None
 
@@ -178,8 +179,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def _params_to_attr(self, *arrays):
         """Attach the provided data as attributes of the class."""
         # If no data was provided and there already is a dataset, skip
-        if len(arrays) > 0 or self._data is None:
-            self._data, self._idx = self._get_data_and_idx(arrays)
+        if len(arrays) > 0 or self.pipeline.data is None:
+            self.pipeline.data, self.pipeline.idx = self._get_data_and_idx(arrays)
 
             # Reset scaler in case of a rerun with new data
             self.scaler = None
@@ -191,44 +192,58 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         models = []
         for m in self.models:
-            # Set models to right name
+            # Get the models' right acronym
             if isinstance(m, str):
-                m = get_model_acronym(m)
+                acronym = None
+                model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
+                for model in model_list:
+                    if m.lower().startswith(model.lower()):
+                        acronym = model
 
-                # Check if packages for not-sklearn models are available
-                if m in OPTIONAL_PACKAGES:
+                if not acronym:
+                    raise ValueError(
+                        f"Unknown model: {m}! Choose from: {', '.join(model_list)}."
+                    )
+
+                # Check if packages for non-sklearn models are available
+                if acronym in OPTIONAL_PACKAGES:
                     try:
-                        importlib.import_module(OPTIONAL_PACKAGES[m])
+                        importlib.import_module(OPTIONAL_PACKAGES[acronym])
                     except ImportError:
                         raise ValueError(
-                            f"Unable to import the {OPTIONAL_PACKAGES[m]}"
-                            " package. Make sure it is installed."
+                            f"Unable to import the {OPTIONAL_PACKAGES[acronym]} "
+                            "package. Make sure it is installed."
                         )
 
                 # Remove regression/classification-only models from pipeline
-                if self.goal.startswith("class") and m in ONLY_REG:
+                if self.goal.startswith("class") and acronym in ONLY_REG:
                     raise ValueError(
-                        f"The {m} model can't perform classification tasks!"
+                        f"The {acronym} model can't perform classification tasks!"
                     )
-                elif self.goal.startswith("reg") and m in ONLY_CLASS:
-                    raise ValueError(f"The {m} model can't perform regression tasks!")
+                elif self.goal.startswith("reg") and acronym in ONLY_CLASS:
+                    raise ValueError(
+                        f"The {acronym} model can't perform regression tasks!"
+                    )
 
-                subclass = MODEL_LIST[m](self)
+                subclass = MODEL_LIST[acronym](self)
+                subclass.name = acronym + m[len(acronym):]
 
             else:  # Model is custom estimator
                 subclass = MODEL_LIST["custom"](self, m)
+                subclass.name = subclass.acronym
 
             # Add the model to the pipeline and check for duplicates
-            models.append(subclass.acronym)
+            models.append(subclass.name)
             if len(models) != len(set(models)):
                 raise ValueError(
-                    "Invalid value for the models parameter. "
-                    f"Duplicate model: {subclass.acronym}."
+                    "Invalid value for the models parameter. Duplicate model: "
+                    f"{subclass.name}. Add a tag to the model's acronym to use "
+                    "the same model twice."
                 )
 
             # Attach the subclasses to the training instances
-            setattr(self, subclass.acronym, subclass)
-            setattr(self, subclass.acronym.lower(), subclass)  # Lowercase as well
+            setattr(self, subclass.name, subclass)
+            setattr(self, subclass.name.lower(), subclass)  # Lowercase as well
 
         self.models = models
 
@@ -313,7 +328,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Assign mapping =================================================== >>
 
-        self.mapping = {str(value): value for value in sorted(self.y.unique())}
+        # Needs to be filled if called from training instance
+        if not self.pipeline.mapping:
+            self.pipeline.mapping = {str(v): v for v in sorted(self.y.unique())}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -381,8 +398,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             mdl = getattr(self, m)
 
             # Add est_params to the model
-            mdl._est_params = fit_init(self.est_params.get(mdl.acronym, {}), False)
-            mdl._est_params_fit = fit_init(self.est_params.get(mdl.acronym, {}), True)
+            mdl._est_params = fit_init(self.est_params.get(mdl.name, {}), False)
+            mdl._est_params_fit = fit_init(self.est_params.get(mdl.name, {}), True)
 
             # Create scaler if model needs scaling and data not already scaled
             if mdl.needs_scaling and not self.scaler:
@@ -392,7 +409,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # If it has custom dimensions, run the BO
                 bo = False
                 if self.bo_params.get("dimensions"):
-                    if self.bo_params["dimensions"].get(mdl.acronym):
+                    if self.bo_params["dimensions"].get(mdl.name):
                         bo = True
 
                 # Use copy of kwargs to not delete original in method
@@ -470,8 +487,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 m.time_bagging,
                 m.time,
             ]
-            m._results.loc[m.acronym] = values
-            results.loc[m.acronym] = values
+            m._results.loc[m.name] = values
+            results.loc[m.name] = values
 
             # Get the model's final output and highlight best score
             out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"

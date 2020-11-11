@@ -16,7 +16,7 @@ from inspect import signature
 from typeguard import typechecked
 from joblib import Parallel, delayed
 from scipy.stats.mstats import mquantiles
-from typing import Optional, Union, Sequence, Tuple
+from typing import Optional, Union, Tuple
 
 # Plotting packages
 import shap
@@ -37,9 +37,8 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    CAL, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted,
-    check_dim, get_best_score, get_model_acronym, partial_dependence,
-    composed, crash, plot_from_model
+    ARRAY_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted, check_dim,
+    get_best_score, partial_dependence, composed, crash, plot_from_model
 )
 
 
@@ -147,8 +146,8 @@ class BasePlotter(object):
 
     # Methods =============================================================== >>
 
-    def _get_models(self, models, max_one=False):
-        """Check and return the provided input models.
+    def _get_subclass(self, models, max_one=False):
+        """Check and return the provided input model subclasses.
 
         Makes sure all names are correct and that every model is in the trainer's
         pipeline. If models=None, returns all models in the pipeline.
@@ -166,11 +165,11 @@ class BasePlotter(object):
         if models is None:
             models = self.models
         elif isinstance(models, str):
-            models = [get_model_acronym(models, self.models)]
+            models = [self._get_model(models)]
         else:
-            models = [get_model_acronym(m, self.models) for m in models]
+            models = [self._get_model(m) for m in models]
 
-        model_subclasses = [m for m in self.models_ if m.acronym in models]
+        model_subclasses = [m for m in self.models_ if m.name in models]
 
         if max_one and len(model_subclasses) > 1:
             raise ValueError("This plot method allows only one model at a time!")
@@ -255,7 +254,7 @@ class BasePlotter(object):
         if isinstance(target, str):
             if target not in self.mapping:
                 raise ValueError(
-                    f"Invalid value for the target parameter. {target} "
+                    f"Invalid value for the target parameter. Value {target} "
                     "not found in the mapping of the target column."
                 )
             tgt_int = self.mapping[target]
@@ -267,6 +266,7 @@ class BasePlotter(object):
                     "Invalid value for the target parameter. There are "
                     f"{self.n_classes} classes, got {target}."
                 )
+            # Get mapping key from value
             tgt_str = list(self.mapping)[list(self.mapping.values()).index(target)]
             return target, tgt_str
 
@@ -460,7 +460,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_pca")
+        check_dim(self, "plot_components")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_components method is only available "
@@ -528,7 +528,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_pca")
+        check_dim(self, "plot_rfecv")
         if not hasattr(self, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
@@ -584,7 +584,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_bagging(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
@@ -618,7 +618,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
         # Check there is at least one model with bagging
@@ -635,7 +635,7 @@ class BaseModelPlotter(BasePlotter):
                     results.append(lst(m.metric_bagging)[metric])
                 else:  # Is single list
                     results.append(m.metric_bagging)
-                names.append(m.acronym)
+                names.append(m.name)
 
         if figsize is None:  # Default figsize depends on number of models
             figsize = (int(8 + len(names) / 2), 6)
@@ -655,7 +655,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_bo(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
@@ -693,7 +693,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
         # Check there is at least one model that run the BO
@@ -712,7 +712,7 @@ class BaseModelPlotter(BasePlotter):
             if len(models) == 1:
                 label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
             else:
-                label = f"{m.acronym} (Score={round(lst(m.metric_bo)[metric], 3)})"
+                label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
 
             # Draw bullets on all markers except the maximum
             markers = [i for i in range(len(m.bo))]
@@ -742,7 +742,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "both",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -783,7 +783,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "plot_evals")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
         dataset = self._get_set(dataset)
 
         # Check that the model had in-training evaluation
@@ -809,7 +809,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -845,7 +845,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("bin"):
@@ -867,7 +867,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}AUC={m.scoring('roc_auc', set_):.3f}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.acronym}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
+                    label = f"{m.name}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
                 plt.plot(fpr, tpr, lw=2, label=label)
 
         plt.plot([0, 1], [0, 1], lw=2, color="black", alpha=0.7, linestyle="--")
@@ -884,7 +884,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -920,7 +920,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("binary"):
@@ -942,7 +942,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}AP={m.scoring('ap', set_):.3f}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.acronym}{l_set} (AP={m.scoring('ap', set_):.3f})"
+                    label = f"{m.name}{l_set} (AP={m.scoring('ap', set_):.3f})"
                 plt.plot(recall, precision, lw=2, label=label)
 
         self._plot(
@@ -957,7 +957,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         show: Optional[int] = None,
         n_repeats: int = 10,
         title: Optional[str] = None,
@@ -998,7 +998,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "plot_permutation_importance")
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         show = self._get_show(show)
         if n_repeats <= 0:
             raise ValueError(
@@ -1022,10 +1022,10 @@ class BaseModelPlotter(BasePlotter):
             # use known permutations (for efficient re-plotting)
             if not hasattr(m, "_repts"):
                 m._repeats = -np.inf
-            if m.acronym not in self.permutations or m._repeats != n_repeats:
+            if m.name not in self.permutations or m._repeats != n_repeats:
                 m._repeats = n_repeats
                 # Permutation importances returns Bunch object from sklearn
-                self.permutations[m.acronym] = permutation_importance(
+                self.permutations[m.name] = permutation_importance(
                     estimator=m.estimator,
                     X=m.X_test,
                     y=m.y_test,
@@ -1037,11 +1037,11 @@ class BaseModelPlotter(BasePlotter):
 
             # Append data to the dataframe
             for i, feature in enumerate(self.X.columns):
-                for score in self.permutations[m.acronym].importances[i, :]:
+                for score in self.permutations[m.name].importances[i, :]:
                     df = df.append({
                         "features": feature,
                         "score": score,
-                        "model": m.acronym
+                        "model": m.name
                     }, ignore_index=True)
 
         # Get the column names sorted by mean of score
@@ -1078,7 +1078,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         show: Optional[int] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
@@ -1115,7 +1115,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "plot_feature_importance")
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         show = self._get_show(show)
 
         # Create dataframe with columns as indices to plot with barh
@@ -1138,7 +1138,7 @@ class BaseModelPlotter(BasePlotter):
                 feature_importances = m.estimator.feature_importances_
 
             # Normalize for plotting values adjacent to bar
-            df[m.acronym] = feature_importances / max(feature_importances)
+            df[m.name] = feature_importances / max(feature_importances)
 
         # Save the best feature order
         best_fxs = df.sort_values(by=df.columns[-1], ascending=False)
@@ -1170,8 +1170,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Union[None, str, Sequence[str]] = None,
-        features: Optional[Union[int, str, Sequence]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        features: Optional[Union[int, str, ARRAY_TYPES]] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1235,7 +1235,7 @@ class BaseModelPlotter(BasePlotter):
 
         check_dim(self, "plot_partial_dependence")
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         tgt_int, tgt_str = self._get_target(target)
 
         # Only for this plot, the target index is always 0 if task not multiclass
@@ -1311,7 +1311,7 @@ class BaseModelPlotter(BasePlotter):
 
             for axi, fx, (pred, values) in zip(ax, cols, pd_results):
                 if len(values) == 1:
-                    axi.plot(values[0], pred[tgt_int].ravel(), lw=2, label=m.acronym)
+                    axi.plot(values[0], pred[tgt_int].ravel(), lw=2, label=m.name)
                 else:
                     # Draw contour plot
                     XX, YY = np.meshgrid(values[0], values[1])
@@ -1373,7 +1373,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1412,7 +1412,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("reg"):
@@ -1428,7 +1428,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.acronym}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
+                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
                 plt.scatter(
                     x=getattr(self, f"y_{set_}"),
@@ -1470,7 +1470,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1511,7 +1511,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("reg"):
@@ -1531,7 +1531,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.acronym}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
+                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
             res = np.subtract(getattr(m, f"predict_{set_}"), getattr(self, f"y_{set_}"))
             ax.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
@@ -1561,7 +1561,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         normalize: bool = False,
         title: Optional[str] = None,
@@ -1603,7 +1603,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
 
         if self.task.startswith("reg"):
             raise PermissionError(
@@ -1687,7 +1687,7 @@ class BaseModelPlotter(BasePlotter):
                 ax.grid(False)
 
             else:  # Create barplot
-                df[m.acronym] = cm.ravel()
+                df[m.name] = cm.ravel()
 
         if len(models) > 1:
             df.plot.barh(figsize=(10, 6) if not figsize else figsize, width=0.6)
@@ -1704,8 +1704,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Union[None, str, Sequence[str]] = None,
-        metric: Optional[Union[CAL, Sequence[CAL]]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
         dataset: str = "test",
         steps: int = 100,
         title: Optional[str] = None,
@@ -1749,7 +1749,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("bin"):
@@ -1806,7 +1806,7 @@ class BaseModelPlotter(BasePlotter):
                         label = f"{l_set}{met.__name__}"
                     else:
                         l_set = f" - {set_}" if len(dataset) > 1 else ""
-                        label = f"{m.acronym}{l_set} ({met.__name__})"
+                        label = f"{m.name}{l_set} ({met.__name__})"
                     plt.plot(steps, results, label=label, lw=2)
 
         self._plot(
@@ -1821,7 +1821,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -1862,7 +1862,7 @@ class BaseModelPlotter(BasePlotter):
         """
         # Set parameters
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         tgt_int, tgt_str = self._get_target(target)
 
@@ -1892,7 +1892,7 @@ class BaseModelPlotter(BasePlotter):
                         label = f"{l_set}Category:{key}"
                     else:
                         l_set = f" - {set_}" if len(dataset) > 1 else ""
-                        label = f"{m.acronym}{l_set} (Category: {key})"
+                        label = f"{m.name}{l_set} (Category: {key})"
                     sns.kdeplot(
                         x=getattr(m, f"predict_proba_{set_}")[idx, tgt_int],
                         fill=True,
@@ -1915,7 +1915,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         n_bins: int = 10,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
@@ -1961,7 +1961,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
 
         if not self.task.startswith("bin"):
             raise PermissionError(
@@ -1991,9 +1991,9 @@ class BaseModelPlotter(BasePlotter):
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
 
             # Draw plots
-            ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.acronym}")
+            ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.name}")
             ax2.hist(
-                prob, range=(0, 1), bins=n_bins, label=m.acronym, histtype="step", lw=2
+                prob, range=(0, 1), bins=n_bins, label=m.name, histtype="step", lw=2
             )
 
         title = "Calibration curve" if not title else title
@@ -2018,7 +2018,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2054,7 +2054,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("bin"):
@@ -2089,7 +2089,7 @@ class BaseModelPlotter(BasePlotter):
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
                 label = ""
                 if len(models) > 1:
-                    label += m.acronym
+                    label += m.name
                 if len(models) > 1 and len(dataset) > 1:
                     label += " - "
                 if len(dataset) > 1:
@@ -2110,7 +2110,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2146,7 +2146,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
         if not self.task.startswith("bin"):
@@ -2183,7 +2183,7 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{l_set}Lift={round(m.scoring('lift'), 3)}"
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.acronym}{l_set} (Lift={round(m.scoring('lift'), 3)})"
+                    label = f"{m.name}{l_set} (Lift={round(m.scoring('lift'), 3)})"
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
                 plt.plot(x, gains / x, lw=2, label=label)
 
@@ -2202,8 +2202,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def force_plot(
         self,
-        models: Union[None, str, Sequence[str]] = None,
-        index: Optional[Union[int, Sequence]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        index: Optional[Union[int, list, tuple]] = None,
         target: Union[str, int] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
@@ -2253,7 +2253,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "force_plot")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index)
         tgt_int, tgt_str = self._get_target(target)
 
@@ -2290,7 +2290,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def dependence_plot(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         index: Union[int, str] = "rank(1)",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2342,7 +2342,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "dependence_plot")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
 
@@ -2367,7 +2367,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def summary_plot(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2414,7 +2414,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "summary_plot")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
@@ -2442,8 +2442,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def decision_plot(
         self,
-        models: Union[None, str, Sequence[str]] = None,
-        index: Optional[Union[int, Sequence]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        index: Optional[Union[int, list, tuple]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2499,7 +2499,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "decision_plot")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
@@ -2529,7 +2529,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def waterfall_plot(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         index: Optional[int] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
@@ -2585,7 +2585,7 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "waterfall_plot")
         check_is_fitted(self, "results")
-        m = self._get_models(models, max_one=True)
+        m = self._get_subclass(models, max_one=True)
 
         # If index is left to default, give a random index of the test set
         if index is None:
@@ -2622,7 +2622,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2656,7 +2656,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         metric = self._get_metric(metric)
         if hasattr(self, "trainer"):
             trainer = self.trainer.__class__.__name__
@@ -2671,14 +2671,14 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         fig, ax = plt.subplots(figsize=figsize)
         for m in models:
             # Make df with rows for only that model
-            df = self._results.xs(m.acronym, level="model")
+            df = self._results.xs(m.name, level="model")
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
             if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                plt.plot(df.index.values, y, lw=2, marker="o", label=m.acronym)
+                plt.plot(df.index.values, y, lw=2, marker="o", label=m.name)
             else:
                 plt.plot(df.index.values, y, lw=2, marker="o")
-                plt.errorbar(df.index.values, y, std, lw=1, marker="o", label=m.acronym)
+                plt.errorbar(df.index.values, y, std, lw=1, marker="o", label=m.name)
                 plt.fill_between(df.index.values, y + std, y - std, alpha=0.3)
 
         range_ = self._results.index.get_level_values("n_models")
@@ -2701,7 +2701,7 @@ class TrainSizingPlotter(BaseModelPlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: Union[None, str, Sequence[str]] = None,
+        models: Optional[Union[str, ARRAY_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2735,7 +2735,7 @@ class TrainSizingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, "results")
-        models = self._get_models(models)
+        models = self._get_subclass(models)
         metric = self._get_metric(metric)
         if hasattr(self, "trainer"):
             trainer = self.trainer.__class__.__name__
@@ -2750,15 +2750,15 @@ class TrainSizingPlotter(BaseModelPlotter):
         plt.subplots(figsize=figsize)
         for m in models:
             # Make df with rows for only that model
-            df = self._results.xs(m.acronym, level="model")
+            df = self._results.xs(m.name, level="model")
             x = np.multiply(df.index.values, len(self.train))
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
             if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                plt.plot(x, y, lw=2, marker="o", label=m.acronym)
+                plt.plot(x, y, lw=2, marker="o", label=m.name)
             else:
                 plt.plot(x, y, lw=2, marker="o")
-                plt.errorbar(x, y, std, lw=1, marker="o", label=m.acronym)
+                plt.errorbar(x, y, std, lw=1, marker="o", label=m.name)
                 plt.fill_between(x, y + std, y - std, alpha=0.3)
 
         plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
@@ -2836,6 +2836,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
     @composed(crash, typechecked)
     def plot_pipeline(
         self,
+        pipeline: Optional[str] = None,
         show_params: bool = True,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
@@ -2846,6 +2847,10 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
 
         Parameters
         ----------
+        pipeline: str, optional (default=None)
+            Name of the pipeline to plot. If None, plot the current
+            active pipeline.
+
         show_params: bool, optional (default=True)
             Whether to show the parameters used for every estimator.
 
@@ -2863,10 +2868,18 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
             Whether to render the plot.
 
         """
+        if not pipeline:
+            pipeline = self._pipe
+        elif pipeline not in self._branches:
+            raise ValueError(
+                "Invalid value for the pipeline parameter. Unknown pipeline,"
+                f" got {pipeline}. Choose from: {', '.join(self._branches)}."
+            )
+
         # Calculate figure's limits
         params = []
         ylim = 30
-        for est in self.pipeline:
+        for est in self._branches[pipeline].estimators:
             ylim += 15
             if show_params:
                 params.append([
@@ -2894,7 +2907,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         pos_param = ylim - 20
         pos_estimator = pos_param
 
-        for i, est in enumerate(self.pipeline):
+        for i, est in enumerate(self._branches[pipeline].estimators):
             plt.annotate(
                 text=est.__class__.__name__,
                 xy=(15, pos_estimator),

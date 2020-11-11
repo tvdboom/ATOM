@@ -34,12 +34,20 @@ def test_models_get_right_name():
     assert trainer.models == ["LR", "ET", "CatB"]
 
 
+def test_multiple_same_models():
+    """Assert that the same model can used with different name."""
+    trainer = TrainerClassifier(["lr", "lr2", "lr_3"], random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.models == ["LR", "LR2", "LR_3"]
+
+
 def test_creation_model_subclasses():
     """Assert that the model subclasses are created correctly."""
-    trainer = TrainerClassifier(["LR", "LDA"], random_state=1)
+    trainer = TrainerClassifier(["LR", "LDA", "LR3"], random_state=1)
     trainer.run(bin_train, bin_test)
     assert hasattr(trainer, "LR") and hasattr(trainer, "lr")
     assert hasattr(trainer, "LDA") and hasattr(trainer, "lda")
+    assert hasattr(trainer, "LR3") and hasattr(trainer, "lr3")
 
 
 def test_duplicate_models():
@@ -233,7 +241,7 @@ def test_data_already_set():
     trainer.run(bin_train, bin_test)
     trainer.run()
     assert trainer.dataset.equals(dataset)
-    assert trainer._idx == [len(bin_train), len(bin_test)]
+    assert trainer.pipeline.idx == [len(bin_train), len(bin_test)]
 
 
 def test_new_scaler():

@@ -301,7 +301,8 @@ class BaseTransformer(object):
 
         else:
             raise ValueError(
-                "Invalid data arrays. See the documentation for the allowed formats.")
+                "Invalid data arrays. See the documentation for the allowed formats."
+            )
 
         return data, idx
 
@@ -344,11 +345,11 @@ class BaseTransformer(object):
                                Only for `training` instances.
 
         """
-        if kwargs.get("save_data") is False and hasattr(self, "_data"):
-            data = self._data.copy()  # Store the data to reattach later
-            self._data = None
-            if getattr(self, "trainer", None):
-                self.trainer._data = None
+        if kwargs.get("save_data") is False and hasattr(self, "dataset"):
+            data = {}  # Store the data to reattach later
+            for key, value in self._branches.items():
+                data[key] = deepcopy(value.data)
+                value.data = None
 
         if not filename:
             filename = self.__class__.__name__
@@ -358,7 +359,9 @@ class BaseTransformer(object):
         with open(filename, "wb") as file:
             pickle.dump(self, file)
 
-        if kwargs.get("save_data") is False and hasattr(self, "_data"):
-            self._data = data
+        # Restore the data to the attributes
+        if kwargs.get("save_data") is False and hasattr(self, "dataset"):
+            for key, value in self._branches.items():
+                value.data = data[key]
 
         self.log(self.__class__.__name__ + " saved successfully!", 1)

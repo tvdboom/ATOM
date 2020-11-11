@@ -14,11 +14,18 @@ import numpy as np
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.training import TrainerClassifier
+from atom.pipeline import Pipeline
 from atom.utils import NotFittedError
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
 # Test utility properties =================================================== >>
+
+def test_pipeline_property():
+    """Assert that the pipeline property returns the current pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom.pipeline, Pipeline)
+
 
 def test_metric_property():
     """Assert that the metric property returns the metric names."""
@@ -104,7 +111,7 @@ def test_n_classes_property():
 def test_dataset_property():
     """Assert that the dataset property returns the _data attribute."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.dataset is atom._data
+    assert atom.dataset is atom.pipeline.data
 
 
 def test_train_property():
@@ -206,7 +213,7 @@ def test_score_method_sample_weights():
     """Assert that the score method works with sample weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    score = atom.score(X_bin, y_bin, sample_weight=atom.get_sample_weight("dataset"))
+    score = atom.score(X_bin, y_bin, sample_weight=list(range(len(y_bin))))
     assert isinstance(score, float)
 
 
@@ -224,20 +231,6 @@ def test_class_weights_method(dataset):
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     class_weight = atom.get_class_weight(dataset)
     assert list(class_weight.keys()) == [0, 1, 2]
-
-
-def test_sample_weights_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_sample_weight, "invalid")
-
-
-@pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
-def test_sample_weights_method(dataset):
-    """Assert that the get_sample_weight method returns a list of the weights."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    sample_weight = atom.get_sample_weight(dataset)
-    assert isinstance(sample_weight, list)
 
 
 def test_calibrate_method():
@@ -300,7 +293,7 @@ def test_models_is_str():
     """Assert that a single model is cleared."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
-    atom.clear("LDA")
+    atom.clear("lda")
     assert atom.models == ["LR"]
     assert atom.winner is atom.LR
     assert len(atom.results) == 1

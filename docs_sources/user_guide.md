@@ -62,7 +62,7 @@ In this documentation we will consistently use terms to refer to certain concept
  [ATOMRegressor](../API/ATOM/atomregressor) instance (note that all examples
  use it as variable name for the instance).
 * `model`: Refers to one of the [model](#models) instances.
-* **pipeline**: Refers to the collection of data cleaning, feature engineering and training steps performed by `atom`.
+* **pipeline**: Refers to the collection of data cleaning, feature engineering and training steps performed by `atom` for a specific dataset.
 * **missing values**: Refers to the values in the `missing` attribute.
 * **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
 * **estimator**: Actual estimator corresponding to a model. Implemented by an external package.
@@ -134,6 +134,16 @@ Analyze the results:
 
     atom.feature_importances(show=10, filename="feature_importance_plot")
     atom.plot_prc(title="Precision-recall curve comparison plot")
+
+
+<br><br>
+# Data pipelines
+----------------
+
+
+
+
+
 
 
 <br><br>
@@ -503,8 +513,8 @@ atom.run(models=Lars)
 
 Additional things to take into account:
 
-* Custom models are not restricted to sklearn estimators. Every class implementing
-  a fit and predict method can be used!
+* Custom models are not restricted to sklearn estimators, but they should follow
+  sklearn's API, i.e. have a fit and predict method.
 * [Parameter customization](#parameter-customization) (for the initializer) is only
   possible for custom models which provide an estimator's class or an instance that
   has a `set_params()` method, i.e. its a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
@@ -589,22 +599,34 @@ atom = ATOMClassifier(X, y)
 atom.successive_halving(["Tree", "Bag"])
 atom.run("LGB") 
 ```
-In this case, both the Ridge and Lasso regressors are kept in the pipeline.
+In this case, both the Ridge and Lasso regressors are kept in the pipeline. Note that
+ reruns are only allowed if the same metric is used. Leaving the `metric` parameter
+ empty after the first run will automatically use the one in the pipeline.
+
 ```python
 atom = ATOMRegressor(X, y)
-atom.run("Ridge")
+atom.run("Ridge", metric="MSE")
 atom.run("Lasso")
 ```
 
-!!!note
-    Reruns are only allowed if the same metric is used. Leaving the `metric` parameter
-    empty after the first run will automatically use the one in the pipeline.
+
+Models are called through their [acronyms](#models), e.g. `atom.run(models="RF")`
+ will train a [Random Forest](../API/models/rf). If you want to run the same
+ model multiple times, add a tag after the acronym to differentiate them.
+
+```Python
+atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2": {"n_estimators": 200}}) 
+```
+
+For example, this pipeline will fit two Random Forest models, one with 100 and
+ the other with 200 decision trees. The `models` can be accessed through
+ `atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
+ performs when fitted with different parameters or on different data sets. Click
+ [here](../examples/imbalanced_datasets/imbalanced_datasets) for an example.
 
 
 Additional things to take into account:
 
-* Models are called through their [acronyms](#models), e.g. `atom.run(models="RF")`
-  will train a Random Forest.
 * If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
   in the `errors` attribute. Note that in that case there will be no `model` for
@@ -692,19 +714,25 @@ Adding the parameters directly to `est_params` will share them across all models
  will use n_estimators=200. Make sure all the models do have the specified parameters
  or an exception will be raised!
 
-    atom.run(["XGB", "LGB"], est_params={"n_estimators": 200})
+```Python
+atom.run(["XGB", "LGB"], est_params={"n_estimators": 200})
+```
 
 To specify parameters per model, use the model name as key and a dict of the
  parameters as value. In this example, the XGBoost model will use n_estimators=200
  and the Multi-layer Perceptron will use one hidden layer with 75 neurons.
 
-    atom.run(["XGB", "MLP"], est_params={"XGB": {"n_estimators": 200}, "MLP": {"hidden_layer_sizes": (75,)}})
+```Python
+atom.run(["XGB", "MLP"], est_params={"XGB": {"n_estimators": 200}, "MLP": {"hidden_layer_sizes": (75,)}})
+```
 
 Some estimators allow you to pass extra parameters to the fit method (besides X and y).
  This can be done adding `_fit` at the end of the parameter. For example, to change
  XGBoost's verbosity, we can run:
 
-    atom.run("XGB", est_params={"verbose_fit": True}
+```Python
+atom.run("XGB", est_params={"verbose_fit": True}
+```
 
 !!!note
     If a parameter is specified through `est_params`, it will be ignored by the
@@ -754,16 +782,22 @@ By default, the hyperparameters and corresponding dimensions per model are prede
  names as keys to specify the dimensions for every individual model. Note that the
  provided search space dimensions must be compliant with skopt's API.
 
-    atom.run("LR", n_calls=10, bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]})
+```Python
+atom.run("LR", n_calls=10, bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]})
+```
 
 The majority of skopt's callbacks to stop the optimizer early can be accessed
  through `bo_params`. You can include other callbacks using the `callbacks` key.
-  
-    atom.run("LR", n_calls=10, bo_params={"max_time": 1000, "callbacks": custom_callback()})
+
+```Python
+atom.run("LR", n_calls=10, bo_params={"max_time": 1000, "callbacks": custom_callback()})
+```
 
 You can also include other optimizer's parameters as key-value pairs.
 
-    atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
+```Python
+atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
+```
 
 
 <br>
@@ -822,12 +856,13 @@ Successive halving is a bandit-based algorithm that fits N models to 1/N of the 
  Beware that a model's performance can depend greatly on the amount of data on which
  it is trained. For this reason, we recommend only to use this technique with similar
  models, e.g. only using tree-based models.
- 
+
 Use successive halving through the [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)/
  [SuccessiveHalvingRegressor](../API/training/successivehalvingregressor) classes
  or from `atom` via the [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
  method. After running the pipeline, the `results` attribute will be multi-index,
- where the first index indicates the iteration and the second the model's acronym.
+ where the first index indicates the number of models (N) in the iteration and the
+ second the model's acronym.
 
 !!!tip
     Use the [plot_successive_halving](../API/plots/plot_successive_halving) method to
@@ -848,8 +883,8 @@ Use train sizing through the [TrainSizingClassifier](../API/training/trainsizing
  via the [train_sizing](../API/ATOM/atomclassifier/#train-sizing)
  method. The number of iterations and the number of samples per training can be
  specified with the `train_sizes` parameter. After running the pipeline, the `results`
- attribute will be multi-index, where the first index indicates the iteration and the
- second the model's acronym.
+ attribute will be multi-index, where the first index indicates the fraction of rows
+ in the training set and the second the model's acronym.
 
 !!!tip
     Use the [plot_learning_curve](../API/plots/plot_learning_curve) method to see

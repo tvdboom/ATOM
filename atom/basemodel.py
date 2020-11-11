@@ -461,8 +461,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Get custom dimensions (if provided)
         dimensions = None
         if bo_params.get("dimensions"):
-            if bo_params["dimensions"].get(self.acronym):
-                dimensions = bo_params.get("dimensions")[self.acronym]
+            if bo_params["dimensions"].get(self.name):
+                dimensions = bo_params.get("dimensions")[self.name]
 
                 @use_named_args(dimensions)
                 def custom_hyperparameters(**x):
@@ -713,10 +713,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             )
 
         # When there is a pipeline, apply all data transformations first
-        if hasattr(self, "pipeline"):
+        if hasattr(self, "_est_pipeline"):
             if kwargs.get("verbose") is None:
                 kwargs["verbose"] = self.T.verbose
-            X, y = catch_return(transform(self.pipeline, X, y, **kwargs))
+            X, y = catch_return(transform(self._est_pipeline, X, y, **kwargs))
 
         # Scale the data if needed
         if self.needs_scaling and not check_scaling(X):
@@ -819,27 +819,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     @property
     def score_train(self):
         if self._score_train is None:
-            samples_as_list = list(self._est_params_fit.get("sample_weight", []))
-            if samples_as_list == self.T.get_sample_weight():
-                sample_weight = self._est_params_fit.get("sample_weight")
-            else:
-                sample_weight = None
-            self._score_train = self.estimator.score(
-                arr(self.X_train), self.y_train, sample_weight=sample_weight
-            )
+            self._score_train = self.estimator.score(arr(self.X_train), self.y_train)
         return self._score_train
 
     @property
     def score_test(self):
         if self._score_test is None:
-            samples_as_list = list(self._est_params_fit.get("sample_weight", []))
-            if samples_as_list == self.T.get_sample_weight():
-                sample_weight = self.T.get_sample_weight("test")
-            else:
-                sample_weight = None
-            self._score_test = self.estimator.score(
-                arr(self.X_test), self.y_test, sample_weight=sample_weight
-            )
+            self._score_test = self.estimator.score(arr(self.X_test), self.y_test)
         return self._score_test
 
     # Properties ==================================================== >>
@@ -973,11 +959,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 "The calibrate method is only available for classification tasks!"
             )
 
-        cal = CalibratedClassifierCV(self.estimator, **kwargs)
+        calibrator = CalibratedClassifierCV(self.estimator, **kwargs)
         if kwargs.get("cv") != "prefit":
-            self.estimator = cal.fit(self.X_train, self.y_train)
+            self.estimator = calibrator.fit(self.X_train, self.y_train)
         else:
-            self.estimator = cal.fit(self.X_test, self.y_test)
+            self.estimator = calibrator.fit(self.X_test, self.y_test)
 
         # Reset all prediction properties since we changed the model attribute
         self.reset_prediction_attributes()

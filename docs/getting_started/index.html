@@ -555,40 +555,41 @@
 <p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
 </div>
 <p>Intall ATOM's newest release easily via <code>pip</code>:</p>
-<pre><code class="Python">    $ pip install -U atom-ml
+<pre><code>$ pip install -U atom-ml
 </code></pre>
-
 <p>or via <code>conda</code>:</p>
-<pre><code class="Python">    $ conda install -c conda-forge atom-ml
+<pre><code>$ conda install -c conda-forge atom-ml
 </code></pre>
-
 <p><br><br></p>
 <h1 id="usage">Usage</h1>
 <hr />
 <p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:  </p>
-<pre><code>from sklearn.datasets import load_breast_cancer
+<pre><code class="Python">from sklearn.datasets import load_breast_cancer
 from atom import ATOMClassifier
 
 X, y = load_breast_cancer(return_X_y)
-atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+atom = ATOMClassifier(X, y, logger=&quot;auto&quot;, n_jobs=2, verbose=2)
 </code></pre>
+
 <p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<pre><code>atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
-atom.encode(strategy="Target", max_onehot=8, frac_to_other=0.05)  
-atom.feature_selection(strategy="PCA", n_features=12)
+<pre><code class="Python">atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)  
+atom.encode(strategy=&quot;Target&quot;, max_onehot=8, frac_to_other=0.05)  
+atom.feature_selection(strategy=&quot;PCA&quot;, n_features=12)
 </code></pre>
+
 <p>Train and evaluate the models you want to compare:</p>
-<pre><code>atom.run(
-    models=["LR", "LDA", "XGB", "lSVM"],
-    metric="f1",
+<pre><code class="Python">atom.run(
+    models=[&quot;LR&quot;, &quot;LDA&quot;, &quot;XGB&quot;, &quot;lSVM&quot;],
+    metric=&quot;f1&quot;,
     n_calls=25,
     n_initial_points=10,
     bagging=4
 )
 </code></pre>
+
 <p>Make plots to analyze the results: </p>
-<pre><code>atom.plot_bagging(figsize=(9, 6), filename="bagging_results.png")  
-atom.LDA.plot_confusion_matrix(normalize=True, filename="cm.png")
+<pre><code class="Python">atom.plot_bagging(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
+atom.LDA.plot_confusion_matrix(normalize=True, filename=&quot;cm.png&quot;)
 </code></pre></div>
             </div>
         </div>

@@ -66,6 +66,10 @@ class BaseCleaner(object):
 class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
     """Scale data to mean=0 and std=1.
 
+    This class is equal to sklearn's StandardScaler except that it
+    returns a dataframe when provided and it ignores non-numerical
+    columns (instead of raising an exception).
+
     Parameters
     ----------
     verbose: int, optional (default=0)
@@ -111,7 +115,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         """
         X, y = self._prepare_input(X, y)
-        self.standard_scaler = StandardScaler().fit(X)
+        self.standard_scaler = StandardScaler().fit(X.select_dtypes(include="number"))
 
         return self
 
@@ -137,7 +141,14 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
-        return to_df(self.standard_scaler.transform(X), X.index, X.columns)
+        X_numerical = X.select_dtypes(include="number")
+        X_transformed = self.standard_scaler.transform(X_numerical)
+
+        # Replace the numerical columns with the transformed values
+        for i, col in enumerate(X_numerical):
+            X[col] = X_transformed[:, i]
+
+        return X
 
 
 class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):

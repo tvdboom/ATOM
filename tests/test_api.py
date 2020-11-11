@@ -129,17 +129,7 @@ def test_verbose_is_reset():
     atom.save(FILE_DIR + "atom", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), verbose=2)
-    assert atom2.pipeline[0].get_params()["verbose"] == 0
-
-
-def test_trainer_gets_data():
-    """Assert that the trainer gets ATOM"S data."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    atom.save(FILE_DIR + "atom", save_data=False)
-
-    atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin))
-    assert atom2.trainer._data is atom2._data
+    assert atom2.pipeline.estimators[0].get_params()["verbose"] == 0
 
 
 # Test ATOMClassifier ======================================================= >>

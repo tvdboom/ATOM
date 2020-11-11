@@ -16,7 +16,7 @@ from typeguard import typechecked
 # Own modules
 from .utils import (
     ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide, check_is_fitted,
-    get_best_score, get_model_acronym, clear, method_to_log, composed, crash,
+    get_best_score, clear, method_to_log, composed, crash,
 )
 
 
@@ -24,6 +24,10 @@ class BasePredictor(object):
     """Properties and shared methods for the training classes."""
 
     # Utility properties =================================================== >>
+
+    @property
+    def pipeline(self):
+        return self._branches[self._pipe]
 
     @property
     def metric(self):
@@ -56,23 +60,23 @@ class BasePredictor(object):
 
     @property
     def dataset(self):
-        return self._data
+        return self.pipeline.data
 
     @property
     def train(self):
-        return self._data[:self._idx[0]]
+        return self.pipeline.data[:self.pipeline.idx[0]]
 
     @property
     def test(self):
-        return self._data[-self._idx[1]:]
+        return self.pipeline.data[-self.pipeline.idx[1]:]
 
     @property
     def X(self):
-        return self._data.drop(self.target, axis=1)
+        return self.pipeline.data.drop(self.target, axis=1)
 
     @property
     def y(self):
-        return self._data[self.target]
+        return self.pipeline.data[self.target]
 
     @property
     def X_train(self):
@@ -92,15 +96,19 @@ class BasePredictor(object):
 
     @property
     def shape(self):
-        return self._data.shape
+        return self.pipeline.data.shape
 
     @property
     def columns(self):
-        return list(self._data.columns)
+        return list(self.pipeline.data.columns)
 
     @property
     def target(self):
         return self.columns[-1]
+
+    @property
+    def mapping(self):
+        return self.pipeline.mapping
 
     @property
     def classes(self):
@@ -150,11 +158,22 @@ class BasePredictor(object):
         sample_weight: Optional[Union[ARRAY_TYPES]] = None,
         **kwargs,
     ):
-        """Get the score function on new data."""
+        """Get the score output on new data."""
         check_is_fitted(self, "results")
         return self.winner.score(X, y, sample_weight, **kwargs)
 
     # Utility methods ====================================================== >>
+
+    def _get_model(self, model):
+        """Return the model's name given."""
+        for name in self.models:
+            if model.lower() == name.lower():
+                return name
+
+        raise ValueError(
+            f"Model {model} not found in the pipeline! Available "
+            f"models are: {', '.join(self.models)}."
+        )
 
     @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train"):
@@ -179,36 +198,7 @@ class BasePredictor(object):
             )
 
         y = self.classes[dataset]
-        return {idx: divide(sum(y), value) for idx, value in y.iteritems()}
-
-    @composed(crash, typechecked)
-    def get_sample_weight(self, dataset: str = "train"):
-        """Return sample weights for a balanced data set.
-
-        Statistically, the sampling weights re-balance the data set so that the
-        sampled data set represents the target population as closely as reasonably
-        possible. The returned weights are the reciprocal of the likelihood of
-        being sampled (i.e. selection probability) of the sampling unit.
-
-        Parameters
-        ----------
-        dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between "train",
-            "test" or "dataset".
-
-        """
-        if dataset in ("train", "test"):
-            y = getattr(self, f"y_{dataset}")
-        elif dataset.lower() == "dataset":
-            y = self.y
-        else:
-            raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'dataset'."
-            )
-
-        classes = self.classes  # Get classes to not recalculate in loop
-        return [divide((len(y)), classes.at[value, dataset]) for value in y]
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
 
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
@@ -277,7 +267,7 @@ class BasePredictor(object):
 
     @composed(crash, method_to_log, typechecked)
     def clear(self, models: Union[str, Sequence[str]] = "all"):
-        """Clear models from the trainer.
+        """Clear models from the pipeline.
 
         Removes all traces of a model in the pipeline (except for the `errors`
         attribute). If all models in the pipeline are removed, the metric is reset.
@@ -292,21 +282,15 @@ class BasePredictor(object):
         """
         # Prepare the models parameter
         if models == "all":
-            keyword = "Pipeline"
+            keyword = "All models were"
             models = self.models.copy()
         elif isinstance(models, str):
-            models = [get_model_acronym(models, self.models)]
+            models = [self._get_model(models)]
             keyword = "Model " + models[0]
         else:
-            models = [get_model_acronym(m, self.models) for m in models]
+            models = [self._get_model(m) for m in models]
             keyword = "Models " + ", ".join(models) + " were"
 
         clear(self, models)
-
-        # If called from atom, clear also all traces from the trainer
-        if hasattr(self, "trainer"):
-            clear(self.trainer, [m for m in models if m in self.trainer.models])
-            if not self.models:
-                self.trainer = None
 
         self.log(f"{keyword} cleared successfully!", 1)

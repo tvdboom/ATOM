@@ -60,28 +60,18 @@ def test_y_is_ignored():
     assert X.equals(X_2)
 
 
-def test_return_df():
-    """Assert that a pd.DataFrame is returned, not a np.array."""
-    X = Scaler().fit_transform(X_bin)
-    assert isinstance(X, pd.DataFrame)
-
-
-def test_return_correct_columns():
-    """Assert that the returned dataframe has the original columns."""
-    X = Scaler().fit_transform(X_bin)
-    assert list(X.columns) == list(X_bin.columns)
-
-
-def test_return_correct_index():
-    """Assert that the returned dataframe has the original indices."""
-    X = Scaler().fit_transform(X_bin)
-    assert list(X.index) == list(X_bin.index)
-
-
 def test_return_scaled_dataset():
     """Assert that the returned dataframe is indeed scaled."""
     X = Scaler().fit_transform(X_bin)
     assert check_scaling(X)
+
+
+def test_ignores_categorical_columns():
+    """Assert that non-numerical columns are ignored."""
+    X = X_bin.copy()
+    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
+    X = Scaler().fit_transform(X)
+    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
 
 
 # Test Cleaner ============================================================= >>
@@ -482,3 +472,17 @@ def test_sampling_multiclass(sampling):
     """Assert that the oversampling method works for multiclass tasks."""
     X, y = Balancer(sampling_strategy=sampling).transform(X_class, y_class)
     assert (y == 2).sum() != (y_class == 2).sum()
+
+
+def test_return_pandas():
+    """Assert that pandas objects are returned, not np.array."""
+    X, y = Balancer().transform(X_bin, y_bin)
+    assert isinstance(X, pd.DataFrame)
+    assert isinstance(y, pd.Series)
+
+
+def test_return_correct_column_names():
+    """Assert that the returned objects have the original column names."""
+    X, y = Balancer().transform(X_bin, y_bin)
+    assert list(X.columns) == list(X_bin.columns)
+    assert y.name == y_bin.name

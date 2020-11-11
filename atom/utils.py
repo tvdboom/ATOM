@@ -72,9 +72,8 @@ from matplotlib.gridspec import GridSpec
 # Global constants ========================================================== >>
 
 # Variable types
-CAL = Union[str, callable]
 SCALAR = Union[int, float]
-ARRAY_TYPES = (list, tuple, np.ndarray, pd.Series)  # Note tuple to use in isinstance
+ARRAY_TYPES = Union[list, tuple, np.ndarray, pd.Series]
 X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
 Y_TYPES = Union[int, str, Union[ARRAY_TYPES]]
 TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
@@ -524,19 +523,13 @@ def fit_init(est_params, fit=False):
         return {k: v for k, v in est_params.items() if not k.endswith("_fit")}
 
 
-def get_model_acronym(model, models_in_pipeline=[]):
+def get_acronym(model):
     """Get the right model acronym.
-
-    If a list of the models in the pipeline is given, search there.
-    If not, Search between all ATOM's predefined models.
 
     Parameters
     ----------
     model: str
         Acronym of the model, case insensitive.
-
-    models_in_pipeline: list, optional (default=[])
-        List of models in the pipeline.
 
     Returns
     -------
@@ -544,31 +537,17 @@ def get_model_acronym(model, models_in_pipeline=[]):
         Correct model name acronym as present in the MODEL_LIST constant.
 
     """
-    if models_in_pipeline:
-        if model in models_in_pipeline:  # If written correctly, return as is
-            return model
-        else:
-            for acronym in models_in_pipeline:
-                if model.lower() == acronym.lower():
-                    return acronym
+    # Not imported on top of file because of module interconnection
+    from .models import MODEL_LIST
 
-        raise ValueError(
-            f"Model {model} not found in the pipeline! Available "
-            f"models are: {', '.join(models_in_pipeline)}."
-        )
+    model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
+    for acronym in model_list:
+        if model.lower() == acronym.lower():
+            return acronym
 
-    else:
-        # Not imported on top of file because of module interconnection
-        from .models import MODEL_LIST
-
-        model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
-        for acronym in model_list:
-            if model.lower() == acronym.lower():
-                return acronym
-
-        raise ValueError(
-            f"Unknown model: {model}! Choose from: {', '.join(model_list)}."
-        )
+    raise ValueError(
+        f"Unknown model: {model}! Choose from: {', '.join(model_list)}."
+    )
 
 
 def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
@@ -730,7 +709,7 @@ def partial_dependence(estimator, X, features):
 
 # Functions shared by classes =============================================== >>
 
-def transform(pl, X, y, verbose, **kwargs):
+def transform(est_pipeline, X, y, verbose, **kwargs):
     """Transform new data through all the pre-processing steps in the pipeline.
 
     The outliers and balance transformations are not included by default since they
@@ -738,8 +717,8 @@ def transform(pl, X, y, verbose, **kwargs):
 
     Parameters
     ----------
-    pl: pd.Series
-        Pipeline of the ATOM instance.
+    est_pipeline: pd.Series
+        Estimators in the pipeline of an `atom` instance.
 
     X: dict, sequence, np.array or pd.DataFrame
         Data containing the features, with shape=(n_samples, n_features).
@@ -795,8 +774,8 @@ def transform(pl, X, y, verbose, **kwargs):
             else:
                 kwargs[value] = kwargs.pop(key)
 
-    # Loop over classes in pipeline with a transform method (exclude trainers)
-    transformers = [est for est in pl if hasattr(est, "transform")]
+    # Loop over the estimators with a transform method (exclude trainers)
+    transformers = [est for est in est_pipeline if hasattr(est, "transform")]
     for i, estimator in enumerate(transformers):
         class_name = estimator.__class__.__name__
         if i in kwargs.get("pipeline", []) or kwargs.get(class_name):
@@ -827,20 +806,17 @@ def clear(self, models):
 
     """
     for model in models:
-        if model not in self.models:
-            raise ValueError(f"Model {model} not found in pipeline!")
+        self.models.remove(model)
+
+        if isinstance(self._results.index, pd.MultiIndex):
+            self._results = self._results.iloc[
+                ~self._results.index.get_level_values(1).str.contains(model)
+            ]
         else:
-            self.models.remove(model)
+            self._results.drop(model, axis=0, inplace=True, errors="ignore")
 
-            if isinstance(self._results.index, pd.MultiIndex):
-                self._results = self._results.iloc[
-                    ~self._results.index.get_level_values(1).str.contains(model)
-                ]
-            else:
-                self._results.drop(model, axis=0, inplace=True, errors="ignore")
-
-            if not self.models:  # No more models in the pipeline
-                self.metric_ = []
+        if not self.models:  # No more models in the pipeline
+            self.metric_ = []
 
         delattr(self, model)
         delattr(self, model.lower())

@@ -556,6 +556,10 @@
               <ul class="nav flex-column">
               </ul>
             </li>
+            <li class="nav-item" data-level="2"><a href="#analyze-results" class="nav-link">Analyze results</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
               </ul>
             </li>
         </ul>
@@ -610,59 +614,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>53132</th>
-      <td>MountGinini</td>
-      <td>12.2</td>
-      <td>24.9</td>
+      <th>116787</th>
+      <td>PerthAirport</td>
+      <td>15.1</td>
+      <td>39.2</td>
+      <td>0.0</td>
+      <td>11.6</td>
+      <td>13.2</td>
+      <td>E</td>
+      <td>48.0</td>
+    </tr>
+    <tr>
+      <th>124452</th>
+      <td>Walpole</td>
+      <td>9.1</td>
+      <td>22.7</td>
       <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>NW</td>
-      <td>30.0</td>
+      <td>NNE</td>
+      <td>41.0</td>
     </tr>
     <tr>
-      <th>141064</th>
-      <td>Uluru</td>
-      <td>12.6</td>
-      <td>26.5</td>
-      <td>0.0</td>
-      <td>NaN</td>
-      <td>NaN</td>
-      <td>SSE</td>
-      <td>44.0</td>
-    </tr>
-    <tr>
-      <th>26116</th>
-      <td>Penrith</td>
-      <td>11.1</td>
-      <td>28.8</td>
+      <th>5086</th>
+      <td>BadgerysCreek</td>
+      <td>12.5</td>
+      <td>28.4</td>
       <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
       <td>ESE</td>
-      <td>33.0</td>
+      <td>30.0</td>
     </tr>
     <tr>
-      <th>62930</th>
-      <td>MelbourneAirport</td>
-      <td>5.6</td>
-      <td>12.5</td>
-      <td>1.4</td>
-      <td>1.2</td>
-      <td>2.0</td>
-      <td>N</td>
-      <td>37.0</td>
+      <th>77899</th>
+      <td>Watsonia</td>
+      <td>16.5</td>
+      <td>26.3</td>
+      <td>0.0</td>
+      <td>10.6</td>
+      <td>12.4</td>
+      <td>WSW</td>
+      <td>43.0</td>
     </tr>
     <tr>
-      <th>64081</th>
-      <td>MelbourneAirport</td>
-      <td>4.5</td>
-      <td>14.5</td>
-      <td>3.4</td>
-      <td>2.0</td>
-      <td>2.3</td>
-      <td>SW</td>
-      <td>35.0</td>
+      <th>124901</th>
+      <td>Walpole</td>
+      <td>13.1</td>
+      <td>22.9</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>SSE</td>
+      <td>39.0</td>
     </tr>
   </tbody>
 </table>
@@ -725,7 +729,7 @@ Encoding categorical columns...
  --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
 </code></pre>
 <pre><code class="python"># First, we fit a logistic regression model directly on the imbalanced data
-atom.run(&quot;LR&quot;, metric=&quot;f1&quot;)
+atom.run(&quot;LR&quot;, metric=&quot;f1&quot;, bagging=5)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
@@ -738,62 +742,71 @@ Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6174
 Test evaluation --&gt; f1: 0.6096
 Time elapsed: 0.078s
+Bagging -----------------------------------------
+Evaluation --&gt; f1: 0.6078 ± 0.0048
+Time elapsed: 0.342s
 -------------------------------------------------
-Total time: 0.085s
+Total time: 0.430s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.087s
+Duration: 0.432s
 ------------------------------------------
-Logistic Regression --&gt; f1: 0.610
+Logistic Regression --&gt; f1: 0.608 ± 0.005
 </code></pre>
 <h2 id="use-weighted-classes">Use weighted classes</h2>
 <pre><code class="python"># Add the class weights through the est_params parameter
-atom.run(&quot;LR&quot;, metric=&quot;f1&quot;, est_params={&quot;class_weight&quot;: atom.get_class_weight()})
+atom.run(&quot;LR_cw&quot;, est_params={&quot;class_weight&quot;: atom.get_class_weight()}, bagging=5)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
-Models: LR
+Models: LR_cw
 Metric: f1
 
 
 Results for Logistic Regression:         
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6449
-Test evaluation --&gt; f1: 0.6472
-Time elapsed: 0.081s
+Train evaluation --&gt; f1: 0.6174
+Test evaluation --&gt; f1: 0.6096
+Time elapsed: 0.078s
+Bagging -----------------------------------------
+Evaluation --&gt; f1: 0.6078 ± 0.0048
+Time elapsed: 0.338s
 -------------------------------------------------
-Total time: 0.087s
+Total time: 0.422s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.089s
+Duration: 0.422s
 ------------------------------------------
-Logistic Regression --&gt; f1: 0.647
+Logistic Regression --&gt; f1: 0.608 ± 0.005
 </code></pre>
 <h2 id="use-sample-weights">Use sample weights</h2>
 <pre><code class="python"># Remember to add &quot;_fit&quot; to the est_params key to add the parameter to the fit method
-atom.run(&quot;LR&quot;, metric=&quot;f1&quot;, est_params={&quot;sample_weight_fit&quot;: atom.get_sample_weight()})
+atom.run(&quot;LR_sw&quot;, est_params={&quot;sample_weight_fit&quot;: atom.get_sample_weight()}, bagging=5)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
-Models: LR
+Models: LR_sw
 Metric: f1
 
 
 Results for Logistic Regression:         
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6449
-Test evaluation --&gt; f1: 0.6472
-Time elapsed: 0.080s
+Train evaluation --&gt; f1: 0.6174
+Test evaluation --&gt; f1: 0.6096
+Time elapsed: 0.076s
+Bagging -----------------------------------------
+Evaluation --&gt; f1: 0.6078 ± 0.0048
+Time elapsed: 0.343s
 -------------------------------------------------
-Total time: 0.087s
+Total time: 0.426s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.089s
+Duration: 0.427s
 ------------------------------------------
-Logistic Regression --&gt; f1: 0.647
+Logistic Regression --&gt; f1: 0.608 ± 0.005
 </code></pre>
 <h2 id="use-oversampling">Use oversampling</h2>
 <pre><code class="python"># Perform oversampling of the minority class
@@ -846,11 +859,11 @@ atom.balance(strategy='smote', sampling_strategy=0.9)
 </table>
 </div>
 
-<pre><code class="python">atom.run(&quot;LR&quot;, metric=&quot;f1&quot;)
+<pre><code class="python">atom.run(&quot;LR_os&quot;, bagging=5)
 </code></pre>
 
 <pre><code>Training ===================================== &gt;&gt;
-Models: LR
+Models: LR_os
 Metric: f1
 
 
@@ -858,16 +871,25 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.7918
 Test evaluation --&gt; f1: 0.6505
-Time elapsed: 0.101s
+Time elapsed: 0.093s
+Bagging -----------------------------------------
+Evaluation --&gt; f1: 0.6489 ± 0.0031
+Time elapsed: 0.400s
 -------------------------------------------------
-Total time: 0.110s
+Total time: 0.504s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.112s
+Duration: 0.505s
 ------------------------------------------
-Logistic Regression --&gt; f1: 0.650
-</code></pre></div>
+Logistic Regression --&gt; f1: 0.649 ± 0.003
+</code></pre>
+<h2 id="analyze-results">Analyze results</h2>
+<pre><code class="python"># Clearly, oversampling proves to be the best way to handle this imbalanced dataset
+atom.plot_bagging()
+</code></pre>
+
+<p><img alt="png" src="../output_16_0.png" /></p></div>
             </div>
         </div>
 

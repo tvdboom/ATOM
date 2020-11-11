@@ -161,7 +161,7 @@ def test_sample_weights_fit():
     atom.run(
         models="LGB",
         n_calls=5,
-        est_params={"sample_weight_fit": atom.get_sample_weight()},
+        est_params={"sample_weight_fit": list(range(len(atom.y_train)))},
     )
     assert not atom.errors
 
@@ -265,14 +265,6 @@ def test_all_prediction_properties():
     assert atom.sgd.decision_function_test is atom.sgd._dec_func_test
     assert atom.sgd.score_train is atom.sgd._score_train
     assert atom.sgd.score_test is atom.sgd._score_test
-
-
-def test_score_with_sample_weight():
-    """Assert that the score prediction property can use sample weights."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR", est_params={"sample_weight_fit": atom.get_sample_weight()})
-    assert atom.lr.score_train != atom.lr.score(atom.X_train, atom.y_train)
-    assert atom.lr.score_test != atom.lr.score(atom.X_test, atom.y_test)
 
 
 def test_results_property():

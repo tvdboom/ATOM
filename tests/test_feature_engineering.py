@@ -257,6 +257,12 @@ def test_SFM_strategy_not_threshold():
     assert X.shape[1] == 16
 
 
+def test_SFM_invalid_solver():
+    """Assert that an error is raised when solver is invalid."""
+    fs = FeatureSelector(strategy="SFM", solver="invalid", n_features=5)
+    pytest.raises(ValueError, fs.fit_transform, X_bin, y_bin)
+
+
 def test_SFM_strategy_fitted_solver():
     """Assert that the SFM strategy works when the solver is already fitted."""
     fs = FeatureSelector(

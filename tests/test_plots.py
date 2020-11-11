@@ -105,6 +105,7 @@ def test_plot_pipeline(show_params):
     atom.outliers()
     atom.feature_selection("PCA", n_features=10)
     atom.successive_halving(["Tree", "AdaB"])
+    pytest.raises(ValueError, atom.plot_pipeline, pipeline="invalid")
     atom.plot_pipeline(
         show_params=show_params,
         filename=FILE_DIR + f"pipeline_{show_params}",

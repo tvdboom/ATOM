@@ -91,8 +91,7 @@ Example steps taken by ATOM's pipeline:
 
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
 * Compatibility with [deep learning](./user_guide/#deep-learning) models.
-* New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) and
-  [get_sample_weight](./API/ATOM/atomclassifier#get-sample-weight) utility methods.
+* New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
 * The `n_rows` parameter in [ATOMLoader](./API/ATOM/atomloader) is deprecated in
@@ -102,7 +101,7 @@ Example steps taken by ATOM's pipeline:
 * The class property now returns a pd.DataFrame of the number of rows per target class
   in the train, test and complete dataset.
 * Possibility to add custom parameters to an estimator's fit method through `est_params`.
-* [Successive halving](./user_guide/#successive-halving) and [Train sizing](./API/user_guide/#train-sizing)
+* [Successive halving](./user_guide/#successive-halving) and [Train sizing](./user_guide/#train-sizing)
   now both allow subsequent runs from `atom` without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
 * Added the [Utilities](./examples/utilities/utilities) and [Deep learning](./examples/deep_learning/deep_learning) example notebooks.

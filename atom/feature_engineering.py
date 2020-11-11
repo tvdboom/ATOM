@@ -40,7 +40,7 @@ from .data_cleaning import BaseCleaner, Scaler
 from .plots import FeatureSelectorPlotter
 from .utils import (
     METRIC_ACRONYMS, X_TYPES, Y_TYPES, to_df, check_scaling, check_is_fitted,
-    get_model_acronym, composed, crash, method_to_log
+    get_acronym, composed, crash, method_to_log
 )
 
 
@@ -655,14 +655,9 @@ class FeatureSelector(
                         self.goal = "regression"
                         self.solver = self.solver[:-4]
 
-                    if self.solver.lower() not in map(str.lower, MODEL_LIST):
-                        raise ValueError(
-                            "Unknown value for the solver parameter, got "
-                            f"{self.solver}. Try one of {list(MODEL_LIST)}."
-                        )
-                    else:  # Set to right model name and call model's method
-                        model_class = MODEL_LIST[get_model_acronym(self.solver)]
-                        self.solver = model_class(self).get_estimator()
+                    # Set to right model name and call model's method
+                    model_class = MODEL_LIST[get_acronym(self.solver)]
+                    self.solver = model_class(self).get_estimator()
 
         if self.n_features is not None and self.n_features <= 0:
             raise ValueError(
@@ -937,9 +932,8 @@ class FeatureSelector(
                     )
                     X.drop(column, axis=1, inplace=True)
 
-            self.feature_importance = X.columns[
-                [np.argsort(get_scores(self.rfe.estimator_))]
-            ][::-1]
+            idx = np.argsort(get_scores(self.rfe.estimator_))
+            self.feature_importance = list(X.columns[idx][::-1])
 
         elif self.strategy.lower() == "rfecv":
             self.log(
@@ -954,8 +948,7 @@ class FeatureSelector(
                     )
                     X.drop(column, axis=1, inplace=True)
 
-            self.feature_importance = X.columns[
-                [np.argsort(get_scores(self.rfecv.estimator_))]
-            ][::-1]
+            idx = np.argsort(get_scores(self.rfecv.estimator_))
+            self.feature_importance = list(X.columns[idx][::-1])
 
         return X

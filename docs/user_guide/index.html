@@ -1017,8 +1017,8 @@ atom.run(models=Lars)
 
 <p>Additional things to take into account:</p>
 <ul>
-<li>Custom models are not restricted to sklearn estimators. Every class implementing
-  a fit and predict method can be used!</li>
+<li>Custom models are not restricted to sklearn estimators, but they should follow
+  sklearn's API, i.e. have a fit and predict method.</li>
 <li><a href="#parameter-customization">Parameter customization</a> (for the initializer) is only
   possible for custom models which provide an estimator's class or an instance that
   has a <code>set_params()</code> method, i.e. its a child class of <a href="https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html">BaseEstimator</a>.</li>
@@ -1295,6 +1295,16 @@ in a convenient boxplot.</p>
 <p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
 evaluation on the train and test set.</p>
 </div>
+<p><br></p>
+<h3 id="repeating-models">Repeating models</h3>
+<p>If you want to fit the same model multiple times in a pipeline, add a tag after the
+ acronym when calling the models.</p>
+<pre><code>atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2": {"n_estimators": 200}})
+</code></pre>
+<p>This pipeline will run two <a href="../API/models/rf">Random Forest</a> models, one with 100
+ and the other with 200 decision trees. The <code>models</code> can be accessed through
+ <code>atom.rf1</code> and <code>atom.rf2</code>. This can be useful to test how the same model performs
+ with different parameters or different data sets.</p>
 <p><br></p>
 <h3 id="successive-halving">Successive halving</h3>
 <p>Successive halving is a bandit-based algorithm that fits N models to 1/N of the data.

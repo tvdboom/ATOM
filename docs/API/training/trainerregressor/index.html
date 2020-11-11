@@ -884,16 +884,6 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
-<td width="15%"><a href="#get-class-weight">get_class_weight</a></td>
-<td>Return class weights for a balanced data set.</td>
-</tr>
-
-<tr>
-<td width="15%"><a href="#get-sample-weight">get_sample_weight</a></td>
-<td>Return sample weights for a balanced data set.</td>
-</tr>
-
-<tr>
 <td><a href="#get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
@@ -942,49 +932,6 @@ Removes all traces of a model in the pipeline (except for the <code>errors</code
 <strong>models: str or iterable, optional (default="all")</strong>
 <blockquote>
 Model(s) to clear from the pipeline. If "all", clear all models.
-</blockquote>
-</tr>
-</table>
-</div>
-<br /></p>
-<p><a name="get-class-weight"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
-<div style="padding-left:3%">
-Return class weights for a balanced data set. Statistically, the class weights
- re-balance the data set so that the sampled data set represents the target
- population as closely as reasonably possible. The returned weights are inversely
- proportional to class frequencies in the selected data set. 
-<br /><br />
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>dataset: str, optional (default="train")</strong>
-<blockquote>
-Data set from which to get the weights. Choose between "train", "test" or "dataset".
-</blockquote>
-</tr>
-</table>
-</div>
-<br /></p>
-<p><a name="get-sample-weight"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_sample_weight</strong>(dataset="train")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
-<div style="padding-left:3%">
-Return sample weights for a balanced data set. Statistically, the sampling weights
- re-balance the data set so that the sampled data set represents the target
- population as closely as reasonably possible. The returned weights are the
- reciprocal of the likelihood of being sampled (i.e. selection probability) of
- the sampling unit.
-<br /><br />
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>dataset: str, optional (default="train")</strong>
-<blockquote>
-Data set from which to get the weights. Choose between "train", "test" or "dataset".
 </blockquote>
 </tr>
 </table>

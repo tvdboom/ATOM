@@ -131,43 +131,46 @@ def ATOMLoader(
         cls = pickle.load(f)
 
     if data is not None:
-        if not hasattr(cls, "_data"):
+        if not hasattr(cls, "_branches"):
             raise TypeError(
-                "Data is provided but the class is not an ATOM nor "
+                "Data is provided but the class is not an atom nor "
                 f"training instance, got {cls.__class__.__name__}."
             )
 
-        elif cls._data is not None:
+        elif cls.pipeline.data is not None:
             raise ValueError(
                 f"The loaded {cls.__class__.__name__} instance already contains data!"
             )
 
         # Prepare the provided data
-        cls._data, cls._idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
+        data, idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
 
-        if hasattr(cls, "pipeline") and transform_data:
-            # Transform the data through all transformers in the pipeline
-            for estimator in [i for i in cls.pipeline if hasattr(i, "transform")]:
-                if verbose is not None:
-                    vb = estimator.get_params()["verbose"]  # Save original verbosity
-                    estimator.set_params(verbose=verbose)
+        for key, pl in cls._branches.items():
+            pl.data, pl.idx = data, idx
 
-                # Some transformations are only applied on the training set
-                if estimator.__class__.__name__ in ["Outliers", "Balancer"]:
-                    X, y = estimator.transform(cls.X_train, cls.y_train)
-                    cls._data = pd.concat([merge(X, y), cls.test])
-                else:
-                    X = estimator.transform(cls.X, cls.y)
+            if transform_data:
+                # Transform the data through all transformers in the pipeline
+                for est in [i for i in pl.estimators if hasattr(i, "transform")]:
+                    if verbose is not None:
+                        vb = est.get_params()["verbose"]  # Save original verbosity
+                        est.set_params(verbose=verbose)
 
-                    # Data changes depending if the estimator returned X or X, y
-                    cls._data = merge(*X) if isinstance(X, tuple) else merge(X, cls.y)
+                    # Some transformations are only applied on the training set
+                    if est.__class__.__name__ in ["Outliers", "Balancer"]:
+                        X, y = est.transform(cls.X_train, cls.y_train)
+                        cls.dataset = pd.concat([merge(X, y), cls.test])
+                    else:
+                        X = est.transform(cls.X, cls.y)
 
-                cls._data.reset_index(drop=True, inplace=True)
-                if verbose is not None:
-                    estimator.verbose = vb  # Reset the original verbosity
+                        # Data changes depending if the estimator returned X or X, y
+                        if isinstance(X, tuple):
+                            cls.dataset = merge(*X)
+                        else:
+                            cls.dataset = merge(X, cls.y)
 
-        if getattr(cls, "trainer", None):
-            cls.trainer._data = cls._data
+                    cls.dataset.reset_index(drop=True, inplace=True)
+                    if verbose is not None:
+                        est.verbose = vb  # Reset the original verbosity
 
     cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
 
