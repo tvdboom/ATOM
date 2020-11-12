@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -580,7 +580,7 @@ ATOMRegressor is ATOM's wrapper for regression tasks. Use this class to easily a
  contains the dataset on which we want to perform the analysis. Calling a method will
  automatically apply it on the dataset it contains.</p>
 <p>You can <a href="../../../user_guide/#predicting">predict</a>, <a href="../../../user_guide/#plots">plot</a>
- and call any <a href="../../../user_guide/#models"><code>model</code></a> from the ATOMRegressor instance.
+ and call any <a href="../../../user_guide/#models">model</a> from the ATOMRegressor instance.
  Read more in the <a href="../../../user_guide/#first-steps">user guide</a>.
 <br />
 <table>
@@ -600,11 +600,11 @@ X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
 Feature set with shape=(n_features, n_samples). If no y is provided, the
  last column is used as target.<br><br>
-y: int, str or array-like<br>
+y: int, str or sequence<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Data target column with shape=(n_samples,).</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>n_rows: int or float, optional (default=1)</strong>
@@ -774,14 +774,14 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: <a href="../../../user_guide/#models"><code>model</code></a></strong>
+<strong>winner: <a href="../../../user_guide/#models">model</a></strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
 <strong>pipeline: pd.Series</strong>
 <blockquote>
 Series containing all classes fitted in the pipeline. Use this attribute only to
- access the individual classes. To visualize the pipeline, use <code>atom</code>'s __repr__
+ access the individual classes. To visualize the pipeline, use atom's __repr__
  or <a href="../../plots/plot_pipeline">plot_pipeline</a>.
 </blockquote>
 <strong>results: pd.DataFrame</strong>
@@ -1193,7 +1193,7 @@ Remove features according to the selected strategy. Ties between
  three methods to call the training classes from the ATOM package. All relevant
  attributes and methods from the training classes are attached to ATOMClassifier for
  convenience. These include the errors, winner and results attributes, the
- <a href="../../../user_guide/#models"><code>models</code></a>, and the
+ <a href="../../../user_guide/#models">models</a>, and the
  <a href="../../../user_guide/#predicting">prediction</a> and
  <a href="../../../user_guide/#plots">plotting</a> methods.</p>
 <table>
@@ -1219,7 +1219,7 @@ Remove features according to the selected strategy. Ties between
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
 <div style="padding-left:3%">
-Runs a <a href="../../training/trainerregressor/">TrainerRegressor</a> instance.
+Runs a <a href="../../training/directregressor/">DirectRegressor</a> instance.
 </div>
 <br /></p>
 <p><a name="successive-halving"></a>

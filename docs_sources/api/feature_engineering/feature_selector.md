@@ -12,7 +12,7 @@ Remove features according to the selected strategy. Ties between
  Additionally, removes features with too low variance and finds pairs of
  collinear features based on the Pearson correlation coefficient. For
  each pair above the specified limit (in terms of absolute value), it
- removes one of the two. This class can be accessed from `atom`
+ removes one of the two. This class can be accessed from atom
  through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
  method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
 <br /><br />
@@ -60,7 +60,7 @@ for SFM, RFE and RFECV).
 Estimator with either a `feature_importances_` or `coef_` attribute after fitting.
  You can use one of ATOM's pre-defined [models](../../../user_guide/#models). Add
  `_class` or `_reg` after the model's name to specify a classification or regression
- task, e.g. `solver="LGB_reg"` (not necessary if called from an `atom` instance. No
+ task, e.g. `solver="LGB_reg"` (not necessary if called from an atom instance. No
  default option.</li>
 </ul>
 </blockquote>
@@ -310,12 +310,12 @@ Fit the class. Note that the univariate, sfm (when model is not fitted), rfe and
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -349,12 +349,12 @@ Fit the FeatureSelector and return the transformed feature set. Note that the
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -517,7 +517,7 @@ Transform the feature set.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>

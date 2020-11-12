@@ -8,7 +8,7 @@
 Scales data to mean=0 and std=1. This class is equal to sklearn's
  [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
  except that it returns a dataframe when provided and it ignores non-numerical columns
- (instead of raising an exception). This class can be accessed from `atom` through the
+ (instead of raising an exception). This class can be accessed from atom through the
  [scale](../../ATOM/atomclassifier/#scale) method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
 <br /><br />
 <table>
@@ -115,7 +115,7 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
@@ -147,7 +147,7 @@ Fit the Scaler and return the scaled data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
@@ -279,7 +279,7 @@ Scale the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>

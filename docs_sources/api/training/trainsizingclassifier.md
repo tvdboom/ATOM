@@ -15,8 +15,8 @@ Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizin
 2. The model is fitted on the training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 
-Just like `atom`, you can [predict](../../../user_guide/#predicting),
- [plot](../../../user_guide/#plots) and call any [`model`](../../../user_guide/#models)
+Just like atom, you can [predict](../../../user_guide/#predicting),
+ [plot](../../../user_guide/#plots) and call any [model](../../../user_guide/#models)
  from the TrainSizingClassifier instance. Read more in the [user guide](../../../user_guide/#training).
 <br />
 <table>
@@ -92,7 +92,7 @@ Whether the metric function takes a continuous decision certainty.
  be ignored if the metric is a string or a scorer. If iterable, the
  n-th value will apply to the n-th metric in the pipeline.
 </blockquote>
-<strong>train_sizes: array-like, optional (default=np.linspace(0.2, 1.0, 5))</strong>
+<strong>train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))</strong>
 <blockquote>
 Sequence of training set sizes used to run the trainings.
 <ul>
@@ -295,7 +295,7 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<strong>winner: [model](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>

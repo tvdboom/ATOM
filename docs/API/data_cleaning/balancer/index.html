@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -562,7 +562,7 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target class. Use only for classification tasks.
-This class can be accessed from <code>atom</code> through the
+This class can be accessed from atom through the
  <a href="../../ATOM/atomclassifier/#balance">balance</a> method. Read more in
  the <a href="../../../user_guide/#balancing-the-data">user guide</a>.
 <br /><br />
@@ -687,9 +687,9 @@ Oversample or undersample the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -817,9 +817,9 @@ Oversample or undersample the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>

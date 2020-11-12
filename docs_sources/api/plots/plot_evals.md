@@ -18,7 +18,7 @@ Plot evaluation curves for the train and test set. Only for models that allow
 <blockquote>
 Name of the model to plot. If None, all models in the pipeline are selected. Note
  that leaving the default option could raise an exception if there are multiple
- models in the pipeline. To avoid this, call the plot from a `model`, e.g. `atom.lgb.plot_evals()`.
+ models in the pipeline. To avoid this, call the plot from a model, e.g. `atom.lgb.plot_evals()`.
 </blockquote>
 <strong>dataset: str, optional (default="both")</strong>
 <blockquote>
@@ -35,7 +35,7 @@ Figure's size, format as (x, y).
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>

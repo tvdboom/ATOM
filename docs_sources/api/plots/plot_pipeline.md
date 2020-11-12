@@ -2,11 +2,11 @@
 ---------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, branch=None, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot a diagram of every estimator in `atom`'s pipeline.
- <br /><br />
+Plot a diagram of every estimator in a branch.
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -14,6 +14,10 @@ Plot a diagram of every estimator in `atom`'s pipeline.
 <strong>show_params: bool, optional (default=True)</strong>
 <blockquote>
 Whether to show the parameters used for every estimator.
+</blockquote>
+<strong>show_params: bool, optional (default=True)</strong>
+<blockquote>
+Name of the branch to plot. If None, plot the current active branch.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -25,7 +29,7 @@ Figure's size, format as (x, y). If None, adapts size to the length of the pipel
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
@@ -55,17 +59,9 @@ atom.feature_selection(
     max_correlation=0.7
 )
 
-atom.run(
-    models=["GBM", "LGB"],
-    metric="recall_weighted",
-    n_calls=(10, 20),
-    n_initial_points=(5, 12),
-    bo_params={"base_estimator": "RF", "cv": 1, "max_time": 1000},
-    bagging=4
-)
-
 atom.plot_pipeline()
 ```
+
 <div align="center">
     <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="1200"/>
 </div>

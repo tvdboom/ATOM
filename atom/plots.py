@@ -37,17 +37,17 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    ARRAY_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted, check_dim,
-    get_best_score, partial_dependence, composed, crash, plot_from_model
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted,
+    check_dim, get_best_score, partial_dependence, composed, crash, plot_from_model
 )
 
 
 class BasePlotter(object):
     """Parent class for all plotting methods.
 
-    This base class defines the plot properties that can be changed in order
-    to customize the plot's aesthetics. Making the variable mutable ensures
-    that it is changed for all classes at the same time.
+    This base class defines the plot properties that can be changed in
+    order to customize the plot's aesthetics. Making the variable
+    mutable ensures that it is changed for all classes at the same time.
 
     """
 
@@ -61,7 +61,7 @@ class BasePlotter(object):
     sns.set_style(_aesthetics["style"])
     sns.set_palette(_aesthetics["palette"])
 
-    # Properties ============================================================ >>
+    # Properties =================================================== >>
 
     @property
     def aesthetics(self):
@@ -144,22 +144,19 @@ class BasePlotter(object):
             )
         self._aesthetics["tick_fontsize"] = tick_fontsize
 
-    # Methods =============================================================== >>
+    # Methods ====================================================== >>
 
     def _get_subclass(self, models, max_one=False):
-        """Check and return the provided input model subclasses.
-
-        Makes sure all names are correct and that every model is in the trainer's
-        pipeline. If models=None, returns all models in the pipeline.
+        """Check and return the provided parameter models.
 
         Parameters
         ----------
         models: str or sequence
             Models provided by the plot's parameter.
 
-        max_one: bool
-            Whether one or multiple models are allowed. If True, return the model
-            instead of a list.
+        max_one: bool, optional (default=False)
+            Whether one or multiple models are allowed. If True, return
+            the model instead of a list.
 
         """
         if models is None:
@@ -177,33 +174,29 @@ class BasePlotter(object):
         return model_subclasses[0] if max_one else model_subclasses
 
     def _get_metric(self, metric):
-        """Check and return the provided input metric."""
-
-        def _raise():
-            raise ValueError(
-                "Invalid value for the metric parameter. Value should be the index"
-                f" or name of a metric used to run the pipeline, got {metric}."
-            )
-
-        # If it's a str, return the corresponding idx
+        """Check and return the provided parameter metric."""
         if isinstance(metric, str):
             if metric.lower() in METRIC_ACRONYMS:
                 metric = METRIC_ACRONYMS[metric]
 
+            # Return index corresponding to str
             for i, m in enumerate(self.metric_):
                 if metric.lower() == m.name:
                     return i
-            _raise()  # If no match was found, raise an exception
 
-        # If index not in available metrics, raise an exception
-        elif metric < 0 or metric > len(self.metric_) - 1:
-            _raise()
+        # If index in available metrics, return as provided
+        elif 0 <= metric < len(self.metric_):
+            return metric
 
-        return metric
+        # If no match was found, raise an exception
+        raise ValueError(
+            "Invalid value for the metric parameter. Value should be the index"
+            f" or name of a metric used to run the pipeline, got {metric}."
+        )
 
     @staticmethod
     def _get_set(dataset):
-        """Check and return the provided input metric."""
+        """Check and return the provided parameter metric."""
         if dataset.lower() == "both":
             return ["train", "test"]
         elif dataset.lower() in ("train", "test"):
@@ -215,7 +208,7 @@ class BasePlotter(object):
             )
 
     def _get_show(self, show):
-        """Check and return the provided input show."""
+        """Check and return the provided parameter show."""
         if show is None or show > self.X.shape[1]:
             return self.X.shape[1]
         elif show < 1:
@@ -227,7 +220,7 @@ class BasePlotter(object):
         return show
 
     def _get_index(self, index):
-        """Check and return the provided input index."""
+        """Check and return the provided parameter index."""
         if not index:
             rows = self.X_test
         elif isinstance(index, int):
@@ -247,7 +240,7 @@ class BasePlotter(object):
         return rows
 
     def _get_target(self, target):
-        """Check and return the provided target as index and string."""
+        """Check and return the provided parameter target."""
         if self.task.startswith("reg"):
             return None, None
 
@@ -271,7 +264,7 @@ class BasePlotter(object):
             return target, tgt_str
 
     def _get_shap(self, model, data, target):
-        """Get the SHAP information for a specific model.
+        """Get the SHAP information of a model.
 
         Parameters
         ----------
@@ -282,7 +275,7 @@ class BasePlotter(object):
             Data on which to calculate the shap values.
 
         target: int
-            Index of the class in the target column.
+            Index of the target class in the target column.
 
         Returns
         -------
@@ -290,8 +283,8 @@ class BasePlotter(object):
             SHAP values for the target class.
 
         expected_value: float
-            Difference between the model output for that sample and the expected
-            value of the model output.
+            Difference between the model output for that sample and
+            the expected value of the model output.
 
         """
         if model.type == "tree":
@@ -328,7 +321,7 @@ class BasePlotter(object):
         ----------
         **kwargs
             Keyword arguments containing the plot's parameters. Can contain:
-                - fig: matplotlib.figure.Figure class for the plot.
+                - fig: Matplotlib's Figure class for the plot.
                 - title: Plot's title.
                 - legend: Loc to place the legend.
                 - xlabel: Label for the plot's x-axis.
@@ -336,7 +329,7 @@ class BasePlotter(object):
                 - xlim: Limits for the plot's x-axis.
                 - ylim: Limits for the plot's y-axis.
                 - tight_layout: Tight layout. Default is True.
-                - filename: Name of the file (to save).
+                - filename: Name of the saved file.
                 - display: Whether to render the plot.
 
         """
@@ -378,7 +371,7 @@ class FeatureSelectorPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot the explained variance ratio vs the number of components.
+        """Plot the explained variance ratio vs number of components.
 
         Parameters
         ----------
@@ -386,10 +379,11 @@ class FeatureSelectorPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -398,8 +392,7 @@ class FeatureSelectorPlotter(BasePlotter):
         check_dim(self, "plot_pca")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
-                "The plot_pca method is only available "
-                "if you applied PCA on the data!"
+                "The plot_pca method is only available if PCA was applied on the data!"
             )
 
         n = self.pca.n_components_  # Number of chosen components
@@ -444,17 +437,18 @@ class FeatureSelectorPlotter(BasePlotter):
         Parameters
         ----------
         show: int or None, optional (default=None)
-            Number of components to show. If None, the number of components
-            in the data are plotted.
+            Number of components to show. If None, the number of
+            components in the data are plotted.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -464,7 +458,7 @@ class FeatureSelectorPlotter(BasePlotter):
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_components method is only available "
-                "if you applied PCA on the data!"
+                "if PCA was applied on the data!"
             )
 
         # Set parameters
@@ -509,9 +503,9 @@ class FeatureSelectorPlotter(BasePlotter):
     ):
         """Plot the RFECV results.
 
-        Plot the scores obtained by the estimator fitted on every subset of
-        the dataset. Only if RFECV was applied on the dataset through the
-        feature_engineering method.
+        Plot the scores obtained by the estimator fitted on every
+        subset of the dataset. Only if RFECV was applied on the
+        dataset through the feature_engineering method.
 
         Parameters
         ----------
@@ -519,10 +513,11 @@ class FeatureSelectorPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -532,7 +527,7 @@ class FeatureSelectorPlotter(BasePlotter):
         if not hasattr(self, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
-                "if you applied RFECV on the data!"
+                "if RFECV was applied on the data!"
             )
 
         try:  # Define the y-label for the plot
@@ -567,7 +562,7 @@ class FeatureSelectorPlotter(BasePlotter):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
         self._plot(
-            title="RFE cross-validation scores" if not title else title,
+            title="RFECV scores" if not title else title,
             legend="best",
             xlabel="Number of features",
             ylabel=ylabel,
@@ -584,7 +579,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_bagging(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
@@ -597,12 +592,12 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline that used bagging are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, adapts size to the number of models.
@@ -611,7 +606,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -655,7 +650,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_bo(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
@@ -665,19 +660,20 @@ class BaseModelPlotter(BasePlotter):
 
         """Plot the bayesian optimization scoring.
 
-        Only for models that ran the hyperparameter optimization. This is the same
-        plot as the one produced by `bo_params={"plot_bo": True}` while running the
-        BO. Creates a canvas with two plots: the first plot shows the score of every
-        trial and the second shows the distance between the last consecutive steps.
+        Only for models that ran the hyperparameter optimization. This
+        is the same plot as produced by `bo_params={"plot_bo": True}`
+        while running the BO. Creates a canvas with two plots: the
+        first plot shows the score of every trial and the second shows
+        the distance between the last consecutive steps.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline that
-            used bayesian optimization are selected.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline that used bayesian optimization are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -686,7 +682,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -742,7 +738,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "both",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -751,31 +747,33 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot evaluation curves for the train and test set.
 
-         Only for models that allow in-training evaluation (XGB, LGB, CastB). The
-         metric is provided by the estimator's package and is different for every model
-         and every task. For this reason, the method only allows plotting one model
-         at a time.
+         Only for models that allow in-training evaluation (XGB, LGB,
+        CastB). The metric is provided by the estimator's package and
+        is different for every model and every task. For this reason,
+        the method only allows plotting one model at a time.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the model to plot. If None, all models in the pipeline are
-            selected. Note that leaving the default option could raise an exception
-            if there are multiple models in the pipeline. To avoid this, call the
-            plot from a `model`, e.g. `atom.lgb.plot_evals()`.
+        models: str, sequence or None, optional (default=None)
+            Name of the model to plot. If None, all models in the
+            pipeline are selected. Note that leaving the default
+            option could raise an exception if there are multiple
+            models in the pipeline. To avoid this, call the plot
+            from a model, e.g. `atom.lgb.plot_evals()`.
 
         dataset: str, optional (default="both")
-            Data set on which to calculate the evaluation curves. Options
-            are "train", "test" or "both".
+            Data set on which to calculate the evaluation curves.
+            Options are "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -809,7 +807,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_roc(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -818,18 +816,18 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the Receiver Operating Characteristics curve.
 
-        The legend shows the Area Under the ROC Curve (AUC) score. Only for
-        binary classification tasks.
+        The legend shows the Area Under the ROC Curve (AUC) score.
+        Only for binary classification tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -838,7 +836,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -884,7 +882,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_prc(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -893,18 +891,18 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the precision-recall curve.
 
-        The legend shows the average precision (AP) score. Only for binary
-        classification tasks.
+        The legend shows the average precision (AP) score. Only for
+        binary classification tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -913,7 +911,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -957,7 +955,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_permutation_importance(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         n_repeats: int = 10,
         title: Optional[str] = None,
@@ -967,13 +965,14 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the feature permutation importance of models.
 
-        If a permutation is repeated for the same model with the same amount of
-        n_repeats, the calculation is skipped. The `feature_importance` attribute
-        is updated with the extracted importance ranking.
+        If a permutation is repeated for the same model with the
+        same amount of n_repeats, the calculation is skipped. The
+        `feature_importance` attribute is updated with the extracted
+        importance ranking.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
@@ -987,10 +986,11 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1078,7 +1078,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_feature_importance(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
@@ -1087,27 +1087,29 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot a tree-based model's feature importance.
 
-        The importances are normalized in order to be able to compare them
-        between models. The `feature_importance` attribute is updated with
-        the extracted importance ranking.
+        The importances are normalized in order to be able to compare
+        them between models. The `feature_importance` attribute is
+        updated with the extracted importance ranking.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         show: int or None, optional (default=None)
-            Number of best features to show in the plot. None to show all.
+            Number of best features to show in the plot. None to
+            show all.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1170,8 +1172,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_partial_dependence(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
-        features: Optional[Union[int, str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1180,25 +1182,25 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the partial dependence of features.
 
-        The partial dependence of a feature (or a set of features) corresponds to the
-        average response of the model for each possible value of the feature.
-        Two-way partial dependence plots are plotted as contour plots (only allowed
-        for single model plots). The deciles of the feature values will be shown
-        with tick marks on the x-axes for one-way plots, and on both axes for two-way
-        plots.
+        The partial dependence of a feature (or a set of features)
+        corresponds to the average response of the model for each
+        possible value of the feature. Two-way partial dependence
+        plots are plotted as contour plots (only allowed for single
+        model plots). The deciles of the feature values will be shown
+        with tick marks on the x-axes for one-way plots, and on both
+        axes for two-way plots.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         features: int, str, list, tuple or None, optional (default=None)
             Features or feature pairs (name or index) to get the partial
-            dependence from. Maximum of 3 allowed. If None, it uses the best
-            3 features if the `feature_importance` attribute is defined (see
-            plot_feature_importance or plot_permutation_importance), else it
-            uses the first 3 features in the dataset.
+            dependence from. Maximum of 3 allowed. If None, it uses the
+            best 3 features if the `feature_importance` attribute is
+            defined, else it uses the first 3 features in the dataset.
 
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
@@ -1211,7 +1213,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1373,7 +1375,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1382,21 +1384,21 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot a model's prediction errors.
 
-        Plot the actual targets from a set against the predicted values generated
-        by the regressor. A linear fit is made on the data. The gray, intersected
-        line shows the identity line. This pot can be useful to detect noise or
-        heteroscedasticity along a range of the target domain. Only for regression
-        tasks.
+        Plot the actual targets from a set against the predicted values
+        generated by the regressor. A linear fit is made on the data.
+        The gray, intersected line shows the identity line. This pot can
+        be useful to detect noise or heteroscedasticity along a range of
+        the target domain. Only for regression tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the errors. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the errors. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1405,7 +1407,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1470,7 +1472,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_residuals(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1479,23 +1481,24 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot a model's residuals.
 
-        The plot shows the residuals (difference between the predicted and the
-        true value) on the vertical axis and the independent variable on the
-        horizontal axis. The gray, intersected line shows the identity line. This
-        plot can be useful to analyze the variance of the error of the regressor.
-        If the points are randomly dispersed around the horizontal axis, a linear
-        regression model is appropriate for the data; otherwise, a non-linear model
-        is more appropriate. Only for regression tasks.
+        The plot shows the residuals (difference between the predicted
+        and the true value) on the vertical axis and the independent
+        variable on the horizontal axis. The gray, intersected line
+        shows the identity line. This plot can be useful to analyze the
+        variance of the error of the regressor. If the points are
+        randomly dispersed around the horizontal axis, a linear
+        regression model is appropriate for the data; otherwise, a
+        non-linear model is more appropriate. Only for regression tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1504,7 +1507,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1561,7 +1564,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         normalize: bool = False,
         title: Optional[str] = None,
@@ -1572,19 +1575,19 @@ class BaseModelPlotter(BasePlotter):
         """Plot a model's confusion matrix.
 
         Only for classification tasks.
-        For 1 model: plot the confusion matrix in a heatmap.
-        For >1 models: compare TP, FP, FN and TN in a barplot.
-                       Not implemented for multiclass classification tasks.
+        If 1 model: Plot the confusion matrix in a heatmap.
+        If >1 models: Compare TP, FP, FN and TN in a barplot. Not
+                      implemented for multiclass classification tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the confusion matrix. Options
-            are "train" or "test".
+            Data set on which to calculate the confusion matrix.
+            Options are "train" or "test".
 
         normalize: bool, optional (default=False)
            Whether to normalize the matrix. Only for the heatmap plot.
@@ -1593,10 +1596,11 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to plot type.
+            Figure's size, format as (x, y). If None, adapts size to
+            plot type.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1704,8 +1708,8 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         steps: int = 100,
         title: Optional[str] = None,
@@ -1719,18 +1723,18 @@ class BaseModelPlotter(BasePlotter):
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        metric: string, callable, list, tuple or None, optional (default=None)
-            Metric(s) to plot. These can be one of sklearn's pre-defined scorers
-            as string, a metric function or a sklearn scorer object. If None, the
-            metric used to run the pipeline is used.
+        metric: str, callable, sequence or None, optional (default=None)
+            Metric(s) to plot. These can be one of sklearn's SCORERS,
+            a metric function or a scorer. If None, the metric used to
+            run the pipeline is used.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         steps: int, optional (default=100)
             Number of thresholds measured.
@@ -1742,7 +1746,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1821,7 +1825,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_probabilities(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -1829,23 +1833,23 @@ class BaseModelPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot the probability distribution of the classes in the target column.
+        """Plot the probability distribution of the target classes.
 
         Only for binary classification tasks.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         target: int or str, optional (default=1)
-            Probability of being that class in the target column as index or name.
-            Only for multiclass classification.
+            Probability of being that class in the target column as
+            index or name. Only for multiclass classification.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1854,7 +1858,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -1915,7 +1919,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_calibration(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         n_bins: int = 10,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
@@ -1924,28 +1928,29 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the calibration curve for a binary classifier.
 
-        Well calibrated classifiers are probabilistic classifiers for which the
-        output of the `predict_proba` method can be directly interpreted as a
-        confidence level. For instance a well calibrated (binary) classifier
-        should classify the samples such that among the samples to which it gave
-        a `predict_proba` value close to 0.8, approx. 80% actually belong to the
-        positive class. This figure shows two plots: the calibration curve, where
-        the x-axis represents the average predicted probability in each bin and the
-        y-axis is the fraction of positives, i.e. the proportion of samples whose
-        class is the positive class (in each bin); and a distribution of all
-        predicted probabilities of the classifier.
+        Well calibrated classifiers are probabilistic classifiers for
+        which the output of the `predict_proba` method can be directly
+        interpreted as a confidence level. For instance a well
+        calibrated (binary) classifier should classify the samples such
+        that among the samples to which it gave a `predict_proba` value
+        close to 0.8, approx. 80% actually belong to the positive class.
+        This figure shows two plots: the calibration curve, where the
+        x-axis represents the average predicted probability in each bin
+        and the y-axis is the fraction of positives, i.e. the proportion
+        of samples whose class is the positive class (in each bin); and
+        a distribution of all predicted probabilities of the classifier.
         Code snippets from https://scikit-learn.org/stable/auto_examples/
         calibration/plot_calibration_curve.html
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         n_bins: int, optional (default=10)
-            Number of bins for the calibration calculation and the histogram.
-            Minimum of 5 required.
+            Number of bins for the calibration calculation and the
+            histogram. Minimum of 5 required.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -1954,7 +1959,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2018,7 +2023,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2027,18 +2032,18 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the cumulative gains curve.
 
-        Only for binary classification tasks. Code snippet from https://github.com/
-        reiinakano/scikit-plot/
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the gains curve. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the gains curve. Options
+            are "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2047,7 +2052,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2110,7 +2115,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_lift(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -2119,18 +2124,18 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the lift curve.
 
-        Only for binary classification tasks. Code snippet from https://github.com/
-        reiinakano/scikit-plot/
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train",
-            "test" or "both".
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2139,7 +2144,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2197,12 +2202,12 @@ class BaseModelPlotter(BasePlotter):
             display=display,
         )
 
-    # SHAP plots ============================================================ >>
+    # SHAP plots =================================================== >>
 
     @composed(crash, plot_from_model, typechecked)
     def force_plot(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[int, list, tuple]] = None,
         target: Union[str, int] = 1,
         title: Optional[str] = None,
@@ -2213,22 +2218,25 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot SHAP's force plot.
 
-        Visualize the given SHAP values with an additive force layout. The explainer
-        will be chosen automatically based on the model's type. Note that by
-        default this plot will render using javascript. For a regular figure use
-        `matplotlib=True` (this option is only available when only 1 row is selected
-        through the `index` parameter).
+        Visualize the given SHAP values with an additive force layout.
+        The explainer will be chosen automatically based on the model's
+        type. Note that by default this plot will render using
+        javascript. For a regular figure use `matplotlib=True` (this
+        option is only available when only 1 row is selected through
+        the `index` parameter).
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline are
-            selected. Note that selecting multiple models will raise an exception.
-            To avoid this, call the plot from a `model`.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
 
         index: int, list, tuple or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If (n, m), select
-            rows n until m. If None, select all rows in the test set.
+            Indices of the rows in the dataset to plot. If (n, m),
+            select rows n until m. If None, select all rows in the
+            test set.
 
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
@@ -2241,7 +2249,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If matplotlib=False, the figure will
+            Name of the file. If matplotlib=False, the figure will
             be saved as an html file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
@@ -2290,7 +2298,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def dependence_plot(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Union[int, str] = "rank(1)",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2301,24 +2309,26 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot SHAP's dependence plot.
 
-        Plots the value of the feature on the x-axis and the SHAP value of the same
-        feature on the y-axis. This shows how the model depends on the given feature,
-        and is like a richer extension of the classical partial dependence plots.
-        Vertical dispersion of the data points represents interaction effects. The
-        explainer will be chosen automatically based on the model's type.
+        Plots the value of the feature on the x-axis and the SHAP value
+        of the same feature on the y-axis. This shows how the model
+        depends on the given feature, and is like a richer extension of
+        the classical partial dependence plots. Vertical dispersion of
+        the data points represents interaction effects. The explainer
+        will be chosen automatically based on the model's type.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline are
-            selected. Note that selecting multiple models will raise an exception.
-            To avoid this, call the plot from a `model`.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
 
         index: int or str, optional (default="rank(1)")
-            If this is an int, it is the index of the feature to plot. If this is a
-            string it is either the name of the feature to plot, or it can have the
-            form "rank(int)" to specify the feature with that rank (ordered by mean
-            absolute SHAP value over all the samples).
+            If int, it is the index of the feature to plot. If string
+            it is either the name of the feature to plot, or it can
+            have the form "rank(int)" to specify the feature with that
+            rank (ordered by mean absolute SHAP value over all samples).
 
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
@@ -2331,7 +2341,7 @@ class BaseModelPlotter(BasePlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2367,7 +2377,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def summary_plot(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2378,16 +2388,17 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot SHAP's summary plot.
 
-        Create a SHAP beeswarm plot, colored by feature values when they are
-        provided. The explainer will be chosen automatically based on the model's
-        type.
+        Create a SHAP beeswarm plot, colored by feature values when
+        they are provided. The explainer will be chosen automatically
+        based on the model's type.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline are
-            selected. Note that selecting multiple models will raise an exception.
-            To avoid this, call the plot from a `model`.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple
+            models will raise an exception. To avoid this, call
+            the plot from a model.
 
         show: int or None, optional (default=None)
             Number of features to show in the plot. None to show all.
@@ -2400,10 +2411,11 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to `show` param.
+            Figure's size, format as (x, y). If None, adapts size
+            to the`show` parameter.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2442,7 +2454,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def decision_plot(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[Union[int, list, tuple]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
@@ -2454,27 +2466,31 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot SHAP's decision plot.
 
-        Visualize model decisions using cumulative SHAP values. Each plotted line
-        explains a single model prediction. If a single prediction is plotted,
-        feature values will be printed in the plot (if supplied). If multiple
-        predictions are plotted together, feature values will not be printed.
-        Plotting too many predictions together will make the plot unintelligible.
-        The explainer will be chosen automatically based on the model's type.
+        Visualize model decisions using cumulative SHAP values. Each
+        plotted line explains a single model prediction. If a single
+        prediction is plotted, feature values will be printed in the
+        plot (if supplied). If multiple predictions are plotted
+        together, feature values will not be printed. Plotting too
+        many predictions together will make the plot unintelligible.
+        The explainer will be chosen automatically based on the model's
+        type.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline are
-            selected. Note that selecting multiple models will raise an exception.
-            To avoid this, call the plot from a `model`.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple
+            models will raise an exception. To avoid this, call
+            the plot from a model.
 
         index: int, list, tuple or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If shape (n, m), select
-            rows n until m. If None, select all rows in the test set.
+            Indices of the rows in the dataset to plot. If shape
+            (n, m), select rows n until m. If None, select all
+            rows in the test set.
 
         show: int or None, optional (default=None)
-            Number of features (ordered by importance) to show in the plot.
-            None to show all.
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
@@ -2484,11 +2500,11 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to the
-            number of features.
+            Figure's size, format as (x, y). If None, adapts size
+            to the number of features.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2529,7 +2545,7 @@ class BaseModelPlotter(BasePlotter):
     @composed(crash, plot_from_model, typechecked)
     def waterfall_plot(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         index: Optional[int] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
@@ -2540,30 +2556,32 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot SHAP's waterfall plot for a single prediction.
 
-        The SHAP value of a feature represents the impact of the evidence
-        provided by that feature on the model’s output. The waterfall plot
-        is designed to visually display how the SHAP values (evidence) of
-        each feature move the model output from our prior expectation under
-        the background data distribution, to the final model prediction
-        given the evidence of all the features. Features are sorted by
-        the magnitude of their SHAP values with the smallest magnitude
-        features grouped together at the bottom of the plot when the
-        number of features in the models exceeds the `show` parameter.
+        The SHAP value of a feature represents the impact of the
+        evidence provided by that feature on the model’s output. The
+        waterfall plot is designed to visually display how the SHAP
+        values (evidence) of each feature move the model output from
+        our prior expectation under the background data distribution,
+        to the final model prediction given the evidence of all the
+        features. Features are sorted by the magnitude of their SHAP
+        values with the smallest magnitude features grouped together
+        at the bottom of the plot when the number of features in the
+        models exceeds the `show` parameter.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
-            Name of the models to plot. If None, all models in the pipeline are
-            selected. Note that selecting multiple models will raise an exception.
-            To avoid this, call the plot from a `model`.
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple
+            models will raise an exception. To avoid this, call
+            the plot from a model.
 
         index: int or None, optional (default=None)
             Index of the row in the dataset to plot. If None,
             selects a random row in the test set.
 
         show: int or None, optional (default=None)
-            Number of features (ordered by importance) to show in the plot.
-            None to show all.
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         target: int or str, optional (default=1)
             Category to look at in the target class as index or name.
@@ -2573,11 +2591,11 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to the
-            number of features.
+            Figure's size, format as (x, y). If None, adapts size to
+            the number of features.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2622,25 +2640,25 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_successive_halving(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot of the models" scores per iteration of the successive halving.
+        """Plot scores per iteration of the successive halving.
 
         Only available if the models were fitted via successive_halving.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2649,7 +2667,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2658,11 +2676,11 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         check_is_fitted(self, "results")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
-        if hasattr(self, "trainer"):
-            trainer = self.trainer.__class__.__name__
-        else:
-            trainer = self.__class__.__name__
-        if not trainer.startswith("SuccessiveHalving"):
+
+        # Either it's a SuccessiveHalving class or atom with a sh approach
+        condition_1 = self.__class__.__name__.startswith("SuccessiveHalving")
+        condition_2 = getattr(self, "_approach", "") == "SuccessiveHalving"
+        if not condition_1 and not condition_2:
             raise PermissionError(
                 "You need to run the pipeline using successive "
                 "halving to use the plot_successive_halving method!"
@@ -2701,25 +2719,25 @@ class TrainSizingPlotter(BaseModelPlotter):
     @composed(crash, plot_from_model, typechecked)
     def plot_learning_curve(
         self,
-        models: Optional[Union[str, ARRAY_TYPES]] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot the model's learning curve: score vs number of training samples.
+        """Plot the learning curve: score vs number of training samples.
 
         Only available if the models were fitted using train sizing.
 
         Parameters
         ----------
-        models: str, list, tuple or None, optional (default=None)
+        models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
         metric: int or str, optional (default=0)
-            Index or name of the metric to plot. Only for multi-metric runs.
+            Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2728,7 +2746,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2737,11 +2755,11 @@ class TrainSizingPlotter(BaseModelPlotter):
         check_is_fitted(self, "results")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
-        if hasattr(self, "trainer"):
-            trainer = self.trainer.__class__.__name__
-        else:
-            trainer = self.__class__.__name__
-        if not trainer.startswith("TrainSizing"):
+
+        # Either it's a TrainSizing class or atom with a ts approach
+        condition_1 = self.__class__.__name__.startswith("TrainSizing")
+        condition_2 = getattr(self, "_approach", "") == "TrainSizing"
+        if not condition_1 and not condition_2:
             raise PermissionError(
                 "You need to run the pipeline using train "
                 "sizing to use the plot_learning_curve method!"
@@ -2784,7 +2802,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot the data's correlation matrix. Ignores non-numeric columns.
+        """Plot the correlation matrix. Ignores non-numeric columns.
 
         Parameters
         ----------
@@ -2792,13 +2810,14 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
             Plot's title. If None, the default option is used.
 
         method: str, optional (default="pearson")
-            Method of correlation. Choose from "pearson", "kendall" or "spearman".
+            Method of correlation. Choose from "pearson", "kendall"
+            or "spearman".
 
         figsize: tuple, optional (default=(8, 7))
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
@@ -2836,23 +2855,23 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
     @composed(crash, typechecked)
     def plot_pipeline(
         self,
-        pipeline: Optional[str] = None,
         show_params: bool = True,
+        branch: Optional[str] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[int, int]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot a diagram of every estimator in ATOM's pipeline.
+        """Plot a diagram of every estimator in a branch.
 
         Parameters
         ----------
-        pipeline: str, optional (default=None)
-            Name of the pipeline to plot. If None, plot the current
-            active pipeline.
-
         show_params: bool, optional (default=True)
             Whether to show the parameters used for every estimator.
+
+        branch: str, optional (default=None)
+            Name of the branch to plot. If None, plot the current
+            active branch.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the default option is used.
@@ -2862,24 +2881,24 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
             the length of the pipeline.
 
         filename: str or None, optional (default=None)
-            Name of the file (to save). If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
 
         """
-        if not pipeline:
-            pipeline = self._pipe
-        elif pipeline not in self._branches:
+        if not branch:
+            branch = self._current
+        elif branch not in self._branches:
             raise ValueError(
-                "Invalid value for the pipeline parameter. Unknown pipeline,"
-                f" got {pipeline}. Choose from: {', '.join(self._branches)}."
+                "Invalid value for the branch parameter. Unknown branch,"
+                f" got {branch}. Choose from: {', '.join(self._branches)}."
             )
 
         # Calculate figure's limits
         params = []
         ylim = 30
-        for est in self._branches[pipeline].estimators:
+        for est in self._branches[branch].estimators:
             ylim += 15
             if show_params:
                 params.append([
@@ -2907,7 +2926,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         pos_param = ylim - 20
         pos_estimator = pos_param
 
-        for i, est in enumerate(self._branches[pipeline].estimators):
+        for i, est in enumerate(self._branches[branch].estimators):
             plt.annotate(
                 text=est.__class__.__name__,
                 xy=(15, pos_estimator),

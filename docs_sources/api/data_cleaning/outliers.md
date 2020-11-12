@@ -7,7 +7,7 @@
 <div style="padding-left:3%">
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
- Ignores categorical columns. This class can be accessed from `atom` through the
+ Ignores categorical columns. This class can be accessed from atom through the
  [outliers](../../ATOM/atomclassifier/#outliers) method. Read more
  in the [user guide](../../../user_guide/#handling-outliers).
 <br /><br />
@@ -110,12 +110,12 @@ Apply the outlier strategy on the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -250,12 +250,12 @@ Apply the outlier strategy on the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>

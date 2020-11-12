@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -556,7 +556,7 @@
 Transform new data through all the pre-processing steps in the pipeline. By default,
  all transformers are included except <a href="../../ATOM/atomclassifier/#outliers">outliers</a>
  and <a href="../../ATOM/atomclassifier/#balance">balance</a> since they should
- only be applied on the training set. Can only be called from <code>atom</code>.
+ only be applied on the training set. Can only be called from atom.
 <br /><br />
 <table>
 <tr>
@@ -598,7 +598,7 @@ Additional keyword arguments to customize which transformers to apply. You can
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>When using the pipeline parameter to include/exclude transformers, remember
-that the first transformer (index 0) in <code>atom</code>'s pipeline is always the
+that the first transformer (index 0) in atom's pipeline is always the
 <a href="../../data_cleaning/cleaner/">Cleaner</a> called during
 initialization.</p>
 </div>

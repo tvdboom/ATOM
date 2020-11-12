@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -509,7 +509,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../../training/trainerclassifier/" class="nav-link">
+                                <a rel="next" href="../../training/directclassifier/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -568,7 +568,7 @@ Remove features according to the selected strategy. Ties between
  Additionally, removes features with too low variance and finds pairs of
  collinear features based on the Pearson correlation coefficient. For
  each pair above the specified limit (in terms of absolute value), it
- removes one of the two. This class can be accessed from <code>atom</code>
+ removes one of the two. This class can be accessed from atom
  through the <a href="../../ATOM/atomclassifier/#feature-selection">feature_selection</a>
  method. Read more in the <a href="../../../user_guide/#selecting-useful-features">user guide</a>.
 <br /><br />
@@ -616,7 +616,7 @@ for SFM, RFE and RFECV).
 Estimator with either a <code>feature_importances_</code> or <code>coef_</code> attribute after fitting.
  You can use one of ATOM's pre-defined <a href="../../../user_guide/#models">models</a>. Add
  <code>_class</code> or <code>_reg</code> after the model's name to specify a classification or regression
- task, e.g. <code>solver="LGB_reg"</code> (not necessary if called from an <code>atom</code> instance. No
+ task, e.g. <code>solver="LGB_reg"</code> (not necessary if called from an atom instance. No
  default option.</li>
 </ul>
 </blockquote>
@@ -854,12 +854,12 @@ Fit the class. Note that the univariate, sfm (when model is not fitted), rfe and
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -891,12 +891,12 @@ Fit the FeatureSelector and return the transformed feature set. Note that the
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -1042,7 +1042,7 @@ Transform the feature set.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>

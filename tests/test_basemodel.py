@@ -23,7 +23,7 @@ from atom.utils import check_scaling
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, X10_str, y10
 
 
-# Test utilities ============================================================ >>
+# Test utilities =================================================== >>
 
 def test_repr_method():
     """Assert that the __repr__ method works as intended."""
@@ -40,7 +40,7 @@ def test_get_default_method():
     assert atom.rf.estimator.get_params()["random_state"] == 1
 
 
-# Test bayesian_optimization ================================================ >>
+# Test bayesian_optimization ======================================= >>
 
 def test_n_initial_points_lower_1():
     """Assert than an error is raised when n_initial_points<1."""
@@ -224,7 +224,7 @@ def test_bagging_attribute_types():
     assert isinstance(atom.xgb.mean_bagging, list)
 
 
-# Test prediction methods =================================================== >>
+# Test prediction methods ========================================== >>
 
 def test_invalid_method():
     """Assert that an error is raised when the model doesn't have the method."""
@@ -249,7 +249,7 @@ def test_score_with_sample_weights():
     assert isinstance(score, np.float64)
 
 
-# Test properties =========================================================== >>
+# Test properties ================================================== >>
 
 def test_all_prediction_properties():
     """Assert that all prediction properties are saved as attributes when called."""
@@ -381,7 +381,7 @@ def test_n_classes_property():
     assert atom.lr.n_classes == atom.n_classes
 
 
-# Test utility methods ====================================================== >>
+# Test utility methods ============================================= >>
 
 def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""

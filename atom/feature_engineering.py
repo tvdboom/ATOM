@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the FeatureGenerator and FeatureSelector estimators.
+Description: Module containing the feature engineering estimators.
 
 """
 
@@ -12,7 +12,7 @@ import random
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Optional, Union, Sequence
+from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
@@ -39,17 +39,18 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import BaseCleaner, Scaler
 from .plots import FeatureSelectorPlotter
 from .utils import (
-    METRIC_ACRONYMS, X_TYPES, Y_TYPES, to_df, check_scaling, check_is_fitted,
-    get_acronym, composed, crash, method_to_log
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, to_df,
+    check_scaling, check_is_fitted, get_acronym, composed,
+    crash, method_to_log
 )
 
 
 class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
     """Apply automated feature engineering.
 
-    Use Deep feature Synthesis or a genetic algorithm to create new combinations
-    of existing features to capture the non-linear relations between the original
-    features.
+    Use Deep feature Synthesis or a genetic algorithm to create new
+    combinations of existing features to capture the non-linear
+    relations between the original features.
 
     Parameters
     ----------
@@ -58,20 +59,22 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             - "DFS" to use Deep Feature Synthesis.
             - "GFG" or "genetic" to use Genetic Feature Generation.
 
-    n_features: int, optional (default=None)
+    n_features: int or None, optional (default=None)
         Number of newly generated features to add to the dataset (if
-        strategy="genetic", no more than 1% of the population). If None,
-        select all created.
+        strategy="genetic", no more than 1% of the population). If
+        None, select all created.
 
     generations: int, optional (default=20)
-        Number of generations to evolve. Only if strategy="genetic".
+        Number of generations to evolve. Only for the genetic strategy.
 
     population: int, optional (default=500)
-        Number of programs in each generation. Only if strategy="genetic".
+        Number of programs in each generation. Only for the genetic
+        strategy.
 
-    operators: str, list, tuple or None, optional (default=None)
-        Mathematical operators to apply on the features. None for all. Choose from:
-        "add", "sub", "mul", "div", "sqrt", "log", "inv", "sin", "cos", "tan".
+    operators: str, sequence or None, optional (default=None)
+        Mathematical operators to apply on the features. None for all.
+        Choose from: "add", "sub", "mul", "div", "sqrt", "log", "inv",
+        "sin", "cos", "tan".
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -88,25 +91,27 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` instance used by `numpy.random`.
+        number generator is the `RandomState` used by `numpy.random`.
 
     Attributes
     ----------
     symbolic_transformer: SymbolicTransformer
-        Instance used to calculate the genetic features. Only for
-        the genetic strategy.
+        Instance used to calculate the genetic features. Only for the
+        genetic strategy.
 
     genetic_features: pd.DataFrame
-        Dataframe of the newly created non-linear features. Only
-        for the genetic strategy. Columns include:
+        Dataframe of the newly created non-linear features. Only for
+        the genetic strategy. Columns include:
             - name: Name of the feature (automatically created).
             - description: Operators used to create this feature.
             - fitness: Fitness score.
@@ -119,7 +124,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         n_features: Optional[int] = None,
         generations: int = 20,
         population: int = 500,
-        operators: Optional[Union[str, Sequence[str]]] = None,
+        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         logger: Optional[Union[bool, str, callable]] = None,
@@ -140,14 +145,14 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
-        """Fit the data according to the selected strategy.
+        """Fit the feature generator to the data.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
+        y: int, str or sequence
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -175,7 +180,6 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         X, y = self._prepare_input(X, y)
 
-        # Check Parameters
         if self.n_features is not None and self.n_features <= 0:
             raise ValueError(
                 "Invalid value for the n_features parameter."
@@ -204,7 +208,6 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 f"should be either 'dfs' or 'genetic', got {self.strategy}."
             )
 
-        # Check operators
         default = ["add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan"]
         if not self.operators:  # None or empty list
             self.operators = default
@@ -257,8 +260,8 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 trans_primitives=trans_primitives,
             )
 
-            # Since dfs doesn't return a specific order in the features and we need
-            # an order for the selection to be deterministic, order by name
+            # Since dfs doesn't return a specific feature order, we
+            # enforce order by name to be deterministic
             new_dfs = []
             for feature in sorted(map(str, self._dfs_features[X.shape[1] - 1:])):
                 for fx in self._dfs_features:
@@ -267,7 +270,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                         break
             self._dfs_features = self._dfs_features[: X.shape[1] - 1] + new_dfs
 
-            # Make sure there are enough features (-1 because X has an index column)
+            # Make sure there are enough features (-1 because of index)
             max_features = len(self._dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
                 self.n_features = max_features
@@ -306,10 +309,10 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -342,8 +345,8 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         else:
             new_features = self.symbolic_transformer.transform(X)
 
-            # ix = indices of all new features that are not in the original set
-            # descript = list of the operators applied to create the new features
+            # ix = indices of new fxs that are not in the original set
+            # descript = operators applied to create the new features
             # fitness = list of fitness scores of the new features
             ix, descript, fitness = [], [], []
             for i, program in enumerate(self.symbolic_transformer):
@@ -352,7 +355,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 descript.append(str(program))
                 fitness.append(program.fitness_)
 
-            # Remove all features that are identical to those in the dataset
+            # Remove all identical features to those in the dataset
             new_features = new_features[:, ix]
             descript = [descript[i] for i in range(len(descript)) if i in ix]
             fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
@@ -410,10 +413,10 @@ class FeatureSelector(
 
     Remove features according to the selected strategy. Ties between
     features with equal scores will be broken in an unspecified way.
-    Additionally, removes features with too low variance and finds pairs of
-    collinear features based on the Pearson correlation coefficient. For
-    each pair above the specified limit (in terms of absolute value), it
-    removes one of the two.
+    Additionally, removes features with too low variance and finds
+    pairs of collinear features based on the Pearson correlation
+    coefficient. For each pair above the specified limit (in terms of
+    absolute value), it removes one of the two.
 
     Parameters
     ----------
@@ -426,14 +429,14 @@ class FeatureSelector(
             - "RFE": Recursive feature eliminator.
             - "RFECV": RFE with cross-validated selection.
 
-        Note that the RFE and RFECV strategies don't work when the solver is a
-        CatBoost model due to incompatibility of the APIs.
+        Note that the RFE and RFECV strategies don't work when the
+        solver is a CatBoost model due to incompatibility of the APIs.
 
-    solver: string, callable or None, optional (default=None)
-        Solver or model to use for the feature selection strategy. See the
-        sklearn documentation for an extended description of the choices.
-        Select None for the default option per strategy (not applicable
-        for SFM, RFE and RFECV).
+    solver: str, callable or None, optional (default=None)
+        Solver or model to use for the feature selection strategy. See
+        sklearn's documentation for an extended description of the
+        choices. Select None for the default option per strategy (not
+        applicable for SFM, RFE and RFECV).
             - for "univariate", choose from:
                 + "f_classif"
                 + "f_regression"
@@ -441,18 +444,19 @@ class FeatureSelector(
                 + "mutual_info_regression"
                 + "chi2"
                 + Any function taking two arrays (X, y), and returning
-                  arrays (scores, p-values). See the sklearn documentation.
+                  arrays (scores, p-values).
             - for "PCA", choose from:
                 + "auto" (default)
                 + "full"
                 + "arpack"
                 + "randomized"
             - for "SFM", "RFE" and "RFECV:
-                Estimator with either a `feature_importances_` or `coef_` attribute
-                after fitting. You can use one of ATOM's pre-defined models. Add
-                `_class` or `_reg` after the model's name to specify a classification
-                or regression task, e.g. `solver="LGB_reg"` (not necessary if called
-                from an `atom` instance. No default option.
+                Estimator with either a `feature_importances_` or `coef_`
+                attribute after fitting. You can use one of ATOM's
+                predefined models. Add `_class` or `_reg` after the
+                model's name to specify a classification or regression
+                task, e.g. `solver="LGB_reg"` (not necessary if called
+                from atom). No default option.
 
     n_features: int, float or None, optional (default=None)
         Number of features to select. Choose from:
@@ -460,22 +464,25 @@ class FeatureSelector(
             - if < 1: Fraction of the total features to select.
             - if >= 1: Number of features to select.
 
-        If `strategy="SFM"` and the threshold parameter is not specified, the
-        threshold will be set to `-np.inf` in order to make this parameter the
-        number of features to select.
-        If `strategy="RFECV"`, it's the minimum number of features to select.
+        If strategy="SFM" and the threshold parameter is not specified,
+        the threshold will be automatically set to `-inf` to select the
+        `n_features` features.
+
+        If strategy="RFECV", `n_features` is the minimum number of
+        features to select.
 
     max_frac_repeated: float or None, optional (default=1.)
-        Remove features with the same value in at least this fraction of
-        the total rows. The default is to keep all features with non-zero
-        variance, i.e. remove the features that have the same value in all
-        samples. None to skip this step.
+        Remove features with the same value in at least this fraction
+        of the total rows. The default is to keep all features with
+        non-zero variance, i.e. remove the features that have the same
+        value in all samples. None to skip this step.
 
     max_correlation: float or None, optional (default=1.)
-        Minimum value of the Pearson correlation coefficient to identify
-        correlated features. A value of 1 removes one of 2 equal columns.
-        A dataframe of the removed features and their correlation values
-        can be accessed through the collinear attribute. None to skip this step.
+        Minimum Pearson correlation coefficient to identify correlated
+        features. A value of 1 will remove one of 2 equal columns. A
+        dataframe of the removed features and their correlation values
+        can be accessed through the collinear attribute. None to skip
+        this step.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -492,28 +499,31 @@ class FeatureSelector(
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` instance used by `numpy.random`.
+        number generator is the `RandomState` used by `numpy.random`.
 
     **kwargs
-        Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
-        See the corresponding sklearn documentation for the available options.
+        Any extra keyword argument for the PCA, SFM, RFE or RFECV
+        estimators. See the corresponding documentation for the
+        available options.
 
     Attributes
     ----------
     collinear: pd.DataFrame
         Dataframe of the removed collinear features. Columns include:
             - drop_feature: Name of the feature dropped by the method.
-            - correlated feature: Name of the correlated feature(s).
-            - correlation_value: Pearson correlation coefficient(s)
-                                 of the feature pairs.
+            - correlated feature: Name of the correlated features.
+            - correlation_value: Pearson correlation coefficients of
+                                 the feature pairs.
 
     feature_importance: list
         Remaining features ordered by importance. Only if strategy in
@@ -580,18 +590,19 @@ class FeatureSelector(
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit the data according to the selected strategy.
+        """Fit the feature selector to the data.
 
-        Note that the univariate, sfm (when model is not fitted), rfe and rfecv
-        strategies need a target column. Leaving it None will raise an exception.
+        Note that the univariate, sfm (when model is not fitted), rfe
+        and rfecv strategies need a target column. Leaving it None will
+        raise an exception.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
-            - If None: y is ignored in the transformation.
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -803,14 +814,14 @@ class FeatureSelector(
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Transform the data according to the selected strategy.
+        """Apply the transformations on the data.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Only for continuity of API.
 
         Returns
@@ -823,10 +834,11 @@ class FeatureSelector(
         def get_scores(est):
             """Return the feature scores for a given estimator.
 
-            Return the values of the attributes scores_, feature_importances_ or
-            coef_ if available (in that order). For multiclass classification tasks,
-            the coef_ attribute has shape (n_targets, n_features). In this case, the
-            mean of the coef_ value over the targets is returned.
+            Return the values of the scores_, feature_importances_ or
+            coef_ attributes if available (in that order). For
+            multiclass classification tasks, the coef_ attribute has
+            shape (n_targets, n_features). In this case, the mean of
+            the coef_ value over the targets is returned.
 
             Parameters
             ----------
@@ -836,7 +848,7 @@ class FeatureSelector(
             Returns
             -------
             scores: np.ndarray
-                Scores of the selected attribute for the provided estimator.
+                Scores of the selected attribute for the estimator.
 
             """
             attributes = ["scores_", "feature_importances_", "coef_"]

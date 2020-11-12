@@ -11,7 +11,7 @@ Description: Module containing the data cleaning estimators.
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional, Sequence
+from typing import Union, Optional
 
 # Sklearn
 from sklearn.base import BaseEstimator
@@ -25,28 +25,29 @@ from category_encoders.one_hot import OneHotEncoder
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES, it, variable_return,
-    to_df, to_series, merge, check_is_fitted, composed, crash, method_to_log
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES,
+    it, variable_return, to_df, to_series, merge, check_is_fitted,
+    composed, crash, method_to_log
 )
 
 
 class BaseCleaner(object):
-    """Base class for the data_cleaning and feature_engineering methods."""
+    """Base class for data cleaning and feature engineering classes."""
 
     @composed(crash, method_to_log, typechecked)
     def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit and transform with (optionally) both X and y parameters.
+        """Fit to data, then transform it.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
-            - If None: y is ignored in the transformation.
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
-            - Else: Data target column with shape=(n_samples,).
+            - Else: Target column with shape=(n_samples,).
 
         Returns
         -------
@@ -77,11 +78,13 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             - 0 to not print anything.
             - 1 to print basic information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -103,10 +106,10 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -125,10 +128,10 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -164,11 +167,11 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     Parameters
     ----------
-    prohibited_types: str or iterable, optional (default=[])
-        Columns with any of these types will be removed from the dataset.
+    prohibited_types: str, sequence or None, optional (default=None)
+        Columns with these types will be removed from the dataset.
 
     strip_categorical: bool, optional (default=True)
-        Whether to strip the spaces from values in the categorical columns.
+        Whether to strip spaces from the categorical columns.
 
     maximum_cardinality: bool, optional (default=True)
         Whether to remove categorical columns with maximum cardinality,
@@ -176,15 +179,16 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         instances. Usually the case for names, IDs, etc...
 
     minimum_cardinality: bool, optional (default=True)
-        Whether to remove columns with minimum cardinality, i.e. all values
-        in the column are the same.
+        Whether to remove columns with minimum cardinality, i.e. all
+        values in the column are the same.
 
     missing_target: bool, optional (default=True)
         Whether to remove rows with missing values in the target column.
-        Ignored if y is not provided.
+        Is ignored if y is not provided.
 
     encode_target: bool, optional (default=True)
-        Whether to Label-encode the target column. Ignored if y is not provided.
+        Whether to Label-encode the target column. Is ignored if y is
+        not provided.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -192,29 +196,31 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     Attributes
     ----------
     missing: list
-        List of values that are considered "missing". Default values are: "", "?",
-        "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and
-        `-inf` are always considered missing since they are incompatible with
-        sklearn estimators.
+        List of values that are considered "missing". Default values
+        are: "", "?", "None", "NA", "nan", "NaN" and "inf". Note that
+        `None`, `NaN`, `+inf` and `-inf` are always considered missing
+        since they are incompatible with sklearn estimators.
 
     mapping: dict
-        Dictionary of the target values mapped to their respective encoded integer.
-        Only available if encode_target=True.
+        Dictionary of the target values mapped to their respective
+        encoded integer. Only available if encode_target=True.
 
     """
 
     def __init__(
         self,
-        prohibited_types: Optional[Union[str, Sequence[str]]] = None,
+        prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
         maximum_cardinality: bool = True,
         minimum_cardinality: bool = True,
@@ -236,15 +242,15 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply data cleaning steps to the data.
+        """Apply the data cleaning steps to the data.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
-            - If None: y is ignored in the transformation.
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -252,7 +258,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         Returns
         -------
         X: pd.DataFrame
-            Feature dataframe.
+            Transformed dataframe.
 
         y: pd.Series
             Target column corresponding to X. Only returned if provided.
@@ -334,8 +340,9 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
     """Handle missing values in the data.
 
     Impute or remove missing values according to the selected strategy.
-    Also removes rows and columns with too many missing values. Use the
-    `missing` attribute to customize what are considered "missing values".
+    Also removes rows and columns with too many missing values. Use
+    the `missing` attribute to customize what are considered "missing
+    values".
 
     Parameters
     ----------
@@ -368,19 +375,21 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     Attributes
     ----------
     missing: list
-        List of values that are considered "missing". Default values are: "", "?",
-        "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and
-        `-inf` are always considered missing since they are incompatible with
-        sklearn estimators.
+        List of values that are considered "missing". Default values
+        are: "", "?", "None", "NA", "nan", "NaN" and "inf". Note that
+        `None`, `NaN`, `+inf` and `-inf` are always considered missing
+        since they are incompatible with sklearn estimators.
 
     """
 
@@ -405,14 +414,14 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit the individual imputers on each column.
+        """Fit the imputer to the data.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -476,15 +485,15 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the missing values transformations.
+        """Impute the missing values.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
-            - If None: y is ignored in the transformation.
+        y: int, str or sequence
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -599,31 +608,35 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
     """Perform encoding of categorical features.
 
-    The encoding type depends on the number of unique values in the column:
+    The encoding type depends on the number of classes in the column:
         - If n_unique=2, use Label-encoding.
         - If 2 < n_unique <= max_onehot, use OneHot-encoding.
         - If n_unique > max_onehot, use `strategy`-encoding.
 
-    Also replaces classes with low occurrences with the value `other` in order to
-    prevent too high cardinality. Categorical features are defined as all columns
-    whose dtype.kind not in `ifu`. Will raise an error if it encounters missing
-    values or unknown classes when transforming.
+    Also replaces classes with low occurrences with the value `other`
+    in order to prevent too high cardinality. Categorical features are
+    defined as all columns whose dtype.kind not in `ifu`. Will raise
+    an error if it encounters missing values or unknown classes when
+    transforming.
 
     Parameters
     ----------
     strategy: str, optional (default="LeaveOneOut")
-        Type of encoding to use for high cardinality features. Choose from one of
-        the estimators available in the category-encoders package except for:
+        Type of encoding to use for high cardinality features. Choose
+        from one of the estimators available in the category-encoders
+        package except for:
             - OneHotEncoder: Use the `max_onehot` parameter.
             - HashingEncoder: Incompatibility of APIs.
 
     max_onehot: int or None, optional (default=10)
-        Maximum number of unique values in a feature to perform one-hot-encoding.
-        If None, it will always use `strategy` when n_unique > 2.
+        Maximum number of unique values in a feature to perform
+        one-hot-encoding. If None, it will always use `strategy`
+        when n_unique > 2.
 
     frac_to_other: float, optional (default=None)
-        Classes with less occurrences than n_rows * fraction_to_other are
-        replaced with the string `other`. If None, this skip this step.
+        Classes with less occurrences than n_rows * fraction_to_other
+        are replaced with the string `other`. If None, this skip this
+        step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -631,11 +644,13 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     **kwargs
         Additional keyword arguments passed to the `strategy` estimator.
@@ -663,14 +678,14 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
-        """Fit the individual encoders on each column.
+        """Fit the encoder to the data.
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str or array-like
+        y: int, str or sequence
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -742,14 +757,14 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the encoding transformations.
+        """Apply the transformations on the data.
 
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
 
         Returns
@@ -799,7 +814,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
     """Remove or replace outliers in the data.
 
-    Outliers are values that lie further than `max_sigma` * standard_deviation
+    Outliers are values that lie further than `max_sigma` * std
     away from the mean of the column. Ignores categorical columns.
 
     Parameters
@@ -807,7 +822,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
     strategy: int, float or str, optional (default="drop")
         Strategy to apply on the outliers. Choose from:
             - "drop": Drop any row with outliers.
-            - "min_max": Replace the outlier with the min or max of the column.
+            - "min_max": Replace outlier with the min/max of the column.
             - Any numerical value with which to replace the outliers.
 
     max_sigma: int or float, optional (default=3)
@@ -815,8 +830,8 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         If more, it is considered an outlier.
 
     include_target: bool, optional (default=False)
-        Whether to include the target column in the transformation. This can
-        be useful for regression tasks.
+        Whether to include the target column in the transformation. This
+        can be useful for regression tasks.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -824,11 +839,13 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     """
 
@@ -852,10 +869,10 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
-            - If None: y is ignored in the transformation.
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -863,7 +880,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         Returns
         -------
         X: pd.DataFrame
-            Imputed dataframe.
+            Transformed dataframe.
 
         y: pd.Series
             Target column corresponding to X.
@@ -952,15 +969,16 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
 
 class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
-    """Balance the number of rows per target class.
+    """Balance the number of rows per class in the target column.
 
     Use only for classification tasks.
 
     Parameters
     ----------
     strategy: str, optional (default="ADASYN")
-        Type of algorithm to use for oversampling or undersampling. Choose from one
-        of the estimators available in the imbalanced-learn package.
+        Type of algorithm to use for oversampling or undersampling.
+        Choose from one of the estimators in the imbalanced-learn
+        package.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -977,15 +995,17 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` instance used by `numpy.random`.
+        number generator is the `RandomState` used by `numpy.random`.
 
     **kwargs
         Additional keyword arguments passed to the `strategy` estimator.
@@ -998,7 +1018,8 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         default option.
 
     mapping: dict
-        Dictionary of the target values mapped to their respective encoded integer.
+        Dictionary of the target values mapped to their respective
+        encoded integer.
 
     """
 
@@ -1027,9 +1048,9 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         Parameters
         ----------
         X: dict, sequence, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series
+        y: int, str, sequence, np.array or pd.Series, optional (default=-1)
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -1045,7 +1066,6 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         """
         X, y = self._prepare_input(X, y)
 
-        # Check Parameters
         if self.strategy.lower() not in BALANCER_TYPES:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
@@ -1053,7 +1073,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
             )
         strategy = BALANCER_TYPES[self.strategy.lower()]
 
-        # Save index and columns for later
+        # Save index and columns to re-convert to pandas
         index = X.index
         columns = X.columns
         name = y.name

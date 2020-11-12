@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the parent class for all training classes.
+Description: Module containing the parent class for the trainers.
 
 """
 
@@ -14,82 +14,81 @@ from time import time
 import matplotlib.pyplot as plt
 
 # Own modules
-from .pipeline import Pipeline
+from .branch import Branch
 from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
     OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score,
-    time_to_string, get_metric, get_default_metric, fit_init, clear
+    time_to_string, get_metric, get_default_metric, fit_init, delete
 )
 
 
 class BaseTrainer(BaseTransformer, BasePredictor):
-    """Base estimator for the training classes.
+    """Base class for the trainers.
 
     Parameters
     ----------
     models: string or sequence
-        List of models to fit on the data. Use the predefined acronyms
-        in MODEL_LIST or a custom model.
+        Models to train on the data. Use the predefined acronyms in
+        MODEL_LIST or a custom model.
 
-    metric: str, callable or iterable, optional (default=None)
-        Metric(s) on which the pipeline fits the models. Choose from any of
-        the scorers predefined by sklearn, use a score (or loss) function with
-        signature metric(y, y_pred, **kwargs) or use a scorer object.
-        If multiple metrics are selected, only the first will be used to
-        optimize the BO. If None, a default metric is selected:
+    metric: str, callable or sequence, optional (default=None)
+        Metric on which to fit the models. Choose from any of sklearn's
+        SCORERS, a function with signature metric(y, y_pred, **kwargs),
+        a scorer object or a sequence of these. If multiple metrics are
+        selected, only the first will be used to optimize the BO. If
+        None, a default metric is selected:
             - "f1" for binary classification
             - "f1_weighted" for multiclass classification
             - "r2" for regression
 
-    greater_is_better: bool or iterable, optional (default=True)
+    greater_is_better: bool or sequence, optional (default=True)
         Whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Will be ignored if the metric is a string or a scorer.
-        If iterable, the n-th value will apply to the n-th metric in the
-        pipeline.
+        If sequence, the n-th value will apply to the n-th metric.
 
-    needs_proba: bool or iterable, optional (default=False)
-        Whether the metric function requires probability estimates out of a
-        classifier. If True, make sure that every estimator in the pipeline has
-        a `predict_proba` method. Will be ignored if the metric is a string
-        or a scorer. If iterable, the n-th value will apply to the n-th metric
-        in the pipeline.
+    needs_proba: bool or sequence, optional (default=False)
+        Whether the metric function requires probability estimates out
+        of a classifier. If True, make sure that every selected model
+        has a `predict_proba` method. Will be ignored if the metric is
+        a string or a scorer. If sequence, the n-th value will apply to
+        the n-th metric.
 
-    needs_threshold: bool or iterable, optional (default=False)
-        Whether the metric function takes a continuous decision certainty.
-        This only works for binary classification using estimators that
-        have either a `decision_function` or `predict_proba` method. Will
-        be ignored if the metric is a string or a scorer. If iterable, the
-        n-th value will apply to the n-th metric in the pipeline.
+    needs_threshold: bool or sequence, optional (default=False)
+        Whether the metric function takes a continuous decision
+        certainty. This only works for estimators that have either a
+        `decision_function` or `predict_proba` method. Will be ignored
+        if the metric is a string or a scorer. If sequence, the n-th
+        value will apply to the n-th metric.
 
-    n_calls: int or iterable, optional (default=0)
-        Maximum number of iterations of the BO (including `random starts`).
-        If 0, skip the BO and fit the model on its default Parameters.
-        If iterable, the n-th value will apply to the n-th model in the
-        pipeline.
+    n_calls: int or sequence, optional (default=15)
+        Maximum number of iterations of the BO. It includes the random
+        points of `n_initial_points`. If 0, skip the BO and fit the
+        model on its default Parameters. If sequence, the n-th value
+        will apply to the n-th model.
 
-    n_initial_points: int or iterable, optional (default=5)
+    n_initial_points: int or sequence, optional (default=5)
         Initial number of random tests of the BO before fitting the
         surrogate function. If equal to `n_calls`, the optimizer will
-        technically be performing a random search. If iterable, the n-th
-        value will apply to the n-th model in the pipeline.
+        technically be performing a random search. If sequence, the
+        n-th value will apply to the n-th model.
 
     est_params: dict, optional (default={})
         Additional parameters for the estimators. See the corresponding
-        documentation for the available options. For multiple models, use
-        the acronyms as key and a dictionary of the parameters as value.
+        documentation for the available options. For multiple models,
+        use the acronyms as key and a dict of the parameters as value.
+        Add _fit to the parameter's name to pass it to the fit method.
 
     bo_params: dict, optional (default={})
         Additional parameters to for the BO. See bayesian_optimization
         in basemodel.py for the available options.
 
-    bagging: int, iterable or None, optional (default=None)
-        Number of data sets (bootstrapped from the training set) to use in
-        the bagging algorithm. If None or 0, no bagging is performed.
-        If iterable, the n-th value will apply to the n-th model in the
-        pipeline.
+    bagging: int, sequence or None, optional (default=None)
+        Number of data sets (bootstrapped from the training set) to use
+        in the bagging algorithm. If None or 0, no bagging is performed.
+        If sequence, the n-th value will apply to the n-th model.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -104,28 +103,32 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
             - 1 to print basic information.
-            - 2 to print extended information.
+            - 2 to print detailed information.
 
     warnings: bool or str, optional (default=True)
-        - If True: Default warning action (equal to "default" when string).
-        - If False: Suppress all warnings (equal to "ignore" when string).
-        - If str: One of the possible actions in python's warnings environment.
+        - If True: Default warning action (equal to "default").
+        - If False: Suppress all warnings (equal to "ignore").
+        - If str: One of the actions in python's warnings environment.
 
-        Note that changing this parameter will affect the `PYTHONWARNINGS`
-        environment.
+        Note that changing this parameter will affect the
+        `PYTHONWARNINGS` environment.
 
-        Note that ATOM can't manage warnings that go directly from C/C++ code
-        to the stdout/stderr.
+        Note that ATOM can't manage warnings that go directly
+        from C/C++ code to the stdout/stderr.
 
-    logger: bool, str, class or None, optional (default=None)
+    logger: str, class or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
+
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
+
+        Note that warnings will not be saved to the logger.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
-        number generator is the `RandomState` instance used by `numpy.random`.
+        number generator is the `RandomState` used by `numpy.random`.
 
     """
 
@@ -154,9 +157,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.bo_params = bo_params
         self.bagging = bagging
 
-        # Pipeline attributes
-        self._pipe = "main"  # Current (and only) pipeline
-        self._branches = {self._pipe: Pipeline(self, self._pipe)}
+        # Branching attributes
+        self._current = "main"  # Current (and only) branch
+        self._branches = {self._current: Branch(self, self._current)}
         self.scaler = None
         self.task = None
 
@@ -179,11 +182,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def _params_to_attr(self, *arrays):
         """Attach the provided data as attributes of the class."""
         # If no data was provided and there already is a dataset, skip
-        if len(arrays) > 0 or self.pipeline.data is None:
-            self.pipeline.data, self.pipeline.idx = self._get_data_and_idx(arrays)
-
-            # Reset scaler in case of a rerun with new data
-            self.scaler = None
+        if len(arrays) > 0 or self.branch.data is None:
+            self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
+            self.scaler = None  # Reset scaler in case of a rerun with new data
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
@@ -192,11 +193,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         models = []
         for m in self.models:
-            # Get the models' right acronym
             if isinstance(m, str):
+                # Get the models' right acronym
                 acronym = None
                 model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
                 for model in model_list:
+                    # Use startswith because models can be tagged
                     if m.lower().startswith(model.lower()):
                         acronym = model
 
@@ -215,7 +217,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                             "package. Make sure it is installed."
                         )
 
-                # Remove regression/classification-only models from pipeline
+                # Check for regression/classification-only models
                 if self.goal.startswith("class") and acronym in ONLY_REG:
                     raise ValueError(
                         f"The {acronym} model can't perform classification tasks!"
@@ -238,16 +240,16 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 raise ValueError(
                     "Invalid value for the models parameter. Duplicate model: "
                     f"{subclass.name}. Add a tag to the model's acronym to use "
-                    "the same model twice."
+                    "the same estimator twice."
                 )
 
-            # Attach the subclasses to the training instances
+            # Attach the subclasses to the trainers
             setattr(self, subclass.name, subclass)
             setattr(self, subclass.name.lower(), subclass)  # Lowercase as well
 
         self.models = models
 
-        # Check validity BO parameters ===================================== >>
+        # Check validity BO parameters ============================= >>
 
         if isinstance(self.n_calls, (list, tuple)):
             if len(self.n_calls) != len(self.models):
@@ -278,7 +280,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         else:
             self.bagging = [self.bagging for _ in self.models]
 
-        # Check dimensions params ========================================== >>
+        # Check dimensions params ================================== >>
 
         if self.bo_params.get("dimensions"):
             dimensions = {}
@@ -295,7 +297,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             self.bo_params["dimensions"] = dimensions
 
-        # Prepare est_params =============================================== >>
+        # Prepare est_params ======================================= >>
 
         if self.est_params:
             est_params = {}
@@ -312,7 +314,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             self.est_params = est_params
 
-        # Check validity metric ============================================ >>
+        # Check validity metric ==================================== >>
 
         if not self.metric_[0]:
             self.metric_ = [get_default_metric(self.task)]
@@ -326,11 +328,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 needs_threshold=self.needs_threshold,
             )
 
-        # Assign mapping =================================================== >>
+        # Assign mapping =========================================== >>
 
-        # Needs to be filled if called from training instance
-        if not self.pipeline.mapping:
-            self.pipeline.mapping = {str(v): v for v in sorted(self.y.unique())}
+        # Is already filled if called from atom
+        if not self.branch.mapping:
+            self.branch.mapping = {str(v): v for v in sorted(self.y.unique())}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -372,7 +374,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         return metric_list
 
     def _run(self):
-        """Core iteration.
+        """Core iteration of the trainer.
 
         Returns
         -------
@@ -444,7 +446,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self.errors[m] = ex
 
                 # Add model to "garbage collector"
-                # Cannot remove at once to maintain iteration order
+                # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m)
 
         # Close the BO plot if there was one
@@ -452,13 +454,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             plt.close()
 
         # Remove faulty models
-        clear(self, to_remove)
+        delete(self, to_remove)
 
-        # Check if all models failed (self.models is empty)
+        # Raise an exception if all models failed
         if not self.models:
             raise RuntimeError("It appears all models failed to run...")
 
-        # Print final results ============================================== >>
+        # Print final results ====================================== >>
 
         # Create dataframe with final results
         results = pd.DataFrame(columns=self._results.columns)
@@ -495,6 +497,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if get_best_score(m) == best_score and len(self.models) > 1:
                 out += " !"
 
-            self.log(out, 1)  # Print the score
+            self.log(out, 1)  # Print the pipeline's final score
 
         return results

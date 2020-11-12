@@ -10,21 +10,28 @@ Description: Unit tests for basepredictor.py
 # Standard packages
 import pytest
 import numpy as np
+import pandas as pd
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.training import TrainerClassifier
-from atom.pipeline import Pipeline
+from atom.branch import Branch
+from atom.training import DirectClassifier
 from atom.utils import NotFittedError
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
-# Test utility properties =================================================== >>
+# Test utility properties ========================================== >>
+
+def test_branch_property():
+    """Assert that the branch property returns the current branch."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom.branch, Branch)
+
 
 def test_pipeline_property():
-    """Assert that the pipeline property returns the current pipeline."""
+    """Assert that the pipeline property returns the estimators in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert isinstance(atom.pipeline, Pipeline)
+    assert isinstance(atom.pipeline, pd.Series)
 
 
 def test_metric_property():
@@ -36,7 +43,7 @@ def test_metric_property():
 
 def test_metric_property_no_run():
     """Assert that the metric property doesn't crash when Trainer is not fit."""
-    trainer = TrainerClassifier("lr", metric="r2", random_state=1)
+    trainer = DirectClassifier("lr", metric="r2", random_state=1)
     assert trainer.metric == "r2"
 
 
@@ -106,12 +113,12 @@ def test_n_classes_property():
     assert atom.n_classes == 3
 
 
-# Data attributes =========================================================== >>
+# Data attributes ================================================== >>
 
 def test_dataset_property():
-    """Assert that the dataset property returns the _data attribute."""
+    """Assert that the dataset property returns the data in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.dataset is atom.pipeline.data
+    assert atom.dataset is atom.branch.data
 
 
 def test_train_property():
@@ -167,7 +174,7 @@ def test_y_test_property():
     assert atom.y_test.shape == (int(test_size * len(X_bin)),)
 
 
-# Test prediction methods =================================================== >>
+# Test prediction methods ========================================== >>
 
 def test_predict_method():
     """Assert that the predict method works as intended."""
@@ -217,7 +224,7 @@ def test_score_method_sample_weights():
     assert isinstance(score, float)
 
 
-# Test utility methods ====================================================== >>
+# Test utility methods ============================================= >>
 
 def test_class_weights_invalid_dataset():
     """Assert that an error is raised if invalid value for dataset."""
@@ -274,11 +281,11 @@ def test_metric_is_given():
 
 
 def test_models_is_all():
-    """Assert that the whole pipeline is cleared for models="all"."""
+    """Assert that the whole pipeline is deleted for models="all"."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
-    atom.clear("all")
-    assert not (atom.models or atom.metric or atom.trainer)
+    atom.delete("all")
+    assert not (atom.models or atom.metric or atom._approach)
     assert atom.results.empty
 
 
@@ -286,14 +293,14 @@ def test_invalid_model():
     """Assert that an error is raised when model is not in pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
-    pytest.raises(ValueError, atom.clear, "GNB")
+    pytest.raises(ValueError, atom.delete, "GNB")
 
 
 def test_models_is_str():
-    """Assert that a single model is cleared."""
+    """Assert that a single model is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
-    atom.clear("lda")
+    atom.delete("lda")
     assert atom.models == ["LR"]
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
@@ -301,28 +308,28 @@ def test_models_is_str():
 
 
 def test_models_is_sequence():
-    """Assert that multiple models are cleared."""
+    """Assert that multiple models are deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA", "QDA"])
-    atom.clear(["LDA", "QDA"])
+    atom.delete(["LDA", "QDA"])
     assert atom.models == ["LR"]
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
 
 
-def test_clear_successive_halving():
-    """Assert that clearing works for successive_halving pipelines."""
+def test_delete_successive_halving():
+    """Assert that deleting works for successive halving pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.successive_halving(["LR", "LDA", "QDA"], bagging=3)
-    atom.clear(["LR"])
+    atom.delete(["LR"])
     assert "LR" not in atom.results.index.get_level_values(1)
     assert atom.winner is atom.LDA
 
 
 def test_clear_train_sizing():
-    """Assert that clearing works for successive_halving pipelines."""
+    """Assert that deleting works for train sizing pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing(["LR", "LDA", "QDA"])
-    atom.clear()
-    assert not (atom.models or atom.metric or atom.trainer)
+    atom.delete()
+    assert not (atom.models or atom.metric or atom._approach)
     assert atom.results.empty

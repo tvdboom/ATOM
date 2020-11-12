@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -571,8 +571,8 @@ Fit and evaluate the models in a <a href="../../../user_guide/#train-sizing">tra
 <li>The model is fitted on the training set using the best combinations of hyperparameters found.</li>
 <li>Using a bagging algorithm, various scores on the test set are calculated.</li>
 </ol>
-<p>Just like <code>atom</code>, you can <a href="../../../user_guide/#predicting">predict</a>,
- <a href="../../../user_guide/#plots">plot</a> and call any <a href="../../../user_guide/#models"><code>model</code></a>
+<p>Just like atom, you can <a href="../../../user_guide/#predicting">predict</a>,
+ <a href="../../../user_guide/#plots">plot</a> and call any <a href="../../../user_guide/#models">model</a>
  from the TrainSizingClassifier instance. Read more in the <a href="../../../user_guide/#training">user guide</a>.
 <br />
 <table>
@@ -648,7 +648,7 @@ Whether the metric function takes a continuous decision certainty.
  be ignored if the metric is a string or a scorer. If iterable, the
  n-th value will apply to the n-th metric in the pipeline.
 </blockquote>
-<strong>train_sizes: array-like, optional (default=np.linspace(0.2, 1.0, 5))</strong>
+<strong>train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))</strong>
 <blockquote>
 Sequence of training set sizes used to run the trainings.
 <ul>
@@ -842,7 +842,7 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: <a href="../../../user_guide/#models"><code>model</code></a></strong>
+<strong>winner: <a href="../../../user_guide/#models">model</a></strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>

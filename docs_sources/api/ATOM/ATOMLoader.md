@@ -3,12 +3,12 @@
 
 <a name="atom"></a>
 <pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename=None, data=None, transform_data=True, verbose=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L76">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L77">[source]</a></div></pre>
 <div style="padding-left:3%">
-Load a class instance from a pickle file. If the file is a `training` instance that
- was saved using `save_data=False`, you can load new data into it. If the file is an
- `atom` instance, you can also apply all data transformations in the pipeline to
- the provided data.
+Load a class instance from a pickle file. If the file is a trainer that
+ was saved using `save_data=False`, you can load new data into it. For
+ atom pickles, you can also apply all data transformations in the 
+ pipeline to the data.
 <br /><br />
 <table width="100%">
 <tr>
@@ -20,9 +20,9 @@ Name of the pickle file to load.
 </blockquote>
 <strong>data: tuple of indexables or None, optional (default=None)</strong>
 <blockquote>
-Tuple containing the features and target data. Only use this parameter if the
- file is a `training` instance that was saved using `save_data=False` (see the
- [save](../atomclassifier/#save) method). Allowed formats are:
+Tuple containing the features and target data. Only use this parameter
+ if the file is a trainer that was saved using `save_data=False` (see
+ the [save](../atomclassifier/#save) method). Allowed formats are:
 <ul>
 <li>X, y</li>
 <li>train, test</li>
@@ -33,23 +33,24 @@ X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
 Feature set with shape=(n_features, n_samples). If no y is provided, the
  last column is used as target.<br><br>
-y: int, str or array-like<br>
+y: int, str or sequence<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Data target column with shape=(n_samples,).</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>transform_data: bool, optional (default=True)</strong>
 <blockquote>
-If False, the `data` is left as provided. If True, the `data` is transformed through
- all the steps in the instance's pipeline. This parameter is ignored if the loaded
- file is not an `atom` instance.
+If False, the `data` is left as provided. If True, it is transformed
+ through all the steps in the instance's pipeline. This parameter is
+ ignored if the loaded file is not an atom pickle.
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the transformations applied on the new data. If None, use the
- verbosity from the loaded instance. This parameter is ignored if `transform_data=False`.
+Verbosity level of the transformations applied on the new data. If
+ None, use the verbosity from the loaded instance. This parameter
+ is ignored if `transform_data=False`.
 </blockquote>
 </tr>
 </table>

@@ -16,7 +16,7 @@ from tensorflow.keras.datasets import mnist
 
 # Own modules
 from atom import ATOMClassifier
-from atom.training import TrainerClassifier
+from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
@@ -24,7 +24,7 @@ from .utils import (
 )
 
 
-# Test properties =========================================================== >>
+# Test properties ================================================== >>
 
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
@@ -117,7 +117,7 @@ def test_random_state_setter():
     pytest.raises(ValueError, BaseTransformer, random_state=-1)
 
 
-# Test _prepare_input ======================================================= >>
+# Test _prepare_input ============================================== >>
 
 def test_input_data_in_atom():
     """Assert that the data does not change once in an atom pipeline."""
@@ -129,7 +129,7 @@ def test_input_data_in_atom():
 def test_input_data_in_training():
     """Assert that the data does not change once in a training pipeline."""
     train = bin_train.copy()
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     trainer.run(train, bin_test)
     train.iloc[3, 2] = 99  # Change an item of the original variable
     assert 99 not in trainer.dataset  # Is unchanged in the pipeline
@@ -193,7 +193,7 @@ def test_target_is_none():
     assert y is None
 
 
-# Test _get_data_and_idx ==================================================== >>
+# Test _get_data_and_idx =========================================== >>
 
 def test_empty_data_arrays():
     """Assert that an error is raised when no data is provided."""
@@ -250,7 +250,7 @@ def test_train_test_provided():
     """Assert that it runs when train and test are provided."""
     dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
 
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.dataset.equals(dataset)
 
@@ -263,7 +263,7 @@ def test_train_test_as_tuple_provided():
     y_train = bin_train.iloc[:, -1]
     y_test = bin_test.iloc[:, -1]
 
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     trainer.run((X_train, y_train), (X_test, y_test))
     assert trainer.dataset.equals(dataset)
 
@@ -276,14 +276,14 @@ def test_4_data_provided():
     y_train = bin_train.iloc[:, -1]
     y_test = bin_test.iloc[:, -1]
 
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     trainer.run(X_train, X_test, y_train, y_test)
     assert trainer.dataset.equals(dataset)
 
 
 def test_invalid_input():
     """Assert that an error is raised when input arrays are invalid."""
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     pytest.raises(ValueError, trainer.run, X_bin, bin_train, bin_test)
 
 
@@ -312,7 +312,7 @@ def test_reset_index():
     assert list(atom.dataset.index) == list(range(len(X_bin)))
 
 
-# Test log ================================================================== >>
+# Test log ========================================================= >>
 
 def test_log():
     """Assert the log method works."""
@@ -320,7 +320,7 @@ def test_log():
     atom.log("test", 1)
 
 
-# Test save ================================================================= >>
+# Test save ======================================================== >>
 
 def test_file_is_saved():
     """Assert that the pickle file is created."""
@@ -338,7 +338,7 @@ def test_save_data():
     assert atom.dataset.equals(dataset)
 
     # From a trainer
-    trainer = TrainerClassifier("LR")
+    trainer = DirectClassifier("LR")
     trainer.run(bin_train, bin_test)
     dataset = trainer.dataset.copy()
     trainer.save(filename=FILE_DIR + "trainer", save_data=False)

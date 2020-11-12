@@ -6,7 +6,7 @@
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
 <div style="padding-left:3%">
 Balance the number of rows per target class. Use only for classification tasks.
-This class can be accessed from `atom` through the
+This class can be accessed from atom through the
  [balance](../../ATOM/atomclassifier/#balance) method. Read more in
  the [user guide](../../../user_guide/#balancing-the-data).
 <br /><br />
@@ -140,9 +140,9 @@ Oversample or undersample the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -279,9 +279,9 @@ Oversample or undersample the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>

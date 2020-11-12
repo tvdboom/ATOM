@@ -18,7 +18,7 @@ from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
-# Test FeatureGenerator ===================================================== >>
+# Test FeatureGenerator ============================================ >>
 
 def test_n_features_parameter_negative():
     """Assert that an error is raised when n_features is negative."""
@@ -107,7 +107,7 @@ def test_updated_dataset():
     assert X.shape[1] > X_bin.shape[1]
 
 
-# Test FeatureSelector ====================================================== >>
+# Test FeatureSelector ============================================= >>
 
 def test_unknown_strategy_parameter():
     """Assert that an error is raised when strategy is unknown."""

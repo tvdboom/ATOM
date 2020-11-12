@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -561,11 +561,11 @@
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L69">[source]</a></div></pre>
 <div style="padding-left:3%">
-Scales data to mean=0 and std=1. This method is equal to sklearn's
+Scales data to mean=0 and std=1. This class is equal to sklearn's
  <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">StandardScaler</a>
- except that it returns a dataframe when provided. This class can be accessed from
- <code>atom</code> through the <a href="../../ATOM/atomclassifier/#scale">scale</a>
- method. Read more in the <a href="../../../user_guide/#scaling-the-feature-set">user guide</a>.
+ except that it returns a dataframe when provided and it ignores non-numerical columns
+ (instead of raising an exception). This class can be accessed from atom through the
+ <a href="../../ATOM/atomclassifier/#scale">scale</a> method. Read more in the <a href="../../../user_guide/#scaling-the-feature-set">user guide</a>.
 <br /><br />
 <table>
 <tr>
@@ -663,7 +663,7 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
@@ -693,7 +693,7 @@ Fit the Scaler and return the scaled data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
@@ -815,7 +815,7 @@ Scale the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>

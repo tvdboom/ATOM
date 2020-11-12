@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../API/training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../API/training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../API/training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../API/training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -549,6 +549,11 @@
               </ul>
             </li>
             
+            <li class="nav-item" data-level="1"><a href="#data-pipelines" class="nav-link">Data pipelines</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
             <li class="nav-item" data-level="1"><a href="#data-cleaning" class="nav-link">Data cleaning</a>
               <ul class="nav flex-column">
               </ul>
@@ -629,30 +634,41 @@
  related to the ATOM package.</p>
 <ul>
 <li><strong>ATOM</strong>: Refers to this package.</li>
-<li><strong>task</strong>: Refers to one of the three supervised machine learning approaches that ATOM supports:<ul>
+<li><strong>task</strong>: One of the three supervised machine learning approaches that ATOM supports:<ul>
 <li><a href="https://en.wikipedia.org/wiki/Binary_classification">binary classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Multiclass_classification">multiclass classification</a></li>
 <li><a href="https://en.wikipedia.org/wiki/Regression_analysis">regression</a></li>
 </ul>
 </li>
-<li><strong>class</strong>: Refers to one of the unique values in a column, e.g. a binary classifier
-  has 2 classes in the target column.</li>
-<li><strong>array-like</strong>: One-dimensional array of variable type list, tuple, np.array or pd.Series.</li>
-<li><code>atom</code>: Refers to an <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
- <a href="../API/ATOM/atomregressor">ATOMRegressor</a> instance (note that all examples
- use it as variable name for the instance).</li>
-<li><code>model</code>: Refers to one of the <a href="#models">model</a> instances.</li>
-<li><strong>pipeline</strong>: Refers to the collection of data cleaning, feature engineering and training steps performed by <code>atom</code>.</li>
-<li><strong>missing values</strong>: Refers to the values in the <code>missing</code> attribute.</li>
+<li><strong>class</strong>: Unique value in a column, e.g. a binary classifier has 2 classes in the target column.</li>
+<li><strong>sequence</strong>: One-dimensional array of variable type <code>list</code>, <code>tuple</code>, <code>np.array</code> or <code>pd.Series</code>.</li>
+<li><strong>predictor</strong>: An estimator implementing a <code>predict</code> method. This encompasses all
+  classifiers and regressors.</li>
+<li><strong>transformer</strong>: An estimator implementing a <code>transform</code> method. This encompasses all
+  data cleaning and feature engineering classes.</li>
+<li><strong>atom</strong>: Instance of the <a href="../API/ATOM/atomclassifier">ATOMClassifier</a> or
+  <a href="../API/ATOM/atomregressor">ATOMRegressor</a> classes (note that the examples
+  use it as variable name for the instance).</li>
+<li><strong>model</strong>: Instance of a <a href="#models">model</a> in the pipeline.</li>
+<li><strong>pipeline</strong>: All the content in atom.</li>
+<li><strong>missing values</strong>: Values in the <code>missing</code> attribute.</li>
 <li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
-<li><strong>estimator</strong>: Actual estimator corresponding to a model. Implemented by an external package.</li>
+<li><strong>estimator</strong>: An object which manages the estimation and decoding of an algorithm. The
+  algorithm is estimated as a deterministic function of a set of parameters, a dataset
+  and a random state.</li>
+<li><strong>target</strong>: Name of the dependent variable, passed as y to an estimator’s fit method.</li>
+<li><strong>branch</strong>: Collection of estimators in the pipeline fitted to a specific dataset, see <a href="#branch"></a>.</li>
+<li><strong>scorer</strong>: A non-estimator callable object which evaluates an estimator on given test
+  data, returning a number. Unlike evaluation metrics, a greater returned number must
+  correspond with a better score. See sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter">documentation</a>.</li>
 <li><strong>BO</strong>: Bayesian optimization algorithm used for hyperparameter optimization.</li>
-<li><code>training</code>: Refers to an instance of one of the classes that train and evaluate the
-  models. The classes are:<ul>
+<li><strong>trainer</strong>: Instance of a class that train and evaluate the models (implement a
+  <code>run</code> method). Note that this means that atom is also a trainer. The following
+  classes are training classes:<ul>
 <li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a></li>
 <li><a href="../API/ATOM/atomregressor">ATOMRegressor</a></li>
-<li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
-<li><a href="../API/training/trainerregressor">TrainerRegressor</a></li>
+<li><a href="../API/training/directclassifier">DirectClassifier</a></li>
+<li><a href="../API/training/directregressor">DirectRegressor</a></li>
 <li><a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
 <li><a href="../API/training/successivehalvingregressor">SuccessiveHavingRegressor</a></li>
 <li><a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
@@ -660,10 +676,6 @@
 </ul>
 </li>
 </ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Note that <code>atom</code> instances are also <code>training</code> instances!</p>
-</div>
 <p><br><br></p>
 <h1 id="first-steps">First steps</h1>
 <hr />
@@ -680,9 +692,9 @@
  they assemble several steps that can be cross-validated together while setting
  different parameters. There are some important differences with sklearn's API:</p>
 <ol>
-<li><code>atom</code> is initialized with the data you want to manipulate. This data can be accessed
- at any moment through <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
-<li>The classes in ATOM's API are reached through <code>atom</code>'s methods. For example, calling
+<li>atom is initialized with the data you want to manipulate. This data can be accessed
+ at any moment through atom's <a href="../API/ATOM/atomclassifier/#data-properties">data attributes</a>.</li>
+<li>The classes in ATOM's API are reached through atom's methods. For example, calling
  the <a href="../API/ATOM/atomclassifier/#encode">encode</a> method, will initialize
  an <a href="../API/data_cleaning/encoder">Encoder</a> instance, fit it on the training set and
  transform the whole dataset.</li>
@@ -693,10 +705,10 @@
  cleaning or feature engineering purposes only.</li>
 </ol>
 <p>Let's get started with an example!</p>
-<p>First, initialize <code>atom</code> and provide it the data you want to use. You can either
+<p>First, initialize atom and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
  test set already splitted. Note that if a dataframe is provided, the indices will
- be reset by <code>atom</code>.</p>
+ be reset by atom.</p>
 <pre><code>atom = ATOMClassifier(X, y, test_size=0.25)
 </code></pre>
 <p>Apply data cleaning methods through the class. For example, calling the
@@ -712,6 +724,30 @@
 atom.plot_prc(title="Precision-recall curve comparison plot")
 </code></pre>
 <p><br><br></p>
+<h1 id="data-pipelines">Data pipelines</h1>
+<hr />
+<p>It may happen that you want to compare how a model performs on different datasets.
+ For example, on one dataset balanced with an undersampling strategy and the other
+ with an oversampling strategy. For this, atom has data pipelines.</p>
+<p>Data pipelines manage separate paths atom's dataset can take. The "paths" are
+ called branches and can be accessed through the <code>branch</code> attribute. Calling it
+ will show the branches in the pipeline. The current branch is indicated with <code>!</code>.
+ A branch contains a specific dataset and the transformers it took to arrive to that
+ dataset from the one the instance initialized with. Accessing data attributes such
+ as <code>atom.dataset</code> will return the data in the current branch. Use the pipelines
+ attribute to see the <code>estimators</code> in the branch.</p>
+<p>By default atom starts with one branch called 'main'. To start a new branch, set
+ a new name to the property, e.g. <code>atom.branch = "new_branch"</code>. Just so, type
+ <code>atom.branch = "main"</code> to go back to a previous branch. Note that every branch
+ contains a unique copy of the whole dataset! Creating many branches can cause
+ memory issues for large datasets. All data cleaning, feature engineering and
+ training methods you call will use the dataset in the current branch.</p>
+<p>You can delete a branch either deleting the attribute, e.g. <code>del atom.branch</code>, or
+ using the delete method, e.g. <code>atom.branch.delete()</code>. Use <code>atom.branch.status()</code>
+ to print a list of the transformers in the branch and their parameters.</p>
+<p>See the <a href="../examples/imbalanced_datasets/imbalanced_datasets/">imbalanced datasets</a>
+ example for a branching use case.</p>
+<p><br><br></p>
 <h1 id="data-cleaning">Data cleaning</h1>
 <hr />
 <p>More often than not, you need to do some data cleaning before fitting your dataset
@@ -725,14 +761,14 @@ atom.plot_prc(title="Precision-recall curve comparison plot")
  estimators: they might behave badly if the individual features do not more or less
  look like standard normally distributed data (e.g. Gaussian with 0 mean and unit
  variance). The <a href="../API/data_cleaning/scaler/">Scaler</a> class scales data to mean=0 and
- std=1. It can be accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#scale">scale</a>
+ std=1. It can be accessed from atom through the <a href="../API/ATOM/atomclassifier/#scale">scale</a>
  method. </p>
 <p><br></p>
 <h3 id="standard-data-cleaning">Standard data cleaning</h3>
 <p>There are many data cleaning steps that are useful to perform on any dataset before
  modelling. These are general rules that apply almost on every use-case and every
  task. The <a href="../API/data_cleaning/cleaner/">Cleaner</a> class is a convenient tool
- to apply such steps. It can be accessed from <code>atom</code> through the
+ to apply such steps. It can be accessed from atom through the
  <a href="../API/ATOM/atomclassifier/#clean">clean</a> method. Use the class' parameters to
  choose which transformations to perform. The available steps are:</p>
 <ul>
@@ -750,11 +786,11 @@ atom.plot_prc(title="Precision-recall curve comparison plot")
  ATOM's models which assume that all values in an array are numerical, and that all
  have and hold meaning. The <a href="../API/data_cleaning/imputer/">Imputer</a> class handles
  missing values in the dataset by either dropping or imputing the value. It can be
- accessed from <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#impute">impute</a>
+ accessed from atom through the <a href="../API/ATOM/atomclassifier/#impute">impute</a>
  method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
+<p>Use atom's <a href="../API/ATOM/atomclassifier/#data-attributes">missing</a> attribute
 for an overview of the missing values in the dataset.</p>
 </div>
 <p><br></p>
@@ -766,10 +802,10 @@ for an overview of the missing values in the dataset.</p>
  determining how to use this data in the analysis. ATOM's models don't support
  direct manipulation of this kind of data. Use the <a href="../API/data_cleaning/encoder/">Encoder</a>
  class to encode categorical features to numerical values. It can be accessed from
- <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#encode">encode</a> method.</p>
+ atom through the <a href="../API/ATOM/atomclassifier/#encode">encode</a> method.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>Use <code>atom</code>'s <a href="../API/ATOM/atomclassifier/#data-attributes">categorical</a> attribute
+<p>Use atom's <a href="../API/ATOM/atomclassifier/#data-attributes">categorical</a> attribute
 for a list of the categorical columns in the dataset.</p>
 </div>
 <p><br> </p>
@@ -779,7 +815,7 @@ for a list of the categorical columns in the dataset.</p>
  outside the range of what is expected and unlike the other data. These are called
  outliers. Often, machine learning modeling and model skill in general can be improved
  by understanding and even removing these outlier values. The <a href="../API/data_cleaning/outliers/">Outliers</a> 
- class can drop or impute outliers in the dataset. It can be accessed from <code>atom</code>
+ class can drop or impute outliers in the dataset. It can be accessed from atom
  through the <a href="../API/ATOM/atomclassifier/#outliers">outliers</a> method.</p>
 <p><br> </p>
 <h3 id="balancing-the-data">Balancing the data</h3>
@@ -789,7 +825,7 @@ for a list of the categorical columns in the dataset.</p>
  most of the transactions are non-fraud and a very few cases are fraud. This leaves
  us with a very unbalanced ratio of fraud vs non-fraud cases. The
  <a href="../API/data_cleaning/balancer/">Balancer</a> class can oversample the minority class
- or undersample the majority class. It can be accessed from <code>atom</code> through the
+ or undersample the majority class. It can be accessed from atom through the
  <a href="../API/ATOM/atomclassifier/#balance">balance</a> method.</p>
 <p><br><br></p>
 <h1 id="feature-engineering">Feature engineering</h1>
@@ -815,7 +851,7 @@ Feature engineering is the process of creating new features from the existing on
 <h3 id="generating-new-features">Generating new features</h3>
 <p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
  new non-linear features based on the original feature set. It can be accessed from
- <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#feature-generation">feature_generation</a>
+ atom through the <a href="../API/ATOM/atomclassifier/#feature-generation">feature_generation</a>
  method. You can choose between two strategies: Deep Feature Synthesis and Genetic
  Feature Generation.</p>
 <p><strong>Deep Feature Synthesis</strong><br>
@@ -845,7 +881,7 @@ the number of features!</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
-<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>'s
+<code>NaN</code> values. Check the warnings that may pop up or use atom's
 <a href="/API/ATOM/atomclassifier/#properties">missing</a> property.</p>
 </div>
 <div class="admonition warning">
@@ -879,7 +915,7 @@ Genetic feature generation (GFG) uses <a href="https://en.wikipedia.org/wiki/Gen
 <p><br></p>
 <h3 id="selecting-useful-features">Selecting useful features</h3>
 <p>The <a href="../API/feature_engineering/feature_selector/">FeatureSelector</a> class provides
- tooling to select the relevant features from a dataset. It can be accessed from <code>atom</code>
+ tooling to select the relevant features from a dataset. It can be accessed from atom
  through the <a href="../API/ATOM/atomclassifier/#feature-selection">feature_selection</a>
  method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.</p>
 <p><strong>Univariate</strong><br>
@@ -897,7 +933,7 @@ SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</cod
  best features in a dataset based on importance weights. The estimator is provided
  through the <code>solver</code> parameter and can be already fitted. ATOM allows you to use one
  its pre-defined <a href="#models">models</a>, e.g. <code>solver="RF"</code>. If you didn't call the
- FeatureSelector through <code>atom</code>, don't forget to indicate the estimator's task adding
+ FeatureSelector through atom, don't forget to indicate the estimator's task adding
  <code>_class</code> or <code>_reg</code> after the name, e.g. <code>RF_class</code> to use a random forest classifier.</p>
 <p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
 <p><strong>Recursive feature elimination</strong><br>
@@ -950,10 +986,10 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <p>ATOM provides 31 models for classification and regression tasks that can be used
  to fit the data in the pipeline. After fitting, every model class is attached to
  the <code>training</code> instance as an attribute. We refer to these "subclasses" as
- <code>models</code> (see the <a href="#nomenclature">nomenclature</a>). The classes contain a variety
+ models (see the <a href="#nomenclature">nomenclature</a>). The classes contain a variety
  of attributes and methods to help you understand how the underlying estimator
  performed. They can be accessed using the models" acronyms, e.g. <code>atom.LGB</code> to
- access the LightGBM's <code>model</code>. The available models and their corresponding
+ access the LightGBM's model. The available models and their corresponding
  acronyms are: </p>
 <ul>
 <li>"GP" for <a href="../API/models/gp">Gaussian Process</a></li>
@@ -1047,18 +1083,18 @@ atom.run(models=Lars)
 <p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>You can also use lowercase to call the <code>models</code>, e.g. <code>atom.lgb.plot_roc()</code>.</p>
+<p>You can also use lowercase to call the models, e.g. <code>atom.lgb.plot_roc()</code>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The <code>models</code> should not be initialized by the user! Only use them through the
+<p>The models should not be initialized by the user! Only use them through the
 <code>training</code> instances.</p>
 </div>
 <p><br><br></p>
 <h1 id="training">Training</h1>
 <hr />
 <p>The training phase is where the models are fitted and evaluated. After this, the
- <code>models</code> are attached to the <code>training</code> instance and you can use the <a href="#plots">plotting</a>
+ models are attached to the <code>training</code> instance and you can use the <a href="#plots">plotting</a>
  and <a href="#predicting">predicting</a> methods.  The pipeline applies the following steps
  iteratively for all models:</p>
 <ol>
@@ -1069,8 +1105,8 @@ atom.run(models=Lars)
 <p>There are three approaches to run the training.</p>
 <ul>
 <li>Direct training:<ul>
-<li><a href="../API/training/trainerclassifier">TrainerClassifier</a></li>
-<li><a href="../API/training/trainerregressor">TrainerRegressor</a></li>
+<li><a href="../API/training/directclassifier">DirectClassifier</a></li>
+<li><a href="../API/training/directregressor">DirectRegressor</a></li>
 </ul>
 </li>
 <li>Training via <a href="#successive-halving">successive halving</a>:<ul>
@@ -1086,43 +1122,49 @@ atom.run(models=Lars)
 </ul>
 <p>The direct fashion repeats the aforementioned steps only once, while the other two
  approaches repeats them more than once. Every approach can be directly called from
- <code>atom</code> through the <a href="../API/ATOM/atomclassifier/#run">run</a>,
+ atom through the <a href="../API/ATOM/atomclassifier/#run">run</a>,
  <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
  and <a href="../API/ATOM/atomclassifier/#train-sizing">train_sizing</a> methods
- respectively. Every approach should be called from an independent instance of <code>atom</code>.
+ respectively. Every approach should be called from an independent instance of atom.
  Subsequent runs from different approaches will remove all information from previous
  trainings from the pipeline. You can, however, rerun the same approach multiple times.
  In that case, the results are combined. Note that if you rerun the same model, only
- the last <code>model</code> is saved.</p>
+ the last model is saved.</p>
 <p>For example, here atom will "forget" the successive halving run.</p>
 <pre><code class="python">atom = ATOMClassifier(X, y)
 atom.successive_halving([&quot;Tree&quot;, &quot;Bag&quot;])
 atom.run(&quot;LGB&quot;) 
 </code></pre>
 
-<p>In this case, both the Ridge and Lasso regressors are kept in the pipeline.</p>
+<p>In this case, both the Ridge and Lasso regressors are kept in the pipeline. Note that
+ reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
+ empty after the first run will automatically use the one in the pipeline.</p>
 <pre><code class="python">atom = ATOMRegressor(X, y)
-atom.run(&quot;Ridge&quot;)
+atom.run(&quot;Ridge&quot;, metric=&quot;MSE&quot;)
 atom.run(&quot;Lasso&quot;)
 </code></pre>
 
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
-empty after the first run will automatically use the one in the pipeline.</p>
-</div>
+<p>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models="RF")</code>
+ will train a <a href="../API/models/rf">Random Forest</a>. If you want to run the same
+ model multiple times, add a tag after the acronym to differentiate them.</p>
+<pre><code class="Python">atom.run(models=[&quot;RF1&quot;, &quot;RF2&quot;], est_params={&quot;RF1&quot;: {&quot;n_estimators&quot;: 100}, &quot;RF2&quot;: {&quot;n_estimators&quot;: 200}}) 
+</code></pre>
+
+<p>For example, this pipeline will fit two Random Forest models, one with 100 and
+ the other with 200 decision trees. The models can be accessed through
+ <code>atom.rf1</code> and <code>atom.rf2</code>. Use tagged models to test how the same model
+ performs when fitted with different parameters or on different data sets. Click
+ <a href="../examples/imbalanced_datasets/imbalanced_datasets">here</a> for an example.</p>
 <p>Additional things to take into account:</p>
 <ul>
-<li>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models="RF")</code>
-  will train a Random Forest.</li>
 <li>If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
-  in the <code>errors</code> attribute. Note that in that case there will be no <code>model</code> for
+  in the <code>errors</code> attribute. Note that in that case there will be no model for
   that estimator.</li>
 <li>When showing the final results, a <code>!</code> indicates the highest score and a <code>~</code>
   indicates that the model is possibly overfitting (training set has a score at
   least 20% higher than the test set).</li>
-<li>The winning <code>model</code> (the one with the highest <code>mean_bagging</code> or <code>metric_test</code>)
+<li>The winning model (the one with the highest <code>mean_bagging</code> or <code>metric_test</code>)
   will be attached to the <code>winner</code> attribute.</li>
 </ul>
 <p><br></p>
@@ -1191,18 +1233,21 @@ Sometimes it is useful to measure the performance of the models in more than one
  in the pipeline. In this example, both the XGBoost and the LightGBM model
  will use n_estimators=200. Make sure all the models do have the specified parameters
  or an exception will be raised!</p>
-<pre><code>atom.run(["XGB", "LGB"], est_params={"n_estimators": 200})
+<pre><code class="Python">atom.run([&quot;XGB&quot;, &quot;LGB&quot;], est_params={&quot;n_estimators&quot;: 200})
 </code></pre>
+
 <p>To specify parameters per model, use the model name as key and a dict of the
  parameters as value. In this example, the XGBoost model will use n_estimators=200
  and the Multi-layer Perceptron will use one hidden layer with 75 neurons.</p>
-<pre><code>atom.run(["XGB", "MLP"], est_params={"XGB": {"n_estimators": 200}, "MLP": {"hidden_layer_sizes": (75,)}})
+<pre><code class="Python">atom.run([&quot;XGB&quot;, &quot;MLP&quot;], est_params={&quot;XGB&quot;: {&quot;n_estimators&quot;: 200}, &quot;MLP&quot;: {&quot;hidden_layer_sizes&quot;: (75,)}})
 </code></pre>
+
 <p>Some estimators allow you to pass extra parameters to the fit method (besides X and y).
  This can be done adding <code>_fit</code> at the end of the parameter. For example, to change
  XGBoost's verbosity, we can run:</p>
-<pre><code>atom.run("XGB", est_params={"verbose_fit": True}
+<pre><code class="Python">atom.run(&quot;XGB&quot;, est_params={&quot;verbose_fit&quot;: True}
 </code></pre>
+
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter is specified through <code>est_params</code>, it will be ignored by the
@@ -1247,15 +1292,18 @@ default parameters.</p>
  you can share the same dimensions across models or use a dictionary with the model
  names as keys to specify the dimensions for every individual model. Note that the
  provided search space dimensions must be compliant with skopt's API.</p>
-<pre><code>atom.run("LR", n_calls=10, bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]})
+<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;dimensions&quot;: [Integer(100, 1000, name=&quot;max_iter&quot;)]})
 </code></pre>
+
 <p>The majority of skopt's callbacks to stop the optimizer early can be accessed
  through <code>bo_params</code>. You can include other callbacks using the <code>callbacks</code> key.</p>
-<pre><code>atom.run("LR", n_calls=10, bo_params={"max_time": 1000, "callbacks": custom_callback()})
+<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;max_time&quot;: 1000, &quot;callbacks&quot;: custom_callback()})
 </code></pre>
+
 <p>You can also include other optimizer's parameters as key-value pairs.</p>
-<pre><code>atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
+<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;acq_func&quot;: &quot;EI&quot;})
 </code></pre>
+
 <p><br></p>
 <h3 id="bagging">Bagging</h3>
 <p>After fitting the estimator, you can asses the robustness of the model using
@@ -1286,7 +1334,7 @@ in a convenient boxplot.</p>
 <li>Filling the <code>early_stopping_rounds</code> parameter directly in <code>est_params</code>. Don't
   forget to add <code>_fit</code> to the parameter to call it from the fit method.</li>
 </ul>
-<p>After fitting, the <code>model</code> will get the <code>evals</code> attribute, a dictionary of the train
+<p>After fitting, the model will get the <code>evals</code> attribute, a dictionary of the train
  and test performances per round (also if early stopping wasn't applied). Click
  <a href="../examples/early_stopping/early_stopping">here</a> for an example pipeline using
  early stopping.</p>
@@ -1295,16 +1343,6 @@ in a convenient boxplot.</p>
 <p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
 evaluation on the train and test set.</p>
 </div>
-<p><br></p>
-<h3 id="repeating-models">Repeating models</h3>
-<p>If you want to fit the same model multiple times in a pipeline, add a tag after the
- acronym when calling the models.</p>
-<pre><code>atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2": {"n_estimators": 200}})
-</code></pre>
-<p>This pipeline will run two <a href="../API/models/rf">Random Forest</a> models, one with 100
- and the other with 200 decision trees. The <code>models</code> can be accessed through
- <code>atom.rf1</code> and <code>atom.rf2</code>. This can be useful to test how the same model performs
- with different parameters or different data sets.</p>
 <p><br></p>
 <h3 id="successive-halving">Successive halving</h3>
 <p>Successive halving is a bandit-based algorithm that fits N models to 1/N of the data.
@@ -1315,9 +1353,10 @@ evaluation on the train and test set.</p>
  models, e.g. only using tree-based models.</p>
 <p>Use successive halving through the <a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a>/
  <a href="../API/training/successivehalvingregressor">SuccessiveHalvingRegressor</a> classes
- or from <code>atom</code> via the <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
+ or from atom via the <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
  method. After running the pipeline, the <code>results</code> attribute will be multi-index,
- where the first index indicates the iteration and the second the model's acronym.</p>
+ where the first index indicates the number of models (N) in the iteration and the
+ second the model's acronym.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_successive_halving">plot_successive_halving</a> method to
@@ -1331,12 +1370,12 @@ see every model's performance per iteration of the successive halving.</p>
  the optimal size of the training set, fitting the models multiple times, ever
  increasing the number of samples in the training set.</p>
 <p>Use train sizing through the <a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a>/
-<a href="../API/training/trainsizingregressor">TrainSizingRegressor</a> classes or from <code>atom</code>
+<a href="../API/training/trainsizingregressor">TrainSizingRegressor</a> classes or from atom
  via the <a href="../API/ATOM/atomclassifier/#train-sizing">train_sizing</a>
  method. The number of iterations and the number of samples per training can be
  specified with the <code>train_sizes</code> parameter. After running the pipeline, the <code>results</code>
- attribute will be multi-index, where the first index indicates the iteration and the
- second the model's acronym.</p>
+ attribute will be multi-index, where the first index indicates the fraction of rows
+ in the training set and the second the model's acronym.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_learning_curve">plot_learning_curve</a> method to see
@@ -1350,9 +1389,9 @@ the model's performance per size of the training set.</p>
  models. Just like a sklearn estimator, you can call the prediction methods from a
  fitted <code>training</code> instance, e.g. <code>atom.predict(X)</code>. Calling the method without
  specifying a model will use the winning model in the pipeline (under attribute
- <code>winner</code>). To use a different model, simply call the method from a <code>model</code>,
+ <code>winner</code>). To use a different model, simply call the method from a model,
  e.g. <code>atom.KNN.predict(X)</code>.</p>
-<p>If called from <code>atom</code>, the prediction methods will transform the provided data through
+<p>If called from atom, the prediction methods will transform the provided data through
  all the transformers in the pipeline before making the predictions. By default, this
  excludes outlier handling and balancing the dataset since these steps should only
  be applied on the training set. Use the method's kwargs to select which transformations
@@ -1392,7 +1431,7 @@ the model's performance per size of the training set.</p>
 </table>
 
 <p>Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the <code>model</code>'s prediction attributes,
+ set. You can access them through the model's prediction attributes,
  e.g. <code>atom.mnb.predict_train</code> or <code>atom.mnb.predict_test</code>. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -1412,9 +1451,9 @@ method if you need to free some memory!</p>
  <a href="https://seaborn.pydata.org/">seaborn</a> and <a href="https://github.com/slundberg/shap">shap</a>
  for plotting.</p>
 <p>The plot methods can be called from a <code>training</code> directly, e.g. <code>atom.plot_roc()</code>,
- or from one of the <code>models</code>, e.g. <code>atom.LGB.plot_roc()</code>. If called from <code>training</code>,
+ or from one of the models, e.g. <code>atom.LGB.plot_roc()</code>. If called from <code>training</code>,
  it will make the plot for all models in the pipeline. This can be useful to compare
- the results of multiple models. If called from a <code>model</code>, it will make the plot for
+ the results of multiple models. If called from a model, it will make the plot for
  only that model. Use this option if you want information just for that specific
  model or to make a plot less crowded.</p>
 <p><br></p>
@@ -1457,7 +1496,7 @@ method if you need to free some memory!</p>
  <a href="../API/plots/decision_plot">decision_plot</a> and <a href="../API/plots/waterfall_plot">waterfall_plot</a>.</p>
 <p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
- from a <code>model</code>, e.g. <code>atom.xgb.force_plot()</code>.</p>
+ from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>You can recognize the SHAP plots by the fact that they end (instead of start)

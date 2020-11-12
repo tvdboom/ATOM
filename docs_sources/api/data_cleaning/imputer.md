@@ -9,7 +9,7 @@
 Impute or remove missing values according to the selected strategy.
  Also removes rows and columns with too many missing values. Use the
  `missing` attribute to customize what are considered "missing values".
- This class can be accessed from `atom` through the [impute](../../ATOM/atomclassifier/#impute)
+ This class can be accessed from atom through the [impute](../../ATOM/atomclassifier/#impute)
  method. Read more in the [user guide](../../../user_guide/#imputing-missing-values).
 <br /><br />
 <table>
@@ -70,7 +70,7 @@ Verbosity level of the class. Possible values are:
 <br>
 
 !!!tip
-    Use `atom`'s [nans](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use atom's [nans](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -154,7 +154,7 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
@@ -190,12 +190,12 @@ Fit the Imputer and return the imputed data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -335,12 +335,12 @@ Impute the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,)</li>

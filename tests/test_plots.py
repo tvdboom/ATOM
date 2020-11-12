@@ -19,7 +19,7 @@ from atom.utils import NotFittedError
 from .utils import FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
-# Test BasePlotter ========================================================== >>
+# Test BasePlotter ================================================= >>
 
 def test_aesthetics_property():
     """Assert that aesthetics returns the classes aesthetics as dict."""
@@ -88,7 +88,7 @@ def test_tick_fontsize_setter():
         BasePlotter().tick_fontsize = 0
 
 
-# Test plots ================================================================ >>
+# Test plots ======================================================= >>
 
 def test_plot_correlation():
     """Assert that the plot_correlation method work as intended."""
@@ -105,7 +105,7 @@ def test_plot_pipeline(show_params):
     atom.outliers()
     atom.feature_selection("PCA", n_features=10)
     atom.successive_halving(["Tree", "AdaB"])
-    pytest.raises(ValueError, atom.plot_pipeline, pipeline="invalid")
+    pytest.raises(ValueError, atom.plot_pipeline, branch="invalid")
     atom.plot_pipeline(
         show_params=show_params,
         filename=FILE_DIR + f"pipeline_{show_params}",
@@ -151,6 +151,7 @@ def test_plot_successive_halving():
     pytest.raises(NotFittedError, atom.plot_successive_halving)
     atom.run("LGB")
     pytest.raises(PermissionError, atom.plot_successive_halving)
+    atom.delete()  # Clear the pipeline to allow sh
     atom.successive_halving(
         models=["OLS", "KNN", "ARD", "Bag", "RF", "LGB"], metric="max_error", bagging=4
     )
@@ -179,7 +180,8 @@ def test_plot_learning_curve():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_learning_curve)
     atom.run("LGB")
-    pytest.raises(PermissionError, atom.plot_learning_curve)  # No train_sizing
+    pytest.raises(PermissionError, atom.plot_learning_curve)
+    atom.delete()  # Clear the pipeline to allow ts
     atom.train_sizing(["Tree", "LGB"], metric="max_error", bagging=4)
     atom.plot_learning_curve(filename=FILE_DIR + "train_sizing_1", display=False)
     atom.train_sizing(["Tree", "LGB"], metric="max_error")

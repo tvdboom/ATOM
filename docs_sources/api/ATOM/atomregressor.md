@@ -13,7 +13,7 @@ ATOMRegressor is ATOM's wrapper for regression tasks. Use this class to easily a
  automatically apply it on the dataset it contains.
  
 You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#plots)
- and call any [`model`](../../../user_guide/#models) from the ATOMRegressor instance.
+ and call any [model](../../../user_guide/#models) from the ATOMRegressor instance.
  Read more in the [user guide](../../../user_guide/#first-steps).
 <br />
 <table>
@@ -33,11 +33,11 @@ X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
 Feature set with shape=(n_features, n_samples). If no y is provided, the
  last column is used as target.<br><br>
-y: int, str or array-like<br>
+y: int, str or sequence<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Data target column with shape=(n_samples,).</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>n_rows: int or float, optional (default=1)</strong>
@@ -216,14 +216,14 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<strong>winner: [model](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
 <strong>pipeline: pd.Series</strong>
 <blockquote>
 Series containing all classes fitted in the pipeline. Use this attribute only to
- access the individual classes. To visualize the pipeline, use `atom`'s \_\_repr__
+ access the individual classes. To visualize the pipeline, use atom's \_\_repr__
  or [plot_pipeline](../../plots/plot_pipeline).
 </blockquote>
 <strong>results: pd.DataFrame</strong>
@@ -683,7 +683,7 @@ The training methods are where the models are fitted to the data and their
  three methods to call the training classes from the ATOM package. All relevant
  attributes and methods from the training classes are attached to ATOMClassifier for
  convenience. These include the errors, winner and results attributes, the
- [`models`](../../../user_guide/#models), and the
+ [models](../../../user_guide/#models), and the
  [prediction](../../../user_guide/#predicting) and
  [plotting](../../../user_guide/#plots) methods.
 
@@ -712,7 +712,7 @@ The training methods are where the models are fitted to the data and their
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
 <div style="padding-left:3%">
-Runs a [TrainerRegressor](../training/trainerregressor.md) instance.
+Runs a [DirectRegressor](../training/directregressor.md) instance.
 </div>
 <br />
 

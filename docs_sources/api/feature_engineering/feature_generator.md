@@ -8,7 +8,7 @@
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
- features. This class can be accessed from `atom` through the
+ features. This class can be accessed from atom through the
  [feature_generation](../../ATOM/atomclassifier/#feature-generation)
  method. Read more in the [user guide](../../../user_guide/#generating-new-features).
 <br /><br />
@@ -90,7 +90,7 @@ Seed used by the random number generator. If None, the random number
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`'s
+    `NaN` values. Check the warnings that may pop up or use atom's
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
@@ -186,9 +186,9 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -222,9 +222,9 @@ Fit the FeatureGenerator and return the transformed data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -357,9 +357,9 @@ Generate new features.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, array-like or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>

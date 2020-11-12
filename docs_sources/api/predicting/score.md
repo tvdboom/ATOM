@@ -8,7 +8,7 @@
 Transform the data and return the model's score on new data. The score is a default
  evaluation criterion for the problem the estimator is designed to solve, defined by
  the estimator's package. If called from a `training` instance, it will use the best
- model in the pipeline (under the `winner` attribute). If called from a `model`, it
+ model in the pipeline (under the `winner` attribute). If called from a model, it
  will use that model. The estimator must have a `score` method.
 <br /><br />
 <table>
@@ -17,7 +17,7 @@ Transform the data and return the model's score on new data. The score is a defa
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
@@ -27,7 +27,7 @@ Data containing the features, with shape=(n_samples, n_features).
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
-<strong>sample_weight: array-like or None, optional (default=None)</strong>
+<strong>sample_weight: sequence or None, optional (default=None)</strong>
 <blockquote>
 Sample weights with shape=(n_samples,).
 </blockquote>

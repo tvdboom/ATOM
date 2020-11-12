@@ -18,13 +18,17 @@ from sklearn.base import BaseEstimator
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    ARRAY_TYPES, TRAIN_TYPES, lst, get_best_score, infer_task,
+    SEQUENCE_TYPES, TRAIN_TYPES, lst, get_best_score, infer_task,
     composed, method_to_log, crash,
 )
 
 
-class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
-    """Fit and evaluate the models in a direct fashion.
+class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
+    """Direct training approach.
+
+    Fit and evaluate over the models. Contrary to SuccessiveHalving
+    and TrainSizing, the direct approach only iterates once over the
+    models, using the full dataset.
 
     See basetrainer.py for a description of the parameters.
 
@@ -67,15 +71,16 @@ class Trainer(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
 
 class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
-    """Fit and evaluate the models in a successive halving fashion.
+    """Successive halving training approach.
 
-    If you want to compare similar models, you can choose to use a successive
-    halving approach to run the pipeline. This technique is a bandit-based
-    algorithm that fits N models to 1/N of the data. The best half are selected
-    to go to the next iteration where the process is repeated. This continues
-    until only one model remains, which is fitted on the complete dataset.
-    Beware that a model's performance can depend greatly on the amount of data
-    on which it is trained. For this reason, we recommend only to use this
+    If you want to compare similar models, you can choose to use a
+    successive halving approach to run the pipeline. This technique
+    is a bandit-based algorithm that fits N models to 1/N of the data.
+    The best half are selected to go to the next iteration where the
+    process is repeated. This continues until only one model remains,
+    which is fitted on the complete dataset. Beware that a model's
+    performance can depend greatly on the amount of data on which it
+    is trained. For this reason, we recommend only to use this
     technique with similar models, e.g. only using tree-based models.
 
     See basetrainer.py for a description of the remaining parameters.
@@ -134,10 +139,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
         run = 0
         results = []  # List of dataframes returned by self._run
-        _train_idx = self.pipeline.idx[0]  # Save the size of the original training set
+        _train_idx = self.branch.idx[0]  # Save the size of the original training set
         while len(self.models) > 2 ** self.skip_runs - 1:
             # Select 1/N of training set to use for this iteration
-            self.pipeline.idx[0] = int(1.0 / len(self.models) * _train_idx)
+            self.branch.idx[0] = int(1.0 / len(self.models) * _train_idx)
 
             # Print stats for this subset of the data
             p = round(100.0 / len(self.models))
@@ -166,22 +171,23 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
         # Renew self.models and restore the training set
         self.models = list(self._results.index.unique(1).values)
-        self.pipeline.idx[0] = _train_idx
+        self.branch.idx[0] = _train_idx
 
 
 class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
-    """Fit and evaluate the models in a train sizing fashion.
+    """Train Sizing training approach.
 
-    When training models, there is usually a trade-off between model performance
-    and computation time that is regulated by the number of samples in the
-    training set. The TrainSizing class can be used to create insights in this
-    trade-off and help determine the optimal size of the training set.
+    When training models, there is usually a trade-off between model
+    performance and computation time that is regulated by the number
+    of samples in the training set. The TrainSizing class can be used
+    to create insights in this trade-off and help determine the optimal
+    size of the training set.
 
     See basetrainer.py for a description of the remaining parameters.
 
     Parameters
     ----------
-    train_sizes: array-like, optional (default=np.linspace(0.2, 1.0, 5))
+    train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))
         Sequence of training set sizes used to run the trainings.
              - If <=1: Fraction of the training set.
              - If >1: Total number of samples.
@@ -223,15 +229,15 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         frac = []  # Fraction of the training set used in evey run
         results = []  # List of dataframes returned by self._run
-        _train_idx = self.pipeline.idx[0]  # Save the size of the original training set
+        _train_idx = self.branch.idx[0]  # Save the size of the original training set
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
                 frac.append(round(size, 3))
-                self.pipeline.idx[0] = int(size * _train_idx)
+                self.branch.idx[0] = int(size * _train_idx)
             else:
                 frac.append(round(size / _train_idx, 3))
-                self.pipeline.idx[0] = size
+                self.branch.idx[0] = size
 
             # Print stats for this subset of the data
             p = round(len(self.train) * 100.0 / _train_idx)
@@ -247,25 +253,25 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
             objs=[df for df in results], keys=frac, names=("frac", "model")
         )
 
-        self.pipeline.idx[0] = _train_idx  # Restore original training set
+        self.branch.idx[0] = _train_idx  # Restore original training set
 
 
-class TrainerClassifier(Trainer):
-    """Trainer class for classification tasks."""
+class DirectClassifier(Direct):
+    """Direct trainer class for classification tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -280,22 +286,22 @@ class TrainerClassifier(Trainer):
         )
 
 
-class TrainerRegressor(Trainer):
-    """Trainer class for regression tasks."""
+class DirectRegressor(Direct):
+    """Direct trainer class for regression tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -311,22 +317,22 @@ class TrainerRegressor(Trainer):
 
 
 class SuccessiveHalvingClassifier(SuccessiveHalving):
-    """SuccessiveHalving class for classification tasks."""
+    """SuccessiveHalving trainer class for classification tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: int = 0,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -342,22 +348,22 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
 
 class SuccessiveHalvingRegressor(SuccessiveHalving):
-    """SuccessiveHalving class for regression tasks."""
+    """SuccessiveHalving trainer class for regression tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: int = 0,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -373,22 +379,22 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
 
 class TrainSizingClassifier(TrainSizing):
-    """TrainSizing class for classification tasks."""
+    """TrainSizing trainer class for classification tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -404,22 +410,22 @@ class TrainSizingClassifier(TrainSizing):
 
 
 class TrainSizingRegressor(TrainSizing):
-    """TrainSizing class for regression tasks."""
+    """TrainSizing trainer class for regression tasks."""
 
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,

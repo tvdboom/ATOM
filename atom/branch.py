@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the Pipeline class.
+Description: Module containing the Branch class.
 
 """
 
@@ -18,22 +18,22 @@ from .basetransformer import BaseTransformer
 from .utils import flt
 
 
-class Pipeline(object):
-    """The pipeline class contains the information coupled to a dataset.
+class Branch(object):
+    """Contains all information corresponding to a branch.
 
     Parameters
     ----------
     T: class
-        Parent class from which the pipeline is called.
+        Parent class from which the branch is called.
 
     name: str
-        Name of the pipeline.
+        Name of the branch.
 
     estimators: pd.Series or None, optional (default=None)
-        Sequence of estimators fitted on the pipeline's data.
+        Sequence of estimators fitted on the data in the branch.
 
     data: pd.DataFrame or None, optional (default=None)
-        Dataset coupled to the pipeline.
+        Dataset coupled to the branch.
 
     idx: tuple or None, optional (default=None)
         Tuple indicating the train and test sizes.
@@ -45,9 +45,10 @@ class Pipeline(object):
     """
 
     def __init__(self, T, name, estimators=None, data=None, idx=None, mapping=None):
-        # Make copies of the parameters to not overwrite mutable variables
         self.T = T
         self.name = name
+
+        # Make copies of the parameters to not overwrite mutable variables
         if estimators is None:
             self.estimators = pd.Series([], name=self.name, dtype="object")
         else:
@@ -57,32 +58,40 @@ class Pipeline(object):
         self.mapping = copy(mapping)
 
     def __repr__(self):
-        repr_ = f"Pipeline: {self.name}"
+        out = "Branches:"
+        for branch in self.T._branches.keys():
+            out += f"\n --> {branch}"
+            if branch == self.T._current:
+                out += " !"
+
+        return out
+
+    def status(self):
+        """Print the status of the branch."""
+        self.T.log(f"Branch: {self.name}")
         for est in self.estimators:
-            repr_ += f"\n --> {est.__class__.__name__}"
+            self.T.log(f" --> {est.__class__.__name__}")
             for param in signature(est.__init__).parameters:
                 if param not in BaseTransformer.attrs + ["self"]:
-                    repr_ += f"\n   >>> {param}: {str(flt(getattr(est, param)))}"
-
-        return repr_
+                    self.T.log(f"   >>> {param}: {str(flt(getattr(est, param)))}")
 
     @typechecked
     def rename(self, name: str):
-        """Change the pipeline's name."""
+        """Change the name of the branch."""
         if not name:
-            raise ValueError("A pipeline can't have an empty name!")
+            raise ValueError("A branch can't have an empty name!")
         else:
             self.name = name
             self.estimators.name = name
-            self.T._branches[name] = self.T._branches.pop(self.T._pipe)
-            self.T._pipe = name
-            self.T.log("Pipeline renamed successfully!")
+            self.T._branches[name] = self.T._branches.pop(self.T._current)
+            self.T._current = name
+            self.T.log("Branch renamed successfully!", 1)
 
-    def clear(self):
-        """Remove the current pipeline."""
+    def delete(self):
+        """Remove the current branch."""
         if len(self.T._branches) > 1:
-            self.T._branches.pop(self.T._pipe)  # Delete the pipeline
-            self.T._pipe = list(self.T._branches.keys())[0]  # Reset the current one
-            self.T.log("Pipeline cleared successfully!")
+            self.T._branches.pop(self.T._current)  # Delete the pipeline
+            self.T._current = list(self.T._branches.keys())[0]  # Reset the current one
+            self.T.log("Branch deleted successfully!")
         else:
-            raise PermissionError("Can't clear this pipeline!")
+            raise PermissionError("Can't delete the last branch in the pipeline!", 1)

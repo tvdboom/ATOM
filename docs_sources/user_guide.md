@@ -51,35 +51,44 @@ In this documentation we will consistently use terms to refer to certain concept
  related to the ATOM package.
 
 * **ATOM**: Refers to this package.
-* **task**: Refers to one of the three supervised machine learning approaches that ATOM supports:
+* **task**: One of the three supervised machine learning approaches that ATOM supports:
     - [binary classification](https://en.wikipedia.org/wiki/Binary_classification)
     - [multiclass classification](https://en.wikipedia.org/wiki/Multiclass_classification)
     - [regression](https://en.wikipedia.org/wiki/Regression_analysis)
-* **class**: Refers to one of the unique values in a column, e.g. a binary classifier
-  has 2 classes in the target column.
-* **array-like**: One-dimensional array of variable type list, tuple, np.array or pd.Series.
-* `atom`: Refers to an [ATOMClassifier](../API/ATOM/atomclassifier) or
- [ATOMRegressor](../API/ATOM/atomregressor) instance (note that all examples
- use it as variable name for the instance).
-* `model`: Refers to one of the [model](#models) instances.
-* **pipeline**: Refers to the collection of data cleaning, feature engineering and training steps performed by `atom` for a specific dataset.
-* **missing values**: Refers to the values in the `missing` attribute.
+* **class**: Unique value in a column, e.g. a binary classifier has 2 classes in the target column.
+* **sequence**: One-dimensional array of variable type `list`, `tuple`, `np.array` or `pd.Series`.
+* **predictor**: An estimator implementing a `predict` method. This encompasses all
+  classifiers and regressors.
+* **transformer**: An estimator implementing a `transform` method. This encompasses all
+  data cleaning and feature engineering classes.
+* **atom**: Instance of the [ATOMClassifier](../API/ATOM/atomclassifier) or
+  [ATOMRegressor](../API/ATOM/atomregressor) classes (note that the examples
+  use it as variable name for the instance).
+* **model**: Instance of a [model](#models) in the pipeline.
+* **pipeline**: All the content in atom.
+* **missing values**: Values in the `missing` attribute.
 * **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
-* **estimator**: Actual estimator corresponding to a model. Implemented by an external package.
+* **estimator**: An object which manages the estimation and decoding of an algorithm. The
+  algorithm is estimated as a deterministic function of a set of parameters, a dataset
+  and a random state.
+* **target**: Name of the dependent variable, passed as y to an estimator’s fit method.
+* **branch**: Collection of estimators in the pipeline fitted to a specific dataset, see [](#branch).
+* **scorer**: A non-estimator callable object which evaluates an estimator on given test
+  data, returning a number. Unlike evaluation metrics, a greater returned number must
+  correspond with a better score. See sklearn's [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter).
 * **BO**: Bayesian optimization algorithm used for hyperparameter optimization.
-* `training`: Refers to an instance of one of the classes that train and evaluate the
-  models. The classes are:
+* **trainer**: Instance of a class that train and evaluate the models (implement a
+  `run` method). Note that this means that atom is also a trainer. The following
+  classes are training classes:
     - [ATOMClassifier](../API/ATOM/atomclassifier)
     - [ATOMRegressor](../API/ATOM/atomregressor)
-    - [TrainerClassifier](../API/training/trainerclassifier)
-    - [TrainerRegressor](../API/training/trainerregressor)
+    - [DirectClassifier](../API/training/directclassifier)
+    - [DirectRegressor](../API/training/directregressor)
     - [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)
     - [SuccessiveHavingRegressor](../API/training/successivehalvingregressor)
     - [TrainSizingClassifier](../API/training/trainsizingclassifier)
     - [TrainSizingRegressor](../API/training/trainsizingregressor)
 
-!!!note
-    Note that `atom` instances are also `training` instances!
 
 
 <br><br>
@@ -99,9 +108,9 @@ These two classes are convenient wrappers for all the possibilities this package
  they assemble several steps that can be cross-validated together while setting
  different parameters. There are some important differences with sklearn's API:
  
-1. `atom` is initialized with the data you want to manipulate. This data can be accessed
- at any moment through `atom`'s [data attributes](../API/ATOM/atomclassifier/#data-properties).
-2. The classes in ATOM's API are reached through `atom`'s methods. For example, calling
+1. atom is initialized with the data you want to manipulate. This data can be accessed
+ at any moment through atom's [data attributes](../API/ATOM/atomclassifier/#data-properties).
+2. The classes in ATOM's API are reached through atom's methods. For example, calling
  the [encode](../API/ATOM/atomclassifier/#encode) method, will initialize
  an [Encoder](../API/data_cleaning/encoder) instance, fit it on the training set and
  transform the whole dataset.
@@ -113,10 +122,10 @@ These two classes are convenient wrappers for all the possibilities this package
 
 Let's get started with an example!
 
-First, initialize `atom` and provide it the data you want to use. You can either
+First, initialize atom and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
  test set already splitted. Note that if a dataframe is provided, the indices will
- be reset by `atom`.
+ be reset by atom.
 
     atom = ATOMClassifier(X, y, test_size=0.25)
 
@@ -140,8 +149,31 @@ Analyze the results:
 # Data pipelines
 ----------------
 
+It may happen that you want to compare how a model performs on different datasets.
+ For example, on one dataset balanced with an undersampling strategy and the other
+ with an oversampling strategy. For this, atom has data pipelines.
 
+Data pipelines manage separate paths atom's dataset can take. The "paths" are
+ called branches and can be accessed through the `branch` attribute. Calling it
+ will show the branches in the pipeline. The current branch is indicated with `!`.
+ A branch contains a specific dataset and the transformers it took to arrive to that
+ dataset from the one the instance initialized with. Accessing data attributes such
+ as `atom.dataset` will return the data in the current branch. Use the pipelines
+ attribute to see the `estimators` in the branch.
 
+By default atom starts with one branch called 'main'. To start a new branch, set
+ a new name to the property, e.g. `atom.branch = "new_branch"`. Just so, type
+ `atom.branch = "main"` to go back to a previous branch. Note that every branch
+ contains a unique copy of the whole dataset! Creating many branches can cause
+ memory issues for large datasets. All data cleaning, feature engineering and
+ training methods you call will use the dataset in the current branch.
+
+You can delete a branch either deleting the attribute, e.g. `del atom.branch`, or
+ using the delete method, e.g. `atom.branch.delete()`. Use `atom.branch.status()`
+ to print a list of the transformers in the branch and their parameters.
+
+See the [imbalanced datasets](../examples/imbalanced_datasets/imbalanced_datasets/)
+ example for a branching use case.
 
 
 
@@ -164,7 +196,7 @@ Standardization of a dataset is a common requirement for many machine learning
  estimators: they might behave badly if the individual features do not more or less
  look like standard normally distributed data (e.g. Gaussian with 0 mean and unit
  variance). The [Scaler](API/data_cleaning/scaler.md) class scales data to mean=0 and
- std=1. It can be accessed from `atom` through the [scale](../API/ATOM/atomclassifier/#scale)
+ std=1. It can be accessed from atom through the [scale](../API/ATOM/atomclassifier/#scale)
  method. 
 
 <br>
@@ -174,7 +206,7 @@ Standardization of a dataset is a common requirement for many machine learning
 There are many data cleaning steps that are useful to perform on any dataset before
  modelling. These are general rules that apply almost on every use-case and every
  task. The [Cleaner](API/data_cleaning/cleaner.md) class is a convenient tool
- to apply such steps. It can be accessed from `atom` through the
+ to apply such steps. It can be accessed from atom through the
  [clean](../API/ATOM/atomclassifier/#clean) method. Use the class' parameters to
  choose which transformations to perform. The available steps are:
 
@@ -194,11 +226,11 @@ For various reasons, many real world datasets contain missing values, often enco
  ATOM's models which assume that all values in an array are numerical, and that all
  have and hold meaning. The [Imputer](API/data_cleaning/imputer.md) class handles
  missing values in the dataset by either dropping or imputing the value. It can be
- accessed from `atom` through the [impute](../API/ATOM/atomclassifier/#impute)
+ accessed from atom through the [impute](../API/ATOM/atomclassifier/#impute)
  method.
 
 !!!tip
-    Use `atom`'s [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use atom's [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the missing values in the dataset.
 
 <br>
@@ -212,10 +244,10 @@ Many datasets will contain categorical features. Their variables are typically s
  determining how to use this data in the analysis. ATOM's models don't support
  direct manipulation of this kind of data. Use the [Encoder](API/data_cleaning/encoder.md)
  class to encode categorical features to numerical values. It can be accessed from
- `atom` through the [encode](../API/ATOM/atomclassifier/#encode) method.
+ atom through the [encode](../API/ATOM/atomclassifier/#encode) method.
 
 !!!tip
-    Use `atom`'s [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
+    Use atom's [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br> 
@@ -227,7 +259,7 @@ When modeling, it is important to clean the data sample to ensure that the obser
  outside the range of what is expected and unlike the other data. These are called
  outliers. Often, machine learning modeling and model skill in general can be improved
  by understanding and even removing these outlier values. The [Outliers](API/data_cleaning/outliers.md) 
- class can drop or impute outliers in the dataset. It can be accessed from `atom`
+ class can drop or impute outliers in the dataset. It can be accessed from atom
  through the [outliers](../API/ATOM/atomclassifier/#outliers) method.
 
 <br> 
@@ -240,7 +272,7 @@ One of the common issues found in datasets that are used for classification is
  most of the transactions are non-fraud and a very few cases are fraud. This leaves
  us with a very unbalanced ratio of fraud vs non-fraud cases. The
  [Balancer](API/data_cleaning/balancer.md) class can oversample the minority class
- or undersample the majority class. It can be accessed from `atom` through the
+ or undersample the majority class. It can be accessed from atom through the
  [balance](../API/ATOM/atomclassifier/#balance) method.
 
 
@@ -277,7 +309,7 @@ Feature engineering is the process of creating new features from the existing on
 
 The [FeatureGenerator](API/feature_engineering/feature_generator.md) class creates
  new non-linear features based on the original feature set. It can be accessed from
- `atom` through the [feature_generation](../API/ATOM/atomclassifier/#feature-generation)
+ atom through the [feature_generation](../API/ATOM/atomclassifier/#feature-generation)
  method. You can choose between two strategies: Deep Feature Synthesis and Genetic
  Feature Generation.
 
@@ -309,7 +341,7 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
-    `NaN` values. Check the warnings that may pop up or use `atom`'s
+    `NaN` values. Check the warnings that may pop up or use atom's
     [missing](/API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
@@ -346,7 +378,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 ### Selecting useful features
 
 The [FeatureSelector](API/feature_engineering/feature_selector.md) class provides
- tooling to select the relevant features from a dataset. It can be accessed from `atom`
+ tooling to select the relevant features from a dataset. It can be accessed from atom
  through the [feature_selection](../API/ATOM/atomclassifier/#feature-selection)
  method. The following strategies are implemented: univariate, PCA, SFM, RFE and RFECV.
 
@@ -372,7 +404,7 @@ SFM uses an estimator with `feature_importances_` or `coef_` attributes to selec
  best features in a dataset based on importance weights. The estimator is provided
  through the `solver` parameter and can be already fitted. ATOM allows you to use one
  its pre-defined [models](#models), e.g. `solver="RF"`. If you didn't call the
- FeatureSelector through `atom`, don't forget to indicate the estimator's task adding
+ FeatureSelector through atom, don't forget to indicate the estimator's task adding
  `_class` or `_reg` after the name, e.g. `RF_class` to use a random forest classifier.
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
@@ -438,10 +470,10 @@ Two features that are highly correlated are redundant, i.e. two will not contrib
 ATOM provides 31 models for classification and regression tasks that can be used
  to fit the data in the pipeline. After fitting, every model class is attached to
  the `training` instance as an attribute. We refer to these "subclasses" as
- `models` (see the [nomenclature](#nomenclature)). The classes contain a variety
+ models (see the [nomenclature](#nomenclature)). The classes contain a variety
  of attributes and methods to help you understand how the underlying estimator
  performed. They can be accessed using the models" acronyms, e.g. `atom.LGB` to
- access the LightGBM's `model`. The available models and their corresponding
+ access the LightGBM's model. The available models and their corresponding
  acronyms are: 
 
 * "GP" for [Gaussian Process](../API/models/gp)
@@ -548,10 +580,10 @@ Many deep learning models, for example in computer vision and natural language
 <br>
 
 !!! tip
-    You can also use lowercase to call the `models`, e.g. `atom.lgb.plot_roc()`.
+    You can also use lowercase to call the models, e.g. `atom.lgb.plot_roc()`.
 
 !!! warning
-    The `models` should not be initialized by the user! Only use them through the
+    The models should not be initialized by the user! Only use them through the
     `training` instances.
 
 
@@ -562,7 +594,7 @@ Many deep learning models, for example in computer vision and natural language
 ----------
 
 The training phase is where the models are fitted and evaluated. After this, the
- `models` are attached to the `training` instance and you can use the [plotting](#plots)
+ models are attached to the `training` instance and you can use the [plotting](#plots)
  and [predicting](#predicting) methods.  The pipeline applies the following steps
  iteratively for all models:
 
@@ -573,8 +605,8 @@ The training phase is where the models are fitted and evaluated. After this, the
 There are three approaches to run the training.
 
 * Direct training:
-    - [TrainerClassifier](../API/training/trainerclassifier)
-    - [TrainerRegressor](../API/training/trainerregressor)
+    - [DirectClassifier](../API/training/directclassifier)
+    - [DirectRegressor](../API/training/directregressor)
 * Training via [successive halving](#successive-halving):
     - [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)
     - [SuccessiveHavingRegressor](../API/training/successivehalvingregressor)
@@ -584,14 +616,14 @@ There are three approaches to run the training.
 
 The direct fashion repeats the aforementioned steps only once, while the other two
  approaches repeats them more than once. Every approach can be directly called from
- `atom` through the [run](../API/ATOM/atomclassifier/#run),
+ atom through the [run](../API/ATOM/atomclassifier/#run),
  [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
  and [train_sizing](../API/ATOM/atomclassifier/#train-sizing) methods
- respectively. Every approach should be called from an independent instance of `atom`.
+ respectively. Every approach should be called from an independent instance of atom.
  Subsequent runs from different approaches will remove all information from previous
  trainings from the pipeline. You can, however, rerun the same approach multiple times.
  In that case, the results are combined. Note that if you rerun the same model, only
- the last `model` is saved.
+ the last model is saved.
 
 For example, here atom will "forget" the successive halving run.
 ```python
@@ -619,7 +651,7 @@ atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2":
 ```
 
 For example, this pipeline will fit two Random Forest models, one with 100 and
- the other with 200 decision trees. The `models` can be accessed through
+ the other with 200 decision trees. The models can be accessed through
  `atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
  performs when fitted with different parameters or on different data sets. Click
  [here](../examples/imbalanced_datasets/imbalanced_datasets) for an example.
@@ -629,12 +661,12 @@ Additional things to take into account:
 
 * If an exception is encountered while fitting an estimator, the pipeline will
   automatically skip the model and jump to the next model and save the exception
-  in the `errors` attribute. Note that in that case there will be no `model` for
+  in the `errors` attribute. Note that in that case there will be no model for
   that estimator.
 * When showing the final results, a `!` indicates the highest score and a `~`
   indicates that the model is possibly overfitting (training set has a score at
   least 20% higher than the test set).
-* The winning `model` (the one with the highest `mean_bagging` or `metric_test`)
+* The winning model (the one with the highest `mean_bagging` or `metric_test`)
   will be attached to the `winner` attribute.
 
 <br>
@@ -836,7 +868,7 @@ There are two ways to apply early stopping on these models:
 * Filling the `early_stopping_rounds` parameter directly in `est_params`. Don't
   forget to add `_fit` to the parameter to call it from the fit method.
  
-After fitting, the `model` will get the `evals` attribute, a dictionary of the train
+After fitting, the model will get the `evals` attribute, a dictionary of the train
  and test performances per round (also if early stopping wasn't applied). Click
  [here](../examples/early_stopping/early_stopping) for an example pipeline using
  early stopping.
@@ -859,7 +891,7 @@ Successive halving is a bandit-based algorithm that fits N models to 1/N of the 
 
 Use successive halving through the [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)/
  [SuccessiveHalvingRegressor](../API/training/successivehalvingregressor) classes
- or from `atom` via the [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
+ or from atom via the [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
  method. After running the pipeline, the `results` attribute will be multi-index,
  where the first index indicates the number of models (N) in the iteration and the
  second the model's acronym.
@@ -879,7 +911,7 @@ When training models, there is usually a trade-off between model performance and
  increasing the number of samples in the training set.
 
 Use train sizing through the [TrainSizingClassifier](../API/training/trainsizingclassifier)/
-[TrainSizingRegressor](../API/training/trainsizingregressor) classes or from `atom`
+[TrainSizingRegressor](../API/training/trainsizingregressor) classes or from atom
  via the [train_sizing](../API/ATOM/atomclassifier/#train-sizing)
  method. The number of iterations and the number of samples per training can be
  specified with the `train_sizes` parameter. After running the pipeline, the `results`
@@ -902,10 +934,10 @@ After running a successful pipeline, it is possible you would like to apply all
  models. Just like a sklearn estimator, you can call the prediction methods from a
  fitted `training` instance, e.g. `atom.predict(X)`. Calling the method without
  specifying a model will use the winning model in the pipeline (under attribute
- `winner`). To use a different model, simply call the method from a `model`,
+ `winner`). To use a different model, simply call the method from a model,
  e.g. `atom.KNN.predict(X)`.
 
-If called from `atom`, the prediction methods will transform the provided data through
+If called from atom, the prediction methods will transform the provided data through
  all the transformers in the pipeline before making the predictions. By default, this
  excludes outlier handling and balancing the dataset since these steps should only
  be applied on the training set. Use the method's kwargs to select which transformations
@@ -948,7 +980,7 @@ The available prediction methods are a selection of the most common methods for
 </table>
 
 Except for transform, the prediction methods can be calculated on the train and test
- set. You can access them through the `model`'s prediction attributes,
+ set. You can access them through the model's prediction attributes,
  e.g. `atom.mnb.predict_train` or ` atom.mnb.predict_test`. Keep in mind that the
  results are not calculated until the attribute is called for the first time. This
  mechanism avoids having to calculate attributes that are never used, saving time
@@ -972,9 +1004,9 @@ After fitting the models to the data, it's time to analyze the results. ATOM pro
  for plotting.
 
 The plot methods can be called from a `training` directly, e.g. `atom.plot_roc()`,
- or from one of the `models`, e.g. `atom.LGB.plot_roc()`. If called from `training`,
+ or from one of the models, e.g. `atom.LGB.plot_roc()`. If called from `training`,
  it will make the plot for all models in the pipeline. This can be useful to compare
- the results of multiple models. If called from a `model`, it will make the plot for
+ the results of multiple models. If called from a model, it will make the plot for
  only that model. Use this option if you want information just for that specific
  model or to make a plot less crowded.
 
@@ -1026,7 +1058,7 @@ The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations) py
 
 Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
- from a `model`, e.g. `atom.xgb.force_plot()`.
+ from a model, e.g. `atom.xgb.force_plot()`.
 
 !!!note
     You can recognize the SHAP plots by the fact that they end (instead of start)

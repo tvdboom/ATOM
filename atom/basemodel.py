@@ -3,7 +3,7 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing the parent class for all model subclasses.
+Description: Module containing the parent class for all models.
 
 """
 
@@ -15,7 +15,7 @@ from time import time
 from tqdm import tqdm
 from joblib import Parallel, delayed
 from typeguard import typechecked
-from typing import Optional, Union
+from typing import Optional
 from inspect import signature
 
 # Sklearn
@@ -34,25 +34,36 @@ from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_mi
 # Own modules
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    ARRAY_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS, flt, lst,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS, flt, lst,
     merge, arr, check_scaling, time_to_string, catch_return, transform,
     composed, get_best_score, crash, method_to_log, PlotCallback,
 )
 
 
-# Classes =================================================================== >>
+# Classes ========================================================== >>
 
 class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
-    """Parent class of all model subclasses.
+    """Parent class of all models.
 
     Parameters
-     ----------
-     data: dict
-         Dictionary of the data used for this model (train and test).
+    ----------
+    T: class
+        Trainer instance from which the model is called.
 
-     T: class
-         Class from which the model is called. To avoid having to pass
-         attributes through params.
+    acronym: str
+        Model's acronym. Used to call the model from the trainer.
+        If None, the predictor's __name__ is used (not recommended).
+
+    fullname: str
+        Full model's name. If None, the predictor's __name__ is used.
+
+    needs_scaling: bool
+        Whether the model needs scaled features. Can not be True for
+        deep learning datasets.
+
+    type: str
+        Model's type. Used to select shap's explainer for plotting.
+        Options are: "linear", "tree" or "kernel".
 
     """
 
@@ -106,22 +117,22 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._results.index.name = "model"
 
     def __repr__(self):
-        repr_ = f"{self.fullname}\n --> Estimator: {self.estimator.__class__.__name__}"
+        out = f"{self.fullname}\n --> Estimator: {self.estimator.__class__.__name__}"
         for i, metric in enumerate(self.T.metric_):
-            repr_ += f"\n --> {metric.name}: {get_best_score(self, i)}"
+            out += f"\n --> {metric.name}: {get_best_score(self, i)}"
 
-        return repr_
+        return out
 
     def _get_default(self, x, params):
-        """Return the standard parameter from params or the training instance.
+        """Get the standard parameter from params or the trainer.
 
         Parameters
         ----------
         x: list
-            Standard parameter name(s). Can be n_jobs and/or random_state.
+            Standard parameter. Can be n_jobs and/or random_state.
 
         params: dict
-            Parameters for the estimator provided by the BO and est_params.
+            Parameters for the estimator provided by est_params.
 
         """
         args = []
@@ -134,12 +145,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             return args[0], args[1]
 
     def get_params(self, x):
-        """Return a dictionary of the model´s hyperparameters.
+        """Get a dictionary of the model's hyperparameters.
 
         Parameters
         ----------
         x: list
-            Hyperparameters returned by the BO, in order of self.params.
+            Hyperparameters returned by the BO in order of self.params.
 
         """
         params = {}
@@ -164,23 +175,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     ):
         """Run the bayesian optimization algorithm.
 
-        Search for the best combination of hyperparameters. The function to
-        optimize is evaluated either with a K-fold cross-validation on the
-        training set or using a different validation set every iteration.
+        Search for the best combination of hyperparameters. The
+        function to optimize is evaluated either with a K-fold
+        cross-validation on the training set or using a different
+        validation set every iteration.
 
         Parameters
         ----------
-        n_calls: int, list or tuple, optional (default=15)
-            Maximum number of iterations of the BO (including `n_initial_points`).
-            If 0, skip the BO and fit the model on its default Parameters.
-            If iterable, the n-th value will apply to the n-th model in the
-            pipeline.
+        n_calls: int or sequence, optional (default=15)
+            Maximum number of iterations of the BO. It includes the
+            random points of `n_initial_points`. If 0, skip the BO
+            and fit the model on its default Parameters. If sequence,
+            the n-th value will apply to the n-th model.
 
-        n_initial_points: int, list or tuple, optional (default=5)
-            Initial number of random tests of the BO before fitting the
-            surrogate function. If equal to `n_calls`, the optimizer will
-            technically be performing a random search. If iterable, the n-th
-            value will apply to the n-th model in the pipeline.
+        n_initial_points: int or sequence, optional (default=5)
+            Initial number of random tests of the BO before fitting
+            the surrogate function. If equal to `n_calls`, the
+            optimizer will technically be performing a random search.
+            If sequence, the n-th value will apply to the n-th model.
 
         bo_params: dict, optional (default={})
             Additional parameters to for the BO. These can include:
@@ -195,40 +207,43 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                 - delta_x: int or float, optional (default=0)
                     Stop the optimization when `|x1 - x2| < delta_x`.
                 - delta_y: int or float, optional (default=0)
-                    Stop the optimization if the 5 minima are within `delta_y`.
-                - early stopping: int, float or None, optional (default=None)
-                    Training will stop if the model didn't improve in last
-                    `early_stopping` rounds. If <1, fraction of rounds from the
-                    total. If None, no early stopping is performed. Only available
-                    for models that allow in-training evaluation.
+                    Stop the optimization if the 5 minima are within
+                    `delta_y` (skopt always minimizes the function).
+                - early_stopping: int, float or None, optional (default=None)
+                    Training will stop if the model didn't improve in
+                    last `early_stopping` rounds. If <1, fraction of
+                    rounds from the total. If None, no early stopping
+                    is performed. Only available for models that allow
+                    in-training evaluation.
                 - cv: int, optional (default=5)
                     Number of folds for the cross-validation. If 1, the
-                    training set will be randomly split in a subtrain and
-                    validation set.
-                - callbacks: callable or list of callables, optional (default=None)
+                    training set will be randomly split in a (sub)train
+                    and validation set.
+                - callbacks: callable or sequence, optional (default=None)
                     Callbacks for the BO.
-                - dimensions: dict, array or None, optional (default=None)
-                    Custom hyperparameter space for the bayesian optimization.
-                    Can be an array to share the same dimensions across models
-                    or a dictionary with the model names as key. If None, ATOM's
-                    predefined dimensions are used.
+                - dimensions: dict, sequence or None, optional (default=None)
+                    Custom hyperparameter space for the BO. Can be an
+                    array to share the same dimensions across models
+                    or a dictionary with the model names as key. If
+                    None, ATOM's predefined dimensions are used.
                 - plot_bo: bool, optional (default=False)
-                    Whether to plot the BO's progress as it runs. Creates a canvas
-                    with two plots: the first plot shows the score of every trial
-                    and the second shows the distance between the last consecutive
-                    steps. Don't forget to call `%matplotlib` at the start of the
-                    cell if you are using an interactive notebook!
+                    Whether to plot the BO's progress as it runs.
+                    Creates a canvas with two plots: the first plot
+                    shows the score of every trial and the second shows
+                    the distance between the last consecutive steps.
+                    Don't forget to call `%matplotlib` at the start of
+                    the cell if you are using an interactive notebook!
                 - Any other parameter for skopt's optimizer.
 
         """
 
         def optimize(**params):
-            """Optimization function for the bayesian optimization algorithm.
+            """Optimization function for the BO.
 
             Parameters
             ----------
             params: dict
-               Model's hyperparameters to be used for this iteration of the BO.
+               Model's hyperparameters used in this call of the BO.
 
             Returns
             -------
@@ -240,9 +255,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             def fit_model(train_idx, val_idx):
                 """Fit the model. Function for parallelization.
 
-                Divide the training set in a (sub)train and validation set for this
-                fit. Fit the model on custom_fit if exists, else normally. Return
-                the score on the validation set.
+                Divide the training set in a (sub)train and validation
+                set for this fit. Fit the model on custom_fit if exists,
+                else normally. Return the score on the validation set.
 
                 Parameters
                 ----------
@@ -364,7 +379,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             return -scores[0]  # Negative since skopt tries to minimize
 
-        # Running optimization ============================================== >>
+        # Running optimization ===================================== >>
 
         # Check parameters
         if n_initial_points < 1:
@@ -577,7 +592,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             for metric in self.T.metric_
         ])
 
-        # Print stats ======================================================= >>
+        # Print stats ============================================== >>
 
         if self.bo.empty:
             self.T.log("\n", 1)  # Print 2 extra lines
@@ -602,25 +617,25 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log(f"Time elapsed: {self.time_fit}", 1)
 
     @composed(crash, method_to_log, typechecked)
-    def bagging(self, bagging: Optional[int] = 5):
-        """Apply a bagging algorithm on the model.
+    def bagging(self, bagging: int = 5):
+        """Apply bagging on the model.
 
-        Take bootstrap samples from the training set and test them on the test
-        set to get a distribution of the model's results.
+        Take bootstrap samples from the training set and test them on
+        the test set to get a distribution of the model's results.
 
         Parameters
         ----------
-        bagging: int or None, optional (default=5)
-            Number of data sets (bootstrapped from the training set) to use in
-            the bagging algorithm. If None or 0, no bagging is performed.
+        bagging: int, optional (default=5)
+            Number of data sets (bootstrapped from the training set)
+            to use in the bagging algorithm.
 
         """
         t_init = time()
 
-        if bagging < 0:
+        if bagging < 1:
             raise ValueError(
                 "Invalid value for the bagging parameter."
-                f"Value should be >=0, got {bagging}."
+                f"Value should be >0, got {bagging}."
             )
 
         self.metric_bagging = []
@@ -672,26 +687,26 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.time_bagging = time_to_string(t_init)
         self.T.log(f"Time elapsed: {self.time_bagging}", 1)
 
-    # Prediction methods ==================================================== >>
+    # Prediction methods =========================================== >>
 
     def _prediction(self, X, y=None, sample_weight=None, method="predict", **kwargs):
         """Apply prediction methods on new data.
 
-        First transform the new data and apply the attribute on the best model.
-        The model has to have the provided attribute.
+        First transform the new data and apply the attribute on the
+        best model. The model has to have the provided attribute.
 
         Parameters
         ----------
         X: dict, list, tuple, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, list, tuple, np.array, pd.Series, optional (default=None)
-            - If None, the target column is not used in the attribute
-            - If int: index of the column of X which is selected as target
-            - If str: name of the target column in X
-            - Else: data target column with shape=(n_samples,)
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
 
-        sample_weight: array-like or None, optional (default=None)
+        sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
         method: str, optional (default="predict")
@@ -713,10 +728,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             )
 
         # When there is a pipeline, apply all data transformations first
-        if hasattr(self, "_est_pipeline"):
+        if hasattr(self, "_est_branch"):
             if kwargs.get("verbose") is None:
                 kwargs["verbose"] = self.T.verbose
-            X, y = catch_return(transform(self._est_pipeline, X, y, **kwargs))
+            X, y = catch_return(transform(self._est_branch, X, y, **kwargs))
 
         # Scale the data if needed
         if self.needs_scaling and not check_scaling(X):
@@ -752,13 +767,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self,
         X: X_TYPES,
         y: Y_TYPES,
-        sample_weight: Optional[Union[ARRAY_TYPES]] = None,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
         **kwargs,
     ):
         """Get the score function on new data."""
         return self._prediction(X, y, sample_weight, method="score", **kwargs)
 
-    # Prediction properties ================================================= >>
+    # Prediction properties ========================================= >>
 
     def reset_prediction_attributes(self):
         """Clear all the prediction attributes."""
@@ -828,11 +843,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self._score_test = self.estimator.score(arr(self.X_test), self.y_test)
         return self._score_test
 
-    # Properties ==================================================== >>
+    # Properties ============================================ >>
 
     @property
     def results(self):
-        """Return results without empty columns."""
+        """Return the results dataframe without empty columns."""
         return self._results.dropna(axis=1, how="all")
 
     @property
@@ -909,7 +924,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def n_classes(self):
         return self.T.n_classes
 
-    # Utility methods ======================================================= >>
+    # Utility methods ============================================== >>
 
     def _final_output(self):
         """Returns the model's final output as a string."""
@@ -939,19 +954,21 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     def calibrate(self, **kwargs):
         """Calibrate the model.
 
-        Applies probability calibration on the winning model. The calibration is
-        done with the CalibratedClassifierCV class from sklearn. The estimator will
-        be trained via cross-validation on a subset of the training data, using the
-        rest to fit the calibrator. The new classifier will replace the `estimator`
+        Applies probability calibration on the winning model. The
+        calibration is done with the CalibratedClassifierCV class from
+        sklearn. The estimator will be trained via cross-validation on
+        a subset of the training data, using the rest to fit the
+        calibrator. The new classifier will replace the `estimator`
         attribute. All prediction attributes will reset.
 
         Parameters
         ----------
         **kwargs
-            Additional keyword arguments for the CalibratedClassifierCV instance.
-            Using cv="prefit" will use the trained model and fit the calibrator on
-            the test set. Note that doing this will result in data leakage in the
-            test set. Use this only if you have another, independent set for testing.
+            Additional keyword arguments for the CalibratedClassifierCV
+            instance. Using cv="prefit" will use the trained model and
+            fit the calibrator on the test set. Note that doing this
+            will result in data leakage in the test set. Use this only
+            if you have another, independent set for testing.
 
         """
         if self.T.goal.startswith("reg"):
@@ -975,12 +992,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         Parameters
         ----------
         metric: str, optional (default=None)
-            Name of the metric to calculate. Choose from any of sklearn's SCORERS or
-            one of the CUSTOM_METRICS. If None, returns ATOM's final results for the
-            model (ignores `dataset`).
+            Name of the metric to calculate. Choose from any of
+            sklearn's SCORERS or one of the CUSTOM_METRICS. If None,
+            returns the model's final results (ignores `dataset`).
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train" or "test".
+            Data set on which to calculate the metric. Options are
+            "train" or "test".
 
         **kwargs
             Additional keyword arguments for the metric function.
@@ -1068,7 +1086,8 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         Parameters
         ----------
         filename: str, optional (default=None)
-            Name of the file to save. If None or "auto", the default name is used.
+            Name of the file. If None or "auto", the estimator's
+            __name__ is used.
 
         """
         if not filename:

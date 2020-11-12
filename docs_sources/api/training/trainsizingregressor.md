@@ -15,8 +15,8 @@ Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizin
 2. The model is fitted on the training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 
-Just like `atom`, you can [predict](../../../user_guide/#predicting),
- [plot](../../../user_guide/#plots) and call any [`model`](../../../user_guide/#models)
+Just like atom, you can [predict](../../../user_guide/#predicting),
+ [plot](../../../user_guide/#plots) and call any [model](../../../user_guide/#models)
  from the TrainSizingRegressor instance. Read more in the [user guide](../../../user_guide/#training).
 <br />
 <table>
@@ -284,7 +284,7 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<strong>winner: [model](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>

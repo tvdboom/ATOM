@@ -17,7 +17,7 @@ Performs standard data cleaning steps on a dataset. Use the parameters to choose
   * Remove rows with missing values in the target column.
   * Encode the target column.
 
-This class can be accessed from `atom` through the [clean](../../ATOM/atomclassifier/#clean)
+This class can be accessed from atom through the [clean](../../ATOM/atomclassifier/#clean)
  method. Read more in the [user guide](../../../user_guide/#standard-data-cleaning).
 <table>
 <tr>
@@ -154,12 +154,12 @@ Apply the data cleaning steps on the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -294,12 +294,12 @@ Apply the data cleaning steps on the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
 <blockquote>
 <ul>
-<li>If None: y is ignored in the transformation.</li>
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>

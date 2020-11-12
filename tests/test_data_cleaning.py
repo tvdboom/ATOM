@@ -28,7 +28,7 @@ from .utils import (
 )
 
 
-# Test BaseCleaner ========================================================== >>
+# Test BaseCleaner ================================================= >>
 
 def test_fit_transform():
     """Assert that the fit_transform method works as intended."""
@@ -46,7 +46,7 @@ def test_fit_transform_no_fit():
     assert X_1.equals(X_2)
 
 
-# Test Scaler =============================================================== >>
+# Test Scaler ====================================================== >>
 
 def test_check_is_fitted():
     """Assert that an error is raised when not fitted."""
@@ -74,7 +74,7 @@ def test_ignores_categorical_columns():
     assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
 
 
-# Test Cleaner ============================================================= >>
+# Test Cleaner ==================================================== >>
 
 def test_invalid_type_ignored():
     """Assert that prohibited types is ignored when None."""
@@ -164,7 +164,7 @@ def test_target_mapping():
     assert cleaner.mapping == {"0": 0, "1": 1, "2": 2}
 
 
-# Test Imputer ============================================================== >>
+# Test Imputer ===================================================== >>
 
 def test_strat_num_parameter():
     """Assert that the strat_num parameter is set correctly."""
@@ -305,7 +305,7 @@ def test_imputing_non_numeric_most_frequent():
     assert X.isna().sum().sum() == 0
 
 
-# Test Encoder ============================================================== >>
+# Test Encoder ===================================================== >>
 
 def test_strategy_parameter_encoder():
     """Assert that the strategy parameter is set correctly."""
@@ -381,7 +381,7 @@ def test_kwargs_parameters():
     assert encoder._encoders["Feature 2"].get_params()["sigma"] == 0.5
 
 
-# Test Outliers ============================================================= >>
+# Test Outliers ==================================================== >>
 
 def test_invalid_strategy_parameter():
     """Assert that the strategy parameter is set correctly."""
@@ -437,7 +437,7 @@ def test_drop_outlier_in_target():
     assert len(y) + 2 == len(y10)
 
 
-# Test Balancer ============================================================= >>
+# Test Balancer ==================================================== >>
 
 def test_strategy_parameter_balancer():
     """Assert that an error is raised when strategy is invalid."""

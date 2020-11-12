@@ -10,38 +10,44 @@ Description: Module containing the BasePredictor class.
 # Standard packages
 import numpy as np
 import pandas as pd
-from typing import Union, Optional, Sequence
+from typing import Union, Optional
 from typeguard import typechecked
 
 # Own modules
 from .utils import (
-    ARRAY_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide, check_is_fitted,
-    get_best_score, clear, method_to_log, composed, crash,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide,
+    check_is_fitted, get_best_score, delete, method_to_log, composed, crash
 )
 
 
 class BasePredictor(object):
     """Properties and shared methods for the training classes."""
 
-    # Utility properties =================================================== >>
+    # Utility properties =========================================== >>
+
+    @property
+    def branch(self):
+        """Return the current branch."""
+        return self._branches[self._current]
 
     @property
     def pipeline(self):
-        return self._branches[self._pipe]
+        """Return the estimators in the branches pipeline."""
+        return self.branch.estimators
 
     @property
     def metric(self):
-        """Return a list of the model subclasses."""
+        """Return the pipeline's metric."""
         return flt([getattr(metric, "name", metric) for metric in self.metric_])
 
     @property
     def models_(self):
-        """Return a list of the model subclasses."""
+        """Return a list of the models in the pipeline."""
         return [getattr(self, model) for model in self.models]
 
     @property
     def results(self):
-        """Return the _results dataframe ordered and without empty columns."""
+        """Return the results dataframe ordered and without empty columns."""
         df = self._results
 
         # If multi-index, invert the runs and reindex the models
@@ -52,31 +58,31 @@ class BasePredictor(object):
 
     @property
     def winner(self):
-        """Return the model subclass that performed best."""
+        """Return the best performing model."""
         if self.models:  # Returns None if not fitted
             return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
 
-    # Data properties ====================================================== >>
+    # Data properties ============================================== >>
 
     @property
     def dataset(self):
-        return self.pipeline.data
+        return self.branch.data
 
     @property
     def train(self):
-        return self.pipeline.data[:self.pipeline.idx[0]]
+        return self.branch.data[:self.branch.idx[0]]
 
     @property
     def test(self):
-        return self.pipeline.data[-self.pipeline.idx[1]:]
+        return self.branch.data[-self.branch.idx[1]:]
 
     @property
     def X(self):
-        return self.pipeline.data.drop(self.target, axis=1)
+        return self.branch.data.drop(self.target, axis=1)
 
     @property
     def y(self):
-        return self.pipeline.data[self.target]
+        return self.branch.data[self.target]
 
     @property
     def X_train(self):
@@ -96,11 +102,11 @@ class BasePredictor(object):
 
     @property
     def shape(self):
-        return self.pipeline.data.shape
+        return self.branch.data.shape
 
     @property
     def columns(self):
-        return list(self.pipeline.data.columns)
+        return list(self.branch.data.columns)
 
     @property
     def target(self):
@@ -108,10 +114,11 @@ class BasePredictor(object):
 
     @property
     def mapping(self):
-        return self.pipeline.mapping
+        return self.branch.mapping
 
     @property
     def classes(self):
+        """Return the number of samples per class and per data set."""
         df = pd.DataFrame({
             "dataset": self.y.value_counts(sort=False, dropna=False),
             "train": self.y_train.value_counts(sort=False, dropna=False),
@@ -122,31 +129,32 @@ class BasePredictor(object):
 
     @property
     def n_classes(self):
+        """Return the number of classes in the target column."""
         return len(self.y.unique())
 
-    # Prediction methods =================================================== >>
+    # Prediction methods =========================================== >>
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
-        """Get predictions on new data."""
+        """Get the winning model's predictions on new data."""
         check_is_fitted(self, "results")
         return self.winner.predict(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(self, X: X_TYPES, **kwargs):
-        """Get probability predictions on new data."""
+        """Get the winning model's probability predictions on new data."""
         check_is_fitted(self, "results")
         return self.winner.predict_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(self, X: X_TYPES, **kwargs):
-        """Get log probability predictions on new data."""
+        """Get the winning model's log probability predictions on new data."""
         check_is_fitted(self, "results")
         return self.winner.predict_log_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(self, X: X_TYPES, **kwargs):
-        """Get the decision function on new data."""
+        """Get the winning model's decision function on new data."""
         check_is_fitted(self, "results")
         return self.winner.decision_function(X, **kwargs)
 
@@ -155,17 +163,17 @@ class BasePredictor(object):
         self,
         X: X_TYPES,
         y: Y_TYPES,
-        sample_weight: Optional[Union[ARRAY_TYPES]] = None,
+        sample_weight: Optional[SEQUENCE_TYPES] = None,
         **kwargs,
     ):
-        """Get the score output on new data."""
+        """Get the winning model's score on new data."""
         check_is_fitted(self, "results")
         return self.winner.score(X, y, sample_weight, **kwargs)
 
-    # Utility methods ====================================================== >>
+    # Utility methods ============================================== >>
 
     def _get_model(self, model):
-        """Return the model's name given."""
+        """Return a model's name. Case insensitive."""
         for name in self.models:
             if model.lower() == name.lower():
                 return name
@@ -179,16 +187,17 @@ class BasePredictor(object):
     def get_class_weight(self, dataset: str = "train"):
         """Return class weights for a balanced data set.
 
-        Statistically, the class weights re-balance the data set so that the
-        sampled data set represents the target population as closely as reasonably
-        possible. The returned weights are inversely proportional to class
-        frequencies in the selected data set.
+        Statistically, the class weights re-balance the data set so
+        that the sampled data set represents the target population
+        as closely as reasonably possible. The returned weights are
+        inversely proportional to class frequencies in the selected
+        data set.
 
         Parameters
         ----------
         dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between "train",
-            "test" or "dataset".
+            Data set from which to get the weights. Choose between
+            "train", "test" or "dataset".
 
         """
         if dataset not in ("train", "test", "dataset"):
@@ -210,20 +219,16 @@ class BasePredictor(object):
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
         """Print the final scoring for a specific metric.
 
-        If a model returns `XXX`, it means the metric failed for that specific
-        model. This can happen if either the metric is unavailable for the task
-        or if the model does not have a `predict_proba` method while the metric
-        requires it.
-
         Parameters
         ----------
-        metric: string or None, optional (default=None)
-            String of one of sklearn's predefined scorers. If None, the metric(s)
-            used to fit the trainer is selected and the bagging results will be
-            showed (if used).
+        metric: str or None, optional (default=None)
+            Name of the metric to calculate. Choose from any of
+            sklearn's SCORERS or one of the CUSTOM_METRICS. If None,
+            returns the pipeline's final results (ignores `dataset`).
 
         dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are "train" or "test".
+            Data set on which to calculate the metric. Options are
+            "train" or "test".
 
         **kwargs
             Additional keyword arguments for the metric function.
@@ -253,31 +258,30 @@ class BasePredictor(object):
             else:
                 score = m.scoring(metric, dataset, **kwargs)
 
-                # Create string of the score (if wrong metric for model -> XXX)
-                if isinstance(score, str):
-                    out = f"{m.fullname:{maxlen}s} --> XXX"
-                else:
-                    if isinstance(score, float):
-                        out_score = round(score, 3)
-                    else:  # If confusion matrix...
-                        out_score = list(score.ravel())
-                    out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
+                if isinstance(score, float):
+                    out_score = round(score, 3)
+                else:  # If confusion matrix...
+                    out_score = list(score.ravel())
+                out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
 
             self.log(out, -2)  # Always print
 
     @composed(crash, method_to_log, typechecked)
-    def clear(self, models: Union[str, Sequence[str]] = "all"):
-        """Clear models from the pipeline.
+    def delete(self, models: Union[str, SEQUENCE_TYPES] = "all"):
+        """Delete models from the trainer's pipeline.
 
-        Removes all traces of a model in the pipeline (except for the `errors`
-        attribute). If all models in the pipeline are removed, the metric is reset.
-        Use this method to remove unwanted models from the pipeline or to clear
-        memory before saving the instance.
+        Removes all traces of a model in the pipeline (except for the
+        `errors` attribute). If the winning model is removed. The next
+        best model (through metric_test or mean_bagging if available)
+        is selected as winner.If all models are removed, the metric and
+        approach are reset. Use this method to drop unwanted models from
+        the pipeline or to clear memory before saving the instance.
 
         Parameters
         ----------
-        models: str or iterable, optional (default="all")
-            Model(s) to clear from the pipeline. If "all", clear all models.
+        models: str or sequence, optional (default="all")
+            Model(s) to remove from the pipeline. If "all", delete all
+            models.
 
         """
         # Prepare the models parameter
@@ -291,6 +295,6 @@ class BasePredictor(object):
             models = [self._get_model(m) for m in models]
             keyword = "Models " + ", ".join(models) + " were"
 
-        clear(self, models)
+        delete(self, models)
 
-        self.log(f"{keyword} cleared successfully!", 1)
+        self.log(f"{keyword} deleted successfully!", 1)

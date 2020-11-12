@@ -7,7 +7,7 @@
 <div style="padding-left:3%">
 Transform the data and make logarithmic probability predictions on new data. If
  called from a `training` instance, it will use the best model in the pipeline (under
- the `winner` attribute). If called from a `model`, it will use that model. The
+ the `winner` attribute). If called from a model, it will use that model. The
  estimator must have a `predict_log_proba` method.
 <br /><br />
 <table>
@@ -16,7 +16,7 @@ Transform the data and make logarithmic probability predictions on new data. If
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>

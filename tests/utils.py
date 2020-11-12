@@ -14,14 +14,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.datasets import load_breast_cancer, load_wine, load_digits, load_diabetes
 
 
-# Functions ================================================================= >>
+# Functions ========================================================= >>
 
 def merge(X, y):
     """Merge a pd.DataFrame and pd.Series into one dataframe."""
     return X.merge(y.to_frame(), left_index=True, right_index=True)
 
 
-# Variables ================================================================= >>
+# Variables ========================================================= >>
 
 # Directory for storing all files created by the tests
 FILE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/files/"

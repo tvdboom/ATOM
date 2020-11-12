@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -574,7 +574,7 @@ Plot SHAP's waterfall plot for a single prediction.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected. Note
  that selecting multiple models will raise an exception. To avoid this, call the
- plot from a <code>model</code>.
+ plot from a model.
 </blockquote>
 <strong>index: int or None, optional (default=None)</strong>
 <blockquote>
@@ -599,7 +599,7 @@ Figure's size, format as (x, y). If None, adapts size to <code>show</code> param
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>

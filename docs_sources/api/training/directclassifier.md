@@ -1,8 +1,8 @@
-# TrainerClassifier
+# DirectClassifier
 -------------------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.training.<strong style="color:#008AB8">TrainerClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+<pre><em>class</em> atom.training.<strong style="color:#008AB8">DirectClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                       needs_threshold=False, n_calls=10, n_initial_points=5,
                                       est_params={}, bo_params={}, bagging=None, n_jobs=1,
                                       verbose=0, logger=None, random_state=None) 
@@ -14,9 +14,9 @@ Fit and evaluates the models to the data in the pipeline. The following steps ar
 2. The model is fitted on the training set using the best combinations of hyperparameters found.
 3. Using a bagging algorithm, various scores on the test set are calculated.
 
-Just like `atom`, you can [predict](../../../user_guide/#predicting),
- [plot](../../../user_guide/#plots) and call any [`model`](../../../user_guide/#models)
- from the TrainerClassifier instance. Read more in the [user guide](../../../user_guide/#training).
+Just like atom, you can [predict](../../../user_guide/#predicting),
+ [plot](../../../user_guide/#plots) and call any [model](../../../user_guide/#models)
+ from the DirectClassifier instance. Read more in the [user guide](../../../user_guide/#training).
 <br />
 <table>
 <tr>
@@ -286,7 +286,7 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<strong>winner: [model](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
@@ -627,7 +627,7 @@ Estimator parameters.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="75%" style="background:white;">
-<strong>self: TrainerClassifier</strong>
+<strong>self: DirectClassifier</strong>
 <blockquote>
 Estimator instance.
 </blockquote>
@@ -640,10 +640,10 @@ Estimator instance.
 ## Example
 ---------
 ```python
-from atom.training import TrainerClassifier
+from atom.training import DirectClassifier
 
 # Run the pipeline
-trainer = TrainerClassifier(["Tree", "RF"], n_calls=5, n_initial_points=3)
+trainer = DirectClassifier(["Tree", "RF"], n_calls=5, n_initial_points=3)
 trainer.run(train, test)
 
 # Analyze the results

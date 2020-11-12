@@ -15,7 +15,7 @@ from typing import Union, Optional
 from pandas_profiling import ProfileReport
 
 # Own modules
-from .pipeline import Pipeline
+from .branch import Branch
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
@@ -28,8 +28,8 @@ from .data_cleaning import (
 )
 from .feature_engineering import FeatureGenerator, FeatureSelector
 from .training import (
-    TrainerClassifier,
-    TrainerRegressor,
+    DirectClassifier,
+    DirectRegressor,
     SuccessiveHalvingClassifier,
     SuccessiveHalvingRegressor,
     TrainSizingClassifier,
@@ -37,37 +37,37 @@ from .training import (
 )
 from .plots import ATOMPlotter
 from .utils import (
-    ARRAY_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, merge, check_property,
-    infer_task, check_dim, check_scaling, transform, method_to_log, composed, crash
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, merge,
+    check_property, infer_task, check_dim, check_scaling, transform,
+    method_to_log, composed, crash
 )
 
 
 class ATOM(BasePredictor, ATOMPlotter):
     """ATOM base class.
 
-    The ATOM class is a convenient wrapper for all data_cleaning,
-    feature_engineering and training methods in this package.
+    The ATOM class is a convenient wrapper for all data cleaning,
+    feature engineering and trainer estimators in this package.
     Provide the dataset to the class, and apply all transformations
     and model management from here.
 
-    Warning: This class should not be used directly. Use descendant
+    Warning: This class should not be called directly. Use descendant
     classes instead.
 
     """
 
     @composed(crash, method_to_log)
     def __init__(self, arrays, n_rows, test_size):
-        """Prepare input, run Cleaner and split data in train/test sets."""
         self.n_rows = n_rows
         self.test_size = test_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
-        # Pipeline attributes
-        self._pipe = "main"  # Current pipeline
-        self._branches = {self._pipe: Pipeline(self, self._pipe)}
+        # Branching attributes
+        self._current = "main"  # Current pipeline
+        self._branches = {self._current: Branch(self, self._current)}
 
         # Training attributes
-        self._approach = None
+        self._approach = None  # Approach adopted by this instance
         self.models = []
         self.metric_ = []
         self.errors = {}
@@ -88,10 +88,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        self.pipeline.data, self.pipeline.idx = self._get_data_and_idx(arrays)
+        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
 
         # Save the test_size fraction for later use
-        self._test_size = self.pipeline.idx[1] / len(self.dataset)
+        self._test_size = self.branch.idx[1] / len(self.dataset)
 
         # Assign the algorithm's task
         self.task = infer_task(self.y, goal=self.goal)
@@ -104,56 +104,57 @@ class ATOM(BasePredictor, ATOMPlotter):
             classes = sorted(self.y.unique())
         except TypeError:
             classes = self.y.unique()
-        self.pipeline.mapping = {str(value): value for value in classes}
+        self.branch.mapping = {str(value): value for value in classes}
 
         self.log('')  # Add empty rows around stats for cleaner look
         self.stats(1)
         self.log('')
 
     def __repr__(self):
-        repr_ = f"{self.__class__.__name__}"
-        for key, value in self._branches.items():
-            repr_ += f"\n --> Pipeline: {key}"
-            for est in value.estimators:
-                repr_ += f"\n   >>> {est.__class__.__name__}"
+        out = f"{self.__class__.__name__}"
+        for key, branch in self._branches.items():
+            out += f"\n --> Branch: {key}"
+            for est in branch.estimators:
+                out += f"\n   >>> {est.__class__.__name__}"
 
-        return repr_
+        out += f"\n --> Training approach: {self._approach}"
+        out += f"\n --> Models: {flt(self.models) if self.models else None}"
+        out += f"\n --> Metric: {flt(self.metric) if self.metric else None}"
+        out += f"\n --> Errors: {len(self.errors)}"
 
-    # Branch properties ================================================== >>
+        return out
 
-    @property
-    def pipelines(self):
-        return list(self._branches.keys())
+    # Branch properties ============================================ >>
 
-    @BasePredictor.pipeline.setter
+    @BasePredictor.branch.setter
     @typechecked
-    def pipeline(self, pipeline: str):
-        if not pipeline:
-            raise ValueError("Can't create a pipeline with an empty name!")
-        elif pipeline.lower() in self._branches:
-            self._pipe = pipeline.lower()
-            self.log(f"Switched to pipeline '{pipeline}'.")
+    def branch(self, branch: str):
+        if not branch:
+            raise ValueError("Can't create a branch with an empty name!")
+        elif branch.lower() in self._branches:
+            self._current = branch.lower()
+            self.log(f"Switched to branch '{branch}'.", 1)
         else:
-            self._branches[pipeline.lower()] = Pipeline(
+            self._branches[branch.lower()] = Branch(
                 T=self,
-                name=pipeline.lower(),
-                estimators=self.pipeline.estimators,
-                data=self.pipeline.data,
-                idx=self.pipeline.idx,
+                name=branch.lower(),
+                estimators=self.branch.estimators,
+                data=self.branch.data,
+                idx=self.branch.idx,
                 mapping=self.mapping
             )
-            self._pipe = pipeline.lower()
-            self.log(f"New pipeline '{pipeline}' successfully created!")
+            self._current = branch.lower()
+            self.log(f"New branch '{branch}' successfully created!", 1)
 
-    @pipeline.deleter
-    def pipeline(self):
-        self.pipeline.clear()
+    @branch.deleter
+    def branch(self):
+        self.branch.delete()
 
-    # Utility properties =================================================== >>
+    # Utility properties =========================================== >>
 
     @property
     def nans(self):
-        """Returns columns with missing + inf values."""
+        """Returns columns with missing values."""
         nans = self.dataset.replace(self.missing, np.NaN).isna().sum()
         return nans[nans > 0]
 
@@ -177,7 +178,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Returns whether the dataset is scaled."""
         return check_scaling(self.dataset)
 
-    # Utility methods ======================================================= >>
+    # Utility methods =============================================== >>
 
     @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
@@ -186,7 +187,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         _vb: int, optional (default=-2)
-            Internal parameter to always print if the user calls this method.
+            Parameter to always print if the user calls this method.
 
         """
         self.log("Dataset stats ================== >>", _vb)
@@ -229,8 +230,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Create an extensive profile analysis of the data.
 
-        The profile report is rendered in HTML5 and CSS3. Note that this
-        method can be slow for rows>10k.
+        The profile report is rendered in HTML5 and CSS3. Note that
+        this method can be slow for rows>10k.
 
         Parameters
         ----------
@@ -238,10 +239,11 @@ class ATOM(BasePredictor, ATOMPlotter):
             Name of the data set to get the report from.
 
         n_rows: int or None, optional(default=None)
-            Number of (randomly picked) rows to process. None for all rows.
+            Number of (randomly picked) rows in `dataset` to process.
+            None for all rows.
 
         filename: str or None, optional (default=None)
-            Name of the file when saved (as .html). None to not save anything.
+            Name of the file (as .html). None to not save anything.
 
         """
         # If rows=None, select all rows in the dataframe
@@ -267,21 +269,17 @@ class ATOM(BasePredictor, ATOMPlotter):
     def transform(
         self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None, **kwargs
     ):
-        """Transform new data through all the pre-processing steps in the pipeline.
+        """Transform new data through all transformers in a branch.
 
-        By default, all transformers are included except outliers and balance since
-        they should only be applied on the training set.
-
-        When using the pipeline parameter to include/exclude transformers, remember
-        that the first transformer (index 0) in `atom`'s pipeline is always the
-        Cleaner called during initialization.
+        The outliers and balance transformations are not included by
+        default since they should only be applied on the training set.
 
         Parameters
         ----------
         X: dict, list, tuple, np.array or pd.DataFrame
-            Data containing the features, with shape=(n_samples, n_features).
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, array-like or None, optional (default=None)
+        y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored in the transformers.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
@@ -289,13 +287,13 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers. If None, it uses
-            the `training`'s verbosity.
+            the atom's verbosity.
 
         **kwargs
-            Additional keyword arguments to customize which transformers to apply.
-            You can either select them including their index in the `pipeline`
-            parameter, e.g. `pipeline=[0, 1, 4]` or include/exclude them individually
-            using their methods, e.g. `impute=True` or `feature_selection=False`.
+            Additional keyword arguments to customize which transforming
+            methods to apply. You can either select them via their index,
+            e.g. pipeline = [0, 1, 4] or include/exclude them via every
+            individual transformer, e.g. impute=True, encode=False.
 
         Returns
         -------
@@ -308,7 +306,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         if verbose is None:
             verbose = self.verbose
-        return transform(self.pipeline.estimators, X, y, verbose, **kwargs)
+        return transform(self.branch.estimators, X, y, verbose, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = None, dataset: str = "dataset"):
@@ -325,12 +323,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         if not filename:
             filename = f"{self.__class__.__name__}_{dataset}.csv"
+
         getattr(self, dataset).to_csv(filename, index=False)
 
-    # Data cleaning methods ================================================ >>
+    # Data cleaning methods ======================================== >>
 
     def _prepare_kwargs(self, kwargs, params=None):
-        """Return kwargs with ATOM values if not specified."""
+        """Return kwargs with atom's values if not specified."""
         for attr in ["n_jobs", "verbose", "warnings", "logger", "random_state"]:
             if (not params or attr in params) and attr not in kwargs:
                 kwargs[attr] = getattr(self, attr)
@@ -339,10 +338,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log)
     def scale(self, **kwargs):
-        """Scale the features.
+        """Scale the features to mean=0 and std=1.
 
-        Scale the features in the dataset to mean=0 and std=1. The scaler is
-        fitted only on the training set to avoid data leakage.
+        This class is equal to sklearn's StandardScaler except that it
+        returns a dataframe when provided and it ignores non-numerical
+        columns (instead of raising an exception). The scaler is fitted
+        only on the training set to avoid data leakage.
 
         """
         check_dim(self, "scale")
@@ -350,14 +351,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         scaler = Scaler(**kwargs).fit(self.X_train)
 
         self.X = scaler.transform(self.X)
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([scaler]), ignore_index=True
         )
 
     @composed(crash, method_to_log, typechecked)
     def clean(
         self,
-        prohibited_types: Optional[Union[str, ARRAY_TYPES]] = None,
+        prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
         maximum_cardinality: bool = True,
         minimum_cardinality: bool = True,
@@ -396,16 +397,16 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.dataset = merge(X, y).reset_index(drop=True)
 
         # Since Cleaner can remove rows from train and test, reset indices
-        self.pipeline.idx[1] = len(X[X.index >= self.pipeline.idx[0]])
-        self.pipeline.idx[0] = len(X[X.index < self.pipeline.idx[0]])
+        self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
+        self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
 
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([cleaner]), ignore_index=True
         )
 
         # Assign mapping (if it changed)
         if cleaner.mapping:
-            self.pipeline.mapping = cleaner.mapping
+            self.branch.mapping = cleaner.mapping
 
     @composed(crash, method_to_log, typechecked)
     def impute(
@@ -419,8 +420,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Handle missing values in the dataset.
 
         Impute or remove missing values according to the selected strategy.
-        Also removes rows and columns with too many missing values. The
-        imputer is fitted only on the training set to avoid data leakage.
+        Also removes rows and columns with too many missing values. Use
+        the `missing` attribute to customize what are considered "missing
+        values".
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -441,10 +443,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.dataset = merge(X, y).reset_index(drop=True)
 
         # Since Imputer can remove rows from train and test, reset indices
-        self.pipeline.idx[1] = len(X[X.index >= self.pipeline.idx[0]])
-        self.pipeline.idx[0] = len(X[X.index < self.pipeline.idx[0]])
+        self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
+        self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
 
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([imputer]), ignore_index=True
         )
 
@@ -461,13 +463,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         The encoding type depends on the number of unique values in the column:
             - If n_unique=2, use Label-encoding.
             - If 2 < n_unique <= max_onehot, use OneHot-encoding.
-            - If n_unique > max_onehot, use "strategy"-encoding.
+            - If n_unique > max_onehot, use `strategy`-encoding.
 
-        Also replaces classes with low occurrences with the value "other" in
-        order to prevent too high cardinality. Categorical features are defined as
-        all columns whose dtype.kind not in "ifu". Will raise an error if it
-        encounters missing values or unknown classes when transforming. The
-        encoder is fitted only on the training set to avoid data leakage.
+        Also replaces classes with low occurrences with the value `other`
+        in order to prevent too high cardinality. Categorical features are
+        defined as all columns whose dtype.kind not in `ifu`. Will raise
+        an error if it encounters missing values or unknown classes when
+        transforming.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -483,7 +485,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self.X = encoder.transform(self.X)
 
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([encoder]), ignore_index=True
         )
 
@@ -497,10 +499,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Remove or replace outliers in the training set.
 
-        Outliers are defined as values that lie further than
-        `max_sigma` * standard_deviation away from the mean of the column. Only
-        outliers from the training set are removed to maintain an original
-        sample of target values in the test set. Ignores categorical columns.
+        Outliers are values that lie further than `max_sigma` * std
+        away from the mean of the column. Ignores categorical columns.
+        Only outliers from the training set are removed to maintain an
+        original sample of target values in the test set. Ignores
+        categorical columns.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -517,18 +520,17 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.train = merge(*outliers.transform(self.X_train, self.y_train))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([outliers]), ignore_index=True
         )
 
     @composed(crash, method_to_log, typechecked)
     def balance(self, strategy: str = "ADASYN", **kwargs):
-        """Balance the target classes in the training set.
+        """Balance the number of rows per class in the target column.
 
-        Balance the number of instances per target class in the training set.
-        Only the training set is balanced in order to maintain the original
-        distribution of target classes in the test set. Use only for
-        classification tasks.
+        Only the training set is balanced in order to maintain the
+        original distribution of target classes in the test set. Use
+        only for classification tasks.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -548,14 +550,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.train = merge(*balancer.transform(self.X_train, self.y_train))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([balancer]), ignore_index=True
         )
 
         # Attach the estimator attribute to ATOM
         setattr(self, strategy.lower(), getattr(balancer, strategy.lower()))
 
-    # Feature engineering methods ========================================== >>
+    # Feature engineering methods ================================== >>
 
     @composed(crash, method_to_log, typechecked)
     def feature_generation(
@@ -564,14 +566,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         n_features: Optional[int] = None,
         generations: int = 20,
         population: int = 500,
-        operators: Optional[Union[str, ARRAY_TYPES]] = None,
+        operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Create new non-linear features.
+        """Apply automated feature engineering.
 
-        Use Deep feature Synthesis or a genetic algorithm to create new combinations
-        of existing features to capture the non-linear relations between the original
-        features.
+        Use Deep feature Synthesis or a genetic algorithm to create new
+        combinations of existing features to capture the non-linear
+        relations between the original features.
 
         See the feature_engineering.py module for a description of the parameters.
 
@@ -588,7 +590,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         ).fit(self.X_train, self.y_train)
 
         self.X = feature_generator.transform(self.X)
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([feature_generator]), ignore_index=True
         )
 
@@ -611,18 +613,18 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Remove features according to the selected strategy. Ties between
         features with equal scores will be broken in an unspecified way.
-        Also removes features with too low variance and finds pairs of
-        collinear features based on the Pearson correlation coefficient. For
-        each pair above the specified limit (in terms of absolute value), it
-        removes one of the two.
+        Additionally, removes features with too low variance and finds
+        pairs of collinear features based on the Pearson correlation
+        coefficient. For each pair above the specified limit (in terms of
+        absolute value), it removes one of the two.
 
-        Note that the RFE and RFECV strategies don't work when the solver is a
-        CatBoost model due to incompatibility of the APIs. If the run method has
-        already been called before running RFECV, the scoring parameter will be set
-        to the selected metric (if not explicitly provided).
+        Note that the RFE and RFECV strategies don't work when the solver
+        is a CatBoost model due to incompatibility of the APIs. If the run
+        method has already been called before running RFECV, the scoring
+        parameter will be set to the selected metric (if not provided).
 
         After running the method, the created attributes and methods are attached
-        to the instance.
+        to atom.
 
         See the feature_engineering.py module for a description of the parameters.
 
@@ -658,7 +660,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         ).fit(self.X_train, self.y_train)
 
         self.X = feature_selector.transform(self.X)
-        self.pipeline.estimators = self.pipeline.estimators.append(
+        self.branch.estimators = self.branch.estimators.append(
             pd.Series([feature_selector]), ignore_index=True
         )
 
@@ -676,7 +678,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             if getattr(feature_selector, attr) is not None:
                 setattr(self, attr, getattr(feature_selector, attr))
 
-    # Training methods ===================================================== >>
+    # Training methods ============================================= >>
 
     def _prepare_run(self, approach, metric, gib, needs_proba, needs_threshold):
         """Check whether the provided parameters are valid for a run.
@@ -684,30 +686,31 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         approach: str
-            Training approach. Either Trainer, SuccessiveHalving or TrainSizing.
+            Either Trainer, SuccessiveHalving or TrainSizing.
 
-        metric: str, array-like or callable
+        metric: str, sequence or callable
             Metric provided for the run.
 
-        gib: bool or array-like
-            Whether the metric is a score function or a loss function.
+        gib: bool or sequence
+            Whether the metric is a score or a loss function.
 
-        needs_proba: bool or array-like
-            Whether the metric function requires probability estimates out of a
-            classifier.
+        needs_proba: bool or sequence
+            Whether the metric function requires probability estimates
+            out of a classifier.
 
-        needs_threshold: bool or array-like
-            Whether the metric function takes a continuous decision certainty.
+        needs_threshold: bool or sequence
+            Whether the metric function takes a continuous decision
+            certainty.
 
         Returns
         -------
-        metric: str, array-like or callable
+        metric: str, sequence or callable
             Metric for the run. Should be the same as previous run.
 
         """
         if not self._approach:
             self._approach = approach
-            if approach == "Trainer":
+            if approach == "Direct":
                 self._results.index = pd.Index([], name="model")
             else:
                 idx = "frac" if approach == "TrainSizing" else "n_models"
@@ -744,18 +747,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     def _run(self, trainer):
         """Run the trainer.
 
-        If all models failed, catch the errors and pass them to the ATOM instance
-        before raising the exception. If successful run, update all relevant
-        attributes and methods.
+        If all models failed, catch the errors and pass them to the
+        atom before raising the exception. If successful run, update
+        all relevant attributes and methods.
 
         Parameters
         ----------
         trainer: class
-            Either the Trainer, SuccessiveHalving or TrainsSizing instance to run.
+            Trainer instance to run.
 
         """
         try:
-            trainer._branches = {"main": self.pipeline}
+            trainer._branches = {"main": self.branch}
             trainer.run()
         except ValueError:
             raise
@@ -775,23 +778,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                 setattr(self, model, getattr(trainer, model))
                 setattr(self, model.lower(), getattr(trainer, model.lower()))
 
-                # Add pipeline estimators to the `models` for transform method
-                setattr(getattr(self, model), "_est_pipeline", self.pipeline.estimators)
-
-            # Remove different approaches from the pipeline
-            to_drop = []
-            for approach in ["Trainer", "SuccessiveHalving", "TrainSizing"]:
-                if not trainer.__class__.__name__.startswith(approach):
-                    to_drop.append(approach)
-
-            self.pipeline.estimators = self.pipeline.estimators[
-                ~self.pipeline.estimators.astype(str).str.startswith(tuple(to_drop))
-            ]
-
-            # Add the trainer to the pipeline
-            self.pipeline.estimators = self.pipeline.estimators.append(
-                pd.Series([trainer]), ignore_index=True
-            )
+                # Add branch estimators to the models for transform method
+                setattr(getattr(self, model), "_est_branch", self.branch.estimators)
 
         finally:  # Catch errors and pass them to ATOM's attribute
             for model, error in trainer.errors.items():
@@ -800,25 +788,29 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Fit the models to the dataset in a direct fashion.
+        """Fit the models in a direct fashion.
+
+        Fit and evaluate over the models. Contrary to SuccessiveHalving
+        and TrainSizing, the direct approach only iterates once over the
+        models, using the full dataset.
 
         See the basetrainer.py module for a description of the parameters.
 
         """
         metric = self._prepare_run(
-            "Trainer", metric, greater_is_better, needs_proba, needs_threshold
+            "Direct", metric, greater_is_better, needs_proba, needs_threshold
         )
 
         params = (
@@ -828,37 +820,38 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         kwargs = self._prepare_kwargs(kwargs)
         if self.goal.startswith("class"):
-            trainer = TrainerClassifier(*params, **kwargs)
+            trainer = DirectClassifier(*params, **kwargs)
         else:
-            trainer = TrainerRegressor(*params, **kwargs)
+            trainer = DirectRegressor(*params, **kwargs)
 
         self._run(trainer)
 
     @composed(crash, method_to_log, typechecked)
     def successive_halving(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         skip_runs: int = 0,
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Fit the models to the dataset in a successive halving fashion.
+        """Fit the models in a successive halving fashion.
 
-        If you want to compare similar models, you can choose to use a successive
-        halving approach to run the pipeline. This technique is a bandit-based
-        algorithm that fits N models to 1/N of the data. The best half are selected
-        to go to the next iteration where the process is repeated. This continues
-        until only one model remains, which is fitted on the complete dataset.
-        Beware that a model's performance can depend greatly on the amount of data
-        on which it is trained. For this reason, we recommend only to use this
+        If you want to compare similar models, you can choose to use a
+        successive halving approach to run the pipeline. This technique
+        is a bandit-based algorithm that fits N models to 1/N of the data.
+        The best half are selected to go to the next iteration where the
+        process is repeated. This continues until only one model remains,
+        which is fitted on the complete dataset. Beware that a model's
+        performance can depend greatly on the amount of data on which it
+        is trained. For this reason, we recommend only to use this
         technique with similar models, e.g. only using tree-based models.
 
         See the basetrainer.py module for a description of the parameters.
@@ -884,25 +877,26 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def train_sizing(
         self,
-        models: Union[str, callable, ARRAY_TYPES],
-        metric: Optional[Union[str, callable, ARRAY_TYPES]] = None,
-        greater_is_better: Union[bool, ARRAY_TYPES] = True,
-        needs_proba: Union[bool, ARRAY_TYPES] = False,
-        needs_threshold: Union[bool, ARRAY_TYPES] = False,
+        models: Union[str, callable, SEQUENCE_TYPES],
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
+        needs_proba: Union[bool, SEQUENCE_TYPES] = False,
+        needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
-        n_calls: Union[int, ARRAY_TYPES] = 0,
-        n_initial_points: Union[int, ARRAY_TYPES] = 5,
+        n_calls: Union[int, SEQUENCE_TYPES] = 0,
+        n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, ARRAY_TYPES]] = None,
+        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
         **kwargs,
     ):
-        """Fit the models to the dataset in a training sizing fashion.
+        """Fit the models in a train sizing fashion.
 
-        If you want to compare how different models perform when training on
-        varying dataset sizes, you can choose to use a train_sizing approach
-        to run the pipeline. This technique fits the models on increasingly
-        large training sets.
+        When training models, there is usually a trade-off between model
+        performance and computation time that is regulated by the number
+        of samples in the training set. The TrainSizing class can be used
+        to create insights in this trade-off and help determine the optimal
+        size of the training set.
 
         See the basetrainer.py module for a description of the parameters.
 
@@ -924,41 +918,41 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self._run(trainer)
 
-    # data attributes ====================================================== >>
+    # data attributes ============================================== >>
 
     @BasePredictor.dataset.setter
     @typechecked
     def dataset(self, dataset: Optional[X_TYPES]):
         if dataset is None:  # None is also possible because of the save method
-            self.pipeline.data = None
+            self.branch.data = None
         else:
-            self.pipeline.data = check_property(dataset, "dataset")
+            self.branch.data = check_property(dataset, "dataset")
 
     @BasePredictor.train.setter
     @typechecked
     def train(self, train: X_TYPES):
         df = check_property(train, "train", under=self.test, under_name="test")
-        self.pipeline.data = pd.concat([df, self.test])
-        self.pipeline.idx[0] = len(df)
+        self.branch.data = pd.concat([df, self.test])
+        self.branch.idx[0] = len(df)
 
     @BasePredictor.test.setter
     @typechecked
     def test(self, test: X_TYPES):
         df = check_property(test, "test", under=self.train, under_name="train")
-        self.pipeline.data = pd.concat([self.train, df])
-        self.pipeline.idx[1] = len(df)
+        self.branch.data = pd.concat([self.train, df])
+        self.branch.idx[1] = len(df)
 
     @BasePredictor.X.setter
     @typechecked
     def X(self, X: X_TYPES):
         df = check_property(X, "X", side=self.y, side_name="y")
-        self.pipeline.data = merge(df, self.y)
+        self.branch.data = merge(df, self.y)
 
     @BasePredictor.y.setter
     @typechecked
     def y(self, y: Union[list, tuple, dict, np.ndarray, pd.Series]):
         series = check_property(y, "y", side=self.X, side_name="X")
-        self.pipeline.data = merge(self.pipeline.data.drop(self.target, axis=1), series)
+        self.branch.data = merge(self.branch.data.drop(self.target, axis=1), series)
 
     @BasePredictor.X_train.setter
     @typechecked
@@ -971,7 +965,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             under=self.X_test,
             under_name="X_test",
         )
-        self.pipeline.data = pd.concat([merge(df, self.train[self.target]), self.test])
+        self.branch.data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @BasePredictor.X_test.setter
     @typechecked
@@ -984,7 +978,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             under=self.X_train,
             under_name="X_train",
         )
-        self.pipeline.data = pd.concat([self.train, merge(df, self.test[self.target])])
+        self.branch.data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @BasePredictor.y_train.setter
     @typechecked
@@ -997,7 +991,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             under=self.y_test,
             under_name="y_test",
         )
-        self.pipeline.data = pd.concat([merge(self.X_train, series), self.test])
+        self.branch.data = pd.concat([merge(self.X_train, series), self.test])
 
     @BasePredictor.y_test.setter
     @typechecked
@@ -1010,4 +1004,4 @@ class ATOM(BasePredictor, ATOMPlotter):
             under=self.y_train,
             under_name="y_train",
         )
-        self.pipeline.data = pd.concat([self.train, merge(self.X_test, series)])
+        self.branch.data = pd.concat([self.train, merge(self.X_test, series)])

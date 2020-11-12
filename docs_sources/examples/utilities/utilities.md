@@ -57,59 +57,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>85350</th>
-      <td>Cairns</td>
-      <td>21.1</td>
-      <td>30.6</td>
-      <td>0.0</td>
-      <td>6.4</td>
-      <td>11.0</td>
-      <td>ENE</td>
-      <td>30.0</td>
-    </tr>
-    <tr>
-      <th>84762</th>
-      <td>Brisbane</td>
-      <td>23.2</td>
-      <td>27.9</td>
-      <td>3.8</td>
-      <td>5.6</td>
-      <td>0.2</td>
-      <td>ENE</td>
-      <td>20.0</td>
-    </tr>
-    <tr>
-      <th>131267</th>
-      <td>Launceston</td>
-      <td>13.3</td>
-      <td>28.0</td>
-      <td>0.2</td>
+      <th>88027</th>
+      <td>GoldCoast</td>
+      <td>15.7</td>
+      <td>21.3</td>
+      <td>3.4</td>
       <td>NaN</td>
       <td>NaN</td>
       <td>SSE</td>
-      <td>28.0</td>
+      <td>31.0</td>
     </tr>
     <tr>
-      <th>107223</th>
-      <td>Albany</td>
-      <td>8.5</td>
-      <td>19.3</td>
-      <td>5.4</td>
-      <td>1.8</td>
-      <td>9.5</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>33917</th>
-      <td>SydneyAirport</td>
-      <td>21.3</td>
-      <td>24.9</td>
+      <th>130010</th>
+      <td>Launceston</td>
+      <td>-0.3</td>
+      <td>13.0</td>
       <td>0.0</td>
-      <td>7.8</td>
+      <td>2.2</td>
       <td>NaN</td>
-      <td>SSW</td>
-      <td>48.0</td>
+      <td>SSE</td>
+      <td>33.0</td>
+    </tr>
+    <tr>
+      <th>118018</th>
+      <td>Perth</td>
+      <td>7.6</td>
+      <td>25.6</td>
+      <td>0.0</td>
+      <td>4.2</td>
+      <td>9.8</td>
+      <td>ENE</td>
+      <td>26.0</td>
+    </tr>
+    <tr>
+      <th>106188</th>
+      <td>Albany</td>
+      <td>12.4</td>
+      <td>18.5</td>
+      <td>3.0</td>
+      <td>3.0</td>
+      <td>5.5</td>
+      <td>NaN</td>
+      <td>NaN</td>
+    </tr>
+    <tr>
+      <th>21882</th>
+      <td>NorfolkIsland</td>
+      <td>13.9</td>
+      <td>18.1</td>
+      <td>13.4</td>
+      <td>1.6</td>
+      <td>1.7</td>
+      <td>ENE</td>
+      <td>54.0</td>
     </tr>
   </tbody>
 </table>
@@ -125,7 +125,7 @@ atom = ATOMClassifier(X, warnings=False, random_state=1)
 atom.clean()
 
 # We can quickly check what columns have missing values
-print("Columns with missing values:\n", atom.missing)
+print("Columns with missing values:\n", atom.nans)
 
 # Or what columns are categorical
 print("\nCategorical columns:", atom.categorical)
@@ -134,6 +134,8 @@ print("\nCategorical columns:", atom.categorical)
 print("\nIs the dataset scaled?", atom.scaled)
 ```
 
+    
+    
     Columns with missing values:
      MinTemp            637
     MaxTemp            322
@@ -168,7 +170,28 @@ print("\nIs the dataset scaled?", atom.scaled)
 ```python
 # Note the number of missing values and categorical columns
 atom.stats()
+```
 
+    Dataset stats ================== >>
+    Shape: (142193, 22)
+    Missing values: 316559
+    Categorical columns: 5
+    Scaled: False
+    -----------------------------------
+    Train set size: 113755
+    Test set size: 28438
+    -----------------------------------
+    Dataset balance: No:Yes <==> 3.5:1.0
+    -----------------------------------
+    Distribution of classes:
+    |    |   dataset |   train |   test |
+    |---:|----------:|--------:|-------:|
+    |  0 |    110316 |   88263 |  22053 |
+    |  1 |     31877 |   25492 |   6385 |
+    
+
+
+```python
 # Now, let's impute and encode the dataset...
 atom.impute()
 atom.encode()
@@ -177,40 +200,20 @@ atom.encode()
 atom.stats()
 ```
 
-    
-    Dataset stats ================= >>
-    Shape: (142193, 22)
-    Missing values: 316559
-    Categorical columns: 5
-    Scaled: False
-    ----------------------------------
-    Train set size: 113755
-    Test set size: 28438
-    ----------------------------------
-    Dataset balance: No:Yes <==> 3.5:1.0
-    ----------------------------------
-    Instances in RainTomorrow per class:
-    |        |    total |    train_set |    test_set |
-    |:-------|---------:|-------------:|------------:|
-    | 0: No  |   110316 |        88263 |       22053 |
-    | 1: Yes |    31877 |        25492 |        6385 |
-    
-    
-    Dataset stats ================= >>
+    Dataset stats ================== >>
     Shape: (56420, 22)
     Scaled: False
-    ----------------------------------
-    Train set size: 45136
-    Test set size: 11284
-    ----------------------------------
+    -----------------------------------
+    Train set size: 45021
+    Test set size: 11399
+    -----------------------------------
     Dataset balance: No:Yes <==> 3.5:1.0
-    ----------------------------------
-    Instances in RainTomorrow per class:
-    |        |    total |    train_set |    test_set |
-    |:-------|---------:|-------------:|------------:|
-    | 0: No  |    43993 |        35199 |        8794 |
-    | 1: Yes |    12427 |         9937 |        2490 |
-    
+    -----------------------------------
+    Distribution of classes:
+    |    |   dataset |   train |   test |
+    |---:|----------:|--------:|-------:|
+    |  0 |     43993 |   35107 |   8886 |
+    |  1 |     12427 |    9914 |   2513 |
     
 
 ## Change the data mid-pipeline
@@ -229,25 +232,23 @@ assert 'AvgTemp' in atom.dataset
 
 
 ```python
-# We can easily visualize the pipeline in two ways
-print(atom)  # Directly in the notebook
-atom.plot_pipeline()  # Using a plot
+# We can easily visualize the pipeline through the branch
+atom.branch.status()
 ```
 
-    ATOMClassifier
+    Branch: main
      --> Cleaner
-       >>> prohibited_types: ['datetime64', 'datetime64[ns]', 'timedelta[ns]']
+       >>> prohibited_types: []
        >>> strip_categorical: True
        >>> maximum_cardinality: True
        >>> minimum_cardinality: True
        >>> missing_target: True
-       >>> map_target: True
+       >>> encode_target: True
      --> Imputer
        >>> strat_num: drop
        >>> strat_cat: drop
        >>> min_frac_rows: 0.5
        >>> min_frac_cols: 0.5
-       >>> missing: {'', inf, -inf, 'NA', 'nan', 'None', 'inf', '?'}
      --> Encoder
        >>> strategy: LeaveOneOut
        >>> max_onehot: 10
@@ -256,7 +257,12 @@ atom.plot_pipeline()  # Using a plot
     
 
 
-![png](output_11_1.png)
+```python
+atom.plot_pipeline()  # Or using a plot
+```
+
+
+![png](output_13_0.png)
 
 
 ## Use a custom metric
@@ -281,17 +287,17 @@ atom.run(models='lr', metric=f2_score)
     
     Results for Logistic Regression:         
     Fit ---------------------------------------------
-    Score on the train set --> f2_score: 0.5678
-    Score on the test set  --> f2_score: 0.5682
-    Time elapsed: 0.209s
+    Train evaluation --> f2_score: 0.5677
+    Test evaluation --> f2_score: 0.5691
+    Time elapsed: 0.237s
     -------------------------------------------------
-    Total time: 0.234s
+    Total time: 0.265s
     
     
     Final results ========================= >>
-    Duration: 0.236s
+    Duration: 0.266s
     ------------------------------------------
-    Logistic Regression --> f2_score: 0.568
+    Logistic Regression --> f2_score: 0.569
     
 
 ## Customize the estimator's parameters
@@ -311,17 +317,17 @@ atom.run('AdaB', est_params={'base_estimator': atom.lr.estimator})
     
     Results for AdaBoost:         
     Fit ---------------------------------------------
-    Score on the train set --> f2_score: 0.5565
-    Score on the test set  --> f2_score: 0.5482
-    Time elapsed: 2.094s
+    Train evaluation --> f2_score: 0.5567
+    Test evaluation --> f2_score: 0.5488
+    Time elapsed: 2.123s
     -------------------------------------------------
-    Total time: 2.098s
+    Total time: 2.123s
     
     
     Final results ========================= >>
-    Duration: 2.100s
+    Duration: 2.125s
     ------------------------------------------
-    AdaBoost --> f2_score: 0.548
+    AdaBoost --> f2_score: 0.549
     
 
 
@@ -353,34 +359,34 @@ atom.run('tree', n_calls=3, n_initial_points=1, est_params={'max_depth': 2}, ver
     Running BO for Decision Tree...
     Initial point 1 ---------------------------------
     Parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
-    Evaluation --> f2_score: 0.4936  Best f2_score: 0.4936
-    Time iteration: 0.383s   Total time: 0.396s
+    Evaluation --> f2_score: 0.4938  Best f2_score: 0.4938
+    Time iteration: 0.396s   Total time: 0.410s
     Iteration 2 -------------------------------------
     Parameters --> {'criterion': 'gini', 'splitter': 'random', 'min_samples_split': 4, 'min_samples_leaf': 20, 'max_features': 0.5, 'ccp_alpha': 0.014}
-    Evaluation --> f2_score: 0.4441  Best f2_score: 0.4936
-    Time iteration: 0.137s   Total time: 0.537s
+    Evaluation --> f2_score: 0.4444  Best f2_score: 0.4938
+    Time iteration: 0.136s   Total time: 0.550s
     Iteration 3 -------------------------------------
     Parameters --> {'criterion': 'entropy', 'splitter': 'random', 'min_samples_split': 2, 'min_samples_leaf': 6, 'max_features': 0.5, 'ccp_alpha': 0.0}
-    Evaluation --> f2_score: 0.3050  Best f2_score: 0.4936
-    Time iteration: 0.140s   Total time: 0.927s
+    Evaluation --> f2_score: 0.3052  Best f2_score: 0.4938
+    Time iteration: 0.140s   Total time: 0.932s
     
     Results for Decision Tree:         
     Bayesian Optimization ---------------------------
     Best parameters --> {'criterion': 'gini', 'splitter': 'best', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': None, 'ccp_alpha': 0}
-    Best evaluation --> f2_score: 0.4936
-    Time elapsed: 1.229s
+    Best evaluation --> f2_score: 0.4938
+    Time elapsed: 1.231s
     Fit ---------------------------------------------
-    Score on the train set --> f2_score: 0.4937
-    Score on the test set  --> f2_score: 0.4878
-    Time elapsed: 0.105s
+    Train evaluation --> f2_score: 0.4939
+    Test evaluation --> f2_score: 0.4871
+    Time elapsed: 0.090s
     -------------------------------------------------
-    Total time: 1.344s
+    Total time: 1.328s
     
     
     Final results ========================= >>
-    Duration: 1.346s
+    Duration: 1.338s
     ------------------------------------------
-    Decision Tree --> f2_score: 0.488
+    Decision Tree --> f2_score: 0.487
     
 
 ## Save & load
@@ -400,12 +406,13 @@ atom.save('atom', save_data=False)
 # Load the instance again with ATOMLoader
 # No need to store the transformed data, providing the original dataset to the loader
 # will automatically transform it throigh all the steps in atom's pipeline
-atom_2 = ATOMLoader('atom', X, verbose=2)
+atom_2 = ATOMLoader('atom', data=(X,), verbose=2)
 
 # Remember to also add the extra column!
 atom_2.X = atom_2.X.assign(AvgTemp=(atom_2.X['MaxTemp'] + atom_2.X['MinTemp'])/2)
 ```
 
+    Loading data for branch 'main'...
     Applying data cleaning...
      --> Label-encoding the target column.
     Imputing missing values...
@@ -445,5 +452,5 @@ atom_2.plot_roc()
 ```
 
 
-![png](output_22_0.png)
+![png](output_24_0.png)
 

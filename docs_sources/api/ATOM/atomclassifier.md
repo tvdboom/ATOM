@@ -4,16 +4,16 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>(*arrays, n_rows=1, test_size=0.2, logger=None,
                               n_jobs=1, warnings=True, verbose=0, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L181">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L183">[source]</a></div></pre>
 <div style="padding-left:3%">
 ATOMClassifier is ATOM's wrapper for binary and multiclass classification tasks. Use
  this class to easily apply all data transformations and model management provided by
  the package on a given dataset. Note that contrary to scikit-learn's API, the
  ATOMClassifier object already contains the dataset on which we want to perform the
  analysis. Calling a method will automatically apply it on the dataset it contains.
- 
+
 You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#plots)
- and call any [`model`](../../../user_guide/#models) from the ATOMClassifier instance.
+ and call any [model](../../../user_guide/#models) from the ATOMClassifier instance.
  Read more in the [user guide](../../../user_guide/#first-steps).
 <br />
 <table>
@@ -22,7 +22,7 @@ You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#
 <td width="80%" style="background:white;">
 <strong>*arrays: sequence of indexables</strong>
 <blockquote>
-Dataset containing the features and target. Allowed formats are:
+Dataset containing features and target. Allowed formats are:
 <ul>
 <li>X, y</li>
 <li>train, test</li>
@@ -31,13 +31,13 @@ Dataset containing the features and target. Allowed formats are:
 </ul>
 X, train, test: dict, list, tuple, np.array or pd.DataFrame<br>
 &nbsp;&nbsp;&nbsp;&nbsp;
-Feature set with shape=(n_features, n_samples). If no y is provided, the
- last column is used as target.<br><br>
-y: int, str or array-like<br>
+Feature set with shape=(n_features, n_samples). If no y is provided,
+ the last column is used as target.<br><br>
+y: int, str or sequence<br>
 <ul>
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
-<li>Else: Data target column with shape=(n_samples,).</li>
+<li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
 <strong>n_rows: int or float, optional (default=1)</strong>
@@ -53,7 +53,7 @@ y: int, str or array-like<br>
 <li>If <=1: Fraction of the dataset to include in the test set.</li>
 <li>If >1: Number of rows to include in the test set.</li>
 </ul>
-This parameter is ignored if the train and test set are provided.
+Is ignored if the train and test set are provided.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -64,7 +64,7 @@ Number of cores to use for parallel processing.
 <li>If <-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
 Beware that using multiple processes on the same machine may cause
-memory issues for large datasets.
+ memory issues for large datasets.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -78,12 +78,13 @@ Verbosity level of the class. Possible values are:
 <strong>warnings: bool or str, optional (default=True)</strong>
 <blockquote>
 <ul>
-<li>If True: Default warning action (equal to "default" when string).</li>
-<li>If False: Suppress all warnings (equal to "ignore" when string).</li>
-<li>If str: One of the possible actions in python's warnings environment.</li>
+<li>If True: Default warning action (equal to "default").</li>
+<li>If False: Suppress all warnings (equal to "ignore").</li>
+<li>If str: One of the actions in python's warnings environment.</li>
 </ul>
-Note that changing this parameter will affect the `PYTHONWARNINGS` environment.<br>
- Note that ATOM can't manage warnings that go directly from C++ code to the
+Note that changing this parameter will affect the `PYTHONWARNINGS` environment.
+<br>
+Note that ATOM can't manage warnings that go directly from C++ code to the
  stdout/stderr.
 </blockquote>
 <strong>logger: bool, str, class or None, optional (default=None)</strong>
@@ -94,7 +95,7 @@ Note that changing this parameter will affect the `PYTHONWARNINGS` environment.<
 <li>If str: Name of the logging file. "auto" for default name.</li>
 <li>If class: python `Logger` object.</li>
 </ul>
-Note that warnings will not be saved to the logger in any case.
+Note that warnings will not be saved to the logger.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
@@ -254,14 +255,14 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: [`model`](../../../user_guide/#models)</strong>
+<strong>winner: [model](../../../user_guide/#models)</strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
 <strong>pipeline: pd.Series</strong>
 <blockquote>
 Series containing all classes fitted in the pipeline. Use this attribute only to
- access the individual classes. To visualize the pipeline, use `atom`'s \_\_repr__
+ access the individual classes. To visualize the pipeline, use atom's \_\_repr__
  or [plot_pipeline](../../plots/plot_pipeline).
 </blockquote>
 <strong>results: pd.DataFrame</strong>
@@ -810,7 +811,7 @@ The training methods are where the models are fitted to the data and their
  three methods to call the training classes from the ATOM package. All relevant
  attributes and methods from the training classes are attached to ATOMClassifier for
  convenience. These include the errors, winner and results attributes, the
- [`models`](../../../user_guide/#models), and the
+ [models](../../../user_guide/#models), and the
  [prediction](../../../user_guide/#predicting) and
  [plotting](../../../user_guide/#plots) methods.
 
@@ -839,7 +840,7 @@ The training methods are where the models are fitted to the data and their
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L702">[source]</a></div></pre>
 <div style="padding-left:3%">
-Runs a [TrainerClassifier](../training/trainerclassifier.md) instance.
+Runs a [DirectClassifier](../training/directclassifier.md) instance.
 </div>
 <br />
 

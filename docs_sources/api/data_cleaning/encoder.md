@@ -17,7 +17,7 @@ Also replaces classes with low occurrences with the value `other` in
  order to prevent too high cardinality. Categorical features are defined as
  all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
  missing values or unknown classes when transforming. This class can be accessed
- from `atom` through the [encode](../../ATOM/atomclassifier/#encode)
+ from atom through the [encode](../../ATOM/atomclassifier/#encode)
  method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <br /><br />
 <table>
@@ -73,7 +73,7 @@ Additional keyword arguments passed to the `strategy` estimator.
 <br>
 
 !!!tip
-    Use `atom`'s [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
+    Use atom's [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
 
 <br>
@@ -135,7 +135,7 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
@@ -171,7 +171,7 @@ Fit the Encoder and return the encoded data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series</strong>
 <blockquote>
@@ -306,7 +306,7 @@ Encode the data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>

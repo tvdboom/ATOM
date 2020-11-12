@@ -20,3 +20,4 @@ after_success:  # Submit coverage
 branches:
   only:
     - master
+    - development

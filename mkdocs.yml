@@ -36,9 +36,9 @@ nav:
         - FeatureGenerator: API/feature_engineering/feature_generator.md
         - FeatureSelector: API/feature_engineering/feature_selector.md
     - Training:
-        - Trainer:
-           - TrainerClassifier: API/training/trainerclassifier.md
-           - TrainerRegressor: API/training/trainerregressor.md
+        - Direct:
+           - DirectClassifier: API/training/directclassifier.md
+           - DirectRegressor: API/training/directregressor.md
         - SuccessiveHalving:
             - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
             - SuccessiveHalvingClassifier: API/training/successivehalvingregressor.md

@@ -8,7 +8,7 @@
 Transform new data through all the pre-processing steps in the pipeline. By default,
  all transformers are included except [outliers](../../ATOM/atomclassifier/#outliers)
  and [balance](../../ATOM/atomclassifier/#balance) since they should
- only be applied on the training set. Can only be called from `atom`.
+ only be applied on the training set. Can only be called from atom.
 <br /><br />
 <table>
 <tr>
@@ -50,7 +50,7 @@ Additional keyword arguments to customize which transformers to apply. You can
 
 !!! note
     When using the pipeline parameter to include/exclude transformers, remember
-    that the first transformer (index 0) in `atom`'s pipeline is always the
+    that the first transformer (index 0) in atom's pipeline is always the
     [Cleaner](../data_cleaning/cleaner.md) called during
     initialization.
 

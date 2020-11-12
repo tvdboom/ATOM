@@ -27,10 +27,10 @@ from .utils import (
 
 
 class BaseTransformer(object):
-    """Base estimator for classes in the package.
+    """Base class for estimators in the package.
 
-    Contains shared properties (n_jobs, verbose, warnings, logger, random_state)
-    and standard methods across transformers.
+    Contains shared properties (n_jobs, verbose, warnings, logger,
+    random_state) and standard methods across estimators.
 
     Parameters
     ----------
@@ -52,7 +52,7 @@ class BaseTransformer(object):
             if attr in kwargs:
                 setattr(self, attr, kwargs[attr])
 
-    # Properties ============================================================ >>
+    # Properties =================================================== >>
 
     @property
     def n_jobs(self):
@@ -135,7 +135,7 @@ class BaseTransformer(object):
         np.random.seed(random_state)
         self._random_state = random_state
 
-    # Methods =============================================================== >>
+    # Methods ====================================================== >>
 
     @staticmethod
     @typechecked
@@ -147,11 +147,11 @@ class BaseTransformer(object):
 
         Parameters
         ----------
-        X: dict, list, tuple,  np.array or pd.DataFrame
-            Dataset containing the features, with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.array or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
 
-        y: int, str, array-like or None, optional (default=None)
-            - If None, y is not used in the estimator.
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -171,9 +171,8 @@ class BaseTransformer(object):
         else:
             X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
-        # Convert target column to series
+        # Prepare target column
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
-            # Convert y to pd.Series
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional
                 ndim = np.array(y).ndim
@@ -209,7 +208,7 @@ class BaseTransformer(object):
         Parameters
         ----------
         arrays: tuple of indexables
-            Dataset(s) provided. Formats according to the API's input format.
+            Dataset(s) provided. Should follow the API's input format.
 
         use_n_rows: bool, optional (default=True)
             Whether to use the n_rows parameter on the dataset.
@@ -225,7 +224,6 @@ class BaseTransformer(object):
                     kwargs = dict(n=int(self.n_rows), random_state=self.random_state)
                 data = data.sample(**kwargs)
 
-            # Reset all indices
             data.reset_index(drop=True, inplace=True)
 
             if self.test_size <= 0 or self.test_size >= len(data):
@@ -245,7 +243,7 @@ class BaseTransformer(object):
 
         def _has_train_test(train, test):
             """Path to follow when train and test are provided."""
-            # Skip the n_rows step if not called from `atom`
+            # Skip the n_rows step if not called from atom
             if hasattr(self, "n_rows") and use_n_rows:
                 # Select same subsample of train and test set
                 if self.n_rows <= 1:
@@ -258,13 +256,12 @@ class BaseTransformer(object):
                         "should be <=1 when train and test are provided."
                     )
 
-            # Update the data and reset the indices
             data = pd.concat([train, test]).reset_index(drop=True)
             idx = [len(train), len(test)]
 
             return data, idx
 
-        # Process input arrays ============================================= >>
+        # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
             raise ValueError(
@@ -315,7 +312,7 @@ class BaseTransformer(object):
         msg: int, float or str
             Message to save to the logger and print to stdout.
 
-        level: int
+        level: int, optional (default=0)
             Minimum verbosity level in order to print the message.
             If 42, don't save to log.
 
@@ -337,12 +334,13 @@ class BaseTransformer(object):
         Parameters
         ----------
         filename: str or None, optional (default=None)
-            Name to save the file with. None or "auto" to save with default name.
+            Name to save the file with. None or "auto" to save with
+            the class' __name__.
 
         **kwargs
             Additional keyword arguments. Can contain:
                 - "save_data": Whether to save the dataset with the instance.
-                               Only for `training` instances.
+                               Only if called from a trainer.
 
         """
         if kwargs.get("save_data") is False and hasattr(self, "dataset"):

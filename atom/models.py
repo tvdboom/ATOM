@@ -3,8 +3,8 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: tvdboom
-Description: Module containing all available models. All classes must have the
-             following structure:
+Description: Module containing all available models. All classes must
+             have the following structure:
 
         Name
         ----
@@ -13,10 +13,10 @@ Description: Module containing all available models. All classes must have the
         Attributes
         ----------
         T: class
-            Training instance from which the model is called.
+            Trainer from which the model is called.
 
         acronym: str
-            Short acronym of the model's fullname for calling.
+            Acronym of the model's fullname.
 
         fullname: str
             Complete name of the model.
@@ -25,36 +25,38 @@ Description: Module containing all available models. All classes must have the
             Whether the model needs scaled features.
 
         type: str
-            Model type (to use in plots). Choose from: linear, tree, kernel.
+            Model's type. Used to select shap's explainer for plotting.
+            Options are: "linear", "tree" or "kernel".
 
         evals: dict
             Evaluation metric and scores. Only for models that allow
             in-train evaluation.
 
         params: dict
-            All the estimator's parameters for the BO. The values should be a
-            list with the parameter's default value and the number of decimals.
+            All the estimator's parameters for the BO. The values
+            should be a list with two elements, the parameter's
+            default value and the number of decimals.
 
         Methods
         -------
-        __init__(self, *arrays):
-            Class initializer (contains super() to parent class).
+        __init__(self, *args):
+            Class initializer. Contains super() to the BaseModel class.
 
         get_init_values(self):
-            Return the initial values for the estimator. Don't implement if
-            parent method in BaseModel (default behaviour) is sufficient.
+            Return the initial values for the estimator. Don't implement
+            if the method in BaseModel (default behaviour) is sufficient.
 
         get_params(self, x):
-            Return the parameters with rounded decimals and (optional) custom
-            changes to the params. Don't implement if parent method in BaseModel
-            (default behaviour) is sufficient.
+            Return the parameters with rounded decimals and (optional)
+            custom changes to the params. Don't implement if the method
+            in BaseModel (default behaviour) is sufficient.
 
         get_estimator(self, params={}):
             Return the model's estimator with unpacked parameters.
 
         custom_fit(model, train, validation, est_params):
-            If the direct fit method of the model is not enough and you desire to
-            customize it a bit, make a custom_fit method. It will run instead.
+            This method will be called instead of directly running the
+            estimator's fit method. Implement only to customize the fit.
 
         get_dimensions(self):
             Return a list of the bounds for the hyperparameters.
@@ -106,11 +108,9 @@ import random
 import numpy as np
 from inspect import signature
 from scipy.spatial.distance import minkowski
-
-# Others
 from skopt.space.space import Real, Integer, Categorical
 
-# Sklearn models
+# Sklearn estimators
 from sklearn.gaussian_process import (
     GaussianProcessClassifier, GaussianProcessRegressor
 )
@@ -168,7 +168,7 @@ from .basemodel import BaseModel
 
 
 class CustomModel(BaseModel):
-    """Custom model (estimator provided by user)."""
+    """Custom model. Estimator provided by user."""
 
     def __init__(self, *args):
         self.est = args[1]  # Estimator provided by the user

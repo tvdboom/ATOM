@@ -239,7 +239,7 @@ Model's score on the test set.
 ----------
 
 The majority of the [plots](../../../user_guide/#plots) and [prediction methods](../../../user_guide/#predicting)
- can be called directly from the `models`, e.g. `atom.lgb.plot_permutation_importance()` or `atom.lgb.predict(X)`.
+ can be called directly from the models, e.g. `atom.lgb.plot_permutation_importance()` or `atom.lgb.predict(X)`.
  The remaining utility methods can be found hereunder:
 <br><br>
 

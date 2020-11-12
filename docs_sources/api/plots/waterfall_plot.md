@@ -26,7 +26,7 @@ Plot SHAP's waterfall plot for a single prediction.
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected. Note
  that selecting multiple models will raise an exception. To avoid this, call the
- plot from a `model`.
+ plot from a model.
 </blockquote>
 <strong>index: int or None, optional (default=None)</strong>
 <blockquote>
@@ -51,7 +51,7 @@ Figure's size, format as (x, y). If None, adapts size to `show` parameter.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>

@@ -22,7 +22,7 @@ Figure's size, format as (x, y).
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>

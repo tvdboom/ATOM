@@ -177,6 +177,7 @@ Release history
 
 * Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
 * Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.
+* New branch system for different data pipelines. Read more in the [user guide](https://tvdboom.github.io/ATOM/user_guide/#data-pipelines).
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
@@ -189,7 +190,7 @@ Release history
 * Possibility to add custom parameters to an estimator's fit method through `est_params`.
 * [Successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving)
   and [Train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing)
-  now both allow subsequent runs from `atom` without losing previous information.
+  now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
 * Added the [Utilities](https://tvdboom.github.io/ATOM/examples/utilities/utilities)
   and [Deep learning](https://tvdboom.github.io/ATOM/examples/deep_learning/deep_learning) example notebooks.
@@ -230,7 +231,7 @@ Release history
 * Implementation of [multi-metric](https://tvdboom.github.io/ATOM/user_guide/#metric) runs.
 * Possibility to choose which metric to plot.
 * Early stopping for models that allow in-training evaluation.
-* Added the [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) function to load saved `atom` instances
+* Added the [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) function to load saved atom instances
   and directly apply all data transformations.
 * The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
 * Implemented the DFS strategy in [FeatureGenerator](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator).

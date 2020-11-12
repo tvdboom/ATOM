@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -564,7 +564,7 @@
 <div style="padding-left:3%">
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
- features. This class can be accessed from <code>atom</code> through the
+ features. This class can be accessed from atom through the
  <a href="../../ATOM/atomclassifier/#feature-generation">feature_generation</a>
  method. Read more in the <a href="../../../user_guide/#generating-new-features">user guide</a>.
 <br /><br />
@@ -646,7 +646,7 @@ the number of features!</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Using the div, log or sqrt operators can return new features with <code>inf</code> or
-<code>NaN</code> values. Check the warnings that may pop up or use <code>atom</code>'s
+<code>NaN</code> values. Check the warnings that may pop up or use atom's
 <a href="/API/ATOM/atomclassifier/#properties">missing</a> property.</p>
 </div>
 <div class="admonition warning">
@@ -736,9 +736,9 @@ Fit the class.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -770,9 +770,9 @@ Fit the FeatureGenerator and return the transformed data.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str or array-like</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -896,9 +896,9 @@ Generate new features.
 <td width="75%" style="background:white;">
 <strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
-Data containing the features, with shape=(n_samples, n_features).
+Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, array-like or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>

@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/training/trainerregressor/">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/training/directclassifier/">
         <link rel="shortcut icon" href="../../../img/favicon.ico">
-        <title>TrainerRegressor - ATOM</title>
+        <title>DirectClassifier - ATOM</title>
         <link href="../../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../../css/base.css" rel="stylesheet">
@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="./" class="dropdown-item active">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">TrainerRegressor</a>
+    <a href="../directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -504,12 +504,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" href="../trainerclassifier/" class="nav-link">
+                                <a rel="prev" href="../../feature_engineering/feature_selector/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../successivehalvingclassifier/" class="nav-link">
+                                <a rel="next" href="../directregressor/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -534,7 +534,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#trainerregressor" class="nav-link">TrainerRegressor</a>
+            <li class="nav-item" data-level="1"><a href="#directclassifier" class="nav-link">DirectClassifier</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#attributes" class="nav-link">Attributes</a>
               <ul class="nav flex-column">
@@ -555,14 +555,14 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="trainerregressor">TrainerRegressor</h1>
+<h1 id="directclassifier">DirectClassifier</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>class</em> atom.training.<strong style="color:#008AB8">TrainerRegressor</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
-                                     needs_threshold=False, n_calls=10, n_initial_points=5,
-                                     est_params={}, bo_params={}, bagging=None, n_jobs=1,
-                                     verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L264">[source]</a></div></pre>
+<pre><em>class</em> atom.training.<strong style="color:#008AB8">DirectClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
+                                      needs_threshold=False, n_calls=10, n_initial_points=5,
+                                      est_params={}, bo_params={}, bagging=None, n_jobs=1,
+                                      verbose=0, logger=None, random_state=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L237">[source]</a></div></pre>
 <div style="padding-left:3%">
 Fit and evaluates the models to the data in the pipeline. The following steps are applied:</p>
 <ol>
@@ -570,9 +570,9 @@ Fit and evaluates the models to the data in the pipeline. The following steps ar
 <li>The model is fitted on the training set using the best combinations of hyperparameters found.</li>
 <li>Using a bagging algorithm, various scores on the test set are calculated.</li>
 </ol>
-<p>Just like <code>atom</code>, you can <a href="../../../user_guide/#predicting">predict</a>,
- <a href="../../../user_guide/#plots">plot</a> and call any <a href="../../../user_guide/#models"><code>model</code></a>
- from the TrainerRegressor instance. Read more in the <a href="../../../user_guide/#training">user guide</a>.
+<p>Just like atom, you can <a href="../../../user_guide/#predicting">predict</a>,
+ <a href="../../../user_guide/#plots">plot</a> and call any <a href="../../../user_guide/#models">model</a>
+ from the DirectClassifier instance. Read more in the <a href="../../../user_guide/#training">user guide</a>.
 <br />
 <table>
 <tr>
@@ -580,31 +580,34 @@ Fit and evaluates the models to the data in the pipeline. The following steps ar
 <td width="80%" style="background:white;">
 <strong>models: str or sequence</strong>
 <blockquote>
-List of models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
+Models to fit on the data. Use the predefined acronyms to select the models. Possible values are (case insensitive):
 <ul>
-<li>"GP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">Gaussian Process</a></li>
-<li>"OLS" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a></li>
-<li>"Ridge" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge Regression</a></li>
-<li>"Lasso" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Lasso.html">Lasso Regression</a></li>
-<li>"EN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html">ElasticNet</a></li>
-<li>"BR" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.BayesianRidge.html">Bayesian Ridge</a></li>
-<li>"ARD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ARDRegression.html">Automated Relevance Determination</a></li>
-<li>"KNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsRegressor.html">K-Nearest Neighbors</a></li>
-<li>"RNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.RadiusNeighborsRegressor.html">Radius Nearest Neighbors</a></li>
-<li>"Tree" for a single <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeRegressor.html">Decision Tree</a></li>
-<li>"Bag" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingRegressor.html">Bagging</a></li>
-<li>"ET" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesRegressor.html">Extra-Trees</a></li>
-<li>"RF" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html">Random Forest</a></li>
-<li>"AdaB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostRegressor.html">AdaBoost</a></li>
-<li>"GBM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingRegressor.html">Gradient Boosting Machine</a></li> 
-<li>"XGB" for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBRegressor">XGBoost</a> (only available if package is installed)</li>
-<li>"LGB" for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html">LightGBM</a> (only available if package is installed)</li>
-<li>"CatB" for <a href="https://catboost.ai/docs/concepts/python-reference_catboostregressor.html">CatBoost</a> (only available if package is installed)</li>
-<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">Linear-SVM</a></li> 
-<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVR.html">Kernel-SVM</a></li>
-<li>"PA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveRegressor.html">Passive Aggressive</a></li>
-<li>"SGD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDRegressor.html">Stochastic Gradient Descent</a></li>
-<li>"MLP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPRegressor.html#sklearn.neural_network.MLPRegressor">Multi-layer Perceptron</a></li> 
+<li>"GP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessClassifier.html">Gaussian Process</a></li>
+<li>"GNB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.GaussianNB.html">Gaussian Naive Bayes</a></li>
+<li>"MNB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.MultinomialNB.html">Multinomial Naive Bayes</a></li>
+<li>"BNB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html">Bernoulli Naive Bayes</a></li>
+<li>"CatNB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.CategoricalNB.html">Categorical Naive Bayes</a></li>
+<li>"CNB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.ComplementNB.html">Complement Naive Bayes</a></li>
+<li>"Ridge" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.RidgeClassifier.html">Ridge Classification</a></li>
+<li>"LR" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LogisticRegression.html">Logistic Regression</a></li> 
+<li>"LDA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.LinearDiscriminantAnalysis.html">Linear Discriminant Analysis</a></li>
+<li>"QDA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.discriminant_analysis.QuadraticDiscriminantAnalysis.html">Quadratic Discriminant Analysis</a></li>
+<li>"KNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html">K-Nearest Neighbors</a></li>
+<li>"RNN" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html">Radius Nearest Neighbors</a></li>
+<li>"Tree" for a single <a href="https://scikit-learn.org/stable/modules/generated/sklearn.tree.DecisionTreeClassifier.html">Decision Tree</a></li>
+<li>"Bag" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.BaggingClassifier.html">Bagging</a></li>
+<li>"ET" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.ExtraTreesClassifier.html">Extra-Trees</a></li>
+<li>"RF" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html">Random Forest</a></li>
+<li>"AdaB" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.AdaBoostClassifier.html">AdaBoost</a></li>
+<li>"GBM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.GradientBoostingClassifier.html">Gradient Boosting Machine</a></li>
+<li>"XGB" for <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html#xgboost.XGBClassifier">XGBoost</a> (only available if package is installed)</li>
+<li>"LGB" for <a href="https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html">LightGBM</a> (only available if package is installed)</li>
+<li>"CatB" for <a href="https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html">CatBoost</a> (only available if package is installed)</li>
+<li>"lSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html">Linear-SVM</a></li> 
+<li>"kSVM" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html">Kernel-SVM</a></li>
+<li>"PA" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.PassiveAggressiveClassifier.html">Passive Aggressive</a></li>
+<li>"SGD" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.SGDClassifier.html">Stochastic Gradient Descent</a></li>
+<li>"MLP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.neural_network.MLPClassifier.html">Multi-layer Perceptron</a></li> 
 </ul>
 </blockquote>
 <strong>metric: str, callable or iterable, optional (default=None)</strong>
@@ -641,7 +644,7 @@ Whether the metric function requires probability estimates out of a
 Whether the metric function takes a continuous decision certainty.
  This only works for binary classification using estimators that
  have either a <code>decision_function</code> or <code>predict_proba</code> method. Will
- be ignored if the metric is a string or a scorer. If sequence, the
+ be ignored if the metric is a string or a scorer. If iterable, the
  n-th value will apply to the n-th metric in the pipeline.
 </blockquote>
 <strong>n_calls: int or iterable, optional (default=0)</strong>
@@ -801,6 +804,14 @@ List of columns in the dataset.
 <blockquote>
 Name of the target column.
 </blockquote>
+<strong>classes: pd.DataFrame</strong>
+<blockquote>
+Dataframe of the number of rows per target class in the train, test and complete dataset.
+</blockquote>
+<strong>n_classes: int</strong>
+<blockquote>
+Number of unique classes in the target column.
+</blockquote>
 </td></tr>
 </table>
 <br></p>
@@ -822,7 +833,7 @@ Metric(s) used to fit the models.
 <blockquote>
 Dictionary of the encountered exceptions (if any).
 </blockquote>
-<strong>winner: <a href="../../../user_guide/#models"><code>model</code></a></strong>
+<strong>winner: <a href="../../../user_guide/#models">model</a></strong>
 <blockquote>
 Model subclass that performed best on the test set.
 </blockquote>
@@ -879,6 +890,11 @@ Fontsize for the ticks along the plot's axes.
 <table width="100%">
 
 <tr>
+<td><a href="#calibrate">calibrate</a></td>
+<td>Calibrate the winning model.</td>
+</tr>
+
+<tr>
 <td width="15%"><a href="#clear">clear</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
@@ -916,6 +932,32 @@ Fontsize for the ticks along the plot's axes.
 </table>
 
 <p><br></p>
+<p><a name="calibrate"></a>
+<pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L116">[source]</a></div></pre>
+<div style="padding-left:3%">
+Applies probability calibration on the winning model. The calibration is done with the
+ <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
+ class from sklearn. The model will be trained via cross-validation on a subset
+ of the training data, using the rest to fit the calibrator. The new classifier will
+ replace the <code>estimator</code> attribute. After calibrating, all prediction attributes of
+ the winning model will reset.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments for the <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
+ instance. Using cv="prefit" will use the trained model and fit the calibrator on the
+ test set. Note that doing this will result in data leakage in the test set. Use this
+ only if you have another, independent set for testing.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
 <p><a name="clear"></a>
 <pre><em>method</em> <strong style="color:#008AB8">clear</strong>(models="all")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
@@ -932,6 +974,27 @@ Removes all traces of a model in the pipeline (except for the <code>errors</code
 <strong>models: str or iterable, optional (default="all")</strong>
 <blockquote>
 Model(s) to clear from the pipeline. If "all", clear all models.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
+<p><a name="get-class-weight"></a>
+<pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L204">[source]</a></div></pre>
+<div style="padding-left:3%">
+Return class weights for a balanced data set. Statistically, the class weights
+ re-balance the data set so that the sampled data set represents the target
+ population as closely as reasonably possible. The returned weights are inversely
+ proportional to class frequencies in the selected data set. 
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: str, optional (default="train")</strong>
+<blockquote>
+Data set from which to get the weights. Choose between "train", "test" or "dataset".
 </blockquote>
 </tr>
 </table>
@@ -1049,8 +1112,20 @@ Returns the scores of the models for a specific metric. If a model
 <td width="75%" style="background:white;">
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>.
- If None, returns the models" final results (ignores the <code>dataset</code> parameter).
+Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
+ or one of the following custom metrics:
+<ul>
+<li>"cm" for the confusion matrix.</li>
+<li>"tn" for true negatives.</li>
+<li>"fp" for false positives.</li>
+<li>"fn" for false negatives.</li>
+<li>"tp" for true positives.</li>
+<li>"lift" for the lift metric.</li>
+<li>"fpr" for the false positive rate.</li>
+<li>"tpr" for true positive rate.</li>
+<li>"sup" for the support metric.</li>
+</ul>
+If None, returns the models" final results (ignores the <code>dataset</code> parameter).
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
@@ -1079,7 +1154,7 @@ Estimator parameters.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="75%" style="background:white;">
-<strong>self: TrainerRegressor</strong>
+<strong>self: DirectClassifier</strong>
 <blockquote>
 Estimator instance.
 </blockquote>
@@ -1088,15 +1163,15 @@ Estimator instance.
 <br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom.training import TrainerRegressor
+<pre><code class="python">from atom.training import DirectClassifier
 
 # Run the pipeline
-trainer = TrainerRegressor([&quot;OLS&quot;, &quot;BR&quot;], n_calls=5, n_initial_points=3, bagging=5)
+trainer = DirectClassifier([&quot;Tree&quot;, &quot;RF&quot;], n_calls=5, n_initial_points=3)
 trainer.run(train, test)
 
 # Analyze the results
-trainer.scoring(&quot;mse&quot;)
-trainer.plot_bagging()
+trainer.scoring(&quot;auc&quot;)
+trainer.Tree.plot_bo()
 </code></pre></div>
             </div>
         </div>

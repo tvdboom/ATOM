@@ -13,8 +13,8 @@ import pandas as pd
 
 # Own modules
 from atom.training import (
-    TrainerClassifier,
-    TrainerRegressor,
+    DirectClassifier,
+    DirectRegressor,
     SuccessiveHalvingClassifier,
     SuccessiveHalvingRegressor,
     TrainSizingClassifier,
@@ -23,24 +23,24 @@ from atom.training import (
 from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
 
 
-# Test Trainer ============================================================== >>
+# Test Trainer ===================================================== >>
 
 def test_infer_task():
     """Assert that the correct task is inferred from the data."""
-    trainer = TrainerClassifier("LR")
+    trainer = DirectClassifier("LR")
     trainer.run(bin_train, bin_test)
     assert trainer.task == "binary classification"
 
-    trainer = TrainerClassifier("LR")
+    trainer = DirectClassifier("LR")
     trainer.run(class_train, class_test)
     assert trainer.task == "multiclass classification"
 
-    trainer = TrainerRegressor("LGB")
+    trainer = DirectRegressor("LGB")
     trainer.run(reg_train, reg_test)
     assert trainer.task == "regression"
 
 
-# Test SuccessiveHalving ==================================================== >>
+# Test SuccessiveHalving =========================================== >>
 
 def test_skip_runs_below_zero():
     """Assert that an error is raised if skip_runs < 0."""
@@ -74,10 +74,10 @@ def test_successive_halving_train_index_is_reset():
     """Assert that the train index is reset after fitting."""
     sh = SuccessiveHalvingRegressor(["Tree", "RF", "AdaB", "LGB"], random_state=1)
     sh.run(reg_train, reg_test)
-    assert sh._idx[0] == len(reg_train)
+    assert sh.branch.idx[0] == len(reg_train)
 
 
-# Test TrainSizing ========================================================== >>
+# Test TrainSizing ================================================= >>
 
 def test_train_sizing_results_is_multi_index():
     """Assert that the results property is a multi-index dataframe."""
@@ -92,17 +92,17 @@ def test_train_sizing_train_index_is_reset():
     """Assert that the train index is reset after fitting."""
     ts = TrainSizingRegressor("LGB", train_sizes=[0.6, 0.8], random_state=1)
     ts.run(reg_train, reg_test)
-    assert ts._idx[0] == len(reg_train)
+    assert ts.branch.idx[0] == len(reg_train)
 
 
-# Test goals ================================================================ >>
+# Test goals ======================================================= >>
 
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""
-    trainer = TrainerClassifier("LR")
+    trainer = DirectClassifier("LR")
     assert trainer.goal == "classification"
 
-    trainer = TrainerRegressor("OLS")
+    trainer = DirectRegressor("OLS")
     assert trainer.goal == "regression"
 
 

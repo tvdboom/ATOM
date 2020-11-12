@@ -91,6 +91,7 @@ Example steps taken by ATOM's pipeline:
 
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
 * Compatibility with [deep learning](./user_guide/#deep-learning) models.
+* New branch system for different data pipelines. Read more in the [user guide](./user_guide/#data-pipelines).
 * New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
@@ -102,7 +103,7 @@ Example steps taken by ATOM's pipeline:
   in the train, test and complete dataset.
 * Possibility to add custom parameters to an estimator's fit method through `est_params`.
 * [Successive halving](./user_guide/#successive-halving) and [Train sizing](./user_guide/#train-sizing)
-  now both allow subsequent runs from `atom` without losing previous information.
+  now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
 * Added the [Utilities](./examples/utilities/utilities) and [Deep learning](./examples/deep_learning/deep_learning) example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
@@ -142,7 +143,7 @@ Example steps taken by ATOM's pipeline:
 * Implementation of [multi-metric](./user_guide/#metric) runs.
 * Possibility to choose which metric to plot.
 * Early stopping for models that allow in-training evaluation.
-* Added the [ATOMLoader](./API/ATOM/atomloader) function to load saved `atom` instances
+* Added the [ATOMLoader](./API/ATOM/atomloader) function to load saved atom instances
   and directly apply all data transformations.
 * The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".
 * Implemented the DFS strategy in [FeatureGenerator](./API/feature_engineering/feature_generator).

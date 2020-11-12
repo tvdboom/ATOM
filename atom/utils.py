@@ -69,13 +69,13 @@ import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
 
-# Global constants ========================================================== >>
+# Global constants ================================================= >>
 
 # Variable types
 SCALAR = Union[int, float]
-ARRAY_TYPES = Union[list, tuple, np.ndarray, pd.Series]
+SEQUENCE_TYPES = Union[list, tuple, np.ndarray, pd.Series]
 X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
-Y_TYPES = Union[int, str, Union[ARRAY_TYPES]]
+Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
 
 # Non-sklearn models
@@ -146,7 +146,7 @@ BALANCER_TYPES = dict(
 )
 
 
-# Functions ================================================================= >>
+# Functions ======================================================== >>
 
 def flt(item):
     """Return value if item is sequence of length 1."""
@@ -195,7 +195,7 @@ def variable_return(X, y):
 
 
 def check_dim(cls, method):
-    """Raise an error if the instance contains a deep learning dataset."""
+    """Raise an error if it's a deep learning dataset."""
     if list(cls.X.columns) == ["Features"]:
         raise PermissionError(
             f"The {method} method is not available for deep learning datasets!"
@@ -261,17 +261,17 @@ def to_df(data, index=None, columns=None, pca=False):
 
     Parameters
     ----------
-    data: array-like
+    data: sequence
         Dataset to convert to a dataframe.
 
-    index: array-like or Index
+    index: sequence or Index
         Values for the dataframe's index.
 
-    columns: array-like or None, optional(default=None)
-        Name of the columns in the dataset. If None, the names are autofilled.
+    columns: sequence or None, optional(default=None)
+        Name of the columns. If None, the names are autofilled.
 
     pca: bool, optional (default=False)
-        whether the columns need to be called Features or Components.
+        Whether the columns are Features or Components.
 
     Returns
     -------
@@ -316,7 +316,7 @@ def to_series(data, index=None, name="target"):
 
 
 def arr(df):
-    """From dataframe to multidimensional array (for deep learning pipelines).
+    """From dataframe to multidimensional array.
 
     When the data consist of more than 2 dimensions, ATOM stores
     it in a df with a single column, "Features". This function
@@ -334,14 +334,13 @@ def prepare_logger(logger, class_name):
 
     Parameters
     ----------
-    logger: bool, str, class or None
-        - If None: No logger.
-        - If bool: True for logging file with default name. False for no logger.
-        - If str: name of the logging file. "auto" for default name.
-        - If class: python `Logger` object.
+    logger: str, class or None
+        - If None: Doesn't save a logging file.
+        - If str: Name of the logging file. Use "auto" for default name.
+        - If class: Python `Logger` object.
 
-        The default name created by ATOM contains the class name followed by the
-        timestamp  of the logger's creation, e.g. ATOMClassifier_
+        The default name created consists of the class' name
+        followed by the timestamp of the logger's creation.
 
     class_name: str
         Name of the class from which the function is called.
@@ -353,10 +352,7 @@ def prepare_logger(logger, class_name):
         Logger object.
 
     """
-    if logger is True:
-        logger = "auto"
-
-    if not logger:  # Empty string, False or None
+    if not logger:  # Empty string or None
         return
 
     elif isinstance(logger, str):
@@ -399,19 +395,19 @@ def check_property(
 
     Parameters
     ----------
-    value: sequence, np.array or pd.DataFrame/pd.Series
+    value: sequence, np.array, pd.Series or pd.DataFrame
         Property to be checked.
 
     value_name: str
         Name of the property to check.
 
-    side: pd.DataFrame/pd.Series or None, optional (default=None)
+    side: pd.Series, pd.DataFrame or None, optional (default=None)
         Other property to compare the length with.
 
     side_name: str
         Name of the property of the side parameter.
 
-    under: pd.DataFrame/pd.Series or None, optional (default=None)
+    under: pd.Series, pd.DataFrame or None, optional (default=None)
         Other property to compare the width with.
 
     under_name: str
@@ -465,18 +461,19 @@ def check_property(
 def check_is_fitted(estimator, attributes=None, msg=None):
     """Perform is_fitted validation for estimator.
 
-    Checks if the estimator is fitted by verifying the presence of fitted
-    attributes (not None or empty) and otherwise raises a NotFittedError.
+    Checks if the estimator is fitted by verifying the presence of
+    fitted attributes (not None or empty). Otherwise it raises a
+    NotFittedError.
 
     Parameters
     ----------
     estimator: class
         Class instance for which the check is performed.
 
-    attributes: str, list, tuple or None, optional (default=None)
-        Attribute value_name(s) to check. If None, estimator is considered fitted if
-        there exist an attribute that ends with a underscore and does not
-        start with double underscore.
+    attributes: str, sequence or None, optional (default=None)
+        Attribute(s) to check. If None, the estimator is considered
+        fitted if there exist an attribute that ends with a underscore
+        and does not start with double underscore.
 
     msg: str, optional (default=None)
         Default error message.
@@ -506,7 +503,8 @@ def check_is_fitted(estimator, attributes=None, msg=None):
 def fit_init(est_params, fit=False):
     """Return the est_params for the __init__ or fit method.
 
-    Select parameters that end with _fit for the fit method, else for __init__.
+    Select parameters that end with _fit for the fit method,
+    else they're used when initializing the instance.
 
     Parameters
     ----------
@@ -534,7 +532,7 @@ def get_acronym(model):
     Returns
     -------
     name: str
-        Correct model name acronym as present in the MODEL_LIST constant.
+        Correct model name acronym as present in MODEL_LIST.
 
     """
     # Not imported on top of file because of module interconnection
@@ -564,12 +562,12 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         better. Will be ignored if the metric is a string or a scorer.
 
     needs_proba: bool
-        Whether the metric function requires probability estimates out of a
-        classifier. Will be ignored if the metric is a string or a scorer.
+        Whether the metric function requires probability estimates of
+        a classifier. Is ignored if the metric is a string or a scorer.
 
     needs_threshold: bool
-        Whether the metric function takes a continuous decision certainty.
-        Will be ignored if the metric is a string or a scorer.
+        Whether the metric function takes a continuous decision
+        certainty. Is ignored if the metric is a string or a scorer.
 
     Returns
     -------
@@ -616,7 +614,8 @@ def get_default_metric(task):
     Parameters
     ----------
     task: str
-        One of binary classification, multiclass classification or regression.
+        One of binary classification, multiclass classification or
+        regression.
 
     """
     if task.startswith("bin"):
@@ -630,8 +629,8 @@ def get_default_metric(task):
 def infer_task(y, goal="classification"):
     """Infer the task corresponding to a target column.
 
-    If goal is provided, only look at number of unique values to determine the
-    classification task.
+    If goal is provided, only look at number of unique values to
+    determine the classification task.
 
     Parameters
     ----------
@@ -651,23 +650,22 @@ def infer_task(y, goal="classification"):
     if len(unique) == 1:
         raise ValueError(f"Only found 1 target value: {unique[0]}")
 
-    if goal.startswith("reg"):
-        return "regression"
-
     if goal.startswith("class"):
         if len(unique) == 2:
             return "binary classification"
         else:
             return "multiclass classification"
 
+    return "regression"
+
 
 def partial_dependence(estimator, X, features):
     """Calculate the partial dependence of features.
 
-    Partial dependence of a feature (or a set of features) corresponds to the
-    average response of an estimator for each possible value of the feature.
-    Code from sklearn's _partial_dependence.py.
-    Note that this implementation always uses method="brute", grid_resolution=100
+    Partial dependence of a feature (or a set of features) corresponds
+    to the average response of an estimator for each possible value of
+    the feature. Code from sklearn's _partial_dependence.py. Note that
+    this implementation always uses method="brute", grid_resolution=100
     and percentiles=(0.05, 0.95).
 
     Parameters
@@ -676,13 +674,13 @@ def partial_dependence(estimator, X, features):
         Model estimator to use.
 
     X : pd.DataFrame
-        Feature set used to generate a grid of values for the target features
-        (where the partial dependence will be evaluated), and also to generate
-        values for the complement features.
+        Feature set used to generate a grid of values for the target
+        features (where the partial dependence will be evaluated), and
+        also to generate values for the complement features.
 
     features : int, str or sequence
-        The feature or pair of interacting features for which the partial
-        dependency should be computed.
+        The feature or pair of interacting features for which the
+        partial dependency should be computed.
 
     Returns
     -------
@@ -707,21 +705,21 @@ def partial_dependence(estimator, X, features):
     return averaged_predictions, values
 
 
-# Functions shared by classes =============================================== >>
+# Functions shared by classes ======================================= >>
 
-def transform(est_pipeline, X, y, verbose, **kwargs):
-    """Transform new data through all the pre-processing steps in the pipeline.
+def transform(est_branch, X, y, verbose, **kwargs):
+    """Transform new data through all transformers in a branch.
 
-    The outliers and balance transformations are not included by default since they
-    should only be applied on the training set.
+    The outliers and balance transformations are not included by
+    default since they should only be applied on the training set.
 
     Parameters
     ----------
-    est_pipeline: pd.Series
-        Estimators in the pipeline of an `atom` instance.
+    est_branch: pd.Series
+        Estimators in a branch.
 
     X: dict, sequence, np.array or pd.DataFrame
-        Data containing the features, with shape=(n_samples, n_features).
+        Feature set with shape=(n_samples, n_features).
 
     y: int, str, sequence, np.array, pd.Series or None
         - If None: y is not used in the transformation.
@@ -733,10 +731,10 @@ def transform(est_pipeline, X, y, verbose, **kwargs):
         Verbosity level of the transformers.
 
     **kwargs
-        Additional keyword arguments to customize which transforming methods to
-        apply. You can either select them via the index in the pipeline, e.g.
-        pipeline = [0, 1, 4] or via every individual transformer, e.g.
-        impute=True, feature_selection=False.
+        Additional keyword arguments to customize which transforming
+        methods to apply. You can either select them via their index,
+        e.g. pipeline = [0, 1, 4] or include/exclude them via every
+        individual transformer, e.g. impute=True, encode=False.
 
     Returns
     -------
@@ -774,40 +772,43 @@ def transform(est_pipeline, X, y, verbose, **kwargs):
             else:
                 kwargs[value] = kwargs.pop(key)
 
-    # Loop over the estimators with a transform method (exclude trainers)
-    transformers = [est for est in est_pipeline if hasattr(est, "transform")]
-    for i, estimator in enumerate(transformers):
-        class_name = estimator.__class__.__name__
-        if i in kwargs.get("pipeline", []) or kwargs.get(class_name):
+    # Loop over the transformers
+    for i, est in enumerate(est_branch):
+        if i in kwargs.get("pipeline", []) or kwargs.get(est.__class__.__name__):
             # If verbose is specified, change the class verbosity
             if verbose is not None:
-                estimator.verbose = verbose
+                est.verbose = verbose
 
             # Some transformers return no y, but we need the original
-            X, y_returned = catch_return(estimator.transform(X, y))
+            X, y_returned = catch_return(est.transform(X, y))
             y = y if y_returned is None else y_returned
 
     return variable_return(X, y)
 
 
-def clear(self, models):
-    """Clear models from the trainer.
+def delete(self, models):
+    """Delete models from a trainer's pipeline.
 
-    If the winning model is removed. The next best model (through
-    metric_test or mean_bagging if available) is selected as winner.
+    Removes all traces of a model in the pipeline (except for the
+    `errors` attribute). If the winning model is removed. The next
+    best model (through metric_test or mean_bagging if available)
+    is selected as winner.If all models are removed, the metric and
+    approach are reset. Use this method to drop unwanted models from
+    the pipeline or to clear memory before saving the instance.
 
     Parameters
     ----------
     self: class
-        Class for which to clear the model.
+        Trainer for which to delete the model.
 
     models: sequence
-        Name of the models to clear from the pipeline.
+        Name of the models to delete from the pipeline.
 
     """
     for model in models:
         self.models.remove(model)
 
+        # Remove the model from the results dataframe
         if isinstance(self._results.index, pd.MultiIndex):
             self._results = self._results.iloc[
                 ~self._results.index.get_level_values(1).str.contains(model)
@@ -815,14 +816,17 @@ def clear(self, models):
         else:
             self._results.drop(model, axis=0, inplace=True, errors="ignore")
 
-        if not self.models:  # No more models in the pipeline
+        # If no models, reset the metric and the training approach
+        if not self.models:
             self.metric_ = []
+            if hasattr(self, "_approach"):
+                self._approach = None
 
         delattr(self, model)
         delattr(self, model.lower())
 
 
-# Decorators ================================================================ >>
+# Decorators ======================================================= >>
 
 def composed(*decs):
     """Add multiple decorators in one line.
@@ -845,9 +849,9 @@ def composed(*decs):
 def crash(f, cache={"last_exception": None}):
     """Save program crashes to log file.
 
-    We use a mutable argument to cache the last exception raised. If the current
-    exception is the same (happens when there is an error catch or multiple calls
-    to crash), its not re-written in the logger.
+    We use a mutable argument to cache the last exception raised. If
+    the current exception is the same (happens when there is an error
+    catch or multiple calls to crash), its not re-written in the logger.
 
     """
 
@@ -890,7 +894,7 @@ def method_to_log(f):
 
 
 def plot_from_model(f):
-    """If a plot is called from a model subclass, adapt the models parameter."""
+    """If a plot is called from a model, adapt the models parameter."""
 
     def wrapper(*args, **kwargs):
         if hasattr(args[0], "T"):
@@ -902,26 +906,24 @@ def plot_from_model(f):
     return wrapper
 
 
-# Classes =================================================================== >>
+# Classes ========================================================== >>
 
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted."""
-
     pass
 
 
 class PlotCallback(object):
-    """Callback to plot the BO's progress as it runs."""
+    """Callback to plot the BO's progress as it runs.
+
+    Parameters
+    ----------
+    model: class
+        Model subclass.
+
+    """
 
     def __init__(self, model):
-        """Initialize class.
-
-        Parameters
-        ----------
-        model: class
-            Model subclass.
-
-        """
         self.M = model
 
         # Plot attributes
@@ -951,9 +953,9 @@ class PlotCallback(object):
     def create_canvas(self):
         """Create the plot.
 
-        Creates a canvas with two plots. The first plot shows the score of
-        every trial and the second shows the distance between the last
-        consecutive steps.
+        Creates a canvas with two plots. The first plot shows the
+        score of every trial and the second shows the distance
+        between the last consecutive steps.
 
         """
         plt.ion()  # Call to matplotlib that allows dynamic plotting

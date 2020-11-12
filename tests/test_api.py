@@ -13,13 +13,13 @@ from sklearn.linear_model import HuberRegressor
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
-from atom.training import TrainerClassifier
+from atom.training import DirectClassifier
 from atom.data_cleaning import Imputer
 from atom.utils import check_scaling
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
 
 
-# Test ATOMModel ============================================================ >>
+# Test ATOMModel =================================================== >>
 
 def test_name():
     """Assert that the model's name is passed properly."""
@@ -58,7 +58,7 @@ def test_type():
     assert atom.hub.type == "linear"
 
 
-# Test ATOMLoader =========================================================== >>
+# Test ATOMLoader ================================================== >>
 
 def test_invalid_verbose():
     """Assert that an error is raised when verbose is invalid."""
@@ -67,11 +67,11 @@ def test_invalid_verbose():
 
 def test_ATOMLoader():
     """Assert that the ATOMLoader function works as intended."""
-    trainer = TrainerClassifier("LR", random_state=1)
+    trainer = DirectClassifier("LR", random_state=1)
     trainer.save(FILE_DIR + "trainer")
 
     trainer2 = ATOMLoader(FILE_DIR + "trainer")
-    assert trainer2.__class__.__name__ == "TrainerClassifier"
+    assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
 def test_load_already_contains_data():
@@ -122,6 +122,18 @@ def test_transform_data():
     assert atom3.shape[0] == X_bin.shape[0] and atom3.shape[1] == X_bin.shape[1] + 1
 
 
+def test_multiple_branches():
+    """Assert that the data is transformed over all branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "branch_2"
+    atom.balance()
+    atom.save(FILE_DIR + "atom", save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), transform_data=True)
+    assert len(atom2.branch.data) != len(X_bin)
+    assert len(atom2._branches["main"].data) == len(X_bin)
+
+
 def test_verbose_is_reset():
     """Assert that the verbosity of the estimator is reset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -129,10 +141,10 @@ def test_verbose_is_reset():
     atom.save(FILE_DIR + "atom", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), verbose=2)
-    assert atom2.pipeline.estimators[0].get_params()["verbose"] == 0
+    assert atom2.branch.estimators[0].get_params()["verbose"] == 0
 
 
-# Test ATOMClassifier ======================================================= >>
+# Test ATOMClassifier ============================================== >>
 
 def test_goal_ATOMClassifier():
     """Assert that the goal is set correctly for ATOMClassifier."""
@@ -140,7 +152,7 @@ def test_goal_ATOMClassifier():
     assert atom.goal == "classification"
 
 
-# Test ATOMRegressor ======================================================== >>
+# Test ATOMRegressor =============================================== >>
 
 def test_goal_ATOMRegressor():
     """Assert that the goal is set correctly for ATOMRegressor."""

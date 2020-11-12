@@ -114,15 +114,15 @@
     <ul class="dropdown-menu">
             
   <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Trainer</a>
+    <a href="#" class="dropdown-item">Direct</a>
     <ul class="dropdown-menu">
             
 <li>
-    <a href="../../training/trainerclassifier/" class="dropdown-item">TrainerClassifier</a>
+    <a href="../../training/directclassifier/" class="dropdown-item">DirectClassifier</a>
 </li>
             
 <li>
-    <a href="../../training/trainerregressor/" class="dropdown-item">TrainerRegressor</a>
+    <a href="../../training/directregressor/" class="dropdown-item">DirectRegressor</a>
 </li>
     </ul>
   </li>
@@ -550,11 +550,11 @@
 <h1 id="plot_pipeline">plot_pipeline</h1>
 <hr />
 <p><a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, title=None, figsize=None, filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, branch=None, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
 <div style="padding-left:3%">
-Plot a diagram of every estimator in <code>atom</code>'s pipeline.
- <br /><br />
+Plot a diagram of every estimator in a branch.
+<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -562,6 +562,10 @@ Plot a diagram of every estimator in <code>atom</code>'s pipeline.
 <strong>show_params: bool, optional (default=True)</strong>
 <blockquote>
 Whether to show the parameters used for every estimator.
+</blockquote>
+<strong>show_params: bool, optional (default=True)</strong>
+<blockquote>
+Name of the branch to plot. If None, plot the current active branch.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -573,7 +577,7 @@ Figure's size, format as (x, y). If None, adapts size to the length of the pipel
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If None, the figure is not saved.
+Name of the file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
@@ -596,15 +600,6 @@ atom.feature_selection(
     n_features=10,
     max_frac_repeated=1.,
     max_correlation=0.7
-)
-
-atom.run(
-    models=[&quot;GBM&quot;, &quot;LGB&quot;],
-    metric=&quot;recall_weighted&quot;,
-    n_calls=(10, 20),
-    n_initial_points=(5, 12),
-    bo_params={&quot;base_estimator&quot;: &quot;RF&quot;, &quot;cv&quot;: 1, &quot;max_time&quot;: 1000},
-    bagging=4
 )
 
 atom.plot_pipeline()

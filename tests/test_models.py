@@ -25,14 +25,14 @@ from atom.utils import ONLY_CLASS, ONLY_REG
 from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 
-# Variables ================================================================= >>
+# Variables ======================================================== >>
 
 binary = [m for m in MODEL_LIST if m not in ["custom", "CatNB"] + ONLY_REG]
 multiclass = [m for m in MODEL_LIST if m not in ["custom", "CatNB", "CatB"] + ONLY_REG]
 regression = [m for m in MODEL_LIST if m not in ["custom"] + ONLY_CLASS]
 
 
-# Functions ================================================================ >>
+# Functions ======================================================= >>
 
 def neural_network():
     """Create a convolutional neural network in Keras."""
@@ -45,7 +45,7 @@ def neural_network():
 
     return model
 
-# Tests ==================================================================== >>
+# Tests =========================================================== >>
 
 
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])

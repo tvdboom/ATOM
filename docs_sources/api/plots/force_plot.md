@@ -19,7 +19,7 @@ Plot SHAP's force plot. Visualize the given SHAP values with an additive force l
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected. Note
  that selecting multiple models will raise an exception. To avoid this, call the
- plot from a `model`.
+ plot from a model.
 </blockquote>
 <strong>index: int, list, tuple or None, optional (default=None)</strong>
 <blockquote>
@@ -41,7 +41,7 @@ Figure's size, format as (x, y).
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file (to save). If matplotlib=False, the figure will be saved as an html
+Name of the file. If matplotlib=False, the figure will be saved as an html
  file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>
