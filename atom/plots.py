@@ -149,6 +149,15 @@ class BasePlotter(object):
 
     # Methods ====================================================== >>
 
+    @staticmethod
+    def _get_figure():
+        """Return existing figure if in canvas, else a new figure."""
+        if BasePlotter._fig.is_canvas:
+            return BasePlotter._fig.figure
+        else:
+            BasePlotter._fig = BaseFigure()
+            return BasePlotter._fig.figure
+
     def _get_subclass(self, models, max_one=False):
         """Check and return the provided parameter models.
 
@@ -316,14 +325,6 @@ class BasePlotter(object):
                 expected_value = expected_value[target]
 
         return shap_values, expected_value
-
-    def _get_figure(self):
-        """Return existing figure if in canvas, else a new figure."""
-        if BasePlotter._fig.is_canvas:
-            return BasePlotter._fig.figure
-        else:
-            BasePlotter._fig = BaseFigure()
-            return BasePlotter._fig.figure
 
     def _plot(self, ax=None, **kwargs):
         """Make the plot.
@@ -1227,6 +1228,7 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        df.plot.barh(ax=ax, width=0.75 if len(models) > 1 else 0.6)
         if len(models) == 1:
             for i, v in enumerate(df[df.columns[0]]):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)

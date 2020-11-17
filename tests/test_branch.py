@@ -45,6 +45,7 @@ def test_repr():
 def test_status_method():
     """Assert that the status method prints the estimators without errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.impute(strat_num=0, strat_cat="missing")
     atom.branch.status()
 
 

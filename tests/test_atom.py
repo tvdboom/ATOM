@@ -85,6 +85,7 @@ def test_task_assigning():
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
     assert str(atom).startswith("ATOMClassifier")
 
 

@@ -34,6 +34,12 @@ def test_models_get_right_name():
     assert trainer.models == ["LR", "ET", "CatB"]
 
 
+def test_invalid_model_name():
+    """Assert that an error is raised when the model is unknown."""
+    trainer = DirectClassifier(models="invalid", random_state=1)
+    pytest.raises(ValueError, trainer.run, bin_train, bin_test)
+
+
 def test_multiple_same_models():
     """Assert that the same model can used with different name."""
     trainer = DirectClassifier(["lr", "lr2", "lr_3"], random_state=1)

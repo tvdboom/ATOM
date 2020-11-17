@@ -916,10 +916,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @BasePredictor.dataset.setter
     @typechecked
     def dataset(self, dataset: Optional[X_TYPES]):
-        if dataset is None:  # None is also possible because of the save method
-            self.branch.data = None
-        else:
-            self.branch.data = check_property(dataset, "dataset")
+        self.branch.data = check_property(dataset, "dataset")
 
     @BasePredictor.train.setter
     @typechecked

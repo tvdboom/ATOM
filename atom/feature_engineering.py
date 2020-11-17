@@ -270,7 +270,6 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             self._dfs_features = self._dfs_features[: X.shape[1] - 1] + new_dfs
 
             # Make sure there are enough features (-1 because of index)
-            print(self._dfs_features)
             max_features = len(self._dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
                 self.n_features = max_features

@@ -90,11 +90,11 @@ def test_tick_fontsize_setter():
 
 def test_canvas():
     """Assert that the canvas works."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas"):
-        atom.plot_prc()
-        atom.plot_roc()
+    with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas", display=False):
+        atom.plot_residuals()
+        atom.plot_feature_importance()
     assert glob.glob(FILE_DIR + "canvas.png")
 
 
@@ -102,7 +102,7 @@ def test_canvas_too_many_plots():
     """Assert that the canvas works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas"):
+    with atom.canvas(1, 2, filename=FILE_DIR + "canvas", display=False):
         atom.plot_prc()
         atom.plot_roc()
         pytest.raises(RuntimeError, atom.plot_prc)
@@ -607,6 +607,14 @@ def test_force_plot(model, index):
     assert glob.glob(FILE_DIR + f"force_{model}_{index}_2.html")
 
 
+def test_force_plot_in_canvas():
+    """Assert that an error is raised when force_plot is called from a canvas."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Tree", metric="MSE")
+    with atom.canvas():
+        pytest.raises(PermissionError, atom.force_plot, index=12, matplotlib=True)
+
+
 @pytest.mark.parametrize("index", [4, "alcohol", "rank(3)"])
 def test_dependence_plot(index):
     """Assert that the dependence_plot method work as intended."""
@@ -645,5 +653,5 @@ def test_waterfall_plot():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.waterfall_plot)
     atom.run(["LR", "Tree"], metric="f1_macro")
-    atom.lr.waterfall_plot(index=-3, filename=FILE_DIR + f"waterfall_1", display=False)
+    atom.lr.waterfall_plot(filename=FILE_DIR + f"waterfall_1", display=False)
     assert glob.glob(FILE_DIR + f"waterfall_1.png")
