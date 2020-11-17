@@ -709,20 +709,24 @@
  input a dataset and let ATOM split the train and test set or provide a train and
  test set already splitted. Note that if a dataframe is provided, the indices will
  be reset by atom.</p>
-<pre><code>atom = ATOMClassifier(X, y, test_size=0.25)
+<pre><code class="python">atom = ATOMClassifier(X, y, test_size=0.25)
 </code></pre>
+
 <p>Apply data cleaning methods through the class. For example, calling the
  <a href="../API/ATOM/atomclassifier/#impute">impute</a> method will
  handle all missing values in the dataset.</p>
-<pre><code>atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
+<pre><code class="python">atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)
 </code></pre>
+
 <p>Select the best hyperparameters and fit a Random Forest and AdaBoost model.</p>
-<pre><code>atom.run(["RF", "AdaB"], metric="accuracy", n_calls=25, n_initial_points=10)
+<pre><code class="python">atom.run([&quot;RF&quot;, &quot;AdaB&quot;], metric=&quot;accuracy&quot;, n_calls=25, n_initial_points=10)
 </code></pre>
+
 <p>Analyze the results:</p>
-<pre><code>atom.feature_importances(show=10, filename="feature_importance_plot")
-atom.plot_prc(title="Precision-recall curve comparison plot")
+<pre><code class="python">atom.feature_importances(show=10, filename=&quot;feature_importance_plot&quot;)
+atom.plot_prc(title=&quot;Precision-recall curve comparison plot&quot;)
 </code></pre>
+
 <p><br><br></p>
 <h1 id="data-pipelines">Data pipelines</h1>
 <hr />
@@ -1480,6 +1484,32 @@ method if you need to free some memory!</p>
 <li>label_fontsize: 16</li>
 <li>tick_fontsize: 12</li>
 </ul>
+<p><br></p>
+<h3 id="canvas">Canvas</h3>
+<p>Sometimes it is desirable to draw multiple plots side by side in order to be
+ able to compare them easier. Use the atom's <a href="../API/ATOM/atomclassifier/#canvas">canvas</a>
+ method for this. The canvas method is a <code>@contextmanager</code>, i.e. it is use
+ through the <code>with</code> command. Plots in a canvas will ignore the figsize, filename
+ and display parameters. Instead, call this parameters from the canvas for the
+ final figure.</p>
+<p>For example, we can use a canvas to compare the results of a <a href="../API/models/xgb">XGBoost</a>
+ and <a href="../API/models/lgb">LightGBM</a> model on the train and test set. We could
+ also draw the lines for both models in the same axes, but then the plot could
+ become too messy.</p>
+<pre><code class="python">atom = ATOMClassifier(X, y)
+atom.run([&quot;xgb&quot;, &quot;lgb&quot;], n_calls=0)
+
+with atom.canvas(2, 2, title=&quot;XGBoost vs LightGBM&quot;, filename=&quot;canvas&quot;):
+    atom.xgb.plot_roc(dataset=&quot;both&quot;, title=&quot;ROC - XGBoost&quot;)
+    atom.lgb.plot_roc(dataset=&quot;both&quot;, title=&quot;ROC - LightGBM&quot;)
+    atom.xgb.plot_prc(dataset=&quot;both&quot;, title=&quot;PRC - XGBoost&quot;)
+    atom.lgb.plot_prc(dataset=&quot;both&quot;, title=&quot;PRC - LightGBM&quot;)
+</code></pre>
+
+<div align="center">
+    <img src="../../../img/plots/canvas.png" alt="canvas" width="1000" height="700"/>
+</div>
+
 <p><br></p>
 <h3 id="shap">SHAP</h3>
 <p>The <a href="https://github.com/slundberg/shap">SHAP</a> (SHapley Additive exPlanations) python

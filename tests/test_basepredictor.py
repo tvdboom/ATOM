@@ -34,6 +34,13 @@ def test_pipeline_property():
     assert isinstance(atom.pipeline, pd.Series)
 
 
+def test_feature_importance_property():
+    """Assert that the feature_importance returns the list of features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.feature_selection('univariate', n_features=10)
+    assert isinstance(atom.feature_importance, list)
+
+
 def test_metric_property():
     """Assert that the metric property returns the metric names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

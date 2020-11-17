@@ -39,8 +39,8 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import BaseCleaner, Scaler
 from .plots import FeatureSelectorPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, to_df,
-    check_scaling, check_is_fitted, get_acronym, composed,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, lst,
+    to_df, check_scaling, check_is_fitted, get_acronym, composed,
     crash, method_to_log
 )
 
@@ -212,13 +212,12 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         if not self.operators:  # None or empty list
             self.operators = default
         else:
-            if not isinstance(self.operators, (list, tuple)):
-                self.operators = [self.operators]
-            for self.operator in self.operators:
-                if self.operator.lower() not in default:
+            self.operators = lst(self.operators)
+            for operator in self.operators:
+                if operator.lower() not in default:
                     raise ValueError(
                         "Invalid value in the operators parameter, got "
-                        f"{self.operator}. Choose from: {', '.join(default)}."
+                        f"{operator}. Choose from: {', '.join(default)}."
                     )
 
         self.log("Fitting FeatureGenerator...", 1)
@@ -271,6 +270,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             self._dfs_features = self._dfs_features[: X.shape[1] - 1] + new_dfs
 
             # Make sure there are enough features (-1 because of index)
+            print(self._dfs_features)
             max_features = len(self._dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
                 self.n_features = max_features
@@ -357,16 +357,16 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Remove all identical features to those in the dataset
             new_features = new_features[:, ix]
-            descript = [descript[i] for i in range(len(descript)) if i in ix]
-            fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
+            descript = [item for i, item in enumerate(descript) if i in ix]
+            fitness = [item for i, item in enumerate(fitness) if i in ix]
 
             # Indices of all non duplicate elements in list
             ix = [ix for ix, v in enumerate(descript) if v not in descript[:ix]]
 
             # Remove all duplicate elements
             new_features = new_features[:, ix]
-            descript = [descript[i] for i in range(len(descript)) if i in ix]
-            fitness = [fitness[i] for i in range(len(fitness)) if i in ix]
+            descript = [item for i, item in enumerate(descript) if i in ix]
+            fitness = [item for i, item in enumerate(fitness) if i in ix]
 
             # Check if any new features remain in the loop
             if len(descript) == 0:

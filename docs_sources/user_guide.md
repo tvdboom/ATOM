@@ -127,22 +127,32 @@ First, initialize atom and provide it the data you want to use. You can either
  test set already splitted. Note that if a dataframe is provided, the indices will
  be reset by atom.
 
-    atom = ATOMClassifier(X, y, test_size=0.25)
+```python
+atom = ATOMClassifier(X, y, test_size=0.25)
+```
 
 Apply data cleaning methods through the class. For example, calling the
  [impute](../API/ATOM/atomclassifier/#impute) method will
  handle all missing values in the dataset.
 
-    atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
+```python
+atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
+```
 
 Select the best hyperparameters and fit a Random Forest and AdaBoost model.
 
-    atom.run(["RF", "AdaB"], metric="accuracy", n_calls=25, n_initial_points=10)
+```python
+atom.run(["RF", "AdaB"], metric="accuracy", n_calls=25, n_initial_points=10)
+```
 
 Analyze the results:
 
-    atom.feature_importances(show=10, filename="feature_importance_plot")
-    atom.plot_prc(title="Precision-recall curve comparison plot")
+```python
+atom.feature_importances(show=10, filename="feature_importance_plot")
+atom.plot_prc(title="Precision-recall curve comparison plot")
+```
+
+
 
 
 <br><br>
@@ -1037,6 +1047,38 @@ The plot aesthetics can be customized using the plot attributes, e.g.
 * title_fontsize: 20
 * label_fontsize: 16
 * tick_fontsize: 12
+
+<br>
+
+
+### Canvas
+
+Sometimes it is desirable to draw multiple plots side by side in order to be
+ able to compare them easier. Use the atom's [canvas](../API/ATOM/atomclassifier/#canvas)
+ method for this. The canvas method is a `@contextmanager`, i.e. it is use
+ through the `with` command. Plots in a canvas will ignore the figsize, filename
+ and display parameters. Instead, call this parameters from the canvas for the
+ final figure.
+
+For example, we can use a canvas to compare the results of a [XGBoost](../API/models/xgb)
+ and [LightGBM](../API/models/lgb) model on the train and test set. We could
+ also draw the lines for both models in the same axes, but then the plot could
+ become too messy.
+ 
+```python
+atom = ATOMClassifier(X, y)
+atom.run(["xgb", "lgb"], n_calls=0)
+
+with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
+    atom.xgb.plot_roc(dataset="both", title="ROC - XGBoost")
+    atom.lgb.plot_roc(dataset="both", title="ROC - LightGBM")
+    atom.xgb.plot_prc(dataset="both", title="PRC - XGBoost")
+    atom.lgb.plot_prc(dataset="both", title="PRC - LightGBM")
+```
+<div align="center">
+    <img src="../../../img/plots/canvas.png" alt="canvas" width="1000" height="700"/>
+</div>
+
 
 <br>
 

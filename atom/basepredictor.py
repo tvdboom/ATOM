@@ -36,6 +36,11 @@ class BasePredictor(object):
         return self.branch.estimators
 
     @property
+    def feature_importance(self):
+        """Return the feature_importance in the branches pipeline."""
+        return self.branch.feature_importance
+
+    @property
     def metric(self):
         """Return the pipeline's metric."""
         return flt([getattr(metric, "name", metric) for metric in self.metric_])

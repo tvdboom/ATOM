@@ -23,7 +23,7 @@ from .utils import SEQUENCE_TYPES, merge
 
 @typechecked
 def ATOMModel(
-    predictor,
+    estimator,
     acronym: str = None,
     fullname: str = None,
     needs_scaling: bool = False,
@@ -36,15 +36,15 @@ def ATOMModel(
 
     Parameters
     ----------
-    predictor: class
-        Model's predictor. Can be a class or an instance.
+    estimator: class
+        Model's estimator. Can be a class or an instance.
 
     acronym: str, optional (default=None)
         Model's acronym. Used to call the model from the trainer.
-        If None, the predictor's __name__ is used (not recommended).
+        If None, the estimator's __name__ is used (not recommended).
 
     fullname: str, optional (default=None)
-        Full model's name. If None, the predictor's __name__ is used.
+        Full model's name. If None, the estimator's __name__ is used.
 
     needs_scaling: bool, optional (default=False)
         Whether the model needs scaled features. Can not be True for
@@ -64,13 +64,13 @@ def ATOMModel(
         )
 
     if acronym:
-        predictor.acronym = acronym
+        estimator.acronym = acronym
     if fullname:
-        predictor.fullname = fullname
-    predictor.needs_scaling = needs_scaling
-    predictor.type = type
+        estimator.fullname = fullname
+    estimator.needs_scaling = needs_scaling
+    estimator.type = type
 
-    return predictor
+    return estimator
 
 
 @typechecked

@@ -136,12 +136,13 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log(f"Switched to branch '{branch}'.", 1)
         else:
             self._branches[branch.lower()] = Branch(
-                T=self,
-                name=branch.lower(),
+                self,
+                branch.lower(),
                 estimators=self.branch.estimators,
                 data=self.branch.data,
                 idx=self.branch.idx,
-                mapping=self.mapping
+                mapping=self.mapping,
+                feature_importance=self.feature_importance,
             )
             self._current = branch.lower()
             self.log(f"New branch '{branch}' successfully created!", 1)
@@ -665,16 +666,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         # Attach used attributes to ATOM
-        attributes = (
-            "feature_importance",
-            "univariate",
-            "collinear",
-            "pca",
-            "sfm",
-            "rfe",
-            "rfecv",
-        )
-        for attr in attributes:
+        self.branch.feature_importance = feature_selector.feature_importance
+        for attr in ("univariate", "collinear", "pca", "sfm", "rfe", "rfecv"):
             if getattr(feature_selector, attr) is not None:
                 setattr(self, attr, getattr(feature_selector, attr))
 

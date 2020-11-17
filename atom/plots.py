@@ -15,6 +15,7 @@ from itertools import chain
 from inspect import signature
 from typeguard import typechecked
 from joblib import Parallel, delayed
+from contextlib import contextmanager
 from scipy.stats.mstats import mquantiles
 from typing import Optional, Union, Tuple
 
@@ -22,7 +23,6 @@ from typing import Optional, Union, Tuple
 import shap
 from matplotlib import transforms
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import ConnectionStyle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -37,8 +37,10 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr, check_is_fitted,
-    check_dim, get_best_score, partial_dependence, composed, crash, plot_from_model
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr,
+    check_is_fitted, check_dim, check_goal, check_binary_task,
+    check_predict_proba, get_best_score, partial_dependence, composed,
+    crash, plot_from_model, BaseFigure,
 )
 
 
@@ -51,6 +53,7 @@ class BasePlotter(object):
 
     """
 
+    _fig = BaseFigure()
     _aesthetics = dict(
         style="darkgrid",  # Seaborn plotting style
         palette="GnBu_r_d",  # Matplotlib color palette
@@ -314,50 +317,119 @@ class BasePlotter(object):
 
         return shap_values, expected_value
 
-    def _plot(self, **kwargs):
+    def _get_figure(self):
+        """Return existing figure if in canvas, else a new figure."""
+        if BasePlotter._fig.is_canvas:
+            return BasePlotter._fig.figure
+        else:
+            BasePlotter._fig = BaseFigure()
+            return BasePlotter._fig.figure
+
+    def _plot(self, ax=None, **kwargs):
         """Make the plot.
+
+        Customize the axes to the default layout and plot the figure
+        if it's not part of a canvas.
 
         Parameters
         ----------
+        ax: matplotlib.axes.Axes or None, optional (default=None)
+            Current plotting axes. If None, ignore the axes.
+
         **kwargs
-            Keyword arguments containing the plot's parameters. Can contain:
-                - fig: Matplotlib's Figure class for the plot.
-                - title: Plot's title.
-                - legend: Loc to place the legend.
-                - xlabel: Label for the plot's x-axis.
-                - ylabel: Label for the plot's y-axis.
-                - xlim: Limits for the plot's x-axis.
-                - ylim: Limits for the plot's y-axis.
+            Keyword arguments containing the plot's parameters.
+            Use axes_only=True to only apply the axes parameters.
+            Axes parameters:
+                - title: Axes' title.
+                - legend: Location to place the legend.
+                - xlabel: Label for the x-axis.
+                - ylabel: Label for the y-axis.
+                - xlim: Limits for the x-axis.
+                - ylim: Limits for the y-axis.
+            Figure parameters:
+                - figsize: Size of the figure.
                 - tight_layout: Tight layout. Default is True.
                 - filename: Name of the saved file.
                 - display: Whether to render the plot.
 
         """
         if kwargs.get("title"):
-            plt.title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
+            ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
         if kwargs.get("legend"):
-            if len(self.models) < 6:
-                n_col = 1
-            elif len(self.models) < 9:
-                n_col = 2
-            else:
-                n_col = 3
-            plt.legend(loc=kwargs["legend"], ncol=n_col, fontsize=self.label_fontsize)
+            ax.legend(
+                loc=kwargs["legend"],
+                ncol=len(self.models) // 3 if len(self.models) // 3 > 0 else 1,
+                fontsize=self.label_fontsize
+            )
         if kwargs.get("xlabel"):
-            plt.xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
+            ax.set_xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
         if kwargs.get("ylabel"):
-            plt.ylabel(kwargs["ylabel"], fontsize=self.label_fontsize, labelpad=12)
+            ax.set_ylabel(kwargs["ylabel"], fontsize=self.label_fontsize, labelpad=12)
         if kwargs.get("xlim"):
-            plt.xlim(kwargs["xlim"])
+            ax.set_xlim(kwargs["xlim"])
         if kwargs.get("ylim"):
-            plt.ylim(kwargs["ylim"])
-        plt.xticks(fontsize=self.tick_fontsize)
-        plt.yticks(fontsize=self.tick_fontsize)
-        if kwargs.get("tight_layout", True):
-            plt.tight_layout()
-        if kwargs.get("filename"):
-            plt.savefig(kwargs["filename"])
-        plt.show() if kwargs.get("display") else plt.close()
+            ax.set_ylim(kwargs["ylim"])
+        if ax is not None:
+            ax.tick_params(axis='both', labelsize=self.tick_fontsize)
+
+        if not BasePlotter._fig.is_canvas and not kwargs.get("axes_only", False):
+            if kwargs.get("figsize"):
+                plt.gcf().set_size_inches(*kwargs["figsize"])
+            if kwargs.get("tight_layout", True):
+                plt.tight_layout()
+            if kwargs.get("filename"):
+                plt.savefig(kwargs["filename"])
+            plt.show() if kwargs.get("display") else plt.close()
+
+    @composed(contextmanager, crash, typechecked)
+    def canvas(
+        self,
+        nrows: int = 1,
+        ncols: int = 2,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: bool = True,
+    ):
+        """Create a figure with multiple plots.
+
+        This `@contextmanager` allows you to draw many plots in one
+        figure. The default option is to add two plots side by side.
+
+        Parameters
+        ----------
+        nrows: int, optional (default=1)
+            Number of plots in length.
+
+        ncols: int, optional (default=2)
+            Number of plots in width.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the default option is used.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, adapts size to
+            the number of plots in the canvas.
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        """
+        BasePlotter._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)
+        try:
+            yield self
+        finally:
+            if title:
+                plt.suptitle(title, fontsize=self.title_fontsize + 4)
+            BasePlotter._fig.is_canvas = False  # Close the canvas
+            self._plot(
+                figsize=figsize if figsize else (6 + 4 * ncols, 2 + 4 * nrows),
+                filename=filename,
+                display=display
+            )
 
 
 class FeatureSelectorPlotter(BasePlotter):
@@ -367,7 +439,7 @@ class FeatureSelectorPlotter(BasePlotter):
     def plot_pca(
         self,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = (10, 6),
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -379,8 +451,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -389,7 +460,6 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_pca")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_pca method is only available if PCA was applied on the data!"
@@ -399,8 +469,9 @@ class FeatureSelectorPlotter(BasePlotter):
         var = np.array(self.pca.explained_variance_ratio_[:n])
         var_all = np.array(self.pca.explained_variance_ratio_)
 
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.scatter(
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax.scatter(
             x=self.pca.n_components_ - 1,
             y=var.sum(),
             marker="*",
@@ -410,15 +481,17 @@ class FeatureSelectorPlotter(BasePlotter):
             zorder=3,
             label=f"Total variance retained: {round(var.sum(), 3)}",
         )
-        plt.plot(range(self.pca.n_features_), np.cumsum(var_all), marker="o")
-        plt.axhline(var.sum(), ls="--", color="k")
+        ax.plot(range(self.pca.n_features_), np.cumsum(var_all), marker="o")
+        ax.axhline(var.sum(), ls="--", color="k")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
         self._plot(
-            title="PCA explained variances" if not title else title,
+            ax=ax,
+            title="PCA explained variances" if title is None else title,
             legend="lower right",
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -428,7 +501,7 @@ class FeatureSelectorPlotter(BasePlotter):
         self,
         show: Optional[int] = None,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -445,7 +518,7 @@ class FeatureSelectorPlotter(BasePlotter):
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            to the number of components shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -454,7 +527,6 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_components")
         if not hasattr(self, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_components method is only available "
@@ -471,24 +543,25 @@ class FeatureSelectorPlotter(BasePlotter):
                 "Invalid value for the show parameter. "
                 f"Value should be >0, got {show}."
             )
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show / 2))
 
         var = np.array(self.pca.explained_variance_ratio_)[:show]
-        indices = ["Component " + str(i) for i in range(len(var))]
+        indices = [f"Component {str(i)}" for i in range(len(var))]
         scr = pd.Series(var, index=indices).sort_values()
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         scr.plot.barh(label=f"Total variance retained: {var.sum():.3f}", width=0.6)
-        plt.xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
+        ax.set_xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
         for i, v in enumerate(scr):
             ax.text(v + 0.005, i - 0.08, f"{v:.3f}", fontsize=self.tick_fontsize)
 
         self._plot(
-            title="Explained variance per component" if not title else title,
+            ax=ax,
+            title="Explained variance per component" if title is None else title,
             legend="lower right",
             xlabel="Explained variance ratio",
             ylabel="Components",
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,
         )
@@ -497,7 +570,7 @@ class FeatureSelectorPlotter(BasePlotter):
     def plot_rfecv(
         self,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = (10, 6),
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -513,8 +586,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -523,7 +595,6 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_rfecv")
         if not hasattr(self, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
@@ -537,10 +608,11 @@ class FeatureSelectorPlotter(BasePlotter):
             if self.rfecv.get_params()["scoring"]:
                 ylabel = str(self.rfecv.get_params()["scoring"])
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         n_features = self.rfecv.get_params()["min_features_to_select"]
         xline = range(n_features, n_features + len(self.rfecv.grid_scores_))
-        plt.plot(xline, self.rfecv.grid_scores_)
+        ax.plot(xline, self.rfecv.grid_scores_)
 
         # Set limits before drawing the intersected lines
         xlim = (n_features - 0.5, n_features + len(self.rfecv.grid_scores_) - 0.5)
@@ -562,12 +634,14 @@ class FeatureSelectorPlotter(BasePlotter):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
         self._plot(
-            title="RFECV scores" if not title else title,
+            ax=ax,
+            title="RFECV scores" if title is None else title,
             legend="best",
             xlabel="Number of features",
             ylabel=ylabel,
             xlim=xlim,
             ylim=ylim,
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -582,7 +656,7 @@ class BaseModelPlotter(BasePlotter):
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -600,10 +674,11 @@ class BaseModelPlotter(BasePlotter):
             Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, adapts size to the number of models.
+            Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y).
+            Figure's size, format as (x, y). If None, adapts size to
+            the number of models.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -632,17 +707,17 @@ class BaseModelPlotter(BasePlotter):
                     results.append(m.metric_bagging)
                 names.append(m.name)
 
-        if figsize is None:  # Default figsize depends on number of models
-            figsize = (int(8 + len(names) / 2), 6)
-
-        fig, ax = plt.subplots(figsize=figsize)
-        plt.boxplot(results)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax.boxplot(results)
         ax.set_xticklabels(names)
 
         self._plot(
-            title="Bagging results" if not title else title,
+            ax=ax,
+            title="Bagging results" if title is None else title,
             xlabel="Model",
             ylabel=self.metric_[metric].name,
+            figsize=figsize if figsize else (int(8 + len(names) / 2), 6),
             filename=filename,
             display=display,
         )
@@ -699,10 +774,9 @@ class BaseModelPlotter(BasePlotter):
                 "ran the bayesian optimization hyperparameter tuning!"
             )
 
-        plt.subplots(figsize=figsize)
-        gs = GridSpec(2, 1, height_ratios=[2, 1])
-        ax1 = plt.subplot(gs[0])
-        ax2 = plt.subplot(gs[1], sharex=ax1)
+        fig = self._get_figure()
+        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(0, 8)))
+        ax2 = plt.subplot(BasePlotter._fig.grid_location(rows=(8, 12)), sharex=ax1)
         for m in models:
             y = m.bo["score"].apply(lambda value: lst(value)[metric])
             if len(models) == 1:
@@ -717,23 +791,23 @@ class BaseModelPlotter(BasePlotter):
             ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
             ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
 
-        title = "Bayesian optimization performance" if not title else title
-        ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
-        ax1.legend(loc="lower right", fontsize=self.label_fontsize)
-        ax2.set_title(
-            label="Distance between last consecutive iterations",
-            fontsize=self.title_fontsize,
-            pad=20,
-        )
-        ax2.set_xlabel("Iteration", fontsize=self.label_fontsize, labelpad=12)
-        ax1.set_ylabel(
-            ylabel=self.metric_[metric].name, fontsize=self.label_fontsize, labelpad=12
-        )
-        ax2.set_ylabel("d", fontsize=self.label_fontsize, labelpad=12)
-        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
         plt.setp(ax1.get_xticklabels(), visible=False)
-        plt.subplots_adjust(hspace=0.0)
-        self._plot(filename=filename, display=display)
+        self._plot(
+            ax=ax1,
+            axes_only=True,
+            title="Bayesian optimization performance" if title is None else title,
+            legend="lower right",
+            ylabel=self.metric_[metric].name,
+        )
+        ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+        self._plot(
+            ax=ax2,
+            xlabel="Call",
+            ylabel="d",
+            figsize=figsize,
+            filename=filename,
+            display=display
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_evals(
@@ -769,8 +843,7 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the default option is used.
 
         figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -791,15 +864,18 @@ class BaseModelPlotter(BasePlotter):
                 f"that allow in-training evaluation, got {m.acronym}."
             )
 
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for set_ in dataset:
-            plt.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
+            ax.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
 
         self._plot(
-            title="Evaluation curves" if not title else title,
+            ax=ax,
+            title="Evaluation curves" if title is None else title,
             legend="best",
             xlabel=m.get_dimensions()[0].name,  # First param is always the iter
             ylabel=m.evals["metric"],
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -843,16 +919,13 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_roc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
+        check_predict_proba(models, "plot_roc")
 
-        if not self.task.startswith("bin"):
-            raise PermissionError(
-                "The plot_roc method is only available "
-                "for binary classification tasks!"
-            )
-
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             for set_ in dataset:
                 # Get False (True) Positive Rate as arrays
@@ -866,15 +939,17 @@ class BaseModelPlotter(BasePlotter):
                 else:
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
                     label = f"{m.name}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
-                plt.plot(fpr, tpr, lw=2, label=label)
+                ax.plot(fpr, tpr, lw=2, label=label)
 
-        plt.plot([0, 1], [0, 1], lw=2, color="black", alpha=0.7, linestyle="--")
+        ax.plot([0, 1], [0, 1], lw=2, color="black", alpha=0.7, linestyle="--")
 
         self._plot(
-            title="ROC curve" if not title else title,
+            ax=ax,
+            title="ROC curve" if title is None else title,
             legend="lower right",
             xlabel="FPR",
             ylabel="TPR",
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -918,19 +993,16 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_prc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
+        check_predict_proba(models, "plot_prc")
 
-        if not self.task.startswith("binary"):
-            raise PermissionError(
-                "The plot_prc method is only available for "
-                "binary classification tasks!"
-            )
-
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             for set_ in dataset:
-                # Get precision-recall pairs for different probability thresholds
+                # Get precision-recall pairs for different thresholds
                 precision, recall, _ = precision_recall_curve(
                     getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
                 )
@@ -944,10 +1016,12 @@ class BaseModelPlotter(BasePlotter):
                 plt.plot(recall, precision, lw=2, label=label)
 
         self._plot(
-            title="Precision-recall curve" if not title else title,
+            ax=ax,
+            title="Precision-recall curve" if title is None else title,
             legend="lower left",
             xlabel="Recall",
             ylabel="Precision",
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -959,7 +1033,7 @@ class BaseModelPlotter(BasePlotter):
         show: Optional[int] = None,
         n_repeats: int = 10,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -987,7 +1061,7 @@ class BaseModelPlotter(BasePlotter):
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -1000,15 +1074,12 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, "results")
         models = self._get_subclass(models)
         show = self._get_show(show)
+
         if n_repeats <= 0:
             raise ValueError(
                 "Invalid value for the n_repeats parameter."
                 f"Value should be >0, got {n_repeats}."
             )
-
-        # Default figsize depends on features shown
-        if figsize is None:
-            figsize = (10, int(4 + show / 2))
 
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame(columns=["features", "score", "model"])
@@ -1018,13 +1089,13 @@ class BaseModelPlotter(BasePlotter):
             self.permutations = {}
 
         for m in models:
-            # If permutations are already calculated and n_repeats is same,
-            # use known permutations (for efficient re-plotting)
+            # If permutations are already calculated and n_repeats is
+            # same, use known permutations (for efficient re-plotting)
             if not hasattr(m, "_repts"):
                 m._repeats = -np.inf
             if m.name not in self.permutations or m._repeats != n_repeats:
                 m._repeats = n_repeats
-                # Permutation importances returns Bunch object from sklearn
+                # Permutation importances returns Bunch object
                 self.permutations[m.name] = permutation_importance(
                     estimator=m.estimator,
                     X=m.X_test,
@@ -1050,14 +1121,16 @@ class BaseModelPlotter(BasePlotter):
         column_order = get_idx.features.values[:show]
 
         # Save the best feature order
-        self.feature_importance = list(get_idx.features.values)
+        self.branch.feature_importance = list(get_idx.features.values)
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         sns.boxplot(
             x="score",
             y="features",
             hue="model",
             data=df,
+            ax=ax,
             order=column_order,
             width=0.75 if len(models) > 1 else 0.6,
         )
@@ -1067,10 +1140,12 @@ class BaseModelPlotter(BasePlotter):
         ax.legend(handles=handles[1:], labels=labels[1:])
 
         self._plot(
+            ax=ax,
             title=title,
             legend="lower right",
             xlabel="Score",
             ylabel="Features",
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,
         )
@@ -1081,7 +1156,7 @@ class BaseModelPlotter(BasePlotter):
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         show: Optional[int] = None,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -1106,7 +1181,7 @@ class BaseModelPlotter(BasePlotter):
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+            to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -1144,27 +1219,26 @@ class BaseModelPlotter(BasePlotter):
 
         # Save the best feature order
         best_fxs = df.sort_values(by=df.columns[-1], ascending=False)
-        self.feature_importance = list(best_fxs.index.values)
+        self.branch.feature_importance = list(best_fxs.index.values)
 
         # Select best and sort ascending
         df = df.nlargest(show, columns=df.columns[-1])
         df.sort_values(by=df.columns[-1], ascending=True, inplace=True)
 
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show / 2))
-
-        # Plot figure
-        ax = df.plot.barh(figsize=figsize, width=0.75 if len(models) > 1 else 0.6)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         if len(models) == 1:
             for i, v in enumerate(df[df.columns[0]]):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
 
         self._plot(
-            title="Normalized feature importance" if not title else title,
+            ax=ax,
+            title="Normalized feature importance" if title is None else title,
             legend="lower right",
             xlim=(0, 1.07),
             xlabel="Score",
             ylabel="Features",
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,
         )
@@ -1196,7 +1270,7 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        features: int, str, list, tuple or None, optional (default=None)
+        features: int, str, sequence or None, optional (default=None)
             Features or feature pairs (name or index) to get the partial
             dependence from. Maximum of 3 allowed. If None, it uses the
             best 3 features if the `feature_importance` attribute is
@@ -1245,18 +1319,17 @@ class BaseModelPlotter(BasePlotter):
             tgt_int = 0
 
         # Prepare features parameter
-        if not features:
-            if not hasattr(self, "feature_importance"):
-                # If feature_importance doesn't exist, select the first 3
+        features = lst(features)
+        if features == [None]:
+            if not self.feature_importance:
+                # If feature_importance is None, select the first 3
                 features = [0, 1, 2]
             else:
-                # If feature_importance does exist, select the best 3
+                # Else, select the best 3 features
                 features = [
                     idx for idx, column in enumerate(self.columns)
                     if column in self.feature_importance[:3]
                 ]
-        elif not isinstance(features, (list, tuple)):
-            features = [features]
 
         if len(features) > 3:
             raise ValueError(
@@ -1283,9 +1356,15 @@ class BaseModelPlotter(BasePlotter):
                     f"are invalid when plotting multiple models, got {fxs}."
                 )
 
-        fig, ax = plt.subplots(ncols=len(cols), figsize=figsize)
-        if not isinstance(ax, np.ndarray):
-            ax = [ax]  # Make iterator in case there is only 1 feature
+        axes = []
+        fig = self._get_figure()
+        size = BasePlotter._fig._size // len(cols)
+        for i in range(len(cols)):
+            axes.append(
+                fig.add_subplot(
+                    BasePlotter._fig.grid_location(cols=(i * size, i * size + size))
+                )
+            )
 
         for m in models:
             # Compute averaged predictions
@@ -1311,7 +1390,7 @@ class BaseModelPlotter(BasePlotter):
                     X_col = _safe_indexing(self.X_test, fx, axis=1)
                     deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            for axi, fx, (pred, values) in zip(ax, cols, pd_results):
+            for axi, fx, (pred, values) in zip(axes, cols, pd_results):
                 if len(values) == 1:
                     axi.plot(values[0], pred[tgt_int].ravel(), lw=2, label=m.name)
                 else:
@@ -1319,6 +1398,7 @@ class BaseModelPlotter(BasePlotter):
                     XX, YY = np.meshgrid(values[0], values[1])
                     Z = pred[tgt_int].T
                     CS = axi.contour(XX, YY, Z, levels=z_lvl, linewidths=0.5)
+                    axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
                     axi.contourf(
                         XX, YY, Z,
                         levels=z_lvl,
@@ -1326,20 +1406,16 @@ class BaseModelPlotter(BasePlotter):
                         vmin=z_lvl[0],
                         alpha=0.75,
                     )
-                    axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
 
                 trans = transforms.blended_transform_factory(
-                    axi.transData, axi.transAxes
+                    x_transform=axi.transData, y_transform=axi.transAxes
                 )
                 axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
-
-                # Set xlabel if it is not already set
-                axi.tick_params(labelsize=self.tick_fontsize)
                 axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
                 axi.set_xlabel(
                     xlabel=self.columns[fx[0]],
                     fontsize=self.label_fontsize,
-                    labelpad=10,
+                    labelpad=12,
                 )
 
                 if len(values) != 1:
@@ -1353,24 +1429,31 @@ class BaseModelPlotter(BasePlotter):
                         labelpad=12,
                     )
 
-        # Place y-label on first non-contour plot
-        for axi in ax:
+        # Place y-label and legend on first non-contour plot
+        for axi in axes:
             if not axi.get_ylabel():
-                axi.set_ylabel("Score", fontsize=self.label_fontsize, labelpad=12)
+                self._plot(
+                    ax=axi,
+                    axes_only=True,
+                    ylabel="Score",
+                    legend="best" if len(models) > 1 else False
+                )
                 break
 
-        if not title:
+        if title is None:
             title = "Partial dependence"
             if self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
-        plt.suptitle(title, fontsize=self.title_fontsize, y=0.97)
-        fig.tight_layout(rect=[0, 0.03, 1, 0.94])
-        self._plot(
-            legend="best" if len(models) > 1 else False,
-            tight_layout=False,
-            filename=filename,
-            display=display,
-        )
+
+        # Place title if not in canvas, else above first or middle image
+        if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
+            axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
+        elif len(cols) == 3:
+            axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
+        elif not BasePlotter._fig.is_canvas:
+            plt.suptitle(title, fontsize=self.title_fontsize)
+
+        self._plot(figsize=figsize, filename=filename, display=display)
 
     @composed(crash, plot_from_model, typechecked)
     def plot_errors(
@@ -1414,15 +1497,12 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_goal(self, "plot_errors", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
-        if not self.task.startswith("reg"):
-            raise PermissionError(
-                "The plot_errors method is only available for regression tasks!"
-            )
-
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             for set_ in dataset:
                 if len(models) == 1:
@@ -1432,7 +1512,7 @@ class BaseModelPlotter(BasePlotter):
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
                     label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
-                plt.scatter(
+                ax.scatter(
                     x=getattr(self, f"y_{set_}"),
                     y=getattr(m, f"predict_{set_}"),
                     alpha=0.8,
@@ -1450,21 +1530,23 @@ class BaseModelPlotter(BasePlotter):
 
                 # Draw the fit
                 x = np.linspace(*ax.get_xlim(), 100)
-                plt.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
+                ax.plot(x, model.predict(x[:, np.newaxis]), lw=2, alpha=1)
 
         # Get limits before drawing the identity line
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
 
         # Draw identity line
-        plt.plot(xlim, ylim, ls="--", lw=1, color="k", alpha=0.7)
+        ax.plot(xlim, ylim, ls="--", lw=1, color="k", alpha=0.7)
 
         self._plot(
-            title="Prediction errors" if not title else title,
+            ax=ax,
+            title="Prediction errors" if title is None else title,
             legend="upper left",
             xlabel="True value",
             ylabel="Predicted value",
             xlim=xlim,
             ylim=ylim,
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -1514,18 +1596,13 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_goal(self, "plot_residuals", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
 
-        if not self.task.startswith("reg"):
-            raise PermissionError(
-                "The plot_residuals method is only available for regression tasks!"
-            )
-
-        # Create figure with two axes
-        fig, ax = plt.subplots(figsize=figsize)
-        divider = make_axes_locatable(ax)
-        hax = divider.append_axes("right", size=1.5, pad=0.1)
+        fig = self._get_figure()
+        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(cols=(0, 10)))
+        ax2 = fig.add_subplot(BasePlotter._fig.grid_location(cols=(10, 12)))
 
         for m in models:
             for set_ in dataset:
@@ -1537,29 +1614,34 @@ class BaseModelPlotter(BasePlotter):
                     label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
 
             res = np.subtract(getattr(m, f"predict_{set_}"), getattr(self, f"y_{set_}"))
-            ax.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
-            hax.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
+            ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
+            ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
         # Get limits before drawing the identity line
-        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        xlim, ylim = ax1.get_xlim(), ax1.get_ylim()
+        ax1.hlines(0, *xlim, ls="--", lw=1, color="k", alpha=0.8)  # Identity line
 
-        # Draw identity line
-        ax.hlines(0, *xlim, ls="--", lw=1, color="k", alpha=0.8)
+        ax2.set_yticklabels([])
+        self._plot(ax=ax2, axes_only=True, xlabel="Distribution")
 
-        # Set parameters
-        ax.legend(loc="best", fontsize=self.label_fontsize)
-        ax.set_ylabel("Residuals", fontsize=self.label_fontsize, labelpad=12)
-        ax.set_xlabel("True value", fontsize=self.label_fontsize, labelpad=12)
-        ax.set_xlim(xlim)
-        ax.set_ylim(ylim)
-        ax.tick_params(labelsize=self.tick_fontsize)
-        hax.set_xlabel("Distribution", fontsize=self.label_fontsize, labelpad=12)
-        hax.set_yticklabels([])
+        if title is None:
+            title = "Residuals plot"
+        if not BasePlotter._fig.is_canvas:
+            plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
+        else:
+            ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
 
-        title = "Residuals plot" if not title else title
-        plt.suptitle(title, fontsize=self.title_fontsize, y=0.97)
-        fig.tight_layout(rect=[0, 0.03, 1, 0.94])
-        self._plot(tight_layout=False, filename=filename, display=display)
+        self._plot(
+            ax=ax1,
+            legend="lower right",
+            ylabel="Residuals",
+            xlabel="True value",
+            xlim=xlim,
+            ylim=ylim,
+            figsize=figsize,
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_confusion_matrix(
@@ -1568,7 +1650,7 @@ class BaseModelPlotter(BasePlotter):
         dataset: str = "test",
         normalize: bool = False,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -1597,7 +1679,7 @@ class BaseModelPlotter(BasePlotter):
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
-            plot type.
+            the plot's type.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -1607,13 +1689,8 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_goal(self, "plot_confusion_matrix", "classification")
         models = self._get_subclass(models)
-
-        if self.task.startswith("reg"):
-            raise PermissionError(
-                "The plot_confusion_matrix_method is only "
-                "available for classification tasks!"
-            )
 
         if self.task.startswith("multi") and len(models) > 1:
             raise NotImplementedError(
@@ -1630,7 +1707,7 @@ class BaseModelPlotter(BasePlotter):
                 "True positives",
             ]
         )
-        if not title:
+        if title is None:
             title = "Confusion matrix"
 
         for m in models:
@@ -1642,10 +1719,9 @@ class BaseModelPlotter(BasePlotter):
                     if title == "Confusion matrix":
                         title = "Normalized confusion matrix"
 
-                fig, ax = plt.subplots(figsize=(8, 8) if not figsize else figsize)
-                im = ax.imshow(
-                    X=cm, interpolation="nearest", cmap=plt.get_cmap("Blues")
-                )
+                fig = self._get_figure()
+                ax = fig.add_subplot(BasePlotter._fig.grid_location())
+                im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
 
                 # Create an axes on the right side of ax. The under of cax will
                 # be 5% of ax and the padding between cax and ax will be fixed
@@ -1694,16 +1770,23 @@ class BaseModelPlotter(BasePlotter):
                 df[m.name] = cm.ravel()
 
         if len(models) > 1:
-            df.plot.barh(figsize=(10, 6) if not figsize else figsize, width=0.6)
+            ax = df.plot.barh(width=0.6)
             self._plot(
+                ax=ax,
                 title=title,
                 legend="best",
                 xlabel="Count",
+                figsize=figsize if figsize else (10, 6),
                 filename=filename,
                 display=display,
             )
         else:
-            self._plot(filename=filename, display=display)
+            self._plot(
+                ax=ax,
+                figsize=figsize if figsize else (8, 8),
+                filename=filename,
+                display=display
+            )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
@@ -1753,22 +1836,10 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_threshold")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-
-        if not self.task.startswith("bin"):
-            raise PermissionError(
-                "The plot_threshold method is only "
-                "available for binary classification tasks!"
-            )
-
-        # Check that all models have predict_proba
-        for m in models:
-            if not hasattr(m.estimator, "predict_proba"):
-                raise AttributeError(
-                    "The plot_threshold method is only available "
-                    f"for models with a predict_proba method, got {m}."
-                )
+        check_predict_proba(models, "plot_threshold")
 
         if metric is None:
             metric = self.metric_
@@ -1793,7 +1864,8 @@ class BaseModelPlotter(BasePlotter):
             else:  # It is a metric function
                 metric_list.append(met)
 
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         steps = np.linspace(0, 1, steps)
         for m in models:
             for met in metric_list:  # Create dict of empty arrays
@@ -1811,13 +1883,15 @@ class BaseModelPlotter(BasePlotter):
                     else:
                         l_set = f" - {set_}" if len(dataset) > 1 else ""
                         label = f"{m.name}{l_set} ({met.__name__})"
-                    plt.plot(steps, results, label=label, lw=2)
+                    ax.plot(steps, results, label=label, lw=2)
 
         self._plot(
-            title="Performance against threshold value" if not title else title,
+            ax=ax,
+            title="Performance vs threshold" if title is None else title,
             legend="best",
             xlabel="Threshold",
             ylabel="Score",
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -1835,7 +1909,7 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot the probability distribution of the target classes.
 
-        Only for binary classification tasks.
+        Only for classification tasks.
 
         Parameters
         ----------
@@ -1864,27 +1938,15 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        # Set parameters
         check_is_fitted(self, "results")
+        check_goal(self, "plot_probabilities", "classification")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         tgt_int, tgt_str = self._get_target(target)
+        check_predict_proba(models, "plot_probabilities")
 
-        if self.task.startswith("reg"):
-            raise PermissionError(
-                "The plot_probabilities method is only "
-                "available for classification tasks!"
-            )
-
-        # Check that all models have predict_proba
-        for m in models:
-            if not hasattr(m.estimator, "predict_proba"):
-                raise AttributeError(
-                    "The plot_probabilities method is only available "
-                    f"for models with a predict_proba method, got {m}."
-                )
-
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             for set_ in dataset:
                 for key, value in self.mapping.items():
@@ -1904,14 +1966,16 @@ class BaseModelPlotter(BasePlotter):
                         label=label,
                     )
 
-        if not title:
+        if title is None:
             title = f"Probability distribution for {m.y.name}={tgt_str}"
         self._plot(
+            ax=ax,
             title=title,
             legend="best",
             xlabel="Probability",
             ylabel="Count",
             xlim=(0, 1),
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -1966,24 +2030,18 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_calibration")
         models = self._get_subclass(models)
 
-        if not self.task.startswith("bin"):
-            raise PermissionError(
-                "The plot_probabilities method is only "
-                "available for binary classification tasks!"
-            )
-
-        # Set parameters
         if n_bins < 5:
             raise ValueError(
                 "Invalid value for the n_bins parameter."
                 f"Value should be >=5, got {n_bins}."
             )
 
-        plt.figure(figsize=figsize)
-        ax1 = plt.subplot2grid((3, 1), (0, 0), rowspan=2)
-        ax2 = plt.subplot2grid((3, 1), (2, 0))
+        fig = self._get_figure()
+        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(0, 8)))
+        ax2 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(8, 12)), sharex=ax1)
         ax1.plot([0, 1], [0, 1], color="k", ls="--")
         for m in models:
             if hasattr(m.estimator, "decision_function"):
@@ -1992,33 +2050,29 @@ class BaseModelPlotter(BasePlotter):
             elif hasattr(m.estimator, "predict_proba"):
                 prob = m.predict_proba_test[:, 1]
 
-            # Calculate the calibration (fraction of positives and predicted values)
+            # Get calibration (frac of positives and predicted values)
             frac_pos, pred = calibration_curve(self.y_test, prob, n_bins=n_bins)
 
-            # Draw plots
             ax1.plot(pred, frac_pos, marker="o", lw=2, label=f"{m.name}")
-            ax2.hist(
-                prob, range=(0, 1), bins=n_bins, label=m.name, histtype="step", lw=2
-            )
+            ax2.hist(prob, n_bins, range=(0, 1), label=m.name, histtype="step", lw=2)
 
-        title = "Calibration curve" if not title else title
-        ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
-        ax1.set_ylabel(
-            ylabel="Fraction of positives", fontsize=self.label_fontsize, labelpad=12
+        plt.setp(ax1.get_xticklabels(), visible=False)
+        self._plot(
+            ax=ax1,
+            axes_only=True,
+            title="Calibration curve" if title is None else title,
+            legend="lower right" if len(models) > 1 else False,
+            ylabel="Fraction of positives",
+            ylim=(-0.05, 1.05),
         )
-        ax1.set_ylim([-0.05, 1.05])
-
-        ax2.set_xlabel(
-            xlabel="Predicted value", fontsize=self.label_fontsize, labelpad=12
+        self._plot(
+            ax=ax2,
+            xlabel="Predicted value",
+            ylabel="Count",
+            figsize=figsize,
+            filename=filename,
+            display=display
         )
-        ax2.set_ylabel("Count", fontsize=self.label_fontsize, labelpad=12)
-
-        # Only draw the legends for more than one model
-        if len(models) > 1:
-            ax1.legend(loc="lower right", fontsize=self.label_fontsize)
-            ax2.legend(loc="best", fontsize=self.label_fontsize, ncol=3)
-
-        self._plot(filename=filename, display=display)
 
     @composed(crash, plot_from_model, typechecked)
     def plot_gains(
@@ -2059,25 +2113,14 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_gains")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
+        check_predict_proba(models, "plot_gains")
 
-        if not self.task.startswith("bin"):
-            raise PermissionError(
-                "The plot_gain method is only available "
-                "for binary classification tasks!"
-            )
-
-        # Check that all models have predict_proba
-        for m in models:
-            if not hasattr(m.estimator, "predict_proba"):
-                raise AttributeError(
-                    "The plot_probabilities method is only available "
-                    f"for models with a predict_proba method, got {m}."
-                )
-
-        plt.subplots(figsize=figsize)
-        plt.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
@@ -2099,15 +2142,17 @@ class BaseModelPlotter(BasePlotter):
                     label += " - "
                 if len(dataset) > 1:
                     label += set_
-                plt.plot(x, gains, lw=2, label=label)
+                ax.plot(x, gains, lw=2, label=label)
 
         self._plot(
-            title="Cumulative gains curve" if not title else title,
+            ax=ax,
+            title="Cumulative gains curve" if title is None else title,
             legend="lower right",
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
             ylim=(0, 1.02),
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -2151,25 +2196,15 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_is_fitted(self, "results")
+        check_binary_task(self, "plot_lift")
+
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
+        check_predict_proba(models, "plot_lift")
 
-        if not self.task.startswith("bin"):
-            raise PermissionError(
-                "The plot_gain method is only available "
-                "for binary classification tasks!"
-            )
-
-        # Check that all models have predict_proba
-        for m in models:
-            if not hasattr(m.estimator, "predict_proba"):
-                raise AttributeError(
-                    "The plot_probabilities method is only available "
-                    f"for models with a predict_proba method, got {m}."
-                )
-
-        plt.subplots(figsize=figsize)
-        plt.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
@@ -2190,14 +2225,16 @@ class BaseModelPlotter(BasePlotter):
                     l_set = f" - {set_}" if len(dataset) > 1 else ""
                     label = f"{m.name}{l_set} (Lift={round(m.scoring('lift'), 3)})"
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                plt.plot(x, gains / x, lw=2, label=label)
+                ax.plot(x, gains / x, lw=2, label=label)
 
         self._plot(
-            title="Lift curve" if not title else title,
+            ax=ax,
+            title="Lift curve" if title is None else title,
             legend="upper right",
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -2261,10 +2298,16 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "force_plot")
         check_is_fitted(self, "results")
+
+        if BasePlotter._fig.is_canvas:
+            raise PermissionError(
+                "The force_plot method can not be called from a "
+                "canvas because of incompatibility of the APIs."
+            )
+
         m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index)
         tgt_int, tgt_str = self._get_target(target)
-
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
         sns.set_style("white")  # Only for this plot
@@ -2280,7 +2323,7 @@ class BaseModelPlotter(BasePlotter):
         sns.set_style(self.style)
         if kwargs.get("matplotlib"):
             self._plot(
-                title="" if not title else title, filename=filename, display=display
+                title="" if title is None else title, filename=filename, display=display
             )
         else:
             if filename:  # Save to an html file
@@ -2352,11 +2395,13 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "dependence_plot")
         check_is_fitted(self, "results")
+
         m = self._get_subclass(models, max_one=True)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         shap.dependence_plot(
             ind=index,
             shap_values=shap_values,
@@ -2368,11 +2413,11 @@ class BaseModelPlotter(BasePlotter):
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
-        if not title:
+        if title is None:
             title = "Dependence plot"
             if tgt_int == 0 or self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
-        self._plot(title=title, filename=filename, display=display)
+        self._plot(ax, title=title, figsize=figsize, filename=filename, display=display)
 
     @composed(crash, plot_from_model, typechecked)
     def summary_plot(
@@ -2426,15 +2471,14 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "summary_plot")
         check_is_fitted(self, "results")
+
         m = self._get_subclass(models, max_one=True)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
 
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show / 2))
-
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         shap.summary_plot(
             shap_values=shap_values,
             features=self.X_test,
@@ -2445,11 +2489,17 @@ class BaseModelPlotter(BasePlotter):
         )
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        if not title:
+        if title is None:
             title = "Summary plot"
             if tgt_int == 0 or self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
-        self._plot(title=title, filename=filename, display=display)
+        self._plot(
+            ax=ax,
+            title=title,
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def decision_plot(
@@ -2459,7 +2509,7 @@ class BaseModelPlotter(BasePlotter):
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
         **kwargs,
@@ -2515,16 +2565,15 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "decision_plot")
         check_is_fitted(self, "results")
+
         m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show / 2))
-
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         shap.decision_plot(
             base_value=expected_value,
             shap_values=shap_values,
@@ -2536,11 +2585,17 @@ class BaseModelPlotter(BasePlotter):
         )
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        if not title:
+        if title is None:
             title = "Decision plot"
             if tgt_int == 0 or self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
-        self._plot(title=title, filename=filename, display=display)
+        self._plot(
+            ax=ax,
+            title=title,
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def waterfall_plot(
@@ -2550,7 +2605,7 @@ class BaseModelPlotter(BasePlotter):
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -2603,21 +2658,20 @@ class BaseModelPlotter(BasePlotter):
         """
         check_dim(self, "waterfall_plot")
         check_is_fitted(self, "results")
-        m = self._get_subclass(models, max_one=True)
 
-        # If index is left to default, give a random index of the test set
+        # If index is None, give a random index of the test set
         if index is None:
             index = random.randint(len(self.train), len(self.dataset))
 
+        m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
-        if figsize is None:  # Default figsize depends on features shown
-            figsize = (10, int(4 + show / 2))
-
         # Use legacy for consistency with other plot methods
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         shap.plots._waterfall.waterfall_legacy(
             expected_value=expected_value,
             shap_values=shap_values[0],
@@ -2626,12 +2680,17 @@ class BaseModelPlotter(BasePlotter):
             show=False,
         )
 
-        plt.gcf().set_size_inches(*figsize)  # Set figure size after creation
-        if not title:
+        if title is None:
             title = "Waterfall plot"
             if tgt_int == 0 or self.task.startswith("multi"):
                 title += f" for {m.y.name}={tgt_str}"
-        self._plot(title=title, filename=filename, display=display)
+        self._plot(
+            ax=ax,
+            title=title,
+            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            filename=filename,
+            display=display
+        )
 
 
 class SuccessiveHalvingPlotter(BaseModelPlotter):
@@ -2686,28 +2745,31 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
                 "halving to use the plot_successive_halving method!"
             )
 
-        fig, ax = plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             # Make df with rows for only that model
             df = self._results.xs(m.name, level="model")
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
             if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                plt.plot(df.index.values, y, lw=2, marker="o", label=m.name)
+                ax.plot(df.index.values, y, lw=2, marker="o", label=m.name)
             else:
-                plt.plot(df.index.values, y, lw=2, marker="o")
-                plt.errorbar(df.index.values, y, std, lw=1, marker="o", label=m.name)
-                plt.fill_between(df.index.values, y + std, y - std, alpha=0.3)
+                ax.plot(df.index.values, y, lw=2, marker="o")
+                ax.errorbar(df.index.values, y, std, lw=1, marker="o", label=m.name)
+                ax.fill_between(df.index.values, y + std, y - std, alpha=0.3)
 
         range_ = self._results.index.get_level_values("n_models")
-        plt.xlim(max(range_) + 0.1, min(range_) - 0.1)
+        ax.set_xlim(max(range_) + 0.1, min(range_) - 0.1)
         ax.set_xticks(range(1, max(range_) + 1))
 
         self._plot(
-            title="Successive halving results" if not title else title,
+            ax=ax,
+            title="Successive halving results" if title is None else title,
             legend="lower right",
             xlabel="n_models",
             ylabel=self.metric_[metric].name,
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -2765,7 +2827,8 @@ class TrainSizingPlotter(BaseModelPlotter):
                 "sizing to use the plot_learning_curve method!"
             )
 
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         for m in models:
             # Make df with rows for only that model
             df = self._results.xs(m.name, level="model")
@@ -2773,18 +2836,20 @@ class TrainSizingPlotter(BaseModelPlotter):
             y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
             std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
             if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                plt.plot(x, y, lw=2, marker="o", label=m.name)
+                ax.plot(x, y, lw=2, marker="o", label=m.name)
             else:
-                plt.plot(x, y, lw=2, marker="o")
-                plt.errorbar(x, y, std, lw=1, marker="o", label=m.name)
-                plt.fill_between(x, y + std, y - std, alpha=0.3)
+                ax.plot(x, y, lw=2, marker="o")
+                ax.errorbar(x, y, std, lw=1, marker="o", label=m.name)
+                ax.fill_between(x, y + std, y - std, alpha=0.3)
 
-        plt.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
+        ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
         self._plot(
-            title="Learning curve" if not title else title,
+            ax=ax,
+            title="Learning curve" if title is None else title,
             legend="lower right",
             xlabel="Number of training samples",
             ylabel=self.metric_[metric].name,
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -2835,7 +2900,8 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         mask[np.triu_indices_from(mask, k=1)] = True
 
         sns.set_style("white")  # Only for this plot
-        plt.subplots(figsize=figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
         sns.heatmap(
             data=corr,
             mask=mask,
@@ -2843,11 +2909,14 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
             vmax=0.3,
             center=0,
             linewidths=0.5,
+            ax=ax,
             cbar_kws={"shrink": 0.8},
         )
         sns.set_style(self.style)  # Set back to original style
         self._plot(
-            title="Feature correlation matrix" if not title else title,
+            ax=ax,
+            title="Feature correlation matrix" if title is None else title,
+            figsize=figsize,
             filename=filename,
             display=display,
         )
@@ -2858,7 +2927,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         show_params: bool = True,
         branch: Optional[str] = None,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[int, int]] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
     ):
@@ -2908,14 +2977,15 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
                 ylim += len(params[-1]) * 10
 
         sns.set_style("white")  # Only for this plot
-        fig, ax = plt.subplots(figsize=(8, int(ylim / 30)) if not figsize else figsize)
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid_location())
 
         # Shared parameters for the blocks
         con = ConnectionStyle("angle", angleA=0, angleB=90, rad=0)
         arrow = dict(arrowstyle="<|-", lw=1, color="k", connectionstyle=con)
 
         # Draw the main class
-        plt.text(
+        ax.text(
             x=20,
             y=ylim - 20,
             s=self.__class__.__name__,
@@ -2927,7 +2997,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         pos_estimator = pos_param
 
         for i, est in enumerate(self._branches[branch].estimators):
-            plt.annotate(
+            ax.annotate(
                 text=est.__class__.__name__,
                 xy=(15, pos_estimator),
                 xytext=(30, pos_param - 3 - 15),
@@ -2941,7 +3011,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
 
             if show_params:
                 for j, key in enumerate(params[i]):
-                    plt.annotate(
+                    ax.annotate(
                         text=key + ": " + str(flt(getattr(est, key))),
                         xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
                         xytext=(40, pos_param - 12),
@@ -2958,9 +3028,11 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
 
         sns.set_style(self.style)  # Set back to original style
         self._plot(
-            title="" if not title else title,
+            ax=ax,
+            title="" if title is None else title,
             xlim=(0, 100),
             ylim=(0, ylim),
+            figsize=figsize if figsize else (8, int(ylim / 30)),
             filename=filename,
             display=display,
         )

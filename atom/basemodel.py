@@ -34,9 +34,9 @@ from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_mi
 # Own modules
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS, flt, lst,
-    merge, arr, check_scaling, time_to_string, catch_return, transform,
-    composed, get_best_score, crash, method_to_log, PlotCallback,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS,
+    flt, lst, merge, arr, check_scaling, time_to_string, catch_return,
+    transform, composed, get_best_score, crash, method_to_log, PlotCallback,
 )
 
 
@@ -402,10 +402,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Prepare callbacks
         callbacks = []
         if bo_params.get("callbacks"):
-            if not isinstance(bo_params["callbacks"], (list, tuple)):
-                callbacks = [bo_params["callbacks"]]
-            else:
-                callbacks = bo_params["callbacks"]
+            callbacks = lst(bo_params["callbacks"])
             bo_params.pop("callbacks")
 
         if bo_params.get("max_time"):

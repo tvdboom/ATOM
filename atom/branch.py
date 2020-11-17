@@ -23,11 +23,9 @@ class Branch(object):
 
     Parameters
     ----------
-    T: class
-        Parent class from which the branch is called.
-
-    name: str
-        Name of the branch.
+    *args: arguments
+        Parent class from which the branch is called and name of
+        the branch.
 
     estimators: pd.Series or None, optional (default=None)
         Sequence of estimators fitted on the data in the branch.
@@ -42,13 +40,22 @@ class Branch(object):
         Dictionary of the target values mapped to their respective
         encoded integer.
 
+    feature_importance: list, optional (default=None)
+        Features ordered by most to least important.
+
     """
 
-    def __init__(self, T, name, estimators=None, data=None, idx=None, mapping=None):
-        self.T = T
-        self.name = name
-
+    def __init__(
+            self,
+            *args,
+            estimators=None,
+            data=None,
+            idx=None,
+            mapping=None,
+            feature_importance=None
+    ):
         # Make copies of the parameters to not overwrite mutable variables
+        self.T, self.name = args[0], args[1]
         if estimators is None:
             self.estimators = pd.Series([], name=self.name, dtype="object")
         else:
@@ -56,6 +63,7 @@ class Branch(object):
         self.data = deepcopy(data)
         self.idx = copy(idx)
         self.mapping = copy(mapping)
+        self.feature_importance = copy(feature_importance)
 
     def __repr__(self):
         out = "Branches:"

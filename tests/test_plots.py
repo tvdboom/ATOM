@@ -88,6 +88,26 @@ def test_tick_fontsize_setter():
         BasePlotter().tick_fontsize = 0
 
 
+def test_canvas():
+    """Assert that the canvas works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas"):
+        atom.plot_prc()
+        atom.plot_roc()
+    assert glob.glob(FILE_DIR + "canvas.png")
+
+
+def test_canvas_too_many_plots():
+    """Assert that the canvas works."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas"):
+        atom.plot_prc()
+        atom.plot_roc()
+        pytest.raises(RuntimeError, atom.plot_prc)
+
+
 # Test plots ======================================================= >>
 
 def test_plot_correlation():

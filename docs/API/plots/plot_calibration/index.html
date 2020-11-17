@@ -604,7 +604,7 @@ Whether to render the plot.
 <hr />
 <pre><code class="python">from atom import ATOMClassifier
 
-atom = ATOMClassifier(X)
+atom = ATOMClassifier(X, y)
 atom.run([&quot;GNB&quot;, &quot;LR&quot;, &quot;LGB&quot;], metric=&quot;average_precision&quot;)
 atom.plot_calibration()
 </code></pre>

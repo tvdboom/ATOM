@@ -288,7 +288,7 @@ inspect the pipeline.
 
 <table>
 <tr>
-<td width="15%"><a href="#clear">clear</a></td>
+<td width="15%"><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
 

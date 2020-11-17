@@ -882,7 +882,12 @@ inspect the pipeline.</p>
 </tr>
 
 <tr>
-<td width="15%"><a href="#clear">clear</a></td>
+<td width="15%"><a href="#canvas">canvas</a></td>
+<td>Create a figure with multiple plots.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
 
@@ -945,6 +950,47 @@ Additional keyword arguments for the <a href="https://scikit-learn.org/stable/mo
  instance. Using cv="prefit" will use the trained model and fit the calibrator on the
  test set. Note that doing this will result in data leakage in the test set. Use this
  only if you have another, independent set for testing.
+</blockquote>
+</tr>
+</table>
+</div>
+<br /></p>
+<p><a name="canvas"></a>
+<pre><em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1, ncols=2, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L385">[source]</a></div></pre>
+<div style="padding-left:3%">
+This <code>@contextmanager</code> allows you to draw many plots in one figure. The default
+ option is to add two plots side by side. See the <a href="../../../user_guide/#canvas">user guide</a>
+ for an example use case.
+<br /><br />
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>nrows: int, optional (default=1)</strong>
+<blockquote>
+Number of plots in length.
+</blockquote>
+<strong>ncols: int, optional (default=2)</strong>
+<blockquote>
+Number of plots in width.
+</blockquote>
+<strong>title: str or None, optional (default=None)</strong>
+<blockquote>
+Plot's title. If None, the default option is used.
+</blockquote>
+<strong>figsize: tuple or None, optional (default=None)</strong>
+<blockquote>
+Figure's size, format as (x, y). If None, adapts size to the number of plots
+ in the canvas.
+</blockquote>
+<strong>filename: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the file. If None, the figure is not saved.
+</blockquote>
+<strong>display: bool, optional (default=True)</strong>
+<blockquote>
+Whether to render the plot.
 </blockquote>
 </tr>
 </table>

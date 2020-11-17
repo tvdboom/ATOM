@@ -71,9 +71,11 @@ from matplotlib.gridspec import GridSpec
 
 # Global constants ================================================= >>
 
+SEQUENCE = (list, tuple, np.ndarray, pd.Series)
+
 # Variable types
 SCALAR = Union[int, float]
-SEQUENCE_TYPES = Union[list, tuple, np.ndarray, pd.Series]
+SEQUENCE_TYPES = Union[SEQUENCE]
 X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
 Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
@@ -150,12 +152,12 @@ BALANCER_TYPES = dict(
 
 def flt(item):
     """Return value if item is sequence of length 1."""
-    return item[0] if isinstance(item, (list, tuple)) and len(item) == 1 else item
+    return item[0] if isinstance(item, SEQUENCE) and len(item) == 1 else item
 
 
 def lst(item):
     """Return list if item is not a sequence."""
-    return [item] if not isinstance(item, (list, tuple)) else item
+    return [item] if not isinstance(item, SEQUENCE) else item
 
 
 def it(item):
@@ -200,6 +202,32 @@ def check_dim(cls, method):
         raise PermissionError(
             f"The {method} method is not available for deep learning datasets!"
         )
+
+
+def check_goal(cls, method, goal):
+    """Raise an error if the goal is invalid."""
+    if not cls.goal == goal:
+        raise PermissionError(
+            f"The {method} method is only available for {goal} tasks!"
+        )
+
+
+def check_binary_task(cls, method):
+    """Raise an error if the task is invalid."""
+    if not cls.task.startswith("bin"):
+        raise PermissionError(
+            f"The {method} method is only available for binary classification tasks!"
+        )
+
+
+def check_predict_proba(models, method):
+    """Raise an error if a model doesn't have a predict_proba method."""
+    for m in models:
+        if not hasattr(m.estimator, "predict_proba"):
+            raise AttributeError(
+                f"The {method} method is only available "
+                f"for models with a predict_proba method, got {m}."
+            )
 
 
 def check_scaling(X):
@@ -281,9 +309,9 @@ def to_df(data, index=None, columns=None, pca=False):
     """
     if not isinstance(data, pd.DataFrame):
         if columns is None and not pca:
-            columns = ["Feature " + str(i) for i in range(len(data[0]))]
+            columns = [f"Feature {str(i)}" for i in range(len(data[0]))]
         elif columns is None:
-            columns = ["Component " + str(i) for i in range(len(data[0]))]
+            columns = [f"Component {str(i)}" for i in range(len(data[0]))]
         data = pd.DataFrame(data, index=index, columns=columns)
 
     return data
@@ -489,14 +517,11 @@ def check_is_fitted(estimator, attributes=None, msg=None):
 
     if msg is None:
         msg = (
-            f"This {type(estimator).__name__} instance is not fitted yet. "
-            "Call 'fit' with appropriate arguments before using this estimator."
+            f"This {type(estimator).__name__} instance is not fitted yet. Call "
+            "'fit' or 'run' with appropriate arguments before using this estimator."
         )
 
-    if not isinstance(attributes, (list, tuple)):
-        attributes = [attributes]
-
-    if all([check_attr(attr) for attr in attributes]):
+    if all([check_attr(attr) for attr in lst(attributes)]):
         raise NotFittedError(msg)
 
 
@@ -898,7 +923,7 @@ def plot_from_model(f):
 
     def wrapper(*args, **kwargs):
         if hasattr(args[0], "T"):
-            result = f(args[0].T, args[0].acronym, *args[1:], **kwargs)
+            result = f(args[0].T, args[0].name, *args[1:], **kwargs)
         else:
             result = f(*args, **kwargs)
         return result
@@ -911,6 +936,76 @@ def plot_from_model(f):
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted."""
     pass
+
+
+class BaseFigure(object):
+    """Class that stores the position of the current axes in grid.
+
+    Parameters
+    ----------
+    nrows: int
+        Number of subplot rows in the canvas.
+
+    ncols: int
+        Number of subplot columns in the canvas.
+
+    """
+
+    def __init__(self, nrows=1, ncols=1, is_canvas=False):
+        self.nrows = nrows
+        self.ncols = ncols
+        self.is_canvas = is_canvas
+        self._size = 12  # Grid size per plot (row x col = 12 x 12)
+        self._idx = -1
+
+        # Create new figure and corresponding grid
+        self.grid = GridSpec(
+            nrows=self.nrows * self._size,
+            ncols=self.ncols * self._size,
+            figure=plt.figure(constrained_layout=True)
+        )
+
+    @property
+    def figure(self):
+        """Get the current figure and increase the subplot index."""
+        self._idx += 1
+
+        # Check if there are too many plots in the contextmanager
+        if self._idx >= self.nrows * self.ncols:
+            raise RuntimeError(
+                "Invalid number of plots in the canvas! Increase "
+                "the number of rows and cols to add more plots."
+            )
+
+        return plt.gcf()
+
+    def grid_location(self, rows=None, cols=None):
+        """Return the location of a plot in the grid.
+
+        Parameters
+        ----------
+        rows: tuple or None, optional (default=None)
+            If tuple, start and end index of the plot in the height of
+            the grid. If None, use the whole height (within the index).
+
+        cols: tuple or None, optional (default=None)
+            If tuple, start and end index of the plot in the width of
+            the grid. If None, use the whole width (within the index).
+
+        """
+        # Set default value to complete width/height
+        if not rows:
+            rows = (0, self._size)
+        if not cols:
+            cols = (0, self._size)
+
+        # Calculate the position of the subplot in the grid
+        pos_row = self._size * (self._idx // self.ncols)
+        pos_col = self._size * (self._idx % self.ncols)
+        slice_row = slice(pos_row + rows[0], pos_row + rows[1])
+        slice_col = slice(pos_col + cols[0], pos_col + cols[1])
+
+        return self.grid[slice_row, slice_col]
 
 
 class PlotCallback(object):

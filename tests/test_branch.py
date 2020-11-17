@@ -23,14 +23,12 @@ def test_estimators_to_empty_series():
     assert atom.branch.estimators.empty
 
 
-def test_input_is_copied():
+@pytest.mark.parametrize("param", ["estimators", "data", "idx", "mapping"])
+def test_input_is_copied(param):
     """Assert that the parameters are copied to attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
-    assert atom.branch.estimators is not atom._branches["main"].estimators
-    assert atom.branch.data is not atom._branches["main"].data
-    assert atom.branch.idx is not atom._branches["main"].idx
-    assert atom.branch.mapping is not atom._branches["main"].mapping
+    assert getattr(atom.branch, param) is not getattr(atom._branches["main"], param)
 
 
 # Test __repr__ ==================================================== >>

@@ -19,7 +19,7 @@ from .models import MODEL_LIST
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer, Scaler
 from .utils import (
-    OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score,
+    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score,
     time_to_string, get_metric, get_default_metric, fit_init, delete
 )
 
@@ -188,11 +188,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
-        if not isinstance(self.models, (list, tuple)):
-            self.models = [self.models]
-
         models = []
-        for m in self.models:
+        for m in lst(self.models):
             if isinstance(m, str):
                 # Get the models' right acronym
                 acronym = None
@@ -251,7 +248,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Check validity BO parameters ============================= >>
 
-        if isinstance(self.n_calls, (list, tuple)):
+        if isinstance(self.n_calls, SEQUENCE):
             if len(self.n_calls) != len(self.models):
                 raise ValueError(
                     "Invalid value for the n_calls parameter. Length should "
@@ -260,7 +257,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
         else:
             self.n_calls = [self.n_calls for _ in self.models]
-        if isinstance(self.n_initial_points, (list, tuple)):
+        if isinstance(self.n_initial_points, SEQUENCE):
             if len(self.n_initial_points) != len(self.models):
                 raise ValueError(
                     "Invalid value for the n_initial_points parameter. Length "
@@ -270,7 +267,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
         else:
             self.n_initial_points = [self.n_initial_points for _ in self.models]
-        if isinstance(self.bagging, (list, tuple)):
+        if isinstance(self.bagging, SEQUENCE):
             if len(self.bagging) != len(self.models):
                 raise ValueError(
                     "Invalid value for the bagging parameter. Length should "
@@ -337,7 +334,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
         """Return a list of scorers given the parameters."""
-        if isinstance(gib, (list, tuple)):
+        if isinstance(gib, SEQUENCE):
             if len(gib) != len(metric):
                 raise ValueError(
                     "Invalid value for the greater_is_better parameter. Length "
@@ -347,7 +344,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         else:
             gib = [gib for _ in metric]
 
-        if isinstance(needs_proba, (list, tuple)):
+        if isinstance(needs_proba, SEQUENCE):
             if len(needs_proba) != len(metric):
                 raise ValueError(
                     "Invalid value for the needs_proba parameter. Length should "
@@ -357,7 +354,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         else:
             needs_proba = [needs_proba for _ in metric]
 
-        if isinstance(needs_threshold, (list, tuple)):
+        if isinstance(needs_threshold, SEQUENCE):
             if len(needs_threshold) != len(metric):
                 raise ValueError(
                     "Invalid value for the needs_threshold parameter. Length should "
