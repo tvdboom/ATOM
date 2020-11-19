@@ -56,7 +56,7 @@ In this documentation we will consistently use terms to refer to certain concept
     - [multiclass classification](https://en.wikipedia.org/wiki/Multiclass_classification)
     - [regression](https://en.wikipedia.org/wiki/Regression_analysis)
 * **class**: Unique value in a column, e.g. a binary classifier has 2 classes in the target column.
-* **sequence**: One-dimensional array of variable type `list`, `tuple`, `np.array` or `pd.Series`.
+* **sequence**: One-dimensional array of variable type `list`, `tuple`, `np.ndarray` or `pd.Series`.
 * **predictor**: An estimator implementing a `predict` method. This encompasses all
   classifiers and regressors.
 * **transformer**: An estimator implementing a `transform` method. This encompasses all
@@ -1064,7 +1064,7 @@ For example, we can use a canvas to compare the results of a [XGBoost](../API/mo
  and [LightGBM](../API/models/lgb) model on the train and test set. We could
  also draw the lines for both models in the same axes, but then the plot could
  become too messy.
- 
+
 ```python
 atom = ATOMClassifier(X, y)
 atom.run(["xgb", "lgb"], n_calls=0)

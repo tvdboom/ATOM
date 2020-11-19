@@ -40,7 +40,7 @@ class BaseCleaner(object):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -106,7 +106,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -128,7 +128,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -246,7 +246,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -418,7 +418,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -489,7 +489,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -682,7 +682,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence

@@ -147,7 +147,7 @@ class BaseTransformer(object):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)

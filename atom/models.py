@@ -1691,7 +1691,6 @@ class MultilayerPerceptron(BaseModel):
 
 # List of all the available models
 MODEL_LIST = dict(
-    custom=CustomModel,
     GP=GaussianProcess,
     GNB=GaussianNaiveBayes,
     MNB=MultinomialNaiveBayes,

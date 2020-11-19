@@ -15,12 +15,14 @@ import matplotlib.pyplot as plt
 
 # Own modules
 from .branch import Branch
-from .models import MODEL_LIST
+from .voting import VotingModel
+from .models import MODEL_LIST, CustomModel
 from .basepredictor import BasePredictor
-from .data_cleaning import BaseTransformer, Scaler
+from .data_cleaning import BaseTransformer
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, get_best_score,
-    time_to_string, get_metric, get_default_metric, fit_init, delete
+    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst,
+    get_best_score, time_to_string, get_metric, get_default_metric,
+    fit_init, delete
 )
 
 
@@ -160,10 +162,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Branching attributes
         self._current = "main"  # Current (and only) branch
         self._branches = {self._current: Branch(self, self._current)}
-        self.scaler = None
         self.task = None
 
         # Model attributes
+        self.vote = VotingModel(self)
         self.errors = {}
         self._results = pd.DataFrame(
             columns=[
@@ -184,7 +186,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # If no data was provided and there already is a dataset, skip
         if len(arrays) > 0 or self.branch.data is None:
             self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
-            self.scaler = None  # Reset scaler in case of a rerun with new data
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
@@ -193,15 +194,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             if isinstance(m, str):
                 # Get the models' right acronym
                 acronym = None
-                model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
-                for model in model_list:
+                for model in MODEL_LIST:
                     # Use startswith because models can be tagged
                     if m.lower().startswith(model.lower()):
                         acronym = model
 
                 if not acronym:
                     raise ValueError(
-                        f"Unknown model: {m}! Choose from: {', '.join(model_list)}."
+                        f"Unknown model: {m}! Choose from: {', '.join(MODEL_LIST)}."
                     )
 
                 # Check if packages for non-sklearn models are available
@@ -228,7 +228,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 subclass.name = acronym + m[len(acronym):]
 
             else:  # Model is custom estimator
-                subclass = MODEL_LIST["custom"](self, m)
+                subclass = CustomModel(self, m)
                 subclass.name = subclass.acronym
 
             # Add the model to the pipeline and check for duplicates
@@ -399,10 +399,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             # Add est_params to the model
             mdl._est_params = fit_init(self.est_params.get(mdl.name, {}), False)
             mdl._est_params_fit = fit_init(self.est_params.get(mdl.name, {}), True)
-
-            # Create scaler if model needs scaling and data not already scaled
-            if mdl.needs_scaling and not self.scaler:
-                self.scaler = Scaler().fit(self.X_train)
 
             try:  # If errors occurs, skip the model
                 # If it has custom dimensions, run the BO

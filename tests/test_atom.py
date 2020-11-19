@@ -91,7 +91,7 @@ def test_repr():
 
 # Test branch properties =========================================== >>
 
-def test_branch_setter_invalid():
+def test_branch_setter_empty():
     """Assert that an error is raised when the name is empty."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     with pytest.raises(ValueError, match=r".*Can't create a branch.*"):
@@ -113,6 +113,22 @@ def test_branch_setter_new():
     atom.clean()
     atom.branch = "branch_2"
     assert list(atom._branches.keys()) == ["main", "branch_2"]
+
+
+def test_branch_setter_from_valid():
+    """Assert that we cna create a new pipeline not from the current one."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.branch = "branch_2"
+    atom.impute()
+    atom.branch = "branch_3_from_main"
+    assert atom.n_nans > 0
+
+
+def test_branch_setter_from_invalid():
+    """Assert that an error is raised when the from branch doesn't exist."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*branch to split from does not exist.*"):
+        atom.branch = "new_branch_from_invalid"
 
 
 def test_branch_deleter():

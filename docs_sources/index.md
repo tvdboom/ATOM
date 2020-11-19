@@ -87,11 +87,12 @@ Example steps taken by ATOM's pipeline:
 # Release history
 -----------------
 
-### Version 4.2.0
+### Version 4.2.0 - Coming soon
 
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
 * Compatibility with [deep learning](./user_guide/#deep-learning) models.
 * New branch system for different data pipelines. Read more in the [user guide](./user_guide/#data-pipelines).
+* Use the [canvas](./API/ATOM/atomclassifier#canvas) contextmanager to draw multiple plots in one figure.
 * New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
@@ -109,7 +110,8 @@ Example steps taken by ATOM's pipeline:
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
-### Version 4.1.0
+### Version 4.1.0 - 16 October 2020
+
 * Added the `est_params` parameter to customize the parameters passed to every model's
   estimator.
 * Following skopt's API, the `n_random_starts` parameter is deprecated in favour of
@@ -123,14 +125,18 @@ Example steps taken by ATOM's pipeline:
 * Small changes in log outputs.
 * Bug fixes and performance improvements.
 
-### Version 4.0.1
+
+### Version 4.0.1 - 29 September 2020
+
 * Bug fix where the DFS strategy in [FeatureGenerator](./API/feature_engineering/feature_generator)
   was not deterministic for a fixed random state.
 * Bug fix where subsequent runs with the same metric failed.
 * Added the [license](./license) file to the package's installer.
 * Typo fixes in documentation.
 
-### Version 4.0.0
+
+### Version 4.0.0 - 28 September 2020
+
 * Bayesian optimization package changed from [GpyOpt](http://sheffieldml.github.io/GPyOpt/)
   to [skopt](https://scikit-optimize.github.io/stable/).
 * Complete revision of the model's hyperparameters.

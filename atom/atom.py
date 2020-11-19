@@ -16,6 +16,7 @@ from pandas_profiling import ProfileReport
 
 # Own modules
 from .branch import Branch
+from .voting import VotingModel
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
@@ -39,7 +40,7 @@ from .plots import ATOMPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, merge,
     check_property, infer_task, check_dim, check_scaling, transform,
-    method_to_log, composed, crash
+    method_to_log, composed, crash,
 )
 
 
@@ -68,6 +69,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Training attributes
         self._approach = None  # Approach adopted by this instance
+        self.vote = VotingModel(self)
         self.models = []
         self.metric_ = []
         self.errors = {}
@@ -106,9 +108,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             classes = self.y.unique()
         self.branch.mapping = {str(value): value for value in classes}
 
-        self.log('')  # Add empty rows around stats for cleaner look
+        self.log('', 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
-        self.log('')
+        self.log('', 1)
 
     def __repr__(self):
         out = f"{self.__class__.__name__}"
@@ -135,17 +137,29 @@ class ATOM(BasePredictor, ATOMPlotter):
             self._current = branch.lower()
             self.log(f"Switched to branch '{branch}'.", 1)
         else:
-            self._branches[branch.lower()] = Branch(
+            # Branch can be created from current or another
+            if "_from_" in branch:
+                new_branch, from_branch = branch.lower().split("_from_")
+            else:
+                new_branch, from_branch = branch.lower(), self._current
+
+            if from_branch not in self._branches:
+                raise ValueError(
+                    "The selected branch to split from does not exist! Print "
+                    "atom.branch for an overview of the branches in the pipeline."
+                )
+
+            self._branches[new_branch] = Branch(
                 self,
-                branch.lower(),
-                estimators=self.branch.estimators,
-                data=self.branch.data,
-                idx=self.branch.idx,
-                mapping=self.mapping,
-                feature_importance=self.feature_importance,
+                new_branch,
+                estimators=self._branches[from_branch].estimators,
+                data=self._branches[from_branch].data,
+                idx=self._branches[from_branch].idx,
+                mapping=self._branches[from_branch].mapping,
+                feature_importance=self._branches[from_branch].feature_importance,
             )
-            self._current = branch.lower()
-            self.log(f"New branch '{branch}' successfully created!", 1)
+            self._current = new_branch
+            self.log(f"New branch '{self._current}' successfully created!", 1)
 
     @branch.deleter
     def branch(self):
@@ -277,7 +291,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -940,7 +954,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @BasePredictor.y.setter
     @typechecked
-    def y(self, y: Union[list, tuple, dict, np.ndarray, pd.Series]):
+    def y(self, y: Union[list, tuple, dict, np.array, pd.Series]):
         series = check_property(y, "y", side=self.X, side_name="X")
         self.branch.data = merge(self.branch.data.drop(self.target, axis=1), series)
 
@@ -972,7 +986,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @BasePredictor.y_train.setter
     @typechecked
-    def y_train(self, y_train: Union[list, tuple, dict, np.ndarray, pd.Series]):
+    def y_train(self, y_train: Union[list, tuple, dict, np.array, pd.Series]):
         series = check_property(
             value=y_train,
             value_name="y_train",
@@ -985,7 +999,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @BasePredictor.y_test.setter
     @typechecked
-    def y_test(self, y_test: Union[list, tuple, dict, np.ndarray, pd.Series]):
+    def y_test(self, y_test: Union[list, tuple, dict, np.array, pd.Series]):
         series = check_property(
             value=y_test,
             value_name="y_test",

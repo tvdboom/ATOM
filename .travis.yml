@@ -2,8 +2,7 @@ language: python
 python:
   - "3.6"  # Current default Python on Travis CI
   - "3.7"
-  - "3.8"
-  - "3.9"
+  - "3.8"  # TODO: Add python 3.9 to build as soon as tensorflow allows it
 before_install:
   - pip install -U pip
   - pip install -U pytest

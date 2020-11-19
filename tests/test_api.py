@@ -109,7 +109,8 @@ def test_n_rows():
 def test_transform_data():
     """Assert that the data is transformed or not depending on the parameter."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.outliers(include_target=True)
+    atom.clean()
+    atom.outliers()
     atom.balance()
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)

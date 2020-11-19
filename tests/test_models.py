@@ -27,9 +27,9 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
 
 # Variables ======================================================== >>
 
-binary = [m for m in MODEL_LIST if m not in ["custom", "CatNB"] + ONLY_REG]
-multiclass = [m for m in MODEL_LIST if m not in ["custom", "CatNB", "CatB"] + ONLY_REG]
-regression = [m for m in MODEL_LIST if m not in ["custom"] + ONLY_CLASS]
+binary = [m for m in MODEL_LIST if m not in ["CatNB"] + ONLY_REG]
+multiclass = [m for m in MODEL_LIST if m not in ["CatNB", "CatB"] + ONLY_REG]
+regression = [m for m in MODEL_LIST if m not in ONLY_CLASS]
 
 
 # Functions ======================================================= >>
@@ -45,8 +45,8 @@ def neural_network():
 
     return model
 
-# Tests =========================================================== >>
 
+# Test custom models =============================================== >>
 
 @pytest.mark.parametrize("model", [RandomForestRegressor, RandomForestRegressor()])
 def test_custom_models(model):
@@ -75,6 +75,8 @@ def test_deep_learning_models():
     atom.run(models=model)
     assert not atom.errors
 
+
+# Test predefined models =========================================== >>
 
 @pytest.mark.parametrize("model", binary)
 def test_models_binary(model):

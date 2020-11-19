@@ -16,7 +16,8 @@ from typeguard import typechecked
 # Own modules
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide,
-    check_is_fitted, get_best_score, delete, method_to_log, composed, crash
+    check_is_fitted, get_best_score, delete, method_to_log, composed,
+    crash
 )
 
 
@@ -241,7 +242,7 @@ class BasePredictor(object):
         """
         check_is_fitted(self, "results")
 
-        # If a metric_ acronym is used, assign the correct name
+        # If a metric acronym is used, assign the correct name
         if metric and metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
 

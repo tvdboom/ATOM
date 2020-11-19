@@ -21,12 +21,13 @@ from typing import Optional, Union, Tuple
 
 # Plotting packages
 import shap
-from matplotlib import transforms
+import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib import transforms
+from matplotlib.gridspec import GridSpec
 from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import ConnectionStyle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-import seaborn as sns
 
 # Sklearn
 from sklearn.utils import _safe_indexing
@@ -37,11 +38,80 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, arr,
-    check_is_fitted, check_dim, check_goal, check_binary_task,
-    check_predict_proba, get_best_score, partial_dependence, composed,
-    crash, plot_from_model, BaseFigure,
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted,
+    check_dim, check_goal, check_binary_task, check_predict_proba,
+    get_best_score, partial_dependence, composed, crash, plot_from_model,
 )
+
+
+class BaseFigure(object):
+    """Class that stores the position of the current axes in grid.
+
+    Parameters
+    ----------
+    nrows: int
+        Number of subplot rows in the canvas.
+
+    ncols: int
+        Number of subplot columns in the canvas.
+
+    """
+
+    def __init__(self, nrows=1, ncols=1, is_canvas=False):
+        self.nrows = nrows
+        self.ncols = ncols
+        self.is_canvas = is_canvas
+        self._size = 12  # Grid size per plot (row x col = 12 x 12)
+        self._idx = -1
+
+        # Create new figure and corresponding grid
+        self.grid = GridSpec(
+            nrows=self.nrows * self._size,
+            ncols=self.ncols * self._size,
+            figure=plt.figure(constrained_layout=True)
+        )
+
+    @property
+    def figure(self):
+        """Get the current figure and increase the subplot index."""
+        self._idx += 1
+
+        # Check if there are too many plots in the contextmanager
+        if self._idx >= self.nrows * self.ncols:
+            raise RuntimeError(
+                "Invalid number of plots in the canvas! Increase "
+                "the number of rows and cols to add more plots."
+            )
+
+        return plt.gcf()
+
+    def grid_location(self, rows=None, cols=None):
+        """Return the location of a plot in the grid.
+
+        Parameters
+        ----------
+        rows: tuple or None, optional (default=None)
+            If tuple, start and end index of the plot in the height of
+            the grid. If None, use the whole height (within the index).
+
+        cols: tuple or None, optional (default=None)
+            If tuple, start and end index of the plot in the width of
+            the grid. If None, use the whole width (within the index).
+
+        """
+        # Set default value to complete width/height
+        if not rows:
+            rows = (0, self._size)
+        if not cols:
+            cols = (0, self._size)
+
+        # Calculate the position of the subplot in the grid
+        pos_row = self._size * (self._idx // self.ncols)
+        pos_col = self._size * (self._idx % self.ncols)
+        slice_row = slice(pos_row + rows[0], pos_row + rows[1])
+        slice_col = slice(pos_col + cols[0], pos_col + cols[1])
+
+        return self.grid[slice_row, slice_col]
 
 
 class BasePlotter(object):
@@ -233,7 +303,7 @@ class BasePlotter(object):
 
     def _get_index(self, index):
         """Check and return the provided parameter index."""
-        if not index:
+        if index is None:
             rows = self.X_test
         elif isinstance(index, int):
             if index < 0:
@@ -299,6 +369,7 @@ class BasePlotter(object):
             the expected value of the model output.
 
         """
+        # TODO: Refactor to shap's newest API
         if model.type == "tree":
             explainer = shap.TreeExplainer(
                 model.estimator, feature_perturbation="tree_path_dependent"
@@ -307,9 +378,9 @@ class BasePlotter(object):
             explainer = shap.LinearExplainer(model.estimator, self.X_train)
         else:
             if len(self.X_train) <= 100:
-                k_data = arr(self.X_train)
+                k_data = self.X_train
             else:
-                k_data = shap.kmeans(arr(self.X_train), 100)
+                k_data = shap.kmeans(self.X_train, 100)
             explainer = shap.KernelExplainer(model.estimator.predict, k_data)
 
         shap_values = explainer.shap_values(data)
@@ -561,7 +632,6 @@ class FeatureSelectorPlotter(BasePlotter):
             title="Explained variance per component" if title is None else title,
             legend="lower right",
             xlabel="Explained variance ratio",
-            ylabel="Components",
             figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,
@@ -1136,16 +1206,20 @@ class BaseModelPlotter(BasePlotter):
             width=0.75 if len(models) > 1 else 0.6,
         )
 
-        # Remove seaborn's legend title
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles[1:], labels=labels[1:])
+        ax.yaxis.label.set_visible(False)
+        if len(models) > 1:
+            # Remove seaborn's legend title
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:])
+        else:
+            # Hide the legend created by seaborn
+            ax.legend().set_visible(False)
 
         self._plot(
             ax=ax,
             title=title,
-            legend="lower right",
+            legend="lower right" if len(models) > 1 else False,
             xlabel="Score",
-            ylabel="Features",
             figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,
@@ -1204,7 +1278,7 @@ class BaseModelPlotter(BasePlotter):
             if not hasattr(m.estimator, "feature_importances_") and m.acronym != "Bag":
                 raise PermissionError(
                     "The plot_feature_importance method is only available for "
-                    f"models with the feature_importances_ attribute!"
+                    f"models with a feature_importances_ attribute!"
                 )
 
             # Bagging has no direct feature importance implementation
@@ -1228,7 +1302,11 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid_location())
-        df.plot.barh(ax=ax, width=0.75 if len(models) > 1 else 0.6)
+        df.plot.barh(
+            ax=ax,
+            width=0.75 if len(models) > 1 else 0.6,
+            legend=True if len(models) > 1 else False
+        )
         if len(models) == 1:
             for i, v in enumerate(df[df.columns[0]]):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
@@ -1236,10 +1314,9 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Normalized feature importance" if title is None else title,
-            legend="lower right",
-            xlim=(0, 1.07),
+            legend="lower right" if len(models) > 1 else False,
+            xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
-            ylabel="Features",
             figsize=figsize if figsize else (10, int(4 + show / 2)),
             filename=filename,
             display=display,

@@ -563,13 +563,12 @@ def get_acronym(model):
     # Not imported on top of file because of module interconnection
     from .models import MODEL_LIST
 
-    model_list = {k: v for k, v in MODEL_LIST.items() if k != "custom"}
-    for acronym in model_list:
+    for acronym in MODEL_LIST:
         if model.lower() == acronym.lower():
             return acronym
 
     raise ValueError(
-        f"Unknown model: {model}! Choose from: {', '.join(model_list)}."
+        f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}."
     )
 
 
@@ -938,88 +937,18 @@ class NotFittedError(ValueError, AttributeError):
     pass
 
 
-class BaseFigure(object):
-    """Class that stores the position of the current axes in grid.
-
-    Parameters
-    ----------
-    nrows: int
-        Number of subplot rows in the canvas.
-
-    ncols: int
-        Number of subplot columns in the canvas.
-
-    """
-
-    def __init__(self, nrows=1, ncols=1, is_canvas=False):
-        self.nrows = nrows
-        self.ncols = ncols
-        self.is_canvas = is_canvas
-        self._size = 12  # Grid size per plot (row x col = 12 x 12)
-        self._idx = -1
-
-        # Create new figure and corresponding grid
-        self.grid = GridSpec(
-            nrows=self.nrows * self._size,
-            ncols=self.ncols * self._size,
-            figure=plt.figure(constrained_layout=True)
-        )
-
-    @property
-    def figure(self):
-        """Get the current figure and increase the subplot index."""
-        self._idx += 1
-
-        # Check if there are too many plots in the contextmanager
-        if self._idx >= self.nrows * self.ncols:
-            raise RuntimeError(
-                "Invalid number of plots in the canvas! Increase "
-                "the number of rows and cols to add more plots."
-            )
-
-        return plt.gcf()
-
-    def grid_location(self, rows=None, cols=None):
-        """Return the location of a plot in the grid.
-
-        Parameters
-        ----------
-        rows: tuple or None, optional (default=None)
-            If tuple, start and end index of the plot in the height of
-            the grid. If None, use the whole height (within the index).
-
-        cols: tuple or None, optional (default=None)
-            If tuple, start and end index of the plot in the width of
-            the grid. If None, use the whole width (within the index).
-
-        """
-        # Set default value to complete width/height
-        if not rows:
-            rows = (0, self._size)
-        if not cols:
-            cols = (0, self._size)
-
-        # Calculate the position of the subplot in the grid
-        pos_row = self._size * (self._idx // self.ncols)
-        pos_col = self._size * (self._idx % self.ncols)
-        slice_row = slice(pos_row + rows[0], pos_row + rows[1])
-        slice_col = slice(pos_col + cols[0], pos_col + cols[1])
-
-        return self.grid[slice_row, slice_col]
-
-
 class PlotCallback(object):
     """Callback to plot the BO's progress as it runs.
 
     Parameters
     ----------
-    model: class
+    M: class
         Model subclass.
 
     """
 
-    def __init__(self, model):
-        self.M = model
+    def __init__(self, *args):
+        self.M = args[0]
 
         # Plot attributes
         max_len = 15  # Maximum steps to show at once in the plot

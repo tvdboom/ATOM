@@ -32,6 +32,7 @@ from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_minimize
 
 # Own modules
+from .data_cleaning import Scaler
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS,
@@ -87,8 +88,9 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._est_params_fit = {}
 
         # BaseModel attributes
-        self.best_params = None
+        self._scaler = None
         self.estimator = None
+        self.best_params = None
         self.time_fit = None
         self.metric_bo = None
         self.time_bo = None
@@ -122,6 +124,13 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             out += f"\n --> {metric.name}: {get_best_score(self, i)}"
 
         return out
+
+    @property
+    def scaler(self):
+        """Get the model's feature scaler."""
+        if not self._scaler:
+            self._scaler = Scaler().fit(self.T.X_train)
+        return self._scaler
 
     def _get_default(self, x, params):
         """Get the standard parameter from params or the trainer.
@@ -732,7 +741,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Scale the data if needed
         if self.needs_scaling and not check_scaling(X):
-            X = self.T.scaler.transform(X)
+            X = self.scaler.transform(X)
 
         if y is None:
             return getattr(self.estimator, method)(X)
@@ -850,28 +859,28 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     @property
     def dataset(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.T.scaler.transform(self.T.X), self.y)
+            return merge(self.scaler.transform(self.T.X), self.y)
         else:
             return self.T.dataset
 
     @property
     def train(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.T.scaler.transform(self.T.X_train), self.y_train)
+            return merge(self.scaler.transform(self.T.X_train), self.y_train)
         else:
             return self.T.train
 
     @property
     def test(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.T.scaler.transform(self.T.X_test), self.y_test)
+            return merge(self.scaler.transform(self.T.X_test), self.y_test)
         else:
             return self.T.test
 
     @property
     def X(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return self.T.scaler.transform(self.T.X)
+            return self.scaler.transform(self.T.X)
         else:
             return self.T.X
 
@@ -882,14 +891,14 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
     @property
     def X_train(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return self.T.scaler.transform(self.T.X_train)
+            return self.scaler.transform(self.T.X_train)
         else:
             return self.T.X_train
 
     @property
     def X_test(self):
         if self.needs_scaling and not check_scaling(self.T.X):
-            return self.T.scaler.transform(self.T.X_test)
+            return self.scaler.transform(self.T.X_test)
         else:
             return self.T.X_test
 
@@ -1028,24 +1037,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
                     getattr(self, f"y_{dataset}"), getattr(self, f"predict_{dataset}")
                 )
             elif metric.lower() == "tn":
-                return int(self.scoring("cm").ravel()[0])
+                return int(self.scoring("cm", dataset).ravel()[0])
             elif metric.lower() == "fp":
-                return int(self.scoring("cm").ravel()[1])
+                return int(self.scoring("cm", dataset).ravel()[1])
             elif metric.lower() == "fn":
-                return int(self.scoring("cm").ravel()[2])
+                return int(self.scoring("cm", dataset).ravel()[2])
             elif metric.lower() == "tp":
-                return int(self.scoring("cm").ravel()[3])
+                return int(self.scoring("cm", dataset).ravel()[3])
             elif metric.lower() == "lift":
-                tn, fp, fn, tp = self.scoring("cm").ravel()
+                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
                 return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
             elif metric.lower() == "fpr":
-                tn, fp, _, _ = self.scoring("cm").ravel()
+                tn, fp, _, _ = self.scoring("cm", dataset).ravel()
                 return float(fp / (fp + tn))
             elif metric.lower() == "tpr":
-                _, _, fn, tp = self.scoring("cm").ravel()
+                _, _, fn, tp = self.scoring("cm", dataset).ravel()
                 return float(tp / (tp + fn))
             elif metric.lower() == "sup":
-                tn, fp, fn, tp = self.scoring("cm").ravel()
+                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
                 return float((tp + fp) / (tp + fp + fn + tn))
 
             # Calculate the scorer via _score_func to use the prediction properties

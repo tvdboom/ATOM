@@ -100,7 +100,7 @@ def ATOMLoader(
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.array or pd.DataFrame
+        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_features, n_samples). If no
             y is provided, the last column is used as target.
 
@@ -192,7 +192,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.array or pd.DataFrame
+        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_features, n_samples). If
             no y is provided, the last column is used as target.
 
@@ -289,7 +289,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.array or pd.DataFrame
+        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_features, n_samples). If
             no y is provided, the last column is used as target.
 

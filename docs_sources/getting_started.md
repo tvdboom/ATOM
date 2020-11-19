@@ -6,7 +6,7 @@
     Since atom was already taken, download the package under the name `atom-ml`!
 
 
-Intall ATOM's newest release easily via `pip`:
+Install ATOM's newest release easily via `pip`:
 
     $ pip install -U atom-ml
 
