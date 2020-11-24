@@ -19,11 +19,20 @@ from skopt.space.space import Integer
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
+from atom.data_cleaning import Scaler
 from atom.utils import check_scaling
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, X10_str, y10
 
 
 # Test utilities =================================================== >>
+
+def test_scaler():
+    """Assert that a scaler is made for models that need scaling."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LGB", "LDA"])
+    assert isinstance(atom.lgb.scaler, Scaler)
+    assert atom.lda.scaler is None
+
 
 def test_repr_method():
     """Assert that the __repr__ method works as intended."""
@@ -255,16 +264,16 @@ def test_all_prediction_properties():
     """Assert that all prediction properties are saved as attributes when called."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "SGD"])
-    assert atom.lr.predict_train is atom.lr._predict_train
-    assert atom.lr.predict_test is atom.lr._predict_test
-    assert atom.lr.predict_proba_train is atom.lr._predict_proba_train
-    assert atom.lr.predict_proba_test is atom.lr._predict_proba_test
-    assert atom.lr.predict_log_proba_train is atom.lr._log_proba_train
-    assert atom.lr.predict_log_proba_test is atom.lr._log_proba_test
-    assert atom.sgd.decision_function_train is atom.sgd._dec_func_train
-    assert atom.sgd.decision_function_test is atom.sgd._dec_func_test
-    assert atom.sgd.score_train is atom.sgd._score_train
-    assert atom.sgd.score_test is atom.sgd._score_test
+    assert isinstance(atom.lr.predict_train, np.ndarray)
+    assert isinstance(atom.lr.predict_test, np.ndarray)
+    assert isinstance(atom.lr.predict_proba_train, np.ndarray)
+    assert isinstance(atom.lr.predict_proba_test, np.ndarray)
+    assert isinstance(atom.lr.predict_log_proba_train, np.ndarray)
+    assert isinstance(atom.lr.predict_log_proba_test, np.ndarray)
+    assert isinstance(atom.lr.decision_function_train, np.ndarray)
+    assert isinstance(atom.lr.decision_function_test, np.ndarray)
+    assert isinstance(atom.lr.score_train, np.float64)
+    assert isinstance(atom.lr.score_test, np.float64)
 
 
 def test_results_property():
@@ -360,6 +369,13 @@ def test_columns_property():
     assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
 
 
+def test_features_property():
+    """Assert that the features property returns the features of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert [i == j for i, j in zip(atom.lr.features, atom.features)]
+
+
 def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -382,6 +398,14 @@ def test_n_classes_property():
 
 
 # Test utility methods ============================================= >>
+
+def test_delete():
+    """Assert that models can be deleted."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("OLS")
+    atom.ols.delete()
+    assert not atom.models
+
 
 def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""
@@ -406,12 +430,13 @@ def test_calibrate_prefit():
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
-def test_reset_predict_properties():
-    """Assert that the prediction properties are reset after calibrating."""
+def test_reset_predictions():
+    """Assert that the prediction attrs are reset after calibrating."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
+    print(atom.mnb.score_test)
     atom.calibrate()
-    assert not atom.mnb._predict_train
+    assert atom.mnb._pred_attrs[9] is None
 
 
 def test_scoring_metric_None():

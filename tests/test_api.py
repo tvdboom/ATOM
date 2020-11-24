@@ -74,18 +74,18 @@ def test_ATOMLoader():
     assert trainer2.__class__.__name__ == "DirectClassifier"
 
 
+def test_load_not_trainer():
+    """Assert that an error is raised when data is provided without a trainer."""
+    imputer = Imputer()
+    imputer.save(FILE_DIR + "imputer")
+    pytest.raises(TypeError, ATOMLoader, FILE_DIR + "imputer", data=(X_bin,))
+
+
 def test_load_already_contains_data():
     """Assert that an error is raised when data is provided without needed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + "atom", save_data=True)
     pytest.raises(ValueError, ATOMLoader, FILE_DIR + "atom", data=(X_bin,))
-
-
-def test_load_not_atom():
-    """Assert that an error is raised when data is provided without _data attr."""
-    imputer = Imputer()
-    imputer.save(FILE_DIR + "imputer")
-    pytest.raises(TypeError, ATOMLoader, FILE_DIR + "imputer", data=(X_bin,))
 
 
 def test_data():
@@ -142,7 +142,7 @@ def test_verbose_is_reset():
     atom.save(FILE_DIR + "atom", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), verbose=2)
-    assert atom2.branch.estimators[0].get_params()["verbose"] == 0
+    assert atom2.pipeline[0].get_params()["verbose"] == 0
 
 
 # Test ATOMClassifier ============================================== >>

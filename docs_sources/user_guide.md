@@ -124,7 +124,7 @@ Let's get started with an example!
 
 First, initialize atom and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
- test set already splitted. Note that if a dataframe is provided, the indices will
+ test set already split. Note that if a dataframe is provided, the indices will
  be reset by atom.
 
 ```python
@@ -167,24 +167,36 @@ Data pipelines manage separate paths atom's dataset can take. The "paths" are
  called branches and can be accessed through the `branch` attribute. Calling it
  will show the branches in the pipeline. The current branch is indicated with `!`.
  A branch contains a specific dataset and the transformers it took to arrive to that
- dataset from the one the instance initialized with. Accessing data attributes such
- as `atom.dataset` will return the data in the current branch. Use the pipelines
- attribute to see the `estimators` in the branch.
+ dataset from the one atom initialized with. Accessing data attributes such
+ as `atom.dataset` will return the data in the current branch. Use the `pipeline`
+ attribute to see the estimators in the branch. All data cleaning, feature engineering
+ and trainers called will use the dataset in the current branch. This means that
+ models are trained and validated on the data in that branch. Don't change the data
+ in a branch after fitting a model, this can cause unexpected model behaviour.
+ Instead, create a new branch for every unique model pipeline.
 
 By default atom starts with one branch called 'main'. To start a new branch, set
- a new name to the property, e.g. `atom.branch = "new_branch"`. Just so, type
- `atom.branch = "main"` to go back to a previous branch. Note that every branch
- contains a unique copy of the whole dataset! Creating many branches can cause
- memory issues for large datasets. All data cleaning, feature engineering and
- training methods you call will use the dataset in the current branch.
+ a new name to the property, e.g. `atom.branch = "new_branch"`. This will start a
+ new branch from the current one. To create a branch from any other branch type
+ '\_from\_' between the new name and the branch from which to split, e.g.
+ `atom.branch = "branch2_from_branch1"` will create branch 'branch2' from branch
+ 'branch1'. To switch between existing branches, just type the name of the desired
+ branch, e.g. `atom.branch = "main"` to go back to the main branch. Note that every
+ branch contains a unique copy of the whole dataset! Creating many branches can cause
+ memory issues for large datasets.
 
 You can delete a branch either deleting the attribute, e.g. `del atom.branch`, or
- using the delete method, e.g. `atom.branch.delete()`. Use `atom.branch.status()`
- to print a list of the transformers in the branch and their parameters.
+ using the delete method, e.g. `atom.branch.delete()`. A branch can only be deleted
+ if no models were trained on its dataset. Use `atom.branch.status()` to print a list
+ of the transformers in the branch and their parameters.
 
 See the [imbalanced datasets](../examples/imbalanced_datasets/imbalanced_datasets/)
- example for a branching use case.
+ or [feature_engineering](../examples/feature_engineering/feature_engineering/)
+ examples for branching use cases.
 
+!!!warning
+    Always create a new branch if you want to change the dataset after fitting
+    a model! Not doing this can cause unexpected model behaviour.
 
 
 
@@ -1102,7 +1114,7 @@ Since the plots are not made by ATOM, we can't draw multiple models in the same 
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a model, e.g. `atom.xgb.force_plot()`.
 
-!!!note
+!!!info
     You can recognize the SHAP plots by the fact that they end (instead of start)
     with plot.
 

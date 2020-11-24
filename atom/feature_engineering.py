@@ -665,9 +665,9 @@ class FeatureSelector(
                         self.goal = "regression"
                         self.solver = self.solver[:-4]
 
-                    # Set to right model name and call model's method
-                    model_class = MODEL_LIST[get_acronym(self.solver)]
-                    self.solver = model_class(self).get_estimator()
+                    # Set to right acronym and get the model's estimator
+                    model = MODEL_LIST[get_acronym(self.solver)](self)
+                    self.solver = model.get_estimator()
 
         if self.n_features is not None and self.n_features <= 0:
             raise ValueError(

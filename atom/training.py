@@ -58,7 +58,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self._params_to_attr(*arrays)
+        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
@@ -66,7 +66,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self.log(f"Models: {', '.join(self.models)}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
-        self._results = self._run()
+        self._results = self._core_iteration()
         self._results.index.name = "model"
 
 
@@ -117,7 +117,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self._params_to_attr(*arrays)
+        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
         n_models = len(self.models)
@@ -152,7 +152,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             # Run iteration and append to the results list
-            df = self._run()
+            df = self._core_iteration()
             results.append(df)
 
             # Select best models for halving
@@ -219,7 +219,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
                 - (X_train, y_train), (X_test, y_test)
 
         """
-        self._params_to_attr(*arrays)
+        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
@@ -246,7 +246,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             # Run iteration and append to the results list
-            results.append(self._run())
+            results.append(self._core_iteration())
 
         # Concatenate all resulting dataframes with multi-index
         self._results = pd.concat(
@@ -257,7 +257,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
 
 class DirectClassifier(Direct):
-    """Direct trainer class for classification tasks."""
+    """Direct trainer for classification tasks."""
 
     @typechecked
     def __init__(
@@ -287,7 +287,7 @@ class DirectClassifier(Direct):
 
 
 class DirectRegressor(Direct):
-    """Direct trainer class for regression tasks."""
+    """Direct trainer for regression tasks."""
 
     @typechecked
     def __init__(
@@ -317,7 +317,7 @@ class DirectRegressor(Direct):
 
 
 class SuccessiveHalvingClassifier(SuccessiveHalving):
-    """SuccessiveHalving trainer class for classification tasks."""
+    """SuccessiveHalving trainer for classification tasks."""
 
     @typechecked
     def __init__(
@@ -348,7 +348,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
 
 
 class SuccessiveHalvingRegressor(SuccessiveHalving):
-    """SuccessiveHalving trainer class for regression tasks."""
+    """SuccessiveHalving trainer for regression tasks."""
 
     @typechecked
     def __init__(
@@ -379,7 +379,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
 
 
 class TrainSizingClassifier(TrainSizing):
-    """TrainSizing trainer class for classification tasks."""
+    """TrainSizing trainer for classification tasks."""
 
     @typechecked
     def __init__(
@@ -410,7 +410,7 @@ class TrainSizingClassifier(TrainSizing):
 
 
 class TrainSizingRegressor(TrainSizing):
-    """TrainSizing trainer class for regression tasks."""
+    """TrainSizing trainer for regression tasks."""
 
     @typechecked
     def __init__(

@@ -60,59 +60,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>65160</th>
-      <td>MelbourneAirport</td>
-      <td>15.6</td>
-      <td>32.7</td>
-      <td>0.2</td>
-      <td>7.6</td>
-      <td>8.4</td>
-      <td>SW</td>
-      <td>57.0</td>
-    </tr>
-    <tr>
-      <th>117146</th>
-      <td>PerthAirport</td>
-      <td>15.0</td>
-      <td>26.1</td>
-      <td>0.0</td>
-      <td>6.8</td>
-      <td>12.1</td>
-      <td>W</td>
-      <td>39.0</td>
-    </tr>
-    <tr>
-      <th>114662</th>
-      <td>PearceRAAF</td>
-      <td>12.1</td>
-      <td>24.4</td>
-      <td>1.6</td>
-      <td>NaN</td>
-      <td>4.1</td>
-      <td>WNW</td>
-      <td>44.0</td>
-    </tr>
-    <tr>
-      <th>42610</th>
+      <th>43813</th>
       <td>Wollongong</td>
-      <td>11.7</td>
-      <td>19.1</td>
-      <td>0.2</td>
+      <td>19.6</td>
+      <td>24.0</td>
+      <td>0.0</td>
       <td>NaN</td>
       <td>NaN</td>
-      <td>WNW</td>
-      <td>37.0</td>
+      <td>SSW</td>
+      <td>67.0</td>
     </tr>
     <tr>
-      <th>119618</th>
-      <td>Perth</td>
-      <td>15.7</td>
-      <td>29.9</td>
+      <th>66825</th>
+      <td>Melbourne</td>
+      <td>7.0</td>
+      <td>12.6</td>
+      <td>0.2</td>
+      <td>1.4</td>
+      <td>0.2</td>
+      <td>N</td>
+      <td>30.0</td>
+    </tr>
+    <tr>
+      <th>32707</th>
+      <td>Sydney</td>
+      <td>18.6</td>
+      <td>26.1</td>
+      <td>3.2</td>
+      <td>6.4</td>
+      <td>7.9</td>
+      <td>S</td>
+      <td>48.0</td>
+    </tr>
+    <tr>
+      <th>40410</th>
+      <td>Williamtown</td>
+      <td>7.5</td>
+      <td>23.1</td>
       <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NW</td>
+      <td>22.0</td>
+    </tr>
+    <tr>
+      <th>1172</th>
+      <td>Albury</td>
       <td>10.2</td>
-      <td>11.0</td>
-      <td>SSW</td>
-      <td>39.0</td>
+      <td>27.6</td>
+      <td>0.0</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NE</td>
+      <td>28.0</td>
     </tr>
   </tbody>
 </table>
@@ -444,13 +444,13 @@ atom.run('LGB_DFS')
     Fit ---------------------------------------------
     Train evaluation --> roc_auc: 0.9947
     Test evaluation --> roc_auc: 0.8764
-    Time elapsed: 0.454s
+    Time elapsed: 0.444s
     -------------------------------------------------
-    Total time: 0.454s
+    Total time: 0.444s
     
     
     Final results ========================= >>
-    Duration: 0.454s
+    Duration: 0.445s
     ------------------------------------------
     LightGBM --> roc_auc: 0.876
     
@@ -471,15 +471,15 @@ atom.feature_generation(strategy='GFG', n_features=20, generations=10, populatio
         |   Population Average    |             Best Individual              |
     ---- ------------------------- ------------------------------------------ ----------
      Gen   Length          Fitness   Length          Fitness      OOB Fitness  Time Left
-       0     3.17         0.127544        3         0.504266              N/A     10.64s
-       1     3.10          0.33852        5         0.536639              N/A      9.20s
-       2     3.50         0.443648        9         0.541754              N/A      7.62s
-       3     4.48         0.476799        7         0.544984              N/A      6.49s
-       4     6.25          0.51219       13         0.546135              N/A      5.76s
-       5     7.45         0.508814        9         0.550855              N/A      4.60s
-       6     7.66         0.501224       11          0.55326              N/A      3.32s
-       7     8.05         0.498132       11         0.553417              N/A      2.22s
-       8     9.52         0.497282       13         0.554988              N/A      1.11s
+       0     3.17         0.127544        3         0.504266              N/A     10.24s
+       1     3.10          0.33852        5         0.536639              N/A      8.96s
+       2     3.50         0.443648        9         0.541754              N/A      7.93s
+       3     4.48         0.476799        7         0.544984              N/A      6.80s
+       4     6.25          0.51219       13         0.546135              N/A      5.80s
+       5     7.45         0.508814        9         0.550855              N/A      4.70s
+       6     7.66         0.501224       11          0.55326              N/A      3.55s
+       7     8.05         0.498132       11         0.553417              N/A      2.29s
+       8     9.52         0.497282       13         0.554988              N/A      1.16s
        9    10.82         0.492465       11         0.553417              N/A      0.00s
     Creating new features...
      --> 5 new features were added to the dataset.
@@ -570,13 +570,13 @@ atom.run('LGB_GFG', metric='auc')
     Fit ---------------------------------------------
     Train evaluation --> roc_auc: 0.9894
     Test evaluation --> roc_auc: 0.8771
-    Time elapsed: 0.290s
+    Time elapsed: 0.299s
     -------------------------------------------------
-    Total time: 0.290s
+    Total time: 0.299s
     
     
     Final results ========================= >>
-    Duration: 0.290s
+    Duration: 0.301s
     ------------------------------------------
     LightGBM --> roc_auc: 0.877
     

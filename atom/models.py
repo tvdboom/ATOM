@@ -170,8 +170,8 @@ from .basemodel import BaseModel
 class CustomModel(BaseModel):
     """Custom model. Estimator provided by user."""
 
-    def __init__(self, *args):
-        self.est = args[1]  # Estimator provided by the user
+    def __init__(self, *args, **kwargs):
+        self.est = kwargs["estimator"]  # Estimator provided by the user
         if hasattr(self.est, "fullname"):
             fullname = self.est.fullname
         elif callable(self.est):
@@ -180,7 +180,7 @@ class CustomModel(BaseModel):
             fullname = self.est.__class__.__name__
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym=getattr(self.est, "acronym", fullname),
             fullname=fullname,
             needs_scaling=getattr(self.est, "needs_scaling", False),
@@ -219,7 +219,7 @@ class GaussianProcess(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="GP",
             fullname="Gaussian Process",
             needs_scaling=False,
@@ -241,7 +241,7 @@ class GaussianNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="GNB",
             fullname="Gaussian Naive Bayes",
             needs_scaling=False,
@@ -259,7 +259,7 @@ class MultinomialNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="MNB",
             fullname="Multinomial Naive Bayes",
             needs_scaling=False,
@@ -286,7 +286,7 @@ class BernoulliNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="BNB",
             fullname="Bernoulli Naive Bayes",
             needs_scaling=False,
@@ -313,7 +313,7 @@ class CategoricalNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="CatNB",
             fullname="Categorical Naive Bayes",
             needs_scaling=False,
@@ -340,7 +340,7 @@ class ComplementNaiveBayes(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="CNB",
             fullname="Complement Naive Bayes",
             needs_scaling=False,
@@ -368,7 +368,7 @@ class OrdinaryLeastSquares(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="OLS",
             fullname="Ordinary Least Squares",
             needs_scaling=True,
@@ -391,7 +391,7 @@ class Ridge(BaseModel):
             fullname = "Ridge Regression"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="Ridge",
             fullname=fullname,
             needs_scaling=True,
@@ -422,7 +422,7 @@ class Lasso(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="Lasso",
             fullname="Lasso Regression",
             needs_scaling=True,
@@ -449,7 +449,7 @@ class ElasticNet(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="EN",
             fullname="ElasticNet Regression",
             needs_scaling=True,
@@ -481,7 +481,7 @@ class BayesianRidge(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="BR",
             fullname="Bayesian Ridge",
             needs_scaling=True,
@@ -517,7 +517,7 @@ class AutomaticRelevanceDetermination(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="ARD",
             fullname="Automatic Relevant Determination",
             needs_scaling=True,
@@ -553,7 +553,7 @@ class LogisticRegression(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="LR",
             fullname="Logistic Regression",
             needs_scaling=True,
@@ -610,7 +610,7 @@ class LinearDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="LDA",
             fullname="Linear Discriminant Analysis",
             needs_scaling=False,
@@ -646,7 +646,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="QDA",
             fullname="Quadratic Discriminant Analysis",
             needs_scaling=False,
@@ -670,7 +670,7 @@ class KNearestNeighbors(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="KNN",
             fullname="K-Nearest Neighbors",
             needs_scaling=True,
@@ -710,7 +710,7 @@ class RadiusNearestNeighbors(BaseModel):
     def __init__(self, *args):
         self._distances = []
         super().__init__(
-            T=args[0],
+            *args,
             acronym="RNN",
             fullname="Radius Nearest Neighbors",
             needs_scaling=True,
@@ -778,7 +778,7 @@ class DecisionTree(BaseModel):
             criterion = "mse"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="Tree",
             fullname="Decision Tree",
             needs_scaling=False,
@@ -831,7 +831,7 @@ class Bagging(BaseModel):
             fullname = "Bagging Regressor"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="Bag",
             fullname=fullname,
             needs_scaling=False,
@@ -875,7 +875,7 @@ class ExtraTrees(BaseModel):
             criterion = "mse"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="ET",
             fullname="Extra-Trees",
             needs_scaling=False,
@@ -942,7 +942,7 @@ class RandomForest(BaseModel):
             criterion = "mse"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="RF",
             fullname="Random Forest",
             needs_scaling=False,
@@ -1004,7 +1004,7 @@ class AdaBoost(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="AdaB",
             fullname="AdaBoost",
             needs_scaling=False,
@@ -1042,7 +1042,7 @@ class GradientBoostingMachine(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="GBM",
             fullname="Gradient Boosting Machine",
             needs_scaling=False,
@@ -1113,7 +1113,7 @@ class XGBoost(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="XGB",
             fullname="XGBoost",
             needs_scaling=True,
@@ -1199,7 +1199,7 @@ class LightGBM(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="LGB",
             fullname="LightGBM",
             needs_scaling=True,
@@ -1284,7 +1284,7 @@ class CatBoost(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="CatB",
             fullname="CatBoost",
             needs_scaling=True,
@@ -1370,7 +1370,7 @@ class LinearSVM(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="lSVM",
             fullname="Linear-SVM",
             needs_scaling=True,
@@ -1428,7 +1428,7 @@ class KernelSVM(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="kSVM",
             fullname="Kernel-SVM",
             needs_scaling=True,
@@ -1488,7 +1488,7 @@ class PassiveAggressive(BaseModel):
             loss = "epsilon_insensitive"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="PA",
             fullname="Passive Aggressive",
             needs_scaling=True,
@@ -1529,7 +1529,7 @@ class StochasticGradientDescent(BaseModel):
             loss = "hinge"
 
         super().__init__(
-            T=args[0],
+            *args,
             acronym="SGD",
             fullname="Stochastic Gradient Descent",
             needs_scaling=True,
@@ -1602,7 +1602,7 @@ class MultilayerPerceptron(BaseModel):
 
     def __init__(self, *args):
         super().__init__(
-            T=args[0],
+            *args,
             acronym="MLP",
             fullname="Multi-layer Perceptron",
             needs_scaling=True,

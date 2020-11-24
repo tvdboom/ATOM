@@ -13,14 +13,13 @@ from typing import Optional
 from typeguard import typechecked
 
 # Own modules
-from .basemodel import BaseModel
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, check_is_fitted, check_scaling,
     get_best_score, catch_return, transform, composed, crash, method_to_log
 )
 
 
-class VotingModel(BaseModel):
+class Voting(object):
     """Model subclass for voting with the models in the pipeline."""
 
     def __init__(self, *args):
@@ -38,11 +37,15 @@ class VotingModel(BaseModel):
             self.fullname = "VotingRegressor"
 
     def __repr__(self):
-        return f"{self.fullname}\n --> Models: {self.T.models}"
+        out = f"{self.fullname}"
+        out += f"\n --> Models: {self.T.models}"
+        out += f"\n --> Weights: {self.weights}"
+
+        return out
 
     @property
     def weights(self):
-        return self.estimator.weights
+        return self.weights
 
     @weights.setter
     @typechecked

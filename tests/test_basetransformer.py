@@ -201,6 +201,17 @@ def test_empty_data_arrays():
         ATOMClassifier(n_rows=100, random_state=1)
 
 
+def test_data_already_set():
+    """Assert that if there already is data, the call to run can be empty."""
+    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
+
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(bin_train, bin_test)
+    trainer.run()
+    assert trainer.dataset.equals(dataset)
+    assert trainer.branch.idx == [len(bin_train), len(bin_test)]
+
+
 def test_input_is_X():
     """Assert that input X works as intended."""
     atom = ATOMClassifier(X_bin, random_state=1)

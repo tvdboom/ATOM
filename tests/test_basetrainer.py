@@ -9,7 +9,6 @@ Description: Unit tests for basetrainer.py
 
 # Standard packages
 import pytest
-import pandas as pd
 from sklearn.metrics import get_scorer, f1_score
 from skopt.space.space import Integer, Categorical
 
@@ -237,35 +236,7 @@ def test_scorer_metric_parameter():
     assert trainer.metric == "f1"
 
 
-# Test _params_to_attr ============================================= >>
-
-def test_data_already_set():
-    """Assert that if there already is data, the call to run can be empty."""
-    dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
-
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    trainer.run()
-    assert trainer.dataset.equals(dataset)
-    assert trainer.branch.idx == [len(bin_train), len(bin_test)]
-
-
-def test_new_scaler():
-    """Assert that the scaler is reset when new data is provided."""
-    trainer = DirectClassifier("LR", random_state=1)
-    trainer.run(bin_train, bin_test)
-    scaler_1 = trainer.scaler
-
-    # Rerun with new data
-    trainer.run(bin_train.iloc[12:70, :], bin_test)
-    scaler_2 = trainer.scaler
-
-    # Compare the scalers transforming some data
-    data = bin_test.iloc[:, :-1]
-    assert not scaler_1.transform(data).equals(scaler_2.transform(data))
-
-
-# Test _run ======================================================== >>
+# Test _core_iteration ============================================= >>
 
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
@@ -286,13 +257,6 @@ def test_invalid_n_calls_parameter():
     """Assert that an error is raised for negative n_calls."""
     trainer = DirectClassifier("LR", n_calls=-1, n_initial_points=1, random_state=1)
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
-
-
-def test_scaler_is_created():
-    """Assert the scaler is created for models that need scaling."""
-    trainer = DirectClassifier("LGB", random_state=1)
-    trainer.run(bin_train, bin_test)
-    assert trainer.scaler is not None
 
 
 def test_custom_dimensions_for_bo():

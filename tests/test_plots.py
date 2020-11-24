@@ -361,6 +361,14 @@ def test_plot_partial_dependence(features):
     with pytest.raises(ValueError, match=r".*not found in the mapping.*"):
         atom.plot_partial_dependence(target="Yes")
 
+    # Different features for multiple models
+    atom.branch = "branch_2"
+    atom.feature_selection(strategy="pca", n_features=5)
+    atom.run(["tree2"])
+    with pytest.raises(ValueError, match=r".*models use the same features.*"):
+        atom.plot_partial_dependence(features=(0, 1))
+
+    atom.delete("Tree2")   # Drop model created for test
     atom.plot_partial_dependence(
         filename=FILE_DIR + "partial_dependence_1", display=False
     )

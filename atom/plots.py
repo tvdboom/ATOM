@@ -23,11 +23,11 @@ from typing import Optional, Union, Tuple
 import shap
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib import transforms
-from matplotlib.gridspec import GridSpec
+from matplotlib.transforms import blended_transform_factory
 from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import ConnectionStyle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
 
 # Sklearn
 from sklearn.utils import _safe_indexing
@@ -61,15 +61,11 @@ class BaseFigure(object):
         self.nrows = nrows
         self.ncols = ncols
         self.is_canvas = is_canvas
-        self._size = 12  # Grid size per plot (row x col = 12 x 12)
         self._idx = -1
 
         # Create new figure and corresponding grid
-        self.grid = GridSpec(
-            nrows=self.nrows * self._size,
-            ncols=self.ncols * self._size,
-            figure=plt.figure(constrained_layout=True)
-        )
+        figure = plt.figure(constrained_layout=True)
+        self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
     def figure(self):
@@ -85,33 +81,10 @@ class BaseFigure(object):
 
         return plt.gcf()
 
-    def grid_location(self, rows=None, cols=None):
-        """Return the location of a plot in the grid.
-
-        Parameters
-        ----------
-        rows: tuple or None, optional (default=None)
-            If tuple, start and end index of the plot in the height of
-            the grid. If None, use the whole height (within the index).
-
-        cols: tuple or None, optional (default=None)
-            If tuple, start and end index of the plot in the width of
-            the grid. If None, use the whole width (within the index).
-
-        """
-        # Set default value to complete width/height
-        if not rows:
-            rows = (0, self._size)
-        if not cols:
-            cols = (0, self._size)
-
-        # Calculate the position of the subplot in the grid
-        pos_row = self._size * (self._idx // self.ncols)
-        pos_col = self._size * (self._idx % self.ncols)
-        slice_row = slice(pos_row + rows[0], pos_row + rows[1])
-        slice_col = slice(pos_col + cols[0], pos_col + cols[1])
-
-        return self.grid[slice_row, slice_col]
+    @property
+    def grid(self):
+        """Return the position of the current axes in the grid."""
+        return self.gridspec[self._idx]
 
 
 class BasePlotter(object):
@@ -291,8 +264,9 @@ class BasePlotter(object):
 
     def _get_show(self, show):
         """Check and return the provided parameter show."""
-        if show is None or show > self.X.shape[1]:
-            return self.X.shape[1]
+        max_fxs = max([len(branch.features) for branch in self._branches.values()])
+        if show is None or show > max_fxs:
+            return max_fxs
         elif show < 1:
             raise ValueError(
                 "Invalid value for the show parameter."
@@ -301,17 +275,18 @@ class BasePlotter(object):
 
         return show
 
-    def _get_index(self, index):
+    @staticmethod
+    def _get_index(index, model):
         """Check and return the provided parameter index."""
         if index is None:
-            rows = self.X_test
+            rows = model.X_test
         elif isinstance(index, int):
             if index < 0:
-                rows = self.X.iloc[[len(self.X) + index]]
+                rows = model.X.iloc[[len(model.X) + index]]
             else:
-                rows = self.X.iloc[[index]]
+                rows = model.X.iloc[[index]]
         else:
-            rows = self.X.iloc[slice(*index)]
+            rows = model.X.iloc[slice(*index)]
 
         if rows.empty:
             raise ValueError(
@@ -345,7 +320,8 @@ class BasePlotter(object):
             tgt_str = list(self.mapping)[list(self.mapping.values()).index(target)]
             return target, tgt_str
 
-    def _get_shap(self, model, data, target):
+    @staticmethod
+    def _get_shap(model, data, target):
         """Get the SHAP information of a model.
 
         Parameters
@@ -375,24 +351,24 @@ class BasePlotter(object):
                 model.estimator, feature_perturbation="tree_path_dependent"
             )
         elif model.type == "linear":
-            explainer = shap.LinearExplainer(model.estimator, self.X_train)
+            explainer = shap.LinearExplainer(model.estimator, model.X_train)
         else:
-            if len(self.X_train) <= 100:
-                k_data = self.X_train
+            if len(model.X_train) <= 100:
+                k_data = model.X_train
             else:
-                k_data = shap.kmeans(self.X_train, 100)
+                k_data = shap.kmeans(model.X_train, 100)
             explainer = shap.KernelExplainer(model.estimator.predict, k_data)
 
         shap_values = explainer.shap_values(data)
         expected_value = explainer.expected_value
 
         # Select the values corresponding to the target
-        if not np.array(shap_values).shape == (len(data), self.X.shape[1]):
+        if not np.array(shap_values).shape == (len(data), model.X.shape[1]):
             shap_values = shap_values[target]
 
         # Select the target expected value or return all
         if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == self.n_classes:
+            if len(expected_value) == model.n_classes:
                 expected_value = expected_value[target]
 
         return shap_values, expected_value
@@ -410,7 +386,6 @@ class BasePlotter(object):
 
         **kwargs
             Keyword arguments containing the plot's parameters.
-            Use axes_only=True to only apply the axes parameters.
             Axes parameters:
                 - title: Axes' title.
                 - legend: Location to place the legend.
@@ -420,7 +395,6 @@ class BasePlotter(object):
                 - ylim: Limits for the y-axis.
             Figure parameters:
                 - figsize: Size of the figure.
-                - tight_layout: Tight layout. Default is True.
                 - filename: Name of the saved file.
                 - display: Whether to render the plot.
 
@@ -444,13 +418,10 @@ class BasePlotter(object):
         if ax is not None:
             ax.tick_params(axis='both', labelsize=self.tick_fontsize)
 
-        if not BasePlotter._fig.is_canvas and not kwargs.get("axes_only", False):
-            if kwargs.get("figsize"):
-                plt.gcf().set_size_inches(*kwargs["figsize"])
-            if kwargs.get("tight_layout", True):
-                plt.tight_layout()
-            if kwargs.get("filename"):
-                plt.savefig(kwargs["filename"])
+        if kwargs.get("figsize"):
+            plt.gcf().set_size_inches(*kwargs["figsize"])
+        if kwargs.get("filename"):
+            plt.savefig(kwargs["filename"])
             plt.show() if kwargs.get("display") else plt.close()
 
     @composed(contextmanager, crash, typechecked)
@@ -532,7 +503,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not hasattr(self, "pca") or not self.pca:
+        if not hasattr(self.branch, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_pca method is only available if PCA was applied on the data!"
             )
@@ -542,7 +513,7 @@ class FeatureSelectorPlotter(BasePlotter):
         var_all = np.array(self.pca.explained_variance_ratio_)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.scatter(
             x=self.pca.n_components_ - 1,
             y=var.sum(),
@@ -599,7 +570,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not hasattr(self, "pca") or not self.pca:
+        if not hasattr(self.branch, "pca") or not self.pca:
             raise PermissionError(
                 "The plot_components method is only available "
                 "if PCA was applied on the data!"
@@ -621,7 +592,7 @@ class FeatureSelectorPlotter(BasePlotter):
         scr = pd.Series(var, index=indices).sort_values()
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         scr.plot.barh(label=f"Total variance retained: {var.sum():.3f}", width=0.6)
         ax.set_xlim(0, max(scr) + 0.1 * max(scr))  # Make extra space for numbers
         for i, v in enumerate(scr):
@@ -666,7 +637,7 @@ class FeatureSelectorPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not hasattr(self, "rfecv") or not self.rfecv:
+        if not hasattr(self.branch, "rfecv") or not self.rfecv:
             raise PermissionError(
                 "The plot_rfecv method is only available "
                 "if RFECV was applied on the data!"
@@ -680,7 +651,7 @@ class FeatureSelectorPlotter(BasePlotter):
                 ylabel = str(self.rfecv.get_params()["scoring"])
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         n_features = self.rfecv.get_params()["min_features_to_select"]
         xline = range(n_features, n_features + len(self.rfecv.grid_scores_))
         ax.plot(xline, self.rfecv.grid_scores_)
@@ -779,7 +750,7 @@ class BaseModelPlotter(BasePlotter):
                 names.append(m.name)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.boxplot(results)
         ax.set_xticklabels(names)
 
@@ -846,8 +817,9 @@ class BaseModelPlotter(BasePlotter):
             )
 
         fig = self._get_figure()
-        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(0, 8)))
-        ax2 = plt.subplot(BasePlotter._fig.grid_location(rows=(8, 12)), sharex=ax1)
+        gs = GridSpecFromSubplotSpec(4, 1, BasePlotter._fig.grid, hspace=0.05)
+        ax1 = fig.add_subplot(gs[0:3, 0])
+        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
             y = m.bo["score"].apply(lambda value: lst(value)[metric])
             if len(models) == 1:
@@ -865,7 +837,6 @@ class BaseModelPlotter(BasePlotter):
         plt.setp(ax1.get_xticklabels(), visible=False)
         self._plot(
             ax=ax1,
-            axes_only=True,
             title="Bayesian optimization performance" if title is None else title,
             legend="lower right",
             ylabel=self.metric_[metric].name,
@@ -936,7 +907,7 @@ class BaseModelPlotter(BasePlotter):
             )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for set_ in dataset:
             ax.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
 
@@ -996,7 +967,7 @@ class BaseModelPlotter(BasePlotter):
         check_predict_proba(models, "plot_roc")
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
                 # Get False (True) Positive Rate as arrays
@@ -1070,7 +1041,7 @@ class BaseModelPlotter(BasePlotter):
         check_predict_proba(models, "plot_prc")
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
                 # Get precision-recall pairs for different thresholds
@@ -1178,7 +1149,7 @@ class BaseModelPlotter(BasePlotter):
                 )
 
             # Append data to the dataframe
-            for i, feature in enumerate(self.X.columns):
+            for i, feature in enumerate(m.features):
                 for score in self.permutations[m.name].importances[i, :]:
                     df = df.append({
                         "features": feature,
@@ -1186,8 +1157,8 @@ class BaseModelPlotter(BasePlotter):
                         "model": m.name
                     }, ignore_index=True)
 
-        # Get the column names sorted by mean of score
-        get_idx = df.groupby("features", as_index=False)["score"].mean()
+        # Get the column names sorted by sum of scores
+        get_idx = df.groupby("features", as_index=False)["score"].sum()
         get_idx.sort_values("score", ascending=False, inplace=True)
         column_order = get_idx.features.values[:show]
 
@@ -1195,7 +1166,7 @@ class BaseModelPlotter(BasePlotter):
         self.branch.feature_importance = list(get_idx.features.values)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         sns.boxplot(
             x="score",
             y="features",
@@ -1271,7 +1242,7 @@ class BaseModelPlotter(BasePlotter):
         show = self._get_show(show)
 
         # Create dataframe with columns as indices to plot with barh
-        df = pd.DataFrame(index=self.X.columns)
+        df = pd.DataFrame()
 
         for m in models:
             # Bagging is a special case where we use the feature_importance per est
@@ -1290,18 +1261,21 @@ class BaseModelPlotter(BasePlotter):
                 feature_importances = m.estimator.feature_importances_
 
             # Normalize for plotting values adjacent to bar
-            df[m.name] = feature_importances / max(feature_importances)
+            max_feature_importance = max(feature_importances)
+            for col, fx in zip(m.features, feature_importances):
+                df.at[col, m.name] = fx / max_feature_importance
 
         # Save the best feature order
+        df.fillna(0, inplace=True)
         best_fxs = df.sort_values(by=df.columns[-1], ascending=False)
         self.branch.feature_importance = list(best_fxs.index.values)
 
-        # Select best and sort ascending
+        # Select best and sort ascending (by sum of total importances)
         df = df.nlargest(show, columns=df.columns[-1])
-        df.sort_values(by=df.columns[-1], ascending=True, inplace=True)
+        df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
@@ -1375,81 +1349,90 @@ class BaseModelPlotter(BasePlotter):
         def convert_feature(feature):
             if isinstance(feature, str):
                 try:
-                    feature = list(self.columns).index(feature)
+                    feature = list(m.features).index(feature)
                 except ValueError:
                     raise ValueError(
                         "Invalid value for the features parameter. "
                         f"Unknown column: {feature}."
                     )
-            elif feature > self.X.shape[1] - 1:  # -1 because of index 0
+            elif feature > m.X.shape[1] - 1:  # -1 because of index 0
                 raise ValueError(
                     "Invalid value for the features parameter. Dataset "
-                    f"has {self.X.shape[1]} features, got index {feature}."
+                    f"has {m.X.shape[1]} features, got index {feature}."
                 )
             return int(feature)
+
+        def get_features(features, m):
+            # Default is to select the best or the first 3 features
+            if not features:
+                if not m.branch.feature_importance:
+                    features = [0, 1, 2]
+                else:
+                    features = m.branch.feature_importance[:3]
+
+            features = lst(features)
+            if len(features) > 3:
+                raise ValueError(
+                    "Invalid value for the features parameter. "
+                    f"Maximum 3 allowed, got {len(features)}."
+                )
+
+            # Convert features into a sequence of int tuples
+            cols = []
+            for fxs in features:
+                if isinstance(fxs, (int, str)):
+                    cols.append((convert_feature(fxs),))
+                elif len(models) == 1:
+                    if len(fxs) == 2:
+                        cols.append(tuple(convert_feature(fx) for fx in fxs))
+                    else:
+                        raise ValueError(
+                            "Invalid value for the features parameter. Values "
+                            f"should be single or in pairs, got {fxs}."
+                        )
+                else:
+                    raise ValueError(
+                        "Invalid value for the features parameter. Feature pairs "
+                        f"are invalid when plotting multiple models, got {fxs}."
+                    )
+
+            return cols
 
         check_dim(self, "plot_partial_dependence")
         check_is_fitted(self, "results")
         models = self._get_subclass(models)
         tgt_int, tgt_str = self._get_target(target)
 
-        # Only for this plot, the target index is always 0 if task not multiclass
+        # Only for this plot, target index is always 0 if not multiclass
         if not self.task.startswith("multi"):
             tgt_int = 0
 
-        # Prepare features parameter
-        features = lst(features)
-        if features == [None]:
-            if not self.feature_importance:
-                # If feature_importance is None, select the first 3
-                features = [0, 1, 2]
-            else:
-                # Else, select the best 3 features
-                features = [
-                    idx for idx, column in enumerate(self.columns)
-                    if column in self.feature_importance[:3]
-                ]
-
-        if len(features) > 3:
-            raise ValueError(
-                "Invalid value for the features parameter. "
-                f"Maximum 3 allowed, got {len(features)}."
-            )
-
-        # Convert features into a sequence of int tuples
-        cols = []
-        for fxs in features:
-            if isinstance(fxs, (int, str)):
-                cols.append((convert_feature(fxs),))
-            elif len(models) == 1:
-                if len(fxs) == 2:
-                    cols.append(tuple(convert_feature(fx) for fx in fxs))
-                else:
-                    raise ValueError(
-                        "Invalid value for the features parameter. Values "
-                        f"should be single or in pairs, got {fxs}."
-                    )
-            else:
-                raise ValueError(
-                    "Invalid value for the features parameter. Feature pairs "
-                    f"are invalid when plotting multiple models, got {fxs}."
-                )
-
         axes = []
         fig = self._get_figure()
-        size = BasePlotter._fig._size // len(cols)
-        for i in range(len(cols)):
-            axes.append(
-                fig.add_subplot(
-                    BasePlotter._fig.grid_location(cols=(i * size, i * size + size))
-                )
-            )
+        n_cols = 3 if not features else len(features)
+        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
+        for i in range(n_cols):
+            axes.append(fig.add_subplot(gs[0, i]))
 
+        names = []  # Names of the features (to compare between models)
         for m in models:
+            # Since every model can have different fxs, select them again
+            cols = get_features(features, m)
+
+            # Make sure the models use the same features
+            if len(models) > 1:
+                fxs_names = [m.features[col[0]] for col in cols]
+                if not names:
+                    names = fxs_names
+                elif names != fxs_names:
+                    raise ValueError(
+                        "Invalid value for the features parameter. Not all models "
+                        f"use the same features, got {names} and {fxs_names}."
+                    )
+
             # Compute averaged predictions
             pd_results = Parallel(n_jobs=self.n_jobs)(
-                delayed(partial_dependence)(m.estimator, self.X_test, col)
-                for col in cols
+                delayed(partial_dependence)(m.estimator, m.X_test, col) for col in cols
             )
 
             # Get global min and max average predictions of PD grouped by plot type
@@ -1459,53 +1442,48 @@ class BaseModelPlotter(BasePlotter):
                 old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
                 pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
 
-            # Create contour levels for two-way plots
-            if 2 in pdp_lim:
-                z_lvl = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
-
             deciles = {}
             for fx in chain.from_iterable(cols):
-                if fx not in deciles:
-                    X_col = _safe_indexing(self.X_test, fx, axis=1)
+                if fx not in deciles:  # Skip if the feature is repeated
+                    X_col = _safe_indexing(m.X_test, fx, axis=1)
                     deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
             for axi, fx, (pred, values) in zip(axes, cols, pd_results):
+                # For both types: draw ticks on the horizontal axis
+                trans = blended_transform_factory(axi.transData, axi.transAxes)
+                axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
+                axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
+                self._plot(ax=axi, xlabel=m.columns[fx[0]])
+
+                # Draw line or contour plot
                 if len(values) == 1:
                     axi.plot(values[0], pred[tgt_int].ravel(), lw=2, label=m.name)
                 else:
+                    # Create contour levels for two-way plots
+                    levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
+
                     # Draw contour plot
                     XX, YY = np.meshgrid(values[0], values[1])
                     Z = pred[tgt_int].T
-                    CS = axi.contour(XX, YY, Z, levels=z_lvl, linewidths=0.5)
+                    CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
                     axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
                     axi.contourf(
                         XX, YY, Z,
-                        levels=z_lvl,
-                        vmax=z_lvl[-1],
-                        vmin=z_lvl[0],
+                        levels=levels,
+                        vmax=levels[-1],
+                        vmin=levels[0],
                         alpha=0.75,
                     )
 
-                trans = transforms.blended_transform_factory(
-                    x_transform=axi.transData, y_transform=axi.transAxes
-                )
-                axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
-                axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
-                axi.set_xlabel(
-                    xlabel=self.columns[fx[0]],
-                    fontsize=self.label_fontsize,
-                    labelpad=12,
-                )
-
-                if len(values) != 1:
-                    trans = transforms.blended_transform_factory(
-                        axi.transAxes, axi.transData
-                    )
+                    # Draw the ticks on the vertical axis
+                    trans = blended_transform_factory(axi.transAxes, axi.transData)
                     axi.hlines(deciles[fx[1]], 0, 0.05, transform=trans, color="k")
-                    axi.set_ylabel(
-                        ylabel=self.columns[fx[1]],
-                        fontsize=self.label_fontsize,
-                        labelpad=12,
+
+                    self._plot(
+                        ax=axi,
+                        ylabel=m.columns[fx[1]],
+                        xlim=(min(XX.flatten()), max(XX.flatten())),
+                        ylim=(min(YY.flatten()), max(YY.flatten())),
                     )
 
         # Place y-label and legend on first non-contour plot
@@ -1513,7 +1491,6 @@ class BaseModelPlotter(BasePlotter):
             if not axi.get_ylabel():
                 self._plot(
                     ax=axi,
-                    axes_only=True,
                     ylabel="Score",
                     legend="best" if len(models) > 1 else False
                 )
@@ -1581,7 +1558,7 @@ class BaseModelPlotter(BasePlotter):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
                 if len(models) == 1:
@@ -1680,8 +1657,9 @@ class BaseModelPlotter(BasePlotter):
         dataset = self._get_set(dataset)
 
         fig = self._get_figure()
-        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(cols=(0, 10)))
-        ax2 = fig.add_subplot(BasePlotter._fig.grid_location(cols=(10, 12)))
+        gs = GridSpecFromSubplotSpec(1, 4, BasePlotter._fig.grid, wspace=0.05)
+        ax1 = fig.add_subplot(gs[0, :3])
+        ax2 = fig.add_subplot(gs[0, 3:4])
 
         for m in models:
             for set_ in dataset:
@@ -1701,7 +1679,7 @@ class BaseModelPlotter(BasePlotter):
         ax1.hlines(0, *xlim, ls="--", lw=1, color="k", alpha=0.8)  # Identity line
 
         ax2.set_yticklabels([])
-        self._plot(ax=ax2, axes_only=True, xlabel="Distribution")
+        self._plot(ax=ax2, xlabel="Distribution")
 
         if title is None:
             title = "Residuals plot"
@@ -1799,7 +1777,7 @@ class BaseModelPlotter(BasePlotter):
                         title = "Normalized confusion matrix"
 
                 fig = self._get_figure()
-                ax = fig.add_subplot(BasePlotter._fig.grid_location())
+                ax = fig.add_subplot(BasePlotter._fig.grid)
                 im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
 
                 # Create an axes on the right side of ax. The under of cax will
@@ -1944,7 +1922,7 @@ class BaseModelPlotter(BasePlotter):
                 metric_list.append(met)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         steps = np.linspace(0, 1, steps)
         for m in models:
             for met in metric_list:  # Create dict of empty arrays
@@ -2025,7 +2003,7 @@ class BaseModelPlotter(BasePlotter):
         check_predict_proba(models, "plot_probabilities")
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
                 for key, value in self.mapping.items():
@@ -2119,8 +2097,9 @@ class BaseModelPlotter(BasePlotter):
             )
 
         fig = self._get_figure()
-        ax1 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(0, 8)))
-        ax2 = fig.add_subplot(BasePlotter._fig.grid_location(rows=(8, 12)), sharex=ax1)
+        gs = GridSpecFromSubplotSpec(4, 1, BasePlotter._fig.grid, hspace=0.05)
+        ax1 = fig.add_subplot(gs[:3, 0])
+        ax2 = fig.add_subplot(gs[3:4, 0], sharex=ax1)
         ax1.plot([0, 1], [0, 1], color="k", ls="--")
         for m in models:
             if hasattr(m.estimator, "decision_function"):
@@ -2138,7 +2117,6 @@ class BaseModelPlotter(BasePlotter):
         plt.setp(ax1.get_xticklabels(), visible=False)
         self._plot(
             ax=ax1,
-            axes_only=True,
             title="Calibration curve" if title is None else title,
             legend="lower right" if len(models) > 1 else False,
             ylabel="Fraction of positives",
@@ -2198,7 +2176,7 @@ class BaseModelPlotter(BasePlotter):
         check_predict_proba(models, "plot_gains")
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7)
         for m in models:
             for set_ in dataset:
@@ -2282,7 +2260,7 @@ class BaseModelPlotter(BasePlotter):
         check_predict_proba(models, "plot_lift")
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7)
         for m in models:
             for set_ in dataset:
@@ -2385,7 +2363,7 @@ class BaseModelPlotter(BasePlotter):
             )
 
         m = self._get_subclass(models, max_one=True)
-        rows = self._get_index(index)
+        rows = self._get_index(index, m)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
@@ -2477,14 +2455,14 @@ class BaseModelPlotter(BasePlotter):
 
         m = self._get_subclass(models, max_one=True)
         tgt_int, tgt_str = self._get_target(target)
-        shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
+        shap_values, _ = self._get_shap(m, m.X_test, tgt_int)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.dependence_plot(
             ind=index,
             shap_values=shap_values,
-            features=self.X_test,
+            features=m.X_test,
             ax=ax,
             show=False,
             **kwargs,
@@ -2554,13 +2532,13 @@ class BaseModelPlotter(BasePlotter):
         m = self._get_subclass(models, max_one=True)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
-        shap_values, _ = self._get_shap(m, self.X_test, tgt_int)
+        shap_values, _ = self._get_shap(m, m.X_test, tgt_int)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.summary_plot(
             shap_values=shap_values,
-            features=self.X_test,
+            features=m.X_test,
             max_display=show,
             plot_size=figsize,
             show=False,
@@ -2646,13 +2624,13 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, "results")
 
         m = self._get_subclass(models, max_one=True)
-        rows = self._get_index(index)
+        rows = self._get_index(index, m)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.decision_plot(
             base_value=expected_value,
             shap_values=shap_values,
@@ -2738,19 +2716,19 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "waterfall_plot")
         check_is_fitted(self, "results")
 
+        m = self._get_subclass(models, max_one=True)
         # If index is None, give a random index of the test set
         if index is None:
-            index = random.randint(len(self.train), len(self.dataset))
+            index = random.randint(len(m.train), len(m.dataset))
 
-        m = self._get_subclass(models, max_one=True)
-        rows = self._get_index(index)
+        rows = self._get_index(index, m)
         show = self._get_show(show)
         tgt_int, tgt_str = self._get_target(target)
         shap_values, expected_value = self._get_shap(m, rows, tgt_int)
 
         # Use legacy for consistency with other plot methods
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.plots._waterfall.waterfall_legacy(
             expected_value=expected_value,
             shap_values=shap_values[0],
@@ -2825,7 +2803,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             # Make df with rows for only that model
             df = self._results.xs(m.name, level="model")
@@ -2907,7 +2885,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             )
 
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             # Make df with rows for only that model
             df = self._results.xs(m.name, level="model")
@@ -2980,7 +2958,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
 
         sns.set_style("white")  # Only for this plot
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         sns.heatmap(
             data=corr,
             mask=mask,
@@ -3046,7 +3024,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         # Calculate figure's limits
         params = []
         ylim = 30
-        for est in self._branches[branch].estimators:
+        for est in self._branches[branch].pipeline:
             ylim += 15
             if show_params:
                 params.append([
@@ -3057,7 +3035,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
 
         sns.set_style("white")  # Only for this plot
         fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid_location())
+        ax = fig.add_subplot(BasePlotter._fig.grid)
 
         # Shared parameters for the blocks
         con = ConnectionStyle("angle", angleA=0, angleB=90, rad=0)
@@ -3075,7 +3053,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         pos_param = ylim - 20
         pos_estimator = pos_param
 
-        for i, est in enumerate(self._branches[branch].estimators):
+        for i, est in enumerate(self._branches[branch].pipeline):
             ax.annotate(
                 text=est.__class__.__name__,
                 xy=(15, pos_estimator),

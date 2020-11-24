@@ -14,15 +14,47 @@ from typing import Union, Optional
 from typeguard import typechecked
 
 # Own modules
+from .branch import Branch
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide,
     check_is_fitted, get_best_score, delete, method_to_log, composed,
-    crash
+    crash,
 )
 
 
 class BasePredictor(object):
-    """Properties and shared methods for the training classes."""
+    """Properties and shared methods for the trainers."""
+
+    def __getattr__(self, item):
+        """Get some attributes from the current branch."""
+        props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
+        if self.__dict__.get("_branches"):  # Add public attrs from branch
+            props.extend([k for k in self.branch.__dict__ if k not in Branch.private])
+        if item in props:
+            return getattr(self.branch, item)
+        else:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{item}'"
+            )
+
+    def __setattr__(self, item, value):
+        """Set some properties to the current branch."""
+        props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
+        if item in props:
+            setattr(self.branch, item, value)
+        else:
+            super().__setattr__(item, value)
+
+    def __delattr__(self, item):
+        """Call appropriate methods for model and branch deletion."""
+        # To delete branches, call the appropriate method
+        if item == "branch":
+            self.branch.delete()
+        else:
+            try:
+                self.delete(item)
+            except ValueError:
+                del self.__dict__[item]
 
     # Utility properties =========================================== >>
 
@@ -30,16 +62,6 @@ class BasePredictor(object):
     def branch(self):
         """Return the current branch."""
         return self._branches[self._current]
-
-    @property
-    def pipeline(self):
-        """Return the estimators in the branches pipeline."""
-        return self.branch.estimators
-
-    @property
-    def feature_importance(self):
-        """Return the feature_importance in the branches pipeline."""
-        return self.branch.feature_importance
 
     @property
     def metric(self):
@@ -67,76 +89,6 @@ class BasePredictor(object):
         """Return the best performing model."""
         if self.models:  # Returns None if not fitted
             return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
-
-    # Data properties ============================================== >>
-
-    @property
-    def dataset(self):
-        return self.branch.data
-
-    @property
-    def train(self):
-        return self.branch.data[:self.branch.idx[0]]
-
-    @property
-    def test(self):
-        return self.branch.data[-self.branch.idx[1]:]
-
-    @property
-    def X(self):
-        return self.branch.data.drop(self.target, axis=1)
-
-    @property
-    def y(self):
-        return self.branch.data[self.target]
-
-    @property
-    def X_train(self):
-        return self.train.drop(self.target, axis=1)
-
-    @property
-    def X_test(self):
-        return self.test.drop(self.target, axis=1)
-
-    @property
-    def y_train(self):
-        return self.train[self.target]
-
-    @property
-    def y_test(self):
-        return self.test[self.target]
-
-    @property
-    def shape(self):
-        return self.branch.data.shape
-
-    @property
-    def columns(self):
-        return list(self.branch.data.columns)
-
-    @property
-    def target(self):
-        return self.columns[-1]
-
-    @property
-    def mapping(self):
-        return self.branch.mapping
-
-    @property
-    def classes(self):
-        """Return the number of samples per class and per data set."""
-        df = pd.DataFrame({
-            "dataset": self.y.value_counts(sort=False, dropna=False),
-            "train": self.y_train.value_counts(sort=False, dropna=False),
-            "test": self.y_test.value_counts(sort=False, dropna=False),
-        }, index=self.mapping.values())
-
-        return df.fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-
-    @property
-    def n_classes(self):
-        """Return the number of classes in the target column."""
-        return len(self.y.unique())
 
     # Prediction methods =========================================== >>
 

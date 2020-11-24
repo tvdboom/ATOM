@@ -17,7 +17,59 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
+
+
+# Test magic methods =============================================== >>
+
+def test_getattr_from_branch():
+    """Assert that branch attributes can be called from the trainer."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.pipeline is atom.branch.pipeline
+
+
+def test_getattr_invalid():
+    """Assert that an error is raised when there is no such attribute."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(AttributeError, match=r".*object has no attribute.*"):
+        _ = atom.invalid
+
+
+def test_setattr_to_branch():
+    """Assert that branch properties can be set from the trainer."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.dataset = bin_train
+    assert atom.shape == (398, 31)
+
+
+def test_setattr_normal():
+    """Assert that trainer attributes can be set normally."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.attr = "test"
+    assert atom.attr == "test"
+
+
+def test_delattr_models():
+    """Assert that models can be deleted through del."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR"])
+    del atom.lr
+    assert not atom.models
+
+
+def test_delattr_branch():
+    """Assert that branches can be deleted through del."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "branch_2"
+    del atom.branch
+    assert list(atom._branches.keys()) == ["main"]
+
+
+def test_delattr_normal():
+    """Assert that trainer attributes can be deleted normally."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    del atom.models
+    assert not hasattr(atom, "models")
 
 
 # Test utility properties ========================================== >>
@@ -90,95 +142,100 @@ def test_winner_property():
     assert atom.winner.acronym == "LGB"
 
 
-def test_shape_property():
-    """Assert that the shape property returns the shape of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.shape == (len(X_bin), X_bin.shape[1] + 1)
-
-
-def test_columns_property():
-    """Assert that the columns property returns the columns of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert len(atom.columns) == len(X_bin.columns) + 1
-
-
-def test_target_property():
-    """Assert that the target property returns the last column in the dataset."""
-    atom = ATOMClassifier(X_bin, "mean radius", random_state=1)
-    assert atom.target == "mean radius"
-
-
-def test_classes_property():
-    """Assert that the classes property returns a df of the classes in y."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert list(atom.classes.index) == [0, 1, 2]
-
-
-def test_n_classes_property():
-    """Assert that the n_classes property returns the number of classes."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert atom.n_classes == 3
-
-
-# Data attributes ================================================== >>
+# Test data attributes ============================================= >>
 
 def test_dataset_property():
     """Assert that the dataset property returns the data in the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.dataset is atom.branch.data
+    assert atom.dataset.equals(atom.branch.data)
 
 
 def test_train_property():
     """Assert that the train property returns the training set."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
-    assert atom.train.shape == (int((1 - 0.3) * len(X_bin)) + 1, X_bin.shape[1] + 1)
+    assert atom.train.equals(atom.branch.train)
 
 
 def test_test_property():
     """Assert that the test property returns the test set."""
     test_size = 0.3
     atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.test.shape == (int(test_size * len(X_bin)), X_bin.shape[1] + 1)
+    assert atom.test.equals(atom.branch.test)
 
 
 def test_X_property():
     """Assert that the X property returns the feature set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.X.shape == (len(X_bin), X_bin.shape[1])
+    assert atom.X.equals(atom.branch.X)
 
 
 def test_y_property():
     """Assert that the y property returns the target column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y.shape == (len(y_bin),)
+    assert atom.y.equals(atom.branch.y)
 
 
 def test_X_train_property():
     """Assert that the X_train property returns the training feature set."""
     test_size = 0.3
     atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.X_train.shape == (int((1 - test_size) * len(X_bin)) + 1, X_bin.shape[1])
+    assert atom.X_train.equals(atom.branch.X_train)
 
 
 def test_X_test_property():
     """Assert that the X_test property returns the test feature set."""
     test_size = 0.3
     atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.X_test.shape == (int(test_size * len(X_bin)), X_bin.shape[1])
+    assert atom.X_test.equals(atom.branch.X_test)
 
 
 def test_y_train_property():
     """Assert that the y_train property returns the training target column."""
     test_size = 0.3
     atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.y_train.shape == (int((1 - test_size) * len(X_bin)) + 1,)
+    assert atom.y_train.equals(atom.branch.y_train)
 
 
 def test_y_test_property():
     """Assert that the y_test property returns the training target column."""
-    test_size = 0.3
-    atom = ATOMClassifier(X_bin, y_bin, test_size=test_size, random_state=1)
-    assert atom.y_test.shape == (int(test_size * len(X_bin)),)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    assert atom.y_test.equals(atom.branch.y_test)
+
+
+def test_shape_property():
+    """Assert that the shape property returns the shape of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.shape == atom.branch.shape
+
+
+def test_columns_property():
+    """Assert that the columns property returns the columns of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.columns == atom.branch.columns
+
+
+def test_features_property():
+    """Assert that the features property returns the features of the dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.features == atom.branch.features
+
+
+def test_target_property():
+    """Assert that the target property returns the last column in the dataset."""
+    atom = ATOMClassifier(X_bin, "mean radius", random_state=1)
+    assert atom.target == atom.branch.target
+
+
+def test_classes_property():
+    """Assert that the classes property returns a df of the classes in y."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.classes.equals(atom.branch.classes)
+
+
+def test_n_classes_property():
+    """Assert that the n_classes property returns the number of classes."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.n_classes == atom.branch.n_classes
 
 
 # Test prediction methods ========================================== >>

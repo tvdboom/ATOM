@@ -16,7 +16,7 @@ from pandas_profiling import ProfileReport
 
 # Own modules
 from .branch import Branch
-from .voting import VotingModel
+from .voting import Voting
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
@@ -39,8 +39,8 @@ from .training import (
 from .plots import ATOMPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst, merge,
-    check_property, infer_task, check_dim, check_scaling, transform,
-    method_to_log, composed, crash,
+    infer_task, check_dim, check_scaling, transform, method_to_log,
+    composed, crash,
 )
 
 
@@ -69,7 +69,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Training attributes
         self._approach = None  # Approach adopted by this instance
-        self.vote = VotingModel(self)
+        # self.vote = VotingModel(self)   # TODO: fix
         self.models = []
         self.metric_ = []
         self.errors = {}
@@ -95,7 +95,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Save the test_size fraction for later use
         self._test_size = self.branch.idx[1] / len(self.dataset)
 
-        # Assign the algorithm's task
         self.task = infer_task(self.y, goal=self.goal)
         self.log(f"Algorithm task: {self.task}.", 1)
         if self.n_jobs > 1:
@@ -114,19 +113,15 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __repr__(self):
         out = f"{self.__class__.__name__}"
-        for key, branch in self._branches.items():
-            out += f"\n --> Branch: {key}"
-            for est in branch.estimators:
-                out += f"\n   >>> {est.__class__.__name__}"
-
+        out += f"\n --> Branches: {', '.join(list(self._branches.keys()))}"
         out += f"\n --> Training approach: {self._approach}"
-        out += f"\n --> Models: {flt(self.models) if self.models else None}"
-        out += f"\n --> Metric: {flt(self.metric) if self.metric else None}"
+        out += f"\n --> Models: {', '.join(self.models) if self.models else None}"
+        out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
         out += f"\n --> Errors: {len(self.errors)}"
 
         return out
 
-    # Branch properties ============================================ >>
+    # Utility properties =========================================== >>
 
     @BasePredictor.branch.setter
     @typechecked
@@ -149,23 +144,9 @@ class ATOM(BasePredictor, ATOMPlotter):
                     "atom.branch for an overview of the branches in the pipeline."
                 )
 
-            self._branches[new_branch] = Branch(
-                self,
-                new_branch,
-                estimators=self._branches[from_branch].estimators,
-                data=self._branches[from_branch].data,
-                idx=self._branches[from_branch].idx,
-                mapping=self._branches[from_branch].mapping,
-                feature_importance=self._branches[from_branch].feature_importance,
-            )
+            self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
             self._current = new_branch
             self.log(f"New branch '{self._current}' successfully created!", 1)
-
-    @branch.deleter
-    def branch(self):
-        self.branch.delete()
-
-    # Utility properties =========================================== >>
 
     @property
     def nans(self):
@@ -321,7 +302,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         if verbose is None:
             verbose = self.verbose
-        return transform(self.branch.estimators, X, y, verbose, **kwargs)
+        return transform(self.pipeline, X, y, verbose, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = None, dataset: str = "dataset"):
@@ -366,7 +347,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         scaler = Scaler(**kwargs).fit(self.X_train)
 
         self.X = scaler.transform(self.X)
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([scaler]), ignore_index=True
         )
 
@@ -415,7 +396,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
         self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
 
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([cleaner]), ignore_index=True
         )
 
@@ -461,7 +442,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
         self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
 
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([imputer]), ignore_index=True
         )
 
@@ -500,7 +481,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         self.X = encoder.transform(self.X)
 
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([encoder]), ignore_index=True
         )
 
@@ -535,7 +516,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.train = merge(*outliers.transform(self.X_train, self.y_train))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([outliers]), ignore_index=True
         )
 
@@ -559,18 +540,18 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Balancer().get_params())
         balancer = Balancer(strategy=strategy, **kwargs)
 
-        # Add mapping from ATOM to balancer for cleaner printing
+        # Add mapping from atom to balancer for cleaner printing
         balancer.mapping = self.mapping
 
         self.train = merge(*balancer.transform(self.X_train, self.y_train))
         self.dataset.reset_index(drop=True, inplace=True)
 
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([balancer]), ignore_index=True
         )
 
-        # Attach the estimator attribute to ATOM
-        setattr(self, strategy.lower(), getattr(balancer, strategy.lower()))
+        # Attach the estimator attribute to atom's branch
+        setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
 
     # Feature engineering methods ================================== >>
 
@@ -605,14 +586,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         ).fit(self.X_train, self.y_train)
 
         self.X = feature_generator.transform(self.X)
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([feature_generator]), ignore_index=True
         )
 
-        # Attach used attributes to ATOM
+        # Attach used attributes to atom's branch
         if strategy.lower() in ("gfg", "genetic"):
             for attr in ["symbolic_transformer", "genetic_features"]:
-                setattr(self, attr, getattr(feature_generator, attr))
+                setattr(self.branch, attr, getattr(feature_generator, attr))
 
     @composed(crash, method_to_log, typechecked)
     def feature_selection(
@@ -675,15 +656,23 @@ class ATOM(BasePredictor, ATOMPlotter):
         ).fit(self.X_train, self.y_train)
 
         self.X = feature_selector.transform(self.X)
-        self.branch.estimators = self.branch.estimators.append(
+        self.branch.pipeline = self.pipeline.append(
             pd.Series([feature_selector]), ignore_index=True
         )
 
-        # Attach used attributes to ATOM
-        self.branch.feature_importance = feature_selector.feature_importance
-        for attr in ("univariate", "collinear", "pca", "sfm", "rfe", "rfecv"):
+        # Attach used attributes to atom's branch
+        attrs = (
+            "feature_importance",
+            "univariate",
+            "pca",
+            "sfm",
+            "rfe",
+            "rfecv",
+            "collinear",
+        )
+        for attr in attrs:
             if getattr(feature_selector, attr) is not None:
-                setattr(self, attr, getattr(feature_selector, attr))
+                setattr(self.branch, attr, getattr(feature_selector, attr))
 
     # Training methods ============================================= >>
 
@@ -765,32 +754,30 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         try:
-            trainer._branches = {"main": self.branch}
+            trainer._branches = {self._current: self.branch}
+            trainer._current = self._current
             trainer.run()
-        except ValueError:
-            raise
-        else:
-            # Update attributes
-            self.models += [m for m in trainer.models if m not in self.models]
-            self.metric_ = trainer.metric_
-
-            # Update the results attribute
-            for idx, row in trainer._results.iterrows():
-                self._results.loc[idx, :] = row
-
-            for model in trainer.models:
-                self.errors.pop(model, None)  # Remove model from errors if there
-
-                # Attach model subclasses to ATOM
-                setattr(self, model, getattr(trainer, model))
-                setattr(self, model.lower(), getattr(trainer, model.lower()))
-
-                # Add branch estimators to the models for transform method
-                setattr(getattr(self, model), "_est_branch", self.branch.estimators)
-
-        finally:  # Catch errors and pass them to ATOM's attribute
+        finally:  # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
                 self.errors[model] = error
+
+        # Update attributes
+        self.models += [m for m in trainer.models if m not in self.models]
+        self.metric_ = trainer.metric_
+
+        # Update the results attribute
+        for idx, row in trainer._results.iterrows():
+            self._results.loc[idx, :] = row
+
+        for model in trainer.models:
+            self.errors.pop(model, None)  # Remove model from errors if there
+
+            # Attach model subclasses to atom
+            setattr(self, model, getattr(trainer, model))
+            setattr(self, model.lower(), getattr(trainer, model.lower()))
+
+            # Change the model's parent class from trainer to atom
+            setattr(getattr(self, model), "T", self)
 
     @composed(crash, method_to_log, typechecked)
     def run(
@@ -924,88 +911,3 @@ class ATOM(BasePredictor, ATOMPlotter):
             trainer = TrainSizingRegressor(*params, **kwargs)
 
         self._run(trainer)
-
-    # data attributes ============================================== >>
-
-    @BasePredictor.dataset.setter
-    @typechecked
-    def dataset(self, dataset: Optional[X_TYPES]):
-        self.branch.data = check_property(dataset, "dataset")
-
-    @BasePredictor.train.setter
-    @typechecked
-    def train(self, train: X_TYPES):
-        df = check_property(train, "train", under=self.test, under_name="test")
-        self.branch.data = pd.concat([df, self.test])
-        self.branch.idx[0] = len(df)
-
-    @BasePredictor.test.setter
-    @typechecked
-    def test(self, test: X_TYPES):
-        df = check_property(test, "test", under=self.train, under_name="train")
-        self.branch.data = pd.concat([self.train, df])
-        self.branch.idx[1] = len(df)
-
-    @BasePredictor.X.setter
-    @typechecked
-    def X(self, X: X_TYPES):
-        df = check_property(X, "X", side=self.y, side_name="y")
-        self.branch.data = merge(df, self.y)
-
-    @BasePredictor.y.setter
-    @typechecked
-    def y(self, y: Union[list, tuple, dict, np.array, pd.Series]):
-        series = check_property(y, "y", side=self.X, side_name="X")
-        self.branch.data = merge(self.branch.data.drop(self.target, axis=1), series)
-
-    @BasePredictor.X_train.setter
-    @typechecked
-    def X_train(self, X_train: X_TYPES):
-        df = check_property(
-            value=X_train,
-            value_name="X_train",
-            side=self.y_train,
-            side_name="y_train",
-            under=self.X_test,
-            under_name="X_test",
-        )
-        self.branch.data = pd.concat([merge(df, self.train[self.target]), self.test])
-
-    @BasePredictor.X_test.setter
-    @typechecked
-    def X_test(self, X_test: X_TYPES):
-        df = check_property(
-            value=X_test,
-            value_name="X_test",
-            side=self.y_test,
-            side_name="y_test",
-            under=self.X_train,
-            under_name="X_train",
-        )
-        self.branch.data = pd.concat([self.train, merge(df, self.test[self.target])])
-
-    @BasePredictor.y_train.setter
-    @typechecked
-    def y_train(self, y_train: Union[list, tuple, dict, np.array, pd.Series]):
-        series = check_property(
-            value=y_train,
-            value_name="y_train",
-            side=self.X_train,
-            side_name="X_train",
-            under=self.y_test,
-            under_name="y_test",
-        )
-        self.branch.data = pd.concat([merge(self.X_train, series), self.test])
-
-    @BasePredictor.y_test.setter
-    @typechecked
-    def y_test(self, y_test: Union[list, tuple, dict, np.array, pd.Series]):
-        series = check_property(
-            value=y_test,
-            value_name="y_test",
-            side=self.X_test,
-            side_name="X_test",
-            under=self.y_train,
-            under_name="y_train",
-        )
-        self.branch.data = pd.concat([self.train, merge(self.X_test, series)])

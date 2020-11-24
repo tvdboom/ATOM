@@ -15,7 +15,7 @@ import pandas as pd
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.utils import merge, check_scaling
+from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_bin_array,
     y_bin_array, X10, X10_nan, X10_str, y10, y10_nan, y10_str, y10_sn
@@ -104,7 +104,7 @@ def test_branch_setter_change():
     atom.branch = "branch_2"
     atom.clean()
     atom.branch = "main"
-    assert atom.branch.estimators.empty  # Has no clean estimator
+    assert atom.pipeline.empty  # Has no clean estimator
 
 
 def test_branch_setter_new():
@@ -129,14 +129,6 @@ def test_branch_setter_from_invalid():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     with pytest.raises(ValueError, match=r".*branch to split from does not exist.*"):
         atom.branch = "new_branch_from_invalid"
-
-
-def test_branch_deleter():
-    """Assert that we can delete a branch."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.branch = "branch_2"
-    del atom.branch
-    assert list(atom._branches.keys()) == ["main"]
 
 
 # Test utility properties ========================================== >>
@@ -211,7 +203,7 @@ def test_verbose_in_transform():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     _ = atom.transform(X_bin, verbose=2)
-    assert atom.branch.estimators[0].verbose == 2
+    assert atom.pipeline[0].verbose == 2
 
 
 def test_pipeline_parameter():
@@ -262,14 +254,14 @@ def test_ATOM_params_to_method():
     """Assert that the ATOM parameters are passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale()
-    assert atom.branch.estimators[0].verbose == 1
+    assert atom.pipeline[0].verbose == 1
 
 
 def test_custom_params_to_method():
     """Assert that a custom parameter is passed to the method."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.scale(verbose=2)
-    assert atom.branch.estimators[0].verbose == 2
+    assert atom.pipeline[0].verbose == 2
 
 
 def test_scale():
@@ -326,7 +318,7 @@ def test_balance_mapping():
     """Assert that the balance method gets the mapping attribute from ATOM."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
-    assert atom.branch.estimators[0].mapping == atom.branch.mapping
+    assert atom.pipeline[0].mapping == atom.mapping
 
 
 def test_balance_attribute():
@@ -356,8 +348,9 @@ def test_feature_generation_attributes():
 def test_feature_selection_attrs():
     """Assert that feature_selection attaches only used attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy="pca", n_features=8, max_correlation=0.8)
-    assert hasattr(atom, "collinear") and hasattr(atom, "pca")
+    atom.feature_selection(strategy="univariate", n_features=8)
+    assert hasattr(atom, "univariate")
+    assert not hasattr(atom, "RFE")
 
 
 def test_default_solver_univariate():
@@ -365,22 +358,20 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.branch.estimators[0].solver.__name__ == "f_classif"
+    assert atom.pipeline[0].solver.__name__ == "f_classif"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.branch.estimators[0].solver.__name__ == "f_regression"
+    assert atom.pipeline[0].solver.__name__ == "f_regression"
 
 
 def test_winner_solver_after_run():
     """Assert that the solver is the winning model after run."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("LR")
-    atom.feature_selection(
-        strategy="SFM", solver=None, n_features=8, max_correlation=None
-    )
-    assert atom.branch.estimators[0].solver is atom.winner.estimator
+    atom.feature_selection(strategy="SFM", solver=None, n_features=8)
+    assert atom.pipeline[0].solver is atom.winner.estimator
 
 
 def test_default_solver_from_task():
@@ -388,12 +379,12 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert type(atom.branch.estimators[0].solver).__name__ == "LGBMClassifier"
+    assert type(atom.pipeline[0].solver).__name__ == "LGBMClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert type(atom.branch.estimators[0].solver).__name__ == "LGBMRegressor"
+    assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
 
 
 def test_default_scoring_RFECV():
@@ -401,23 +392,16 @@ def test_default_scoring_RFECV():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
     atom.feature_selection(strategy="rfecv", solver="lgb", n_features=8)
-    assert atom.branch.estimators[0].kwargs["scoring"].name == "recall"
-
-
-def test_plot_methods_attached():
-    """Assert that the plot methods are attached to the ATOM instance."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.feature_selection(strategy="rfecv", solver="lgb", n_features=8)
-    assert hasattr(atom, "plot_rfecv")
+    assert atom.pipeline[0].kwargs["scoring"].name == "recall"
 
 
 # Test training methods ============================================ >>
 
-def test_errors_are_passed_to_ATOM():
-    """Assert that the errors found in models are passed to ATOM."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"], n_calls=5, n_initial_points=(2, -1))
-    assert atom.errors.get("LGB")
+def test_errors_are_updated():
+    """Assert that the found exceptions are updated in the errors attribute."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["XGB", "LGB"], n_calls=2, n_initial_points=(2, -1))  # Produces an error
+    assert list(atom.errors.keys()) == ["LGB"]
 
 
 def test_models_and_metric_are_updated():
@@ -431,7 +415,7 @@ def test_models_and_metric_are_updated():
 def test_results_are_attached():
     """Assert that the results are attached for subsequent runs of Trainer."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
+    atom.run("Tree")
     atom.run("LGB")
     assert len(atom.results) == 2
 
@@ -448,23 +432,15 @@ def test_errors_are_removed():
 def test_model_subclasses_are_attached():
     """Assert that the model subclasses are attached to ATOM."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    assert hasattr(atom, "OLS") and hasattr(atom, "ols")
+    atom.run("Tree")
+    assert hasattr(atom, "Tree") and hasattr(atom, "tree")
 
 
-def test_branch_estimators_are_attached():
-    """Assert that the branch estimators are attached to the models."""
+def test_trainer_becomes_atom():
+    """Assert that the parent trainer is converted to atom."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    assert hasattr(atom.ols, "_est_branch")
-
-
-def test_errors_are_updated():
-    """Assert that the found exceptions are updated in the errors attribute."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["XGB", "LGB"], n_calls=2, n_initial_points=2)  # No errors
-    atom.run(["XGB", "LGB"], n_calls=2, n_initial_points=(2, -1))  # Produces an error
-    assert atom.errors.get("LGB")
+    atom.run("Tree")
+    assert atom is atom.tree.T
 
 
 def test_exception_mixed_approaches():
@@ -487,130 +463,3 @@ def test_raises_invalid_metric_consecutive_runs():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
     pytest.raises(ValueError, atom.run, "lda", metric="f1")
-
-
-# Test property getters ============================================ >>
-
-def test_dataset_setter():
-    """Assert that the dataset setter changes the whole dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.dataset = merge(X_class, y_class)
-    assert atom.dataset.shape == (len(X_class), X_class.shape[1] + 1)
-
-
-def test_train_setter():
-    """Assert that the train setter changes the training set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.train = atom.train.iloc[:100, :]
-    assert atom.train.shape == (100, X_bin.shape[1] + 1)
-
-
-def test_test_setter():
-    """Assert that the test setter changes the test set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.test = atom.test.iloc[:100, :]
-    assert atom.test.shape == (100, X_bin.shape[1] + 1)
-
-
-def test_X_setter():
-    """Assert that the X setter changes the feature set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.X = atom.X.iloc[:, :10]
-    assert atom.X.shape == (len(X_bin), 10)
-
-
-def test_y_setter():
-    """Assert that the y setter changes the target column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y[0] == 1  # First value is 1 in original
-    atom.y = [0] + list(y_bin.values[1:])
-    assert atom.y[0] == 0  # First value changed to 0
-
-
-def test_X_train_setter():
-    """Assert that the X_train setter changes the training feature set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    new_X_train = atom.X_train
-    new_X_train.iloc[0, 0] = 999
-    atom.X_train = new_X_train
-    assert atom.X_train.iloc[0, 0] == 999
-
-
-def test_X_test_setter():
-    """Assert that the X_test setter changes the test feature set."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    new_X_test = atom.X_test
-    new_X_test.iloc[0, 0] = 999
-    atom.X_test = new_X_test
-    assert atom.X_test.iloc[0, 0] == 999
-
-
-def test_y_train_setter():
-    """Assert that the y_train setter changes the training target column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_train.iloc[0] == 1  # First value is 1 in original
-    atom.y_train = [0] + list(atom.y_train.values[1:])
-    assert atom.y_train.iloc[0] == 0  # First value changed to 0
-
-
-def test_y_test_setter():
-    """Assert that the y_test setter changes the training target column."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.y_test.iloc[0] == 0  # First value is 0 in original
-    atom.y_test = [1] + list(atom.y_test.values[1:])
-    assert atom.y_test.iloc[0] == 1  # First value changed to 1
-
-
-def test_data_properties_to_df():
-    """Assert that the data attributes are converted to a df at setter."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.X = X_bin_array
-    assert isinstance(atom.X, pd.DataFrame)
-
-
-def test_data_properties_to_series():
-    """Assert that the data attributes are converted to a series at setter."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.y = y_bin_array
-    assert isinstance(atom.y, pd.Series)
-
-
-def test_setter_error_unequal_rows():
-    """Assert that an error is raised when the setter has unequal rows."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"number of rows"):
-        atom.X_train = X_bin
-
-
-def test_setter_error_unequal_index():
-    """Assert that an error is raised when the setter has unequal indices."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r"the same indices"):
-        atom.y = pd.Series(y_bin_array, index=range(10, len(y_bin_array) + 10))
-
-
-def test_setter_error_unequal_columns():
-    """Assert that an error is raised when the setter has unequal columns."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match="number of columns"):
-        new_X = atom.train
-        new_X.insert(0, "new_column", 1)
-        atom.train = new_X
-
-
-def test_setter_error_unequal_column_names():
-    """Assert that an error is raised with different column names."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match="the same columns"):
-        new_X = atom.train.drop(atom.train.columns[0], axis=1)
-        new_X.insert(0, "new_column", 1)
-        atom.train = new_X
-
-
-def test_setter_error_unequal_target_names():
-    """Assert that an error is raised with different target names."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match="the same name"):
-        new_y_train = atom.y_train
-        new_y_train.name = "different_name"
-        atom.y_train = new_y_train

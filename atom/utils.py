@@ -413,79 +413,6 @@ def prepare_logger(logger, class_name):
     return logger
 
 
-def check_property(
-    value, value_name, side=None, side_name=None, under=None, under_name=None
-):
-    """Check the property setter on type and dimensions.
-
-    Convert the property to a pandas object and compare with other
-    properties to check if it has the right dimensions.
-
-    Parameters
-    ----------
-    value: sequence, np.array, pd.Series or pd.DataFrame
-        Property to be checked.
-
-    value_name: str
-        Name of the property to check.
-
-    side: pd.Series, pd.DataFrame or None, optional (default=None)
-        Other property to compare the length with.
-
-    side_name: str
-        Name of the property of the side parameter.
-
-    under: pd.Series, pd.DataFrame or None, optional (default=None)
-        Other property to compare the width with.
-
-    under_name: str
-        Name of the property of the under parameter.
-
-    """
-    index = side.index if side_name else None
-    if "y" in value_name:
-        name = under.name if under_name else "target"
-        value = to_series(value, index=index, name=name)
-    else:
-        columns = under.columns if under_name else None
-        value = to_df(value, index=index, columns=columns)
-
-    if side_name:  # Check for equal number of rows
-        if len(value) != len(side):
-            raise ValueError(
-                f"The {value_name} and {side_name} properties need to have the "
-                f"same number of rows, got {len(value)} != {len(side)}."
-            )
-        if not value.index.equals(side.index):
-            raise ValueError(
-                f"The {value_name} and {side_name} properties need to have the "
-                f"same indices, got {value.index} != {side.index}."
-            )
-
-    if under_name:  # Check they have the same columns
-        if "y" in value_name:
-            if value.name != under.name:
-                raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have "
-                    f"the same name, got {value.name} != {under.name}."
-                )
-        else:
-            if value.shape[1] != under.shape[1]:
-                raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have "
-                    f"the same number of columns, got {value.shape[1]} != "
-                    f"{under.shape[1]}."
-                )
-
-            if list(value.columns) != list(under.columns):
-                raise ValueError(
-                    f"The {value_name} and {under_name} properties need to have "
-                    f"the same columns , got {value.columns} != {under.columns}."
-                )
-
-    return value
-
-
 def check_is_fitted(estimator, attributes=None, msg=None):
     """Perform is_fitted validation for estimator.
 
@@ -670,17 +597,16 @@ def infer_task(y, goal="classification"):
         Inferred task.
 
     """
+    if goal == "regression":
+        return goal
+
     unique = y.unique()
     if len(unique) == 1:
         raise ValueError(f"Only found 1 target value: {unique[0]}")
-
-    if goal.startswith("class"):
-        if len(unique) == 2:
-            return "binary classification"
-        else:
-            return "multiclass classification"
-
-    return "regression"
+    elif len(unique) == 2:
+        return "binary classification"
+    else:
+        return "multiclass classification"
 
 
 def partial_dependence(estimator, X, features):
@@ -846,8 +772,8 @@ def delete(self, models):
             if hasattr(self, "_approach"):
                 self._approach = None
 
-        delattr(self, model)
-        delattr(self, model.lower())
+        del self.__dict__[model]
+        del self.__dict__[model.lower()]
 
 
 # Decorators ======================================================= >>
@@ -900,7 +826,7 @@ def crash(f, cache={"last_exception": None}):
 
 
 def method_to_log(f):
-    """Save function's parameters to log file."""
+    """Save called functions to log file."""
 
     def wrapper(*args, **kwargs):
         # Get logger (for model subclasses called from BasePredictor)
@@ -922,10 +848,9 @@ def plot_from_model(f):
 
     def wrapper(*args, **kwargs):
         if hasattr(args[0], "T"):
-            result = f(args[0].T, args[0].name, *args[1:], **kwargs)
+            return f(args[0].T, args[0].name, *args[1:], **kwargs)
         else:
-            result = f(*args, **kwargs)
-        return result
+            return f(*args, **kwargs)
 
     return wrapper
 
@@ -971,26 +896,26 @@ class PlotCallback(object):
             self.y2.append(abs(self.y1[-1] - self.y1[-2]))
 
         if len(result.func_vals) == 1:  # After the 1st iteration, create plot
-            self.line1, self.line2, self.ax1, self.ax2 = self.create_canvas()
-        self.animate_plot()
+            self.line1, self.line2, self.ax1, self.ax2 = self.create_figure()
+        else:
+            self.animate_plot()
 
-    def create_canvas(self):
+    def create_figure(self):
         """Create the plot.
 
-        Creates a canvas with two plots. The first plot shows the
-        score of every trial and the second shows the distance
-        between the last consecutive steps.
+        Creates a figure with two subplots. The first plot shows the
+        score of every trial and the second shows the distance between
+        the last consecutive steps.
 
         """
         plt.ion()  # Call to matplotlib that allows dynamic plotting
 
-        # Initialize plot
-        fig = plt.figure(figsize=(10, 8))
-        gs = GridSpec(2, 1, height_ratios=[2, 1])
+        plt.gcf().set_size_inches(10, 8)
+        gs = GridSpec(4, 1, hspace=0.05)
+        ax1 = plt.subplot(gs[0:3, 0])
+        ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
 
-        # First subplot (without xtick labels)
-        ax1 = plt.subplot(gs[0])
-        # Create a variable for the line so we can later update it
+        # First subplot
         (line1,) = ax1.plot(self.x, self.y1, "-o", alpha=0.8)
         ax1.set_title(
             label=f"Bayesian Optimization for {self.M.fullname}",
@@ -1005,27 +930,16 @@ class PlotCallback(object):
         ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
 
         # Second subplot
-        ax2 = plt.subplot(gs[1], sharex=ax1)
         (line2,) = ax2.plot(self.x, self.y2, "-o", alpha=0.8)
-        ax2.set_title(
-            label="Distance between last consecutive iterations",
-            fontsize=self.M.T.title_fontsize,
-            pad=20,
-        )
-        ax2.set_xlabel(
-            xlabel="Iteration", fontsize=self.M.T.label_fontsize, labelpad=12
-        )
+        ax2.set_xlabel(xlabel="Call", fontsize=self.M.T.label_fontsize, labelpad=12)
         ax2.set_ylabel(ylabel="d", fontsize=self.M.T.label_fontsize, labelpad=12)
         ax2.set_xticks(self.x)
         ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
         ax2.set_ylim([-0.05, 0.1])
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        plt.subplots_adjust(hspace=0.0)
         plt.xticks(fontsize=self.M.T.tick_fontsize)
         plt.yticks(fontsize=self.M.T.tick_fontsize)
-        fig.tight_layout()
-        plt.show()
 
         return line1, line2, ax1, ax2
 

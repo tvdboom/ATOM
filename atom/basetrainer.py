@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 # Own modules
 from .branch import Branch
-from .voting import VotingModel
+from .voting import Voting
 from .models import MODEL_LIST, CustomModel
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
@@ -165,7 +165,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.task = None
 
         # Model attributes
-        self.vote = VotingModel(self)
+        # self.vote = VotingModel(self)  # TODO: fix
         self.errors = {}
         self._results = pd.DataFrame(
             columns=[
@@ -180,12 +180,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 "time",
             ]
         )
-
-    def _params_to_attr(self, *arrays):
-        """Attach the provided data as attributes of the class."""
-        # If no data was provided and there already is a dataset, skip
-        if len(arrays) > 0 or self.branch.data is None:
-            self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
@@ -224,12 +218,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         f"The {acronym} model can't perform regression tasks!"
                     )
 
-                subclass = MODEL_LIST[acronym](self)
-                subclass.name = acronym + m[len(acronym):]
+                subclass = MODEL_LIST[acronym](self, acronym + m[len(acronym):])
 
             else:  # Model is custom estimator
-                subclass = CustomModel(self, m)
-                subclass.name = subclass.acronym
+                subclass = CustomModel(self, estimator=m)
 
             # Add the model to the pipeline and check for duplicates
             models.append(subclass.name)
@@ -328,8 +320,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # Assign mapping =========================================== >>
 
         # Is already filled if called from atom
-        if not self.branch.mapping:
-            self.branch.mapping = {str(v): v for v in sorted(self.y.unique())}
+        if not self.mapping:
+            self.mapping = {str(v): v for v in sorted(self.y.unique())}
 
     @staticmethod
     def _prepare_metric(metric, gib, needs_proba, needs_threshold):
@@ -370,7 +362,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         return metric_list
 
-    def _run(self):
+    def _core_iteration(self):
         """Core iteration of the trainer.
 
         Returns

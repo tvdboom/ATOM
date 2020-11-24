@@ -15,6 +15,10 @@ from atom import ATOMClassifier
 ```
 
 
+    <Figure size 432x288 with 0 Axes>
+
+
+
 ```python
 # Load data
 X = pd.read_csv('./datasets/weatherAUS.csv')
@@ -56,59 +60,59 @@ X.sample(frac=1).iloc[:5, :8]
   </thead>
   <tbody>
     <tr>
-      <th>86433</th>
-      <td>Cairns</td>
-      <td>14.7</td>
-      <td>26.4</td>
+      <th>56886</th>
+      <td>Bendigo</td>
+      <td>10.3</td>
+      <td>14.0</td>
+      <td>12.4</td>
+      <td>1.2</td>
+      <td>NaN</td>
+      <td>ENE</td>
+      <td>30.0</td>
+    </tr>
+    <tr>
+      <th>132891</th>
+      <td>AliceSprings</td>
+      <td>21.0</td>
+      <td>39.1</td>
+      <td>1.2</td>
+      <td>9.0</td>
+      <td>12.2</td>
+      <td>NNW</td>
+      <td>41.0</td>
+    </tr>
+    <tr>
+      <th>100511</th>
+      <td>Nuriootpa</td>
+      <td>2.6</td>
+      <td>15.7</td>
+      <td>1.0</td>
+      <td>1.0</td>
+      <td>5.3</td>
+      <td>ENE</td>
+      <td>15.0</td>
+    </tr>
+    <tr>
+      <th>10385</th>
+      <td>CoffsHarbour</td>
+      <td>19.9</td>
+      <td>27.0</td>
       <td>0.0</td>
-      <td>5.0</td>
-      <td>7.6</td>
-      <td>ESE</td>
+      <td>4.8</td>
+      <td>3.0</td>
+      <td>NNW</td>
       <td>35.0</td>
     </tr>
     <tr>
-      <th>5964</th>
-      <td>Cobar</td>
-      <td>23.8</td>
-      <td>39.9</td>
+      <th>112606</th>
+      <td>PearceRAAF</td>
+      <td>12.5</td>
+      <td>36.1</td>
       <td>0.0</td>
-      <td>12.6</td>
-      <td>13.2</td>
-      <td>S</td>
-      <td>31.0</td>
-    </tr>
-    <tr>
-      <th>18064</th>
-      <td>NorahHead</td>
-      <td>21.8</td>
-      <td>26.7</td>
-      <td>4.2</td>
       <td>NaN</td>
-      <td>NaN</td>
-      <td>NNE</td>
-      <td>48.0</td>
-    </tr>
-    <tr>
-      <th>107088</th>
-      <td>Albany</td>
-      <td>19.5</td>
-      <td>25.9</td>
-      <td>0.0</td>
-      <td>5.2</td>
-      <td>12.2</td>
-      <td>NaN</td>
-      <td>NaN</td>
-    </tr>
-    <tr>
-      <th>79530</th>
-      <td>Dartmoor</td>
-      <td>9.6</td>
-      <td>14.2</td>
-      <td>11.8</td>
-      <td>1.4</td>
-      <td>0.1</td>
-      <td>SSW</td>
-      <td>37.0</td>
+      <td>13.3</td>
+      <td>WSW</td>
+      <td>46.0</td>
     </tr>
   </tbody>
 </table>
@@ -192,16 +196,16 @@ atom.run("LR", metric="f1", bagging=5)
     Fit ---------------------------------------------
     Train evaluation --> f1: 0.6174
     Test evaluation --> f1: 0.6096
-    Time elapsed: 0.083s
+    Time elapsed: 0.074s
     Bagging -----------------------------------------
     Evaluation --> f1: 0.6078 ± 0.0048
-    Time elapsed: 0.353s
+    Time elapsed: 0.321s
     -------------------------------------------------
-    Total time: 0.446s
+    Total time: 0.396s
     
     
     Final results ========================= >>
-    Duration: 0.448s
+    Duration: 0.397s
     ------------------------------------------
     Logistic Regression --> f1: 0.608 ± 0.005
     
@@ -224,16 +228,16 @@ atom.run("LR_cw", est_params={"class_weight": atom.get_class_weight()}, bagging=
     Fit ---------------------------------------------
     Train evaluation --> f1: 0.6449
     Test evaluation --> f1: 0.6472
-    Time elapsed: 0.080s
+    Time elapsed: 0.074s
     Bagging -----------------------------------------
     Evaluation --> f1: 0.6483 ± 0.0014
-    Time elapsed: 0.334s
+    Time elapsed: 0.306s
     -------------------------------------------------
-    Total time: 0.423s
+    Total time: 0.381s
     
     
     Final results ========================= >>
-    Duration: 0.424s
+    Duration: 0.382s
     ------------------------------------------
     Logistic Regression --> f1: 0.648 ± 0.001
     
@@ -242,69 +246,7 @@ atom.run("LR_cw", est_params={"class_weight": atom.get_class_weight()}, bagging=
 
 
 ```python
-# Since we are going to use two different approaches that
-# change the dataset, we will split atom in two branches
-
-# We will use the current branch later for undersampling
-atom.branch.rename("undersampling")
-```
-
-    Branch renamed successfully!
-    
-
-
-```python
-atom.classes
-```
-
-
-
-
-<div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
-
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
-<table border="1" class="dataframe">
-  <thead>
-    <tr style="text-align: right;">
-      <th></th>
-      <th>dataset</th>
-      <th>train</th>
-      <th>test</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <th>0</th>
-      <td>13189</td>
-      <td>9317</td>
-      <td>3872</td>
-    </tr>
-    <tr>
-      <th>1</th>
-      <td>3706</td>
-      <td>2555</td>
-      <td>1151</td>
-    </tr>
-  </tbody>
-</table>
-</div>
-
-
-
-
-```python
-# And we need to create a new branch for oversampling
+# Create a new branch for oversampling
 atom.branch = "oversampling"
 ```
 
@@ -386,30 +328,30 @@ atom.run("LR_os", bagging=5)
     Fit ---------------------------------------------
     Train evaluation --> f1: 0.7918
     Test evaluation --> f1: 0.6505
-    Time elapsed: 0.107s
+    Time elapsed: 0.097s
     Bagging -----------------------------------------
     Evaluation --> f1: 0.6489 ± 0.0031
-    Time elapsed: 0.405s
+    Time elapsed: 0.368s
     -------------------------------------------------
-    Total time: 0.523s
+    Total time: 0.465s
     
     
     Final results ========================= >>
-    Duration: 0.524s
+    Duration: 0.466s
     ------------------------------------------
     Logistic Regression --> f1: 0.649 ± 0.003
     
 
 
 ```python
-# Now, let's return to the undersampling branch
-atom.branch = "undersampling"
+# Create the undersampling branch from main
+atom.branch = "undersampling_from_main"
 
 # Note that here the data is still imbalanced!
 atom.classes
 ```
 
-    Switched to branch 'undersampling'.
+    New branch 'undersampling' successfully created!
     
 
 
@@ -482,16 +424,16 @@ atom.run("LR_us", bagging=5)
     Fit ---------------------------------------------
     Train evaluation --> f1: 0.7829
     Test evaluation --> f1: 0.6061
-    Time elapsed: 0.060s
+    Time elapsed: 0.052s
     Bagging -----------------------------------------
     Evaluation --> f1: 0.6037 ± 0.0071
-    Time elapsed: 0.239s
+    Time elapsed: 0.213s
     -------------------------------------------------
-    Total time: 0.305s
+    Total time: 0.266s
     
     
     Final results ========================= >>
-    Duration: 0.306s
+    Duration: 0.267s
     ------------------------------------------
     Logistic Regression --> f1: 0.604 ± 0.007 ~
     
@@ -504,5 +446,5 @@ atom.plot_bagging()
 ```
 
 
-![png](output_20_0.png)
+![png](output_18_0.png)
 

@@ -48,9 +48,8 @@ class BaseTransformer(object):
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
-        for attr in self.attrs:
-            if attr in kwargs:
-                setattr(self, attr, kwargs[attr])
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
     # Properties =================================================== >>
 
@@ -264,10 +263,13 @@ class BaseTransformer(object):
         # Process input arrays ===================================== >>
 
         if len(arrays) == 0:
-            raise ValueError(
-                "The data arrays are empty! Provide the data to run the pipeline "
-                "successfully. See the documentation for the allowed formats."
-            )
+            if self.branch.data is None:
+                raise ValueError(
+                    "The data arrays are empty! Provide the data to run the pipeline "
+                    "successfully. See the documentation for the allowed formats."
+                )
+            else:
+                return self.branch.data, self.branch.idx
 
         elif len(arrays) == 1:
             # arrays=(X,)

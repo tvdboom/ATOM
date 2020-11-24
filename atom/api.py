@@ -151,7 +151,8 @@ def ATOMLoader(
 
             if transform_data:
                 # Transform the data through all transformers in the branch
-                for est in branch.estimators:
+                print(branch.pipeline)
+                for est in branch.pipeline:
                     if verbose is not None:
                         vb = est.get_params()["verbose"]  # Save original verbosity
                         est.set_params(verbose=verbose)

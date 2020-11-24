@@ -68,14 +68,24 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.T = args[0]  # Trainer instance
         self.__dict__.update(kwargs)
+        self.name = self.acronym if len(args) == 1 else args[1]
+
+        # Skip if called from for FeatureSelector
+        if hasattr(self.T, "_branches"):
+            self.branch = self.T._branches[self.T._current]
+            if self.needs_scaling and not check_scaling(self.branch.X):
+                self.scaler = Scaler().fit(self.branch.X_train)
+            else:
+                self.scaler = None
 
         # BO attributes
         self._iter = 0
         self._init_bo = None
         self._pbar = None
-        self._cv = 5  # Default value
+        self._cv = 5  # Number of cross-validation folds
         self._early_stopping = None
         self._stopped = None
         self.bo = pd.DataFrame(
@@ -88,7 +98,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._est_params_fit = {}
 
         # BaseModel attributes
-        self._scaler = None
         self.estimator = None
         self.best_params = None
         self.time_fit = None
@@ -100,7 +109,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
-        self.reset_prediction_attributes()
+
+        # Prediction attributes include (for train and test)
+        # predict, predict_proba, predict_log_proba, decision_function, score
+        self._pred_attrs = [None] * 10
 
         # Results
         self._results = pd.DataFrame(
@@ -124,13 +136,6 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             out += f"\n --> {metric.name}: {get_best_score(self, i)}"
 
         return out
-
-    @property
-    def scaler(self):
-        """Get the model's feature scaler."""
-        if not self._scaler:
-            self._scaler = Scaler().fit(self.T.X_train)
-        return self._scaler
 
     def _get_default(self, x, params):
         """Get the standard parameter from params or the trainer.
@@ -734,10 +739,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             )
 
         # When there is a pipeline, apply all data transformations first
-        if hasattr(self, "_est_branch"):
+        if not self.T.pipeline.empty:
             if kwargs.get("verbose") is None:
                 kwargs["verbose"] = self.T.verbose
-            X, y = catch_return(transform(self._est_branch, X, y, **kwargs))
+            X, y = catch_return(transform(self.T.pipeline, X, y, **kwargs))
 
         # Scale the data if needed
         if self.needs_scaling and not check_scaling(X):
@@ -781,73 +786,70 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     # Prediction properties ========================================= >>
 
-    def reset_prediction_attributes(self):
+    @composed(crash, method_to_log)
+    def reset_predictions(self):
         """Clear all the prediction attributes."""
-        self._predict_train, self._predict_test = None, None
-        self._predict_proba_train, self._predict_proba_test = None, None
-        self._log_proba_train, self._log_proba_test = None, None
-        self._dec_func_train, self._dec_func_test = None, None
-        self._score_train, self._score_test = None, None
+        self._pred_attrs = [None] * 10
 
     @property
     def predict_train(self):
-        if self._predict_train is None:
-            self._predict_train = self.estimator.predict(arr(self.X_train))
-        return self._predict_train
+        if self._pred_attrs[0] is None:
+            self._pred_attrs[0] = self.estimator.predict(arr(self.X_train))
+        return self._pred_attrs[0]
 
     @property
     def predict_test(self):
-        if self._predict_test is None:
-            self._predict_test = self.estimator.predict(arr(self.X_test))
-        return self._predict_test
+        if self._pred_attrs[1] is None:
+            self._pred_attrs[1] = self.estimator.predict(arr(self.X_test))
+        return self._pred_attrs[1]
 
     @property
     def predict_proba_train(self):
-        if self._predict_proba_train is None:
-            self._predict_proba_train = self.estimator.predict_proba(arr(self.X_train))
-        return self._predict_proba_train
+        if self._pred_attrs[2] is None:
+            self._pred_attrs[2] = self.estimator.predict_proba(arr(self.X_train))
+        return self._pred_attrs[2]
 
     @property
     def predict_proba_test(self):
-        if self._predict_proba_test is None:
-            self._predict_proba_test = self.estimator.predict_proba(arr(self.X_test))
-        return self._predict_proba_test
+        if self._pred_attrs[3] is None:
+            self._pred_attrs[3] = self.estimator.predict_proba(arr(self.X_test))
+        return self._pred_attrs[3]
 
     @property
     def predict_log_proba_train(self):
-        if self._log_proba_train is None:
-            self._log_proba_train = self.estimator.predict_log_proba(arr(self.X_train))
-        return self._log_proba_train
+        if self._pred_attrs[4] is None:
+            self._pred_attrs[4] = self.estimator.predict_log_proba(arr(self.X_train))
+        return self._pred_attrs[4]
 
     @property
     def predict_log_proba_test(self):
-        if self._log_proba_test is None:
-            self._log_proba_test = self.estimator.predict_log_proba(arr(self.X_test))
-        return self._log_proba_test
+        if self._pred_attrs[5] is None:
+            self._pred_attrs[5] = self.estimator.predict_log_proba(arr(self.X_test))
+        return self._pred_attrs[5]
 
     @property
     def decision_function_train(self):
-        if self._dec_func_train is None:
-            self._dec_func_train = self.estimator.decision_function(arr(self.X_train))
-        return self._dec_func_train
+        if self._pred_attrs[6] is None:
+            self._pred_attrs[6] = self.estimator.decision_function(arr(self.X_train))
+        return self._pred_attrs[6]
 
     @property
     def decision_function_test(self):
-        if self._dec_func_test is None:
-            self._dec_func_test = self.estimator.decision_function(arr(self.X_test))
-        return self._dec_func_test
+        if self._pred_attrs[7] is None:
+            self._pred_attrs[7] = self.estimator.decision_function(arr(self.X_test))
+        return self._pred_attrs[7]
 
     @property
     def score_train(self):
-        if self._score_train is None:
-            self._score_train = self.estimator.score(arr(self.X_train), self.y_train)
-        return self._score_train
+        if self._pred_attrs[8] is None:
+            self._pred_attrs[8] = self.estimator.score(arr(self.X_train), self.y_train)
+        return self._pred_attrs[8]
 
     @property
     def score_test(self):
-        if self._score_test is None:
-            self._score_test = self.estimator.score(arr(self.X_test), self.y_test)
-        return self._score_test
+        if self._pred_attrs[9] is None:
+            self._pred_attrs[9] = self.estimator.score(arr(self.X_test), self.y_test)
+        return self._pred_attrs[9]
 
     # Properties ============================================ >>
 
@@ -858,77 +860,81 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @property
     def dataset(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.scaler.transform(self.T.X), self.y)
+        if self.scaler:
+            return merge(self.scaler.transform(self.branch.X), self.y)
         else:
-            return self.T.dataset
+            return self.branch.data
 
     @property
     def train(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.scaler.transform(self.T.X_train), self.y_train)
+        if self.scaler:
+            return merge(self.scaler.transform(self.branch.X_train), self.y_train)
         else:
-            return self.T.train
+            return self.branch.train
 
     @property
     def test(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return merge(self.scaler.transform(self.T.X_test), self.y_test)
+        if self.scaler:
+            return merge(self.scaler.transform(self.branch.X_test), self.y_test)
         else:
-            return self.T.test
+            return self.branch.test
 
     @property
     def X(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return self.scaler.transform(self.T.X)
+        if self.scaler:
+            return self.scaler.transform(self.branch.X)
         else:
-            return self.T.X
+            return self.branch.X
 
     @property
     def y(self):
-        return self.T.y
+        return self.branch.y
 
     @property
     def X_train(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return self.scaler.transform(self.T.X_train)
+        if self.scaler:
+            return self.scaler.transform(self.branch.X_train)
         else:
-            return self.T.X_train
+            return self.branch.X_train
 
     @property
     def X_test(self):
-        if self.needs_scaling and not check_scaling(self.T.X):
-            return self.scaler.transform(self.T.X_test)
+        if self.scaler:
+            return self.scaler.transform(self.branch.X_test)
         else:
-            return self.T.X_test
+            return self.branch.X_test
 
     @property
     def y_train(self):
-        return self.T.y_train
+        return self.branch.y_train
 
     @property
     def y_test(self):
-        return self.T.y_test
+        return self.branch.y_test
 
     @property
     def shape(self):
-        return self.T.shape
+        return self.branch.shape
 
     @property
     def columns(self):
-        return self.T.columns
+        return self.branch.columns
+
+    @property
+    def features(self):
+        return self.branch.features
 
     @property
     def target(self):
-        return self.T.target
+        return self.branch.target
 
     @property
     def classes(self):
-        return self.T.classes
+        return self.branch.classes
 
     @property
     def n_classes(self):
-        return self.T.n_classes
+        return self.branch.n_classes
 
     # Utility methods ============================================== >>
 
@@ -956,7 +962,12 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         return out
 
-    @composed(crash)
+    @composed(crash, method_to_log)
+    def delete(self):
+        """Delete model from the trainer."""
+        self.T.delete(self.name)
+
+    @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the model.
 
@@ -988,10 +999,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:
             self.estimator = calibrator.fit(self.X_test, self.y_test)
 
-        # Reset all prediction properties since we changed the model attribute
-        self.reset_prediction_attributes()
+        # Reset all prediction attrs since the model's estimator changed
+        self._pred_attrs = [None] * 10
 
-    @composed(crash, typechecked)
+    @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
         """Get the scoring of a specific metric on the test set.
 
