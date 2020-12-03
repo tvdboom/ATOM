@@ -15,7 +15,7 @@ from sklearn.linear_model import HuberRegressor
 from atom import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
 from atom.training import DirectClassifier
 from atom.data_cleaning import Imputer
-from atom.utils import check_scaling
+from atom.utils import check_scaling, merge
 from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
 
 
@@ -117,10 +117,37 @@ def test_transform_data():
     atom.save(FILE_DIR + "atom", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), transform_data=True)
-    assert atom2.shape[0] != X_bin.shape[0] and atom2.shape[1] != X_bin.shape[1] + 1
+    assert atom2.dataset.shape == atom.dataset.shape
 
     atom3 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), transform_data=False)
-    assert atom3.shape[0] == X_bin.shape[0] and atom3.shape[1] == X_bin.shape[1] + 1
+    assert atom3.dataset.shape == merge(X_bin, y_bin).shape
+
+
+def test_transform_data_multiple_branches():
+    """Assert that the data is transformed with multiple branches."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    print(atom.branch.idx)
+    atom.clean()
+    print(atom.branch.idx)
+    atom.outliers()
+    print(atom.branch.idx)
+    data_1 = atom.dataset
+    atom.branch = "branch_2"
+    atom.balance()
+    print(atom.branch.idx)
+    atom.feature_generation(strategy="dfs", n_features=5)
+    print(atom.branch.idx)
+    data_2 = atom.dataset
+    atom.branch = "branch_3"
+    atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
+    print(atom.branch.idx)
+    data_3 = atom.dataset
+    atom.save(FILE_DIR + "atom_2", save_data=False)
+
+    atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)
+    assert atom2._branches["main"].dataset.shape == data_1.shape
+    assert atom2._branches["branch_2"].dataset.shape == data_2.shape
+    assert atom2._branches["branch_3"].dataset.shape == data_3.shape
 
 
 def test_multiple_branches():

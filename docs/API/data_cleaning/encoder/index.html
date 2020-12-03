@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -553,24 +553,24 @@
 
 <h1 id="encoder">Encoder</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L548">[source]</a></div></pre>
 <div style="padding-left:3%">
 Perform encoding of categorical features. The encoding type depends on the number
- of unique values in the column:</p>
-<ul>
-<li>If n_unique=2, use Label-encoding.</li>
-<li>If 2 &lt; n_unique &lt;= max_onehot, use OneHot-encoding.</li>
-<li>If n_unique &gt; max_onehot, use <code>strategy</code>-encoding.</li>
-</ul>
-<p>Also replaces classes with low occurrences with the value <code>other</code> in
+ of unique values in the column:
+
+* If n_unique=2, use Label-encoding.
+* If 2 < n_unique <= max_onehot, use OneHot-encoding.
+* If n_unique > max_onehot, use `strategy`-encoding.
+
+Also replaces classes with low occurrences with the value `other` in
  order to prevent too high cardinality. Categorical features are defined as
- all columns whose dtype.kind not in <code>ifu</code>. Will raise an error if it encounters
+ all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
  missing values or unknown classes when transforming. This class can be accessed
- from atom through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
- method. Read more in the <a href="../../../user_guide/#encoding-categorical-features">user guide</a>.
+ from atom through the [encode](../../ATOM/atomclassifier/#encode)
+ method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <br /><br />
 <table>
 <tr>
@@ -579,22 +579,22 @@ Perform encoding of categorical features. The encoding type depends on the numbe
 <strong>strategy: str, optional (default="LeaveOneOut")</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
- estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+ estimators available in the [category-encoders](http://contrib.scikit-learn.org/category_encoders/)
  package except for:
 <ul>
-<li>OneHotEncoder: Use the <code>max_onehot</code> parameter.</li>
+<li>OneHotEncoder: Use the `max_onehot` parameter.</li>
 <li>HashingEncoder: Incompatibility of APIs.</li>
 </ul>
 </blockquote>
 <strong>max_onehot: int or None, optional (default=10)</strong>
 <blockquote>
 Maximum number of unique values in a feature to perform one-hot-encoding.
- If None, it will always use <code>strategy</code> when n_unique &gt; 2.
+ If None, it will always use `strategy` when n_unique > 2.
 </blockquote>
 <strong>frac_to_other: float, optional (default=None)</strong>
 <blockquote>
-Classes with less occurrences than n_rows * <code>fraction_to_other</code> are replaced
- with the string <code>other</code>. If None, skip this step.
+Classes with less occurrences than n_rows * `fraction_to_other` are replaced
+ with the string `other`. If None, skip this step.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -611,18 +611,18 @@ Verbosity level of the class. Possible values are:
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Additional keyword arguments passed to the <code>strategy</code> estimator.
+Additional keyword arguments passed to the `strategy` estimator.
 </blockquote>
 </td>
 </tr>
 </table>
 </div>
-<br></p>
+<p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use atom's <a href="../../ATOM/atomclassifier/#data-attributes">categorical</a> attribute
@@ -668,9 +668,8 @@ for a list of the categorical columns in the dataset.</p>
 <td>Transform the data.</td>
 </tr>
 </table>
-
 <p><br></p>
-<p><a name="fit"></a>
+<p><a name="fit"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L612">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -681,11 +680,11 @@ Fit the class.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.ndarray or pd.Series</strong>
+<strong>y: int, str, sequence, np.array or pd.Series</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -703,8 +702,8 @@ Fitted instance of self.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="fit-transform"></a>
+<p><br /></p>
+<p><a name="fit-transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -715,11 +714,11 @@ Fit the Encoder and return the encoded data.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.ndarray, pd.Series</strong>
+<strong>y: int, str, sequence, np.array, pd.Series</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -737,8 +736,8 @@ Transformed feature set.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="get-params"></a>
+<p><br /></p>
+<p><a name="get-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -763,8 +762,8 @@ Dictionary of the parameter names mapped to their values.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="log"></a>
+<p><br /></p>
+<p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -785,8 +784,8 @@ Minimum verbosity level in order to print the message.
 </tr>
 </table>
 </div>
-<br /></p>
-<p><a name="save"></a>
+<p><br /></p>
+<p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -803,8 +802,8 @@ Name to save the file with. None to save with default name.
 </tr>
 </table>
 </div>
-<br></p>
-<p><a name="set-params"></a>
+<p><br></p>
+<p><a name="set-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -815,7 +814,7 @@ Set the parameters of this estimator.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>**params: dict</strong>
+<strong>\*\*params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -829,8 +828,8 @@ Estimator instance.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="transform"></a>
+<p><br /></p>
+<p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L692">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -841,11 +840,11 @@ Encode the data.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.ndarray, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>
@@ -859,17 +858,16 @@ Transformed feature set.
 </blockquote>
 </tr>
 </table>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.encode(strategy=&quot;CatBoost&quot;, max_onehot=5)
 </code></pre>
-
 <p>or</p>
-<pre><code class="python">from atom.data_cleaning import Encoder
+<pre><code class="language-python">from atom.data_cleaning import Encoder
 
 encoder = Encoder(strategy=&quot;CatBoost&quot;, max_onehot=5)
 encoder.fit(X_train, y_train)

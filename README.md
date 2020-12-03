@@ -176,8 +176,9 @@ Release history
 * Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
 * Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.
 * New branch system for different data pipelines. Read more in the [user guide](https://tvdboom.github.io/ATOM/user_guide/#data-pipelines).
-* Use the [canvas](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#canvas) contextmanager to draw multiple plots in one figure.
-* New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier#get-class-weight) utility method.
+* Use the [canvas](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
+* New [Voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [Stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
+* New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
 * The `n_rows` parameter in [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) is deprecated in

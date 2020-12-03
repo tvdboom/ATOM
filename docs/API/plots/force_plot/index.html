@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,15 +549,15 @@
 
 <h1 id="force_plot">force_plot</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1, title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2081">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot SHAP's force plot. Visualize the given SHAP values with an additive force layout.
  The explainer will be chosen automatically based on the model's type. Note that by
- default this plot will render using javascript. For a regular figure use <code>matplotlib=True</code>
- (this option is only available when only 1 row is selected through the <code>index</code> parameter).
- Read more about SHAP plots in the <a href="../../../user_guide/#shap">user guide</a>.
+ default this plot will render using javascript. For a regular figure use `matplotlib=True`
+ (this option is only available when only 1 row is selected through the `index` parameter).
+ Read more about SHAP plots in the [user guide](../../../user_guide/#shap).
 <br /><br />
 <table width="100%">
 <tr>
@@ -596,23 +596,22 @@ Name of the file. If matplotlib=False, the figure will be saved as an html
 <blockquote>
 Whether to render the plot.
 </blockquote>
-<strong>**kwargs</strong>
+<strong>\*\*kwargs</strong>
 <blockquote>
 Additional keyword arguments for shap's force_plot.
 </blockquote>
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(&quot;lr&quot;)
 atom.force_plot(index=atom.X_test.index[0], matplotlib=True, filename=&quot;force_plot&quot;)
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>
 </div></div>

@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,19 +549,20 @@
 
 <h1 id="plot_calibration">plot_calibration</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1805">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the calibration curve for a binary classifier.
  Well calibrated classifiers are probabilistic classifiers for which the
- output of the <code>predict_proba</code> method can be directly interpreted as a
+ output of the `predict_proba` method can be directly interpreted as a
  confidence level. For instance a well calibrated (binary) classifier
  should classify the samples such that among the samples to which it gave
- a <code>predict_proba</code> value close to 0.8, approx. 80% actually belong to the
+ a `predict_proba` value close to 0.8, approx. 80% actually belong to the
  positive class. Read more in sklearn's
- <a href="https://scikit-learn.org/stable/modules/calibration.html">documentation</a>.</p>
-<p>This figure shows two plots: the calibration curve, where
+ [documentation](https://scikit-learn.org/stable/modules/calibration.html).
+
+ This figure shows two plots: the calibration curve, where
  the x-axis represents the average predicted probability in each bin and the
  y-axis is the fraction of positives, i.e. the proportion of samples whose
  class is the positive class (in each bin); and a distribution of all
@@ -599,16 +600,15 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run([&quot;GNB&quot;, &quot;LR&quot;, &quot;LGB&quot;], metric=&quot;average_precision&quot;)
 atom.plot_calibration()
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/plot_calibration.png" alt="plot_calibration" width="700" height="700"/>
 </div></div>

@@ -16,7 +16,7 @@ from pandas_profiling import ProfileReport
 
 # Own modules
 from .branch import Branch
-from .voting import Voting
+from .ensembles import Voting, Stacking
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
@@ -69,7 +69,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Training attributes
         self._approach = None  # Approach adopted by this instance
-        # self.vote = VotingModel(self)   # TODO: fix
+        self.vote = Voting(self)
+        self.stack = Stacking(self)
         self.models = []
         self.metric_ = []
         self.errors = {}
@@ -302,6 +303,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         if verbose is None:
             verbose = self.verbose
+
         return transform(self.pipeline, X, y, verbose, **kwargs)
 
     @composed(crash, method_to_log, typechecked)

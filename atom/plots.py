@@ -64,7 +64,7 @@ class BaseFigure(object):
         self._idx = -1
 
         # Create new figure and corresponding grid
-        figure = plt.figure(constrained_layout=True)
+        figure = plt.figure(constrained_layout=True if is_canvas else False)
         self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
@@ -96,7 +96,7 @@ class BasePlotter(object):
 
     """
 
-    _fig = BaseFigure()
+    _fig = None
     _aesthetics = dict(
         style="darkgrid",  # Seaborn plotting style
         palette="GnBu_r_d",  # Matplotlib color palette
@@ -195,7 +195,7 @@ class BasePlotter(object):
     @staticmethod
     def _get_figure():
         """Return existing figure if in canvas, else a new figure."""
-        if BasePlotter._fig.is_canvas:
+        if BasePlotter._fig and BasePlotter._fig.is_canvas:
             return BasePlotter._fig.figure
         else:
             BasePlotter._fig = BaseFigure()
@@ -420,8 +420,11 @@ class BasePlotter(object):
 
         if kwargs.get("figsize"):
             plt.gcf().set_size_inches(*kwargs["figsize"])
+        if not BasePlotter._fig.is_canvas:
+            plt.tight_layout()
         if kwargs.get("filename"):
             plt.savefig(kwargs["filename"])
+        if "filename" in kwargs:
             plt.show() if kwargs.get("display") else plt.close()
 
     @composed(contextmanager, crash, typechecked)

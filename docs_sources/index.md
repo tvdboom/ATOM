@@ -92,8 +92,9 @@ Example steps taken by ATOM's pipeline:
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
 * Compatibility with [deep learning](./user_guide/#deep-learning) models.
 * New branch system for different data pipelines. Read more in the [user guide](./user_guide/#data-pipelines).
-* Use the [canvas](./API/ATOM/atomclassifier#canvas) contextmanager to draw multiple plots in one figure.
-* New [get_class_weight](./API/ATOM/atomclassifier#get-class-weight) utility method.
+* Use the [canvas](./API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
+* New [Voting](./user_guide/#voting) and [Stacking](./user_guide/#stacking) ensemble techniques.
+* New [get_class_weight](./API/ATOM/atomclassifier/#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
 * The `n_rows` parameter in [ATOMLoader](./API/ATOM/atomloader) is deprecated in
@@ -106,7 +107,7 @@ Example steps taken by ATOM's pipeline:
 * [Successive halving](./user_guide/#successive-halving) and [Train sizing](./user_guide/#train-sizing)
   now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
-* Added the [Utilities](./examples/utilities/utilities) and [Deep learning](./examples/deep_learning/deep_learning) example notebooks.
+* Added the <a href="./examples/utilities.html" target="_blank">Utilities</a> and <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
@@ -158,3 +159,122 @@ Example steps taken by ATOM's pipeline:
 * Tests coverage up to 100%.
 * Completely new documentation page.
 * Bug fixes and performance improvements.
+
+
+<br><br><br>
+
+# Content
+---------
+
+- [Getting started](./getting_started)
+- [User guide](./user_guide)
+- API
+    - ATOM
+        - [ATOMClassifier](./API/ATOM/atomclassifier)
+        - [ATOMRegressor](./API/ATOM/atomregressor)
+        - [ATOMLoader](./API/ATOM/atomloader)
+        - [ATOMModel](./API/ATOM/atommodel)
+    - Data cleaning
+        - [Scaler](./API/data_cleaning/scaler)
+        - [Cleaner](./API/data_cleaning/cleaner)
+        - [Imputer](./API/data_cleaning/imputer)
+        - [Encoder](./API/data_cleaning/encoder)
+        - [Outliers](./API/data_cleaning/outliers)
+        - [Balancer](./API/data_cleaning/balancer)
+    - Feature engineering
+        - [FeatureGenerator](./API/feature_engineering/feature_generator)
+        - [FeatureSelector](./API/feature_engineering/feature_selector)
+    - Training
+        - Direct
+            - [DirectClassifier](./API/training/directclassifier)
+            - [DirectRegressor](./API/training/directregressor)
+        - SuccessiveHalving
+            - [SuccessiveHalvingClassifier](./API/training/successivehalvingclassifier)
+            - [SuccessiveHalvingClassifier](./API/training/successivehalvingregressor)
+        - TrainSizing
+            - [TrainSizingClassifier](./API/training/trainsizingclassifier)
+            - [TrainSizingRegressor](./API/training/trainsizingregressor)
+    - Models
+        - [Gaussian Process](./API/models/gp)
+        - [Gaussian Naive Bayes](./API/models/gnb)
+        - [Multinomial Naive Bayes](./API/models/mnb)
+        - [Bernoulli Naive Bayes](./API/models/bnb)
+        - [Categorical Naive Bayes](./API/models/catnb)
+        - [Complement Naive Bayes](./API/models/cnb)
+        - [Ordinary Least Squares](./API/models/ols)
+        - [Ridge](./API/models/ridge)
+        - [Lasso](./API/models/lasso)
+        - [Elastic Net](./API/models/en)
+        - [Bayesian Ridge](./API/models/br)
+        - [Automated Relevance Determination](./API/models/ard)
+        - [Logistic Regression](./API/models/lr)
+        - [Linear Discriminant Analysis](./API/models/lda)
+        - [Quadratic Discriminant Analysis](./API/models/qda)
+        - [K-Nearest Neighbors](./API/models/knn)
+        - [Radius Nearest Neighbors](./API/models/rnn)
+        - [Decision Tree](./API/models/tree)
+        - [Bagging](./API/models/bag)
+        - [Extra-Trees](./API/models/et)
+        - [Random Forest](./API/models/rf)
+        - [AdaBoost](./API/models/adab)
+        - [Gradient Boosting Machine](./API/models/gbm)
+        - [XGBoost](./API/models/xgb)
+        - [LightGBM](./API/models/lgb)
+        - [CatBoost](./API/models/catb)
+        - [Linear-SVM](./API/models/lsvm)
+        - [Kernel-SVM](./API/models/ksvm)
+        - [Passive Aggressive](./API/models/pa)
+        - [Stochastic Gradient Descent](./API/models/sgd)
+        - [Multi-layer Perceptron](./API/models/mlp)
+    - Predicting
+          - [transform](./API/predicting/transform)
+          - [predict](./API/predicting/predict)
+          - [predict_proba](./API/predicting/predict_proba)
+          - [predict_log_proba](./API/predicting/predict_log_proba)
+          - [decision_function](./API/predicting/decision_function)
+          - [score](./API/predicting/score)
+    - Plots
+        - [plot_correlation](./API/plots/plot_correlation)
+        - [plot_pipeline](./API/plots/plot_pipeline)
+        - [plot_pca](./API/plots/plot_pca)
+        - [plot_components](./API/plots/plot_components)
+        - [plot_rfecv](./API/plots/plot_rfecv)
+        - [plot_successive_halving](./API/plots/plot_successive_halving)
+        - [plot_learning_curve](./API/plots/plot_learning_curve)
+        - [plot_bagging](./API/plots/plot_bagging)
+        - [plot_bo](./API/plots/plot_bo)
+        - [plot_evals](./API/plots/plot_evals)
+        - [plot_roc](./API/plots/plot_roc)
+        - [plot_prc](./API/plots/plot_prc)
+        - [plot_permutation_importance](./API/plots/plot_permutation_importance)
+        - [plot_feature_importance](./API/plots/plot_feature_importance)
+        - [plot_partial_dependence](./API/plots/plot_partial_dependence)
+        - [plot_errors](./API/plots/plot_errors)
+        - [plot_residuals](./API/plots/plot_residuals)
+        - [plot_confusion_matrix](./API/plots/plot_confusion_matrix)
+        - [plot_threshold](./API/plots/plot_threshold)
+        - [plot_probabilities](./API/plots/plot_probabilities)
+        - [plot_calibration](./API/plots/plot_calibration)
+        - [plot_gains](./API/plots/plot_gains)
+        - [plot_lift](./API/plots/plot_lift)
+        - [force_plot](./API/plots/force_plot)
+        - [dependence_plot](./API/plots/dependence_plot)
+        - [summary_plot](./API/plots/summary_plot)
+        - [decision_plot](./API/plots/decision_plot)
+        - [waterfall_plot](./API/plots/waterfall_plot)
+- Examples
+    - <a href="./examples/binary_classification.html" target="_blank">Binary classification</a>
+    - <a href="./examples/multiclass_classification.html" target="_blank">Multiclass classification</a>
+    - <a href="./examples/regression.html" target="_blank">Regression</a>
+    - <a href="./examples/successive_halving.html" target="_blank">Successive halving</a>
+    - <a href="./examples/train_sizing.html" target="_blank">Train sizing</a>
+    - <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>
+    - <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
+    - <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
+    - <a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a>
+    - <a href="./examples/early_stopping.html" target="_blank">Early stopping</a>
+    - <a href="./examples/calibration.html" target="_blank">Calibration</a>
+    - <a href="./examples/utilities.html" target="_blank">Utilities</a>
+- [Dependencies](./dependencies)
+- [License](./license)
+

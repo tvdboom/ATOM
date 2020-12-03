@@ -10,7 +10,7 @@ Description: Module containing the Branch class.
 # Standard packages
 import pandas as pd
 from inspect import signature
-from copy import copy, deepcopy
+from copy import copy
 from typeguard import typechecked
 from typing import Optional
 
@@ -68,7 +68,7 @@ class Branch(object):
             self.feature_importance = None
         else:
             self.pipeline = copy(self.T._branches[parent].pipeline)
-            self.data = deepcopy(self.T._branches[parent].data)
+            self.data = copy(self.T._branches[parent].data)
             self.idx = copy(self.T._branches[parent].idx)
             self.mapping = copy(self.T._branches[parent].mapping)
             self.feature_importance = copy(self.T._branches[parent].feature_importance)

@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,7 +549,7 @@
 
 <h1 id="atommodel">ATOMModel</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(predictor, name=None, fullname=None, needs_scaling=False, type="kernel")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -566,11 +566,11 @@ Model's predictor. Can be a class or an instance.
 <strong>name: str, optional (default=None)</strong>
 <blockquote>
 Model's acronym. Used to call the model from the trainer.
- If None, the predictor's __name__ will be used (not recommended).
+ If None, the predictor's \_\_name\_\_ will be used (not recommended).
 </blockquote>
 <strong>fullname: str, optional (default=None)</strong>
 <blockquote>
-Full model's name. If None, the predictor's __name__ will be used.
+Full model's name. If None, the predictor's \_\_name\_\_ will be used.
 </blockquote>
 <strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
@@ -578,7 +578,7 @@ Whether the model needs scaled features. Can not be True for deep learning datas
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>
-Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.html#core-explainers">shap's explainer</a>
+Model's type. Used to select [shap's explainer](https://shap.readthedocs.io/en/latest/api.html#core-explainers)
  for plotting. Choose from:
 <ul>
 <li>"linear" for linear models.</li>
@@ -589,10 +589,10 @@ Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMRegressor, ATOMModel
+<pre><code class="language-python">from atom import ATOMRegressor, ATOMModel
 from sklearn.linear_model import HuberRegressor
 
 model =  ATOMModel(HuberRegressor, name=&quot;hub&quot;, fullname=&quot;Huber&quot;, needs_scaling=True, type=&quot;linear&quot;)

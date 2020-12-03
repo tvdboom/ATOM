@@ -240,6 +240,16 @@ def test_n_classes_property():
 
 # Test prediction methods ========================================== >>
 
+def test_reset_predictions():
+    """Assert that we can reset all predictions."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    print(atom.lr.predict_proba_train)
+    print(atom.lgb.predict_test)
+    atom.reset_predictions()
+    assert atom.lr._pred_attrs == [None] * 10
+
+
 def test_predict_method():
     """Assert that the predict method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -319,13 +329,6 @@ def test_not_fitted():
     pytest.raises(NotFittedError, atom.scoring)
 
 
-def test_invalid_metric():
-    """Assert that an error is raised when an invalid metric_ is selected."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["ols", "br"])
-    pytest.raises(ValueError, atom.scoring, metric="f1")
-
-
 def test_metric_is_none():
     """Assert that it works for metric_=None."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
@@ -390,7 +393,7 @@ def test_delete_successive_halving():
     assert atom.winner is atom.LDA
 
 
-def test_clear_train_sizing():
+def test_delete_train_sizing():
     """Assert that deleting works for train sizing pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.train_sizing(["LR", "LDA", "QDA"])

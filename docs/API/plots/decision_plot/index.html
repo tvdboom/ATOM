@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,7 +549,7 @@
 
 <h1 id="decision_plot">decision_plot</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">decision_plot</strong>(models=None, index=None, show=None, target=1,
                      title=None, figsize=None, filename=None, display=True, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2321">[source]</a></div></pre>
@@ -560,7 +560,7 @@ Plot SHAP's decision plot. Visualize model decisions using cumulative SHAP value
  predictions are plotted together, feature values will not be printed. Plotting too
  many predictions together will make the plot unintelligible. The explainer will be
  chosen automatically based on the model's type. Read more about SHAP plots in the
- <a href="../../../user_guide/#shap">user guide</a>.
+ [user guide](../../../user_guide/#shap).
 <br /><br />
 <table width="100%">
 <tr>
@@ -602,30 +602,28 @@ Name of the file. If None, the figure is not saved.
 <blockquote>
 Whether to render the plot.
 </blockquote>
-<strong>**kwargs</strong>
+<strong>\*\*kwargs</strong>
 <blockquote>
 Additional keyword arguments for shap's decision_plot.
 </blockquote>
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMRegressor
+<pre><code class="language-python">from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
 atom.run(&quot;RF&quot;)
 atom.decision_plot(index=(120, 140))
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/decision_plot_1.png" alt="decision_plot_1" width="700" height="700"/>
 </div>
 
-<pre><code class="python">atom.decision_plot(index=120)
+<pre><code class="language-python">atom.decision_plot(index=120)
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/decision_plot_2.png" alt="decision_plot_2" width="700" height="700"/>
 </div></div>

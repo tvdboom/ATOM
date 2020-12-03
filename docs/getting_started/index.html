@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -554,7 +554,7 @@
 <p class="admonition-title">Note</p>
 <p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
 </div>
-<p>Intall ATOM's newest release easily via <code>pip</code>:</p>
+<p>Install ATOM's newest release easily via <code>pip</code>:</p>
 <pre><code>$ pip install -U atom-ml
 </code></pre>
 <p>or via <code>conda</code>:</p>
@@ -564,21 +564,19 @@
 <h1 id="usage">Usage</h1>
 <hr />
 <p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:  </p>
-<pre><code class="Python">from sklearn.datasets import load_breast_cancer
+<pre><code class="language-Python">from sklearn.datasets import load_breast_cancer
 from atom import ATOMClassifier
 
 X, y = load_breast_cancer(return_X_y)
 atom = ATOMClassifier(X, y, logger=&quot;auto&quot;, n_jobs=2, verbose=2)
 </code></pre>
-
 <p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<pre><code class="Python">atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)  
+<pre><code class="language-Python">atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)  
 atom.encode(strategy=&quot;Target&quot;, max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy=&quot;PCA&quot;, n_features=12)
 </code></pre>
-
 <p>Train and evaluate the models you want to compare:</p>
-<pre><code class="Python">atom.run(
+<pre><code class="language-Python">atom.run(
     models=[&quot;LR&quot;, &quot;LDA&quot;, &quot;XGB&quot;, &quot;lSVM&quot;],
     metric=&quot;f1&quot;,
     n_calls=25,
@@ -586,9 +584,8 @@ atom.feature_selection(strategy=&quot;PCA&quot;, n_features=12)
     bagging=4
 )
 </code></pre>
-
 <p>Make plots to analyze the results: </p>
-<pre><code class="Python">atom.plot_bagging(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
+<pre><code class="language-Python">atom.plot_bagging(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
 atom.LDA.plot_confusion_matrix(normalize=True, filename=&quot;cm.png&quot;)
 </code></pre></div>
             </div>

@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -707,26 +707,22 @@
 <p>Let's get started with an example!</p>
 <p>First, initialize atom and provide it the data you want to use. You can either
  input a dataset and let ATOM split the train and test set or provide a train and
- test set already splitted. Note that if a dataframe is provided, the indices will
+ test set already split. Note that if a dataframe is provided, the indices will
  be reset by atom.</p>
-<pre><code class="python">atom = ATOMClassifier(X, y, test_size=0.25)
+<pre><code class="language-python">atom = ATOMClassifier(X, y, test_size=0.25)
 </code></pre>
-
 <p>Apply data cleaning methods through the class. For example, calling the
  <a href="../API/ATOM/atomclassifier/#impute">impute</a> method will
  handle all missing values in the dataset.</p>
-<pre><code class="python">atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)
+<pre><code class="language-python">atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)
 </code></pre>
-
 <p>Select the best hyperparameters and fit a Random Forest and AdaBoost model.</p>
-<pre><code class="python">atom.run([&quot;RF&quot;, &quot;AdaB&quot;], metric=&quot;accuracy&quot;, n_calls=25, n_initial_points=10)
+<pre><code class="language-python">atom.run([&quot;RF&quot;, &quot;AdaB&quot;], metric=&quot;accuracy&quot;, n_calls=25, n_initial_points=10)
 </code></pre>
-
 <p>Analyze the results:</p>
-<pre><code class="python">atom.feature_importances(show=10, filename=&quot;feature_importance_plot&quot;)
+<pre><code class="language-python">atom.feature_importances(show=10, filename=&quot;feature_importance_plot&quot;)
 atom.plot_prc(title=&quot;Precision-recall curve comparison plot&quot;)
 </code></pre>
-
 <p><br><br></p>
 <h1 id="data-pipelines">Data pipelines</h1>
 <hr />
@@ -737,20 +733,34 @@ atom.plot_prc(title=&quot;Precision-recall curve comparison plot&quot;)
  called branches and can be accessed through the <code>branch</code> attribute. Calling it
  will show the branches in the pipeline. The current branch is indicated with <code>!</code>.
  A branch contains a specific dataset and the transformers it took to arrive to that
- dataset from the one the instance initialized with. Accessing data attributes such
- as <code>atom.dataset</code> will return the data in the current branch. Use the pipelines
- attribute to see the <code>estimators</code> in the branch.</p>
+ dataset from the one atom initialized with. Accessing data attributes such
+ as <code>atom.dataset</code> will return the data in the current branch. Use the <code>pipeline</code>
+ attribute to see the estimators in the branch. All data cleaning, feature engineering
+ and trainers called will use the dataset in the current branch. This means that
+ models are trained and validated on the data in that branch. Don't change the data
+ in a branch after fitting a model, this can cause unexpected model behaviour.
+ Instead, create a new branch for every unique model pipeline.</p>
 <p>By default atom starts with one branch called 'main'. To start a new branch, set
- a new name to the property, e.g. <code>atom.branch = "new_branch"</code>. Just so, type
- <code>atom.branch = "main"</code> to go back to a previous branch. Note that every branch
- contains a unique copy of the whole dataset! Creating many branches can cause
- memory issues for large datasets. All data cleaning, feature engineering and
- training methods you call will use the dataset in the current branch.</p>
+ a new name to the property, e.g. <code>atom.branch = "new_branch"</code>. This will start a
+ new branch from the current one. To create a branch from any other branch type
+ '_from_' between the new name and the branch from which to split, e.g.
+ <code>atom.branch = "branch2_from_branch1"</code> will create branch 'branch2' from branch
+ 'branch1'. To switch between existing branches, just type the name of the desired
+ branch, e.g. <code>atom.branch = "main"</code> to go back to the main branch. Note that every
+ branch contains a unique copy of the whole dataset! Creating many branches can cause
+ memory issues for large datasets.</p>
 <p>You can delete a branch either deleting the attribute, e.g. <code>del atom.branch</code>, or
- using the delete method, e.g. <code>atom.branch.delete()</code>. Use <code>atom.branch.status()</code>
- to print a list of the transformers in the branch and their parameters.</p>
-<p>See the <a href="../examples/imbalanced_datasets/imbalanced_datasets/">imbalanced datasets</a>
- example for a branching use case.</p>
+ using the delete method, e.g. <code>atom.branch.delete()</code>. A branch can only be deleted
+ if no models were trained on its dataset. Use <code>atom.branch.status()</code> to print a list
+ of the transformers in the branch and their parameters.</p>
+<p>See the <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
+ or <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
+ examples for branching use cases.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Always create a new branch if you want to change the dataset after fitting
+a model! Not doing this can cause unexpected model behaviour.</p>
+</div>
 <p><br><br></p>
 <h1 id="data-cleaning">Data cleaning</h1>
 <hr />
@@ -834,11 +844,11 @@ for a list of the categorical columns in the dataset.</p>
 <p><br><br></p>
 <h1 id="feature-engineering">Feature engineering</h1>
 <hr />
-<p><cite>
+<p><cite></p>
 <div align="center">
 "Applied machine learning" is basically feature engineering. ~ Andrew Ng.
 </div>
-</cite></p>
+<p></cite></p>
 <p><br>
 Feature engineering is the process of creating new features from the existing ones,
  in order to capture relationships with the target column that the first set of
@@ -850,7 +860,7 @@ Feature engineering is the process of creating new features from the existing on
  created features can be useless, i.e. they do not help the algorithm to make better
  predictions. Even worse, having useless features can drop your performance. To avoid
  this, we perform feature selection, a process in which we select the relevant features 
- in the dataset. See <a href="../examples/feature_engineering/feature_engineering/">here</a> an example.</p>
+ in the dataset. See the <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a> example.</p>
 <p><br></p>
 <h3 id="generating-new-features">Generating new features</h3>
 <p>The <a href="../API/feature_engineering/feature_generator/">FeatureGenerator</a> class creates
@@ -863,7 +873,7 @@ Deep feature synthesis (DFS) applies the selected operators on the features in
  the dataset. For example, if the operator is "log", it will create the new feature
  <code>LOG(old_feature)</code> and if the operator is "mul", it will create the new feature
  <code>old_feature_1 x old_feature_2</code>. The operators can be chosen through the <code>operators</code>
- parameter. Available options are:
+ parameter. Available options are:</p>
 <ul>
 <li><b>add: </b>Sum two features together.</li>
 <li><b>sub: </b>Subtract two features from each other.</li>
@@ -874,7 +884,8 @@ Deep feature synthesis (DFS) applies the selected operators on the features in
 <li><b>sin: </b>Calculate the sine of a feature.</li>
 <li><b>cos: </b>Calculate the cosine of a feature.</li>
 <li><b>tan: </b>Calculate the tangent of a feature.</li>
-</ul></p>
+</ul>
+
 <p>ATOM's implementation of DFS uses the <a href="https://www.featuretools.com/">featuretools</a> package.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1036,7 +1047,7 @@ model doesn't have a <code>feature_importances_</code> attribute, use
  There are two ways to achieve this:</p>
 <p>Using <a href="../API/ATOM/atommodel">ATOMModel</a> (recommended). With this approach you can
  pass the required model characteristics to the pipeline.</p>
-<pre><code class="python">from sklearn.linear_model import Lars
+<pre><code class="language-python">from sklearn.linear_model import Lars
 from atom import ATOMRegressor, ATOMModel
 
 model = ATOMModel(models=Lars, fullname=&quot;Lars Regression&quot;, needs_scaling=True, type=&quot;linear&quot;)
@@ -1044,17 +1055,15 @@ model = ATOMModel(models=Lars, fullname=&quot;Lars Regression&quot;, needs_scali
 atom = ATOMRegressor(X, y)
 atom.run(model)
 </code></pre>
-
 <p>Using the estimator's class or an instance of the class. This approach will also call
  <a href="../API/ATOM/atommodel">ATOMModel</a> under the hood, but it will leave its parameters
  to their default values.</p>
-<pre><code class="python">from sklearn.linear_model import Lars
+<pre><code class="language-python">from sklearn.linear_model import Lars
 from atom import ATOMRegressor, ATOMModel
 
 atom = ATOMRegressor(X, y)
 atom.run(models=Lars)
 </code></pre>
-
 <p>Additional things to take into account:</p>
 <ul>
 <li>Custom models are not restricted to sklearn estimators, but they should follow
@@ -1080,10 +1089,11 @@ atom.run(models=Lars)
  shape (n_samples, length, width, rgb). These data structures are not intended
  to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
  instance for the dataset, multidimensional data sets are stored in a single column
- called "Features" where every row contains one (multidimensional) sample. Click
- <a href="../examples/deep_learning/deep_learning">here</a> for an example. Note that, because
- of this, the <a href="#data-cleaning">data cleaning</a>, <a href="#feature-engineering">feature engineering</a>
- and some of the <a href="#plots">plotting</a> methods are unavailable for deep learning datasets.</p>
+ called "Features" where every row contains one (multidimensional) sample. See the
+ <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example. 
+ Note that, because of this, the <a href="#data-cleaning">data cleaning</a>,
+ <a href="#feature-engineering">feature engineering</a> and some of the <a href="#plots">plotting</a>
+ methods are unavailable for deep learning datasets.</p>
 <p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1135,30 +1145,28 @@ atom.run(models=Lars)
  In that case, the results are combined. Note that if you rerun the same model, only
  the last model is saved.</p>
 <p>For example, here atom will "forget" the successive halving run.</p>
-<pre><code class="python">atom = ATOMClassifier(X, y)
+<pre><code class="language-python">atom = ATOMClassifier(X, y)
 atom.successive_halving([&quot;Tree&quot;, &quot;Bag&quot;])
 atom.run(&quot;LGB&quot;) 
 </code></pre>
-
 <p>In this case, both the Ridge and Lasso regressors are kept in the pipeline. Note that
  reruns are only allowed if the same metric is used. Leaving the <code>metric</code> parameter
  empty after the first run will automatically use the one in the pipeline.</p>
-<pre><code class="python">atom = ATOMRegressor(X, y)
+<pre><code class="language-python">atom = ATOMRegressor(X, y)
 atom.run(&quot;Ridge&quot;, metric=&quot;MSE&quot;)
 atom.run(&quot;Lasso&quot;)
 </code></pre>
-
 <p>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models="RF")</code>
  will train a <a href="../API/models/rf">Random Forest</a>. If you want to run the same
  model multiple times, add a tag after the acronym to differentiate them.</p>
-<pre><code class="Python">atom.run(models=[&quot;RF1&quot;, &quot;RF2&quot;], est_params={&quot;RF1&quot;: {&quot;n_estimators&quot;: 100}, &quot;RF2&quot;: {&quot;n_estimators&quot;: 200}}) 
+<pre><code class="language-Python">atom.run(models=[&quot;RF1&quot;, &quot;RF2&quot;], est_params={&quot;RF1&quot;: {&quot;n_estimators&quot;: 100}, &quot;RF2&quot;: {&quot;n_estimators&quot;: 200}}) 
 </code></pre>
-
 <p>For example, this pipeline will fit two Random Forest models, one with 100 and
  the other with 200 decision trees. The models can be accessed through
  <code>atom.rf1</code> and <code>atom.rf2</code>. Use tagged models to test how the same model
- performs when fitted with different parameters or on different data sets. Click
- <a href="../examples/imbalanced_datasets/imbalanced_datasets">here</a> for an example.</p>
+ performs when fitted with different parameters or on different data sets. See the
+ <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
+ example.</p>
 <p>Additional things to take into account:</p>
 <ul>
 <li>If an exception is encountered while fitting an estimator, the pipeline will
@@ -1237,21 +1245,18 @@ Sometimes it is useful to measure the performance of the models in more than one
  in the pipeline. In this example, both the XGBoost and the LightGBM model
  will use n_estimators=200. Make sure all the models do have the specified parameters
  or an exception will be raised!</p>
-<pre><code class="Python">atom.run([&quot;XGB&quot;, &quot;LGB&quot;], est_params={&quot;n_estimators&quot;: 200})
+<pre><code class="language-Python">atom.run([&quot;XGB&quot;, &quot;LGB&quot;], est_params={&quot;n_estimators&quot;: 200})
 </code></pre>
-
 <p>To specify parameters per model, use the model name as key and a dict of the
  parameters as value. In this example, the XGBoost model will use n_estimators=200
  and the Multi-layer Perceptron will use one hidden layer with 75 neurons.</p>
-<pre><code class="Python">atom.run([&quot;XGB&quot;, &quot;MLP&quot;], est_params={&quot;XGB&quot;: {&quot;n_estimators&quot;: 200}, &quot;MLP&quot;: {&quot;hidden_layer_sizes&quot;: (75,)}})
+<pre><code class="language-Python">atom.run([&quot;XGB&quot;, &quot;MLP&quot;], est_params={&quot;XGB&quot;: {&quot;n_estimators&quot;: 200}, &quot;MLP&quot;: {&quot;hidden_layer_sizes&quot;: (75,)}})
 </code></pre>
-
 <p>Some estimators allow you to pass extra parameters to the fit method (besides X and y).
  This can be done adding <code>_fit</code> at the end of the parameter. For example, to change
  XGBoost's verbosity, we can run:</p>
-<pre><code class="Python">atom.run(&quot;XGB&quot;, est_params={&quot;verbose_fit&quot;: True}
+<pre><code class="language-Python">atom.run(&quot;XGB&quot;, est_params={&quot;verbose_fit&quot;: True}
 </code></pre>
-
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If a parameter is specified through <code>est_params</code>, it will be ignored by the
@@ -1296,18 +1301,15 @@ default parameters.</p>
  you can share the same dimensions across models or use a dictionary with the model
  names as keys to specify the dimensions for every individual model. Note that the
  provided search space dimensions must be compliant with skopt's API.</p>
-<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;dimensions&quot;: [Integer(100, 1000, name=&quot;max_iter&quot;)]})
+<pre><code class="language-Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;dimensions&quot;: [Integer(100, 1000, name=&quot;max_iter&quot;)]})
 </code></pre>
-
 <p>The majority of skopt's callbacks to stop the optimizer early can be accessed
  through <code>bo_params</code>. You can include other callbacks using the <code>callbacks</code> key.</p>
-<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;max_time&quot;: 1000, &quot;callbacks&quot;: custom_callback()})
+<pre><code class="language-Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;max_time&quot;: 1000, &quot;callbacks&quot;: custom_callback()})
 </code></pre>
-
 <p>You can also include other optimizer's parameters as key-value pairs.</p>
-<pre><code class="Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;acq_func&quot;: &quot;EI&quot;})
+<pre><code class="language-Python">atom.run(&quot;LR&quot;, n_calls=10, bo_params={&quot;acq_func&quot;: &quot;EI&quot;})
 </code></pre>
-
 <p><br></p>
 <h3 id="bagging">Bagging</h3>
 <p>After fitting the estimator, you can asses the robustness of the model using
@@ -1340,8 +1342,8 @@ in a convenient boxplot.</p>
 </ul>
 <p>After fitting, the model will get the <code>evals</code> attribute, a dictionary of the train
  and test performances per round (also if early stopping wasn't applied). Click
- <a href="../examples/early_stopping/early_stopping">here</a> for an example pipeline using
- early stopping.</p>
+ <a href="./examples/early_stopping.html" target="_blank">here</a> for an example
+ pipeline using early stopping.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../API/plots/plot_evals">plot_evals</a> method to plot the in-training
@@ -1385,6 +1387,8 @@ see every model's performance per iteration of the successive halving.</p>
 <p>Use the <a href="../API/plots/plot_learning_curve">plot_learning_curve</a> method to see
 the model's performance per size of the training set.</p>
 </div>
+<h3 id="voting">Voting</h3>
+<h3 id="stacking">Stacking</h3>
 <p><br><br></p>
 <h1 id="predicting">Predicting</h1>
 <hr />
@@ -1496,7 +1500,7 @@ method if you need to free some memory!</p>
  and <a href="../API/models/lgb">LightGBM</a> model on the train and test set. We could
  also draw the lines for both models in the same axes, but then the plot could
  become too messy.</p>
-<pre><code class="python">atom = ATOMClassifier(X, y)
+<pre><code class="language-python">atom = ATOMClassifier(X, y)
 atom.run([&quot;xgb&quot;, &quot;lgb&quot;], n_calls=0)
 
 with atom.canvas(2, 2, title=&quot;XGBoost vs LightGBM&quot;, filename=&quot;canvas&quot;):
@@ -1505,7 +1509,6 @@ with atom.canvas(2, 2, title=&quot;XGBoost vs LightGBM&quot;, filename=&quot;can
     atom.xgb.plot_prc(dataset=&quot;both&quot;, title=&quot;PRC - XGBoost&quot;)
     atom.lgb.plot_prc(dataset=&quot;both&quot;, title=&quot;PRC - LightGBM&quot;)
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/canvas.png" alt="canvas" width="1000" height="700"/>
 </div>
@@ -1527,8 +1530,8 @@ with atom.canvas(2, 2, title=&quot;XGBoost vs LightGBM&quot;, filename=&quot;can
 <p>Since the plots are not made by ATOM, we can't draw multiple models in the same figure.
  Selecting more than one model will raise an exception. To avoid this, call the plot
  from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
 <p>You can recognize the SHAP plots by the fact that they end (instead of start)
 with plot.</p>
 </div>

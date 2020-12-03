@@ -10,9 +10,9 @@ site_dir: docs/
 theme: lumen
 
 markdown_extensions:
-  - tables
-  - fenced_code
-  - admonition
+- tables
+- fenced_code
+- admonition
 
 copyright: © Copyright 2020, by tvdboom.
 
@@ -114,17 +114,17 @@ nav:
         - decision_plot: API/plots/decision_plot.md
         - waterfall_plot: API/plots/waterfall_plot.md
 - Examples:
-    - Binary classification: examples/binary_classification/binary_classification.md
-    - Multiclass classification: examples/multiclass_classification/multiclass_classification.md
-    - Regression: examples/regression/regression.md
-    - Successive halving: examples/successive_halving/successive_halving.md
-    - Train sizing: examples/train_sizing/train_sizing.md
-    - Deep learning: examples/deep_learning/deep_learning.md
-    - Imbalanced datasets: examples/imbalanced_datasets/imbalanced_datasets.md
-    - Feature engineering: examples/feature_engineering/feature_engineering.md
-    - Multi-metric runs: examples/multi_metric/multi_metric.md
-    - Early stopping: examples/early_stopping/early_stopping.md
-    - Calibration: examples/calibration/calibration.md
-    - Utilities: examples/utilities/utilities.md
+    - Binary classification: examples/binary_classification.html" target="_blank
+    - Multiclass classification: examples/multiclass_classification.html" target="_blank
+    - Regression: examples/regression.html" target="_blank
+    - Successive halving: examples/successive_halving.html" target="_blank
+    - Train sizing: examples/train_sizing.html" target="_blank
+    - Deep learning: examples/deep_learning.html" target="_blank
+    - Imbalanced datasets: examples/imbalanced_datasets.html" target="_blank
+    - Feature engineering: examples/feature_engineering.html" target="_blank
+    - Multi-metric runs: examples/multi_metric.html" target="_blank
+    - Early stopping: examples/early_stopping.html" target="_blank
+    - Calibration: examples/calibration.html" target="_blank
+    - Utilities: examples/utilities.html" target="_blank
 - Dependencies: dependencies.md
 - License: license.md

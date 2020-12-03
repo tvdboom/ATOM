@@ -190,8 +190,8 @@ You can delete a branch either deleting the attribute, e.g. `del atom.branch`, o
  if no models were trained on its dataset. Use `atom.branch.status()` to print a list
  of the transformers in the branch and their parameters.
 
-See the [imbalanced datasets](../examples/imbalanced_datasets/imbalanced_datasets/)
- or [feature_engineering](../examples/feature_engineering/feature_engineering/)
+See the <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
+ or <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
  examples for branching use cases.
 
 !!!warning
@@ -322,7 +322,7 @@ Feature engineering is the process of creating new features from the existing on
  created features can be useless, i.e. they do not help the algorithm to make better
  predictions. Even worse, having useless features can drop your performance. To avoid
  this, we perform feature selection, a process in which we select the relevant features 
- in the dataset. See [here](examples/feature_engineering/feature_engineering.md) an example.
+ in the dataset. See the <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a> example.
 
 
 <br>
@@ -594,10 +594,11 @@ Many deep learning models, for example in computer vision and natural language
  shape (n_samples, length, width, rgb). These data structures are not intended
  to store in a 2 dimensional pandas dataframe. Since ATOM requires a dataframe as
  instance for the dataset, multidimensional data sets are stored in a single column
- called "Features" where every row contains one (multidimensional) sample. Click
- [here](../examples/deep_learning/deep_learning) for an example. Note that, because
- of this, the [data cleaning](#data-cleaning), [feature engineering](#feature-engineering)
- and some of the [plotting](#plots) methods are unavailable for deep learning datasets.
+ called "Features" where every row contains one (multidimensional) sample. See the
+ <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example. 
+ Note that, because of this, the [data cleaning](#data-cleaning),
+ [feature engineering](#feature-engineering) and some of the [plotting](#plots)
+ methods are unavailable for deep learning datasets.
 
 <br>
 
@@ -675,8 +676,9 @@ atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2":
 For example, this pipeline will fit two Random Forest models, one with 100 and
  the other with 200 decision trees. The models can be accessed through
  `atom.rf1` and `atom.rf2`. Use tagged models to test how the same model
- performs when fitted with different parameters or on different data sets. Click
- [here](../examples/imbalanced_datasets/imbalanced_datasets) for an example.
+ performs when fitted with different parameters or on different data sets. See the
+ <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
+ example.
 
 
 Additional things to take into account:
@@ -892,8 +894,8 @@ There are two ways to apply early stopping on these models:
  
 After fitting, the model will get the `evals` attribute, a dictionary of the train
  and test performances per round (also if early stopping wasn't applied). Click
- [here](../examples/early_stopping/early_stopping) for an example pipeline using
- early stopping.
+ <a href="./examples/early_stopping.html" target="_blank">here</a> for an example
+ pipeline using early stopping.
 
 !!!tip
     Use the [plot_evals](../API/plots/plot_evals) method to plot the in-training
@@ -943,6 +945,13 @@ Use train sizing through the [TrainSizingClassifier](../API/training/trainsizing
 !!!tip
     Use the [plot_learning_curve](../API/plots/plot_learning_curve) method to see
     the model's performance per size of the training set.
+
+
+
+### Voting
+
+
+### Stacking
 
 
 

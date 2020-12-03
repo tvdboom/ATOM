@@ -761,7 +761,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, sequence, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -868,7 +868,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, sequence, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -1047,10 +1047,10 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.array or pd.DataFrame
+        X: dict, sequence, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.array or pd.Series, optional (default=-1)
+        y: int, str, sequence, np.ndarray or pd.Series, optional (default=-1)
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).

@@ -15,7 +15,7 @@ import numpy as np
 import pandas as pd
 import multiprocessing
 import warnings as warn
-from copy import deepcopy
+from copy import copy
 from typeguard import typechecked
 from typing import Union, Optional
 
@@ -168,7 +168,7 @@ class BaseTransformer(object):
         if np.array(X).ndim > 2:
             X = pd.DataFrame({"Features": [row for row in X]})
         else:
-            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
+            X = to_df(copy(X))  # Make copy to not overwrite mutable arguments
 
         # Prepare target column
         if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
@@ -348,7 +348,7 @@ class BaseTransformer(object):
         if kwargs.get("save_data") is False and hasattr(self, "dataset"):
             data = {}  # Store the data to reattach later
             for key, value in self._branches.items():
-                data[key] = deepcopy(value.data)
+                data[key] = copy(value.data)
                 value.data = None
 
         if not filename:

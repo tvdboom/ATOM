@@ -475,7 +475,7 @@ def test_sampling_multiclass(sampling):
 
 
 def test_return_pandas():
-    """Assert that pandas objects are returned, not np.array."""
+    """Assert that pandas objects are returned, not np.ndarray."""
     X, y = Balancer().transform(X_bin, y_bin)
     assert isinstance(X, pd.DataFrame)
     assert isinstance(y, pd.Series)

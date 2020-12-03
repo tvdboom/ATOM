@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -585,7 +585,7 @@
 <li>The <code>n_jobs</code> and <code>random_state</code> parameters are set equal to those of the
  <code>training</code> instance.</li>
 </ul>
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Dimensions:</strong></td>
@@ -632,7 +632,8 @@ Categorical(np.linspace(0.1, 0.9, 9), name="power_t")
 Categorical([True, False], name="average")
 </blockquote>
 </td></tr>
-</table></p>
+</table>
+
 <p><br><br><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
@@ -644,7 +645,7 @@ Categorical([True, False], name="average")
  attributes not be updated (i.e. they have no <code>@setter</code>).
 <br><br></p>
 <h3 id="utility-attributes">Utility attributes</h3>
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -719,12 +720,12 @@ Dataframe of the training results with the model acronym as index. Columns can i
 </td>
 </tr>
 </table>
-<br></p>
+<p><br></p>
 <h3 id="prediction-attributes">Prediction attributes</h3>
 <p>The prediction attributes are not calculated until the attribute is called for the
  first time. This mechanism avoids having to calculate attributes that are never
  used, saving time and memory.</p>
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Prediction attributes:</strong></td>
@@ -755,7 +756,7 @@ Model's score on the test set.
 </blockquote>
 </tr>
 </table>
-<br><br><br></p>
+<p><br><br><br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <p>The majority of the <a href="../../../user_guide/#plots">plots</a> and <a href="../../../user_guide/#predicting">prediction methods</a>
@@ -783,17 +784,16 @@ Model's score on the test set.
 <td>Save the estimator to a pickle file.</td>
 </tr>
 </table>
-
 <p><br></p>
-<p><a name="calibrate"></a>
-<pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
+<p><a name="calibrate"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(\*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L826">[source]</a></div></pre>
 <div style="padding-left:3%">
 Applies probability calibration on the estimator. The calibration is done using the
- <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
+ [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
  class from sklearn. The calibrator will be trained via cross-validation on a subset
  of the training data, using the rest to fit the calibrator. The new classifier will
- replace the <code>estimator</code> attribute. After calibrating, all prediction attributes will
+ replace the `estimator` attribute. After calibrating, all prediction attributes will
  reset. Only if classifier.
 <br /><br />
 <table>
@@ -810,16 +810,16 @@ test set. Use this only if you have another, independent set for testing.
 </tr>
 </table>
 </div>
-<br /></p>
-<p><a name="reset-prediction-attributes"></a>
+<p><br /></p>
+<p><a name="reset-prediction-attributes"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">reset_prediction_attributes</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L654">[source]</a></div></pre>
 <div style="padding-left:3%">
 Clear all the prediction attributes. Use this method to free some memory before saving
  the class.
 </div>
-<br /></p>
-<p><a name="scoring"></a>
+<p><br /></p>
+<p><a name="scoring"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -831,7 +831,7 @@ Returns the model's score for a specific metric.
 <td width="75%" style="background:white;">
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
+Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules)
  or one of the following custom metrics (only if classifier):
 <ul>
 <li>"cm" for the confusion matrix.</li>
@@ -844,7 +844,7 @@ Name of the metric to calculate. Choose from any of sklearn's <a href="https://s
 <li>"tpr" for true positive rate.</li>
 <li>"sup" for the support metric.</li>
 </ul>
-If None, returns the final results for this model (ignores the <code>dataset</code> parameter).
+If None, returns the final results for this model (ignores the `dataset` parameter).
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
@@ -853,8 +853,8 @@ Data set on which to calculate the metric. Options are "train" or "test".
 </tr>
 </table>
 </div>
-<br /></p>
-<p><a name="save-estimator"></a>
+<p><br /></p>
+<p><a name="save-estimator"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L944">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -871,10 +871,10 @@ Name of the file to save. If None or "auto", the estimator's name is used.
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(models=&quot;SGD&quot;, metric=&quot;recall&quot;, bo_params={&quot;cv&quot;: 3})

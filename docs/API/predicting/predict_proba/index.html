@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,26 +549,26 @@
 
 <h1 id="predict_proba">predict_proba</h1>
 <hr />
-<p><a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None, **kwargs) 
+<p><a name="atom"></a></p>
+<pre><em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, verbose=None, \*\*kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L128">[source]</a></div></pre>
 <div style="padding-left:3%">
 Transform the data and make probabilistic predictions on new data. If called from a
- <code>training</code> instance, it will use the best model in the pipeline (under the <code>winner</code>
+ `training` instance, it will use the best model in the pipeline (under the `winner`
  attribute). If called from a model, it will use that model. The estimator must
- have a <code>predict_proba</code> method.
+ have a `predict_proba` method.
 <br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the <code>training</code>'s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -577,16 +577,16 @@ Verbosity level of the output. If None, it uses the <code>training</code>'s verb
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Same keyword arguments as the <a href="../transform/">transform</a> method to
+Same keyword arguments as the [transform](transform.md) method to
  include/exclude transformers from the transformations.
 </blockquote>
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run([&quot;Tree&quot;, &quot;AdaB&quot;], metric=&quot;AP&quot;, n_calls=10)

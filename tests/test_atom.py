@@ -198,14 +198,6 @@ def test_verbose_raises_when_invalid():
     pytest.raises(ValueError, atom.transform, X_bin, verbose=3)
 
 
-def test_verbose_in_transform():
-    """Assert that the verbosity of the transformed classes is changed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    _ = atom.transform(X_bin, verbose=2)
-    assert atom.pipeline[0].verbose == 2
-
-
 def test_pipeline_parameter():
     """Assert that the pipeline parameter is obeyed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

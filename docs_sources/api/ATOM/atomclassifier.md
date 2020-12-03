@@ -606,10 +606,7 @@ Data set to save.
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L152">[source]</a></div></pre>
 <div style="padding-left:3%">
-Returns the scores of the models for a specific metric. If a model
- returns `XXX`, it means the metric failed for that specific model. This
- can happen if either the metric is unavailable for the task or if the
- model does not have a `predict_proba` method while the metric requires it.
+Returns the scores of the models for a specific metric.
 <br /><br />
 <table>
 <tr>

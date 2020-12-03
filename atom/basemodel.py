@@ -73,7 +73,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.__dict__.update(kwargs)
         self.name = self.acronym if len(args) == 1 else args[1]
 
-        # Skip if called from for FeatureSelector
+        # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
             self.branch = self.T._branches[self.T._current]
             if self.needs_scaling and not check_scaling(self.branch.X):
@@ -110,8 +110,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.std_bagging = None
         self.time_bagging = None
 
-        # Prediction attributes include (for train and test)
-        # predict, predict_proba, predict_log_proba, decision_function, score
+        # Prediction attributes for train and test
         self._pred_attrs = [None] * 10
 
         # Results
@@ -704,11 +703,11 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Apply prediction methods on new data.
 
         First transform the new data and apply the attribute on the
-        best model. The model has to have the provided attribute.
+        best model. The model needs to have the provided attribute.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.array or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -728,21 +727,20 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Returns
         -------
-        np.array
+        np.ndarray
             Return of the attribute.
 
         """
         if not hasattr(self.estimator, method):
             raise AttributeError(
-                f"The {self.estimator.__class__.__name__} "
-                f"estimator doesn't have a {method} method!"
+                f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
             )
 
-        # When there is a pipeline, apply all data transformations first
-        if not self.T.pipeline.empty:
+        # When there is a pipeline, apply transformations first
+        if not self.branch.pipeline.empty:
             if kwargs.get("verbose") is None:
                 kwargs["verbose"] = self.T.verbose
-            X, y = catch_return(transform(self.T.pipeline, X, y, **kwargs))
+            X, y = catch_return(transform(self.branch.pipeline, X, y, **kwargs))
 
         # Scale the data if needed
         if self.needs_scaling and not check_scaling(X):
@@ -784,7 +782,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Get the score function on new data."""
         return self._prediction(X, y, sample_weight, method="score", **kwargs)
 
-    # Prediction properties ========================================= >>
+    # Prediction properties ======================================== >>
 
     @composed(crash, method_to_log)
     def reset_predictions(self):
@@ -851,7 +849,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             self._pred_attrs[9] = self.estimator.score(arr(self.X_test), self.y_test)
         return self._pred_attrs[9]
 
-    # Properties ============================================ >>
+    # Properties =================================================== >>
 
     @property
     def results(self):
@@ -1004,7 +1002,7 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Get the scoring of a specific metric on the test set.
+        """Get the scoring fora specific metric.
 
         Parameters
         ----------
@@ -1094,7 +1092,10 @@ class BaseModel(SuccessiveHalvingPlotter, TrainSizingPlotter):
             ))
 
         except (ValueError, TypeError):
-            return f"Invalid metric for a {self.acronym} model with {self.T.task} task!"
+            raise ValueError(
+                f"Invalid value for the metric parameter. Metric {metric} is "
+                f"invalid for a {self.fullname} model with a {self.T.task} task!"
+            )
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: Optional[str] = None):

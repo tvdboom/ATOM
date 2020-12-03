@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -557,16 +557,16 @@
 
 <h1 id="imputer">Imputer</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
                                  min_frac_cols=0.5, verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L300">[source]</a></div></pre>
 <div style="padding-left:3%">
 Impute or remove missing values according to the selected strategy.
  Also removes rows and columns with too many missing values. Use the
- <code>missing</code> attribute to customize what are considered "missing values".
- This class can be accessed from atom through the <a href="../../ATOM/atomclassifier/#impute">impute</a>
- method. Read more in the <a href="../../../user_guide/#imputing-missing-values">user guide</a>.
+ `missing` attribute to customize what are considered "missing values".
+ This class can be accessed from atom through the [impute](../../ATOM/atomclassifier/#impute)
+ method. Read more in the [user guide](../../../user_guide/#imputing-missing-values).
 <br /><br />
 <table>
 <tr>
@@ -616,14 +616,14 @@ Verbosity level of the class. Possible values are:
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
 </td>
 </tr>
 </table>
 </div>
-<br></p>
+<p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use atom's <a href="../../ATOM/atomclassifier/#data-attributes">nans</a> attribute
@@ -632,7 +632,7 @@ for an overview of the missing values in the dataset.</p>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -640,14 +640,14 @@ for an overview of the missing values in the dataset.</p>
 <strong>missing: list</strong>
 <blockquote>
 List of values that are considered "missing". Default values are: "", "?",
- "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>, <code>NaN</code>, <code>+inf</code> and <code>-inf</code>
+ "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf`
  are always considered missing since they are incompatible with sklearn
  estimators.
 </blockquote>
 </td>
 </tr>
 </table>
-<br></p>
+<p><br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <table width="100%">
@@ -687,9 +687,8 @@ List of values that are considered "missing". Default values are: "", "?",
 <td>Transform the data.</td>
 </tr>
 </table>
-
 <p><br></p>
-<p><a name="fit"></a>
+<p><a name="fit"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L370">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -718,18 +717,18 @@ Fitted instance of self.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="fit-transform"></a>
+<p><br /></p>
+<p><a name="fit-transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
-Fit the Imputer and return the imputed data.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Leaving <code>y=None</code> can lead to inconsistencies in data length between X and y
-if rows are dropped during the transformation.</p>
+Fit the Imputer and return the imputed data.
+
+!!!warning
+    Leaving `y=None` can lead to inconsistencies in data length between X and y
+    if rows are dropped during the transformation.
+
 </div>
-<p></div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -761,8 +760,8 @@ Transformed target column. Only returned if provided.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="get-params"></a>
+<p><br /></p>
+<p><a name="get-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -788,8 +787,8 @@ Dictionary of the parameter names mapped to their values.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="log"></a>
+<p><br /></p>
+<p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -810,8 +809,8 @@ Minimum verbosity level in order to print the message.
 </tr>
 </table>
 </div>
-<br /></p>
-<p><a name="save"></a>
+<p><br /></p>
+<p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -828,8 +827,8 @@ Name to save the file with. None to save with default name.
 </tr>
 </table>
 </div>
-<br></p>
-<p><a name="set-params"></a>
+<p><br></p>
+<p><a name="set-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -840,7 +839,7 @@ Set the parameters of this estimator.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>**params: dict</strong>
+<strong>\*\*params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -854,18 +853,18 @@ Estimator instance.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="transform"></a>
+<p><br /></p>
+<p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L445">[source]</a></div></pre>
 <div style="padding-left:3%">
-Impute the data.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Leaving <code>y=None</code> can lead to inconsistencies in data length between X and y
-if rows are dropped during the transformation.</p>
+Impute the data.
+
+!!!warning
+    Leaving `y=None` can lead to inconsistencies in data length between X and y
+    if rows are dropped during the transformation.
+
 </div>
-<p></div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -897,17 +896,16 @@ Transformed target column. Only returned if provided.
 </blockquote>
 </tr>
 </table>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;drop&quot;, min_frac_cols=0.8)
 </code></pre>
-
 <p>or</p>
-<pre><code class="Python">from atom.data_cleaning import Imputer
+<pre><code class="language-Python">from atom.data_cleaning import Imputer
 
 imputer = Imputer(strat_num=&quot;knn&quot;, strat_cat=&quot;drop&quot;, min_frac_cols=0.8)
 imputer.fit(X_train, y_train)

@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -549,12 +549,12 @@
 
 <h1 id="plot_bagging">plot_bagging</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_bagging</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L548">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot a boxplot of the bagging's results. Only available for models fitted using
- <a href="../../../user_guide/#bagging">bagging</a>.
+ [bagging](../../../user_guide/#bagging).
 <br /><br />
 <table width="100%">
 <tr>
@@ -566,7 +566,7 @@ Name of the models to plot. If None, all models in the pipeline that used baggin
 </blockquote>
 <strong>metric: int or str, optional (default=0)</strong>
 <blockquote>
-Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
+Index or name of the metric to plot. Only for [multi-metric](../../../user_guide/#metric) runs.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -587,16 +587,15 @@ Whether to render the plot.
 </tr>
 </table>
 </div>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run([&quot;LR&quot;, &quot;Tree&quot;, &quot;LGB&quot;, &quot;MLP&quot;], metric=&quot;accuracy&quot;, bagging=5)
 atom.plot_bagging()
 </code></pre>
-
 <div align="center">
     <img src="../../../img/plots/plot_bagging.png" alt="plot_bagging" width="700" height="420"/>
 </div></div>

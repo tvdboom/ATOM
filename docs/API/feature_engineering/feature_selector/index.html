@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="../../../examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="../../../examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="../../../examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="../../../examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="../../../examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -557,10 +557,10 @@
 
 <h1 id="featureselector">FeatureSelector</h1>
 <hr />
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None, solver=None, n_features=None, max_frac_repeated=1.,
                                                max_correlation=1., n_jobs=1, verbose=0, logger=None,
-                                               random_state=None, **kwargs)
+                                               random_state=None, \*\*kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L376">[source]</a></div></pre>
 <div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
@@ -569,8 +569,8 @@ Remove features according to the selected strategy. Ties between
  collinear features based on the Pearson correlation coefficient. For
  each pair above the specified limit (in terms of absolute value), it
  removes one of the two. This class can be accessed from atom
- through the <a href="../../ATOM/atomclassifier/#feature-selection">feature_selection</a>
- method. Read more in the <a href="../../../user_guide/#selecting-useful-features">user guide</a>.
+ through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
+ method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
 <br /><br />
 <table>
 <tr>
@@ -613,10 +613,10 @@ for SFM, RFE and RFECV).
     <li>"randomized"</li>
     </ul></li>
 <li>for "SFM", "RFE" and "RFECV:<br>
-Estimator with either a <code>feature_importances_</code> or <code>coef_</code> attribute after fitting.
- You can use one of ATOM's pre-defined <a href="../../../user_guide/#models">models</a>. Add
- <code>_class</code> or <code>_reg</code> after the model's name to specify a classification or regression
- task, e.g. <code>solver="LGB_reg"</code> (not necessary if called from an atom instance. No
+Estimator with either a `feature_importances_` or `coef_` attribute after fitting.
+ You can use one of ATOM's pre-defined [models](../../../user_guide/#models). Add
+ `_class` or `_reg` after the model's name to specify a classification or regression
+ task, e.g. `solver="LGB_reg"` (not necessary if called from an atom instance. No
  default option.</li>
 </ul>
 </blockquote>
@@ -625,11 +625,11 @@ Estimator with either a <code>feature_importances_</code> or <code>coef_</code> 
 Number of features to select. Choose from:
 <ul>
 <li>if None: Select all features.</li>
-<li>if &lt; 1: Fraction of the total features to select.</li>
-<li>if &gt;= 1: Number of features to select.</li>
+<li>if < 1: Fraction of the total features to select.</li>
+<li>if >= 1: Number of features to select.</li>
 </ul>
 If strategy="SFM" and the threshold parameter is not specified, the threshold will be
- set to <code>-np.inf</code> in order to make this parameter the number of features to select.<br>
+ set to `-np.inf` in order to make this parameter the number of features to select.<br>
 If strategy="RFECV", it's the minimum number of features to select.
 </blockquote>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong>
@@ -650,9 +650,9 @@ Minimum value of the Pearson correlation coefficient to identify
 <blockquote>
 Number of cores to use for parallel processing.
 <ul>
-<li>If &gt;0: Number of cores to use.</li>
+<li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
-<li>If &lt;-1: Use available_cores - 1 + n_jobs.</li>
+<li>If <-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
 Beware that using multiple processes on the same machine may cause
 memory issues for large datasets.
@@ -672,13 +672,13 @@ Verbosity level of the class. Possible values are:
 <li>If None: Doesn't save a logging file.</li>
 <li>If bool: True for logging file with default name. False for no logger.</li>
 <li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>If class: python `Logger` object.</li>
 </ul>
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+ generator is the `RandomState` instance used by `numpy.random`.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
@@ -689,7 +689,7 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
 </tr>
 </table>
 </div>
-<br></p>
+<p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../../plots/plot_feature_importance/">plot_feature_importance</a> method to
@@ -706,7 +706,7 @@ model doesn't have a <code>feature_importances_</code> attribute, use
 <h2 id="attributes">Attributes</h2>
 <hr />
 <h3 id="utility-attributes">Utility attributes</h3>
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -727,36 +727,36 @@ Remaining features ordered by importance. Only if strategy in ["univariate", "SF
  "RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
  estimator fitted on the reduced set. 
 </blockquote>
-<strong>univariate: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">SelectKBest</a></strong>
+<strong>univariate: [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)</strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="univariate".
 </blockquote>
-<strong>scaler: <a href="../../data_cleaning/scaler/">Scaler</a></strong>
+<strong>scaler: [Scaler](../../data_cleaning/scaler/)</strong>
 <blockquote>
 Instance used to scale the data. Only if strategy="PCA" and the data was not already scaled.
 </blockquote>
-<strong>pca: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a></strong>
+<strong>pca: [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="PCA".
 </blockquote>
-<strong>sfm: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SelectFromModel</a></strong>
+<strong>sfm: [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="SFM".
 </blockquote>
-<strong>rfe: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a></strong>
+<strong>rfe: [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="RFE".
 </blockquote>
-<strong>rfecv: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a></strong>
+<strong>rfecv: [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)</strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="RFECV".
 </blockquote>
 </td>
 </tr>
 </table>
-<br></p>
+<p><br></p>
 <h3 id="plot-attributes">Plot attributes</h3>
-<p><a name="atom"></a>
+<p><a name="atom"></a></p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -783,7 +783,7 @@ Fontsize for the ticks along the plot's axes.
 </blockquote>
 </td></tr>
 </table>
-<br><br><br></p>
+<p><br><br><br></p>
 <h2 id="methods">Methods</h2>
 <hr />
 <table width="100%">
@@ -838,9 +838,8 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 </table>
-
 <p><br></p>
-<p><a name="fit"></a>
+<p><a name="fit"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L517">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -875,8 +874,8 @@ Fitted instance of self.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="fit-transform"></a>
+<p><br /></p>
+<p><a name="fit-transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -912,8 +911,8 @@ Transformed feature set.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="get-params"></a>
+<p><br /></p>
+<p><a name="get-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -938,8 +937,8 @@ Dictionary of the parameter names mapped to their values.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="log"></a>
+<p><br /></p>
+<p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -960,32 +959,32 @@ Minimum verbosity level in order to print the message.
 </tr>
 </table>
 </div>
-<br /></p>
-<p><a name="plot-pca"></a>
+<p><br /></p>
+<p><a name="plot-pca"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L344">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the explained variance ratio vs the number of components.
-See <a href="../../plots/plot_pca">plot_pca</a> for a description of the parameters.
+See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 </div>
-<br /></p>
-<p><a name="plot-components"></a>
+<p><br /></p>
+<p><a name="plot-components"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L399">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the explained variance ratio per components.
-See <a href="../../plots/plot_components">plot_components</a> for a description of the parameters.
+See [plot_components](../../plots/plot_components) for a description of the parameters.
 </div>
-<br /></p>
-<p><a name="plot-rfecv"></a>
+<p><br /></p>
+<p><a name="plot-rfecv"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L461">[source]</a></div></pre>
 <div style="padding-left:3%">
 Plot the scores obtained by the estimator fitted on every subset of
- the data. See <a href="../../plots/plot_rfecv">plot_rfecv</a> for a description of the parameters.
+ the data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the parameters.
 </div>
-<br /></p>
-<p><a name="save"></a>
+<p><br /></p>
+<p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -1002,8 +1001,8 @@ Name to save the file with. None to save with default name.
 </tr>
 </table>
 </div>
-<br></p>
-<p><a name="set-params"></a>
+<p><br></p>
+<p><a name="set-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -1014,7 +1013,7 @@ Set the parameters of this estimator.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>**params: dict</strong>
+<strong>\*\*params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -1028,8 +1027,8 @@ Estimator instance.
 </blockquote>
 </tr>
 </table>
-<br /></p>
-<p><a name="transform"></a>
+<p><br /></p>
+<p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L734">[source]</a></div></pre>
 <div style="padding-left:3%">
@@ -1058,19 +1057,18 @@ Transformed feature set.
 </blockquote>
 </tr>
 </table>
-<br /></p>
+<p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
-<pre><code class="python">from atom import ATOMClassifier
+<pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.feature_selection(stratgey=&quot;pca&quot;, n_features=12, whiten=True, max_correlation=0.96)
 
 atom.plot_pca(filename=&quot;pca&quot;, figsize=(8, 5))
 </code></pre>
-
 <p>or</p>
-<pre><code class="python">from atom.feature_engineering import FeatureSelector
+<pre><code class="language-python">from atom.feature_engineering import FeatureSelector
 
 feature_selector = FeatureSelector(stratgey=&quot;pca&quot;, n_features=12, whiten=True, max_correlation=0.96)
 feature_selector.fit(X_train, y_train)

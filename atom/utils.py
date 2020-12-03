@@ -322,7 +322,7 @@ def to_series(data, index=None, name="target"):
 
     Parameters
     ----------
-    data: list, tuple or np.array
+    data: list, tuple or np.ndarray
         Data to convert.
 
     index: array or Index, optional (default=None)
@@ -668,10 +668,10 @@ def transform(est_branch, X, y, verbose, **kwargs):
     est_branch: pd.Series
         Estimators in a branch.
 
-    X: dict, sequence, np.array or pd.DataFrame
+    X: dict, sequence, np.ndarray or pd.DataFrame
         Feature set with shape=(n_samples, n_features).
 
-    y: int, str, sequence, np.array, pd.Series or None
+    y: int, str, sequence, np.ndarray, pd.Series or None
         - If None: y is not used in the transformation.
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
@@ -695,6 +695,21 @@ def transform(est_branch, X, y, verbose, **kwargs):
         Transformed target column. Only returned if provided.
 
     """
+
+    def transform_one(est):
+        """Transform a single estimator."""
+        nonlocal X, y
+
+        vb = est.get_params()["verbose"]  # Save original verbosity
+        est.verbose = verbose
+
+        # Some transformers return no y, but we need the original
+        X, y_returned = catch_return(est.transform(X, y))
+        y = y if y_returned is None else y_returned
+
+        # Reset the original verbosity
+        est.verbose = vb
+
     # Check verbose parameter
     if verbose < 0 or verbose > 2:
         raise ValueError(
@@ -702,7 +717,7 @@ def transform(est_branch, X, y, verbose, **kwargs):
             f"Value should be between 0 and 2, got {verbose}."
         )
 
-    # All data cleaning and feature selection methods and their classes
+    # Data cleaning and feature engineering methods and their classes
     steps = dict(
         cleaner="Cleaner",
         scale="Scaler",
@@ -715,23 +730,18 @@ def transform(est_branch, X, y, verbose, **kwargs):
     )
 
     # Set default values if pipeline is not provided
-    if not kwargs.get("pipeline"):
+    if kwargs.get("pipeline") is None:
         for key, value in steps.items():
             if key not in kwargs:
                 kwargs[value] = False if key in ["outliers", "balance"] else True
             else:
                 kwargs[value] = kwargs.pop(key)
 
-    # Loop over the transformers
+    # Transform either one or all the transformers in the pipeline
     for i, est in enumerate(est_branch):
         if i in kwargs.get("pipeline", []) or kwargs.get(est.__class__.__name__):
-            # If verbose is specified, change the class verbosity
-            if verbose is not None:
-                est.verbose = verbose
-
-            # Some transformers return no y, but we need the original
-            X, y_returned = catch_return(est.transform(X, y))
-            y = y if y_returned is None else y_returned
+            if kwargs.get("_one_trans", i) == i:
+                transform_one(est)
 
     return variable_return(X, y)
 

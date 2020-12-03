@@ -469,16 +469,6 @@ def test_scoring_metric_acronym():
 
 
 @pytest.mark.parametrize("on_set", ["train", "test"])
-def test_scoring_all_scorers(on_set):
-    """Assert that the scoring methods works for all sklearn scorers."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["MNB", "PA"])
-    for metric in SCORERS:
-        assert isinstance(atom.mnb.scoring(metric, on_set), (int, float, str))
-        assert isinstance(atom.pa.scoring(metric, on_set), (int, float, str))
-
-
-@pytest.mark.parametrize("on_set", ["train", "test"])
 def test_scoring_custom_metrics(on_set):
     """Assert that the scoring methods works for custom metrics."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -494,7 +484,7 @@ def test_scoring_invalid_metric():
     """Assert that invalid metrics return a string."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    assert isinstance(atom.ols.scoring("roc_auc"), str)
+    pytest.raises(ValueError, atom.ols.scoring, "roc_auc")
 
 
 def test_scoring_kwargs():

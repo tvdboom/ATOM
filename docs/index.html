@@ -441,51 +441,51 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
-    <a href="examples/binary_classification/binary_classification/" class="dropdown-item">Binary classification</a>
+    <a href="examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
-    <a href="examples/multiclass_classification/multiclass_classification/" class="dropdown-item">Multiclass classification</a>
+    <a href="examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
 </li>
                                     
 <li>
-    <a href="examples/regression/regression/" class="dropdown-item">Regression</a>
+    <a href="examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
 </li>
                                     
 <li>
-    <a href="examples/successive_halving/successive_halving/" class="dropdown-item">Successive halving</a>
+    <a href="examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
 </li>
                                     
 <li>
-    <a href="examples/train_sizing/train_sizing/" class="dropdown-item">Train sizing</a>
+    <a href="examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
 </li>
                                     
 <li>
-    <a href="examples/deep_learning/deep_learning/" class="dropdown-item">Deep learning</a>
+    <a href="examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
 </li>
                                     
 <li>
-    <a href="examples/imbalanced_datasets/imbalanced_datasets/" class="dropdown-item">Imbalanced datasets</a>
+    <a href="examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
 </li>
                                     
 <li>
-    <a href="examples/feature_engineering/feature_engineering/" class="dropdown-item">Feature engineering</a>
+    <a href="examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
 </li>
                                     
 <li>
-    <a href="examples/multi_metric/multi_metric/" class="dropdown-item">Multi-metric runs</a>
+    <a href="examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
-    <a href="examples/early_stopping/early_stopping/" class="dropdown-item">Early stopping</a>
+    <a href="examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
 </li>
                                     
 <li>
-    <a href="examples/calibration/calibration/" class="dropdown-item">Calibration</a>
+    <a href="examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
-    <a href="examples/utilities/utilities/" class="dropdown-item">Utilities</a>
+    <a href="examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
 </li>
                                 </ul>
                             </li>
@@ -533,6 +533,11 @@
               <ul class="nav flex-column">
               </ul>
             </li>
+            
+            <li class="nav-item" data-level="1"><a href="#content" class="nav-link">Content</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
         </ul>
     </div>
 </div></div>
@@ -541,7 +546,6 @@
 <div align="center">
     <img src="img/logo.png" alt="ATOM" height="170" width="600"/>
 </div>
-
 <p><br><br></p>
 <h1 id="automated-tool-for-optimized-modelling">Automated Tool for Optimized Modelling</h1>
 <hr />
@@ -623,12 +627,14 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <p><br><br><br><br></p>
 <h1 id="release-history">Release history</h1>
 <hr />
-<h3 id="version-420">Version 4.2.0</h3>
+<h3 id="version-420-coming-soon">Version 4.2.0 - Coming soon</h3>
 <ul>
 <li>Possibility to add custom models to the pipeline using <a href="./API/ATOM/atommodel">ATOMModel</a>.</li>
 <li>Compatibility with <a href="./user_guide/#deep-learning">deep learning</a> models.</li>
 <li>New branch system for different data pipelines. Read more in the <a href="./user_guide/#data-pipelines">user guide</a>.</li>
-<li>New <a href="./API/ATOM/atomclassifier#get-class-weight">get_class_weight</a> utility method.</li>
+<li>Use the <a href="./API/ATOM/atomclassifier/#canvas">canvas</a> contextmanager to draw multiple plots in one figure.</li>
+<li>New <a href="./user_guide/#voting">Voting</a> and <a href="./user_guide/#stacking">Stacking</a> ensemble techniques.</li>
+<li>New <a href="./API/ATOM/atomclassifier/#get-class-weight">get_class_weight</a> utility method.</li>
 <li>Added the <code>sample_weight</code> parameter to the <a href="./API/predicting/score">score</a> method.</li>
 <li>New ways to initialize the data in the <code>training</code> instances.</li>
 <li>The <code>n_rows</code> parameter in <a href="./API/ATOM/atomloader">ATOMLoader</a> is deprecated in
@@ -641,10 +647,10 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li><a href="./user_guide/#successive-halving">Successive halving</a> and <a href="./user_guide/#train-sizing">Train sizing</a>
   now both allow subsequent runs from atom without losing previous information.</li>
 <li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
-<li>Added the <a href="./examples/utilities/utilities">Utilities</a> and <a href="./examples/deep_learning/deep_learning">Deep learning</a> example notebooks.</li>
+<li>Added the <a href="./examples/utilities.html" target="_blank">Utilities</a> and <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example notebooks.</li>
 <li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
 </ul>
-<h3 id="version-410">Version 4.1.0</h3>
+<h3 id="version-410-16-october-2020">Version 4.1.0 - 16 October 2020</h3>
 <ul>
 <li>Added the <code>est_params</code> parameter to customize the parameters passed to every model's
   estimator.</li>
@@ -659,7 +665,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Small changes in log outputs.</li>
 <li>Bug fixes and performance improvements.</li>
 </ul>
-<h3 id="version-401">Version 4.0.1</h3>
+<h3 id="version-401-29-september-2020">Version 4.0.1 - 29 September 2020</h3>
 <ul>
 <li>Bug fix where the DFS strategy in <a href="./API/feature_engineering/feature_generator">FeatureGenerator</a>
   was not deterministic for a fixed random state.</li>
@@ -667,7 +673,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Added the <a href="./license">license</a> file to the package's installer.</li>
 <li>Typo fixes in documentation.</li>
 </ul>
-<h3 id="version-400">Version 4.0.0</h3>
+<h3 id="version-400-28-september-2020">Version 4.0.0 - 28 September 2020</h3>
 <ul>
 <li>Bayesian optimization package changed from <a href="http://sheffieldml.github.io/GPyOpt/">GpyOpt</a>
   to <a href="https://scikit-optimize.github.io/stable/">skopt</a>.</li>
@@ -690,6 +696,146 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Tests coverage up to 100%.</li>
 <li>Completely new documentation page.</li>
 <li>Bug fixes and performance improvements.</li>
+</ul>
+<p><br><br><br></p>
+<h1 id="content">Content</h1>
+<hr />
+<ul>
+<li><a href="./getting_started">Getting started</a></li>
+<li><a href="./user_guide">User guide</a></li>
+<li>API<ul>
+<li>ATOM<ul>
+<li><a href="./API/ATOM/atomclassifier">ATOMClassifier</a></li>
+<li><a href="./API/ATOM/atomregressor">ATOMRegressor</a></li>
+<li><a href="./API/ATOM/atomloader">ATOMLoader</a></li>
+<li><a href="./API/ATOM/atommodel">ATOMModel</a></li>
+</ul>
+</li>
+<li>Data cleaning<ul>
+<li><a href="./API/data_cleaning/scaler">Scaler</a></li>
+<li><a href="./API/data_cleaning/cleaner">Cleaner</a></li>
+<li><a href="./API/data_cleaning/imputer">Imputer</a></li>
+<li><a href="./API/data_cleaning/encoder">Encoder</a></li>
+<li><a href="./API/data_cleaning/outliers">Outliers</a></li>
+<li><a href="./API/data_cleaning/balancer">Balancer</a></li>
+</ul>
+</li>
+<li>Feature engineering<ul>
+<li><a href="./API/feature_engineering/feature_generator">FeatureGenerator</a></li>
+<li><a href="./API/feature_engineering/feature_selector">FeatureSelector</a></li>
+</ul>
+</li>
+<li>Training<ul>
+<li>Direct<ul>
+<li><a href="./API/training/directclassifier">DirectClassifier</a></li>
+<li><a href="./API/training/directregressor">DirectRegressor</a></li>
+</ul>
+</li>
+<li>SuccessiveHalving<ul>
+<li><a href="./API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
+<li><a href="./API/training/successivehalvingregressor">SuccessiveHalvingClassifier</a></li>
+</ul>
+</li>
+<li>TrainSizing<ul>
+<li><a href="./API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
+<li><a href="./API/training/trainsizingregressor">TrainSizingRegressor</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Models<ul>
+<li><a href="./API/models/gp">Gaussian Process</a></li>
+<li><a href="./API/models/gnb">Gaussian Naive Bayes</a></li>
+<li><a href="./API/models/mnb">Multinomial Naive Bayes</a></li>
+<li><a href="./API/models/bnb">Bernoulli Naive Bayes</a></li>
+<li><a href="./API/models/catnb">Categorical Naive Bayes</a></li>
+<li><a href="./API/models/cnb">Complement Naive Bayes</a></li>
+<li><a href="./API/models/ols">Ordinary Least Squares</a></li>
+<li><a href="./API/models/ridge">Ridge</a></li>
+<li><a href="./API/models/lasso">Lasso</a></li>
+<li><a href="./API/models/en">Elastic Net</a></li>
+<li><a href="./API/models/br">Bayesian Ridge</a></li>
+<li><a href="./API/models/ard">Automated Relevance Determination</a></li>
+<li><a href="./API/models/lr">Logistic Regression</a></li>
+<li><a href="./API/models/lda">Linear Discriminant Analysis</a></li>
+<li><a href="./API/models/qda">Quadratic Discriminant Analysis</a></li>
+<li><a href="./API/models/knn">K-Nearest Neighbors</a></li>
+<li><a href="./API/models/rnn">Radius Nearest Neighbors</a></li>
+<li><a href="./API/models/tree">Decision Tree</a></li>
+<li><a href="./API/models/bag">Bagging</a></li>
+<li><a href="./API/models/et">Extra-Trees</a></li>
+<li><a href="./API/models/rf">Random Forest</a></li>
+<li><a href="./API/models/adab">AdaBoost</a></li>
+<li><a href="./API/models/gbm">Gradient Boosting Machine</a></li>
+<li><a href="./API/models/xgb">XGBoost</a></li>
+<li><a href="./API/models/lgb">LightGBM</a></li>
+<li><a href="./API/models/catb">CatBoost</a></li>
+<li><a href="./API/models/lsvm">Linear-SVM</a></li>
+<li><a href="./API/models/ksvm">Kernel-SVM</a></li>
+<li><a href="./API/models/pa">Passive Aggressive</a></li>
+<li><a href="./API/models/sgd">Stochastic Gradient Descent</a></li>
+<li><a href="./API/models/mlp">Multi-layer Perceptron</a></li>
+</ul>
+</li>
+<li>Predicting<ul>
+<li><a href="./API/predicting/transform">transform</a></li>
+<li><a href="./API/predicting/predict">predict</a></li>
+<li><a href="./API/predicting/predict_proba">predict_proba</a></li>
+<li><a href="./API/predicting/predict_log_proba">predict_log_proba</a></li>
+<li><a href="./API/predicting/decision_function">decision_function</a></li>
+<li><a href="./API/predicting/score">score</a></li>
+</ul>
+</li>
+<li>Plots<ul>
+<li><a href="./API/plots/plot_correlation">plot_correlation</a></li>
+<li><a href="./API/plots/plot_pipeline">plot_pipeline</a></li>
+<li><a href="./API/plots/plot_pca">plot_pca</a></li>
+<li><a href="./API/plots/plot_components">plot_components</a></li>
+<li><a href="./API/plots/plot_rfecv">plot_rfecv</a></li>
+<li><a href="./API/plots/plot_successive_halving">plot_successive_halving</a></li>
+<li><a href="./API/plots/plot_learning_curve">plot_learning_curve</a></li>
+<li><a href="./API/plots/plot_bagging">plot_bagging</a></li>
+<li><a href="./API/plots/plot_bo">plot_bo</a></li>
+<li><a href="./API/plots/plot_evals">plot_evals</a></li>
+<li><a href="./API/plots/plot_roc">plot_roc</a></li>
+<li><a href="./API/plots/plot_prc">plot_prc</a></li>
+<li><a href="./API/plots/plot_permutation_importance">plot_permutation_importance</a></li>
+<li><a href="./API/plots/plot_feature_importance">plot_feature_importance</a></li>
+<li><a href="./API/plots/plot_partial_dependence">plot_partial_dependence</a></li>
+<li><a href="./API/plots/plot_errors">plot_errors</a></li>
+<li><a href="./API/plots/plot_residuals">plot_residuals</a></li>
+<li><a href="./API/plots/plot_confusion_matrix">plot_confusion_matrix</a></li>
+<li><a href="./API/plots/plot_threshold">plot_threshold</a></li>
+<li><a href="./API/plots/plot_probabilities">plot_probabilities</a></li>
+<li><a href="./API/plots/plot_calibration">plot_calibration</a></li>
+<li><a href="./API/plots/plot_gains">plot_gains</a></li>
+<li><a href="./API/plots/plot_lift">plot_lift</a></li>
+<li><a href="./API/plots/force_plot">force_plot</a></li>
+<li><a href="./API/plots/dependence_plot">dependence_plot</a></li>
+<li><a href="./API/plots/summary_plot">summary_plot</a></li>
+<li><a href="./API/plots/decision_plot">decision_plot</a></li>
+<li><a href="./API/plots/waterfall_plot">waterfall_plot</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Examples<ul>
+<li><a href="./examples/binary_classification.html" target="_blank">Binary classification</a></li>
+<li><a href="./examples/multiclass_classification.html" target="_blank">Multiclass classification</a></li>
+<li><a href="./examples/regression.html" target="_blank">Regression</a></li>
+<li><a href="./examples/successive_halving.html" target="_blank">Successive halving</a></li>
+<li><a href="./examples/train_sizing.html" target="_blank">Train sizing</a></li>
+<li><a href="./examples/deep_learning.html" target="_blank">Deep learning</a></li>
+<li><a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a></li>
+<li><a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a></li>
+<li><a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a></li>
+<li><a href="./examples/early_stopping.html" target="_blank">Early stopping</a></li>
+<li><a href="./examples/calibration.html" target="_blank">Calibration</a></li>
+<li><a href="./examples/utilities.html" target="_blank">Utilities</a></li>
+</ul>
+</li>
+<li><a href="./dependencies">Dependencies</a></li>
+<li><a href="./license">License</a></li>
 </ul></div>
             </div>
         </div>
@@ -775,5 +921,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-11-17 18:26:00.533921+00:00
+Build Date UTC : 2020-12-03 13:15:20.935574+00:00
 -->

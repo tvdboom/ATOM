@@ -10,13 +10,14 @@ Description: Module containing the API classes.
 # Standard packages
 import pickle
 import pandas as pd
+from copy import copy
 from typeguard import typechecked
 from typing import Optional, Union
 
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SEQUENCE_TYPES, merge
+from .utils import SEQUENCE_TYPES, merge, catch_return, transform
 
 
 # Functions ======================================================== >>
@@ -136,7 +137,6 @@ def ATOMLoader(
                 "Data is provided but the class is not a "
                 f"trainer, got {cls.__class__.__name__}."
             )
-
         elif cls.branch.data is not None:
             raise ValueError(
                 f"The loaded {cls.__class__.__name__} instance already contains data!"
@@ -145,34 +145,71 @@ def ATOMLoader(
         # Prepare the provided data
         data, idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
 
-        for key, branch in cls._branches.items():
-            cls.log(f"Loading data for branch '{key}'...", 1)
-            branch.data, branch.idx = data, idx
+        # Apply all transformers, also those only for the train set
+        # Verbosity is set to class' verbosity if left to default
+        kwargs = dict(
+            outliers=True,
+            balance=True,
+            verbose=cls.verbose if verbose is None else verbose
+        )
+
+        # Apply transformations per branch
+        step = {}  # Current step in the pipeline per branch
+        for b1, v1 in cls._branches.items():
+            branch = cls._branches[b1]
+
+            # Provide the input data if not already filled from another branch
+            if branch.data is None:
+                branch.data, branch.idx = data, idx
 
             if transform_data:
-                # Transform the data through all transformers in the branch
-                print(branch.pipeline)
-                for est in branch.pipeline:
-                    if verbose is not None:
-                        vb = est.get_params()["verbose"]  # Save original verbosity
-                        est.set_params(verbose=verbose)
+                cls.log(f"Transforming data for branch {b1}...", 1)
 
-                    # Some transformations are only applied on the training set
-                    if est.__class__.__name__ in ["Outliers", "Balancer"]:
-                        X, y = est.transform(cls.X_train, cls.y_train)
-                        cls.dataset = pd.concat([merge(X, y), cls.test])
+                for i, est1 in enumerate(v1.pipeline):
+                    # Skip if the transformation was already applied
+                    if step.get(b1, -1) >= i:
+                        continue
+
+                    kwargs["_one_trans"] = i
+                    if est1.__class__.__name__ in ["Outliers", "Balancer"]:
+                        X, y = transform(
+                            est_branch=v1.pipeline,
+                            X=branch.X_train,
+                            y=branch.y_train,
+                            **kwargs
+                        )
+                        branch.data = pd.concat([merge(X, y), cls.test])
                     else:
-                        X = est.transform(cls.X, cls.y)
+                        X = catch_return(
+                            transform(
+                                est_branch=v1.pipeline,
+                                X=branch.X,
+                                y=branch.y,
+                                **kwargs
+                            )
+                        )
 
-                        # Data changes depending if the estimator returned X or X, y
+                        # Estimator can return X or X, y
                         if isinstance(X, tuple):
-                            cls.dataset = merge(*X)
+                            branch.data = merge(*X)
                         else:
-                            cls.dataset = merge(X, cls.y)
+                            branch.data = merge(X, cls.y)
 
-                    cls.dataset.reset_index(drop=True, inplace=True)
-                    if verbose is not None:
-                        est.verbose = vb  # Reset the original verbosity
+                    # Update the indices for the train and test set
+                    branch.idx[1] = len(branch.data[branch.data.index >= branch.idx[0]])
+                    branch.idx[0] = len(branch.data[branch.data.index < branch.idx[0]])
+
+                    branch.data.reset_index(drop=True, inplace=True)
+
+                    for b2, v2 in cls._branches.items():
+                        try:  # Can fail if pipeline is shorter than i
+                            if b1 != b2 and est1 is v2.pipeline[i]:
+                                # Update the data and step for the other branch
+                                cls._branches[b2].data = copy(branch.data)
+                                cls._branches[b2].idx = copy(branch.idx)
+                                step[b2] = i
+                        except KeyError:
+                            continue
 
     cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
 

@@ -92,6 +92,12 @@ class BasePredictor(object):
 
     # Prediction methods =========================================== >>
 
+    @composed(crash, method_to_log)
+    def reset_predictions(self):
+        """Clear the prediction attributes from all models."""
+        for m in self.models_ + [self.vote]:
+            m._pred_attrs = [None] * 10
+
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
         """Get the winning model's predictions on new data."""
@@ -175,7 +181,7 @@ class BasePredictor(object):
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Print the final scoring for a specific metric.
+        """Get the scoring for a specific metric.
 
         Parameters
         ----------
@@ -200,13 +206,6 @@ class BasePredictor(object):
 
         # Get max length of the model names
         maxlen = max([len(m.fullname) for m in self.models_])
-
-        # Get list of scores
-        all_scores = [m.scoring(metric, dataset, **kwargs) for m in self.models_]
-
-        # Raise an error if the metric was invalid for all models
-        if metric and all([isinstance(score, str) for score in all_scores]):
-            raise ValueError("Invalid metric selected!")
 
         self.log("Results ===================== >>", -2)
 
