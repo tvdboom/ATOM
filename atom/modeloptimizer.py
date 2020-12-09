@@ -21,7 +21,6 @@ from inspect import signature
 # Sklearn
 from sklearn.base import clone
 from sklearn.utils import resample
-from sklearn.metrics import SCORERS, confusion_matrix
 from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
@@ -33,53 +32,31 @@ from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_mi
 
 # Own modules
 from .data_cleaning import Scaler
+from .basemodel import BaseModel
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS,
-    flt, lst, merge, arr, check_scaling, time_to_string, catch_return,
-    transform, composed, get_best_score, crash, method_to_log, PlotCallback,
+    flt, lst, arr, check_scaling, time_to_string, composed,
+    get_best_score, crash, method_to_log, PlotCallback,
 )
 
 
-# Classes ========================================================== >>
+class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
+    """Class for model optimization.
 
-class ModelOptimizer(object):
-    """Parent class of all models.
-
-    Parameters
-    ----------
-    T: class
-        Trainer instance from which the model is called.
-
-    acronym: str
-        Model's acronym. Used to call the model from the trainer.
-        If None, the predictor's __name__ is used (not recommended).
-
-    fullname: str
-        Full model's name. If None, the predictor's __name__ is used.
-
-    needs_scaling: bool
-        Whether the model needs scaled features. Can not be True for
-        deep learning datasets.
-
-    type: str
-        Model's type. Used to select shap's explainer for plotting.
-        Options are: "linear", "tree" or "kernel".
+    Contains the Bayesian Optimization, fitting and bagging of the
+    models as well as some utility attributes not shared with the
+    ensemble classes.
 
     """
 
     def __init__(self, *args, **kwargs):
-        self.T = args[0]  # Trainer instance
-        self.__dict__.update(kwargs)
-        self.name = self.acronym if len(args) == 1 else args[1]
+        super().__init__(*args, **kwargs)
 
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
             self.branch = self.T._branches[self.T._current]
             if self.needs_scaling and not check_scaling(self.branch.X):
                 self.scaler = Scaler().fit(self.branch.X_train)
-            else:
-                self.scaler = None
 
         # BO attributes
         self._iter = 0
@@ -98,7 +75,6 @@ class ModelOptimizer(object):
         self._est_params_fit = {}
 
         # BaseModel attributes
-        self.estimator = None
         self.best_params = None
         self.time_fit = None
         self.metric_bo = None
@@ -109,9 +85,6 @@ class ModelOptimizer(object):
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
-
-        # Prediction attributes for train and test
-        self._pred_attrs = [None] * 10
 
         # Results
         self._results = pd.DataFrame(
@@ -135,6 +108,11 @@ class ModelOptimizer(object):
             out += f"\n --> {metric.name}: {get_best_score(self, i)}"
 
         return out
+
+    @property
+    def results(self):
+        """Return the results dataframe without empty columns."""
+        return self._results.dropna(axis=1, how="all")
 
     def get_params(self, x):
         """Get a dictionary of the model's hyperparameters.
@@ -703,11 +681,6 @@ class ModelOptimizer(object):
         return out
 
     @composed(crash, method_to_log)
-    def delete(self):
-        """Delete model from the trainer."""
-        self.T.delete(self.name)
-
-    @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the model.
 
@@ -741,103 +714,6 @@ class ModelOptimizer(object):
 
         # Reset all prediction attrs since the model's estimator changed
         self._pred_attrs = [None] * 10
-
-    @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Get the scoring fora specific metric.
-
-        Parameters
-        ----------
-        metric: str, optional (default=None)
-            Name of the metric to calculate. Choose from any of
-            sklearn's SCORERS or one of the CUSTOM_METRICS. If None,
-            returns the model's final results (ignores `dataset`).
-
-        dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
-            "train" or "test".
-
-        **kwargs
-            Additional keyword arguments for the metric function.
-
-        """
-        metric_opts = CUSTOM_METRICS + list(SCORERS)
-
-        # Check metric parameter
-        if metric is None:
-            return self._final_output()
-        elif metric.lower() in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric.lower()]
-        elif metric.lower() not in metric_opts:
-            raise ValueError(
-                "Unknown value for the metric parameter, "
-                f"got {metric}. Try one of {', '.join(metric_opts)}."
-            )
-
-        # Check set parameter
-        dataset = dataset.lower()
-        if dataset not in ("train", "test"):
-            raise ValueError(
-                "Unknown value for the dataset parameter. "
-                "Choose between 'train' or 'test'."
-            )
-
-        try:
-            if metric.lower() == "cm":
-                return confusion_matrix(
-                    getattr(self, f"y_{dataset}"), getattr(self, f"predict_{dataset}")
-                )
-            elif metric.lower() == "tn":
-                return int(self.scoring("cm", dataset).ravel()[0])
-            elif metric.lower() == "fp":
-                return int(self.scoring("cm", dataset).ravel()[1])
-            elif metric.lower() == "fn":
-                return int(self.scoring("cm", dataset).ravel()[2])
-            elif metric.lower() == "tp":
-                return int(self.scoring("cm", dataset).ravel()[3])
-            elif metric.lower() == "lift":
-                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
-                return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
-            elif metric.lower() == "fpr":
-                tn, fp, _, _ = self.scoring("cm", dataset).ravel()
-                return float(fp / (fp + tn))
-            elif metric.lower() == "tpr":
-                _, _, fn, tp = self.scoring("cm", dataset).ravel()
-                return float(tp / (tp + fn))
-            elif metric.lower() == "sup":
-                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
-                return float((tp + fp) / (tp + fp + fn + tn))
-
-            # Calculate the scorer via _score_func to use the prediction properties
-            scorer = SCORERS[metric]
-            if type(scorer).__name__ == "_ThresholdScorer":
-                if self.T.task.startswith("reg"):
-                    y_pred = getattr(self, f"predict_{dataset}")
-                elif hasattr(self.estimator, "decision_function"):
-                    y_pred = getattr(self, f"decision_function_{dataset}")
-                else:
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
-            elif type(scorer).__name__ == "_ProbaScorer":
-                if hasattr(self.estimator, "predict_proba"):
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
-                else:
-                    y_pred = getattr(self, f"decision_function_{dataset}")
-            else:
-                y_pred = getattr(self, f"predict_{dataset}")
-
-            return scorer._sign * float(scorer._score_func(
-                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
-            ))
-
-        except (ValueError, TypeError):
-            raise ValueError(
-                f"Invalid value for the metric parameter. Metric {metric} is "
-                f"invalid for a {self.fullname} model with a {self.T.task} task!"
-            )
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: Optional[str] = None):

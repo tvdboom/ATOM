@@ -16,7 +16,6 @@ from pandas_profiling import ProfileReport
 
 # Own modules
 from .branch import Branch
-from .ensembles import Voting, Stacking
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .data_cleaning import (
@@ -69,8 +68,6 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Training attributes
         self._approach = None  # Approach adopted by this instance
-        self.vote = Voting(self)
-        self.stack = Stacking(self)
         self.models = []
         self.metric_ = []
         self.errors = {}

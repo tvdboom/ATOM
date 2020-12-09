@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 
 # Own modules
 from .branch import Branch
-from .ensembles import Voting, Stacking
 from .models import MODEL_LIST, CustomModel
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
@@ -165,8 +164,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.task = None
 
         # Model attributes
-        self.vote = Voting(self)
-        # self.stack = Stacking(self)
         self.errors = {}
         self._results = pd.DataFrame(
             columns=[

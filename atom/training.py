@@ -127,10 +127,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                 "Invalid value for the skip_runs parameter."
                 f"Value should be >=0, got {self.skip_runs}."
             )
-        elif self.skip_runs >= int(n_models / 2) + 1:
+        elif self.skip_runs >= n_models // 2 + 1:
             raise ValueError(
                 "Invalid value for the skip_runs parameter. Less than 1 "
-                f"run remaining, got n_runs={int(n_models/2) + 1} and "
+                f"run remaining, got n_runs={n_models//2 + 1} and "
                 f"skip_runs={self.skip_runs}."
             )
 
@@ -157,7 +157,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
             # Select best models for halving
             best = df.apply(lambda row: get_best_score(row), axis=1)
-            best = best.nlargest(n=int(len(self.models) / 2), keep="first")
+            best = best.nlargest(n=len(self.models) // 2, keep="first")
             self.models = list(best.index.values)
 
             run += 1

@@ -40,16 +40,16 @@ Description: Module containing all available models. All classes must
         Methods
         -------
         __init__(self, *args):
-            Class initializer. Contains super() to the BaseModel class.
+            Class initializer. Contains super() to the ModelOptimizer class.
 
         get_init_values(self):
             Return the initial values for the estimator. Don't implement
-            if the method in BaseModel (default behaviour) is sufficient.
+            if the method in ModelOptimizer (default behaviour) is sufficient.
 
         get_params(self, x):
             Return the parameters with rounded decimals and (optional)
             custom changes to the params. Don't implement if the method
-            in BaseModel (default behaviour) is sufficient.
+            in ModelOptimizer (default behaviour) is sufficient.
 
         get_estimator(self, params={}):
             Return the model's estimator with unpacked parameters.
@@ -164,10 +164,10 @@ from sklearn.linear_model import (
 from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Own modules
-from .basemodel import BaseModel
+from .modeloptimizer import ModelOptimizer
 
 
-class CustomModel(BaseModel):
+class CustomModel(ModelOptimizer):
     """Custom model. Estimator provided by user."""
 
     def __init__(self, *args, **kwargs):
@@ -214,7 +214,7 @@ class CustomModel(BaseModel):
             return self.est
 
 
-class GaussianProcess(BaseModel):
+class GaussianProcess(ModelOptimizer):
     """Gaussian process."""
 
     def __init__(self, *args):
@@ -236,7 +236,7 @@ class GaussianProcess(BaseModel):
             return GaussianProcessRegressor(**kwargs)
 
 
-class GaussianNaiveBayes(BaseModel):
+class GaussianNaiveBayes(ModelOptimizer):
     """Gaussian Naive Bayes."""
 
     def __init__(self, *args):
@@ -254,7 +254,7 @@ class GaussianNaiveBayes(BaseModel):
         return GaussianNB(**params)
 
 
-class MultinomialNaiveBayes(BaseModel):
+class MultinomialNaiveBayes(ModelOptimizer):
     """Multinomial Naive Bayes."""
 
     def __init__(self, *args):
@@ -281,7 +281,7 @@ class MultinomialNaiveBayes(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class BernoulliNaiveBayes(BaseModel):
+class BernoulliNaiveBayes(ModelOptimizer):
     """Bernoulli Naive Bayes."""
 
     def __init__(self, *args):
@@ -308,7 +308,7 @@ class BernoulliNaiveBayes(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class CategoricalNaiveBayes(BaseModel):
+class CategoricalNaiveBayes(ModelOptimizer):
     """Categorical Naive Bayes."""
 
     def __init__(self, *args):
@@ -335,7 +335,7 @@ class CategoricalNaiveBayes(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ComplementNaiveBayes(BaseModel):
+class ComplementNaiveBayes(ModelOptimizer):
     """Complement Naive Bayes."""
 
     def __init__(self, *args):
@@ -363,7 +363,7 @@ class ComplementNaiveBayes(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class OrdinaryLeastSquares(BaseModel):
+class OrdinaryLeastSquares(ModelOptimizer):
     """Linear Regression (without regularization)."""
 
     def __init__(self, *args):
@@ -381,7 +381,7 @@ class OrdinaryLeastSquares(BaseModel):
         return LinearRegression(n_jobs=n_jobs, **params)
 
 
-class Ridge(BaseModel):
+class Ridge(ModelOptimizer):
     """Linear Regression/Classification with ridge regularization."""
 
     def __init__(self, *args):
@@ -417,7 +417,7 @@ class Ridge(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class Lasso(BaseModel):
+class Lasso(ModelOptimizer):
     """Linear Regression with lasso regularization."""
 
     def __init__(self, *args):
@@ -444,7 +444,7 @@ class Lasso(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ElasticNet(BaseModel):
+class ElasticNet(ModelOptimizer):
     """Linear Regression with elasticnet regularization."""
 
     def __init__(self, *args):
@@ -476,7 +476,7 @@ class ElasticNet(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class BayesianRidge(BaseModel):
+class BayesianRidge(ModelOptimizer):
     """Bayesian ridge regression."""
 
     def __init__(self, *args):
@@ -512,7 +512,7 @@ class BayesianRidge(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class AutomaticRelevanceDetermination(BaseModel):
+class AutomaticRelevanceDetermination(ModelOptimizer):
     """Automatic Relevance Determination."""
 
     def __init__(self, *args):
@@ -548,7 +548,7 @@ class AutomaticRelevanceDetermination(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LogisticRegression(BaseModel):
+class LogisticRegression(ModelOptimizer):
     """Logistic Regression."""
 
     def __init__(self, *args):
@@ -605,7 +605,7 @@ class LogisticRegression(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LinearDiscriminantAnalysis(BaseModel):
+class LinearDiscriminantAnalysis(ModelOptimizer):
     """Linear Discriminant Analysis."""
 
     def __init__(self, *args):
@@ -641,7 +641,7 @@ class LinearDiscriminantAnalysis(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class QuadraticDiscriminantAnalysis(BaseModel):
+class QuadraticDiscriminantAnalysis(ModelOptimizer):
     """Quadratic Discriminant Analysis."""
 
     def __init__(self, *args):
@@ -665,7 +665,7 @@ class QuadraticDiscriminantAnalysis(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class KNearestNeighbors(BaseModel):
+class KNearestNeighbors(ModelOptimizer):
     """K-Nearest Neighbors."""
 
     def __init__(self, *args):
@@ -704,7 +704,7 @@ class KNearestNeighbors(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class RadiusNearestNeighbors(BaseModel):
+class RadiusNearestNeighbors(ModelOptimizer):
     """Radius Nearest Neighbors."""
 
     def __init__(self, *args):
@@ -768,7 +768,7 @@ class RadiusNearestNeighbors(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class DecisionTree(BaseModel):
+class DecisionTree(ModelOptimizer):
     """Single Decision Tree."""
 
     def __init__(self, *args):
@@ -821,7 +821,7 @@ class DecisionTree(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class Bagging(BaseModel):
+class Bagging(ModelOptimizer):
     """Bagging model (with decision tree as base estimator)."""
 
     def __init__(self, *args):
@@ -865,7 +865,7 @@ class Bagging(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class ExtraTrees(BaseModel):
+class ExtraTrees(ModelOptimizer):
     """Extremely Randomized Trees."""
 
     def __init__(self, *args):
@@ -932,7 +932,7 @@ class ExtraTrees(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class RandomForest(BaseModel):
+class RandomForest(ModelOptimizer):
     """Random Forest."""
 
     def __init__(self, *args):
@@ -999,7 +999,7 @@ class RandomForest(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class AdaBoost(BaseModel):
+class AdaBoost(ModelOptimizer):
     """Adaptive Boosting (with decision tree as base estimator)."""
 
     def __init__(self, *args):
@@ -1037,7 +1037,7 @@ class AdaBoost(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class GradientBoostingMachine(BaseModel):
+class GradientBoostingMachine(ModelOptimizer):
     """Gradient Boosting Machine."""
 
     def __init__(self, *args):
@@ -1108,7 +1108,7 @@ class GradientBoostingMachine(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class XGBoost(BaseModel):
+class XGBoost(ModelOptimizer):
     """Extreme Gradient Boosting."""
 
     def __init__(self, *args):
@@ -1194,7 +1194,7 @@ class XGBoost(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LightGBM(BaseModel):
+class LightGBM(ModelOptimizer):
     """Light Gradient Boosting Machine."""
 
     def __init__(self, *args):
@@ -1279,7 +1279,7 @@ class LightGBM(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class CatBoost(BaseModel):
+class CatBoost(ModelOptimizer):
     """Categorical Boosting Machine."""
 
     def __init__(self, *args):
@@ -1365,7 +1365,7 @@ class CatBoost(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class LinearSVM(BaseModel):
+class LinearSVM(ModelOptimizer):
     """Linear Support Vector Machine."""
 
     def __init__(self, *args):
@@ -1423,7 +1423,7 @@ class LinearSVM(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class KernelSVM(BaseModel):
+class KernelSVM(ModelOptimizer):
     """Kernel (non-linear) Support Vector Machine."""
 
     def __init__(self, *args):
@@ -1478,7 +1478,7 @@ class KernelSVM(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class PassiveAggressive(BaseModel):
+class PassiveAggressive(ModelOptimizer):
     """Passive Aggressive."""
 
     def __init__(self, *args):
@@ -1519,7 +1519,7 @@ class PassiveAggressive(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class StochasticGradientDescent(BaseModel):
+class StochasticGradientDescent(ModelOptimizer):
     """Stochastic Gradient Descent."""
 
     def __init__(self, *args):
@@ -1597,7 +1597,7 @@ class StochasticGradientDescent(BaseModel):
         return [d for d in dimensions if d.name in self.params]
 
 
-class MultilayerPerceptron(BaseModel):
+class MultilayerPerceptron(ModelOptimizer):
     """Multi-layer Perceptron."""
 
     def __init__(self, *args):

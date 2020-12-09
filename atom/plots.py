@@ -214,13 +214,7 @@ class BasePlotter(object):
             the model instead of a list.
 
         """
-        if models is None:
-            models = self.models
-        elif isinstance(models, str):
-            models = [self._get_model(models)]
-        else:
-            models = [self._get_model(m) for m in models]
-
+        models = self._get_models(models)
         model_subclasses = [m for m in self.models_ if m.name in models]
 
         if max_one and len(model_subclasses) > 1:
@@ -606,7 +600,7 @@ class FeatureSelectorPlotter(BasePlotter):
             title="Explained variance per component" if title is None else title,
             legend="lower right",
             xlabel="Explained variance ratio",
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display,
         )
@@ -762,7 +756,7 @@ class BaseModelPlotter(BasePlotter):
             title="Bagging results" if title is None else title,
             xlabel="Model",
             ylabel=self.metric_[metric].name,
-            figsize=figsize if figsize else (int(8 + len(names) / 2), 6),
+            figsize=figsize if figsize else (8 + len(names) // 2, 6),
             filename=filename,
             display=display,
         )
@@ -906,7 +900,7 @@ class BaseModelPlotter(BasePlotter):
         if not hasattr(m, "evals"):
             raise AttributeError(
                 "The plot_evals method is only available for models "
-                f"that allow in-training evaluation, got {m.acronym}."
+                f"that allow in-training evaluation, got {m.name}."
             )
 
         fig = self._get_figure()
@@ -1194,7 +1188,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             legend="lower right" if len(models) > 1 else False,
             xlabel="Score",
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display,
         )
@@ -1252,7 +1246,7 @@ class BaseModelPlotter(BasePlotter):
             if not hasattr(m.estimator, "feature_importances_") and m.acronym != "Bag":
                 raise PermissionError(
                     "The plot_feature_importance method is only available for "
-                    f"models with a feature_importances_ attribute!"
+                    f"models with a feature_importances_ attribute, got {m.name}."
                 )
 
             # Bagging has no direct feature importance implementation
@@ -1294,7 +1288,7 @@ class BaseModelPlotter(BasePlotter):
             legend="lower right" if len(models) > 1 else False,
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display,
         )
@@ -2556,7 +2550,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display,
         )
@@ -2652,7 +2646,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display,
         )
@@ -2747,7 +2741,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, int(4 + show / 2)),
+            figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
             display=display
         )
@@ -3092,7 +3086,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
             title="" if title is None else title,
             xlim=(0, 100),
             ylim=(0, ylim),
-            figsize=figsize if figsize else (8, int(ylim / 30)),
+            figsize=figsize if figsize else (8, ylim // 30),
             filename=filename,
             display=display,
         )

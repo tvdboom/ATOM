@@ -222,7 +222,7 @@ def check_binary_task(cls, method):
 
 def check_predict_proba(models, method):
     """Raise an error if a model doesn't have a predict_proba method."""
-    for m in models:
+    for m in [m for m in models if m.name != "vote"]:
         if not hasattr(m.estimator, "predict_proba"):
             raise AttributeError(
                 f"The {method} method is only available "
@@ -273,15 +273,15 @@ def time_to_string(t_init):
 
     """
     t = time() - t_init  # Total time in seconds
-    h = int(t / 3600.0)
-    m = int(t / 60.0) - h * 60
+    h = t // 3600
+    m = t / 60 - h * 60
     s = t - h * 3600 - m * 60
     if h < 1 and m < 1:  # Only seconds
         return f"{s:.3f}s"
     elif h < 1:  # Also minutes
-        return f"{m}m:{int(s):02}s"
+        return f"{m}m:{s:02}s"
     else:  # Also hours
-        return f"{h}h:{m:02}m:{int(s):02}s"
+        return f"{h}h:{m:02}m:{s:02}s"
 
 
 def to_df(data, index=None, columns=None, pca=False):

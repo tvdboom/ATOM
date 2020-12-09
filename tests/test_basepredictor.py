@@ -300,6 +300,59 @@ def test_score_method_sample_weights():
 
 # Test utility methods ============================================= >>
 
+def test_voting():
+    """Assert that the voting method creates a Vote model."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.voting()
+    assert hasattr(atom, "Vote") and hasattr(atom, "vote")
+    assert "Vote" in atom.models
+
+
+def test_voting_models_from_branch():
+    """Assert that only the models from the current branch are passed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.branch = "branch_2"
+    atom.balance()
+    atom.run(["RF", "ET"])
+    atom.voting()
+    assert atom.vote.models == ["RF", "ET"]
+
+
+def test_stacking():
+    """Assert that the stacking method creates a Stack model."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.stacking()
+    assert hasattr(atom, "Stack") and hasattr(atom, "stack")
+    assert "Stack" in atom.models
+
+
+def test_stacking_models_from_branch():
+    """Assert that only the models from the current branch are passed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.branch = "branch_2"
+    atom.balance()
+    atom.run(["RF", "ET"])
+    atom.stacking()
+    assert atom.stack.models == ["RF", "ET"]
+
+
+def test_stacking_default_estimator():
+    """Assert that a default estimator is provided per goal."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.stacking()
+    assert atom.stack.estimator.__class__.__name__ == "LogisticRegression"
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["Tree", "LGB"])
+    atom.stacking()
+    assert atom.stack.estimator.__class__.__name__ == "Ridge"
+
+
 def test_class_weights_invalid_dataset():
     """Assert that an error is raised if invalid value for dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -347,11 +400,11 @@ def test_metric_is_given():
     assert 1 == 1  # Ran without errors
 
 
-def test_models_is_all():
-    """Assert that the whole pipeline is deleted for models="all"."""
+def test_models_default():
+    """Assert that the whole pipeline is deleted as default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR", "LDA"])
-    atom.delete("all")
+    atom.delete()
     assert not (atom.models or atom.metric or atom._approach)
     assert atom.results.empty
 

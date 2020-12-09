@@ -126,21 +126,15 @@ def test_transform_data():
 def test_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    print(atom.branch.idx)
     atom.clean()
-    print(atom.branch.idx)
     atom.outliers()
-    print(atom.branch.idx)
     data_1 = atom.dataset
     atom.branch = "branch_2"
     atom.balance()
-    print(atom.branch.idx)
     atom.feature_generation(strategy="dfs", n_features=5)
-    print(atom.branch.idx)
     data_2 = atom.dataset
     atom.branch = "branch_3"
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
-    print(atom.branch.idx)
     data_3 = atom.dataset
     atom.save(FILE_DIR + "atom_2", save_data=False)
 

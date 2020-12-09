@@ -694,7 +694,7 @@ class FeatureSelector(
                 for u, c in zip(unique, count):
                     # If count is larger than fraction of total...
                     if c >= self.max_frac_repeated * len(X):
-                        self._low_variance[col] = [u, int(c / len(X) * 100)]
+                        self._low_variance[col] = [u, c // len(X) * 100]
                         X.drop(col, axis=1, inplace=True)
                         break
 

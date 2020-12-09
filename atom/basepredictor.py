@@ -15,6 +15,7 @@ from typeguard import typechecked
 
 # Own modules
 from .branch import Branch
+from .ensembles import Voting, Stacking
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide,
     check_is_fitted, get_best_score, delete, method_to_log, composed,
@@ -95,7 +96,7 @@ class BasePredictor(object):
     @composed(crash, method_to_log)
     def reset_predictions(self):
         """Clear the prediction attributes from all models."""
-        for m in self.models_ + [self.vote]:
+        for m in self.models_:
             m._pred_attrs = [None] * 10
 
     @composed(crash, method_to_log, typechecked)
@@ -136,7 +137,7 @@ class BasePredictor(object):
 
     # Utility methods ============================================== >>
 
-    def _get_model(self, model):
+    def _get_model_name(self, model):
         """Return a model's name. Case insensitive."""
         for name in self.models:
             if model.lower() == name.lower():
@@ -146,6 +147,53 @@ class BasePredictor(object):
             f"Model {model} not found in the pipeline! Available "
             f"models are: {', '.join(self.models)}."
         )
+
+    def _get_models(self, models):
+        """Return models in the pipeline."""
+        if not models:
+            return self.models.copy()
+        elif isinstance(models, str):
+            return [self._get_model_name(models)]
+        else:
+            return [self._get_model_name(m) for m in models]
+
+    @composed(crash, method_to_log, typechecked)
+    def voting(
+        self,
+        models: Optional[SEQUENCE_TYPES] = None,
+        weights: Optional[SEQUENCE_TYPES] = None,
+    ):
+        """Add a Voting instance to the models in the pipeline."""
+        if not models:
+            models = self.branch._get_depending_models()
+
+        self.Vote = self.vote = Voting(self, models=models, weights=weights)
+        self.models += [self.vote.name]
+        self.log(f"{self.vote.fullname} added to the models!", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def stacking(
+        self,
+        models: Optional[SEQUENCE_TYPES] = None,
+        estimator: Optional[Union[str, callable]] = None,
+        stack_method: str = "auto",
+        passthrough: bool = False,
+    ):
+        """Add a Stacking instance to the models in the pipeline."""
+        if not models:
+            models = self.branch._get_depending_models()
+        if not estimator:
+            estimator = "LR" if self.goal.startswith("class") else "Ridge"
+
+        self.Stack = self.stack = Stacking(
+            self,
+            models=models,
+            estimator=estimator,
+            stack_method=stack_method,
+            passthrough=passthrough,
+        )
+        self.models += [self.stack.name]
+        self.log(f"{self.stack.fullname} added to the models!", 1)
 
     @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train"):
@@ -224,34 +272,21 @@ class BasePredictor(object):
             self.log(out, -2)  # Always print
 
     @composed(crash, method_to_log, typechecked)
-    def delete(self, models: Union[str, SEQUENCE_TYPES] = "all"):
+    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
         """Delete models from the trainer's pipeline.
 
         Removes all traces of a model in the pipeline (except for the
         `errors` attribute). If the winning model is removed. The next
         best model (through metric_test or mean_bagging if available)
-        is selected as winner.If all models are removed, the metric and
+        is selected as winner. If all models are removed, the metric and
         approach are reset. Use this method to drop unwanted models from
-        the pipeline or to clear memory before saving the instance.
+        the pipeline or to free up some memory.
 
         Parameters
         ----------
-        models: str or sequence, optional (default="all")
-            Model(s) to remove from the pipeline. If "all", delete all
-            models.
+        models: str, sequence or None, optional (default=None)
+            Models to remove from the pipeline. If None, delete all.
 
         """
-        # Prepare the models parameter
-        if models == "all":
-            keyword = "All models were"
-            models = self.models.copy()
-        elif isinstance(models, str):
-            models = [self._get_model(models)]
-            keyword = "Model " + models[0]
-        else:
-            models = [self._get_model(m) for m in models]
-            keyword = "Models " + ", ".join(models) + " were"
-
-        delete(self, models)
-
-        self.log(f"{keyword} deleted successfully!", 1)
+        delete(self, self._get_models(models))
+        self.log(f"Models deleted successfully!", 1)
