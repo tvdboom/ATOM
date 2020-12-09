@@ -164,10 +164,16 @@ class BasePredictor(object):
         weights: Optional[SEQUENCE_TYPES] = None,
     ):
         """Add a Voting instance to the models in the pipeline."""
+        check_is_fitted(self, "results")
+
         if not models:
             models = self.branch._get_depending_models()
 
-        self.Vote = self.vote = Voting(self, models=models, weights=weights)
+        self.Vote = self.vote = Voting(
+            self,
+            models=self._get_models(models),
+            weights=weights
+        )
         self.models += [self.vote.name]
         self.log(f"{self.vote.fullname} added to the models!", 1)
 
@@ -180,6 +186,8 @@ class BasePredictor(object):
         passthrough: bool = False,
     ):
         """Add a Stacking instance to the models in the pipeline."""
+        check_is_fitted(self, "results")
+
         if not models:
             models = self.branch._get_depending_models()
         if not estimator:
@@ -187,7 +195,7 @@ class BasePredictor(object):
 
         self.Stack = self.stack = Stacking(
             self,
-            models=models,
+            models=self._get_models(models),
             estimator=estimator,
             stack_method=stack_method,
             passthrough=passthrough,
@@ -288,5 +296,6 @@ class BasePredictor(object):
             Models to remove from the pipeline. If None, delete all.
 
         """
-        delete(self, self._get_models(models))
-        self.log(f"Models deleted successfully!", 1)
+        models = self._get_models(models)
+        delete(self, models)
+        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)

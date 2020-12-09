@@ -190,6 +190,16 @@ class BasePlotter(object):
             )
         self._aesthetics["tick_fontsize"] = tick_fontsize
 
+    def reset_aesthetics(self):
+        """Reset the figure's aesthetics to their default values."""
+        self.aesthetics = dict(
+            style="darkgrid",
+            palette="GnBu_r_d",
+            title_fontsize=20,
+            label_fontsize=16,
+            tick_fontsize=12,
+        )
+
     # Methods ====================================================== >>
 
     @staticmethod
@@ -389,6 +399,7 @@ class BasePlotter(object):
                 - ylim: Limits for the y-axis.
             Figure parameters:
                 - figsize: Size of the figure.
+                - tight_layout: Whether to apply it (default=True).
                 - filename: Name of the saved file.
                 - display: Whether to render the plot.
 
@@ -412,14 +423,15 @@ class BasePlotter(object):
         if ax is not None:
             ax.tick_params(axis='both', labelsize=self.tick_fontsize)
 
-        if kwargs.get("figsize"):
-            plt.gcf().set_size_inches(*kwargs["figsize"])
         if not BasePlotter._fig.is_canvas:
-            plt.tight_layout()
-        if kwargs.get("filename"):
-            plt.savefig(kwargs["filename"])
-        if "filename" in kwargs:
-            plt.show() if kwargs.get("display") else plt.close()
+            if kwargs.get("figsize"):
+                plt.gcf().set_size_inches(*kwargs["figsize"])
+            if kwargs.get("tight_layout", True):
+                plt.tight_layout()
+            if kwargs.get("filename"):
+                plt.savefig(kwargs["filename"])
+            if "filename" in kwargs:
+                plt.show() if kwargs.get("display") else plt.close()
 
     @composed(contextmanager, crash, typechecked)
     def canvas(
@@ -467,6 +479,7 @@ class BasePlotter(object):
             BasePlotter._fig.is_canvas = False  # Close the canvas
             self._plot(
                 figsize=figsize if figsize else (6 + 4 * ncols, 2 + 4 * nrows),
+                tight_layout=False,
                 filename=filename,
                 display=display
             )

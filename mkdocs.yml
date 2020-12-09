@@ -124,6 +124,7 @@ nav:
     - Feature engineering: examples/feature_engineering.html" target="_blank
     - Multi-metric runs: examples/multi_metric.html" target="_blank
     - Early stopping: examples/early_stopping.html" target="_blank
+    - Ensembles: examples/ensembles.html" target="_blank
     - Calibration: examples/calibration.html" target="_blank
     - Utilities: examples/utilities.html" target="_blank
 - Dependencies: dependencies.md

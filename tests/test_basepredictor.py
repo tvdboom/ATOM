@@ -303,6 +303,7 @@ def test_score_method_sample_weights():
 def test_voting():
     """Assert that the voting method creates a Vote model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.voting)
     atom.run(["LR", "LGB"])
     atom.voting()
     assert hasattr(atom, "Vote") and hasattr(atom, "vote")
@@ -323,6 +324,7 @@ def test_voting_models_from_branch():
 def test_stacking():
     """Assert that the stacking method creates a Stack model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.stacking)
     atom.run(["LR", "LGB"])
     atom.stacking()
     assert hasattr(atom, "Stack") and hasattr(atom, "stack")

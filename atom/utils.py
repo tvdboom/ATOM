@@ -222,11 +222,11 @@ def check_binary_task(cls, method):
 
 def check_predict_proba(models, method):
     """Raise an error if a model doesn't have a predict_proba method."""
-    for m in [m for m in models if m.name != "vote"]:
+    for m in [m for m in models if m.name != "Vote"]:
         if not hasattr(m.estimator, "predict_proba"):
             raise AttributeError(
-                f"The {method} method is only available "
-                f"for models with a predict_proba method, got {m}."
+                f"The {method} method is only available for "
+                f"models with a predict_proba method, got {m.name}."
             )
 
 

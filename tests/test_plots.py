@@ -88,6 +88,14 @@ def test_tick_fontsize_setter():
         BasePlotter().tick_fontsize = 0
 
 
+def test_reset_aesthetics():
+    """Assert that the reset_aesthetics method set values to default."""
+    plotter = BasePlotter()
+    plotter.style = "white"
+    plotter.reset_aesthetics()
+    assert plotter.style == "darkgrid"
+
+
 def test_canvas():
     """Assert that the canvas works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
