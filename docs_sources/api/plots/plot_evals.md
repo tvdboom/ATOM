@@ -1,24 +1,22 @@
 # plot_evals
 ------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset="both", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L701">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L865">[source]</a></div></pre>
 Plot evaluation curves for the train and test set. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). The metric is provided by the estimator's
+ in-training evaluation ([XGB](../../models/xgb), [LGB](../../models/lgb),
+ [CatB](../../models/catb)). The metric is provided by the estimator's
  package and is different for every model and every task. For this reason, the
  method only allows plotting one model at a time.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the model to plot. If None, all models in the pipeline are selected. Note
  that leaving the default option could raise an exception if there are multiple
- models in the pipeline. To avoid this, call the plot from a model, e.g. `atom.lgb.plot_evals()`.
+ models in the pipeline. To avoid this, call the plot from a model, e.g. <code>atom.lgb.plot_evals()</code>.
 </blockquote>
 <strong>dataset: str, optional (default="both")</strong>
 <blockquote>
@@ -43,7 +41,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

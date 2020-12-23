@@ -13,6 +13,7 @@ import numpy as np
 import pandas as pd
 from itertools import chain
 from inspect import signature
+from collections import defaultdict
 from typeguard import typechecked
 from joblib import Parallel, delayed
 from contextlib import contextmanager
@@ -191,7 +192,7 @@ class BasePlotter(object):
         self._aesthetics["tick_fontsize"] = tick_fontsize
 
     def reset_aesthetics(self):
-        """Reset the figure's aesthetics to their default values."""
+        """Reset the plot aesthetics to their default values."""
         self.aesthetics = dict(
             style="darkgrid",
             palette="GnBu_r_d",
@@ -392,7 +393,7 @@ class BasePlotter(object):
             Keyword arguments containing the plot's parameters.
             Axes parameters:
                 - title: Axes' title.
-                - legend: Location to place the legend.
+                - legend: Location of the legend and number of items.
                 - xlabel: Label for the x-axis.
                 - ylabel: Label for the y-axis.
                 - xlim: Limits for the x-axis.
@@ -408,8 +409,8 @@ class BasePlotter(object):
             ax.set_title(kwargs.get("title"), fontsize=self.title_fontsize, pad=20)
         if kwargs.get("legend"):
             ax.legend(
-                loc=kwargs["legend"],
-                ncol=len(self.models) // 3 if len(self.models) // 3 > 0 else 1,
+                loc=kwargs["legend"][0],
+                ncol=kwargs["legend"][1] // 3 if kwargs["legend"][1] // 3 > 0 else 1,
                 fontsize=self.label_fontsize
             )
         if kwargs.get("xlabel"):
@@ -457,7 +458,7 @@ class BasePlotter(object):
             Number of plots in width.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, no title is displayed.
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
@@ -485,7 +486,7 @@ class BasePlotter(object):
             )
 
 
-class FeatureSelectorPlotter(BasePlotter):
+class FSPlotter(BasePlotter):
     """Plots for the FeatureSelector class."""
 
     @composed(crash, typechecked)
@@ -541,7 +542,7 @@ class FeatureSelectorPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="PCA explained variances" if title is None else title,
-            legend="lower right",
+            legend=("lower right", 1),
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
             figsize=figsize,
@@ -611,7 +612,7 @@ class FeatureSelectorPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Explained variance per component" if title is None else title,
-            legend="lower right",
+            legend=("lower right", 1),
             xlabel="Explained variance ratio",
             figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
@@ -688,7 +689,7 @@ class FeatureSelectorPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="RFECV scores" if title is None else title,
-            legend="best",
+            legend=("best", 1),
             xlabel="Number of features",
             ylabel=ylabel,
             xlim=xlim,
@@ -703,7 +704,7 @@ class BaseModelPlotter(BasePlotter):
     """Plots for the BaseModel class."""
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_bagging(
+    def plot_results(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         metric: Union[int, str] = 0,
@@ -712,15 +713,19 @@ class BaseModelPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Boxplot of the bagging's results.
+        """Plot of the model results after the evaluation.
 
-        Only available if the models were fitted using bagging.
+        If all models applied bagging, the plot will be a boxplot.
+        If not, the plot will be a barplot. Models are ordered based
+        on their score from the top down. The score is either the
+        `mean_bagging` or `metric_test` attribute of the model,
+        selected in that order.
 
         Parameters
         ----------
         models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
-            pipeline that used bagging are selected.
+            pipeline are selected.
 
         metric: int or str, optional (default=0)
             Index or name of the metric. Only for multi-metric runs.
@@ -739,37 +744,62 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
+        def get_bagging(m):
+            """Get the bagging's results for a specific metric."""
+            if getattr(m, "metric_bagging", None):
+                if len(self.metric_) == 1:
+                    return m.metric_bagging
+                else:
+                    return m.metric_bagging[metric]
+
+        def std(m):
+            """Get the standard deviation of the bagging's results."""
+            if getattr(m, "std_bagging", None):
+                return lst(m.std_bagging)[metric]
+            else:
+                return 0
+
         check_is_fitted(self, "results")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
-        # Check there is at least one model with bagging
-        if all([not m.metric_bagging for m in models]):
-            raise PermissionError(
-                "The plot_bagging method is only available "
-                "you run the pipeline using bagging>0!"
-            )
-
-        results, names = [], []
-        for m in models:
-            if m.metric_bagging:
-                if len(self.metric_) > 1:  # Is list of lists
-                    results.append(lst(m.metric_bagging)[metric])
-                else:  # Is single list
-                    results.append(m.metric_bagging)
-                names.append(m.name)
-
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.boxplot(results)
-        ax.set_xticklabels(names)
 
+        names = []
+        models = sorted(models, key=lambda m: get_best_score(m, metric))
+        color = plt.rcParams['axes.prop_cycle'].by_key()['color'][0]  # First color
+
+        all_bagging = all(get_bagging(m) for m in models)
+        for i, m in enumerate(models):
+            names.append(m.name)
+            if all_bagging:
+                ax.boxplot(
+                    x=get_bagging(m),
+                    vert=False,
+                    positions=[i],
+                    widths=0.5,
+                    boxprops=dict(color=color)
+                )
+            else:
+                ax.barh(
+                    y=i,
+                    width=get_best_score(m, metric),
+                    height=0.5,
+                    xerr=std(m),
+                    color=color
+                )
+
+        min_lim = 0.95 * (get_best_score(models[0], metric) - std(models[0]))
+        max_lim = 1.01 * (get_best_score(models[-1], metric) + std(models[-1]))
+        ax.set_yticks(range(len(models)))
+        ax.set_yticklabels(names)
         self._plot(
             ax=ax,
-            title="Bagging results" if title is None else title,
-            xlabel="Model",
-            ylabel=self.metric_[metric].name,
-            figsize=figsize if figsize else (8 + len(names) // 2, 6),
+            title="Model evaluation" if title is None else title,
+            xlabel=self.metric_[metric].name,
+            xlim=(min_lim, max_lim) if not all_bagging else None,
+            figsize=figsize if figsize else (10, 4 + len(models) // 2),
             filename=filename,
             display=display,
         )
@@ -848,7 +878,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax1,
             title="Bayesian optimization performance" if title is None else title,
-            legend="lower right",
+            legend=("lower right", len(models)),
             ylabel=self.metric_[metric].name,
         )
         ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -924,7 +954,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Evaluation curves" if title is None else title,
-            legend="best",
+            legend=("best", len(dataset)),
             xlabel=m.get_dimensions()[0].name,  # First param is always the iter
             ylabel=m.evals["metric"],
             figsize=figsize,
@@ -998,7 +1028,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="ROC curve" if title is None else title,
-            legend="lower right",
+            legend=("lower right", len(models)),
             xlabel="FPR",
             ylabel="TPR",
             figsize=figsize,
@@ -1070,7 +1100,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Precision-recall curve" if title is None else title,
-            legend="lower left",
+            legend=("lower left", len(models)),
             xlabel="Recall",
             ylabel="Precision",
             figsize=figsize,
@@ -1198,8 +1228,8 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title=title,
-            legend="lower right" if len(models) > 1 else False,
+            title="Permutation importance" if title is None else title,
+            legend=("lower right" if len(models) > 1 else False, len(models)),
             xlabel="Score",
             figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
@@ -1298,7 +1328,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Normalized feature importance" if title is None else title,
-            legend="lower right" if len(models) > 1 else False,
+            legend=("lower right" if len(models) > 1 else False, len(models)),
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -1340,7 +1370,7 @@ class BaseModelPlotter(BasePlotter):
             defined, else it uses the first 3 features in the dataset.
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -1419,7 +1449,7 @@ class BaseModelPlotter(BasePlotter):
 
         axes = []
         fig = self._get_figure()
-        n_cols = 3 if not features else len(features)
+        n_cols = 3 if not features else len(lst(features))
         gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
         for i in range(n_cols):
             axes.append(fig.add_subplot(gs[0, i]))
@@ -1502,7 +1532,7 @@ class BaseModelPlotter(BasePlotter):
                 self._plot(
                     ax=axi,
                     ylabel="Score",
-                    legend="best" if len(models) > 1 else False
+                    legend=("best" if len(models) > 1 else False, len(models))
                 )
                 break
 
@@ -1607,7 +1637,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Prediction errors" if title is None else title,
-            legend="upper left",
+            legend=("upper left", len(models)),
             xlabel="True value",
             ylabel="Predicted value",
             xlim=xlim,
@@ -1700,7 +1730,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax1,
-            legend="lower right",
+            legend=("lower right", len(models)),
             ylabel="Residuals",
             xlabel="True value",
             xlim=xlim,
@@ -1817,13 +1847,6 @@ class BaseModelPlotter(BasePlotter):
                             color="w" if cm[i, j] > cm.max() / 2.0 else "k",
                         )
 
-                ax.set_title(title, fontsize=self.title_fontsize, pad=20)
-                ax.set_xlabel(
-                    xlabel="Predicted label", fontsize=self.label_fontsize, labelpad=12
-                )
-                ax.set_ylabel(
-                    ylabel="True label", fontsize=self.label_fontsize, labelpad=12
-                )
                 cbar.set_label(
                     label="Count",
                     fontsize=self.label_fontsize,
@@ -1841,7 +1864,7 @@ class BaseModelPlotter(BasePlotter):
             self._plot(
                 ax=ax,
                 title=title,
-                legend="best",
+                legend=("best", len(models)),
                 xlabel="Count",
                 figsize=figsize if figsize else (10, 6),
                 filename=filename,
@@ -1850,6 +1873,9 @@ class BaseModelPlotter(BasePlotter):
         else:
             self._plot(
                 ax=ax,
+                title=title,
+                xlabel="Predicted label",
+                ylabel="True label",
                 figsize=figsize if figsize else (8, 8),
                 filename=filename,
                 display=display
@@ -1955,7 +1981,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Performance vs threshold" if title is None else title,
-            legend="best",
+            legend=("best", len(models)),
             xlabel="Threshold",
             ylabel="Score",
             figsize=figsize,
@@ -2038,7 +2064,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            legend="best",
+            legend=("best", len(models)),
             xlabel="Probability",
             ylabel="Count",
             xlim=(0, 1),
@@ -2128,7 +2154,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax1,
             title="Calibration curve" if title is None else title,
-            legend="lower right" if len(models) > 1 else False,
+            legend=("lower right" if len(models) > 1 else False, len(models)),
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
         )
@@ -2214,7 +2240,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Cumulative gains curve" if title is None else title,
-            legend="lower right",
+            legend=("lower right", len(models)),
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
@@ -2297,7 +2323,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Lift curve" if title is None else title,
-            legend="upper right",
+            legend=("upper right", len(models)),
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),
@@ -2312,7 +2338,7 @@ class BaseModelPlotter(BasePlotter):
     def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, list, tuple]] = None,
+        index: Optional[Union[int, tuple]] = None,
         target: Union[str, int] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
@@ -2337,13 +2363,13 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: int, list, tuple or None, optional (default=None)
+        index: int, tuple or None, optional (default=None)
             Indices of the rows in the dataset to plot. If (n, m),
             select rows n until m. If None, select all rows in the
             test set.
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -2389,9 +2415,7 @@ class BaseModelPlotter(BasePlotter):
 
         sns.set_style(self.style)
         if kwargs.get("matplotlib"):
-            self._plot(
-                title="" if title is None else title, filename=filename, display=display
-            )
+            self._plot(title, filename=filename, display=display)
         else:
             if filename:  # Save to an html file
                 fn = filename if filename.endswith(".html") else filename + ".html"
@@ -2441,7 +2465,7 @@ class BaseModelPlotter(BasePlotter):
             rank (ordered by mean absolute SHAP value over all samples).
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -2516,7 +2540,7 @@ class BaseModelPlotter(BasePlotter):
             Number of features to show in the plot. None to show all.
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -2572,7 +2596,7 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, list, tuple]] = None,
+        index: Optional[Union[int, tuple]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2600,7 +2624,7 @@ class BaseModelPlotter(BasePlotter):
             models will raise an exception. To avoid this, call
             the plot from a model.
 
-        index: int, list, tuple or None, optional (default=None)
+        index: int, tuple or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), select rows n until m. If None, select all
             rows in the test set.
@@ -2610,7 +2634,7 @@ class BaseModelPlotter(BasePlotter):
             the plot. None to show all.
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -2706,7 +2730,7 @@ class BaseModelPlotter(BasePlotter):
             the plot. None to show all.
 
         target: int or str, optional (default=1)
-            Category to look at in the target class as index or name.
+            Index or name of the class in the target column to look at.
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
@@ -2814,26 +2838,30 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
+
+        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
         for m in models:
-            # Make df with rows for only that model
-            df = self._results.xs(m.name, level="model")
-            y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
-            std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
-            if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                ax.plot(df.index.values, y, lw=2, marker="o", label=m.name)
+            y[m.name[:-1]].append(get_best_score(m, metric))
+            x[m.name[:-1]].append(len(self.train) // m._train_idx)
+            if m.std_bagging:
+                std[m.name[:-1]].append(lst(m.std_bagging)[metric])
+
+        for k in x:
+            if not std:
+                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
             else:
-                ax.plot(df.index.values, y, lw=2, marker="o")
-                ax.errorbar(df.index.values, y, std, lw=1, marker="o", label=m.name)
-                ax.fill_between(df.index.values, y + std, y - std, alpha=0.3)
+                ax.plot(x[k], y[k], lw=2, marker="o")
+                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
+                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
+                ax.fill_between(x[k], plus, minus, alpha=0.3)
 
         range_ = self._results.index.get_level_values("n_models")
         ax.set_xlim(max(range_) + 0.1, min(range_) - 0.1)
         ax.set_xticks(range(1, max(range_) + 1))
-
         self._plot(
             ax=ax,
             title="Successive halving results" if title is None else title,
-            legend="lower right",
+            legend=("lower right", len(x)),
             xlabel="n_models",
             ylabel=self.metric_[metric].name,
             figsize=figsize,
@@ -2896,24 +2924,28 @@ class TrainSizingPlotter(BaseModelPlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
+
+        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
         for m in models:
-            # Make df with rows for only that model
-            df = self._results.xs(m.name, level="model")
-            x = np.multiply(df.index.values, len(self.train))
-            y = df.apply(lambda row: get_best_score(row, metric), axis=1).values
-            std = df.apply(lambda row: lst(row.std_bagging)[metric], axis=1)
-            if any(std.isna()):  # Plot fill and errorbars if std is not all None
-                ax.plot(x, y, lw=2, marker="o", label=m.name)
+            y[m.name[:-1]].append(get_best_score(m, metric))
+            x[m.name[:-1]].append(m._train_idx)
+            if m.std_bagging:
+                std[m.name[:-1]].append(lst(m.std_bagging)[metric])
+
+        for k in x:
+            if not std:
+                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
             else:
-                ax.plot(x, y, lw=2, marker="o")
-                ax.errorbar(x, y, std, lw=1, marker="o", label=m.name)
-                ax.fill_between(x, y + std, y - std, alpha=0.3)
+                ax.plot(x[k], y[k], lw=2, marker="o")
+                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
+                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
+                ax.fill_between(x[k], plus, minus, alpha=0.3)
 
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
         self._plot(
             ax=ax,
             title="Learning curve" if title is None else title,
-            legend="lower right",
+            legend=("lower right", len(x)),
             xlabel="Number of training samples",
             ylabel=self.metric_[metric].name,
             figsize=figsize,
@@ -2922,7 +2954,7 @@ class TrainSizingPlotter(BaseModelPlotter):
         )
 
 
-class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
+class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     """Plots for the ATOM classes."""
 
     @composed(crash, typechecked)
@@ -3005,7 +3037,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         show_params: bool, optional (default=True)
             Whether to show the parameters used for every estimator.
 
-        branch: str, optional (default=None)
+        branch: str or None, optional (default=None)
             Name of the branch to plot. If None, plot the current
             active branch.
 
@@ -3096,7 +3128,7 @@ class ATOMPlotter(FeatureSelectorPlotter, SuccessiveHalvingPlotter, TrainSizingP
         sns.set_style(self.style)  # Set back to original style
         self._plot(
             ax=ax,
-            title="" if title is None else title,
+            title=title,
             xlim=(0, 100),
             ylim=(0, ylim),
             figsize=figsize if figsize else (8, ylim // 30),

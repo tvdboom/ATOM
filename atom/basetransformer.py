@@ -315,7 +315,7 @@ class BaseTransformer(object):
             Message to save to the logger and print to stdout.
 
         level: int, optional (default=0)
-            Minimum verbosity level in order to print the message.
+            Minimum verbosity level to print the message.
             If 42, don't save to log.
 
         """
@@ -331,18 +331,18 @@ class BaseTransformer(object):
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: Optional[str] = None, **kwargs):
-        """Save the class to a pickle file.
+        """Save the instance to a pickle file.
 
         Parameters
         ----------
         filename: str or None, optional (default=None)
             Name to save the file with. None or "auto" to save with
-            the class' __name__.
+            the __name__ of the class.
 
         **kwargs
             Additional keyword arguments. Can contain:
                 - "save_data": Whether to save the dataset with the instance.
-                               Only if called from a trainer.
+                               Can only be used if called from a trainer.
 
         """
         if kwargs.get("save_data") is False and hasattr(self, "dataset"):

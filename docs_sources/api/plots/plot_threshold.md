@@ -1,25 +1,22 @@
 # plot_threshold
 ----------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_threshold</strong>(models=None, metric=None, dataset="test", steps=100,
                       title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1607">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1859">[source]</a></div></pre>
 Plot metric performances against threshold values. Only for binary classification tasks.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: str, callable, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric function
- or a sklearn scorer object (see the [user guide](../../../user_guide/#metric)). If
+ or a sklearn scorer object (see the <a href="../../../user_guide/#metric">user guide</a>). If
  None, the metric used to run the pipeline is used.
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
@@ -48,7 +45,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

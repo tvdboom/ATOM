@@ -1,11 +1,9 @@
 # dependence_plot
 -----------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">dependence_plot</strong>(models=None, index="rank(1)", target=1,
                        title=None, figsize=(10, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2167">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2409">[source]</a></div></pre>
 Plot SHAP's dependence plot. Plots the value of the feature on the x-axis and the
  SHAP value of the same feature on the y-axis. This shows how the model depends on
  the given feature, and is like a richer extension of the classical partial dependence
@@ -13,12 +11,11 @@ Plot SHAP's dependence plot. Plots the value of the feature on the x-axis and th
  ticks along the y-axis are data points where the feature's value was NaN. The
  explainer will be chosen automatically based on the model's type. Read more about
  SHAP plots in the [user guide](../../../user_guide/#shap).
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected. Note
  that selecting multiple models will raise an exception. To avoid this, call the
@@ -33,7 +30,7 @@ If this is an int, it is the index of the feature to plot. If this is a
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Category to look at in the target class as index or name. Only for multi-class
+Index or name of the class in the target column to look at. Only for multi-class
  classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
@@ -52,13 +49,12 @@ Name of the file. If None, the figure is not saved.
 <blockquote>
 Whether to render the plot.
 </blockquote>
-<strong>\*\*kwargs</strong>
+<strong>**kwargs</strong>
 <blockquote>
 Additional keyword arguments for shap's dependence_plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

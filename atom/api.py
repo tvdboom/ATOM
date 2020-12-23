@@ -163,7 +163,8 @@ def ATOMLoader(
                 branch.data, branch.idx = data, idx
 
             if transform_data:
-                cls.log(f"Transforming data for branch {b1}...", 1)
+                if not v1.pipeline.empty:
+                    cls.log(f"Transforming data for branch {b1}...", 1)
 
                 for i, est1 in enumerate(v1.pipeline):
                     # Skip if the transformation was already applied
@@ -280,8 +281,8 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by
+        the timestamp of the logger's creation.
 
         Note that warnings will not be saved to the logger.
 
@@ -377,8 +378,8 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by
+        the timestamp of the logger's creation.
 
         Note that warnings will not be saved to the logger.
 

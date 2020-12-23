@@ -2,14 +2,12 @@
 ------------
 
 <a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename=None, data=None, transform_data=True, verbose=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L77">[source]</a></div></pre>
-<div style="padding-left:3%">
+<pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename, data=None, transform_data=True, verbose=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L78">[source]</a></div></pre>
 Load a class instance from a pickle file. If the file is a trainer that
  was saved using `save_data=False`, you can load new data into it. For
  atom pickles, you can also apply all data transformations in the 
  pipeline to the data.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -21,8 +19,8 @@ Name of the pickle file to load.
 <strong>data: tuple of indexables or None, optional (default=None)</strong>
 <blockquote>
 Tuple containing the features and target data. Only use this parameter
- if the file is a trainer that was saved using `save_data=False` (see
- the [save](../atomclassifier/#save) method). Allowed formats are:
+ if the file is a trainer that was saved using <code>save_data=False</code> (see
+ the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
 <ul>
 <li>X, y</li>
 <li>train, test</li>
@@ -42,7 +40,7 @@ y: int, str or sequence<br>
 </blockquote>
 <strong>transform_data: bool, optional (default=True)</strong>
 <blockquote>
-If False, the `data` is left as provided. If True, it is transformed
+If False, the <code>data</code> is left as provided. If True, it is transformed
  through all the steps in the instance's pipeline. This parameter is
  ignored if the loaded file is not an atom pickle.
 </blockquote>
@@ -50,11 +48,10 @@ If False, the `data` is left as provided. If True, it is transformed
 <blockquote>
 Verbosity level of the transformations applied on the new data. If
  None, use the verbosity from the loaded instance. This parameter
- is ignored if `transform_data=False`.
+ is ignored if <code>transform_data=False</code>.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

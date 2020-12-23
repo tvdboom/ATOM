@@ -50,6 +50,7 @@ class Voting(BaseModel):
         # Note that using models from a different branch can cause
         # unexpected errors
         self.branch = self.T.branch
+        self._train_idx = self.branch.idx[0]
 
     def __repr__(self):
         out = f"{self.fullname}"
@@ -196,68 +197,82 @@ class Voting(BaseModel):
     # Prediction properties ======================================== >>
 
     @property
-    def predict_train(self):
+    def metric_train(self):
         if self._pred_attrs[0] is None:
-            pred = np.array([m.predict_train for m in self.models_])
-            self._pred_attrs[0] = np.apply_along_axis(
-                func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
-                axis=0,
-                arr=pred.astype("int"),
-            )
+            pred = np.array([m.metric_train for m in self.models_])
+            self._pred_attrs[0] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[0]
 
     @property
-    def predict_test(self):
+    def metric_test(self):
         if self._pred_attrs[1] is None:
-            pred = np.array([m.predict_test for m in self.models_])
-            self._pred_attrs[1] = np.apply_along_axis(
+            pred = np.array([m.metric_test for m in self.models_])
+            self._pred_attrs[1] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred_attrs[1]
+
+    @property
+    def predict_train(self):
+        if self._pred_attrs[2] is None:
+            pred = np.array([m.predict_train for m in self.models_])
+            self._pred_attrs[2] = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
                 arr=pred.astype("int"),
             )
-        return self._pred_attrs[1]
-
-    @property
-    def predict_proba_train(self):
-        if self._pred_attrs[2] is None:
-            pred = np.array([m.predict_proba_train for m in self.models_])
-            self._pred_attrs[2] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[2]
 
     @property
-    def predict_proba_test(self):
+    def predict_test(self):
         if self._pred_attrs[3] is None:
-            pred = np.array([m.predict_proba_test for m in self.models_])
-            self._pred_attrs[3] = np.average(pred, axis=0, weights=self.weights)
+            pred = np.array([m.predict_test for m in self.models_])
+            self._pred_attrs[3] = np.apply_along_axis(
+                func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
+                axis=0,
+                arr=pred.astype("int"),
+            )
         return self._pred_attrs[3]
 
     @property
-    def predict_log_proba_train(self):
+    def predict_proba_train(self):
         if self._pred_attrs[4] is None:
-            pred = np.array([m.predict_log_proba_train for m in self.models_])
+            pred = np.array([m.predict_proba_train for m in self.models_])
             self._pred_attrs[4] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[4]
 
     @property
-    def predict_log_proba_test(self):
+    def predict_proba_test(self):
         if self._pred_attrs[5] is None:
-            pred = np.array([m.predict_log_proba_test for m in self.models_])
+            pred = np.array([m.predict_proba_test for m in self.models_])
             self._pred_attrs[5] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[5]
 
     @property
-    def score_train(self):
+    def predict_log_proba_train(self):
         if self._pred_attrs[6] is None:
-            pred = np.array([m.score_train for m in self.models_])
+            pred = np.array([m.predict_log_proba_train for m in self.models_])
             self._pred_attrs[6] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[6]
 
     @property
-    def score_test(self):
+    def predict_log_proba_test(self):
         if self._pred_attrs[7] is None:
-            pred = np.array([m.score_test for m in self.models_])
+            pred = np.array([m.predict_log_proba_test for m in self.models_])
             self._pred_attrs[7] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[7]
+
+    @property
+    def score_train(self):
+        if self._pred_attrs[8] is None:
+            pred = np.array([m.score_train for m in self.models_])
+            self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred_attrs[8]
+
+    @property
+    def score_test(self):
+        if self._pred_attrs[9] is None:
+            pred = np.array([m.score_test for m in self.models_])
+            self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred_attrs[9]
 
 
 class Stacking(BaseModel):
@@ -274,9 +289,6 @@ class Stacking(BaseModel):
                 "Invalid value for the models parameter. A Stacking "
                 "class should contain at least two models."
             )
-
-        # The Stacking instance has his own internal branch
-        self.branch = Branch(self, "StackBranch")
 
         # Create the dataset for the Stacking instance
         dataset = pd.DataFrame()
@@ -307,6 +319,7 @@ class Stacking(BaseModel):
         self.branch = Branch(self, "StackBranch")
         self.branch.data = merge(dataset, self.T.y)
         self.branch.idx = self.T.branch.idx
+        self._train_idx = self.branch.idx[0]
 
         if isinstance(self.estimator, str):
             # Add goal, n_jobs and random_state from trainer for the estimator
@@ -417,7 +430,8 @@ class Stacking(BaseModel):
         data = {k: (copy(X), copy(y)) for k in self.T._branches}
         step = {}  # Current step in the pipeline per branch
         for b1, v1 in self.T._branches.items():
-            self.T.log(f"Transforming data for branch {b1}...", 1)
+            if not v1.pipeline.empty:
+                self.T.log(f"Transforming data for branch {b1}...", 1)
 
             for i, est1 in enumerate(v1.pipeline):
                 # Skip if the transformation was already applied

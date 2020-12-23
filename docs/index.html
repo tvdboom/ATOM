@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="API/plots/plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -560,7 +564,7 @@
  if you are not satisfied with the results. Unfortunately, different models require
  different data cleaning steps, different type/amount of features, tuning a new set
  of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
- and time consuming. Because of this, many data scientists end up just using the model
+ and time-consuming. Because of this, many data scientists end up just using the model
  best known to them and fine-tuning this particular model without ever trying different
  ones. This can result in poor performance (because the model is just not the right one
  for the task) or in poor time management (because you could have achieved a similar
@@ -647,7 +651,9 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li><a href="./user_guide/#successive-halving">Successive halving</a> and <a href="./user_guide/#train-sizing">Train sizing</a>
   now both allow subsequent runs from atom without losing previous information.</li>
 <li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
-<li>Added the <a href="./examples/utilities.html" target="_blank">Utilities</a> and <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example notebooks.</li>
+<li>Added the <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>, 
+  <a href="./examples/ensembles.html" target="_blank">Ensembles</a> and
+  <a href="./examples/utilities.html" target="_blank">Utilities</a> example notebooks.</li>
 <li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
 </ul>
 <h3 id="version-410-16-october-2020">Version 4.1.0 - 16 October 2020</h3>
@@ -794,7 +800,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li><a href="./API/plots/plot_rfecv">plot_rfecv</a></li>
 <li><a href="./API/plots/plot_successive_halving">plot_successive_halving</a></li>
 <li><a href="./API/plots/plot_learning_curve">plot_learning_curve</a></li>
-<li><a href="./API/plots/plot_bagging">plot_bagging</a></li>
+<li><a href="./API/plots/plot_results">plot_results</a></li>
 <li><a href="./API/plots/plot_bo">plot_bo</a></li>
 <li><a href="./API/plots/plot_evals">plot_evals</a></li>
 <li><a href="./API/plots/plot_roc">plot_roc</a></li>
@@ -830,6 +836,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li><a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a></li>
 <li><a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a></li>
 <li><a href="./examples/early_stopping.html" target="_blank">Early stopping</a></li>
+<li><a href="./examples/ensembles.html" target="_blank">Ensembles</a></li>
 <li><a href="./examples/calibration.html" target="_blank">Calibration</a></li>
 <li><a href="./examples/utilities.html" target="_blank">Utilities</a></li>
 </ul>
@@ -921,5 +928,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-12-03 13:15:20.935574+00:00
+Build Date UTC : 2020-12-23 22:16:56.231605+00:00
 -->

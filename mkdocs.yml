@@ -41,7 +41,7 @@ nav:
            - DirectRegressor: API/training/directregressor.md
         - SuccessiveHalving:
             - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
-            - SuccessiveHalvingClassifier: API/training/successivehalvingregressor.md
+            - SuccessiveHalvingRegressor: API/training/successivehalvingregressor.md
         - TrainSizing:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
@@ -92,7 +92,7 @@ nav:
         - plot_rfecv: API/plots/plot_rfecv.md
         - plot_successive_halving: API/plots/plot_successive_halving.md
         - plot_learning_curve: API/plots/plot_learning_curve.md
-        - plot_bagging: API/plots/plot_bagging.md
+        - plot_results: API/plots/plot_results.md
         - plot_bo: API/plots/plot_bo.md
         - plot_evals: API/plots/plot_evals.md
         - plot_roc: API/plots/plot_roc.md

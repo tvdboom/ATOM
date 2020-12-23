@@ -249,7 +249,7 @@ def get_best_score(item, metric=0):
         Index of the metric to use.
 
     """
-    if item.mean_bagging:
+    if getattr(item, "mean_bagging", None):
         return lst(item.mean_bagging)[metric]
     else:
         return lst(item.metric_test)[metric]
@@ -367,8 +367,8 @@ def prepare_logger(logger, class_name):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by
+        the timestamp of the logger's creation.
 
     class_name: str
         Name of the class from which the function is called.
@@ -668,10 +668,10 @@ def transform(est_branch, X, y, verbose, **kwargs):
     est_branch: pd.Series
         Estimators in a branch.
 
-    X: dict, sequence, np.ndarray or pd.DataFrame
+    X: dict, list, tuple, np.ndarray or pd.DataFrame
         Feature set with shape=(n_samples, n_features).
 
-    y: int, str, sequence, np.ndarray, pd.Series or None
+    y: int, str, sequence or None
         - If None: y is not used in the transformation.
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.

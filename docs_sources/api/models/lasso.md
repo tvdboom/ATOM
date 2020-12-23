@@ -15,12 +15,11 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 ## Hyperparameters
 ------------------
 
-* By default, the estimator adopts the default parameters provided by it's package.
+* By default, the estimator adopts the default parameters provided by its package.
   See the [user guide](../../../user_guide/#parameter-customization) on how to
   customize them.
-* The `random_state` parameter is set equal to that of the `training` instance.
+* The `random_state` parameter is set equal to that of the trainer.
 
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Dimensions:</strong></td>
@@ -43,12 +42,69 @@ Categorical(["cyclic", "random"], name="selection")
 
 ### Data attributes
 
-You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
- as the `training` instances to check the dataset that was used to fit a particular
- model. These can differ from each other if the model needs scaled features and the
- data wasn't already scaled. Note that, unlike with the `training` instances, these
- attributes not be updated (i.e. they have no `@setter`).
-<br><br>
+The dataset can be accessed at any time through multiple attributes, e.g. calling
+`trainer.train` will return the training set. The data can differ from the trainer's
+dataset if the model needs scaled features and the data wasn't scaled already.
+
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: pd.DataFrame</strong>
+<blockquote>
+Complete dataset in the pipeline.
+</blockquote>
+<strong>train: pd.DataFrame</strong>
+<blockquote>
+Training set.
+</blockquote>
+<strong>test: pd.DataFrame</strong>
+<blockquote>
+Test set.
+</blockquote>
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Feature set.
+</blockquote>
+<strong>y: pd.Series</strong>
+<blockquote>
+Target column.
+</blockquote>
+<strong>X_train: pd.DataFrame</strong>
+<blockquote>
+Training features.
+</blockquote>
+<strong>y_train: pd.Series</strong>
+<blockquote>
+Training target.
+</blockquote>
+<strong>X_test: pd.DataFrame</strong>
+<blockquote>
+Test features.
+</blockquote>
+<strong>y_test: pd.Series</strong>
+<blockquote>
+Test target.
+</blockquote>
+<strong>shape: tuple</strong>
+<blockquote>
+Dataset's shape: (n_rows x n_columns).
+</blockquote>
+<strong>columns: list</strong>
+<blockquote>
+List of columns in the dataset.
+</blockquote>
+<strong>features: list</strong>
+<blockquote>
+List of features in the dataset.
+</blockquote>
+<strong>target: str</strong>
+<blockquote>
+Name of the target column.
+</blockquote>
+</td></tr>
+</table>
+<br>
 
 ### Utility attributes
 
@@ -97,17 +153,17 @@ Metric score(s) on the training set.
 <blockquote>
 Metric score(s) on the test set.
 </blockquote>
-<strong>metric_bagging: list</strong>
+<strong>metric_bagging: np.ndarray</strong>
 <blockquote>
-Array of the bagging's results.
+Bagging's results with shape=(bagging,) for single-metric runs and shape=(metric, bagging) for multi-metric runs.
 </blockquote>
-<strong>mean_bagging: float</strong>
+<strong>mean_bagging: float or list</strong>
 <blockquote>
-Mean of the bagging's results.
+Mean of the bagging's results. List of values for multi-metric runs.
 </blockquote>
-<strong>std_bagging: float</strong>
+<strong>std_bagging: float or list</strong>
 <blockquote>
-Standard deviation of the bagging's results.
+Standard deviation of the bagging's results. List of values for multi-metric runs.
 </blockquote>
 <strong>results: pd.DataFrame</strong>
 <blockquote>
@@ -172,13 +228,13 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 
 <table>
 <tr>
-<td width="15%"><a href="#reset-prediction-attributes">reset_prediction_attributes</a></td>
+<td width="15%"><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
 </tr>
 
 <tr>
 <td width="15%"><a href="#scoring">scoring</a></td>
-<td>Get the scoring of a specific metric on the test set.</td>
+<td>Get the score for a specific metric.</td>
 </tr>
 
 <tr>
@@ -189,58 +245,61 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 <br>
 
 
-<a name="reset-prediction-attributes"></a>
-<pre><em>method</em> <strong style="color:#008AB8">reset_prediction_attributes</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L654">[source]</a></div></pre>
-<div style="padding-left:3%">
-Clear all the prediction attributes. Use this method to free some memory before saving
- the class.
-</div>
-<br />
+<a name="reset-predictions"></a>
+<pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L168">[source]</a></div></pre>
+Clear all the [prediction attributes](../../../user_guide/#predicting).
+ Use this method to free some memory before saving the model.
+<br /><br /><br />
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L858">[source]</a></div></pre>
-<div style="padding-left:3%">
-Returns the model's score for a specific metric.
-<br /><br />
+<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L320">[source]</a></div></pre>
+Get the model's score for a specific metric.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>metric: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the metric to calculate. Choose from any of sklearn's [SCORERS](https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules).
- If None, returns the final results for this model (ignores the `dataset` parameter).
+Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules"></a>.
+ If None, returns the final results for this model (ignores the <code>dataset</code> parameter).
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
 Data set on which to calculate the metric. Options are "train" or "test".
 </blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments for the metric function.
+</blockquote>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>score: np.float64</strong>
+<blockquote>
+Model's scoring on the selected metric.
+</blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
 <a name="save-estimator"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L944">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L417">[source]</a></div></pre>
 Save the estimator to a pickle file.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file to save. If None or "auto", the estimator's name is used.
+Name of the file to save. If None or "auto", the estimator's __name__ is used.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

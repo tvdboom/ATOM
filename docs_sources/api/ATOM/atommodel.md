@@ -1,28 +1,25 @@
 # ATOMModel
 -----------
 
-<a name="atom"></a>
-<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(predictor, name=None, fullname=None, needs_scaling=False, type="kernel")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
-<div style="padding-left:3%">
+<pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, acronym=None, fullname=None, needs_scaling=False, type="kernel")
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L26">[source]</a></div></pre>
 Convert an estimator to a model that can be ingested by ATOM.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>predictor: class</strong>
+<strong>estimator: class</strong>
 <blockquote>
-Model's predictor. Can be a class or an instance.
+Model's estimator. Can be a class or an instance.
 </blockquote>
-<strong>name: str, optional (default=None)</strong>
+<strong>acronym: str, optional (default=None)</strong>
 <blockquote>
 Model's acronym. Used to call the model from the trainer.
- If None, the predictor's \_\_name\_\_ will be used (not recommended).
+ If None, the estimator's __name__ will be used (not recommended).
 </blockquote>
 <strong>fullname: str, optional (default=None)</strong>
 <blockquote>
-Full model's name. If None, the predictor's \_\_name\_\_ will be used.
+Full model's name. If None, the estimator's __name__ will be used.
 </blockquote>
 <strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
@@ -30,7 +27,7 @@ Whether the model needs scaled features. Can not be True for deep learning datas
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>
-Model's type. Used to select [shap's explainer](https://shap.readthedocs.io/en/latest/api.html#core-explainers)
+Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.html#core-explainers">shap's explainer</a>
  for plotting. Choose from:
 <ul>
 <li>"linear" for linear models.</li>
@@ -40,7 +37,6 @@ Model's type. Used to select [shap's explainer](https://shap.readthedocs.io/en/l
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

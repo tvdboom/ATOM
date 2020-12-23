@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="../plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="../plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -549,24 +553,22 @@
 
 <h1 id="plot_evals">plot_evals</h1>
 <hr />
-<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset="both", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L701">[source]</a></div></pre>
-<div style="padding-left:3%">
-Plot evaluation curves for the train and test set. Only for models that allow
- in-training evaluation (XGB, LGB, CatB). The metric is provided by the estimator's
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L865">[source]</a></div></pre>
+<p>Plot evaluation curves for the train and test set. Only for models that allow
+ in-training evaluation (<a href="../../models/xgb">XGB</a>, <a href="../../models/lgb">LGB</a>,
+ <a href="../../models/catb">CatB</a>). The metric is provided by the estimator's
  package and is different for every model and every task. For this reason, the
- method only allows plotting one model at a time.
-<br /><br />
+ method only allows plotting one model at a time.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the model to plot. If None, all models in the pipeline are selected. Note
  that leaving the default option could raise an exception if there are multiple
- models in the pipeline. To avoid this, call the plot from a model, e.g. `atom.lgb.plot_evals()`.
+ models in the pipeline. To avoid this, call the plot from a model, e.g. <code>atom.lgb.plot_evals()</code>.
 </blockquote>
 <strong>dataset: str, optional (default="both")</strong>
 <blockquote>
@@ -591,7 +593,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br /></p>
 <h2 id="example">Example</h2>
 <hr />

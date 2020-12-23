@@ -3,10 +3,8 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(method="pearson", title=None, figsize=(8, 8), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2564">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2929">[source]</a></div></pre>
 Plot the data's correlation matrix. Ignores non-numeric columns.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -33,7 +31,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
@@ -43,7 +40,7 @@ Whether to render the plot.
 ```python
 from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, "RainTomorrow")
+atom = ATOMClassifier(X, y)
 atom.plot_correlation()
 ```
 <div align="center">

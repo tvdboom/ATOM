@@ -30,7 +30,7 @@ def test_input_is_copied(param):
     """Assert that the parameters are copied to attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
-    assert getattr(atom.branch, param) is not getattr(atom._branches["main"], param)
+    assert getattr(atom.branch, param) is not getattr(atom._branches["master"], param)
 
 
 # Test __repr__ ==================================================== >>
@@ -39,7 +39,7 @@ def test_repr():
     """Assert that the __repr__  method returns the list of available branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
-    assert str(atom.branch) == "Branches:\n --> main\n --> branch_2 !"
+    assert str(atom.branch) == "Branches:\n --> master\n --> branch_2 !"
 
 
 # Test status ====================================================== >>
@@ -89,8 +89,8 @@ def test_branch_delete_not_current():
     """Assert that we can delete any branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
-    atom.branch.delete("main")
-    assert "main" not in atom._branches
+    atom.branch.delete("master")
+    assert "master" not in atom._branches
 
 
 def test_branch_delete_depending_models():

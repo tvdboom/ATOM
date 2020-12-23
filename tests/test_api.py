@@ -139,7 +139,7 @@ def test_transform_data_multiple_branches():
     atom.save(FILE_DIR + "atom_2", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)
-    assert atom2._branches["main"].dataset.shape == data_1.shape
+    assert atom2._branches["master"].dataset.shape == data_1.shape
     assert atom2._branches["branch_2"].dataset.shape == data_2.shape
     assert atom2._branches["branch_3"].dataset.shape == data_3.shape
 
@@ -153,7 +153,7 @@ def test_multiple_branches():
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin), transform_data=True)
     assert len(atom2.branch.data) != len(X_bin)
-    assert len(atom2._branches["main"].data) == len(X_bin)
+    assert len(atom2._branches["master"].data) == len(X_bin)
 
 
 def test_verbose_is_reset():

@@ -48,11 +48,10 @@ def test_multiple_same_models():
 
 def test_creation_model_subclasses():
     """Assert that the model subclasses are created correctly."""
-    trainer = DirectClassifier(["LR", "LDA", "LR3"], random_state=1)
+    trainer = DirectClassifier(["LR", "LGB2"], random_state=1)
     trainer.run(bin_train, bin_test)
     assert hasattr(trainer, "LR") and hasattr(trainer, "lr")
-    assert hasattr(trainer, "LDA") and hasattr(trainer, "lda")
-    assert hasattr(trainer, "LR3") and hasattr(trainer, "lr3")
+    assert hasattr(trainer, "LGB2") and hasattr(trainer, "lgb2")
 
 
 def test_duplicate_models():
@@ -241,7 +240,7 @@ def test_scorer_metric_parameter():
 def test_sequence_parameters():
     """Assert that every model get his corresponding parameters."""
     trainer = DirectClassifier(
-        models=["LR", "LDA", "LGB"],
+        models=["LR", "Tree", "LGB"],
         n_calls=(2, 3, 4),
         n_initial_points=(1, 2, 3),
         bagging=[2, 5, 7],
@@ -249,7 +248,7 @@ def test_sequence_parameters():
     )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
-    assert sum(trainer.LDA.bo.index.str.startswith("Initial")) == 2
+    assert sum(trainer.tree.bo.index.str.startswith("Initial")) == 2
     assert len(trainer.lgb.metric_bagging) == 7
 
 
@@ -262,7 +261,7 @@ def test_invalid_n_calls_parameter():
 def test_custom_dimensions_for_bo():
     """Assert that the BO runs when custom dimensions are provided."""
     trainer = DirectRegressor(
-        models="ols",
+        models="OLS",
         n_calls=5,
         bo_params={"dimensions": [Categorical([True, False], name="fit_intercept")]},
         random_state=1,
@@ -278,7 +277,7 @@ def test_error_handling():
     )
     trainer.run(bin_train, bin_test)
     assert trainer.errors.get("LDA")
-    assert "lDA" not in trainer.models
+    assert "LDA" not in trainer.models
     assert "LDA" not in trainer.results.index
 
 

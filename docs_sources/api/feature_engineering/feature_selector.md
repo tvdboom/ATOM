@@ -1,12 +1,10 @@
 # FeatureSelector
 -----------------
 
-<a name="atom"></a>
 <pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None, solver=None, n_features=None, max_frac_repeated=1.,
                                                max_correlation=1., n_jobs=1, verbose=0, logger=None,
-                                               random_state=None, \*\*kwargs)
+                                               random_state=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L376">[source]</a></div></pre>
-<div style="padding-left:3%">
 Remove features according to the selected strategy. Ties between
  features with equal scores will be broken in an unspecified way.
  Additionally, removes features with too low variance and finds pairs of
@@ -15,7 +13,6 @@ Remove features according to the selected strategy. Ties between
  removes one of the two. This class can be accessed from atom
  through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
  method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
-<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -32,10 +29,10 @@ Feature selection strategy to use. Choose from:
 <li>"RFECV": Perform RFE with cross-validated selection.</li>
 </ul>
 </blockquote>
-<strong>solver: string, callable or None, optional (default=None)</strong>
+<strong>solver: string, estimator or None, optional (default=None)</strong>
 <blockquote>
-Solver or model to use for the feature selection strategy. See the
-sklearn documentation for an extended description of the choices.
+Solver or model to use for the feature selection strategy. See
+sklearn's documentation for an extended description of the choices.
 Select None for the default option per strategy (not applicable
 for SFM, RFE and RFECV).
 <ul>
@@ -57,11 +54,12 @@ for SFM, RFE and RFECV).
     <li>"randomized"</li>
     </ul></li>
 <li>for "SFM", "RFE" and "RFECV:<br>
-Estimator with either a `feature_importances_` or `coef_` attribute after fitting.
- You can use one of ATOM's pre-defined [models](../../../user_guide/#models). Add
- `_class` or `_reg` after the model's name to specify a classification or regression
- task, e.g. `solver="LGB_reg"` (not necessary if called from an atom instance. No
- default option.</li>
+Estimator with either a <code>feature_importances_</code> or <code>coef_</code>
+ attribute after fitting. You can use one of ATOM's pre-defined
+ <a href="../../../user_guide/#predefined-models">models</a>. Add
+ <code>_class</code> or <code>_reg</code> after the model's name to
+ specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
+ (not necessary if called from an atom instance. No default option.</li>
 </ul>
 </blockquote>
 <strong>n_features: int, float or None, optional (default=None)</strong>
@@ -72,8 +70,9 @@ Number of features to select. Choose from:
 <li>if < 1: Fraction of the total features to select.</li>
 <li>if >= 1: Number of features to select.</li>
 </ul>
-If strategy="SFM" and the threshold parameter is not specified, the threshold will be
- set to `-np.inf` in order to make this parameter the number of features to select.<br>
+If strategy="SFM" and the threshold parameter is not specified, the
+ threshold will be set to <code>-np.inf</code> to select the
+ <code>n_features</code> features.<br>
 If strategy="RFECV", it's the minimum number of features to select.
 </blockquote>
 <strong>max_frac_repeated: float or None, optional (default=1.)</strong>
@@ -110,19 +109,20 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by the
+ timestamp of the logger's creation.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the `RandomState` instance used by `numpy.random`.
+ generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
@@ -132,7 +132,6 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
 </td>
 </tr>
 </table>
-</div>
 <br>
 
 !!! tip
@@ -154,7 +153,6 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
 
 ### Utility attributes
 
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -166,7 +164,7 @@ Dataframe of the removed collinear features.
 <ul>
 <li><b>drop_feature:</b> Name of the feature dropped by the method.</li>
 <li><b>correlated feature:</b> Name of the correlated feature(s).</li>
-<li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
+<li><b>correlation_value:</b> Pearson correlation coefficients of the feature pairs.</li>
 </ul>
 </blockquote>
 <strong>feature_importance: list</strong>
@@ -175,27 +173,27 @@ Remaining features ordered by importance. Only if strategy in ["univariate", "SF
  "RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
  estimator fitted on the reduced set. 
 </blockquote>
-<strong>univariate: [SelectKBest](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html)</strong>
+<strong>univariate: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">SelectKBest</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="univariate".
 </blockquote>
-<strong>scaler: [Scaler](../../data_cleaning/scaler/)</strong>
+<strong>scaler: <a href="../../data_cleaning/scaler/">Scaler</a></strong>
 <blockquote>
 Instance used to scale the data. Only if strategy="PCA" and the data was not already scaled.
 </blockquote>
-<strong>pca: [PCA](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html)</strong>
+<strong>pca: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="PCA".
 </blockquote>
-<strong>sfm: [SelectFromModel](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html)</strong>
+<strong>sfm: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SelectFromModel</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="SFM".
 </blockquote>
-<strong>rfe: [RFE](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html)</strong>
+<strong>rfe: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="RFE".
 </blockquote>
-<strong>rfecv: [RFECV](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html)</strong>
+<strong>rfecv: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="RFECV".
 </blockquote>
@@ -207,7 +205,6 @@ Instance used to fit the estimator. Only if strategy="RFECV".
 
 ### Plot attributes
  
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -244,12 +241,12 @@ Fontsize for the ticks along the plot's axes.
 <table width="100%">
 <tr>
 <td><a href="#fit">fit</a></td>
-<td>Fit the class.</td>
+<td>Fit to data.</td>
 </tr>
 
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
-<td>Fit the class and return the transformed data.</td>
+<td>Fit to data, then transform it.</td>
 </tr>
 
 <tr>
@@ -278,6 +275,11 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
+<td><a href="#reset-aesthetics">reset_aesthetics</a></td>
+<td>Reset the plot aesthetics to their default values.</td>
+</tr>
+
+<tr>
 <td><a href="#save">save</a></td>
 <td>Save the instance to a pickle file.</td>
 </tr>
@@ -298,21 +300,18 @@ Fontsize for the ticks along the plot's axes.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L517">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the class. Note that the univariate, sfm (when model is not fitted), rfe and
- rfecv strategies all need a target column. Leaving it None will raise an exception.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L589">[source]</a></div></pre>
+Fit to data. Note that the univariate, SFM (when model is not fitted), RFE and
+ RFECV strategies all need a target column. Leaving it None will raise an exception.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>
@@ -336,22 +335,19 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the FeatureSelector and return the transformed feature set. Note that the
- univariate, sfm (when model is not fitted), rfe and rfecv strategies need a target
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+Fit to data, then transform it. Note that the univariate, SFM
+ (when model is not fitted), RFE and RFECV strategies need a target
  column. Leaving it None will raise an exception.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>
@@ -376,10 +372,7 @@ Transformed feature set.
 <a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
 Get parameters for this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -403,10 +396,8 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -417,77 +408,70 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
-
 
 
 <a name="plot-pca"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L344">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L492">[source]</a></div></pre>
 Plot the explained variance ratio vs the number of components.
 See [plot_pca](../../plots/plot_pca) for a description of the parameters.
-</div>
-<br />
+<br /><br /><br />
 
 
 <a name="plot-components"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L399">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L553">[source]</a></div></pre>
 Plot the explained variance ratio per components.
 See [plot_components](../../plots/plot_components) for a description of the parameters.
-</div>
-<br />
+<br /><br /><br />
 
 
 <a name="plot-rfecv"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L461">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L622">[source]</a></div></pre>
 Plot the scores obtained by the estimator fitted on every subset of
  the data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the parameters.
-</div>
-<br />
+<br /><br /><br />
+
+
+<a name="reset-aesthetics"></a>
+<pre><em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L193">[source]</a></div></pre>
+Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
+<br /><br /><br />
 
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file.
-<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <br>
 
 
 <a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
-<div style="padding-left:3%">
 Set the parameters of this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -506,20 +490,17 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L734">[source]</a></div></pre>
-<div style="padding-left:3%">
-Transform the feature set.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L813">[source]</a></div></pre>
+Transform the data.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>

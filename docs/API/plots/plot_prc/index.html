@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="../plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="../plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -549,18 +553,15 @@
 
 <h1 id="plot_prc">plot_prc</h1>
 <hr />
-<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L834">[source]</a></div></pre>
-<div style="padding-left:3%">
-Plot the precision-recall curve. The legend shows the average precision (AP) score. 
- Only for binary classification tasks.
-<br /><br />
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1010">[source]</a></div></pre>
+<p>Plot the precision-recall curve. The legend shows the average precision (AP) score. 
+ Only for binary classification tasks.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
@@ -586,7 +587,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br /></p>
 <h2 id="example">Example</h2>
 <hr />

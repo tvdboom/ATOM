@@ -103,7 +103,7 @@ def test_branch_setter_change():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.branch = "branch_2"
     atom.clean()
-    atom.branch = "main"
+    atom.branch = "master"
     assert atom.pipeline.empty  # Has no clean estimator
 
 
@@ -112,7 +112,7 @@ def test_branch_setter_new():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.clean()
     atom.branch = "branch_2"
-    assert list(atom._branches.keys()) == ["main", "branch_2"]
+    assert list(atom._branches.keys()) == ["master", "branch_2"]
 
 
 def test_branch_setter_from_valid():
@@ -120,7 +120,7 @@ def test_branch_setter_from_valid():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.branch = "branch_2"
     atom.impute()
-    atom.branch = "branch_3_from_main"
+    atom.branch = "branch_3_from_master"
     assert atom.n_nans > 0
 
 
@@ -236,8 +236,8 @@ def test_transform_with_y():
 def test_save_data():
     """Assert that the dataset is saved to a csv file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.save_data(FILE_DIR + 'dataset')
-    assert glob.glob(FILE_DIR + 'dataset')
+    atom.save_data(FILE_DIR + "auto")
+    assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
 
 
 # Test data cleaning methods ======================================= >>
@@ -438,15 +438,15 @@ def test_trainer_becomes_atom():
 def test_exception_mixed_approaches():
     """Assert that an exception is raised when approaches are mixed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["lr", "lda"])
-    pytest.raises(PermissionError, atom.run, "lr")
+    atom.successive_halving(["LR", "RF"])
+    pytest.raises(PermissionError, atom.run, "LR")
 
 
 def test_assign_existing_metric():
     """Assert that the existing metric_ is assigned if rerun."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("lr", metric="recall")
-    atom.run("lda")
+    atom.run("LR", metric="recall")
+    atom.run("Tree")
     assert atom.metric == "recall"
 
 

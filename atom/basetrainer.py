@@ -31,8 +31,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     Parameters
     ----------
     models: string or sequence
-        Models to train on the data. Use the predefined acronyms in
-        MODEL_LIST or a custom model.
+        Models to fit to the data. Use a custom estimator or the
+        model's predefined acronyms.
 
     metric: str, callable or sequence, optional (default=None)
         Metric on which to fit the models. Choose from any of sklearn's
@@ -80,11 +80,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Additional parameters for the estimators. See the corresponding
         documentation for the available options. For multiple models,
         use the acronyms as key and a dict of the parameters as value.
-        Add _fit to the parameter's name to pass it to the fit method.
+        Add _fit to the parameter's name to pass it to the fit method
+        instead of the initializer.
 
     bo_params: dict, optional (default={})
         Additional parameters to for the BO. See bayesian_optimization
-        in basemodel.py for the available options.
+        in modeloptimizer.py for the available options.
 
     bagging: int, sequence or None, optional (default=None)
         Number of data sets (bootstrapped from the training set) to use
@@ -122,8 +123,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by
+        the timestamp of the logger's creation.
 
         Note that warnings will not be saved to the logger.
 
@@ -159,7 +160,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.bagging = bagging
 
         # Branching attributes
-        self._current = "main"  # Current (and only) branch
+        self._current = "master"  # Current (and only) branch
         self._branches = {self._current: Branch(self, self._current)}
         self.task = None
 

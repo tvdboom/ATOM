@@ -63,7 +63,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Branching attributes
-        self._current = "main"  # Current pipeline
+        self._current = "master"  # Current pipeline
         self._branches = {self._current: Branch(self, self._current)}
 
         # Training attributes
@@ -148,7 +148,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @property
     def nans(self):
-        """Returns columns with missing values."""
+        """Returns columns with number of missing values."""
         nans = self.dataset.replace(self.missing, np.NaN).isna().sum()
         return nans[nans > 0]
 
@@ -169,14 +169,14 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @property
     def scaled(self):
-        """Returns whether the dataset is scaled."""
-        return check_scaling(self.dataset)
+        """Returns whether the feature set is scaled."""
+        return check_scaling(self.X)
 
     # Utility methods =============================================== >>
 
     @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
-        """Print some information about the dataset.
+        """Print basic information about the dataset.
 
         Parameters
         ----------
@@ -222,7 +222,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         n_rows: Optional[Union[int, float]] = None,  # float for 1e3...
         filename: Optional[str] = None,
     ):
-        """Create an extensive profile analysis of the data.
+        """Create an extensive profile analysis report of the data.
 
         The profile report is rendered in HTML5 and CSS3. Note that
         this method can be slow for rows>10k.
@@ -230,14 +230,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         Parameters
         ----------
         dataset: str, optional(default="dataset")
-            Name of the data set to get the report from.
+            Data set to get the report from.
 
         n_rows: int or None, optional(default=None)
-            Number of (randomly picked) rows in `dataset` to process.
-            None for all rows.
+            Number of (randomly picked) rows in to process. None for
+            all rows.
 
         filename: str or None, optional (default=None)
-            Name of the file (as .html). None to not save anything.
+            Name to save the file with (as .html). None to not save
+            anything.
 
         """
         # If rows=None, select all rows in the dataframe
@@ -287,12 +288,12 @@ class ATOM(BasePredictor, ATOMPlotter):
             Additional keyword arguments to customize which transforming
             methods to apply. You can either select them via their index,
             e.g. pipeline = [0, 1, 4] or include/exclude them via every
-            individual transformer, e.g. impute=True, encode=False.
+            individual transformer, e.g. outliers=True, encode=False.
 
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataset.
+            Transformed feature set.
 
         y: pd.Series
             Transformed target column. Only returned if provided.
@@ -305,20 +306,24 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = None, dataset: str = "dataset"):
-        """Save data to a csv file.
+        """Save the data in the current branch to a csv file.
 
         Parameters
         ----------
         filename: str or None, optional (default=None)
-            Name of the saved file. None to use default name.
+            Name to save the file with. None or "auto" for default name.
 
         dataset: str, optional (default="dataset")
             Data set to save.
 
         """
         if not filename:
-            filename = f"{self.__class__.__name__}_{dataset}.csv"
+            filename = f"{self.__class__.__name__}_{dataset}"
+        elif filename == "auto" or filename.endswith("/auto"):
+            filename = filename.replace("auto", f"{self.__class__.__name__}_{dataset}")
 
+        if not filename.endswith(".csv"):
+            filename += ".csv"
         getattr(self, dataset).to_csv(filename, index=False)
 
     # Data cleaning methods ======================================== >>
@@ -333,7 +338,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log)
     def scale(self, **kwargs):
-        """Scale the features to mean=0 and std=1.
+        """Scale features to mean=0 and std=1.
 
         This class is equal to sklearn's StandardScaler except that it
         returns a dataframe when provided and it ignores non-numerical
@@ -496,8 +501,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Outliers are values that lie further than `max_sigma` * std
         away from the mean of the column. Ignores categorical columns.
-        Only outliers from the training set are removed to maintain an
-        original sample of target values in the test set. Ignores
+        Only outliers from the training set are removed to maintain the
+        original distribution of target values in the test set. Ignores
         categorical columns.
 
         See the data_cleaning.py module for a description of the parameters.
@@ -566,9 +571,10 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Apply automated feature engineering.
 
-        Use Deep feature Synthesis or a genetic algorithm to create new
-        combinations of existing features to capture the non-linear
-        relations between the original features.
+        Use Deep feature Synthesis or a genetic algorithm to create
+        new combinations of existing features to capture the non-linear
+        relations between the original features. Attributes created by
+        the class are attached to atom.
 
         See the feature_engineering.py module for a description of the parameters.
 
@@ -606,20 +612,14 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Apply feature selection techniques.
 
-        Remove features according to the selected strategy. Ties between
-        features with equal scores will be broken in an unspecified way.
-        Additionally, removes features with too low variance and finds
-        pairs of collinear features based on the Pearson correlation
-        coefficient. For each pair above the specified limit (in terms of
-        absolute value), it removes one of the two.
-
-        Note that the RFE and RFECV strategies don't work when the solver
-        is a CatBoost model due to incompatibility of the APIs. If the run
-        method has already been called before running RFECV, the scoring
-        parameter will be set to the selected metric (if not provided).
-
-        After running the method, the created attributes and methods are attached
-        to atom.
+        Remove features according to the selected strategy. Ties
+        between features with equal scores will be broken in an
+        unspecified way. Additionally, removes features with too low
+        variance and finds pairs of collinear features based on the
+        Pearson correlation coefficient. For each pair above the
+        specified limit (in terms of absolute value), it removes one
+        of the two. Plotting methods and attributes created by the
+        class are attached to atom.
 
         See the feature_engineering.py module for a description of the parameters.
 

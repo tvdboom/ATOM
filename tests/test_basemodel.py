@@ -198,8 +198,8 @@ def test_n_classes_property():
 def test_delete():
     """Assert that models can be deleted."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    atom.ols.delete()
+    atom.run("RF")
+    atom.rf.delete()
     assert not atom.models
 
 
@@ -213,15 +213,15 @@ def test_scoring_metric_None():
 def test_unknown_metric():
     """Assert that an error is raised when metric is unknown."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    pytest.raises(ValueError, atom.ols.scoring, "unknown")
+    atom.run("RF")
+    pytest.raises(ValueError, atom.rf.scoring, "unknown")
 
 
 def test_unknown_dataset():
     """Assert that an error is raised when metric is unknown."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    pytest.raises(ValueError, atom.ols.scoring, metric="r2", dataset="unknown")
+    atom.run("RF")
+    pytest.raises(ValueError, atom.rf.scoring, metric="r2", dataset="unknown")
 
 
 def test_scoring_metric_acronym():
@@ -247,8 +247,8 @@ def test_scoring_custom_metrics(on_set):
 def test_scoring_invalid_metric():
     """Assert that invalid metrics return a string."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("OLS")
-    pytest.raises(ValueError, atom.ols.scoring, "roc_auc")
+    atom.run("RF")
+    pytest.raises(ValueError, atom.rf.scoring, "roc_auc")
 
 
 def test_scoring_kwargs():

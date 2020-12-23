@@ -37,7 +37,7 @@ from sklearn.feature_selection import (
 from .models import MODEL_LIST
 from .basetransformer import BaseTransformer
 from .data_cleaning import BaseCleaner, Scaler
-from .plots import FeatureSelectorPlotter
+from .plots import FSPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, lst,
     to_df, check_scaling, check_is_fitted, get_acronym, composed,
@@ -60,9 +60,9 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             - "GFG" or "genetic" to use Genetic Feature Generation.
 
     n_features: int or None, optional (default=None)
-        Number of newly generated features to add to the dataset (if
-        strategy="genetic", no more than 1% of the population). If
-        None, select all created.
+        Number of newly generated features to add to the dataset (no
+        more than 1% of the population for the genetic strategy). If
+        None, select all created features.
 
     generations: int, optional (default=20)
         Number of generations to evolve. Only for the genetic strategy.
@@ -96,8 +96,8 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -127,7 +127,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         operators: Optional[Union[str, SEQUENCE_TYPES]] = None,
         n_jobs: int = 1,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -145,7 +145,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
-        """Fit the feature generator to the data.
+        """Fit to data.
 
         Parameters
         ----------
@@ -304,7 +304,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Generate the new features.
+        """Generate new features.
 
         Parameters
         ----------
@@ -405,9 +405,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         return X
 
 
-class FeatureSelector(
-    BaseEstimator, BaseTransformer, BaseCleaner, FeatureSelectorPlotter
-):
+class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
     """Apply feature selection techniques.
 
     Remove features according to the selected strategy. Ties between
@@ -431,7 +429,7 @@ class FeatureSelector(
         Note that the RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
 
-    solver: str, callable or None, optional (default=None)
+    solver: str, estimator or None, optional (default=None)
         Solver or model to use for the feature selection strategy. See
         sklearn's documentation for an extended description of the
         choices. Select None for the default option per strategy (not
@@ -503,8 +501,8 @@ class FeatureSelector(
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -560,7 +558,7 @@ class FeatureSelector(
         max_correlation: Optional[float] = 1.0,
         n_jobs: int = 1,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -813,7 +811,7 @@ class FeatureSelector(
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the transformations on the data.
+        """Transform the data.
 
         Parameters
         ----------
@@ -826,7 +824,7 @@ class FeatureSelector(
         Returns
         -------
         X: pd.DataFrame
-            Copy of the feature dataset.
+            Transformed feature set.
 
         """
 

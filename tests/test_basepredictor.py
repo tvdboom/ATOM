@@ -62,7 +62,7 @@ def test_delattr_branch():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
     del atom.branch
-    assert list(atom._branches.keys()) == ["main"]
+    assert list(atom._branches.keys()) == ["master"]
 
 
 def test_delattr_normal():
@@ -109,36 +109,41 @@ def test_metric_property_no_run():
 def test_models_property():
     """Assert that the models_ property returns the model subclasses."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["lr", "lda"])
-    assert atom.models_ == [atom.LR, atom.LDA]
+    atom.run(["LR", "Tree"])
+    assert atom.models_ == [atom.LR, atom.Tree]
 
 
 def test_results_property_sorted():
     """Assert that the results property returns sorted indices."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.train_sizing("lr")
-    atom.train_sizing("lda")
+    atom.train_sizing("LR")
+    atom.train_sizing("Tree")
     assert list(atom.results.index.get_level_values("frac"))[:2] == [0.2, 0.2]
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.successive_halving(["LR", "RF"])
+    atom.successive_halving("Tree")
+    assert list(atom.results.index.get_level_values("n_models")) == [2, 2, 1, 1]
 
 
 def test_results_property_reindex():
     """Assert that the results property is reindexed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["lr", "lda", "knn", "rf"])
-    assert list(atom.results.index.get_level_values("model"))[-4:] == atom.models
+    atom.successive_halving(["LR", "KNN", "Tree", "RF"])
+    assert list(atom.results.index.get_level_values("model")) == atom.models
 
 
 def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("lr")
+    atom.run("LR")
     assert "mean_bagging" not in atom.results
 
 
 def test_winner_property():
     """Assert that the winner property returns the best model in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["lr", "lda", "lgb"], n_calls=0)
+    atom.run(["LR", "Tree", "LGB"], n_calls=0)
     assert atom.winner.acronym == "LGB"
 
 
@@ -411,6 +416,30 @@ def test_models_default():
     assert atom.results.empty
 
 
+def test_models_general_name():
+    """Assert that the general name selects all models from that acronym."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR1", "LR2"])
+    atom.delete("LR")
+    assert not atom.models
+
+
+def test_models_general_number():
+    """Assert that the general number selects all models with that number."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR0", "RF0"])
+    atom.delete("0")
+    assert not atom.models
+
+
+def test_models_handle_duplicates():
+    """Assert that duplicate models are ignored."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    atom.delete(["LR", "LR"])
+    assert not atom.models
+
+
 def test_invalid_model():
     """Assert that an error is raised when model is not in pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -421,19 +450,19 @@ def test_invalid_model():
 def test_models_is_str():
     """Assert that a single model is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LDA"])
-    atom.delete("lda")
+    atom.run(["LR", "Tree"])
+    atom.delete("Tree")
     assert atom.models == ["LR"]
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
-    assert not hasattr(atom, "LDA")
+    assert not hasattr(atom, "Tree")
 
 
 def test_models_is_sequence():
     """Assert that multiple models are deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LDA", "QDA"])
-    atom.delete(["LDA", "QDA"])
+    atom.run(["LR", "Tree", "RF"])
+    atom.delete(["Tree", "RF"])
     assert atom.models == ["LR"]
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
@@ -442,16 +471,16 @@ def test_models_is_sequence():
 def test_delete_successive_halving():
     """Assert that deleting works for successive halving pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["LR", "LDA", "QDA"], bagging=3)
-    atom.delete(["LR"])
-    assert "LR" not in atom.results.index.get_level_values(1)
-    assert atom.winner is atom.LDA
+    atom.successive_halving(["LR", "Tree", "RF"], bagging=3)
+    atom.delete(["LR0"])
+    assert "LR0" not in atom.results.index.get_level_values(1)
+    assert atom.winner is atom.lr1
 
 
 def test_delete_train_sizing():
     """Assert that deleting works for train sizing pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.train_sizing(["LR", "LDA", "QDA"])
+    atom.train_sizing(["LR", "Tree", "RF"])
     atom.delete()
     assert not (atom.models or atom.metric or atom._approach)
     assert atom.results.empty

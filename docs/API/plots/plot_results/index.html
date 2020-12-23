@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/plots/plot_bagging/">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/plots/plot_results/">
         <link rel="shortcut icon" href="../../../img/favicon.ico">
-        <title>plot_bagging - ATOM</title>
+        <title>plot_results - ATOM</title>
         <link href="../../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../../css/base.css" rel="stylesheet">
@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">plot_bagging</a>
+    <a href="./" class="dropdown-item active">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -534,7 +538,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#plot_bagging" class="nav-link">plot_bagging</a>
+            <li class="nav-item" data-level="1"><a href="#plot_results" class="nav-link">plot_results</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#example" class="nav-link">Example</a>
               <ul class="nav flex-column">
@@ -547,26 +551,27 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="plot_bagging">plot_bagging</h1>
+<h1 id="plot_results">plot_results</h1>
 <hr />
-<p><a name="atom"></a></p>
-<pre><em>method</em> <strong style="color:#008AB8">plot_bagging</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L548">[source]</a></div></pre>
-<div style="padding-left:3%">
-Plot a boxplot of the bagging's results. Only available for models fitted using
- [bagging](../../../user_guide/#bagging).
-<br /><br />
+<pre><em>method</em> <strong style="color:#008AB8">plot_results</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L706">[source]</a></div></pre>
+<p>Plot of the model results after the evaluation.
+If all models applied bagging, the plot will be a boxplot.
+If not, the plot will be a barplot. Models are ordered based
+on their score from the top down. The score is either the
+<code>mean_bagging</code> or <code>metric_test</code> attribute of the model,
+selected in that order.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Name of the models to plot. If None, all models in the pipeline that used bagging are selected.
+Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: int or str, optional (default=0)</strong>
 <blockquote>
-Index or name of the metric to plot. Only for [multi-metric](../../../user_guide/#metric) runs.
+Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -586,18 +591,25 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br /></p>
 <h2 id="example">Example</h2>
 <hr />
 <pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run([&quot;LR&quot;, &quot;Tree&quot;, &quot;LGB&quot;, &quot;MLP&quot;], metric=&quot;accuracy&quot;, bagging=5)
-atom.plot_bagging()
+atom.run([&quot;QDA&quot;, &quot;Tree&quot;, &quot;RF&quot;, &quot;ET&quot;, &quot;LGB&quot;], metric=&quot;f1&quot;, bagging=5)
+atom.plot_results()  # With bagging...
 </code></pre>
 <div align="center">
-    <img src="../../../img/plots/plot_bagging.png" alt="plot_bagging" width="700" height="420"/>
+    <img src="../../../img/plots/plot_results_1.png" alt="plot_results" width="700" height="420"/>
+</div>
+
+<pre><code class="language-python"># And without bagging...
+atom.run([&quot;QDA&quot;, &quot;Tree&quot;, &quot;RF&quot;, &quot;ET&quot;, &quot;LGB&quot;], metric=&quot;f1&quot;, bagging=0)
+atom.plot_results()
+</code></pre>
+<div align="center">
+    <img src="../../../img/plots/plot_results_2.png" alt="plot_results" width="700" height="420"/>
 </div></div>
             </div>
         </div>

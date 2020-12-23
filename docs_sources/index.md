@@ -18,7 +18,7 @@ There is no magic formula in data science that can tell us which type of machine
  if you are not satisfied with the results. Unfortunately, different models require
  different data cleaning steps, different type/amount of features, tuning a new set
  of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
- and time consuming. Because of this, many data scientists end up just using the model
+ and time-consuming. Because of this, many data scientists end up just using the model
  best known to them and fine-tuning this particular model without ever trying different
  ones. This can result in poor performance (because the model is just not the right one
  for the task) or in poor time management (because you could have achieved a similar
@@ -107,7 +107,9 @@ Example steps taken by ATOM's pipeline:
 * [Successive halving](./user_guide/#successive-halving) and [Train sizing](./user_guide/#train-sizing)
   now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
-* Added the <a href="./examples/utilities.html" target="_blank">Utilities</a> and <a href="./examples/deep_learning.html" target="_blank">Deep learning</a> example notebooks.
+* Added the <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>, 
+  <a href="./examples/ensembles.html" target="_blank">Ensembles</a> and
+  <a href="./examples/utilities.html" target="_blank">Utilities</a> example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
@@ -241,7 +243,7 @@ Example steps taken by ATOM's pipeline:
         - [plot_rfecv](./API/plots/plot_rfecv)
         - [plot_successive_halving](./API/plots/plot_successive_halving)
         - [plot_learning_curve](./API/plots/plot_learning_curve)
-        - [plot_bagging](./API/plots/plot_bagging)
+        - [plot_results](./API/plots/plot_results)
         - [plot_bo](./API/plots/plot_bo)
         - [plot_evals](./API/plots/plot_evals)
         - [plot_roc](./API/plots/plot_roc)
@@ -273,6 +275,7 @@ Example steps taken by ATOM's pipeline:
     - <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
     - <a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a>
     - <a href="./examples/early_stopping.html" target="_blank">Early stopping</a>
+    - <a href="./examples/ensembles.html" target="_blank">Ensembles</a>
     - <a href="./examples/calibration.html" target="_blank">Calibration</a>
     - <a href="./examples/utilities.html" target="_blank">Utilities</a>
 - [Dependencies](./dependencies)

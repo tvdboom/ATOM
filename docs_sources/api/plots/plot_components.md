@@ -1,13 +1,10 @@
 # plot_components
 -----------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L415">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L553">[source]</a></div></pre>
 Plot the explained variance ratio per components. Only available if PCA was applied
  on the data.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -22,7 +19,7 @@ Plot's title. If None, the default option is used.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to `show` parameter.
+Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
@@ -34,7 +31,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

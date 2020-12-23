@@ -98,6 +98,8 @@ def test_vote_prediction_attrs():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(models=["Tree", "RF"])
     atom.voting()
+    assert isinstance(atom.vote.metric_train, np.float64)
+    assert isinstance(atom.vote.metric_test, np.float64)
     assert isinstance(atom.vote.predict_train, np.ndarray)
     assert isinstance(atom.vote.predict_test, np.ndarray)
     assert isinstance(atom.vote.predict_proba_train, np.ndarray)

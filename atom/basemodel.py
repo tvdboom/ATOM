@@ -10,6 +10,7 @@ Description: Module containing the BaseModel class.
 # Standard packages
 import pickle
 import numpy as np
+import pandas as pd
 from typeguard import typechecked
 from typing import Optional
 from sklearn.metrics import SCORERS, confusion_matrix
@@ -233,42 +234,30 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def dataset(self):
-        if self.scaler:
-            return merge(self.scaler.transform(self.branch.X), self.y)
-        else:
-            return self.branch.data
+        return merge(self.X, self.y)
 
     @property
     def train(self):
-        if self.scaler:
-            return merge(self.scaler.transform(self.branch.X_train), self.y_train)
-        else:
-            return self.branch.train
+        return merge(self.X_train, self.y_train)
 
     @property
     def test(self):
-        if self.scaler:
-            return merge(self.scaler.transform(self.branch.X_test), self.y_test)
-        else:
-            return self.branch.test
+        return merge(self.X_test, self.y_test)
 
     @property
     def X(self):
-        if self.scaler:
-            return self.scaler.transform(self.branch.X)
-        else:
-            return self.branch.X
+        return pd.concat([self.X_train, self.X_test])
 
     @property
     def y(self):
-        return self.branch.y
+        return pd.concat([self.y_train, self.y_test])
 
     @property
     def X_train(self):
         if self.scaler:
-            return self.scaler.transform(self.branch.X_train)
+            return self.scaler.transform(self.branch.X_train[:self._train_idx])
         else:
-            return self.branch.X_train
+            return self.branch.X_train[:self._train_idx]
 
     @property
     def X_test(self):
@@ -279,7 +268,7 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def y_train(self):
-        return self.branch.y_train
+        return self.branch.y_train[:self._train_idx]
 
     @property
     def y_test(self):
@@ -287,7 +276,7 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def shape(self):
-        return self.branch.shape
+        return self.dataset.shape
 
     @property
     def columns(self):
@@ -303,11 +292,17 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def classes(self):
-        return self.branch.classes
+        df = pd.DataFrame({
+            "dataset": self.y.value_counts(sort=False, dropna=False),
+            "train": self.y_train.value_counts(sort=False, dropna=False),
+            "test": self.y_test.value_counts(sort=False, dropna=False),
+        }, index=self.branch.mapping.values())
+
+        return df.fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
 
     @property
     def n_classes(self):
-        return self.branch.n_classes
+        return len(self.y.unique())
 
     # Utility methods ============================================== >>
 

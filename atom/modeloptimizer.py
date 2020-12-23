@@ -55,6 +55,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
             self.branch = self.T._branches[self.T._current]
+            self._train_idx = self.branch.idx[0]  # Can change for sh and ts
             if self.needs_scaling and not check_scaling(self.branch.X):
                 self.scaler = Scaler().fit(self.branch.X_train)
 
@@ -81,7 +82,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.time_bo = None
         self.metric_train = None
         self.metric_test = None
-        self.metric_bagging = []
+        self.metric_bagging = None
         self.mean_bagging = None
         self.std_bagging = None
         self.time_bagging = None
@@ -148,7 +149,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         Search for the best combination of hyperparameters. The
         function to optimize is evaluated either with a K-fold
         cross-validation on the training set or using a different
-        validation set every iteration.
+        split for train and validation set every iteration.
 
         Parameters
         ----------
@@ -203,7 +204,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     the distance between the last consecutive steps.
                     Don't forget to call `%matplotlib` at the start of
                     the cell if you are using an interactive notebook!
-                - Any other parameter for skopt's optimizer.
+                - Additional keyword arguments for skopt's optimizer.
 
         """
 
@@ -632,14 +633,14 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Append metric result to list
             self.metric_bagging.append(scores)
 
-        # Numpy array for mean and std
         # Separate for multi-metric to transform numpy types in python types
         if len(self.T.metric_) == 1:
             self.mean_bagging = np.mean(self.metric_bagging, axis=0).item()
             self.std_bagging = np.std(self.metric_bagging, axis=0).item()
         else:
-            self.mean_bagging = np.mean(self.metric_bagging, axis=0).tolist()
-            self.std_bagging = np.std(self.metric_bagging, axis=0).tolist()
+            self.metric_bagging = list(zip(*self.metric_bagging))
+            self.mean_bagging = np.mean(self.metric_bagging, axis=1).tolist()
+            self.std_bagging = np.std(self.metric_bagging, axis=1).tolist()
 
         self.T.log("Bagging -----------------------------------------", 1)
         out = [

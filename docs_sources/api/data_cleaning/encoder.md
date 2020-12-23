@@ -1,11 +1,9 @@
 # Encoder
---------
+---------
 
-<a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L548">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L603">[source]</a></div></pre>
 Perform encoding of categorical features. The encoding type depends on the number
  of unique values in the column:
 
@@ -19,7 +17,6 @@ Also replaces classes with low occurrences with the value `other` in
  missing values or unknown classes when transforming. This class can be accessed
  from atom through the [encode](../../ATOM/atomclassifier/#encode)
  method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
-<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -27,22 +24,22 @@ Also replaces classes with low occurrences with the value `other` in
 <strong>strategy: str, optional (default="LeaveOneOut")</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
- estimators available in the [category-encoders](http://contrib.scikit-learn.org/category_encoders/)
+ estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
  package except for:
 <ul>
-<li>OneHotEncoder: Use the `max_onehot` parameter.</li>
+<li>OneHotEncoder: Use the <code>max_onehot</code> parameter.</li>
 <li>HashingEncoder: Incompatibility of APIs.</li>
 </ul>
 </blockquote>
 <strong>max_onehot: int or None, optional (default=10)</strong>
 <blockquote>
 Maximum number of unique values in a feature to perform one-hot-encoding.
- If None, it will always use `strategy` when n_unique > 2.
+ If None, it will always use <code>strategy</code> when n_unique > 2.
 </blockquote>
 <strong>frac_to_other: float, optional (default=None)</strong>
 <blockquote>
-Classes with less occurrences than n_rows * `fraction_to_other` are replaced
- with the string `other`. If None, skip this step.
+Classes with less occurrences than n_rows * <code>frac_to_other</code> are replaced
+ with the string <code>other</code>. If None, skip this step.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -53,23 +50,23 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by the
+ timestamp of the logger's creation.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Additional keyword arguments passed to the `strategy` estimator.
+Additional keyword arguments passed to the <code>strategy</code> estimator.
 </blockquote>
 </td>
 </tr>
 </table>
-</div>
 <br>
 
 !!!tip
@@ -85,12 +82,12 @@ Additional keyword arguments passed to the `strategy` estimator.
 <table>
 <tr>
 <td><a href="#fit">fit</a></td>
-<td>Fit the class.</td>
+<td>Fit to data.</td>
 </tr>
 
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
-<td>Fit the class and return the transformed data.</td>
+<td>Fit to data, then transform it.</td>
 </tr>
 
 <tr>
@@ -124,20 +121,17 @@ Additional keyword arguments passed to the `strategy` estimator.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L612">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the class.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L675">[source]</a></div></pre>
+Fit to data.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -160,20 +154,17 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the Encoder and return the encoded data.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+Fit to data, then transform it.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If int: Index of the target column in X.</li>
@@ -196,10 +187,7 @@ Transformed feature set.
 <a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
 Get parameters for this estimator.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -223,10 +211,8 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -237,46 +223,39 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file.
-<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <br>
 
 
 <a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 Set the parameters of this estimator.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -295,20 +274,17 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L692">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L754">[source]</a></div></pre>
 Encode the data.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>

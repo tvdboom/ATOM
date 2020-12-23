@@ -1,13 +1,10 @@
 # plot_pca
 ----------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L360">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L492">[source]</a></div></pre>
 Plot the explained variance ratio vs the number of components. Only available if PCA
  was applied on the data.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -30,7 +27,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

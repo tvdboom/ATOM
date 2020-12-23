@@ -35,7 +35,7 @@ class BasePredictor(object):
             return getattr(self.branch, item)
         else:
             raise AttributeError(
-                f"'{self.__class__.__name__}' object has no attribute '{item}'"
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
             )
 
     def __setattr__(self, item, value):
@@ -76,12 +76,13 @@ class BasePredictor(object):
 
     @property
     def results(self):
-        """Return the results dataframe ordered and without empty columns."""
+        """Return the results dataframe without empty columns."""
         df = self._results
 
-        # If multi-index, invert the runs and reindex the models
+        # Combine and order possible different runs
         if isinstance(df.index, pd.MultiIndex):
-            df = df.sort_index(level=0).reindex(self.models, level=1)
+            asc = True if df.index.names[0] == "frac" else False
+            df = df.sort_index(level=0, ascending=asc).reindex(self.models, level=1)
 
         return df.dropna(axis=1, how="all")
 
@@ -138,32 +139,63 @@ class BasePredictor(object):
     # Utility methods ============================================== >>
 
     def _get_model_name(self, model):
-        """Return a model's name. Case insensitive."""
-        for name in self.models:
-            if model.lower() == name.lower():
-                return name
+        """Return a model's name.
 
-        raise ValueError(
-            f"Model {model} not found in the pipeline! Available "
-            f"models are: {', '.join(self.models)}."
-        )
+         If there are multiple models that start with the same
+         acronym, all will be return. If the input is a number,
+         select all models that end with that number. The input
+         is case insensitive.
+
+         """
+        to_return = []
+        for name in self.models:
+            condition_1 = name.lower().startswith(model)
+            condition_2 = model.isdigit() and name.endswith(model)
+            if condition_1 or condition_2:
+                to_return.append(name)
+
+        if to_return:
+            return to_return
+        else:
+            raise ValueError(
+                f"Model {model} not found in the pipeline! The "
+                f"available models are: {', '.join(self.models)}."
+            )
 
     def _get_models(self, models):
         """Return models in the pipeline."""
         if not models:
             return self.models.copy()
         elif isinstance(models, str):
-            return [self._get_model_name(models)]
+            return self._get_model_name(models.lower())
         else:
-            return [self._get_model_name(m) for m in models]
+            to_return = []
+            for m1 in models:
+                for m2 in self._get_model_name(m1.lower()):
+                    to_return.append(m2)
+
+            return list(dict.fromkeys(to_return))
 
     @composed(crash, method_to_log, typechecked)
     def voting(
         self,
-        models: Optional[SEQUENCE_TYPES] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         weights: Optional[SEQUENCE_TYPES] = None,
     ):
-        """Add a Voting instance to the models in the pipeline."""
+        """Add a Voting instance to the models in the pipeline.
+
+        Parameters
+        ----------
+        models: sequence or None, optional (default=None)
+            Models that feed the voting.
+
+        weights: sequence or None, optional (default=None)
+            Sequence of weights (int or float) to weight the
+            occurrences of predicted class labels (hard voting)
+            or class probabilities before averaging (soft voting).
+            Uses uniform weights if None.
+
+        """
         check_is_fitted(self, "results")
 
         if not models:
@@ -180,12 +212,37 @@ class BasePredictor(object):
     @composed(crash, method_to_log, typechecked)
     def stacking(
         self,
-        models: Optional[SEQUENCE_TYPES] = None,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         estimator: Optional[Union[str, callable]] = None,
         stack_method: str = "auto",
         passthrough: bool = False,
     ):
-        """Add a Stacking instance to the models in the pipeline."""
+        """Add a Stacking instance to the models in the pipeline.
+
+        Parameters
+        ----------
+        models: sequence or None, optional (default=None)
+            Models that feed the stacking.
+
+        estimator: str, callable or None, optional (default=None)
+            The final estimator, which will be used to combine the base
+            estimators. If str, choose from ATOM's predefined models.
+            If None, a default estimator is selected:
+                - LogisticRegression for classification tasks.
+                - Ridge for regression tasks.
+
+        stack_method: str, optional (default="auto")
+            Methods called for each base estimator. If "auto", it will
+            try to invoke `predict_proba`, `decision_function` or
+            `predict` in that order.
+
+        passthrough: bool, optional (default=False)
+            When False, only the predictions of estimators will be used
+            as training data for the final estimator. When True, the
+            estimator is trained on the predictions as well as the
+            original training data.
+
+        """
         check_is_fitted(self, "results")
 
         if not models:
@@ -205,7 +262,7 @@ class BasePredictor(object):
 
     @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train"):
-        """Return class weights for a balanced data set.
+        """Return class weights for a balanced dataset.
 
         Statistically, the class weights re-balance the data set so
         that the sampled data set represents the target population

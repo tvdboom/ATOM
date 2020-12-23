@@ -8,8 +8,11 @@ Description: Module containing the training classes.
 """
 
 # Standard packages
+import os
+import contextlib
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from typeguard import typechecked
 from typing import Optional, Union
 from sklearn.base import BaseEstimator
@@ -129,9 +132,8 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             )
         elif self.skip_runs >= n_models // 2 + 1:
             raise ValueError(
-                "Invalid value for the skip_runs parameter. Less than 1 "
-                f"run remaining, got n_runs={n_models//2 + 1} and "
-                f"skip_runs={self.skip_runs}."
+                "Invalid value for the skip_runs parameter. Less than 1 run remaining "
+                f", got n_runs={n_models//2 + 1} and skip_runs={self.skip_runs}."
             )
 
         self.log("\nTraining ===================================== >>", 1)
@@ -139,10 +141,18 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
         run = 0
         results = []  # List of dataframes returned by self._run
-        _train_idx = self.branch.idx[0]  # Save the size of the original training set
-        while len(self.models) > 2 ** self.skip_runs - 1:
-            # Select 1/N of training set to use for this iteration
-            self.branch.idx[0] = int(1.0 / len(self.models) * _train_idx)
+        _all_models = []
+        _next_models = [f"{m}_" for m in self.models]
+        while len(_next_models) > 2 ** self.skip_runs - 1:
+            self.models = [f"{m[:-1]}{run}" for m in _next_models]
+            _all_models += self.models
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                for m in self.models:
+                    subclass = deepcopy(getattr(self, m[:-1]))
+                    subclass.name = m
+                    subclass._train_idx = int(1.0 / len(self.models) * len(self.train))
+                    setattr(self, m, subclass)
+                    setattr(self, m.lower(), subclass)
 
             # Print stats for this subset of the data
             p = round(100.0 / len(self.models))
@@ -158,7 +168,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             # Select best models for halving
             best = df.apply(lambda row: get_best_score(row), axis=1)
             best = best.nlargest(n=len(self.models) // 2, keep="first")
-            self.models = list(best.index.values)
+            _next_models = [m for m in df.index if m in best.index]
 
             run += 1
 
@@ -169,9 +179,11 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             names=("n_models", "model"),
         )
 
-        # Renew self.models and restore the training set
-        self.models = list(self._results.index.unique(1).values)
-        self.branch.idx[0] = _train_idx
+        # Restore original models
+        self.models = _all_models
+        for m in self._get_models("0"):
+            del self.__dict__[m[:-1]]
+            del self.__dict__[m[:-1].lower()]
 
 
 class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
@@ -229,20 +241,31 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         frac = []  # Fraction of the training set used in evey run
         results = []  # List of dataframes returned by self._run
-        _train_idx = self.branch.idx[0]  # Save the size of the original training set
+        _all_models = []
+        _models = self.models.copy()
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
                 frac.append(round(size, 3))
-                self.branch.idx[0] = int(size * _train_idx)
+                train_size = int(size * self.branch.idx[0])
             else:
-                frac.append(round(size / _train_idx, 3))
-                self.branch.idx[0] = size
+                frac.append(round(size / self.branch.idx[0], 3))
+                train_size = size
+
+            self.models = [f"{m}{run}" for m in _models]
+            _all_models += self.models
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                for i, m in enumerate(self.models):
+                    subclass = deepcopy(getattr(self, _models[i]))
+                    subclass.name = m
+                    subclass._train_idx = train_size
+                    setattr(self, m, subclass)
+                    setattr(self, m.lower(), subclass)
 
             # Print stats for this subset of the data
-            p = round(len(self.train) * 100.0 / _train_idx)
+            p = round(train_size * 100.0 / self.branch.idx[0])
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
-            self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
+            self.log(f"Size of training set: {train_size} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             # Run iteration and append to the results list
@@ -253,7 +276,11 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
             objs=[df for df in results], keys=frac, names=("frac", "model")
         )
 
-        self.branch.idx[0] = _train_idx  # Restore original training set
+        # Restore original models
+        self.models = _all_models
+        for m in _models:
+            del self.__dict__[m]
+            del self.__dict__[m.lower()]
 
 
 class DirectClassifier(Direct):

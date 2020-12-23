@@ -224,9 +224,9 @@ def test_bagging_attribute_types():
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("XGB", metric=("f1", "auc", "recall"), bagging=5)
-    assert isinstance(atom.xgb.metric_bagging, list)
-    assert isinstance(atom.xgb.mean_bagging, list)
+    atom.run("LGB", metric=("f1", "auc", "recall"), bagging=5)
+    assert isinstance(atom.lgb.metric_bagging[0], tuple)
+    assert isinstance(atom.lgb.mean_bagging, list)
 
 
 # Test utility methods ============================================= >>

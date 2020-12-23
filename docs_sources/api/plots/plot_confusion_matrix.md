@@ -1,11 +1,9 @@
 # plot_confusion_matrix
 -----------------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset="test", normalize=False,
                              title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1469">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1714">[source]</a></div></pre>
 Plot a model's confusion matrix. Only for classification tasks.
 
 * For 1 model: plot the confusion matrix in a heatmap.
@@ -15,7 +13,7 @@ Plot a model's confusion matrix. Only for classification tasks.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
@@ -45,7 +43,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
@@ -62,6 +59,7 @@ atom.Tree.plot_confusion_matrix(normalize=True)
 <div align="center">
     <img src="../../../img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="560"/>
 </div>
+
 ```python
 atom.plot_confusion_matrix()
 ```

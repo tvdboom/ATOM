@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="../../plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="../../plots/plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -557,35 +561,33 @@
 
 <h1 id="cleaner">Cleaner</h1>
 <hr />
-<p><a name="atom"></a></p>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
                                  minimum_cardinality=True, missing_target=True, encode_target=True,
                                  verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L141">[source]</a></div></pre>
-<div style="padding-left:3%">
-Performs standard data cleaning steps on a dataset. Use the parameters to choose
- which transformations to perform. The available steps are:
-
-  * Remove columns with prohibited data types.
-  * Strip categorical features from white spaces.
-  * Remove categorical columns with maximal cardinality.
-  * Remove columns with minimum cardinality.
-  * Remove rows with missing values in the target column.
-  * Encode the target column.
-
-This class can be accessed from atom through the [clean](../../ATOM/atomclassifier/#clean)
- method. Read more in the [user guide](../../../user_guide/#standard-data-cleaning).
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L151">[source]</a></div></pre>
+<p>Performs standard data cleaning steps on a dataset. Use the parameters to choose
+ which transformations to perform. The available steps are:</p>
+<ul>
+<li>Remove columns with prohibited data types.</li>
+<li>Strip categorical features from white spaces.</li>
+<li>Remove categorical columns with maximal cardinality.</li>
+<li>Remove columns with minimum cardinality.</li>
+<li>Remove rows with missing values in the target column.</li>
+<li>Encode the target column.</li>
+</ul>
+<p>This class can be accessed from atom through the <a href="../../ATOM/atomclassifier/#clean">clean</a>
+ method. Read more in the <a href="../../../user_guide/#standard-data-cleaning">user guide</a>.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>prohibited_types: str, iterable or None, optional (default=None)</strong>
+<strong>prohibited_types: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Columns with any of these types will be removed from the dataset.
+Columns with these types will be removed from the dataset.
 </blockquote>
 <strong>strip_categorical: bool, optional (default=True)</strong>
 <blockquote>
-Whether to strip the spaces from values in the categorical columns.
+Whether to strip the spaces from the categorical columns.
 </blockquote>
 <strong>maximum_cardinality: bool, optional (default=True)</strong>
 <blockquote>
@@ -601,11 +603,11 @@ Whether to remove columns with minimum cardinality, i.e. all values in the
 <strong>missing_target: bool, optional (default=True)</strong>
 <blockquote>
 Whether to remove rows with missing values in the target column.
- Ignored if y is not provided.
+ Is ignored if y is not provided.
 </blockquote>
 <strong>encode_target: bool, optional (default=True)</strong>
 <blockquote>
-Whether to Label-encode the target column. Ignored if y is not provided.
+Whether to Label-encode the target column. Is ignored if y is not provided.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -616,33 +618,32 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by
+ the timestamp of the logger's creation.
 </blockquote>
 </td>
 </tr>
 </table>
-</div>
 <p><br></p>
 <h2 id="attributes">Attributes</h2>
 <hr />
-<p><a name="atom"></a></p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
 <strong>missing: list</strong>
 <blockquote>
-List of values that are considered "missing". Default values are: "", "?",
- "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf`
- are always considered missing since they are incompatible with sklearn
- estimators.
+List of values that are considered "missing". Default values are: "",
+ "?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
+ <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
+considered missing since they are incompatible with sklearn estimators.
 </blockquote>
 <strong>mapping: dict</strong>
 <blockquote>
@@ -690,20 +691,17 @@ Dictionary of the target values mapped to their respective encoded integer.
 <p><br></p>
 <p><a name="fit-transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Apply the data cleaning steps on the data.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+<p>Fit to data, then transform it.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>
@@ -730,10 +728,7 @@ Transformed target column. Only returned if provided.
 <p><a name="get-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
-Get parameters for this estimator.
-<br><br>
-</div>
+<p>Get parameters for this estimator.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -755,10 +750,8 @@ Dictionary of the parameter names mapped to their values.
 <p><br /></p>
 <p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
-Write a message to the logger and print it to stdout.
-<br /><br />
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<p>Write a message to the logger and print it to stdout.</p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -769,29 +762,25 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br /></p>
 <p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
-Save the instance to a pickle file.
-<br><br>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<p>Save the instance to a pickle file.</p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br></p>
 <p><a name="set-params"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
@@ -804,7 +793,7 @@ Set the parameters of this estimator.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -821,20 +810,17 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L213">[source]</a></div></pre>
-<div style="padding-left:3%">
-Apply the data cleaning steps on the data.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L239">[source]</a></div></pre>
+<p>Apply the data cleaning steps on the data.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>
@@ -863,12 +849,12 @@ Transformed target column. Only returned if provided.
 <pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.clean()
+atom.clean(maximum_cardinality=False)
 </code></pre>
 <p>or</p>
 <pre><code class="language-python">from atom.data_cleaning import Cleaner
 
-cleaner = Cleaner(prohibited_types=&quot;datetime64&quot;, maximum_cardinality=False)
+cleaner = Cleaner(maximum_cardinality=False)
 X, y = cleaner.transform(X, y)
 </code></pre></div>
             </div>

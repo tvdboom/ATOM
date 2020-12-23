@@ -2,14 +2,12 @@
 ----------
 
 <a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, \*\*kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L899">[source]</a></div></pre>
-<div style="padding-left:3%">
-Balance the number of rows per target class. Use only for classification tasks.
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L966">[source]</a></div></pre>
+Balance the number of rows per class in the target column. Use only for classification tasks.
 This class can be accessed from atom through the
  [balance](../../ATOM/atomclassifier/#balance) method. Read more in
  the [user guide](../../../user_guide/#balancing-the-data).
-<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -17,7 +15,7 @@ This class can be accessed from atom through the
 <strong>strategy: str, optional (default="ADASYN")</strong>
 <blockquote>
 Type of algorithm to use for oversampling or undersampling. Choose from one
- of the estimators available in the [imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/index.html)
+ of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
  package.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
@@ -40,28 +38,28 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by the
+ timestamp of the logger's creation.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the `RandomState` instance used by `numpy.random`.
+ generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Additional keyword arguments passed to the `strategy` estimator.
+Additional keyword arguments passed to the <code>strategy</code> estimator.
 </blockquote>
 </td>
 </tr>
 </table>
-</div>
 <br>
 
 
@@ -70,7 +68,6 @@ Additional keyword arguments passed to the `strategy` estimator.
 ## Attributes
 -------------
 
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -78,7 +75,7 @@ Additional keyword arguments passed to the `strategy` estimator.
 <strong>&lt;estimator_name&gt;: class</strong>
 <blockquote>
 Estimator instance (attribute name in all lowercase) used to oversample/undersample
- the data, e.g. `balancer.adasyn` for the default option.
+ the data, e.g. <code>balancer.adasyn</code> for the default option.
 </blockquote>
 <strong>mapping: dict</strong>
 <blockquote>
@@ -94,11 +91,6 @@ Dictionary of the target values mapped to their respective encoded integer.
 ---------
 
 <table>
-<tr>
-<td><a href="#fit-transform">fit_transform</a></td>
-<td>Same as transform.</td>
-</tr>
-
 <tr>
 <td><a href="#get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
@@ -127,52 +119,10 @@ Dictionary of the target values mapped to their respective encoded integer.
 <br>
 
 
-<a name="fit-transform"></a>
-<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Oversample or undersample the data.
-<br><br>
-</div>
-<table>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
-<blockquote>
-Feature set with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str or sequence</strong>
-<blockquote>
-<ul>
-<li>If int: Index of the target column in X.</li>
-<li>If str: Name of the target column in X.</li>
-<li>Else: Target column with shape=(n_samples,).</li>
-</ul>
-</blockquote>
-</tr>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: pd.DataFrame</strong>
-<blockquote>
-Transformed feature set.
-</blockquote>
-<strong>X: pd.Series</strong>
-<blockquote>
-Transformed target column.
-</blockquote>
-</tr>
-</table>
-<br />
-
 <a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
 Get parameters for this estimator.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -196,10 +146,8 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -210,46 +158,39 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file.
-<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <br>
 
 
 <a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L2155">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
 Set the parameters of this estimator.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -268,16 +209,13 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L958">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1040">[source]</a></div></pre>
 Oversample or undersample the data.
-<br><br>
-</div>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>

@@ -52,6 +52,6 @@ atom.run(
 Make plots to analyze the results: 
 
 ```Python
-atom.plot_bagging(figsize=(9, 6), filename="bagging_results.png")  
+atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
 atom.LDA.plot_confusion_matrix(normalize=True, filename="cm.png")
 ```

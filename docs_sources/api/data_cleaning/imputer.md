@@ -1,17 +1,15 @@
 # Imputer
 ---------
 
-<a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
                                  min_frac_cols=0.5, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L300">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L334">[source]</a></div></pre>
 Impute or remove missing values according to the selected strategy.
- Also removes rows and columns with too many missing values. Use the
- `missing` attribute to customize what are considered "missing values".
- This class can be accessed from atom through the [impute](../../ATOM/atomclassifier/#impute)
- method. Read more in the [user guide](../../../user_guide/#imputing-missing-values).
-<br /><br />
+ Also removes rows and columns with too many missing values. Use
+ the `missing` attribute to customize what are considered "missing
+ values". This class can be accessed from atom through the
+ [impute](../../ATOM/atomclassifier/#impute) method. Read more in the
+ [user guide](../../../user_guide/#imputing-missing-values).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -54,19 +52,19 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by the
+ timestamp of the logger's creation.
 </blockquote>
 </td>
 </tr>
 </table>
-</div>
 <br>
 
 !!!tip
@@ -80,22 +78,22 @@ Verbosity level of the class. Possible values are:
 ## Attributes
 -------------
 
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
 <strong>missing: list</strong>
 <blockquote>
-List of values that are considered "missing". Default values are: "", "?",
- "None", "NA", "nan", "NaN" and "inf". Note that `None`, `NaN`, `+inf` and `-inf`
- are always considered missing since they are incompatible with sklearn
- estimators.
+List of values that are considered "missing". Default values are: "",
+ "?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
+ <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
+considered missing since they are incompatible with sklearn estimators.
 </blockquote>
 </td>
 </tr>
 </table>
 <br>
+
 
 
 ## Methods
@@ -104,12 +102,12 @@ List of values that are considered "missing". Default values are: "", "?",
 <table width="100%">
 <tr>
 <td><a href="#fit">fit</a></td>
-<td>Fit the class.</td>
+<td>Fit to data.</td>
 </tr>
 
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
-<td>Fit the class and return the transformed data.</td>
+<td>Fit to data, then transform it.</td>
 </tr>
 
 <tr>
@@ -143,20 +141,17 @@ List of values that are considered "missing". Default values are: "", "?",
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L370">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the class.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L411">[source]</a></div></pre>
+Fit to data.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array, pd.Series or None, optional (default=None)</strong>
+<strong>y: int, str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Does nothing. Implemented for continuity of the API.
 </blockquote>
@@ -175,24 +170,19 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the Imputer and return the imputed data.
- 
-!!!warning
-    Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped during the transformation.
-
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+Fit the Imputer and return the imputed data. Note that leaving y=None
+ can lead to inconsistencies in data length between X and y if rows are
+ dropped during the transformation.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>
@@ -220,10 +210,7 @@ Transformed target column. Only returned if provided.
 <a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
 Get parameters for this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -248,10 +235,8 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -262,46 +247,39 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file.
-<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <br>
 
 
 <a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
-<div style="padding-left:3%">
 Set the parameters of this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -320,24 +298,18 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L445">[source]</a></div></pre>
-<div style="padding-left:3%">
-Impute the data.
-
-!!!warning
-    Leaving `y=None` can lead to inconsistencies in data length between X and y
-    if rows are dropped during the transformation.
-
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L482">[source]</a></div></pre>
+Impute the data. Note that leaving y=None can lead to inconsistencies in
+ data length between X and y if rows are dropped during the transformation.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
-<strong>y: int, str, sequence, np.array or pd.Series</strong>
+<strong>y: int, str or sequence</strong>
 <blockquote>
 <ul>
 <li>If None: y is ignored.</li>

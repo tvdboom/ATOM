@@ -180,9 +180,7 @@ def test_plot_successive_halving():
     atom.run("LGB")
     pytest.raises(PermissionError, atom.plot_successive_halving)
     atom.delete()  # Clear the pipeline to allow sh
-    atom.successive_halving(
-        models=["OLS", "KNN", "ARD", "Bag", "RF", "LGB"], metric="max_error", bagging=4
-    )
+    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"], bagging=4)
     pytest.raises(ValueError, atom.plot_successive_halving, models="unknown")
     pytest.raises(ValueError, atom.plot_successive_halving, models="BR")
     pytest.raises(ValueError, atom.plot_successive_halving, metric="unknown")
@@ -192,11 +190,8 @@ def test_plot_successive_halving():
     atom.plot_successive_halving(
         filename=FILE_DIR + "successive_halving_1", display=False
     )
-    atom.successive_halving(
-        models=["OLS", "KNN", "Tree", "Bag", "ET", "RF", "XGB", "LGB", "CatB"],
-        metric="max_error",
-    )
-    atom.lgb.plot_successive_halving(
+    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"])
+    atom.plot_successive_halving(
         filename=FILE_DIR + "successive_halving_2", display=False
     )
     assert glob.glob(FILE_DIR + "successive_halving_1.png")
@@ -211,25 +206,30 @@ def test_plot_learning_curve():
     pytest.raises(PermissionError, atom.plot_learning_curve)
     atom.delete()  # Clear the pipeline to allow ts
     atom.train_sizing(["Tree", "LGB"], metric="max_error", bagging=4)
-    atom.plot_learning_curve(filename=FILE_DIR + "train_sizing_1", display=False)
-    atom.train_sizing(["Tree", "LGB"], metric="max_error")
-    atom.lgb.plot_learning_curve(filename=FILE_DIR + "train_sizing_2", display=False)
-    assert glob.glob(FILE_DIR + "train_sizing_1.png")
-    assert glob.glob(FILE_DIR + "train_sizing_2.png")
+    atom.plot_learning_curve(filename=FILE_DIR + "train_sizing", display=False)
+    assert glob.glob(FILE_DIR + "train_sizing.png")
 
 
 @pytest.mark.parametrize("metric", ["me", ["me", "r2"]])
-def test_plot_bagging(metric):
-    """Assert that the plot_bagging method work as intended."""
+def test_plot_results(metric):
+    """Assert that the plot_results method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.plot_bagging)
-    atom.run("Tree", metric=metric, bagging=0)
-    pytest.raises(PermissionError, atom.plot_bagging, models="Tree")  # No bagging
-    atom.run("Tree", metric=metric, bagging=3)
-    atom.plot_bagging(metric="me", filename=FILE_DIR + "bagging_1", display=False)
-    atom.tree.plot_bagging(filename=FILE_DIR + "bagging_2", display=False)
+    pytest.raises(NotFittedError, atom.plot_results)
+
+    # Without bagging
+    atom.run(["Tree", "LGB"], metric=metric, bagging=0)
+    atom.voting()
+    atom.plot_results(metric="me", filename=FILE_DIR + "bagging_1", display=False)
+    atom.tree.plot_results(filename=FILE_DIR + "bagging_2", display=False)
     assert glob.glob(FILE_DIR + "bagging_1.png")
     assert glob.glob(FILE_DIR + "bagging_2.png")
+
+    # With bagging
+    atom.run("Tree", metric=metric, bagging=3)
+    atom.plot_results(metric="me", filename=FILE_DIR + "bagging_3", display=False)
+    atom.tree.plot_results(filename=FILE_DIR + "bagging_4", display=False)
+    assert glob.glob(FILE_DIR + "bagging_3.png")
+    assert glob.glob(FILE_DIR + "bagging_4.png")
 
 
 def test_plot_bo():

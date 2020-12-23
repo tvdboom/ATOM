@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../../training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="../plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="../plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -509,7 +513,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../plot_bagging/" class="nav-link">
+                                <a rel="next" href="../plot_results/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -549,24 +553,21 @@
 
 <h1 id="plot_learning_curve">plot_learning_curve</h1>
 <hr />
-<p><a name="atom"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>(models=None, metric=0, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2489">[source]</a></div></pre>
-<div style="padding-left:3%">
-Plot the model's learning curve: score vs number of training samples. Only
- available if the models were fitted using [train sizing](../../../user_guide/#train-sizing).
-<br /><br />
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2849">[source]</a></div></pre>
+<p>Plot the model's learning curve: score vs number of training samples. Only
+ available if the models were fitted using <a href="../../../user_guide/#train-sizing">train sizing</a>.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: int or str, optional (default=0)</strong>
 <blockquote>
-Index or name of the metric to plot. Only for [multi-metric](../../../user_guide/#metric) runs.
+Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -586,7 +587,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <p><br /></p>
 <h2 id="example">Example</h2>
 <hr />

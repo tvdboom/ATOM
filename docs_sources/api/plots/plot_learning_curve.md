@@ -1,24 +1,21 @@
 # plot_learning_curve
 ---------------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>(models=None, metric=0, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2489">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2849">[source]</a></div></pre>
 Plot the model's learning curve: score vs number of training samples. Only
  available if the models were fitted using [train sizing](../../../user_guide/#train-sizing).
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>models: str, list, tuple or None, optional (default=None)</strong>
+<strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
 Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: int or str, optional (default=0)</strong>
 <blockquote>
-Index or name of the metric to plot. Only for [multi-metric](../../../user_guide/#metric) runs.
+Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -38,7 +35,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 

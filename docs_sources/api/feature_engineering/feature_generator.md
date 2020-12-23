@@ -4,14 +4,12 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureGenerator</strong>(strategy="DFS", n_features=None, generations=20, population=500,
                                                 operators=None, n_jobs=1, verbose=0, logger=None, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L48">[source]</a></div></pre>
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
  of existing features to capture the non-linear relations between the original
  features. This class can be accessed from atom through the
  [feature_generation](../../ATOM/atomclassifier/#feature-generation)
  method. Read more in the [user guide](../../../user_guide/#generating-new-features).
-<br /><br />
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -26,8 +24,9 @@ Strategy to crate new features. Choose from:
 </blockquote>
 <strong>n_features: int or None, optional (default=None)</strong>
 <blockquote>
-Number of newly generated features to add to the dataset. No more than
- 1% of the population (for the genetic strategy). If None, select all created.
+Number of newly generated features to add to the dataset (no
+ more than 1% of the population for the genetic strategy). If
+ None, select all created features.
 </blockquote>
 <strong>generations: int, optional (default=20)</strong>
 <blockquote>
@@ -39,8 +38,8 @@ Number of programs in each generation. Only for the genetic strategy.
 </blockquote>
 <strong>operators: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
-Name of the operators to be used on the features (for both strategies). None to use all.
- Valid options are: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
+Name of the operators to be used on the features. None to use all.
+ Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -62,24 +61,24 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: bool, str, class or None, optional (default=None)</strong>
+<strong>logger: str, class or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
-<li>If bool: True for logging file with default name. False for no logger.</li>
-<li>If str: Name of the logging file. "auto" to create an automatic name.</li>
-<li>If class: python `Logger` object.</li>
+<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If class: python <code>Logger</code> object.</li>
 </ul>
+The default name consists of the class' name followed by the
+ timestamp of the logger's creation.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the `RandomState` instance used by `numpy.random`.
+ generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 </td>
 </tr>
 </table>
-</div>
 <br>
 
 
@@ -91,7 +90,7 @@ Seed used by the random number generator. If None, the random number
 !!! warning
     Using the div, log or sqrt operators can return new features with `inf` or
     `NaN` values. Check the warnings that may pop up or use atom's
-    [missing](/API/ATOM/atomclassifier/#properties) property.
+    [missing](/API/ATOM/atomclassifier/#data-attributes) property.
 
 !!! warning
     When using DFS with `n_jobs>1`, make sure to protect your code with `if __name__
@@ -105,12 +104,11 @@ Seed used by the random number generator. If None, the random number
 ## Attributes
 -------------
 
-<a name="atom"></a>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>symbolic_transformer: [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer)</strong>
+<strong>symbolic_transformer: <a href="https://gplearn.readthedocs.io/en/stable/reference.html#symbolic-transformer">SymbolicTransformer</a></strong>
 <blockquote>
 Instance used to calculate the genetic features. Only for the genetic strategy.
 </blockquote>
@@ -137,12 +135,12 @@ Dataframe of the newly created non-linear features. Only for the genetic strateg
 <table width="100%">
 <tr>
 <td><a href="#fit">fit</a></td>
-<td>Fit the class.</td>
+<td>Fit to data.</td>
 </tr>
 
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
-<td>Fit the class and return the transformed data.</td>
+<td>Fit to data, then transform it.</td>
 </tr>
 
 <tr>
@@ -175,16 +173,13 @@ Dataframe of the newly created non-linear features. Only for the genetic strateg
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L121">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the class.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L147">[source]</a></div></pre>
+Fit to data.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
@@ -211,16 +206,13 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L40">[source]</a></div></pre>
-<div style="padding-left:3%">
-Fit the FeatureGenerator and return the transformed data.
-<br><br>
-</div>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+Fit to data, then transform it.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>
@@ -247,10 +239,7 @@ Feature set with the newly generated features.
 <a name="get-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-<div style="padding-left:3%">
 Get parameters for this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -274,10 +263,8 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L196">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
-<br /><br />
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -288,46 +275,39 @@ Message to write to the logger and print to stdout.
 </blockquote>
 <strong>level: int, optional (default=0)</strong>
 <blockquote>
-Minimum verbosity level in order to print the message.
+Minimum verbosity level to print the message.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L220">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file.
-<br><br>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name to save the file with. None to save with default name.
+Name to save the file with. None or "auto" to save with the __name__ of the class.
 </blockquote>
 </tr>
 </table>
-</div>
 <br>
 
 
 <a name="set-params"></a>
 <pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
 <div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
-<div style="padding-left:3%">
 Set the parameters of this estimator.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>\*\*params: dict</strong>
+<strong>**params: dict</strong>
 <blockquote>
 Estimator parameters.
 </blockquote>
@@ -346,16 +326,13 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L274">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L306">[source]</a></div></pre>
 Generate new features.
-<br><br>
-</div>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.array or pd.DataFrame</strong>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
 <blockquote>
 Feature set with shape=(n_samples, n_features).
 </blockquote>

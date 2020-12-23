@@ -136,7 +136,7 @@
 </li>
             
 <li>
-    <a href="../API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingClassifier</a>
+    <a href="../API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
 </li>
     </ul>
   </li>
@@ -350,7 +350,7 @@
 </li>
             
 <li>
-    <a href="../API/plots/plot_bagging/" class="dropdown-item">plot_bagging</a>
+    <a href="../API/plots/plot_results/" class="dropdown-item">plot_results</a>
 </li>
             
 <li>
@@ -481,6 +481,10 @@
 </li>
                                     
 <li>
+    <a href="../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
     <a href="../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
@@ -585,7 +589,7 @@ atom.feature_selection(strategy=&quot;PCA&quot;, n_features=12)
 )
 </code></pre>
 <p>Make plots to analyze the results: </p>
-<pre><code class="language-Python">atom.plot_bagging(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
+<pre><code class="language-Python">atom.plot_results(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
 atom.LDA.plot_confusion_matrix(normalize=True, filename=&quot;cm.png&quot;)
 </code></pre></div>
             </div>

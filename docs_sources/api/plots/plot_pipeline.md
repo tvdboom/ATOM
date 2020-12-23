@@ -1,12 +1,9 @@
 # plot_pipeline
 ---------------
 
-<a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pipeline</strong>(show_params=True, branch=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2621">[source]</a></div></pre>
-<div style="padding-left:3%">
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2992">[source]</a></div></pre>
 Plot a diagram of every estimator in a branch.
-<br /><br />
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -15,7 +12,7 @@ Plot a diagram of every estimator in a branch.
 <blockquote>
 Whether to show the parameters used for every estimator.
 </blockquote>
-<strong>show_params: bool, optional (default=True)</strong>
+<strong>branch: str or None, optional (default=None)</strong>
 <blockquote>
 Name of the branch to plot. If None, plot the current active branch.
 </blockquote>
@@ -37,7 +34,6 @@ Whether to render the plot.
 </blockquote>
 </tr>
 </table>
-</div>
 <br />
 
 
@@ -63,5 +59,5 @@ atom.plot_pipeline()
 ```
 
 <div align="center">
-    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="1200"/>
+    <img src="../../../img/plots/plot_pipeline.png" alt="plot_pipeline" width="700" height="700"/>
 </div>

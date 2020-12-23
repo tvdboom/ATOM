@@ -12,14 +12,10 @@ import numpy as np
 import pandas as pd
 from typeguard import typechecked
 from typing import Union, Optional
-
-# Sklearn
+from scipy.stats import zscore
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
-
-# Other packages
-from scipy.stats import zscore
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
@@ -32,7 +28,7 @@ from .utils import (
 
 
 class BaseCleaner(object):
-    """Base class for data cleaning and feature engineering classes."""
+    """Base class for the data cleaning and feature engineering classes."""
 
     @composed(crash, method_to_log, typechecked)
     def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -68,7 +64,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
     """Scale data to mean=0 and std=1.
 
     This class is equal to sklearn's StandardScaler except that it
-    returns a dataframe when provided and it ignores non-numerical
+    returns a dataframe when provided, and it ignores non-numerical
     columns (instead of raising an exception).
 
     Parameters
@@ -83,8 +79,8 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -94,15 +90,13 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
     """
 
     @typechecked
-    def __init__(
-        self, verbose: int = 0, logger: Optional[Union[bool, str, callable]] = None
-    ):
+    def __init__(self, verbose: int = 0, logger: Optional[Union[str, callable]] = None):
         super().__init__(verbose=verbose, logger=logger)
         self.standard_scaler = None
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit the scaler to the data.
+        """Fit to data.
 
         Parameters
         ----------
@@ -124,7 +118,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Scale the data.
+        """Perform standardization by centering and scaling.
 
         Parameters
         ----------
@@ -157,12 +151,13 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
 class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
     """Applies standard data cleaning steps on a dataset.
 
-     These steps can include:
+    Use the parameters to choose which transformations to perform.
+    The available steps are:
+        - Remove columns with prohibited data types.
         - Strip categorical features from white spaces.
-        - Removing columns with prohibited data types.
-        - Removing categorical columns with maximal cardinality.
-        - Removing columns with minimum cardinality.
-        - Removing rows with missing values in the target column.
+        - Remove categorical columns with maximal cardinality.
+        - Remove columns with minimum cardinality.
+        - Remove rows with missing values in the target column.
         - Encode the target column.
 
     Parameters
@@ -201,8 +196,8 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -227,7 +222,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         missing_target: bool = True,
         encode_target: bool = True,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.prohibited_types = prohibited_types
@@ -380,8 +375,8 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -400,7 +395,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         min_frac_rows: float = 0.5,
         min_frac_cols: float = 0.5,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strat_num = strat_num
@@ -414,7 +409,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Fit the imputer to the data.
+        """Fit to data.
 
         Parameters
         ----------
@@ -649,8 +644,8 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     **kwargs
         Additional keyword arguments passed to the `strategy` estimator.
@@ -663,7 +658,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         max_onehot: Optional[int] = 10,
         frac_to_other: Optional[float] = None,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
         **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
@@ -678,7 +673,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
-        """Fit the encoder to the data.
+        """Fit to data.
 
         Parameters
         ----------
@@ -761,7 +756,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
         Parameters
         ----------
-        X: dict, sequence, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -844,8 +839,8 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     """
 
@@ -855,7 +850,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
         max_sigma: Union[int, float] = 3,
         include_target: bool = False,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
@@ -864,11 +859,11 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the transformations on the data.
+        """Apply the outlier strategy on the data.
 
         Parameters
         ----------
-        X: dict, sequence, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -1000,8 +995,8 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         - If str: Name of the logging file. Use "auto" for default name.
         - If class: Python `Logger` object.
 
-        The default name created consists of the class' name
-        followed by the timestamp of the logger's creation.
+        The default name consists of the class' name followed by the
+        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -1028,7 +1023,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
         strategy: str = "ADASYN",
         n_jobs: int = 1,
         verbose: int = 0,
-        logger: Optional[Union[bool, str, callable]] = None,
+        logger: Optional[Union[str, callable]] = None,
         random_state: Optional[int] = None,
         **kwargs,
     ):
@@ -1043,14 +1038,14 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Y_TYPES = -1):
-        """Apply the transformations on the data.
+        """Oversample or undersample the data.
 
         Parameters
         ----------
-        X: dict, sequence, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
-        y: int, str, sequence, np.ndarray or pd.Series, optional (default=-1)
+        y: int, str or sequence, optional (default=-1)
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).

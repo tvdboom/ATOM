@@ -41,46 +41,51 @@ Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&
 Description  
 -----------------
 
-There is no magic formula in data science that can tell us which type of machine
- learning algorithm will perform best for a specific use-case. Different models
- are better suited for different types of data and different problems. At best,
- you can follow some [rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
- on how to approach problems with regard to which model to try on your data, but
- these are often more confusing than helpful. Best practices tell
- us to start with a simple model (e.g. linear regression) and build up to more
- complicated models (e.g. logistic regression -> random forest -> multi-layer perceptron)
- if you are not satisfied with the results. Unfortunately, different models require
- different data cleaning steps, different type/amount of features, tuning a new set
- of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
- and time consuming. Because of this, many data scientists end up just using the model
- best known to them and fine-tuning this particular model without ever trying different
- ones. This can result in poor performance (because the model is just not the right one
- for the task) or in poor time management (because you could have achieved a similar
- performance with a simpler/faster model).
+There is no magic formula in data science that can tell us which type of
+machine learning algorithm will perform best for a specific use-case.
+Different models are better suited for different types of data and
+different problems. At best, you can follow some
+[rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
+on how to approach problems with regard to which model to try on your
+data, but these are often more confusing than helpful. Best practices
+tell us to start with a simple model (e.g. linear regression) and build
+up to more complicated models (e.g. linear regression -> random forest
+-> multi-layer perceptron) if you are not satisfied with the results.
+Unfortunately, different models require different data cleaning steps,
+different type/amount of features, tuning a new set of hyperparameters,
+etc. Refactoring the code for this purpose can be quite boring and
+time-consuming. Because of this, many data scientists end up just using
+the model best known to them and fine-tuning this particular model
+without ever trying different ones. This can result in poor performance
+(because the model is just not the right one for the task) or in poor
+time management (because you could have achieved a similar performance
+with a simpler/faster model).
 
-ATOM is here to help us solve these issues. With just a few lines of code, you can
- perform basic data cleaning steps, select relevant features and compare the performance
- of multiple models on a given dataset. ATOM should be able to provide quick insights
- on which algorithms perform best for the task at hand and provide an indication of
- the feasibility of the ML solution.
+ATOM is made to help you solve these issues. With just a few lines of code,
+you can perform basic data cleaning steps, select relevant features and
+compare the performance of multiple models on a given dataset. ATOM should
+be able to provide quick insights on which algorithms perform best for the
+task at hand and provide an indication of the feasibility of the ML solution.
 
-It is important to realize that ATOM is not here to replace all the work a data
- scientist has to do before getting his model into production. ATOM doesn't spit out
- production-ready models just by tuning some parameters in its API. After helping you
- to determine the right model, you will most probably need to fine-tune it using
- use-case specific features and data cleaning steps in order to achieve maximum performance.
+It is important to realize that ATOM is not here to replace all the work a
+data scientist has to do before getting his model into production. ATOM
+doesn't spit out production-ready models just by tuning some parameters in
+its API. After helping you to determine the right model, you will most
+probably need to fine-tune it using use-case specific features and data
+cleaning steps in order to achieve maximum performance.
 
 So, this sounds a bit like AutoML, how is ATOM different than 
- [auto-sklearn](https://automl.github.io/auto-sklearn/master/) or [TPOT](http://epistasislab.github.io/tpot/)?
- Well, ATOM does AutoML in the sense that it helps you find the best model for a
- specific task, but contrary to the aforementioned packages, it does not actively
- search for the best model. It simply runs all of them and let you pick the one that
- you think suites you best. AutoML packages are often black boxes: if you provide
- data, it will magically return a working model. Although it works great, they often
- produce complicated pipelines with low explainability, hard to sell to the business.
- In this, ATOM excels. Every step of the pipeline is accounted for, and using the
- provided plotting methods, it’s easy to demonstrate why a model is better/worse than
- the other.
+[auto-sklearn](https://automl.github.io/auto-sklearn/master/) or
+[TPOT](http://epistasislab.github.io/tpot/)? Well, ATOM does AutoML in
+the sense that it helps you find the best model for a specific task, but
+contrary to the aforementioned packages, it does not actively search for
+the best model. It simply runs all of them and let you pick the one that
+you think suites the task best. AutoML packages are often black boxes: if
+you provide data, it will magically return a working model. Although it
+works great, they often produce complicated pipelines with low explainability.
+This is hard to sell to the business. In this, ATOM excels. Every step of
+the pipeline is accounted for, and using the provided plotting methods,
+it’s easy to demonstrate why a model is a better or worse choice than the other.
 
 Example steps taken by ATOM's pipeline:
 
@@ -161,7 +166,7 @@ Run the pipeline with the models you want to compare:
 
 Make plots to analyze the results: 
 
-	atom.plot_bagging(figsize=(9, 6), filename="bagging_results.png")  
+	atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
 	atom.LDA.plot_confusion_matrix(normalize=True, filename="cm.png")
 
 <br><br>
@@ -180,7 +185,7 @@ Release history
 * New [Voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [Stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
-* New ways to initialize the data in the `training` instances.
+* New ways to initialize the data in the trainers.
 * The `n_rows` parameter in [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) is deprecated in
   favour of the new data input formats.
 * The `test_size` parameter now also allows integer values.
@@ -192,8 +197,9 @@ Release history
   and [Train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing)
   now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
-* Added the [Utilities](https://tvdboom.github.io/ATOM/examples/utilities/utilities)
-  and [Deep learning](https://tvdboom.github.io/ATOM/examples/deep_learning/deep_learning) example notebooks.
+* Added the <a href="https://tvdboom.github.io/ATOM/examples/deep_learning.html" target="_blank">Deep learning</a>, 
+  <a href="https://tvdboom.github.io/ATOM/examples/ensembles.html" target="_blank">Ensembles</a> and
+  <a href="https://tvdboom.github.io/ATOM/examples/utilities.html" target="_blank">Utilities</a> example notebooks.
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
