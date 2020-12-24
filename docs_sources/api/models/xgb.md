@@ -146,7 +146,7 @@ Dictionary of the metric calculated during training. The metric is provided by t
 <li>"test": List of scores calculated on the test set.</li>
 </ul>
 </blockquote>
-<strong>metric_bagging: np.ndarray</strong>
+<strong>metric_bagging: list</strong>
 <blockquote>
 Bagging's results with shape=(bagging,) for single-metric runs and shape=(metric, bagging) for multi-metric runs.
 </blockquote>

@@ -1410,11 +1410,10 @@ trained. For this reason, we recommend only to use this technique with
 similar models, e.g. only using tree-based models.</p>
 <p>Use successive halving through the <a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a>/<a href="../API/training/successivehalvingregressor">SuccessiveHalvingRegressor</a>
 classes or from atom via the <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
-method. After running the pipeline, the <code>results</code> attribute will be
+method. Consecutive runs of the same model are saved with the model's acronym
+followed by a number to differentiate the runs. The <code>results</code> attribute will be
 multi-index, where the first index indicates the number of models (N)
-in the iteration and the second the model's acronym. Note that only
-the last trained model from every class (the one trained on the largest
-data set) is stored under its normal attribute.</p>
+in the iteration and the second the model's acronym.</p>
 <p>Click <a href="../examples/successive_halving.html" target="_blank">here</a> for a
 successive halving example.</p>
 <div class="admonition tip">
@@ -1434,12 +1433,11 @@ the number of samples in the training set.</p>
 <p>Use train sizing through the <a href="../API/training/trainsizingclassifier">TrainSizingClassifier</a>/<a href="../API/training/trainsizingregressor">TrainSizingRegressor</a>
 classes or from atom via the <a href="../API/ATOM/atomclassifier/#train-sizing">train_sizing</a>
 method. The number of iterations and the number of samples per training
-can be specified with the <code>train_sizes</code> parameter. After running the
-pipeline, the <code>results</code> attribute will be multi-index, where the first
-index indicates the fraction of rows in the training set and the second
-the model's acronym. Note that only the last trained model from every
-class (the one trained on the largest data set) is stored under its
-normal attribute.</p>
+can be specified with the <code>train_sizes</code> parameter. Consecutive runs of the
+same model are saved with the model's acronym followed by a number to
+differentiate the runs. The <code>results</code> attribute will be multi-index, where
+the first index indicates the fraction of rows in the training set and the
+second the model's acronym.</p>
 <p>Click <a href="../examples/train_sizing.html" target="_blank">here</a> for a
 train sizing example.</p>
 <div class="admonition tip">

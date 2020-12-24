@@ -2955,7 +2955,7 @@ class TrainSizingPlotter(BaseModelPlotter):
 
 
 class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
-    """Plots for the ATOM classes."""
+    """Plots for the ATOM class."""
 
     @composed(crash, typechecked)
     def plot_correlation(

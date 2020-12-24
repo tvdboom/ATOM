@@ -960,11 +960,10 @@ similar models, e.g. only using tree-based models.
 
 Use successive halving through the [SuccessiveHalvingClassifier](../API/training/successivehalvingclassifier)/[SuccessiveHalvingRegressor](../API/training/successivehalvingregressor)
 classes or from atom via the [successive_halving](../API/ATOM/atomclassifier/#successive-halving)
-method. After running the pipeline, the `results` attribute will be
+method. Consecutive runs of the same model are saved with the model's acronym
+followed by a number to differentiate the runs. The `results` attribute will be
 multi-index, where the first index indicates the number of models (N)
-in the iteration and the second the model's acronym. Note that only
-the last trained model from every class (the one trained on the largest
-data set) is stored under its normal attribute.
+in the iteration and the second the model's acronym.
 
 Click <a href="../examples/successive_halving.html" target="_blank">here</a> for a
 successive halving example.
@@ -988,12 +987,11 @@ the number of samples in the training set.
 Use train sizing through the [TrainSizingClassifier](../API/training/trainsizingclassifier)/[TrainSizingRegressor](../API/training/trainsizingregressor)
 classes or from atom via the [train_sizing](../API/ATOM/atomclassifier/#train-sizing)
 method. The number of iterations and the number of samples per training
-can be specified with the `train_sizes` parameter. After running the
-pipeline, the `results` attribute will be multi-index, where the first
-index indicates the fraction of rows in the training set and the second
-the model's acronym. Note that only the last trained model from every
-class (the one trained on the largest data set) is stored under its
-normal attribute.
+can be specified with the `train_sizes` parameter. Consecutive runs of the
+same model are saved with the model's acronym followed by a number to
+differentiate the runs. The `results` attribute will be multi-index, where
+the first index indicates the fraction of rows in the training set and the
+second the model's acronym.
 
 Click <a href="../examples/train_sizing.html" target="_blank">here</a> for a
 train sizing example.
