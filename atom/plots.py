@@ -424,7 +424,7 @@ class BasePlotter(object):
         if ax is not None:
             ax.tick_params(axis='both', labelsize=self.tick_fontsize)
 
-        if not BasePlotter._fig.is_canvas:
+        if not getattr(BasePlotter._fig, "is_canvas", None):
             if kwargs.get("figsize"):
                 plt.gcf().set_size_inches(*kwargs["figsize"])
             if kwargs.get("tight_layout", True):
@@ -2392,7 +2392,7 @@ class BaseModelPlotter(BasePlotter):
         check_dim(self, "force_plot")
         check_is_fitted(self, "results")
 
-        if BasePlotter._fig.is_canvas:
+        if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
                 "The force_plot method can not be called from a "
                 "canvas because of incompatibility of the APIs."
