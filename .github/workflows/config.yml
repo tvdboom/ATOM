@@ -9,9 +9,10 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
 
     steps:
@@ -29,7 +30,7 @@ jobs:
         python -m pip install --upgrade tensorflow
         python -m pip install --upgrade keras
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Test with pytest
+    - name: Run tests
       run: coverage run -m pytest
-    - name: Get code coverage
+    - name: Get coverage
       run: codecov

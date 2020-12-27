@@ -301,9 +301,7 @@ def test_RFE_strategy():
 
 def test_RFECV_strategy_before_pipeline_classification():
     """Assert that the RFECV strategy works before a fitted pipeline."""
-    fs = FeatureSelector(
-        strategy="RFECV", solver="RF_class", n_features=None, random_state=1
-    )
+    fs = FeatureSelector("RFECV", solver="RF_class", n_features=None, random_state=1)
     X = fs.fit_transform(X_bin, y_bin)
     assert X.shape[1] == 17
     assert set(fs.feature_importance) == set(X.columns)
@@ -311,12 +309,17 @@ def test_RFECV_strategy_before_pipeline_classification():
 
 def test_RFECV_strategy_before_pipeline_regression():
     """Assert that the RFECV strategy works before a fitted pipeline."""
-    fs = FeatureSelector(
-        strategy="RFECV", solver="RF_reg", n_features=16, random_state=1
-    )
+    fs = FeatureSelector("RFECV", solver="RF_reg", n_features=16, random_state=1)
     X = fs.fit_transform(X_reg, y_reg)
     assert X.shape[1] == 10
     assert set(fs.feature_importance) == set(X.columns)
+
+
+def test_SFS_strategy():
+    """Assert that the SFS strategy works."""
+    fs = FeatureSelector("SFS", solver="RF_reg", n_features=6, cv=3, random_state=1)
+    X = fs.fit_transform(X_reg, y_reg)
+    assert X.shape[1] == 6
 
 
 def test_kwargs_parameter_threshold():

@@ -631,7 +631,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                     solver = "f_regression"
                 else:
                     solver = "f_classif"
-            elif strategy.lower() in ["sfm", "rfe", "rfecv"]:
+            elif strategy.lower() in ["sfm", "rfe", "rfecv", "sfs"]:
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
@@ -639,8 +639,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                     if not solver.endswith("_class") and not solver.endswith("_reg"):
                         solver += "_reg" if self.task.startswith("reg") else "_class"
 
-            # If the run method was called before, use the main metric_ for RFECV
-            if strategy.lower() == "rfecv":
+            # If the run method was called before, use the main metric
+            if strategy.lower() in ("rfecv", "sfs"):
                 if self.metric_ and "scoring" not in kwargs:
                     kwargs["scoring"] = self.metric_[0]
 
@@ -667,6 +667,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             "sfm",
             "rfe",
             "rfecv",
+            "sfs",
             "collinear",
         )
         for attr in attrs:

@@ -45,7 +45,7 @@ setuptools.setup(
         "joblib >= 0.16.0",
         "typeguard >= 2.7.1",
         "tabulate >= 0.8.6",
-        "scikit-learn >= 0.23.2",
+        "scikit-learn >= 0.24",
         "scikit-optimize >= 0.8.1",
         "category-encoders >= 2.1.0",
         "imbalanced-learn >= 0.5.0",

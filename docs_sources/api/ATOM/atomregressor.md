@@ -5,10 +5,10 @@
                              n_jobs=1, warnings=True, verbose=0, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L319">[source]</a></div></pre>
 ATOMRegressor is ATOM's wrapper for regression tasks. Use this class to easily apply
- all data transformations and model management provided by the package on a given
- dataset. Note that contrary to scikit-learn's API, an ATOMRegressor instance already
- contains the dataset on which we want to perform the analysis. Calling a method will
- automatically apply it on the dataset it contains.
+all data transformations and model management provided by the package on a given
+dataset. Note that contrary to scikit-learn's API, an ATOMRegressor instance already
+contains the dataset on which we want to perform the analysis. Calling a method will
+automatically apply it on the dataset it contains.
 
 You can [predict](../../../user_guide/#predicting), [plot](../../../user_guide/#plots)
  and call any [model](../../../user_guide/#models) from atom. Read more in the
@@ -112,11 +112,11 @@ Seed used by the random number generator. If None, the random number
 ### Data attributes
 
 The dataset can be accessed at any time through multiple attributes, e.g. calling
- `trainer.train` will return the training set. The data can also be changed through
- these attributes, e.g. `trainer.test = atom.test.drop(0)` will drop the first row
- from the test set. Updating one of the data attributes will automatically update the
- rest as well. Changing the branch will also change the response from these attributes
- accordingly.
+`trainer.train` will return the training set. The data can also be changed through
+these attributes, e.g. `trainer.test = atom.test.drop(0)` will drop the first row
+from the test set. Updating one of the data attributes will automatically update the
+rest as well. Changing the branch will also change the response from these attributes
+accordingly.
 
 <table>
 <tr>
@@ -220,10 +220,10 @@ Returns whether the feature set is scaled.
 <strong>missing: list</strong>
 <blockquote>
 List of values that are considered "missing" (used by the <a href="#clean">clean</a>
- and <a href="#impute">impute</a> methods). Default values are: "", "?", "None", "NA",
- "nan", "NaN" and "inf". Note that <code>None</code>, <code>NaN</code>, <code>+inf</code>
- and <code>-inf</code> are always considered missing since they are incompatible with
- sklearn estimators.
+and <a href="#impute">impute</a> methods). Default values are: "", "?", "None", "NA",
+"nan", "NaN" and "inf". Note that <code>None</code>, <code>NaN</code>, <code>+inf</code>
+and <code>-inf</code> are always considered missing since they are incompatible with
+sklearn estimators.
 </blockquote>
 <strong>genetic_features: pd.DataFrame</strong>
 <blockquote>
@@ -388,8 +388,8 @@ inspect the pipeline.
 <pre><em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1, ncols=2, title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L437">[source]</a></div></pre>
 This `@contextmanager` allows you to draw many plots in one figure. The default
- option is to add two plots side by side. See the [user guide](../../../user_guide/#canvas)
- for an example use case.
+option is to add two plots side by side. See the [user guide](../../../user_guide/#canvas)
+for an example use case.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -428,8 +428,8 @@ Whether to render the plot.
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L322">[source]</a></div></pre>
 Removes a model from the pipeline. If all models in the pipeline are removed,
- the metric is reset. Use this method to remove unwanted models or to free
- some memory before saving the instance.
+the metric is reset. Use this method to remove unwanted models or to free
+some memory before saving the instance.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -468,7 +468,7 @@ Minimum verbosity level to print the message.
 <pre><em>method</em> <strong style="color:#008AB8">report</strong>(dataset="dataset", n_rows=None, filename=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L219">[source]</a></div></pre>
 Create an extensive profile analysis report of the data. The report is rendered
- in HTML5 and CSS3. Note that this method can be slow for `n_rows` > 10k.
+in HTML5 and CSS3. Note that this method can be slow for `n_rows` > 10k.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -509,8 +509,8 @@ Clear the [prediction attributes](../../../user_guide/#predicting) from all mode
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
 Save the instance to a pickle file. Remember that the class contains the complete
- dataset as attribute, so the file can become large for big datasets! To avoid this,
- use `save_data=False`.
+dataset as attribute, so the file can become large for big datasets! To avoid this,
+use `save_data=False`.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -657,8 +657,8 @@ Sequence of weights (int or float) to weight the
 ----------------
 
 ATOMRegressor provides data cleaning methods to scale your features and handle
- missing values, categorical columns and outliers. Calling on one of them will
- automatically apply the method on the dataset in the pipeline.
+missing values, categorical columns and outliers. Calling on one of them will
+automatically apply the method on the dataset in the pipeline.
 
 !!! tip
     Use the [report](#report) method to examine the data and help you
@@ -722,11 +722,11 @@ See [Cleaner](../data_cleaning/cleaner.md) for a description of the parameters.
 <pre><em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5, min_frac_cols=0.5, missing=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L412">[source]</a></div></pre>
 Impute or remove missing values according to the selected strategy. Also removes
- rows and columns with too many missing values. The imputer is fitted only on the
- training set to avoid data leakage. Use the `missing` attribute to customize what
- are considered "missing values". See [Imputer](../data_cleaning/imputer.md) for a
- description of the parameters. Note that since the Imputer can remove rows from both
- the train and test set, the size of the sets may change after the tranformation.
+rows and columns with too many missing values. The imputer is fitted only on the
+training set to avoid data leakage. Use the `missing` attribute to customize what
+are considered "missing values". See [Imputer](../data_cleaning/imputer.md) for a
+description of the parameters. Note that since the Imputer can remove rows from both
+the train and test set, the size of the sets may change after the tranformation.
 <br /><br /><br />
 
 
@@ -741,11 +741,11 @@ Perform encoding of categorical features. The encoding type depends on the
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>
 Also replaces classes with low occurrences with the value `other` in
- order to prevent too high cardinality. Categorical features are defined as
- all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
- missing values or unknown classes when transforming. The encoder is fitted only
- on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
- for a description of the parameters.
+order to prevent too high cardinality. Categorical features are defined as
+all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
+missing values or unknown classes when transforming. The encoder is fitted only
+on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
+for a description of the parameters.
 <br /><br /><br />
 
 
@@ -753,10 +753,10 @@ Also replaces classes with low occurrences with the value `other` in
 <pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy="drop", max_sigma=3, include_target=False) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L493">[source]</a></div></pre>
 Remove or replace outliers in the training set. Outliers are defined as values that
- lie further than `max_sigma` * standard_deviation away from the mean of the column.
- Only outliers from the training set are removed to maintain the original distribution
- of target values in the test set. Ignores categorical columns. See
- [Outliers](../data_cleaning/outliers.md) for a description of the parameters.
+lie further than `max_sigma` * standard_deviation away from the mean of the column.
+Only outliers from the training set are removed to maintain the original distribution
+of target values in the test set. Ignores categorical columns. See
+[Outliers](../data_cleaning/outliers.md) for a description of the parameters.
 <br /><br /><br />
 
 
@@ -765,8 +765,8 @@ Remove or replace outliers in the training set. Outliers are defined as values t
 ----------------------
 
 To further pre-process the data, you can create new non-linear features transforming
- the existing ones or, if your dataset is too large, remove features using one
- of the provided strategies.
+the existing ones or, if your dataset is too large, remove features using one
+of the provided strategies.
 
 <table>
 <tr>
@@ -787,10 +787,10 @@ To further pre-process the data, you can create new non-linear features transfor
 <pre><em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS", n_features=None, generations=20, population=500, operators=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L563">[source]</a></div></pre>
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
- of existing features to capture the non-linear relations between the original
- features. See [FeatureGenerator](../feature_engineering/feature_generator.md) for
- a description of the parameters. Attributes created by the class are attached to
- atom.
+of existing features to capture the non-linear relations between the original
+features. See [FeatureGenerator](../feature_engineering/feature_generator.md) for
+a description of the parameters. Attributes created by the class are attached to
+atom.
 <br /><br /><br />
 
 
@@ -799,25 +799,25 @@ Use Deep feature Synthesis or a genetic algorithm to create new combinations
                          max_frac_repeated=1., max_correlation=1., **kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L604">[source]</a></div></pre>
 Remove features according to the selected strategy. Ties between features with
- equal scores will be broken in an unspecified way. Also removes features with
- too low variance and finds pairs of collinear features based on the Pearson
- correlation coefficient. For each pair above the specified limit (in terms of
- absolute value), it removes one of the two. See [FeatureSelector](../feature_engineering/feature_selector.md)
- for a description of the parameters. Plotting methods and attributes created
- by the class are attached to atom.
+equal scores will be broken in an unspecified way. Also removes features with
+too low variance and finds pairs of collinear features based on the Pearson
+correlation coefficient. For each pair above the specified limit (in terms of
+absolute value), it removes one of the two. See [FeatureSelector](../feature_engineering/feature_selector.md)
+for a description of the parameters. Plotting methods and attributes created
+by the class are attached to atom.
 
 !!! note
     <ul>
     <li>When strategy="univariate" and solver=None, [f_classif](https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.f_classif.html)
         will be used as default solver.</li>
-    <li>When strategy is one of "SFM", "RFE" or "RFECV" and the solver is one of 
+    <li>When strategy is one of SFM, RFE, RFECV or SFS and the solver is one of 
         ATOM's [predefined models](../../../user_guide/#predefined-models), the
         algorithm will automatically select the classifier (no need to add `_class`
         to the solver).</li>
-    <li>When strategy is one of "SFM", "RFE" or "RFECV" and solver=None, ATOM will
+    <li>When strategy is one of SFM, RFE, RFECV or SFS and solver=None, ATOM will
          use the winning model (if it exists) as solver.</li>
-    <li>When strategy="RFECV", ATOM will use the metric in the pipeline (if it exists)
-        as the scoring parameter (only if not specified).</li>
+    <li>When strategy is RFECV or SFS, ATOM will use the metric in the pipeline
+        (if it exists) as the scoring parameter (only if not specified).</li>
 
 <br /><br />
 
@@ -827,13 +827,13 @@ Remove features according to the selected strategy. Ties between features with
 ----------
 
 The training methods are where the models are fitted to the data and their
- performance is evaluated according to the selected metric. There are three
- methods to call the three different training approaches in ATOM. All relevant
- attributes and methods from the training classes are attached to atom for
- convenience. These include the errors, winner and results attributes, as well
- as the [models](../../../user_guide/#models), and the
- [prediction](../../../user_guide/#predicting) and
- [plotting](../../../user_guide/#plots) methods.
+performance is evaluated according to the selected metric. There are three
+methods to call the three different training approaches in ATOM. All relevant
+attributes and methods from the training classes are attached to atom for
+convenience. These include the errors, winner and results attributes, as well
+as the [models](../../../user_guide/#models), and the
+[prediction](../../../user_guide/#predicting) and
+[plotting](../../../user_guide/#plots) methods.
 
 
 <table>

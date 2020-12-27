@@ -95,6 +95,7 @@ Example steps taken by ATOM's pipeline:
 * Use the [canvas](./API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
 * New [Voting](./user_guide/#voting) and [Stacking](./user_guide/#stacking) ensemble techniques.
 * New [get_class_weight](./API/ATOM/atomclassifier/#get-class-weight) utility method.
+* New Sequential Feature Selection strategy for the [FeatureSelector](./API/feature_engineering/feature_selector).
 * Added the `sample_weight` parameter to the [score](./API/predicting/score) method.
 * New ways to initialize the data in the `training` instances.
 * The `n_rows` parameter in [ATOMLoader](./API/ATOM/atomloader) is deprecated in

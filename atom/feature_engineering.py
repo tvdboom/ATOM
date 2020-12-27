@@ -31,6 +31,7 @@ from sklearn.feature_selection import (
     SelectFromModel,
     RFE,
     RFECV,
+    SequentialFeatureSelector,
 )
 
 # Own modules
@@ -424,16 +425,17 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
             - "PCA": Perform principal component analysis.
             - "SFM": Select best features from model.
             - "RFE": Recursive feature eliminator.
-            - "RFECV": RFE with cross-validated selection.
+            - "RFECV": Perform RFE with cross-validated selection.
+            - "SFS"" Perform Sequential Feature Selector.
 
-        Note that the RFE and RFECV strategies don't work when the
+        Note that the RFE, RFECV and SFS strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
 
     solver: str, estimator or None, optional (default=None)
         Solver or model to use for the feature selection strategy. See
         sklearn's documentation for an extended description of the
-        choices. Select None for the default option per strategy (not
-        applicable for SFM, RFE and RFECV).
+        choices. Select None for the default option per strategy (only
+        for univariate or PCA).
             - for "univariate", choose from:
                 + "f_classif"
                 + "f_regression"
@@ -447,8 +449,9 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                 + "full"
                 + "arpack"
                 + "randomized"
-            - for "SFM", "RFE" and "RFECV:
-                Estimator with either a `feature_importances_` or `coef_`
+            - for "SFM", "RFE", "RFECV" and "SFS":
+                The base estimator. For SFM, RFE and RFECV, it should
+                have either a `feature_importances_` or `coef_`
                 attribute after fitting. You can use one of ATOM's
                 predefined models. Add `_class` or `_reg` after the
                 model's name to specify a classification or regression
@@ -509,9 +512,9 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
         number generator is the `RandomState` used by `numpy.random`.
 
     **kwargs
-        Any extra keyword argument for the PCA, SFM, RFE or RFECV
-        estimators. See the corresponding documentation for the
-        available options.
+        Any extra keyword argument for the PCA, SFM, RFE, RFECV
+        and SFS estimators. See the corresponding documentation
+        for the available options.
 
     Attributes
     ----------
@@ -546,6 +549,9 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
 
     rfecv: RFECV
         Instance used to fit the estimator. Only if strategy="RFECV".
+
+    sfs: SequentialFeatureSelector
+        Instance used to fit the estimator. Only if strategy="SFS".
 
     """
 
@@ -582,6 +588,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
         self.sfm = None
         self.rfe = None
         self.rfecv = None
+        self.sfs = None
         self._is_fitted = False
         self._low_variance = {}
 
@@ -622,7 +629,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "rfe", "rfecv"]
+            strats = ["univariate", "pca", "sfm", "rfe", "rfecv", "sfs"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
@@ -651,7 +658,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
             elif self.strategy.lower() == "pca":
                 self.solver = "auto" if self.solver is None else self.solver
 
-            elif self.strategy.lower() in ["sfm", "rfe", "rfecv"]:
+            else:
                 if self.solver is None:
                     raise ValueError("Select a solver for the strategy!")
                 elif isinstance(self.solver, str):
@@ -788,23 +795,35 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                 **self.kwargs,
             ).fit(X, y)
 
-        elif self.strategy.lower() == "rfecv":
+        else:
             check_y()
-            if self.n_features == X.shape[1]:
-                self.n_features = 1
 
+            # Both RFECV and SFS use the scoring parameter
             if isinstance(self.kwargs.get("scoring"), str):
                 if self.kwargs.get("scoring", "").lower() in METRIC_ACRONYMS:
                     self.kwargs["scoring"] = METRIC_ACRONYMS[
                         self.kwargs["scoring"].lower()
                     ]
 
-            self.rfecv = RFECV(
-                estimator=self.solver,
-                min_features_to_select=self.n_features,
-                n_jobs=self.n_jobs,
-                **self.kwargs,
-            ).fit(X, y)
+            if self.strategy.lower() == "rfecv":
+                # Invert n_features to select them all (default option)
+                if self.n_features == X.shape[1]:
+                    self.n_features = 1
+
+                self.rfecv = RFECV(
+                    estimator=self.solver,
+                    min_features_to_select=self.n_features,
+                    n_jobs=self.n_jobs,
+                    **self.kwargs,
+                ).fit(X, y)
+
+            elif self.strategy.lower() == "sfs":
+                self.sfs = SequentialFeatureSelector(
+                    estimator=self.solver,
+                    n_features_to_select=self.n_features,
+                    n_jobs=self.n_jobs,
+                    **self.kwargs,
+                ).fit(X, y)
 
         self._is_fitted = True
         return self
@@ -959,5 +978,15 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
 
             idx = np.argsort(get_scores(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
+
+        elif self.strategy.lower() == "sfs":
+            self.log(
+                f" --> The SFS selected {self.sfs.n_features_to_select_}"
+                " features from the dataset.", 2
+            )
+            for n, column in enumerate(X):
+                if not self.sfs.support_[n]:
+                    self.log(f"   >>> Dropping feature {column}.", 2)
+                    X.drop(column, axis=1, inplace=True)
 
         return X

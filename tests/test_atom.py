@@ -379,8 +379,8 @@ def test_default_solver_from_task():
     assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
 
 
-def test_default_scoring_RFECV():
-    """Assert that the scoring for RFECV is ATOM's metric_ when exists."""
+def test_default_scoring():
+    """Assert that the scoring is ATOM's metric when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
     atom.feature_selection(strategy="rfecv", solver="lgb", n_features=8)

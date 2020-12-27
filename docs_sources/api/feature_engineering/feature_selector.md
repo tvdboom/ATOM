@@ -6,13 +6,13 @@
                                                random_state=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L376">[source]</a></div></pre>
 Remove features according to the selected strategy. Ties between
- features with equal scores will be broken in an unspecified way.
- Additionally, removes features with too low variance and finds pairs of
- collinear features based on the Pearson correlation coefficient. For
- each pair above the specified limit (in terms of absolute value), it
- removes one of the two. This class can be accessed from atom
- through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
- method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
+features with equal scores will be broken in an unspecified way.
+Additionally, removes features with too low variance and finds pairs of
+collinear features based on the Pearson correlation coefficient. For
+each pair above the specified limit (in terms of absolute value), it
+removes one of the two. This class can be accessed from atom
+through the [feature_selection](../../ATOM/atomclassifier/#feature-selection)
+method. Read more in the [user guide](../../../user_guide/#selecting-useful-features).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -27,14 +27,15 @@ Feature selection strategy to use. Choose from:
 <li>"SFM": Select best features according to a model.</li>
 <li>"RFE": Perform recursive feature elimination.</li>
 <li>"RFECV": Perform RFE with cross-validated selection.</li>
+<li>"SFS": Perform Sequential Feature Selection.</li>
 </ul>
 </blockquote>
 <strong>solver: string, estimator or None, optional (default=None)</strong>
 <blockquote>
 Solver or model to use for the feature selection strategy. See
 sklearn's documentation for an extended description of the choices.
-Select None for the default option per strategy (not applicable
-for SFM, RFE and RFECV).
+Select None for the default option per strategy (only for univariate
+and PCA).
 <ul>
 <li>for "univariate", choose from:
     <ul>
@@ -53,13 +54,14 @@ for SFM, RFE and RFECV).
     <li>"arpack"</li>
     <li>"randomized"</li>
     </ul></li>
-<li>for "SFM", "RFE" and "RFECV:<br>
-Estimator with either a <code>feature_importances_</code> or <code>coef_</code>
- attribute after fitting. You can use one of ATOM's pre-defined
- <a href="../../../user_guide/#predefined-models">models</a>. Add
- <code>_class</code> or <code>_reg</code> after the model's name to
- specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
- (not necessary if called from an atom instance. No default option.</li>
+<li>for "SFM", "RFE", "RFECV" and "SFS":<br>
+The base estimator. For SFM, RFE and RFECV, it should
+have either a either a <code>feature_importances_</code> or <code>coef_</code>
+attribute after fitting. You can use one of ATOM's pre-defined
+<a href="../../../user_guide/#predefined-models">models</a>. Add
+<code>_class</code> or <code>_reg</code> after the model's name to
+specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
+(not necessary if called from an atom instance. No default option.</li>
 </ul>
 </blockquote>
 <strong>n_features: int, float or None, optional (default=None)</strong>
@@ -126,8 +128,8 @@ Seed used by the random number generator. If None, the random number
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
- See the corresponding sklearn documentation for the available options.
+Any extra keyword argument for the PCA, SFM, RFE, RFECV  and SFS estimators.
+See the corresponding sklearn documentation for the available options.
 </blockquote>
 </td>
 </tr>
@@ -141,7 +143,7 @@ Any extra keyword argument for the PCA, SFM, RFE or RFECV estimators.
     [plot_permutation_importance](../plots/plot_permutation_importance.md) instead.
 
 !!!warning
-    The RFE and RFECV strategies don't work when the solver is a 
+    The RFE, RFECV AND SFS strategies don't work when the solver is a 
     [CatBoost](https://catboost.ai/) model due to incompatibility of the APIs.
 
 <br>
@@ -196,6 +198,10 @@ Instance used to fit the estimator. Only if strategy="RFE".
 <strong>rfecv: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a></strong>
 <blockquote>
 Instance used to fit the estimator. Only if strategy="RFECV".
+</blockquote>
+<strong>sfs: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">SequentialFeatureSelector</a></strong>
+<blockquote>
+Instance used to fit the estimator. Only if strategy="SFS".
 </blockquote>
 </td>
 </tr>

@@ -643,7 +643,7 @@ def partial_dependence(estimator, X, features):
     """
     grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
 
-    averaged_predictions = _partial_dependence_brute(
+    averaged_predictions, _ = _partial_dependence_brute(
         estimator, grid, features, X, "auto"
     )
 

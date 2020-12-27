@@ -26,7 +26,7 @@ ATOM is built on top of several existing Python libraries. The required packages
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
 * **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.23.1)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.24)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.7.4)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)

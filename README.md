@@ -23,7 +23,7 @@ Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&
 
 
 #### Build status:
-[![Build Status](https://travis-ci.com/tvdboom/ATOM.svg?branch=master)](https://travis-ci.com/tvdboom/ATOM)
+[![Build Status](https://github.com/tvdboom/ATOM/workflows/ATOM/badge.svg)](https://github.com/tvdboom/ATOM/actions)
 [![Azure Pipelines](https://dev.azure.com/conda-forge/feedstock-builds/_apis/build/status/atom-ml-feedstock?branchName=master)](https://dev.azure.com/conda-forge/feedstock-builds/_build/latest?definitionId=10822&branchName=master)
 [![codecov](https://codecov.io/gh/tvdboom/ATOM/branch/master/graph/badge.svg)](https://codecov.io/gh/tvdboom/ATOM)
 
@@ -185,6 +185,7 @@ Release history
 * New [Voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [Stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
+* New Sequential Feature Selection strategy for the [FeatureSelector](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_selector).
 * New ways to initialize the data in the trainers.
 * The `n_rows` parameter in [ATOMLoader](https://tvdboom.github.io/ATOM/API/ATOM/atomloader) is deprecated in
   favour of the new data input formats.
