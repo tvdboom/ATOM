@@ -189,25 +189,25 @@ def test_is_fitted():
     pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
 
 
-def test_imputing_all_missing_values_numeric():
+@pytest.mark.parametrize("missing", [None, np.NaN, np.inf, -np.inf, 99])
+def test_imputing_all_missing_values_numeric(missing):
     """Assert that all missing values are imputed in numeric columns."""
+    X = [[missing, 1, 1], [2, 5, 2], [4, missing, 1], [2, 1, 1]]
+    y = [1, 1, 0, 0]
     imputer = Imputer(strat_num="mean")
     imputer.missing.append(99)
-    for v in [None, np.NaN, np.inf, -np.inf, 99]:
-        X = [[v, 1, 1], [2, 5, 2], [4, v, 1], [2, 1, 1]]
-        y = [1, 1, 0, 0]
-        X, y = imputer.fit_transform(X, y)
-        assert X.isna().sum().sum() == 0
+    X, y = imputer.fit_transform(X, y)
+    assert X.isna().sum().sum() == 0
 
 
-def test_imputing_all_missing_values_categorical():
+@pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
+def test_imputing_all_missing_values_categorical(missing):
     """Assert that all missing values are imputed in categorical columns."""
-    for v in ["", "?", "NA", "nan", "inf"]:
-        X = [[v, "1", "1"], ["2", "5", v], ["2", "1", "3"], ["3", "1", "1"]]
-        y = [1, 1, 0, 0]
-        imputer = Imputer(strat_cat="most_frequent")
-        X, y = imputer.fit_transform(X, y)
-        assert X.isna().sum().sum() == 0
+    X = [[missing, "1", "1"], ["2", "5", missing], ["2", "1", "3"], ["3", "1", "1"]]
+    y = [1, 1, 0, 0]
+    imputer = Imputer(strat_cat="most_frequent")
+    X, y = imputer.fit_transform(X, y)
+    assert X.isna().sum().sum() == 0
 
 
 def test_rows_too_many_nans():
