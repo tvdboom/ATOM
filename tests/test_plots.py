@@ -206,8 +206,11 @@ def test_plot_learning_curve():
     pytest.raises(PermissionError, atom.plot_learning_curve)
     atom.delete()  # Clear the pipeline to allow ts
     atom.train_sizing(["Tree", "LGB"], metric="max_error", bagging=4)
-    atom.plot_learning_curve(filename=FILE_DIR + "train_sizing", display=False)
-    assert glob.glob(FILE_DIR + "train_sizing.png")
+    atom.plot_learning_curve(filename=FILE_DIR + "train_sizing_1", display=False)
+    atom.train_sizing(["Tree", "LGB"], metric="max_error")
+    atom.plot_learning_curve(filename=FILE_DIR + "train_sizing_2", display=False)
+    assert glob.glob(FILE_DIR + "train_sizing_1.png")
+    assert glob.glob(FILE_DIR + "train_sizing_2.png")
 
 
 @pytest.mark.parametrize("metric", ["me", ["me", "r2"]])
@@ -302,7 +305,7 @@ def test_plot_permutation_importance():
     """Assert that the plot_permutation_importance method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_permutation_importance)
-    atom.run("LGB", metric="f1")
+    atom.run(["Tree", "LGB"], metric="f1")
     pytest.raises(ValueError, atom.plot_permutation_importance, show=0)
     pytest.raises(ValueError, atom.plot_permutation_importance, n_repeats=0)
     atom.plot_permutation_importance(
@@ -376,7 +379,8 @@ def test_plot_partial_dependence(features):
     with pytest.raises(ValueError, match=r".*models use the same features.*"):
         atom.plot_partial_dependence(features=(0, 1))
 
-    atom.delete("Tree2")   # Drop model created for test
+    atom.delete("Tree2")  # Drop model created for test
+    atom.branch.delete()  # Drop branch created for test
     atom.plot_partial_dependence(
         filename=FILE_DIR + "partial_dependence_1", display=False
     )

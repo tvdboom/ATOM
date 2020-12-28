@@ -162,22 +162,31 @@ def test_stack_repr():
 
 def test_stack_scoring():
     """Assert that the scoring method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree"])
+    atom = ATOMClassifier(X_bin, y_bin, verbose=2, random_state=1)
+    atom.run(["Tree", "RF"])
     atom.stacking()
     assert atom.stack.scoring() == "f1: 0.957"
     assert atom.stack.scoring("recall") == 0.9852941176470589
 
 
-def test_stack_prediction_methods():
-    """Assert that the prediction methods work as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+def test_stack_predictions_classification():
+    """Assert that the prediction methods work for classification tasks."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run(["Tree", "PA"])
+    atom.stacking(models=["Tree", "PA"], passthrough=True)
+    pytest.raises(AttributeError, atom.stack.decision_function, X_class)
+    assert isinstance(atom.stack.predict(X_class), np.ndarray)
+    assert isinstance(atom.stack.score(X_class, y_class), np.float64)
+
+
+def test_stack_predictions_regression():
+    """Assert that the prediction methods work for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.clean()
     atom.run(models=["Tree"])
     atom.branch = "branch_2"
     atom.impute(strat_num="mean", strat_cat="most_frequent")
     atom.run(["PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
-    pytest.raises(AttributeError, atom.stack.decision_function, X_bin)
-    assert isinstance(atom.stack.predict(X_bin), np.ndarray)
-    assert isinstance(atom.stack.score(X_bin, y_bin), np.float64)
+    assert isinstance(atom.stack.predict(X_reg), np.ndarray)
+    assert isinstance(atom.stack.score(X_reg, y_reg), np.float64)

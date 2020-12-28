@@ -254,6 +254,15 @@ def test_calibrate_prefit():
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
+def test_reset_predictions_after_calibrating():
+    """Assert that the prediction attrs are reset after calibrating."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    print(atom.mnb.score_test)
+    atom.calibrate()
+    assert atom.mnb._pred_attrs[9] is None
+
+
 def test_save_estimator():
     """Assert that the save_estimator saves a pickle file."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

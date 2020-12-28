@@ -1231,21 +1231,22 @@ ATOM lets you define the scorer for the pipeline in three ways:</p>
 <li>The <code>metric</code> parameter is a scorer object.</li>
 </ul>
 <p>Note that all scorers follow the convention that higher return values
-are better than lower return values. Thus metrics which measure the
+are better than lower return values. Thus, metrics which measure the
 distance between the model and the data (i.e. loss functions), like
 <code>max_error</code> or <code>mean_squared_error</code>, will return the negated value of
 the metric.</p>
 <p><strong>Custom scorer acronyms</strong><br>
 Since some of sklearn's scorers have quite long names and ATOM is all
 about <s>lazy</s>fast experimentation, the package provides acronyms
-for some of the most commonly used ones. These acronyms are case
-insensitive can be used for the <code>metric</code> parameter instead of the
+for some of the most commonly used ones. These acronyms are case-insensitive
+and can be used in the <code>metric</code> parameter instead of the
 scorer's full name, e.g. <code>atom.run("LR", metric="BA")</code> will use
 <code>balanced_accuracy</code>. The available acronyms are:</p>
 <ul>
 <li>"AP" for "average_precision"</li>
 <li>"BA" for "balanced_accuracy"</li>
 <li>"AUC" for "roc_auc"</li>
+<li>"LogLoss" for "neg_log_loss"</li>
 <li>"EV" for "explained_variance"</li>
 <li>"ME" for "max_error"</li>
 <li>"MAE" for "neg_mean_absolute_error"</li>

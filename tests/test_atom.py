@@ -12,6 +12,7 @@ import glob
 import pytest
 import numpy as np
 import pandas as pd
+from sklearn.metrics import get_scorer
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -397,7 +398,7 @@ def test_errors_are_updated():
 def test_models_and_metric_are_updated():
     """Assert that the models and metric attributes are updated correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["LGB", "CatB"], metric="max_error")
+    atom.run(["LGB", "CatB"], metric=get_scorer("max_error"))
     assert atom.models == ["LGB", "CatB"]
     assert atom.metric == "max_error"
 

@@ -21,7 +21,7 @@ Just like atom, you can [predict](../../../user_guide/#predicting),
 <td width="80%" style="background:white;">
 <strong>models: str or sequence</strong>
 <blockquote>
-Models to fit to the data. Use a custom estimator or the model's predefined acronyms. Possible values are (case insensitive):
+Models to fit to the data. Use a custom estimator or the model's predefined acronyms. Possible values are (case-insensitive):
 <ul>
 <li>"GP" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.gaussian_process.GaussianProcessRegressor.html">Gaussian Process</a></li>
 <li>"OLS" for <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html">Ordinary Least Squares</a></li>

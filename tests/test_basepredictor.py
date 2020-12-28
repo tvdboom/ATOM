@@ -402,7 +402,7 @@ def test_metric_is_given():
     """Assert that it works for a specified metric_."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LDA", "PA"])
-    atom.scoring("auc")
+    atom.scoring("logloss")
     atom.scoring("cm")
     assert 1 == 1  # Ran without errors
 

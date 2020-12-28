@@ -181,20 +181,8 @@ def ATOMLoader(
                         )
                         branch.data = pd.concat([merge(X, y), cls.test])
                     else:
-                        X = catch_return(
-                            transform(
-                                est_branch=v1.pipeline,
-                                X=branch.X,
-                                y=branch.y,
-                                **kwargs
-                            )
-                        )
-
-                        # Estimator can return X or X, y
-                        if isinstance(X, tuple):
-                            branch.data = merge(*X)
-                        else:
-                            branch.data = merge(X, cls.y)
+                        X, y = transform(v1.pipeline, branch.X, branch.y, **kwargs)
+                        branch.data = merge(X, y)
 
                     # Update the indices for the train and test set
                     branch.idx[1] = len(branch.data[branch.data.index >= branch.idx[0]])

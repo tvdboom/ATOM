@@ -55,11 +55,11 @@ def test_score_with_sample_weights():
 # Test properties ================================================== >>
 
 def test_reset_predictions():
-    """Assert that the prediction attrs are reset after calibrating."""
+    """Assert that reset_predictions removes the made predictions."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     print(atom.mnb.score_test)
-    atom.calibrate()
+    atom.mnb.reset_predictions()
     assert atom.mnb._pred_attrs[9] is None
 
 
@@ -242,13 +242,6 @@ def test_scoring_custom_metrics(on_set):
         assert isinstance(atom.mnb.scoring(metric, on_set), int)
     for metric in ["lift", "fpr", "tpr", "sup"]:
         assert isinstance(atom.mnb.scoring(metric, on_set), float)
-
-
-def test_scoring_invalid_metric():
-    """Assert that invalid metrics return a string."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
-    pytest.raises(ValueError, atom.rf.scoring, "roc_auc")
 
 
 def test_scoring_kwargs():

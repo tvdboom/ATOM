@@ -95,6 +95,7 @@ METRIC_ACRONYMS = dict(
     ap="average_precision",
     ba="balanced_accuracy",
     auc="roc_auc",
+    logloss="neg_log_loss",
     ev="explained_variance",
     me="max_error",
     mae="neg_mean_absolute_error",
@@ -479,7 +480,7 @@ def get_acronym(model):
     Parameters
     ----------
     model: str
-        Acronym of the model, case insensitive.
+        Acronym of the model, case-insensitive.
 
     Returns
     -------

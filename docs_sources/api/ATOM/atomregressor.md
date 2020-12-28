@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.api.<strong style="color:#008AB8">ATOMRegressor</strong>(*arrays, n_rows=1, test_size=0.2, logger=None,
                              n_jobs=1, warnings=True, verbose=0, random_state=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L319">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L307">[source]</a></div></pre>
 ATOMRegressor is ATOM's wrapper for regression tasks. Use this class to easily apply
 all data transformations and model management provided by the package on a given
 dataset. Note that contrary to scikit-learn's API, an ATOMRegressor instance already

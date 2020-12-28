@@ -349,59 +349,52 @@ class BaseModel(BaseModelPlotter):
                 "Choose between 'train' or 'test'."
             )
 
-        try:
-            if metric.lower() == "cm":
-                return confusion_matrix(
-                    getattr(self, f"y_{dataset}"), getattr(self, f"predict_{dataset}")
-                )
-            elif metric.lower() == "tn":
-                return int(self.scoring("cm", dataset).ravel()[0])
-            elif metric.lower() == "fp":
-                return int(self.scoring("cm", dataset).ravel()[1])
-            elif metric.lower() == "fn":
-                return int(self.scoring("cm", dataset).ravel()[2])
-            elif metric.lower() == "tp":
-                return int(self.scoring("cm", dataset).ravel()[3])
-            elif metric.lower() == "lift":
-                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
-                return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
-            elif metric.lower() == "fpr":
-                tn, fp, _, _ = self.scoring("cm", dataset).ravel()
-                return float(fp / (fp + tn))
-            elif metric.lower() == "tpr":
-                _, _, fn, tp = self.scoring("cm", dataset).ravel()
-                return float(tp / (tp + fn))
-            elif metric.lower() == "sup":
-                tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
-                return float((tp + fp) / (tp + fp + fn + tn))
-
-            # Calculate the scorer via _score_func to use the prediction properties
-            scorer = SCORERS[metric]
-            if type(scorer).__name__ == "_ThresholdScorer":
-                if self.T.task.startswith("reg"):
-                    y_pred = getattr(self, f"predict_{dataset}")
-                elif hasattr(self.estimator, "decision_function"):
-                    y_pred = getattr(self, f"decision_function_{dataset}")
-                else:
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
-            elif type(scorer).__name__ == "_ProbaScorer":
-                if hasattr(self.estimator, "predict_proba"):
-                    y_pred = getattr(self, f"predict_proba_{dataset}")
-                    if self.T.task.startswith("bin"):
-                        y_pred = y_pred[:, 1]
-                else:
-                    y_pred = getattr(self, f"decision_function_{dataset}")
-            else:
-                y_pred = getattr(self, f"predict_{dataset}")
-
-            return scorer._sign * float(scorer._score_func(
-                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
-            ))
-
-        except (ValueError, TypeError):
-            raise ValueError(
-                f"Invalid value for the metric parameter. Metric {metric} is "
-                f"invalid for a {self.fullname} model with a {self.T.task} task!"
+        if metric.lower() == "cm":
+            return confusion_matrix(
+                getattr(self, f"y_{dataset}"), getattr(self, f"predict_{dataset}")
             )
+        elif metric.lower() == "tn":
+            return int(self.scoring("cm", dataset).ravel()[0])
+        elif metric.lower() == "fp":
+            return int(self.scoring("cm", dataset).ravel()[1])
+        elif metric.lower() == "fn":
+            return int(self.scoring("cm", dataset).ravel()[2])
+        elif metric.lower() == "tp":
+            return int(self.scoring("cm", dataset).ravel()[3])
+        elif metric.lower() == "lift":
+            tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
+            return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
+        elif metric.lower() == "fpr":
+            tn, fp, _, _ = self.scoring("cm", dataset).ravel()
+            return float(fp / (fp + tn))
+        elif metric.lower() == "tpr":
+            _, _, fn, tp = self.scoring("cm", dataset).ravel()
+            return float(tp / (tp + fn))
+        elif metric.lower() == "sup":
+            tn, fp, fn, tp = self.scoring("cm", dataset).ravel()
+            return float((tp + fp) / (tp + fp + fn + tn))
+
+        # Calculate the scorer via _score_func to use the prediction properties
+        scorer = SCORERS[metric]
+        if type(scorer).__name__ == "_ThresholdScorer":
+            if self.T.task.startswith("reg"):
+                y_pred = getattr(self, f"predict_{dataset}")
+            elif hasattr(self.estimator, "decision_function"):
+                y_pred = getattr(self, f"decision_function_{dataset}")
+            else:
+                y_pred = getattr(self, f"predict_proba_{dataset}")
+                if self.T.task.startswith("bin"):
+                    y_pred = y_pred[:, 1]
+        elif type(scorer).__name__ == "_ProbaScorer":
+            if hasattr(self.estimator, "predict_proba"):
+                y_pred = getattr(self, f"predict_proba_{dataset}")
+                if self.T.task.startswith("bin"):
+                    y_pred = y_pred[:, 1]
+            else:
+                y_pred = getattr(self, f"decision_function_{dataset}")
+        else:
+            y_pred = getattr(self, f"predict_{dataset}")
+
+        return scorer._sign * float(scorer._score_func(
+            getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
+        ))

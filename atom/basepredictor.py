@@ -144,7 +144,7 @@ class BasePredictor(object):
          If there are multiple models that start with the same
          acronym, all will be return. If the input is a number,
          select all models that end with that number. The input
-         is case insensitive.
+         is case-insensitive.
 
          """
         to_return = []
