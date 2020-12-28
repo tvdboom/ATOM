@@ -377,9 +377,7 @@ class BaseModel(BaseModelPlotter):
         # Calculate the scorer via _score_func to use the prediction properties
         scorer = SCORERS[metric]
         if type(scorer).__name__ == "_ThresholdScorer":
-            if self.T.task.startswith("reg"):
-                y_pred = getattr(self, f"predict_{dataset}")
-            elif hasattr(self.estimator, "decision_function"):
+            if hasattr(self.estimator, "decision_function"):
                 y_pred = getattr(self, f"decision_function_{dataset}")
             else:
                 y_pred = getattr(self, f"predict_proba_{dataset}")

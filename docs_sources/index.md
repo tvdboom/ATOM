@@ -87,7 +87,7 @@ Example steps taken by ATOM's pipeline:
 # Release history
 -----------------
 
-### Version 4.2.0 - Coming soon
+### Version 4.2.0 - 28 December 2020
 
 * Possibility to add custom models to the pipeline using [ATOMModel](./API/ATOM/atommodel).
 * Compatibility with [deep learning](./user_guide/#deep-learning) models.

@@ -176,7 +176,7 @@ Make plots to analyze the results:
 Release history
 -----------------
 
-### Version 4.2.0 - Coming soon
+### Version 4.2.0 - 28 December 2020
 
 * Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
 * Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.

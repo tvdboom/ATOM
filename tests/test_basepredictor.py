@@ -401,9 +401,10 @@ def test_metric_is_none():
 def test_metric_is_given():
     """Assert that it works for a specified metric_."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LDA", "PA"])
-    atom.scoring("logloss")
-    atom.scoring("cm")
+    atom.run(["GNB", "PA"])
+    atom.scoring("logloss")  # For _ProbaScorer
+    atom.scoring("ap")  # For _ThresholdScorer
+    atom.scoring("cm")  # For special case
     assert 1 == 1  # Ran without errors
 
 

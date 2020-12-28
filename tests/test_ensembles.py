@@ -169,12 +169,21 @@ def test_stack_scoring():
     assert atom.stack.scoring("recall") == 0.9852941176470589
 
 
-def test_stack_predictions_classification():
-    """Assert that the prediction methods work for classification tasks."""
+def test_stack_predictions_binary():
+    """Assert that the prediction methods work for binary tasks."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["Tree", "PA"])
+    atom.stacking(models=["Tree", "PA"], passthrough=True)
+    pytest.raises(AttributeError, atom.stack.decision_function, X_bin)
+    assert isinstance(atom.stack.predict(X_bin), np.ndarray)
+    assert isinstance(atom.stack.score(X_bin, y_bin), np.float64)
+
+
+def test_stack_predictions_multiclass():
+    """Assert that the prediction methods work for multiclass tasks."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run(["Tree", "PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
-    pytest.raises(AttributeError, atom.stack.decision_function, X_class)
     assert isinstance(atom.stack.predict(X_class), np.ndarray)
     assert isinstance(atom.stack.score(X_class, y_class), np.float64)
 
