@@ -426,7 +426,7 @@ Whether to render the plot.
 
 <a name="delete"></a>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L322">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L340">[source]</a></div></pre>
 Removes a model from the pipeline. If all models in the pipeline are removed,
 the metric is reset. Use this method to remove unwanted models or to free
 some memory before saving the instance.
@@ -492,14 +492,14 @@ Name to save the file with (as .html). None to not save anything.
 
 <a name="reset-aesthetics"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L193">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L194">[source]</a></div></pre>
 Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
 <br /><br /><br />
 
 
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L97">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L98">[source]</a></div></pre>
 Clear the [prediction attributes](../../../user_guide/#predicting) from all models.
  Use this method to free some memory before saving the trainer.
 <br /><br /><br />
@@ -553,7 +553,7 @@ Data set to save.
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L278">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
 Get the scoring for a specific metric.
 <table>
 <tr>
@@ -586,7 +586,7 @@ Overview of the models' scoring for the selected metric.
 
 <a name="stacking"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None, estimator=None, stack_method="auto", passthrough=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L195">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L213">[source]</a></div></pre>
 Add a Stacking instance to the models in the pipeline.
 <table>
 <tr>
@@ -629,7 +629,7 @@ Print basic information about the dataset.
 
 <a name="voting"></a>
 <pre><em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L162">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L180">[source]</a></div></pre>
 Add a Voting instance to the models in the pipeline.
 <table>
 <tr>
@@ -858,7 +858,7 @@ as the [models](../../../user_guide/#models), and the
 <a name="run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
            n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L782">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L783">[source]</a></div></pre>
 Runs a [DirectRegressor](../training/directregressor.md) instance.
 <br /><br /><br />
 
@@ -867,7 +867,7 @@ Runs a [DirectRegressor](../training/directregressor.md) instance.
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
                           est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L823">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L824">[source]</a></div></pre>
 Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) instance.
 <br /><br /><br />
 
@@ -876,7 +876,7 @@ Runs a [SuccessiveHalvingRegressor](../training/successivehalvingregressor.md) i
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
                     n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L871">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L872">[source]</a></div></pre>
 Runs a [TrainSizingRegressor](../training/trainsizingregressor.md) instance.
 <br /><br /><br />
 

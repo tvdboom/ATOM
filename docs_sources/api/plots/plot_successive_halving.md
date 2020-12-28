@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_successive_halving</strong>(models=None, metric=0, title=None,
                                figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2767">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2790">[source]</a></div></pre>
 Plot of the models" scores per iteration of the successive halving. Only
  available if the models were fitted using [successive halving](../../../user_guide/#successive-halving).
 <table width="100%">

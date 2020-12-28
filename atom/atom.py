@@ -518,7 +518,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         self.train = merge(*outliers.transform(self.X_train, self.y_train))
-        self.dataset.reset_index(drop=True, inplace=True)
+        self.dataset = self.dataset.reset_index(drop=True)
 
         self.branch.pipeline = self.pipeline.append(
             pd.Series([outliers]), ignore_index=True
@@ -548,7 +548,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         balancer.mapping = self.mapping
 
         self.train = merge(*balancer.transform(self.X_train, self.y_train))
-        self.dataset.reset_index(drop=True, inplace=True)
+        self.dataset = self.dataset.reset_index(drop=True)
 
         self.branch.pipeline = self.pipeline.append(
             pd.Series([balancer]), ignore_index=True

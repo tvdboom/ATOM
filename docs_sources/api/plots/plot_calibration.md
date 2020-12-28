@@ -2,7 +2,7 @@
 ------------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2051">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2076">[source]</a></div></pre>
 Plot the calibration curve for a binary classifier.
  Well calibrated classifiers are probabilistic classifiers for which the
  output of the `predict_proba` method can be directly interpreted as a

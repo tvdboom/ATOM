@@ -2,7 +2,7 @@
 ------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_evals</strong>(models=None, dataset="both", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L865">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L895">[source]</a></div></pre>
 Plot evaluation curves for the train and test set. Only for models that allow
  in-training evaluation ([XGB](../../models/xgb), [LGB](../../models/lgb),
  [CatB](../../models/catb)). The metric is provided by the estimator's

@@ -5,7 +5,7 @@
                                                 needs_threshold=False, skip_runs=0, n_calls=10,
                                                 n_initial_points=5, est_params={}, bo_params={}, bagging=None,
                                                 n_jobs=1, verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L319">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L346">[source]</a></div></pre>
 Fit and evaluate the models in a [successive halving](../../../user_guide/#successive-halving)
  fashion. The pipeline applies the following steps per iteration:
 
@@ -432,7 +432,7 @@ Fontsize for the ticks along the plot's axes.
 
 <a name="calibrate"></a>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L272">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L290">[source]</a></div></pre>
 Applies probability calibration on the winning model. The calibration is performed
  using sklearn's [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
  class. The model is trained via cross-validation on a subset of the training data,
@@ -496,7 +496,7 @@ Whether to render the plot.
 
 <a name="delete"></a>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L322">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L340">[source]</a></div></pre>
 Removes a model from the pipeline. If all models in the pipeline are removed,
  the metric is reset. Use this method to remove unwanted models or to free
  some memory before saving the instance.
@@ -515,7 +515,7 @@ Name of the models to clear from the pipeline. If None, clear all models.
 
 <a name="get-class-weight"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L246">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L264">[source]</a></div></pre>
 Return class weights for a balanced data set. Statistically, the class weights
  re-balance the data set so that the sampled data set represents the target
  population as closely as reasonably possible. The returned weights are inversely
@@ -581,14 +581,14 @@ Minimum verbosity level to print the message.
 
 <a name="reset-aesthetics"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L193">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L194">[source]</a></div></pre>
 Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
 <br /><br /><br />
 
 
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L97">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L98">[source]</a></div></pre>
 Clear the [prediction attributes](../../../user_guide/#predicting) from all models.
  Use this method to free some memory before saving the trainer.
 <br /><br /><br />
@@ -643,7 +643,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L278">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
 Get the scoring for a specific metric.
 <table>
 <tr>
@@ -712,7 +712,7 @@ Estimator instance.
 
 <a name="stacking"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None, estimator=None, stack_method="auto", passthrough=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L195">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L213">[source]</a></div></pre>
 Add a Stacking instance to the models in the pipeline.
 <table>
 <tr>
@@ -748,7 +748,7 @@ When False, only the predictions of estimators will be used
 
 <a name="voting"></a>
 <pre><em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L162">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L180">[source]</a></div></pre>
 Add a Voting instance to the models in the pipeline.
 <table>
 <tr>

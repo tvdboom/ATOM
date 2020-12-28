@@ -5,7 +5,7 @@
                                          needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5),
                                          n_calls=10, n_initial_points=5, est_params={}, bo_params={},
                                          bagging=None, n_jobs=1, verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L412">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L439">[source]</a></div></pre>
 Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizing)
  fashion. The pipeline applies the following steps per iteration:
 
@@ -456,7 +456,7 @@ Whether to render the plot.
 
 <a name="delete"></a>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L322">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L340">[source]</a></div></pre>
 Removes a model from the pipeline. If all models in the pipeline are removed,
  the metric is reset. Use this method to remove unwanted models or to free
  some memory before saving the instance.
@@ -521,14 +521,14 @@ Minimum verbosity level to print the message.
 
 <a name="reset-aesthetics"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L193">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L194">[source]</a></div></pre>
 Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
 <br /><br /><br />
 
 
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L97">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L98">[source]</a></div></pre>
 Clear the [prediction attributes](../../../user_guide/#predicting) from all models.
  Use this method to free some memory before saving the trainer.
 <br /><br /><br />
@@ -583,7 +583,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L278">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
 Get the scoring for a specific metric.
 <table>
 <tr>
@@ -640,7 +640,7 @@ Estimator instance.
 
 <a name="stacking"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None, estimator=None, stack_method="auto", passthrough=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L195">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L213">[source]</a></div></pre>
 Add a Stacking instance to the models in the pipeline.
 <table>
 <tr>
@@ -676,7 +676,7 @@ When False, only the predictions of estimators will be used
 
 <a name="voting"></a>
 <pre><em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L162">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L180">[source]</a></div></pre>
 Add a Voting instance to the models in the pipeline.
 <table>
 <tr>

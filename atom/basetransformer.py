@@ -223,7 +223,7 @@ class BaseTransformer(object):
                     kwargs = dict(n=int(self.n_rows), random_state=self.random_state)
                 data = data.sample(**kwargs)
 
-            data.reset_index(drop=True, inplace=True)
+            data = data.reset_index(drop=True)
 
             if self.test_size <= 0 or self.test_size >= len(data):
                 raise ValueError(

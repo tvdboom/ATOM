@@ -2,7 +2,7 @@
 ---------------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>(models=None, metric=0, title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2849">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2876">[source]</a></div></pre>
 Plot the model's learning curve: score vs number of training samples. Only
  available if the models were fitted using [train sizing](../../../user_guide/#train-sizing).
 <table width="100%">

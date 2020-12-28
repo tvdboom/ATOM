@@ -2,7 +2,7 @@
 --------------
 
 <pre><em>method</em> <strong style="color:#008AB8">summary_plot</strong>(models=None, show=None, target=1, title=None, figsize=None, filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2490">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2513">[source]</a></div></pre>
 Plot SHAP's summary plot. Create a SHAP beeswarm plot, colored by feature values when
  they are provided. The explainer will be chosen automatically based on the model's type.
  Read more about SHAP plots in the [user guide](../../../user_guide/#shap).

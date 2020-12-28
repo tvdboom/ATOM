@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset="test", normalize=False,
                              title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1714">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1743">[source]</a></div></pre>
 Plot a model's confusion matrix. Only for classification tasks.
 
 * For 1 model: plot the confusion matrix in a heatmap.

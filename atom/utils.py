@@ -774,7 +774,7 @@ def delete(self, models):
                 ~self._results.index.get_level_values(1).str.contains(model)
             ]
         else:
-            self._results.drop(model, axis=0, inplace=True, errors="ignore")
+            self._results = self._results.drop(model, axis=0, errors="ignore")
 
         # If no models, reset the metric and the training approach
         if not self.models:

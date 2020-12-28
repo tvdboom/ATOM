@@ -200,7 +200,7 @@ def ATOMLoader(
                     branch.idx[1] = len(branch.data[branch.data.index >= branch.idx[0]])
                     branch.idx[0] = len(branch.data[branch.data.index < branch.idx[0]])
 
-                    branch.data.reset_index(drop=True, inplace=True)
+                    branch.data = branch.data.reset_index(drop=True)
 
                     for b2, v2 in cls._branches.items():
                         try:  # Can fail if pipeline is shorter than i

@@ -700,7 +700,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                     # If count is larger than fraction of total...
                     if c >= self.max_frac_repeated * len(X):
                         self._low_variance[col] = [u, c // len(X) * 100]
-                        X.drop(col, axis=1, inplace=True)
+                        X = X.drop(col, axis=1)
                         break
 
         # Remove features with too high correlation
@@ -727,7 +727,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                     "correlation_value": ", ".join(map(str, corr_values)),
                 }, ignore_index=True)
 
-            X.drop(to_drop, axis=1, inplace=True)
+            X = X.drop(to_drop, axis=1)
 
         # Set n_features as all or fraction of total
         if self.n_features is None:
@@ -886,7 +886,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                 f" --> Feature {key} was removed due to low variance. Value "
                 f"{value[0]} repeated in {value[1]}% of the rows.", 2
             )
-            X.drop(key, axis=1, inplace=True)
+            X = X.drop(key, axis=1)
 
         # Remove features with too high correlation
         for col in self.collinear["drop_feature"]:
@@ -894,7 +894,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                 f" --> Feature {col} was removed due to "
                 "collinearity with another feature.", 2
             )
-            X.drop(col, axis=1, inplace=True)
+            X = X.drop(col, axis=1)
 
         # Perform selection based on strategy
         if self.strategy is None:
@@ -914,7 +914,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                         f"(score: {self.univariate.scores_[n]:.2f}  "
                         f"p-value: {self.univariate.pvalues_[n]:.2f}).", 2
                     )
-                    X.drop(column, axis=1, inplace=True)
+                    X = X.drop(column, axis=1)
 
             self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
@@ -943,7 +943,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
             for n, column in enumerate(X):
                 if not self.sfm.get_support()[n]:
                     self.log(f"   >>> Dropping feature {column}.", 2)
-                    X.drop(column, axis=1, inplace=True)
+                    X = X.drop(column, axis=1)
 
             self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
@@ -958,7 +958,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                         f"   >>> Dropping feature {column} "
                         f"(rank {self.rfe.ranking_[n]}).", 2
                     )
-                    X.drop(column, axis=1, inplace=True)
+                    X = X.drop(column, axis=1)
 
             idx = np.argsort(get_scores(self.rfe.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
@@ -974,7 +974,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
                         f"   >>> Dropping feature {column} "
                         f"(rank {self.rfecv.ranking_[n]}).", 2
                     )
-                    X.drop(column, axis=1, inplace=True)
+                    X = X.drop(column, axis=1)
 
             idx = np.argsort(get_scores(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
@@ -987,6 +987,6 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
             for n, column in enumerate(X):
                 if not self.sfs.support_[n]:
                     self.log(f"   >>> Dropping feature {column}.", 2)
-                    X.drop(column, axis=1, inplace=True)
+                    X = X.drop(column, axis=1)
 
         return X

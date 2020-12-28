@@ -8,8 +8,6 @@ Description: Module containing the BaseModel class.
 """
 
 # Standard packages
-import pickle
-import numpy as np
 import pandas as pd
 from typeguard import typechecked
 from typing import Optional
@@ -308,7 +306,7 @@ class BaseModel(BaseModelPlotter):
 
     @composed(crash, method_to_log)
     def delete(self):
-        """Delete model from the trainer."""
+        """Delete the model from the trainer."""
         self.T.delete(self.name)
 
     @composed(crash, method_to_log, typechecked)
@@ -407,23 +405,3 @@ class BaseModel(BaseModelPlotter):
                 f"Invalid value for the metric parameter. Metric {metric} is "
                 f"invalid for a {self.fullname} model with a {self.T.task} task!"
             )
-
-    @composed(crash, method_to_log, typechecked)
-    def save_estimator(self, filename: Optional[str] = None):
-        """Save the estimator to a pickle file.
-
-        Parameters
-        ----------
-        filename: str, optional (default=None)
-            Name of the file. If None or "auto", the estimator's
-            __name__ is used.
-
-        """
-        if not filename:
-            filename = self.estimator.__class__.__name__
-        elif filename == "auto" or filename.endswith("/auto"):
-            filename = filename.replace("auto", self.estimator.__class__.__name__)
-
-        with open(filename, "wb") as file:
-            pickle.dump(self.estimator, file)
-        self.T.log(f"{self.fullname} estimator saved successfully!", 1)

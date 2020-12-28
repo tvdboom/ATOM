@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
                                    title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1082">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1112">[source]</a></div></pre>
 Plot the feature permutation importance of models. Calculating all permutations can
  be time-consuming, especially if `n_repeats` is high. They are stored under
  the attribute `permutations`. This means that if a plot is repeated for

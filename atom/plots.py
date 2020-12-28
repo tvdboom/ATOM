@@ -1199,7 +1199,7 @@ class BaseModelPlotter(BasePlotter):
 
         # Get the column names sorted by sum of scores
         get_idx = df.groupby("features", as_index=False)["score"].sum()
-        get_idx.sort_values("score", ascending=False, inplace=True)
+        get_idx = get_idx.sort_values("score", ascending=False)
         column_order = get_idx.features.values[:show]
 
         # Save the best feature order
@@ -1306,8 +1306,7 @@ class BaseModelPlotter(BasePlotter):
                 df.at[col, m.name] = fx / max_feature_importance
 
         # Save the best feature order
-        df.fillna(0, inplace=True)
-        best_fxs = df.sort_values(by=df.columns[-1], ascending=False)
+        best_fxs = df.fillna(0).sort_values(by=df.columns[-1], ascending=False)
         self.branch.feature_importance = list(best_fxs.index.values)
 
         # Select best and sort ascending (by sum of total importances)

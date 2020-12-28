@@ -221,6 +221,11 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 </tr>
 
 <tr>
+<td width="15%"><a href="#delete">delete</a></td>
+<td>Delete the model from the trainer.</td>
+</tr>
+
+<tr>
 <td width="15%"><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
 </tr>
@@ -240,7 +245,7 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 
 <a name="calibrate"></a>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L684">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a></div></pre>
 Applies probability calibration on the estimator. The calibration is done using the
  [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
  class from sklearn. The calibrator will be trained via cross-validation on a subset
@@ -263,9 +268,16 @@ test set. Use this only if you have another, independent set for testing.
 <br />
 
 
+<a name="delete"></a>
+<pre><em>method</em> <strong style="color:#008AB8">delete</strong>()
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L308">[source]</a></div></pre>
+Delete the model from the trainer.
+<br /><br /><br />
+
+
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L168">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L167">[source]</a></div></pre>
 Clear all the [prediction attributes](../../../user_guide/#predicting).
  Use this method to free some memory before saving the model.
 <br /><br /><br />
@@ -273,7 +285,7 @@ Clear all the [prediction attributes](../../../user_guide/#predicting).
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L320">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L313">[source]</a></div></pre>
 Get the model's score for a specific metric.
 <table>
 <tr>
@@ -318,7 +330,7 @@ Model's scoring on the selected metric.
 
 <a name="save-estimator"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L417">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L720">[source]</a></div></pre>
 Save the estimator to a pickle file.
 <table>
 <tr>

@@ -280,7 +280,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     f" --> Dropping feature {col} for having a "
                     f"prohibited type: {dtype}.", 2
                 )
-                X.drop(col, axis=1, inplace=True)
+                X = X.drop(col, axis=1)
                 continue
 
             elif dtype in ("object", "category"):  # If non-numerical feature...
@@ -295,7 +295,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     self.log(
                         f" --> Dropping feature {col} due to maximum cardinality.", 2
                     )
-                    X.drop(col, axis=1, inplace=True)
+                    X = X.drop(col, axis=1)
 
             # Drop features with minimum cardinality (all values are the same)
             if n_unique == 1 and self.minimum_cardinality:
@@ -303,7 +303,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
                     f" --> Dropping feature {col} due to minimum "
                     f"cardinality. Contains only 1 class: {unique[0]}.", 2
                 )
-                X.drop(col, axis=1, inplace=True)
+                X = X.drop(col, axis=1)
 
         if y is not None:
             # Delete rows with NaN in target
@@ -447,11 +447,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         self.log("Fitting Imputer...", 1)
 
         # Replace all missing values with NaN
-        X.replace(self.missing + [np.inf, -np.inf], np.NaN, inplace=True)
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        min_frac_rows = int(self.min_frac_rows * X.shape[1])
-        X.dropna(axis=0, thresh=min_frac_rows, inplace=True)
+        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
 
         # Loop over all columns to fit the impute classes
         for col in X:
@@ -508,14 +507,11 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         self.log("Imputing missing values...", 1)
 
         # Replace missing values with NaN
-        X.fillna(value=np.NaN, inplace=True)  # Replace None first
-        for to_replace in self.missing:
-            X.replace(to_replace, np.NaN, inplace=True)
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        min_frac_rows = int(self.min_frac_rows * X.shape[1])
         length = len(X)
-        X.dropna(axis=0, thresh=min_frac_rows, inplace=True)
+        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
         if y is not None:
             y = y[y.index.isin(X.index)]  # Select only indices that remain
         diff = length - len(X)
@@ -537,7 +533,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                     f" --> Dropping feature {col} for containing "
                     f"{nans} ({p_nans}%) missing values.", 2
                 )
-                X.drop(col, axis=1, inplace=True)
+                X = X.drop(col, axis=1)
                 continue  # Skip to side column
 
             # Column is numerical and contains missing values
@@ -547,10 +543,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                         f" --> Imputing {nans} missing values with number "
                         f"{str(self.strat_num)} in feature {col}.", 2
                     )
-                    X[col].replace(np.NaN, self.strat_num, inplace=True)
+                    X[col] = X[col].replace(np.NaN, self.strat_num)
 
                 elif self.strat_num.lower() == "drop":
-                    X.dropna(subset=[col], axis=0, inplace=True)
+                    X = X.dropna(subset=[col], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
@@ -579,10 +575,10 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_cat} in feature {col}.", 2
                     )
-                    X[col].replace(np.NaN, self.strat_cat, inplace=True)
+                    X[col] = X[col].replace(np.NaN, self.strat_cat)
 
                 elif self.strat_cat.lower() == "drop":
-                    X.dropna(subset=[col], axis=0, inplace=True)
+                    X = X.dropna(subset=[col], axis=0)
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
@@ -726,7 +722,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
                     for category, count in X[col].value_counts().items():
                         if count < self.frac_to_other * len(X[col]):
                             self._to_other[col].append(category)
-                            X[col].replace(category, "other", inplace=True)
+                            X[col] = X[col].replace(category, "other")
 
                 # Count number of unique values in the column
                 n_unique = len(X[col].unique())
@@ -776,8 +772,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         for idx, col in enumerate(X):
             if X[col].dtype.kind not in "ifu":  # If column is categorical
                 # Convert classes to "other"
-                for category in self._to_other[col]:
-                    X[col].replace(category, "other", inplace=True)
+                X[col] = X[col].replace(self._to_other[col], "other")
 
                 self.log(
                     f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
@@ -907,7 +902,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
         if not isinstance(self.strategy, str):
             cond = np.abs(z_scores) > self.max_sigma
-            objective.mask(cond, self.strategy, inplace=True)
+            objective = objective.mask(cond, self.strategy)
             if cond.sum() > 0:
                 self.log(
                     f" --> Replacing {cond.sum()} outliers with "

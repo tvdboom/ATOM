@@ -2,7 +2,7 @@
 ------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_gains</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2145">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2170">[source]</a></div></pre>
 Plot the cumulative gains curve. Only for binary classification tasks.
 <table width="100%">
 <tr>

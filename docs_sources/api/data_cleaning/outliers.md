@@ -2,7 +2,7 @@
 ----------
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Outliers</strong>(strategy="drop", max_sigma=3, include_target=False, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L809">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L804">[source]</a></div></pre>
 Remove or replace outliers in the data. Outliers are defined as values that lie
  further than `max_sigma` * standard_deviation away from the mean of the column.
  Ignores categorical columns. This class can be accessed from atom through the

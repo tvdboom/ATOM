@@ -203,7 +203,7 @@ def test_imputing_all_missing_values_numeric(missing):
 @pytest.mark.parametrize("missing", ["", "?", "NaN", "NA", "nan", "inf"])
 def test_imputing_all_missing_values_categorical(missing):
     """Assert that all missing values are imputed in categorical columns."""
-    X = [[missing, "1", "1"], ["2", "5", missing], ["2", "1", "3"], ["3", "1", "1"]]
+    X = [[missing, "a", "a"], ["b", "c", missing], ["b", "a", "c"], ["c", "a", "a"]]
     y = [1, 1, 0, 0]
     imputer = Imputer(strat_cat="most_frequent")
     X, y = imputer.fit_transform(X, y)
