@@ -8,11 +8,9 @@ Description: Module containing the training classes.
 """
 
 # Standard packages
-import os
-import contextlib
 import numpy as np
 import pandas as pd
-from copy import deepcopy
+from copy import copy
 from typeguard import typechecked
 from typing import Optional, Union
 from sklearn.base import BaseEstimator
@@ -146,13 +144,13 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         while len(_next_models) > 2 ** self.skip_runs - 1:
             self.models = [f"{m[:-1]}{run}" for m in _next_models]
             _all_models += self.models
-            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-                for m in self.models:
-                    subclass = deepcopy(getattr(self, m[:-1]))
-                    subclass.name = m
-                    subclass._train_idx = int(1.0 / len(self.models) * len(self.train))
-                    setattr(self, m, subclass)
-                    setattr(self, m.lower(), subclass)
+            for m in self.models:
+                subclass = copy(getattr(self, m[:-1]))
+                subclass.name = m
+                subclass._pred_attrs = [None] * 10  # Avoid shallow copy
+                subclass._train_idx = int(1.0 / len(self.models) * len(self.train))
+                setattr(self, m, subclass)
+                setattr(self, m.lower(), subclass)
 
             # Print stats for this subset of the data
             p = round(100.0 / len(self.models))
@@ -254,13 +252,13 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
             self.models = [f"{m}{run}" for m in _models]
             _all_models += self.models
-            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-                for i, m in enumerate(self.models):
-                    subclass = deepcopy(getattr(self, _models[i]))
-                    subclass.name = m
-                    subclass._train_idx = train_size
-                    setattr(self, m, subclass)
-                    setattr(self, m.lower(), subclass)
+            for i, m in enumerate(self.models):
+                subclass = copy(getattr(self, _models[i]))
+                subclass.name = m
+                subclass._pred_attrs = [None] * 10  # Avoid shallow copy
+                subclass._train_idx = train_size
+                setattr(self, m, subclass)
+                setattr(self, m.lower(), subclass)
 
             # Print stats for this subset of the data
             p = round(train_size * 100.0 / self.branch.idx[0])

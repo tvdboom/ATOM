@@ -56,11 +56,13 @@ setuptools.setup(
         "seaborn >= 0.10.0",
         "shap >= 0.37.0"
     ],
-    extras_require=[
-        "xgboost >= 0.90",
-        "lightgbm >= 2.3.0",
-        "catboost >= 0.19.1"
-    ],
+    extras_require={
+        "models": [
+            "xgboost >= 0.90",
+            "lightgbm >= 2.3.0",
+            "catboost >= 0.19.1"
+        ]
+    },
     test_require=[
         "pytest >= 6.1.2",
         "tensorflow >= 2.3.1",

@@ -5,7 +5,7 @@
                                           needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5),
                                           n_calls=10, n_initial_points=5, est_params={}, bo_params={},
                                           bagging=None, n_jobs=1, verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L408">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L406">[source]</a></div></pre>
 Fit and evaluate the models in a [train sizing](../../../user_guide/#train-sizing)
  fashion. The pipeline applies the following steps per iteration:
 

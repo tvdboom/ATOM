@@ -14,6 +14,11 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
+To also install the [optional dependencies](../dependencies/#optional), add [models]
+after the package's name.
+
+    $ pip install -U atom-ml[models]
+
 <br><br>
 
 # Usage

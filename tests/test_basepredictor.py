@@ -472,7 +472,7 @@ def test_models_is_sequence():
 def test_delete_successive_halving():
     """Assert that deleting works for successive halving pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.successive_halving(["LR", "Tree", "RF"], bagging=3)
+    atom.successive_halving(["LR", "Tree"], bagging=3)
     atom.delete(["LR0"])
     assert "LR0" not in atom.results.index.get_level_values(1)
     assert atom.winner is atom.lr1
@@ -481,7 +481,7 @@ def test_delete_successive_halving():
 def test_delete_train_sizing():
     """Assert that deleting works for train sizing pipelines."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.train_sizing(["LR", "Tree", "RF"])
+    atom.train_sizing(["LR", "Tree"])
     atom.delete()
     assert not (atom.models or atom.metric or atom._approach)
     assert atom.results.empty

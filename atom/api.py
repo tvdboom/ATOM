@@ -17,7 +17,7 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SEQUENCE_TYPES, merge, catch_return, transform
+from .utils import SEQUENCE_TYPES, merge, transform
 
 
 # Functions ======================================================== >>

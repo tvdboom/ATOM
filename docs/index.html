@@ -631,13 +631,23 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <p><br><br><br><br></p>
 <h1 id="release-history">Release history</h1>
 <hr />
+<h3 id="version-421-29-december-2020">Version 4.2.1 - 29 December 2020</h3>
+<ul>
+<li>Bug fix where there was memory leakage in <a href="./user_guide/#successive-halving">successive halving</a>
+  and <a href="./user_guide/#train-sizing">train sizing</a> pipelines.</li>
+<li>The <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html">XGBoost</a>,
+  <a href="https://lightgbm.readthedocs.io/en/latest/">LightGBM</a> and
+  <a href="https://catboost.ai/">CatBoost</a> packages can now be installed through the installer's
+  extras_require under the name <code>models</code>, e.g. <code>pip install -U atom-ml[models]</code>.</li>
+<li>Improved documentation.</li>
+</ul>
 <h3 id="version-420-28-december-2020">Version 4.2.0 - 28 December 2020</h3>
 <ul>
 <li>Possibility to add custom models to the pipeline using <a href="./API/ATOM/atommodel">ATOMModel</a>.</li>
 <li>Compatibility with <a href="./user_guide/#deep-learning">deep learning</a> models.</li>
 <li>New branch system for different data pipelines. Read more in the <a href="./user_guide/#data-pipelines">user guide</a>.</li>
 <li>Use the <a href="./API/ATOM/atomclassifier/#canvas">canvas</a> contextmanager to draw multiple plots in one figure.</li>
-<li>New <a href="./user_guide/#voting">Voting</a> and <a href="./user_guide/#stacking">Stacking</a> ensemble techniques.</li>
+<li>New <a href="./user_guide/#voting">voting</a> and <a href="./user_guide/#stacking">stacking</a> ensemble techniques.</li>
 <li>New <a href="./API/ATOM/atomclassifier/#get-class-weight">get_class_weight</a> utility method.</li>
 <li>New Sequential Feature Selection strategy for the <a href="./API/feature_engineering/feature_selector">FeatureSelector</a>.</li>
 <li>Added the <code>sample_weight</code> parameter to the <a href="./API/predicting/score">score</a> method.</li>
@@ -649,7 +659,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>The class property now returns a pd.DataFrame of the number of rows per target class
   in the train, test and complete dataset.</li>
 <li>Possibility to add custom parameters to an estimator's fit method through <code>est_params</code>.</li>
-<li><a href="./user_guide/#successive-halving">Successive halving</a> and <a href="./user_guide/#train-sizing">Train sizing</a>
+<li><a href="./user_guide/#successive-halving">Successive halving</a> and <a href="./user_guide/#train-sizing">train sizing</a>
   now both allow subsequent runs from atom without losing previous information.</li>
 <li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
 <li>Added the <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>, 
@@ -929,5 +939,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-12-28 16:17:58.261206+00:00
+Build Date UTC : 2020-12-29 09:13:59.640465+00:00
 -->

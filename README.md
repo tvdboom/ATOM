@@ -176,13 +176,24 @@ Make plots to analyze the results:
 Release history
 -----------------
 
+### Version 4.2.1 - 29 December 2020
+
+* Bug fix where there was memory leakage in [successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving)
+  and [train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing) pipelines.
+* The [XGBoost](https://xgboost.readthedocs.io/en/latest/python/python_api.html),
+  [LightGBM](https://lightgbm.readthedocs.io/en/latest/) and
+  [CatBoost](https://catboost.ai/) packages can now be installed through the installer's
+  extras_require under the name `models`, e.g. `pip install -U atom-ml[models]`.
+* Improved documentation.
+
+
 ### Version 4.2.0 - 28 December 2020
 
 * Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
 * Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.
 * New branch system for different data pipelines. Read more in the [user guide](https://tvdboom.github.io/ATOM/user_guide/#data-pipelines).
 * Use the [canvas](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
-* New [Voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [Stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
+* New [voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#get-class-weight) utility method.
 * Added the `sample_weight` parameter to the [score](https://tvdboom.github.io/ATOM/API/predicting/score) method.
 * New Sequential Feature Selection strategy for the [FeatureSelector](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_selector).
@@ -195,7 +206,7 @@ Release history
   in the train, test and complete dataset.
 * Possibility to add custom parameters to an estimator's fit method through `est_params`.
 * [Successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving)
-  and [Train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing)
+  and [train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing)
   now both allow subsequent runs from atom without losing previous information.
 * Bug fix where ATOMLoader wouldn't encode the target column during transformation.
 * Added the <a href="https://tvdboom.github.io/ATOM/examples/deep_learning.html" target="_blank">Deep learning</a>, 

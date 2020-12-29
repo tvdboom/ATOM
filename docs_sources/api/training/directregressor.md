@@ -5,7 +5,7 @@
                                     needs_threshold=False, n_calls=10, n_initial_points=5,
                                     est_params={}, bo_params={}, bagging=None, n_jobs=1,
                                     verbose=0, logger=None, random_state=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L316">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L314">[source]</a></div></pre>
 Fit and evaluates the models to the data in the pipeline. The following steps are applied:
 
 1. The optimal hyperparameters are selected using a bayesian optimization algorithm.
