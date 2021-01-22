@@ -1,6 +1,7 @@
 # Files
 run_automl.py
 deep_learning.py
+presentation.pptx
 
 # Exclude everything from tests/files except the .gitkeep file
 tests/files/*

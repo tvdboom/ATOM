@@ -19,7 +19,7 @@ ATOM is built on top of several existing Python libraries. The required packages
 
 ### Required
 
-* **[numpy](https://numpy.org/)** (>=1.17.2)
+* **[numpy](https://numpy.org/)** (>=1.19.5)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
 * **[pandas](https://pandas.pydata.org/)** (>=1.0.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
@@ -28,6 +28,7 @@ ATOM is built on top of several existing Python libraries. The required packages
 * **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.24)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.7.4)
+* **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.5.0)
@@ -35,7 +36,7 @@ ATOM is built on top of several existing Python libraries. The required packages
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
-* **[shap](https://github.com/slundberg/shap/)** (>=0.36.0)
+* **[shap](https://github.com/slundberg/shap/)** (>=0.38.1)
 
 ### Optional
 

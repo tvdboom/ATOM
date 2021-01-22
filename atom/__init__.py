@@ -9,4 +9,4 @@ Description: Import API and declare version.
 
 from .api import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
 
-__version__ = "4.2.1"
+__version__ = "4.3.0"

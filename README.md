@@ -5,7 +5,7 @@
 
 ## Automated Tool for Optimized Modelling
 
-Author: tvdboom &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
+Author: [tvdboom](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
 
 
 #### Repository:
@@ -176,7 +176,25 @@ Make plots to analyze the results:
 Release history
 -----------------
 
-### Version 4.2.1 - 29 December 2020
+### Version 4.3.0 - dev
+
+* Possibility to [add](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
+* The [export_pipeline](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#export-pipeline) utility method extracts atom's current pipeline as a sklearn object.
+* Use [AutoML](https://tvdboom.github.io/ATOM/user_guide/#automl) to automate the search for an optimized pipeline.
+* New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
+* All [training approaches](https://tvdboom.github.io/ATOM/user_guide/#training) can now be combined in the same atom instance.
+* The results dataframe is now equal for all training approaches (multi-index is deprecated).
+* Complete rework of all the [shap plots](https://tvdboom.github.io/ATOM/user_guide#shap) to be consistent with their new API.
+* The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
+* Plots and methods now accept `winner` as model name.
+* Fixed a bug where custom metrics didn't show the correct name.
+* Large refactoring for performance optimization.
+* Cleaner output of messages to the logger.
+* Added the <a href="https://tvdboom.github.io/ATOM/examples/automl.html" target="_blank">AutoML</a> example notebook.
+* Minor bug fixes.
+
+
+### Version 4.2.1
 
 * Bug fix where there was memory leakage in [successive halving](https://tvdboom.github.io/ATOM/user_guide/#successive-halving)
   and [train sizing](https://tvdboom.github.io/ATOM/user_guide/#train-sizing) pipelines.
@@ -187,11 +205,11 @@ Release history
 * Improved documentation.
 
 
-### Version 4.2.0 - 28 December 2020
+### Version 4.2.0
 
 * Possibility to add custom models to the pipeline using [ATOMModel](https://tvdboom.github.io/ATOM/API/ATOM/atommodel).
 * Compatibility with [deep learning](https://tvdboom.github.io/ATOM/user_guide/#deep-learning) models.
-* New branch system for different data pipelines. Read more in the [user guide](https://tvdboom.github.io/ATOM/user_guide/#data-pipelines).
+* New branch system for different data pipelines. Read more in the [user guide](https://tvdboom.github.io/ATOM/user_guide/#branches).
 * Use the [canvas](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
 * New [voting](https://tvdboom.github.io/ATOM/user_guide/#voting) and [stacking](https://tvdboom.github.io/ATOM/user_guide/#stacking) ensemble techniques.
 * New [get_class_weight](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#get-class-weight) utility method.
@@ -215,7 +233,7 @@ Release history
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
-### Version 4.1.0 - 16 October 2020
+### Version 4.1.0
 
 * Added the `est_params` parameter to customize the parameters passed to every model's
   estimator.
@@ -231,7 +249,7 @@ Release history
 * Bug fixes and performance improvements.
 
 
-### Version 4.0.1 - 29 September 2020
+### Version 4.0.1
 
 * Bug fix where the DFS strategy in [FeatureGenerator](https://tvdboom.github.io/ATOM/API/feature_engineering/feature_generator)
   was not deterministic for a fixed random state.
@@ -240,7 +258,7 @@ Release history
 * Typo fixes in documentation.
 
 
-### Version 4.0.0 - 28 September 2020
+### Version 4.0.0
 
 * Bayesian optimization package changed from [GpyOpt](http://sheffieldml.github.io/GPyOpt/)
   to [skopt](https://scikit-optimize.github.io/stable/).

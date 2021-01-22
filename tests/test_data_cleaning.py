@@ -28,7 +28,7 @@ from .utils import (
 )
 
 
-# Test BaseCleaner ================================================= >>
+# Test TransformerMixin ============================================ >>
 
 def test_fit_transform():
     """Assert that the fit_transform method works as intended."""

@@ -17,13 +17,13 @@ from typeguard import typechecked
 from .branch import Branch
 from .ensembles import Voting, Stacking
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, divide,
-    check_is_fitted, get_best_score, delete, method_to_log, composed,
-    crash,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst,
+    divide, check_is_fitted, get_best_score, delete, method_to_log,
+    composed, crash,
 )
 
 
-class BasePredictor(object):
+class BasePredictor:
     """Properties and shared methods for the trainers."""
 
     def __getattr__(self, item):
@@ -32,7 +32,9 @@ class BasePredictor(object):
         if self.__dict__.get("_branches"):  # Add public attrs from branch
             props.extend([k for k in self.branch.__dict__ if k not in Branch.private])
         if item in props:
-            return getattr(self.branch, item)
+            return getattr(self.branch, item)  # Get attr from branch
+        elif self.__dict__.get("_models").get(item.lower()):
+            return self._models[item.lower()]   # Get model subclass
         else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
@@ -66,62 +68,59 @@ class BasePredictor(object):
 
     @property
     def metric(self):
-        """Return the pipeline's metric."""
-        return flt([getattr(metric, "name", metric) for metric in self.metric_])
+        """Return the names of the metrics in the pipeline."""
+        return flt([getattr(metric, "name", metric) for metric in self._metric])
 
     @property
-    def models_(self):
-        """Return a list of the models in the pipeline."""
-        return [getattr(self, model) for model in self.models]
+    def models(self):
+        """Return the names of the models in the pipeline."""
+        return flt([getattr(model, "name", model) for model in self._models])
 
     @property
     def results(self):
-        """Return the results dataframe without empty columns."""
-        df = self._results
-
-        # Combine and order possible different runs
-        if isinstance(df.index, pd.MultiIndex):
-            asc = True if df.index.names[0] == "frac" else False
-            df = df.sort_index(level=0, ascending=asc).reindex(self.models, level=1)
-
-        return df.dropna(axis=1, how="all")
+        """Return the results as a pd.DataFrame."""
+        return pd.DataFrame(
+            data=[m.results for m in self._models],
+            columns=[m.results.index for m in self._models][0],
+            index=lst(self.models),
+        ).dropna(axis=1, how="all")
 
     @property
     def winner(self):
         """Return the best performing model."""
-        if self.models:  # Returns None if not fitted
-            return self.models_[np.argmax([get_best_score(m) for m in self.models_])]
+        if self._models:  # Returns None if not fitted
+            return self._models[np.argmax([get_best_score(m) for m in self._models])]
 
     # Prediction methods =========================================== >>
 
     @composed(crash, method_to_log)
     def reset_predictions(self):
         """Clear the prediction attributes from all models."""
-        for m in self.models_:
+        for m in self._models:
             m._pred_attrs = [None] * 10
 
     @composed(crash, method_to_log, typechecked)
     def predict(self, X: X_TYPES, **kwargs):
         """Get the winning model's predictions on new data."""
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         return self.winner.predict(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(self, X: X_TYPES, **kwargs):
         """Get the winning model's probability predictions on new data."""
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         return self.winner.predict_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(self, X: X_TYPES, **kwargs):
         """Get the winning model's log probability predictions on new data."""
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         return self.winner.predict_log_proba(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(self, X: X_TYPES, **kwargs):
         """Get the winning model's decision function on new data."""
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         return self.winner.decision_function(X, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
@@ -133,7 +132,7 @@ class BasePredictor(object):
         **kwargs,
     ):
         """Get the winning model's score on new data."""
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         return self.winner.score(X, y, sample_weight, **kwargs)
 
     # Utility methods ============================================== >>
@@ -141,18 +140,26 @@ class BasePredictor(object):
     def _get_model_name(self, model):
         """Return a model's name.
 
-         If there are multiple models that start with the same
-         acronym, all will be return. If the input is a number,
-         select all models that end with that number. The input
-         is case-insensitive.
+        If there are multiple models that start with the same
+        acronym, all will be return. If the input is a number,
+        select all models that end with that number. The input
+        is case-insensitive.
 
-         """
+        """
+        model = model.lower()
+
+        if model == "winner":
+            return [self.winner.name]
+
+        if model in self._models:
+            return [self._models[model].name]
+
         to_return = []
-        for name in self.models:
-            condition_1 = name.lower().startswith(model)
-            condition_2 = model.isdigit() and name.endswith(model)
+        for key, value in self._models.items():
+            condition_1 = key.startswith(model)
+            condition_2 = model.replace(".", "").isdigit() and key.endswith(model)
             if condition_1 or condition_2:
-                to_return.append(name)
+                to_return.append(value.name)
 
         if to_return:
             return to_return
@@ -163,9 +170,9 @@ class BasePredictor(object):
             )
 
     def _get_models(self, models):
-        """Return models in the pipeline."""
+        """Return models in the pipeline. Duplicate inputs are ignored."""
         if not models:
-            return self.models.copy()
+            return lst(self.models).copy()
         elif isinstance(models, str):
             return self._get_model_name(models.lower())
         else:
@@ -174,7 +181,7 @@ class BasePredictor(object):
                 for m2 in self._get_model_name(m1.lower()):
                     to_return.append(m2)
 
-            return list(dict.fromkeys(to_return))
+            return list(dict.fromkeys(to_return))  # Avoid duplicates
 
     @composed(crash, method_to_log, typechecked)
     def voting(
@@ -187,26 +194,26 @@ class BasePredictor(object):
         Parameters
         ----------
         models: sequence or None, optional (default=None)
-            Models that feed the voting.
+            Models that feed the voting. If None, all models depending
+            on the current branch are selected.
 
         weights: sequence or None, optional (default=None)
             Sequence of weights (int or float) to weight the
             occurrences of predicted class labels (hard voting)
             or class probabilities before averaging (soft voting).
-            Uses uniform weights if None.
+            If None, it uses uniform weights.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         if not models:
             models = self.branch._get_depending_models()
 
-        self.Vote = self.vote = Voting(
+        self._models["vote"] = Voting(
             self,
             models=self._get_models(models),
             weights=weights
         )
-        self.models += [self.vote.name]
         self.log(f"{self.vote.fullname} added to the models!", 1)
 
     @composed(crash, method_to_log, typechecked)
@@ -243,21 +250,20 @@ class BasePredictor(object):
             original training data.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         if not models:
             models = self.branch._get_depending_models()
         if not estimator:
             estimator = "LR" if self.goal.startswith("class") else "Ridge"
 
-        self.Stack = self.stack = Stacking(
+        self._models["stack"] = Stacking(
             self,
             models=self._get_models(models),
             estimator=estimator,
             stack_method=stack_method,
             passthrough=passthrough,
         )
-        self.models += [self.stack.name]
         self.log(f"{self.stack.fullname} added to the models!", 1)
 
     @composed(crash, typechecked)
@@ -276,6 +282,11 @@ class BasePredictor(object):
             Data set from which to get the weights. Choose between
             "train", "test" or "dataset".
 
+        Returns
+        -------
+        class_weights: dict
+            Classes with the corresponding weights.
+
         """
         if dataset not in ("train", "test", "dataset"):
             raise ValueError(
@@ -289,12 +300,12 @@ class BasePredictor(object):
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the winning model."""
-        check_is_fitted(self, "results")
-        return self.winner.calibrate(**kwargs)
+        check_is_fitted(self, attributes="_models")
+        self.winner.calibrate(**kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Get the scoring for a specific metric.
+        """Print all the models' scoring for a specific metric.
 
         Parameters
         ----------
@@ -311,18 +322,19 @@ class BasePredictor(object):
             Additional keyword arguments for the metric function.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         # If a metric acronym is used, assign the correct name
         if metric and metric.lower() in METRIC_ACRONYMS:
             metric = METRIC_ACRONYMS[metric.lower()]
 
         # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self.models_])
+        maxlen = max([len(m.fullname) for m in self._models])
 
-        self.log("Results ===================== >>", -2)
+        # Get best score of all the models
+        best_score = max([get_best_score(m) for m in self._models])
 
-        for m in self.models_:
+        for m in self._models:
             if not metric:
                 out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
             else:
@@ -333,8 +345,10 @@ class BasePredictor(object):
                 else:  # If confusion matrix...
                     out_score = list(score.ravel())
                 out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
+                if get_best_score(m) == best_score and len(self._models) > 1:
+                    out += " !"
 
-            self.log(out, -2)  # Always print
+            self.log(out, kwargs.get("_vb", -2))  # Always print if called by user
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):

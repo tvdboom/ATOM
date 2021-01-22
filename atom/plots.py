@@ -45,7 +45,7 @@ from .utils import (
 )
 
 
-class BaseFigure(object):
+class BaseFigure:
     """Class that stores the position of the current axes in grid.
 
     Parameters
@@ -88,7 +88,7 @@ class BaseFigure(object):
         return self.gridspec[self._idx]
 
 
-class BasePlotter(object):
+class BasePlotter:
     """Parent class for all plotting methods.
 
     This base class defines the plot properties that can be changed in
@@ -226,7 +226,7 @@ class BasePlotter(object):
 
         """
         models = self._get_models(models)
-        model_subclasses = [m for m in self.models_ if m.name in models]
+        model_subclasses = [m for m in self._models if m.name in models]
 
         if max_one and len(model_subclasses) > 1:
             raise ValueError("This plot method allows only one model at a time!")
@@ -234,21 +234,15 @@ class BasePlotter(object):
         return model_subclasses[0] if max_one else model_subclasses
 
     def _get_metric(self, metric):
-        """Check and return the provided parameter metric."""
+        """Check and return the index of the provided metric."""
         if isinstance(metric, str):
             if metric.lower() in METRIC_ACRONYMS:
                 metric = METRIC_ACRONYMS[metric]
+            return self._metric.index(metric)
 
-            # Return index corresponding to str
-            for i, m in enumerate(self.metric_):
-                if metric.lower() == m.name:
-                    return i
-
-        # If index in available metrics, return as provided
-        elif 0 <= metric < len(self.metric_):
+        elif 0 <= metric < len(self._metric):
             return metric
 
-        # If no match was found, raise an exception
         raise ValueError(
             "Invalid value for the metric parameter. Value should be the index"
             f" or name of a metric used to run the pipeline, got {metric}."
@@ -747,7 +741,7 @@ class BaseModelPlotter(BasePlotter):
         def get_bagging(m):
             """Get the bagging's results for a specific metric."""
             if getattr(m, "metric_bagging", None):
-                if len(self.metric_) == 1:
+                if len(self._metric) == 1:
                     return m.metric_bagging
                 else:
                     return m.metric_bagging[metric]
@@ -759,7 +753,7 @@ class BaseModelPlotter(BasePlotter):
             else:
                 return 0
 
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
@@ -797,7 +791,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title="Model evaluation" if title is None else title,
-            xlabel=self.metric_[metric].name,
+            xlabel=self._metric[metric].name,
             xlim=(min_lim, max_lim) if not all_bagging else None,
             figsize=figsize if figsize else (10, 4 + len(models) // 2),
             filename=filename,
@@ -845,7 +839,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
 
@@ -879,7 +873,7 @@ class BaseModelPlotter(BasePlotter):
             ax=ax1,
             title="Bayesian optimization performance" if title is None else title,
             legend=("lower right", len(models)),
-            ylabel=self.metric_[metric].name,
+            ylabel=self._metric[metric].name,
         )
         ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
         self._plot(
@@ -935,7 +929,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "plot_evals")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         dataset = self._get_set(dataset)
 
@@ -1000,7 +994,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_roc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -1074,7 +1068,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_prc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -1153,7 +1147,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "plot_permutation_importance")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show)
 
@@ -1182,7 +1176,7 @@ class BaseModelPlotter(BasePlotter):
                     estimator=m.estimator,
                     X=m.X_test,
                     y=m.y_test,
-                    scoring=self.metric_[0],
+                    scoring=self._metric[0],
                     n_repeats=n_repeats,
                     n_jobs=self.n_jobs,
                     random_state=self.random_state,
@@ -1277,7 +1271,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "plot_feature_importance")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show)
 
@@ -1438,7 +1432,7 @@ class BaseModelPlotter(BasePlotter):
             return cols
 
         check_dim(self, "plot_partial_dependence")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         tgt_int, tgt_str = self._get_target(target)
 
@@ -1591,7 +1585,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_goal(self, "plot_errors", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -1690,7 +1684,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_goal(self, "plot_residuals", "regression")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -1784,7 +1778,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_goal(self, "plot_confusion_matrix", "classification")
         models = self._get_subclass(models)
 
@@ -1927,14 +1921,14 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_threshold")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         check_predict_proba(models, "plot_threshold")
 
         if metric is None:
-            metric = self.metric_
+            metric = self._metric
         elif not isinstance(metric, list):
             metric = [metric]
 
@@ -2030,7 +2024,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_goal(self, "plot_probabilities", "classification")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -2121,7 +2115,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_calibration")
         models = self._get_subclass(models)
 
@@ -2204,7 +2198,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_gains")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
@@ -2287,7 +2281,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_lift")
 
         models = self._get_subclass(models)
@@ -2389,7 +2383,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "force_plot")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
@@ -2484,7 +2478,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "dependence_plot")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         m = self._get_subclass(models, max_one=True)
         tgt_int, tgt_str = self._get_target(target)
@@ -2560,7 +2554,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "summary_plot")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         m = self._get_subclass(models, max_one=True)
         show = self._get_show(show)
@@ -2654,7 +2648,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "decision_plot")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         m = self._get_subclass(models, max_one=True)
         rows = self._get_index(index, m)
@@ -2747,7 +2741,7 @@ class BaseModelPlotter(BasePlotter):
 
         """
         check_dim(self, "waterfall_plot")
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
 
         m = self._get_subclass(models, max_one=True)
         # If index is None, give a random index of the test set
@@ -2822,28 +2816,19 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
-
-        # Either it's a SuccessiveHalving class or atom with a sh approach
-        condition_1 = self.__class__.__name__.startswith("SuccessiveHalving")
-        condition_2 = getattr(self, "_approach", "") == "SuccessiveHalving"
-        if not condition_1 and not condition_2:
-            raise PermissionError(
-                "You need to run the pipeline using successive "
-                "halving to use the plot_successive_halving method!"
-            )
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
         x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
         for m in models:
-            y[m.name[:-1]].append(get_best_score(m, metric))
-            x[m.name[:-1]].append(len(self.train) // m._train_idx)
+            y[m._group].append(get_best_score(m, metric))
+            x[m._group].append(len(self.train) // m._train_idx)
             if m.std_bagging:
-                std[m.name[:-1]].append(lst(m.std_bagging)[metric])
+                std[m._group].append(lst(m.std_bagging)[metric])
 
         for k in x:
             if not std:
@@ -2854,15 +2839,15 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
                 plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
                 ax.fill_between(x[k], plus, minus, alpha=0.3)
 
-        range_ = self._results.index.get_level_values("n_models")
-        ax.set_xlim(max(range_) + 0.1, min(range_) - 0.1)
-        ax.set_xticks(range(1, max(range_) + 1))
+        n_models = [len(self.train) // m._train_idx for m in models]
+        ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
+        ax.set_xticks(range(1, max(n_models) + 1))
         self._plot(
             ax=ax,
             title="Successive halving results" if title is None else title,
             legend=("lower right", len(x)),
             xlabel="n_models",
-            ylabel=self.metric_[metric].name,
+            ylabel=self._metric[metric].name,
             figsize=figsize,
             filename=filename,
             display=display,
@@ -2908,28 +2893,19 @@ class TrainSizingPlotter(BaseModelPlotter):
             Whether to render the plot.
 
         """
-        check_is_fitted(self, "results")
+        check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         metric = self._get_metric(metric)
-
-        # Either it's a TrainSizing class or atom with a ts approach
-        condition_1 = self.__class__.__name__.startswith("TrainSizing")
-        condition_2 = getattr(self, "_approach", "") == "TrainSizing"
-        if not condition_1 and not condition_2:
-            raise PermissionError(
-                "You need to run the pipeline using train "
-                "sizing to use the plot_learning_curve method!"
-            )
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
         x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
         for m in models:
-            y[m.name[:-1]].append(get_best_score(m, metric))
-            x[m.name[:-1]].append(m._train_idx)
+            y[m._group].append(get_best_score(m, metric))
+            x[m._group].append(m._train_idx)
             if m.std_bagging:
-                std[m.name[:-1]].append(lst(m.std_bagging)[metric])
+                std[m._group].append(lst(m.std_bagging)[metric])
 
         for k in x:
             if not std:
@@ -2946,7 +2922,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             title="Learning curve" if title is None else title,
             legend=("lower right", len(x)),
             xlabel="Number of training samples",
-            ylabel=self.metric_[metric].name,
+            ylabel=self._metric[metric].name,
             figsize=figsize,
             filename=filename,
             display=display,

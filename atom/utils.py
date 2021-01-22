@@ -13,9 +13,12 @@ import logging
 import numpy as np
 import pandas as pd
 from time import time
+from functools import wraps
 from datetime import datetime
+from inspect import signature
 from collections import deque
 from typing import Union, Sequence
+from collections.abc import MutableMapping
 
 # Encoders
 from category_encoders.backward_difference import BackwardDifferenceEncoder
@@ -407,80 +410,79 @@ def prepare_logger(logger, class_name):
 
     elif type(logger) != logging.Logger:  # Should be python "Logger" object"
         raise TypeError(
-            "Invalid value for the logger parameter. Should be a "
-            f"python logging.Logger object, got {type(logger)}!"
+            "Invalid value for the logger parameter. Expected a "
+            f"logging.Logger object, got {type(logger)}!"
         )
 
     return logger
 
 
-def check_is_fitted(estimator, attributes=None, msg=None):
+def check_is_fitted(estimator, exception=True, attributes=None):
     """Perform is_fitted validation for estimator.
 
     Checks if the estimator is fitted by verifying the presence of
     fitted attributes (not None or empty). Otherwise it raises a
-    NotFittedError.
+    NotFittedError. Extension on sklearn's function that accounts
+    for empty dataframes and series.
 
     Parameters
     ----------
     estimator: class
         Class instance for which the check is performed.
 
+    exception: bool, optional (default=True)
+        Whether to raise an exception if the estimator is not fitted.
+        If False, it returns False instead.
+
     attributes: str, sequence or None, optional (default=None)
         Attribute(s) to check. If None, the estimator is considered
         fitted if there exist an attribute that ends with a underscore
         and does not start with double underscore.
 
-    msg: str, optional (default=None)
-        Default error message.
-
     """
-
     def check_attr(attr):
         """Return empty pandas or None/empty sequence."""
-        if isinstance(getattr(estimator, attr), (pd.DataFrame, pd.Series)):
+        if attr and isinstance(getattr(estimator, attr), (pd.DataFrame, pd.Series)):
             return getattr(estimator, attr).empty
         else:
             return not getattr(estimator, attr)
 
-    if msg is None:
-        msg = (
-            f"This {type(estimator).__name__} instance is not fitted yet. Call "
-            "'fit' or 'run' with appropriate arguments before using this estimator."
-        )
+    is_fitted = False
+    if hasattr(estimator, "_is_fitted"):
+        is_fitted = estimator._is_fitted
+    elif attributes is None:
+        # Check for attributes from a fitted object
+        for v in vars(estimator):
+            if v.endswith("_") and not v.startswith("__"):
+                is_fitted = True
+                break
+    elif not all([check_attr(attr) for attr in lst(attributes)]):
+        is_fitted = True
 
-    if all([check_attr(attr) for attr in lst(attributes)]):
-        raise NotFittedError(msg)
+    if not is_fitted:
+        if exception:
+            raise NotFittedError(
+                f"This {type(estimator).__name__} instance is not"
+                " fitted yet. Call 'fit' or 'run' with appropriate"
+                " arguments before using this estimator."
+            )
+        else:
+            return False
 
-
-def fit_init(est_params, fit=False):
-    """Return the est_params for the __init__ or fit method.
-
-    Select parameters that end with _fit for the fit method,
-    else they're used when initializing the instance.
-
-    Parameters
-    ----------
-    est_params: dict
-        Parameters that need to be classified.
-
-    fit: bool, optional (default=False)
-        Whether the parameters are for the fit method.
-
-    """
-    if fit:
-        return {k[:-4]: v for k, v in est_params.items() if k.endswith("_fit")}
-    else:
-        return {k: v for k, v in est_params.items() if not k.endswith("_fit")}
+    return True
 
 
-def get_acronym(model):
+def get_acronym(model, must_be_equal=True):
     """Get the right model acronym.
 
     Parameters
     ----------
     model: str
         Acronym of the model, case-insensitive.
+
+    must_be_equal: bool, optional (default=True)
+        Whether the model name must be exactly equal or start
+        with the acronym.
 
     Returns
     -------
@@ -492,7 +494,9 @@ def get_acronym(model):
     from .models import MODEL_LIST
 
     for acronym in MODEL_LIST:
-        if model.lower() == acronym.lower():
+        cond_1 = must_be_equal and model.lower() == acronym.lower()
+        cond_2 = not must_be_equal and model.lower().startswith(acronym.lower())
+        if cond_1 or cond_2:
             return acronym
 
     raise ValueError(
@@ -527,7 +531,6 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
         Scorer object.
 
     """
-
     def get_scorer_name(scorer):
         """Return the name of the provided scorer."""
         for key, value in SCORERS.items():
@@ -571,11 +574,11 @@ def get_default_metric(task):
 
     """
     if task.startswith("bin"):
-        return get_metric("f1", True, False, False)
+        return {"f1": get_metric("f1", True, False, False)}
     elif task.startswith("multi"):
-        return get_metric("f1_weighted", True, False, False)
+        return {"f1_weighted": get_metric("f1_weighted", True, False, False)}
     else:
-        return get_metric("r2", True, False, False)
+        return {"r2": get_metric("r2", True, False, False)}
 
 
 def infer_task(y, goal="classification"):
@@ -608,6 +611,35 @@ def infer_task(y, goal="classification"):
         return "binary classification"
     else:
         return "multiclass classification"
+
+
+def names_from_estimator(cls, estimator):
+    """Get the model's acronym and fullname from an estimator.
+
+    Parameters
+    ----------
+    cls: class
+        Trainer from which the function is called.
+
+    estimator: class
+        Estimator instance to get the information from.
+
+    Returns
+    -------
+    acronym: str
+        Model's acronym.
+
+    fullname: str
+        Model's complete name.
+
+    """
+    from .models import MODEL_LIST
+
+    get_name = lambda est: est.__class__.__name__
+    for key, value in MODEL_LIST.items():
+        model = value(cls)
+        if get_name(model.get_estimator()) == get_name(estimator):
+            return model.acronym, model.fullname
 
 
 def partial_dependence(estimator, X, features):
@@ -658,6 +690,125 @@ def partial_dependence(estimator, X, features):
 
 # Functions shared by classes ======================================= >>
 
+def add_transformer(self, transformer, name=None, train_only=False):
+    """Add a transformer to the current branch.
+
+    If the transformer is not fitted, it is fitted on the
+    complete training set. Afterwards, the data set is
+    transformed and the transformer is added to atom's
+    pipeline.
+
+    If the transformer has the n_jobs and/or random_state
+    parameters and they are left to their default value,
+    they adopt atom's values.
+
+    Parameters
+    ----------
+    self: class
+        Instance of atom from which the function is called.
+
+    transformer: class
+        Transformer to add to the pipeline. Should implement a
+        `transform` method.
+
+    name: str or None, optional (default=None)
+        Name of the transformation step. If None, it defaults to
+        the __name__ of the transformer's class (lower case).
+
+    train_only: bool, optional (default=False)
+        Whether to apply the transformer only on the train set or
+        on the complete dataset.
+
+    """
+    def get_cols(array, dataframe):
+        """Get the column names after a transformation.
+
+        If the number of columns is unchanged, the original
+        column names are returned. Else, give the column a
+        default name if the column values changed.
+
+        Parameters
+        ----------
+        array: np.ndarray
+            Transformed dataset.
+
+        dataframe: pd.DataFrame
+            Original dataset.
+
+        """
+        # If columns were only transformed, return og names
+        if array.shape[1] == dataframe.shape[1]:
+            return dataframe.columns
+
+        # If columns were added or removed
+        cols = []
+        for i, col in enumerate(array.T):
+            mask = dataframe.apply(lambda c: all(c == col))
+            if any(mask):
+                cols.append(mask[mask].index.values[0])
+            else:
+                cols.append(f"Feature {str(i)}")
+
+        return cols
+
+    if not hasattr(transformer, "transform"):
+        raise ValueError("The transformer should have a transform method!")
+
+    # Add BaseTransformer params to the estimator if left to default
+    if all(hasattr(transformer, attr) for attr in ["get_params", "set_params"]):
+        sign = signature(transformer.__init__).parameters
+        for p in ["n_jobs", "random_state"]:
+            if p in sign and transformer.get_params()[p] == sign[p]._default:
+                transformer.set_params(**{p: getattr(self, p)})
+
+    if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
+        transformer.fit(self.X_train, self.y_train)
+
+    if train_only:
+        if "y" in signature(transformer.transform).parameters:
+            X, y = catch_return(transformer.transform(self.X_train, self.y_train))
+        else:
+            X, y = catch_return(transformer.transform(self.X_train))
+
+        if not isinstance(X, pd.DataFrame):
+            X = to_df(X, columns=get_cols(X, self.X_train))
+        if y is None:
+            self.train = merge(X, self.y_train)
+        else:
+            self.train = merge(X, to_series(y, name=self.target))
+
+    else:
+        if "y" in signature(transformer.transform).parameters:
+            X, y = catch_return(transformer.transform(self.X, self.y))
+        else:
+            X, y = catch_return(transformer.transform(self.X))
+
+        if not isinstance(X, pd.DataFrame):
+            X = to_df(X, columns=get_cols(X, self.X))
+        if y is None:
+            self.dataset = merge(X, self.y)
+        else:
+            self.dataset = merge(X, to_series(y, name=self.target))
+
+        # Since rows can be removed from train and test, reset indices
+        self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
+        self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
+
+    self.dataset = self.dataset.reset_index(drop=True)
+
+    # Add the train_only parameter as attr to the transformer
+    transformer.train_only = train_only
+
+    # Add the transformer to the pipeline
+    self.branch.pipeline = self.pipeline.append(
+        pd.Series(
+            data=[transformer],
+            index=[name if name else transformer.__class__.__name__.lower()],
+            name=self._current,
+        )
+    )
+
+
 def transform(est_branch, X, y, verbose, **kwargs):
     """Transform new data through all transformers in a branch.
 
@@ -696,7 +847,6 @@ def transform(est_branch, X, y, verbose, **kwargs):
         Transformed target column. Only returned if provided.
 
     """
-
     def transform_one(est):
         """Transform a single estimator."""
         nonlocal X, y
@@ -718,29 +868,11 @@ def transform(est_branch, X, y, verbose, **kwargs):
             f"Value should be between 0 and 2, got {verbose}."
         )
 
-    # Data cleaning and feature engineering methods and their classes
-    steps = dict(
-        cleaner="Cleaner",
-        scale="Scaler",
-        impute="Imputer",
-        encode="Encoder",
-        outliers="Outliers",
-        balance="Balancer",
-        feature_generation="FeatureGenerator",
-        feature_selection="FeatureSelector",
-    )
-
-    # Set default values if pipeline is not provided
-    if kwargs.get("pipeline") is None:
-        for key, value in steps.items():
-            if key not in kwargs:
-                kwargs[value] = False if key in ["outliers", "balance"] else True
-            else:
-                kwargs[value] = kwargs.pop(key)
-
     # Transform either one or all the transformers in the pipeline
-    for i, est in enumerate(est_branch):
-        if i in kwargs.get("pipeline", []) or kwargs.get(est.__class__.__name__):
+    p = kwargs.get("pipeline", [])
+    for i, (idx, est) in enumerate(est_branch.iteritems()):
+        is_default = not p and not est.train_only and kwargs.get(idx) is None
+        if i in p or idx in p or kwargs.get(idx) or is_default:
             if kwargs.get("_one_trans", i) == i:
                 transform_one(est)
 
@@ -751,11 +883,8 @@ def delete(self, models):
     """Delete models from a trainer's pipeline.
 
     Removes all traces of a model in the pipeline (except for the
-    `errors` attribute). If the winning model is removed. The next
-    best model (through metric_test or mean_bagging if available)
-    is selected as winner.If all models are removed, the metric and
-    approach are reset. Use this method to drop unwanted models from
-    the pipeline or to clear memory before saving the instance.
+    `errors` attribute). If all models are removed, the metric and
+    approach are reset.
 
     Parameters
     ----------
@@ -767,24 +896,11 @@ def delete(self, models):
 
     """
     for model in models:
-        self.models.remove(model)
+        self._models.pop(model.lower())
 
-        # Remove the model from the results dataframe
-        if isinstance(self._results.index, pd.MultiIndex):
-            self._results = self._results.iloc[
-                ~self._results.index.get_level_values(1).str.contains(model)
-            ]
-        else:
-            self._results = self._results.drop(model, axis=0, errors="ignore")
-
-        # If no models, reset the metric and the training approach
-        if not self.models:
-            self.metric_ = []
-            if hasattr(self, "_approach"):
-                self._approach = None
-
-        del self.__dict__[model]
-        del self.__dict__[model.lower()]
+    # If no models, reset the metric
+    if not self._models:
+        self._metric = {}
 
 
 # Decorators ======================================================= >>
@@ -798,7 +914,6 @@ def composed(*decs):
         Decorators to run.
 
     """
-
     def decorator(f):
         for dec in reversed(decs):
             f = dec(f)
@@ -815,7 +930,7 @@ def crash(f, cache={"last_exception": None}):
     catch or multiple calls to crash), its not re-written in the logger.
 
     """
-
+    @wraps(f)
     def wrapper(*args, **kwargs):
         logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
 
@@ -838,7 +953,7 @@ def crash(f, cache={"last_exception": None}):
 
 def method_to_log(f):
     """Save called functions to log file."""
-
+    @wraps(f)
     def wrapper(*args, **kwargs):
         # Get logger (for model subclasses called from BasePredictor)
         logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
@@ -856,7 +971,7 @@ def method_to_log(f):
 
 def plot_from_model(f):
     """If a plot is called from a model, adapt the models parameter."""
-
+    @wraps(f)
     def wrapper(*args, **kwargs):
         if hasattr(args[0], "T"):
             return f(args[0].T, args[0].name, *args[1:], **kwargs)
@@ -873,7 +988,7 @@ class NotFittedError(ValueError, AttributeError):
     pass
 
 
-class PlotCallback(object):
+class PlotCallback:
     """Callback to plot the BO's progress as it runs.
 
     Parameters
@@ -978,3 +1093,130 @@ class PlotCallback(object):
 
         # Pause the data so the figure/axis can catch up
         plt.pause(0.01)
+
+
+class CustomDict(MutableMapping):
+    """Custom ordered dictionary.
+
+    Custom dictionary for the _models and _metric private attributes
+    of the trainers. the main differences with the Python dictionary
+    are:
+        - It has ordered entries.
+        - It allows getting an item from an index position.
+        - It can insert key value pairs at a specific position.
+        - Keys are lower case and requests are case insensitive.
+        - If iterated over, it iterates over its values, not the keys!
+
+    """
+
+    @staticmethod
+    def _conv(key):
+        return key.lower() if isinstance(key, str) else key
+
+    def __init__(self, iterable_or_mapping=None, **kwargs):
+        """Class initializer.
+
+        Mimics a dictionary's initialization and accepts the same
+        arguments. You have to pass an ordered iterable or mapping
+        unless you want the order to be arbitrary.
+
+        """
+        self.__data = {}
+        self.__keys = []
+
+        if iterable_or_mapping is not None:
+            try:
+                iterable = iterable_or_mapping.items()
+            except AttributeError:
+                iterable = iterable_or_mapping
+
+            for key, value in iterable:
+                self.__keys.append(self._conv(key))
+                self.__data[self._conv(key)] = value
+
+        for key, value in kwargs.items():
+            self.__keys.append(self._conv(key))
+            self.__data[self._conv(key)] = value
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self.__data[key.lower()]
+        else:
+            return self.__data[self.__keys[key]]
+
+    def __setitem__(self, key, value):
+        self.__keys.append(self._conv(key))
+        self.__data[self._conv(key)] = value
+
+    def __delitem__(self, key):
+        del self.__data[self._conv(key)]
+        self.__keys.remove(self._conv(key))
+
+    def __iter__(self):
+        yield from self.values()
+
+    def __len__(self):
+        return len(self.__keys)
+
+    def __contains__(self, key):
+        return key in self.__keys
+
+    def __repr__(self):
+        return str(dict(self))
+
+    def keys(self):
+        yield from self.__keys
+
+    def items(self):
+        for key in self.__keys:
+            yield key, self.__data[key]
+
+    def values(self):
+        for key in self.__keys:
+            yield self.__data[key]
+
+    def insert(self, pos, new_key, value):
+        if isinstance(pos, str):
+            pos = self.__keys.index(pos)
+        try:
+            self.__keys.insert(pos, new_key)
+            self.__data[self._conv(new_key)] = value
+        except ValueError:
+            raise KeyError(pos) from ValueError
+
+    def get(self, key, default=None):
+        try:
+            return self.__data[self._conv(key)]
+        except KeyError:
+            return default
+
+    def pop(self, key, default=None):
+        value = self.get(key)
+        if value:
+            self.__delitem__(key)
+            return value
+        else:
+            return default
+
+    def popitem(self):
+        try:
+            return self.__data.pop(self.__keys.pop())
+        except IndexError:
+            raise KeyError(f"{self.__class__.__name__} is empty")
+
+    def clear(self):
+        self.__keys = []
+        self.__data = {}
+
+    def update(self, mapping={}, **kwargs):
+        for key, value in mapping.items():
+            if key not in self.__keys:
+                self.__keys.append(self._conv(key))
+            self.__data[self._conv(key)] = value
+
+    def setdefault(self, key, default=None):
+        try:
+            return self[self._conv(key)]
+        except KeyError:
+            self[self._conv(key)] = default
+            return self[self._conv(key)]

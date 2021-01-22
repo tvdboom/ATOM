@@ -9,7 +9,6 @@ Description: Module containing the API classes.
 
 # Standard packages
 import pickle
-import pandas as pd
 from copy import copy
 from typeguard import typechecked
 from typing import Optional, Union
@@ -17,7 +16,7 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SEQUENCE_TYPES, merge, transform
+from .utils import SEQUENCE_TYPES, merge, catch_return, transform
 
 
 # Functions ======================================================== >>
@@ -28,7 +27,6 @@ def ATOMModel(
     acronym: str = None,
     fullname: str = None,
     needs_scaling: bool = False,
-    type: str = "kernel",
 ):
     """Convert an estimator to a model that can be ingested by ATOM.
 
@@ -41,8 +39,9 @@ def ATOMModel(
         Model's estimator. Can be a class or an instance.
 
     acronym: str, optional (default=None)
-        Model's acronym. Used to call the model from the trainer.
-        If None, the estimator's __name__ is used (not recommended).
+        Model's acronym. Used to call the model from the trainer. If
+        None and there are 2 or more capital letters in the estimator's
+        __name__, those are used. Else, the full __name__ is used.
 
     fullname: str, optional (default=None)
         Full model's name. If None, the estimator's __name__ is used.
@@ -51,25 +50,12 @@ def ATOMModel(
         Whether the model needs scaled features. Can not be True for
         deep learning datasets.
 
-    type: str, optional (default="kernel")
-        Model's type. Used to select shap's explainer for plotting.
-        Choose from:
-            - "linear" for linear models.
-            - "tree" for tree-based models.
-            - "kernel" for the remaining model types.
-
     """
-    if type not in ("linear", "tree", "kernel"):
-        raise ValueError(
-            "Invalid value for the type parameter. Choose from: linear, tree or kernel."
-        )
-
     if acronym:
         estimator.acronym = acronym
     if fullname:
         estimator.fullname = fullname
     estimator.needs_scaling = needs_scaling
-    estimator.type = type
 
     return estimator
 
@@ -156,11 +142,11 @@ def ATOMLoader(
         # Apply transformations per branch
         step = {}  # Current step in the pipeline per branch
         for b1, v1 in cls._branches.items():
-            branch = cls._branches[b1]
+            brch = cls._branches[b1]
 
             # Provide the input data if not already filled from another branch
-            if branch.data is None:
-                branch.data, branch.idx = data, idx
+            if brch.data is None:
+                brch.data, brch.idx = data, idx
 
             if transform_data:
                 if not v1.pipeline.empty:
@@ -172,32 +158,36 @@ def ATOMLoader(
                         continue
 
                     kwargs["_one_trans"] = i
-                    if est1.__class__.__name__ in ["Outliers", "Balancer"]:
-                        X, y = transform(
-                            est_branch=v1.pipeline,
-                            X=branch.X_train,
-                            y=branch.y_train,
-                            **kwargs
+                    if est1.train_only:
+                        X, y = catch_return(
+                            transform(
+                                est_branch=v1.pipeline,
+                                X=brch.X_train,
+                                y=brch.y_train,
+                                **kwargs,
+                            )
                         )
-                        branch.data = pd.concat([merge(X, y), cls.test])
+                        brch.train = merge(X, brch.y_train if y is None else y)
                     else:
-                        X, y = transform(v1.pipeline, branch.X, branch.y, **kwargs)
-                        branch.data = merge(X, y)
+                        X, y = catch_return(
+                            transform(v1.pipeline, brch.X, brch.y, **kwargs)
+                        )
+                        brch.dataset = merge(X, brch.y if y is None else y)
 
-                    # Update the indices for the train and test set
-                    branch.idx[1] = len(branch.data[branch.data.index >= branch.idx[0]])
-                    branch.idx[0] = len(branch.data[branch.data.index < branch.idx[0]])
+                        # Update the indices for the train and test set
+                        brch.idx[1] = len(brch.data[brch.data.index >= brch.idx[0]])
+                        brch.idx[0] = len(brch.data[brch.data.index < brch.idx[0]])
 
-                    branch.data = branch.data.reset_index(drop=True)
+                    brch.data = brch.data.reset_index(drop=True)
 
                     for b2, v2 in cls._branches.items():
                         try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline[i]:
+                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
                                 # Update the data and step for the other branch
-                                cls._branches[b2].data = copy(branch.data)
-                                cls._branches[b2].idx = copy(branch.idx)
+                                cls._branches[b2].data = copy(brch.data)
+                                cls._branches[b2].idx = copy(brch.idx)
                                 step[b2] = i
-                        except KeyError:
+                        except IndexError:
                             continue
 
     cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)

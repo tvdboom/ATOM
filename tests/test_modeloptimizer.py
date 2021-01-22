@@ -200,6 +200,14 @@ def test_est_params_unknown_param():
     pytest.raises(RuntimeError, atom.run, "LGB", n_calls=5, est_params={"test": 220})
 
 
+def test_est_params_default_method():
+    """Assert that custom parameters overwrite the default ones."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("rf", est_params={"n_jobs": 3})
+    assert atom.rf.estimator.get_params()["n_jobs"] == 3
+    assert atom.rf.estimator.get_params()["random_state"] == 1
+
+
 def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)

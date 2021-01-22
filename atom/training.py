@@ -9,7 +9,6 @@ Description: Module containing the training classes.
 
 # Standard packages
 import numpy as np
-import pandas as pd
 from copy import copy
 from typeguard import typechecked
 from typing import Optional, Union
@@ -20,7 +19,7 @@ from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
     SEQUENCE_TYPES, TRAIN_TYPES, lst, get_best_score, infer_task,
-    composed, method_to_log, crash,
+    composed, method_to_log, crash, CustomDict,
 )
 
 
@@ -64,11 +63,10 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self._check_parameters()
 
         self.log("\nTraining ===================================== >>", 1)
-        self.log(f"Models: {', '.join(self.models)}", 1)
+        self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
-        self._results = self._core_iteration()
-        self._results.index.name = "model"
+        self._core_iteration()
 
 
 class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
@@ -121,67 +119,53 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
-        n_models = len(self.models)
 
         if self.skip_runs < 0:
             raise ValueError(
                 "Invalid value for the skip_runs parameter."
                 f"Value should be >=0, got {self.skip_runs}."
             )
-        elif self.skip_runs >= n_models // 2 + 1:
+        elif self.skip_runs >= len(self._models) // 2 + 1:
             raise ValueError(
-                "Invalid value for the skip_runs parameter. Less than 1 run remaining "
-                f", got n_runs={n_models//2 + 1} and skip_runs={self.skip_runs}."
+                "Invalid value for the skip_runs parameter. Less than "
+                f"1 run remaining, got n_runs={len(self._models) // 2 + 1} "
+                f"and skip_runs={self.skip_runs}."
             )
 
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
-        results = []  # List of dataframes returned by self._run
-        _all_models = []
-        _next_models = [f"{m}_" for m in self.models]
-        while len(_next_models) > 2 ** self.skip_runs - 1:
-            self.models = [f"{m[:-1]}{run}" for m in _next_models]
-            _all_models += self.models
-            for m in self.models:
-                subclass = copy(getattr(self, m[:-1]))
-                subclass.name = m
-                subclass._pred_attrs = [None] * 10  # Avoid shallow copy
-                subclass._train_idx = int(1.0 / len(self.models) * len(self.train))
-                setattr(self, m, subclass)
-                setattr(self, m.lower(), subclass)
+        models = {}
+        og_models = {k: copy(v) for k, v in self._models.items()}
+        while len(self._models) > 2 ** self.skip_runs - 1:
+            # Create the new set of models for the run
+            for m in self._models:
+                m.name += str(len(self._models))  # Add n_models to the name
+                m._pred_attrs = [None] * 10  # Avoid shallow copy
+                m._train_idx = len(self.train) // len(self._models)
 
             # Print stats for this subset of the data
-            p = round(100.0 / len(self.models))
+            p = round(100.0 / len(self._models))
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
-            self.log(f"Models: {', '.join(self.models)}", 1)
+            self.log(f"Models: {', '.join(lst(self.models))}", 1)
             self.log(f"Size of training set: {len(self.train)} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
 
-            # Run iteration and append to the results list
-            df = self._core_iteration()
-            results.append(df)
+            self._core_iteration()
+            models.update({m.name.lower(): m for m in self._models})
 
-            # Select best models for halving
-            best = df.apply(lambda row: get_best_score(row), axis=1)
-            best = best.nlargest(n=len(self.models) // 2, keep="first")
-            _next_models = [m for m in df.index if m in best.index]
+            # Select next models for halving
+            best = self.results.apply(lambda row: get_best_score(row), axis=1)
+            best = best.nlargest(n=len(self._models) // 2, keep="first")
+            acronyms = [m.acronym for m in self._models if m.name in best.index]
+            self._models = CustomDict(
+                {k: copy(v) for k, v in og_models.items() if v.acronym in acronyms}
+            )
 
             run += 1
 
-        # Concatenate all resulting dataframes with multi-index
-        self._results = pd.concat(
-            objs=[df for df in results],
-            keys=[len(df) for df in results],
-            names=("n_models", "model"),
-        )
-
-        # Restore original models
-        self.models = _all_models
-        for m in self._get_models("0"):
-            del self.__dict__[m[:-1]]
-            del self.__dict__[m[:-1].lower()]
+        self._models = models  # Restore all models
 
 
 class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
@@ -234,51 +218,38 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self._check_parameters()
 
         self.log("\nTraining ===================================== >>", 1)
-        self.log(f"Models: {', '.join(self.models)}", 1)
+        self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
-        frac = []  # Fraction of the training set used in evey run
-        results = []  # List of dataframes returned by self._run
-        _all_models = []
-        _models = self.models.copy()
+        models = {}
+        og_models = {k: copy(v) for k, v in self._models.items()}
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
-                frac.append(round(size, 3))
-                train_size = int(size * self.branch.idx[0])
+                frac = round(size, 3)
+                train_idx = int(size * self.branch.idx[0])
             else:
-                frac.append(round(size / self.branch.idx[0], 3))
-                train_size = size
+                frac = round(size / self.branch.idx[0], 3)
+                train_idx = size
 
-            self.models = [f"{m}{run}" for m in _models]
-            _all_models += self.models
-            for i, m in enumerate(self.models):
-                subclass = copy(getattr(self, _models[i]))
-                subclass.name = m
-                subclass._pred_attrs = [None] * 10  # Avoid shallow copy
-                subclass._train_idx = train_size
-                setattr(self, m, subclass)
-                setattr(self, m.lower(), subclass)
+            for m in self._models:
+                m.name += str(frac).replace(".", "")  # Add frac to the name
+                m._pred_attrs = [None] * 10  # Avoid shallow copy
+                m._train_idx = train_idx
 
             # Print stats for this subset of the data
-            p = round(train_size * 100.0 / self.branch.idx[0])
+            p = round(train_idx * 100.0 / self.branch.idx[0])
             self.log(f"\n\nRun: {run} {'='*32} >>", 1)
-            self.log(f"Size of training set: {train_size} ({p}%)", 1)
+            self.log(f"Size of training set: {train_idx} ({p}%)", 1)
             self.log(f"Size of test set: {len(self.test)}", 1)
 
-            # Run iteration and append to the results list
-            results.append(self._core_iteration())
+            self._core_iteration()
+            models.update({m.name.lower(): m for m in self._models})
 
-        # Concatenate all resulting dataframes with multi-index
-        self._results = pd.concat(
-            objs=[df for df in results], keys=frac, names=("frac", "model")
-        )
+            # Create next models for sizing
+            self._models = CustomDict({k: copy(v) for k, v in og_models.items()})
 
-        # Restore original models
-        self.models = _all_models
-        for m in _models:
-            del self.__dict__[m]
-            del self.__dict__[m.lower()]
+        self._models = models  # Restore original models
 
 
 class DirectClassifier(Direct):
@@ -296,7 +267,7 @@ class DirectClassifier(Direct):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -326,7 +297,7 @@ class DirectRegressor(Direct):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -357,7 +328,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -388,7 +359,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -419,7 +390,7 @@ class TrainSizingClassifier(TrainSizing):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
@@ -450,7 +421,7 @@ class TrainSizingRegressor(TrainSizing):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: dict = {},
         bo_params: dict = {},
-        bagging: Optional[Union[int, SEQUENCE_TYPES]] = None,
+        bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,

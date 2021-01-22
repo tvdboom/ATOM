@@ -17,16 +17,6 @@ from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_reg, y_reg, X10_str, y10
 
 
-# Test utilities =================================================== >>
-
-def test_get_default_method():
-    """Assert that the _get_default method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("rf", est_params={"n_jobs": 3})
-    assert atom.rf.estimator.get_params()["n_jobs"] == 3
-    assert atom.rf.estimator.get_params()["random_state"] == 1
-
-
 # Test prediction methods ========================================== >>
 
 def test_invalid_method():

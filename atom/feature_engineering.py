@@ -37,7 +37,7 @@ from sklearn.feature_selection import (
 # Own modules
 from .models import MODEL_LIST
 from .basetransformer import BaseTransformer
-from .data_cleaning import BaseCleaner, Scaler
+from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, lst,
@@ -46,7 +46,7 @@ from .utils import (
 )
 
 
-class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
+class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
     """Apply automated feature engineering.
 
     Use Deep feature Synthesis or a genetic algorithm to create new
@@ -140,9 +140,10 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         self.population = population
         self.operators = operators
 
-        self._dfs_features = None
         self.symbolic_transformer = None
         self.genetic_features = None
+        self._dfs_features = None
+        self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Y_TYPES):
@@ -301,6 +302,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
                 random_state=self.random_state,
             ).fit(X, y)
 
+        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log, typechecked)
@@ -321,7 +323,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
             Dataframe containing the newly generated features.
 
         """
-        check_is_fitted(self, ("_dfs_features", "symbolic_transformer"))
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
         self.log("Creating new features...", 1)
@@ -406,7 +408,7 @@ class FeatureGenerator(BaseEstimator, BaseTransformer, BaseCleaner):
         return X
 
 
-class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
+class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotter):
     """Apply feature selection techniques.
 
     Remove features according to the selected strategy. Ties between
@@ -589,8 +591,8 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
         self.rfe = None
         self.rfecv = None
         self.sfs = None
-        self._is_fitted = False
         self._low_variance = {}
+        self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -874,7 +876,7 @@ class FeatureSelector(BaseEstimator, BaseTransformer, BaseCleaner, FSPlotter):
 
             return scores
 
-        check_is_fitted(self, "_is_fitted")
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
         columns = X.columns  # Save columns for SFM
 

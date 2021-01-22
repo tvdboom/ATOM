@@ -323,6 +323,18 @@ def test_reset_index():
     assert list(atom.dataset.index) == list(range(len(X_bin)))
 
 
+
+def test_merger_to_dataset():
+    """Assert that the merger between X and y was successful."""
+    # Reset index since order of rows is different after shuffling
+    merger = X_bin.merge(y_bin.to_frame(), left_index=True, right_index=True)
+    df1 = merger.sort_values(by=merger.columns.tolist())
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
+    assert df1.reset_index(drop=True).equals(df2.reset_index(drop=True))
+
+
 # Test log ========================================================= >>
 
 def test_log():

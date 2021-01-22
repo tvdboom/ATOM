@@ -563,7 +563,7 @@
 <hr />
 <pre><em>class</em> atom.training.<strong style="color:#008AB8">SuccessiveHalvingClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                                 needs_threshold=False, skip_runs=0, n_calls=10,
-                                                n_initial_points=5, est_params={}, bo_params={}, bagging=None,
+                                                n_initial_points=5, est_params={}, bo_params={}, bagging=0,
                                                 n_jobs=1, verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L344">[source]</a></div></pre>
 <p>Fit and evaluate the models in a <a href="../../../user_guide/#successive-halving">successive halving</a>
@@ -707,10 +707,10 @@ Additional parameters to for the BO. These can include:
 <li><b>Additional keyword arguments for skopt's optimizer.</b></li>                
 </ul>
 </blockquote>
-<strong>bagging: int, sequence or None, optional (default=None)</strong>
+<strong>bagging: int or sequence, optional (default=0)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in
- the bagging algorithm. If None or 0, no bagging is performed.
+ the bagging algorithm. If 0, no bagging is performed.
  If sequence, the n-th value will apply to the n-th model.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
@@ -850,8 +850,7 @@ Model subclass that performed best on the test set.
 </blockquote>
 <strong>results: pd.DataFrame</strong>
 <blockquote>
-Dataframe of the training results with the number of models in the iteration and the model
- acronyms as indices. Columns can include:
+Dataframe of the training results. Columns can include:
 <ul>
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
@@ -1065,6 +1064,14 @@ Name of the models to clear from the pipeline. If None, clear all models.
 Data set from which to get the weights. Choose between "train", "test" or "dataset".
 </blockquote>
 </tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>class_weights: dict</strong>
+<blockquote>
+Classes with the corresponding weights.
+</blockquote>
+</tr>
 </table>
 <p><br /></p>
 <p><a name="get-params"></a></p>
@@ -1167,7 +1174,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <p><a name="scoring"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
-<p>Get the scoring for a specific metric.</p>
+<p>Print all the models' scoring for a specific metric.</p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1191,20 +1198,8 @@ If None, returns the models' final results (ignores the <code>dataset</code> par
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are "train" or "test".
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
 Additional keyword arguments for the metric function.
 </blockquote>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>score: str</strong>
-<blockquote>
-Overview of the models' scoring for the selected metric.
-</blockquote>
-</tr>
 </table>
 <p><br /></p>
 <p><a name="set-params"></a></p>

@@ -593,7 +593,7 @@
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>A data scientist with domain knowledge can outperform ATOM if he applies
-usecase-specific feature engineering or data cleaning steps! </p>
+use case-specific feature engineering or data cleaning steps! </p>
 </div>
 <p>Example steps taken by ATOM's pipeline:</p>
 <ol>
@@ -631,7 +631,24 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <p><br><br><br><br></p>
 <h1 id="release-history">Release history</h1>
 <hr />
-<h3 id="version-421-29-december-2020">Version 4.2.1 - 29 December 2020</h3>
+<h3 id="version-430-dev">Version 4.3.0 - dev</h3>
+<ul>
+<li>Possibility to <a href="./API/ATOM/atomclassifier/#add">add</a> custom transformers to the pipeline.</li>
+<li>The <a href="./API/ATOM/atomclassifier/#export-pipeline">export_pipeline</a> utility method extracts atom's current pipeline as a sklearn object.</li>
+<li>Use <a href="./user_guide/#automl">AutoML</a> to automate the search for an optimized pipeline.</li>
+<li>New magic methods makes atom behave similarly to sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.</li>
+<li>All <a href="./user_guide/#training">training approaches</a> can now be combined in the same atom instance.</li>
+<li>The results dataframe is now equal for all training approaches (multi-index is deprecated).</li>
+<li>Complete rework of all the <a href="./user_guide#shap">shap plots</a> to be consistent with their new API.</li>
+<li>The acronym for custom models now defaults to the capital letters in the class' __name__.</li>
+<li>Plots and methods now accept <code>winner</code> as model name.</li>
+<li>Fixed a bug where custom metrics didn't show the correct name.</li>
+<li>Large refactoring for performance optimization.</li>
+<li>Cleaner output of messages to the logger.</li>
+<li>Added the <a href="https://tvdboom.github.io/ATOM/examples/automl.html" target="_blank">AutoML</a> example notebook.</li>
+<li>Minor bug fixes.</li>
+</ul>
+<h3 id="version-421">Version 4.2.1</h3>
 <ul>
 <li>Bug fix where there was memory leakage in <a href="./user_guide/#successive-halving">successive halving</a>
   and <a href="./user_guide/#train-sizing">train sizing</a> pipelines.</li>
@@ -641,11 +658,11 @@ usecase-specific feature engineering or data cleaning steps! </p>
   extras_require under the name <code>models</code>, e.g. <code>pip install -U atom-ml[models]</code>.</li>
 <li>Improved documentation.</li>
 </ul>
-<h3 id="version-420-28-december-2020">Version 4.2.0 - 28 December 2020</h3>
+<h3 id="version-420">Version 4.2.0</h3>
 <ul>
 <li>Possibility to add custom models to the pipeline using <a href="./API/ATOM/atommodel">ATOMModel</a>.</li>
 <li>Compatibility with <a href="./user_guide/#deep-learning">deep learning</a> models.</li>
-<li>New branch system for different data pipelines. Read more in the <a href="./user_guide/#data-pipelines">user guide</a>.</li>
+<li>New branch system for different data pipelines. Read more in the <a href="./user_guide/#branches">user guide</a>.</li>
 <li>Use the <a href="./API/ATOM/atomclassifier/#canvas">canvas</a> contextmanager to draw multiple plots in one figure.</li>
 <li>New <a href="./user_guide/#voting">voting</a> and <a href="./user_guide/#stacking">stacking</a> ensemble techniques.</li>
 <li>New <a href="./API/ATOM/atomclassifier/#get-class-weight">get_class_weight</a> utility method.</li>
@@ -667,7 +684,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
   <a href="./examples/utilities.html" target="_blank">Utilities</a> example notebooks.</li>
 <li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
 </ul>
-<h3 id="version-410-16-october-2020">Version 4.1.0 - 16 October 2020</h3>
+<h3 id="version-410">Version 4.1.0</h3>
 <ul>
 <li>Added the <code>est_params</code> parameter to customize the parameters passed to every model's
   estimator.</li>
@@ -682,7 +699,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Small changes in log outputs.</li>
 <li>Bug fixes and performance improvements.</li>
 </ul>
-<h3 id="version-401-29-september-2020">Version 4.0.1 - 29 September 2020</h3>
+<h3 id="version-401">Version 4.0.1</h3>
 <ul>
 <li>Bug fix where the DFS strategy in <a href="./API/feature_engineering/feature_generator">FeatureGenerator</a>
   was not deterministic for a fixed random state.</li>
@@ -690,7 +707,7 @@ usecase-specific feature engineering or data cleaning steps! </p>
 <li>Added the <a href="./license">license</a> file to the package's installer.</li>
 <li>Typo fixes in documentation.</li>
 </ul>
-<h3 id="version-400-28-september-2020">Version 4.0.0 - 28 September 2020</h3>
+<h3 id="version-400">Version 4.0.0</h3>
 <ul>
 <li>Bayesian optimization package changed from <a href="http://sheffieldml.github.io/GPyOpt/">GpyOpt</a>
   to <a href="https://scikit-optimize.github.io/stable/">skopt</a>.</li>
@@ -939,5 +956,5 @@ usecase-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2020-12-29 09:13:59.640465+00:00
+Build Date UTC : 2021-01-22 19:38:39.874123+00:00
 -->

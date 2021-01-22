@@ -334,6 +334,16 @@ inspect the pipeline.
 
 <table>
 <tr>
+<td><a href="#add">add</a></td>
+<td>Add a transformer to the current branch.</td>
+</tr>
+
+<tr>
+<td><a href="#automl">automl</a></td>
+<td>Use AutoML to search for an optimized pipeline.</td>
+</tr>
+
+<tr>
 <td><a href="#calibrate">calibrate</a></td>
 <td>Calibrate the winning model.</td>
 </tr>
@@ -346,6 +356,11 @@ inspect the pipeline.
 <tr>
 <td width="15%"><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
+</tr>
+
+<tr>
+<td><a href="#export-pipeline">export_pipeline</a></td>
+<td>Export atom's pipeline to a sklearn's Pipeline object.</td>
 </tr>
 
 <tr>
@@ -404,6 +419,70 @@ inspect the pipeline.
 </tr>
 </table>
 <br>
+
+
+<a name="add"></a>
+<pre><em>method</em> <strong style="color:#008AB8">add</strong>(transformer, name=None, train_only=False)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L365">[source]</a></div></pre>
+Add a transformer to the current branch. If the transformer is not fitted,
+it is fitted on the complete training set. Afterwards, the data set is
+transformed and the transformer is added to atom's pipeline. If the transformer
+is a sklearn Pipeline, every step will be transformed independently on the
+complete data set.
+
+!!!note
+    If the transformer has a `n_jobs` and/or `random_state` parameter and it
+    is left to its default value, it adopts atom's value.
+
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>transformer: class</strong>
+<blockquote>
+Transformer to add to the pipeline. Should implement a <code>transform</code> method.
+</blockquote>
+<strong>name: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the transformation step. If None, it defaults to
+the __name__ of the transformer's class (lower case).
+</blockquote>
+<strong>train_only: bool, optional (default=False)</strong>
+<blockquote>
+Whether to apply the transformer only on the train set or
+on the complete dataset.
+</blockquote>
+</tr>
+</table>
+<br />
+
+
+<a name="automl"></a>
+<pre><em>method</em> <strong style="color:#008AB8">automl</strong>(**kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L721">[source]</a></div></pre>
+Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
+an automated search of transformers and a final estimator that maximizes
+a metric on the dataset. The resulting transformations and estimator are
+merged with atom's pipeline. Read more in the [user guide](../../../user_guide/#automl).
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>**kwargs</strong>
+<blockquote>
+Keyword arguments for tpot's classifier.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>tpot: <a href="http://epistasislab.github.io/tpot/api/#classification">TPOTClassifier</a></strong>
+<blockquote>
+Fitted tpot object.
+</blockquote>
+</tr>
+</table>
+<br />
 
 
 <a name="calibrate"></a>
@@ -489,6 +568,35 @@ Name of the models to clear from the pipeline. If None, clear all models.
 <br />
 
 
+<a name="export-pipeline"></a>
+<pre><em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L347">[source]</a></div></pre>
+Export atom's pipeline to a sklearn's Pipeline. Optionally, you can add a model
+as final estimator. If the model needs feature scaling and there is no scaler in
+the pipeline, a [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
+will be added. The returned pipeline is already fitted.
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>model: str or None, optional (default=None)</strong>
+<blockquote>
+Name of the model to add as a final estimator to the
+pipeline. If None, no model is added.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>pipeline: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a></strong>
+<blockquote>
+Pipeline in the current branch as a sklearn object.
+</blockquote>
+</tr>
+</table>
+<br />
+
+
 <a name="get-class-weight"></a>
 <pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L264">[source]</a></div></pre>
@@ -503,6 +611,14 @@ proportional to class frequencies in the selected data set.
 <strong>dataset: str, optional (default="train")</strong>
 <blockquote>
 Data set from which to get the weights. Choose between "train", "test" or "dataset".
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>class_weights: dict</strong>
+<blockquote>
+Classes with the corresponding weights.
 </blockquote>
 </tr>
 </table>
@@ -550,6 +666,14 @@ Number of (randomly picked) rows to process. None for all rows.
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
 Name to save the file with (as .html). None to not save anything.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>report: <a href="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html#pandas_profiling.profile_report.ProfileReport">ProfileReport</a></strong>
+<blockquote>
+Created profile object.
 </blockquote>
 </tr>
 </table>
@@ -620,7 +744,7 @@ Data set to save.
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
-Get the scoring for a specific metric.
+Print all the models' scoring for a specific metric.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -644,20 +768,8 @@ If None, returns the models' final results (ignores the <code>dataset</code> par
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are "train" or "test".
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
 Additional keyword arguments for the metric function.
 </blockquote>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>score: str</strong>
-<blockquote>
-Overview of the models' scoring for the selected metric.
-</blockquote>
-</tr>
 </table>
 <br />
 
@@ -950,7 +1062,7 @@ as the [models](../../../user_guide/#models), and the
 
 <a name="run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-           n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+           n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L783">[source]</a></div></pre>
 Runs a [DirectClassifier](../training/directclassifier.md) instance.
 <br /><br /><br />
@@ -959,7 +1071,7 @@ Runs a [DirectClassifier](../training/directclassifier.md) instance.
 <a name="successive-halving"></a>
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
-                          est_params={}, bo_params={}, bagging=None) 
+                          est_params={}, bo_params={}, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L824">[source]</a></div></pre>
 Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
 <br /><br /><br />
@@ -968,7 +1080,7 @@ Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md)
 <a name="train-sizing"></a>
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
-                    n_initial_points=5, est_params={}, bo_params={}, bagging=None) 
+                    n_initial_points=5, est_params={}, bo_params={}, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L872">[source]</a></div></pre>
 Runs a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
 <br /><br /><br />

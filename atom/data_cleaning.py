@@ -27,11 +27,16 @@ from .utils import (
 )
 
 
-class BaseCleaner(object):
-    """Base class for the data cleaning and feature engineering classes."""
+class TransformerMixin:
+    """Mixin class for all transformers in ATOM.
+
+    Different from sklearn, since it accounts for the transformation
+    of y and a possible absence of the fit method.
+
+    """
 
     @composed(crash, method_to_log, typechecked)
-    def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+    def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None, **fit_params):
         """Fit to data, then transform it.
 
         Parameters
@@ -45,6 +50,9 @@ class BaseCleaner(object):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
+        **fit_params
+            Additional keyword arguments for the fit method.
+
         Returns
         -------
         X: pd.DataFrame
@@ -55,12 +63,12 @@ class BaseCleaner(object):
 
         """
         try:
-            return self.fit(X, y).transform(X, y)
+            return self.fit(X, y, **fit_params).transform(X, y)
         except AttributeError:
             return self.transform(X, y)
 
 
-class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
+class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale data to mean=0 and std=1.
 
     This class is equal to sklearn's StandardScaler except that it
@@ -93,6 +101,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
     def __init__(self, verbose: int = 0, logger: Optional[Union[str, callable]] = None):
         super().__init__(verbose=verbose, logger=logger)
         self.standard_scaler = None
+        self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -114,6 +123,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         X, y = self._prepare_input(X, y)
         self.standard_scaler = StandardScaler().fit(X.select_dtypes(include="number"))
 
+        self._is_fitted = True
         return self
 
     @composed(crash, method_to_log, typechecked)
@@ -134,7 +144,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
             Scaled dataframe.
 
         """
-        check_is_fitted(self, "standard_scaler")
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
@@ -148,7 +158,7 @@ class Scaler(BaseEstimator, BaseTransformer, BaseCleaner):
         return X
 
 
-class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
+class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Applies standard data cleaning steps on a dataset.
 
     Use the parameters to choose which transformations to perform.
@@ -213,6 +223,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
+    @typechecked
     def __init__(
         self,
         prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
@@ -331,7 +342,7 @@ class Cleaner(BaseEstimator, BaseTransformer, BaseCleaner):
         return variable_return(X, y)
 
 
-class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
+class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Handle missing values in the data.
 
     Impute or remove missing values according to the selected strategy.
@@ -388,6 +399,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
+    @typechecked
     def __init__(
         self,
         strat_num: Union[int, float, str] = "drop",
@@ -501,7 +513,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
             Target column corresponding to X.
 
         """
-        check_is_fitted(self, "_is_fitted")
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
         self.log("Imputing missing values...", 1)
@@ -527,7 +539,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
 
             # Drop columns with too many NaN values
             nans = X[col].isna().sum()  # Number of missing values in column
-            p_nans = nans // len(X) * 100  # Percentage of NaNs
+            p_nans = nans * 100 // len(X)  # Percentage of NaNs
             if (len(X) - nans) / len(X) < self.min_frac_cols:
                 self.log(
                     f" --> Dropping feature {col} for containing "
@@ -596,7 +608,7 @@ class Imputer(BaseEstimator, BaseTransformer, BaseCleaner):
         return variable_return(X, y)
 
 
-class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
+class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
@@ -648,6 +660,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
+    @typechecked
     def __init__(
         self,
         strategy: str = "LeaveOneOut",
@@ -764,7 +777,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
             Encoded dataframe.
 
         """
-        check_is_fitted(self, "_is_fitted")
+        check_is_fitted(self)
         X, y = self._prepare_input(X, y)
 
         self.log("Encoding categorical columns...", 1)
@@ -801,7 +814,7 @@ class Encoder(BaseEstimator, BaseTransformer, BaseCleaner):
         return X
 
 
-class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
+class Outliers(BaseEstimator, TransformerMixin, BaseTransformer):
     """Remove or replace outliers in the data.
 
     Outliers are values that lie further than `max_sigma` * std
@@ -839,6 +852,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
+    @typechecked
     def __init__(
         self,
         strategy: Union[int, float, str] = "drop",
@@ -958,7 +972,7 @@ class Outliers(BaseEstimator, BaseTransformer, BaseCleaner):
             return X
 
 
-class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
+class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Balance the number of rows per class in the target column.
 
     Use only for classification tasks.
@@ -1013,6 +1027,7 @@ class Balancer(BaseEstimator, BaseTransformer, BaseCleaner):
 
     """
 
+    @typechecked
     def __init__(
         self,
         strategy: str = "ADASYN",

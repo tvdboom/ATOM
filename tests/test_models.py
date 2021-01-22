@@ -53,9 +53,8 @@ def test_custom_models(model):
     """Assert that ATOM works with custom models."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(models=model, n_calls=2, n_initial_points=1)
-    assert not atom.errors
-    assert hasattr(atom, "RandomForestRegressor")
-    assert atom.RandomForestRegressor.estimator.get_params()["random_state"] == 1
+    assert atom.rfr.fullname == "RandomForestRegressor"
+    assert atom.rfr.estimator.get_params()["random_state"] == 1
 
 
 def test_deep_learning_models():

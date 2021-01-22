@@ -22,7 +22,7 @@ from .utils import (
 )
 
 
-class Branch(object):
+class Branch:
     """Contains all information corresponding to a branch.
 
     Parameters
@@ -86,7 +86,7 @@ class Branch(object):
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T.models_ if m.branch.name == self.name]
+        return [m.name for m in self.T._models if m.branch.name == self.name]
 
     @composed(crash, method_to_log)
     def status(self):

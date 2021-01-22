@@ -646,8 +646,8 @@ concepts related to this package.</p>
   <a href="../API/ATOM/atomregressor">ATOMRegressor</a> classes (note that the examples
   use it as the default variable name).</li>
 <li><strong>ATOM</strong>: Refers to this package.</li>
-<li><strong>branch</strong>: Collection of estimators in the pipeline fitted to a specific dataset,
-  see the <a href="#data-pipelines">Data Pipelines</a> section.</li>
+<li><strong>branch</strong>: Collection of estimators in the pipeline fitted to a specific dataset.
+  See the <a href="#branches">branches</a> section.</li>
 <li><strong>BO</strong>: Bayesian optimization algorithm used for hyperparameter optimization.</li>
 <li><strong>categorical columns</strong>: Refers to all columns with dtype.kind not in <code>ifu</code>.</li>
 <li><strong>class</strong>: Unique value in a column, e.g. a binary classifier has 2 classes in the target column.</li>
@@ -711,8 +711,6 @@ different parameters. There are some important differences with sklearn's API:</
 <li>The transformations are applied immediately after calling the method
    (there is no fit method). This approach gives the user a clearer overview
    and more control over every step in the pipeline.</li>
-<li>The pipeline does not have to end with an estimator. ATOM can be just for data
-   cleaning or feature engineering purposes only.</li>
 </ol>
 <p>Let's get started with an example!</p>
 <p>First, initialize atom and provide it the data you want to use. You can
@@ -740,6 +738,8 @@ atom.plot_prc(title=&quot;Precision-recall curve comparison plot&quot;)
 datasets. For example, on one dataset balanced with an undersampling
 strategy and the other with an oversampling strategy. For this, atom has
 data pipelines.</p>
+<p><br></p>
+<h3 id="branches">Branches</h3>
 <p>Data pipelines manage separate paths atom's dataset can take. The paths
 are called branches and can be accessed through the <code>branch</code> attribute.
 Calling it will show the branches in the pipeline. The current branch is
@@ -773,7 +773,36 @@ examples for branching use cases.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Always create a new branch if you want to change the dataset after fitting
-a model! Not doing this can cause unexpected model behaviour.</p>
+a model! Not doing so can cause unexpected model behaviour.</p>
+</div>
+<p><br></p>
+<h3 id="data-transformations">Data transformations</h3>
+<p>Performing data transformations is a common requirement of many datasets
+before they are ready to be ingested by a model. ATOM provides various
+classes to apply <a href="#data-cleaning">data cleaning</a> and
+<a href="#feature-engineering">feature engineering</a> transformations to the data.
+This tooling should be able to help you apply most of the typically needed
+transformations to get the data ready for modelling. For further fine-tuning,
+it is also possible to pre-process the data using custom transformers. They
+can be added to the pipeline using atom's <a href="../API/ATOM/atomclassifier/#add">add</a>
+method. Remember that all transformers are only applied on the dataset in
+the current branch.</p>
+<p><br></p>
+<h3 id="automl">AutoML</h3>
+<p>Automated machine learning (AutoML) automates the selection, composition
+and parameterization of machine learning pipelines. Automating the machine
+learning process makes it more user-friendly and often provides faster, more
+accurate outputs than hand-coded algorithms. ATOM uses the <a href="http://epistasislab.github.io/tpot/">TPOT</a>
+package for AutoML optimization. TPOT uses a genetic algorithm to intelligently
+explore thousands of possible pipelines in order to find the best one for your
+data. Such an algorithm can be started through the <a href="../API/ATOM/atomclassifier/#automl">automl</a>
+method. The resulting data transformers and final estimator are merged with atom's
+pipeline (check the <code>pipeline</code> and <code>models</code> attributes after the method
+finishes running).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>AutoML algorithms aren't intended to run for only a few minutes. If left
+to its default parameters, the method can take a very long time to finish!</p>
 </div>
 <p><br><br></p>
 <h1 id="data-cleaning">Data cleaning</h1>
@@ -788,7 +817,7 @@ the most common transformations fast and easy.</p>
 <p>Standardization of a dataset is a common requirement for many machine
 learning estimators: they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
-Gaussian with 0 mean and unit variance). The <a href="../API/data_cleaning/scaler/">Scaler</a>
+Gaussian with 0 mean and unit variance). The <a href="../API/data_cleaning/scaler.md">Scaler</a>
 class scales data to mean=0 and std=1. It can be accessed from atom 
 through the <a href="../API/ATOM/atomclassifier/#scale">scale</a> method. </p>
 <p><br></p>
@@ -1074,7 +1103,7 @@ The available models and their corresponding acronyms are: </p>
 </ul>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>You can also use lowercase to call the models, e.g. <code>atom.lgb</code>.</p>
+<p>The acronyms are case insensitive. You can also use lowercase to call the models, e.g. <code>atom.lgb</code>.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1109,7 +1138,8 @@ atom.run(models=Lars)
 <p>Additional things to take into account:</p>
 <ul>
 <li>Custom models are not restricted to sklearn estimators, but they should
-  follow sklearn's API, i.e. have a fit and predict method.</li>
+  follow <a href="https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects">sklearn's API</a>,
+  i.e. have a fit and predict method.</li>
 <li><a href="#parameter-customization">Parameter customization</a> (for the initializer)
   is only possible for custom models which provide an estimator's class
   or an instance that has a <code>set_params()</code> method, i.e. it's a child class
@@ -1124,8 +1154,8 @@ atom.run(models=Lars)
 <p><br></p>
 <h3 id="deep-learning">Deep learning</h3>
 <p>Deep learning models can be used through ATOM's <a href="#custom-models">custom models</a>
-as long as they follow sklearn's API. For example, models implemented
-with the Keras package should use the sklearn wrappers
+as long as they follow <a href="https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects">sklearn's API</a>.
+For example, models implemented with the Keras package should use the sklearn wrappers
 <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasClassifier">KerasClassifier</a>
 or <a href="https://www.tensorflow.org/api_docs/python/tf/keras/wrappers/scikit_learn/KerasRegressor">kerasRegressor</a>.</p>
 <p>Many deep learning models, for example in computer vision and natural
@@ -1173,22 +1203,7 @@ other two approaches repeats them more than once. Every approach can be
 directly called from atom through the <a href="../API/ATOM/atomclassifier/#run">run</a>,
 <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
 and <a href="../API/ATOM/atomclassifier/#train-sizing">train_sizing</a> methods
-respectively. Every approach should be called from an independent instance
-of atom. Subsequent runs from different approaches will raise an exception.
-You can, however, rerun the same approach multiple times. In that case,
-the results are combined. Note that if you rerun the same model, only
-the last subclass is saved.</p>
-<p>For example, in this case, only the Ridge and the last fitted Lasso
-regressor (the one using bagging) are kept in the pipeline. The first
-Lasso model will be overwritten and all its information will be lost.
-Note that reruns are only allowed if the same metric is used. Leaving
-the <code>metric</code> parameter empty after the first run will automatically use
-the one in the pipeline.</p>
-<pre><code class="language-python">atom = ATOMRegressor(X, y)
-atom.run(&quot;Ridge&quot;, metric=&quot;MSE&quot;)
-atom.run(&quot;Lasso&quot;)
-atom.run(&quot;Lasso&quot;, bagging=5)
-</code></pre>
+respectively.</p>
 <p>Models are called through their <a href="#models">acronyms</a>, e.g. <code>atom.run(models="RF")</code>
 will train a <a href="../API/models/rf">Random Forest</a>. If you want to run
 the same model multiple times, add a tag after the acronym to
@@ -1300,7 +1315,7 @@ layer with 75 neurons.</p>
 <p>Some estimators allow you to pass extra parameters to the fit method
 (besides X and y). This can be done adding <code>_fit</code> at the end of the
 parameter. For example, to change XGBoost's verbosity, we can run:</p>
-<pre><code class="language-Python">atom.run(&quot;XGB&quot;, est_params={&quot;verbose_fit&quot;: True}
+<pre><code class="language-Python">atom.run(&quot;XGB&quot;, est_params={&quot;verbose_fit&quot;: True})
 </code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1412,9 +1427,9 @@ similar models, e.g. only using tree-based models.</p>
 <p>Use successive halving through the <a href="../API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a>/<a href="../API/training/successivehalvingregressor">SuccessiveHalvingRegressor</a>
 classes or from atom via the <a href="../API/ATOM/atomclassifier/#successive-halving">successive_halving</a>
 method. Consecutive runs of the same model are saved with the model's acronym
-followed by a number to differentiate the runs. The <code>results</code> attribute will be
-multi-index, where the first index indicates the number of models (N)
-in the iteration and the second the model's acronym.</p>
+followed by the number of models in the run. For example, a
+<a href="../API/models/rf">Random Forest</a> in a run with 4 models would become model
+<code>RF4</code>.</p>
 <p>Click <a href="../examples/successive_halving.html" target="_blank">here</a> for a
 successive halving example.</p>
 <div class="admonition tip">
@@ -1435,10 +1450,10 @@ the number of samples in the training set.</p>
 classes or from atom via the <a href="../API/ATOM/atomclassifier/#train-sizing">train_sizing</a>
 method. The number of iterations and the number of samples per training
 can be specified with the <code>train_sizes</code> parameter. Consecutive runs of the
-same model are saved with the model's acronym followed by a number to
-differentiate the runs. The <code>results</code> attribute will be multi-index, where
-the first index indicates the fraction of rows in the training set and the
-second the model's acronym.</p>
+same model are saved with the model's acronym followed by the fraction of
+rows in the training set (the <code>.</code> is removed from the fraction!). For example,
+a <a href="../API/models/rf">Random Forest</a> in a run with 80% of the training samples
+would become model <code>RF08</code>.</p>
 <p>Click <a href="../examples/train_sizing.html" target="_blank">here</a> for a
 train sizing example.</p>
 <div class="admonition tip">

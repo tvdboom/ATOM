@@ -270,6 +270,11 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 </tr>
 
 <tr>
+<td width="15%"><a href="#rename">rename</a></td>
+<td>Change the model's tag.</td>
+</tr>
+
+<tr>
 <td width="15%"><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
 </tr>
@@ -319,6 +324,22 @@ Delete the model from the trainer.
 <br /><br /><br />
 
 
+<a name="rename"></a>
+<pre><em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L585">[source]</a></div></pre>
+Change the model's tag. Note that the acronym always stays at the beginning of the model's name.
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>name: str or None, optional (default=None)</strong>
+<blockquote>
+New tag for the model. If None, the tag is removed.
+</blockquote>
+</table>
+<br />
+
+
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L167">[source]</a></div></pre>
@@ -330,7 +351,7 @@ Clear all the [prediction attributes](../../../user_guide/#predicting).
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L313">[source]</a></div></pre>
-Get the model's score for a specific metric.
+Get the scoring for a specific metric.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -363,9 +384,9 @@ Additional keyword arguments for the metric function.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="75%" style="background:white;">
-<strong>score: np.float64</strong>
+<strong>score: float or np.ndarray</strong>
 <blockquote>
-Model's scoring on the selected metric.
+Model's score for the selected metric.
 </blockquote>
 </tr>
 </table>

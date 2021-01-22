@@ -15,6 +15,10 @@ Description: Module containing all available models. All classes must
         T: class
             Trainer from which the model is called.
 
+        name: str
+            Name of the model. Defaults to the same as the acronym.
+            Is assigned in the basemodel.py module.
+
         acronym: str
             Acronym of the model's fullname.
 
@@ -172,6 +176,8 @@ class CustomModel(ModelOptimizer):
 
     def __init__(self, *args, **kwargs):
         self.est = kwargs["estimator"]  # Estimator provided by the user
+
+        # If no fullname is provided, use the class' name
         if hasattr(self.est, "fullname"):
             fullname = self.est.fullname
         elif callable(self.est):
@@ -179,9 +185,17 @@ class CustomModel(ModelOptimizer):
         else:
             fullname = self.est.__class__.__name__
 
+        # If no acronym is provided, use capital letters in the class' name
+        if hasattr(self.est, "acronym"):
+            acronym = self.est.acronym
+        else:
+            acronym = "".join([c for c in fullname if c.isupper()])
+            if len(acronym) < 2 or acronym.lower() in map(str.lower, MODEL_LIST):
+                acronym = fullname
+
         super().__init__(
             *args,
-            acronym=getattr(self.est, "acronym", fullname),
+            acronym=acronym,
             fullname=fullname,
             needs_scaling=getattr(self.est, "needs_scaling", False),
             type=getattr(self.est, "type", "kernel"),
@@ -190,14 +204,14 @@ class CustomModel(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        parameters = signature(self.est.__init__).parameters
+        sign = signature(self.est.__init__).parameters
 
         # The provided estimator can be a class or an instance
         if callable(self.est):
             # Add n_jobs and random_state to the estimator (if available)
             for p in ["n_jobs", "random_state"]:
-                if p in parameters:
-                    params[p] = self._get_default([p], params)
+                if p in sign:
+                    params[p] = params.pop(p, getattr(self.T, p))
 
             return self.est(**params)
 
@@ -205,12 +219,12 @@ class CustomModel(ModelOptimizer):
             # Update the parameters (only if it's a BaseEstimator)
             if all(hasattr(self.est, attr) for attr in ["get_params", "set_params"]):
                 for p in ["n_jobs", "random_state"]:
-                    if p in parameters and p in self.est.get_params():
-                        # If the class has the parameter and it's the default value
-                        if self.est.get_params()[p] == parameters[p]._default:
-                            params[p] = self._get_default([p], params)
+                    # If the class has the parameter and it's the default value
+                    if p in sign and self.est.get_params()[p] == sign[p]._default:
+                        params[p] = params.pop(p, getattr(self.T, p))
 
                 self.est.set_params(**params)
+
             return self.est
 
 
@@ -228,10 +242,15 @@ class GaussianProcess(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
-        kwargs = dict(random_state=random_state, **params)
+        kwargs = dict(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
         if self.T.goal.startswith("class"):
-            return GaussianProcessClassifier(n_jobs=n_jobs, **kwargs)
+            return GaussianProcessClassifier(
+                n_jobs=params.pop("n_jobs", self.T.n_jobs),
+                **kwargs,
+            )
         else:
             return GaussianProcessRegressor(**kwargs)
 
@@ -377,8 +396,7 @@ class OrdinaryLeastSquares(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        n_jobs = self._get_default(["n_jobs"], params)
-        return LinearRegression(n_jobs=n_jobs, **params)
+        return LinearRegression(n_jobs=params.pop("n_jobs", self.T.n_jobs), **params)
 
 
 class Ridge(ModelOptimizer):
@@ -401,7 +419,7 @@ class Ridge(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return RidgeClassifier(random_state=random_state, **params)
         else:
@@ -432,7 +450,7 @@ class Lasso(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         return LassoRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
@@ -463,7 +481,7 @@ class ElasticNet(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         return ElasticNetRegressor(random_state=random_state, **params)
 
     def get_dimensions(self):
@@ -589,7 +607,8 @@ class LogisticRegression(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Call the estimator object."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
+        random_state = params.pop("random_state", self.T.random_state)
         return LR(n_jobs=n_jobs, random_state=random_state, **params)
 
     def get_dimensions(self):
@@ -686,7 +705,7 @@ class KNearestNeighbors(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs = self._get_default(["n_jobs"], params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
         if self.T.goal.startswith("class"):
             return KNeighborsClassifier(n_jobs=n_jobs, **params)
         else:
@@ -743,12 +762,11 @@ class RadiusNearestNeighbors(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        if params.get("radius"):
-            radius = params.pop("radius")
-        else:
-            radius = np.mean(self.distances)
-        n_jobs = self._get_default(["n_jobs"], params)
-        kwargs = dict(radius=radius, n_jobs=n_jobs, **params)
+        kwargs = dict(
+            radius=params.pop("radius", np.mean(self.distances)),
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            **params,
+        )
         if self.T.goal.startswith("class"):
             return RadiusNeighborsClassifier(outlier_label="most_frequent", **kwargs)
         else:
@@ -796,7 +814,7 @@ class DecisionTree(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return DecisionTreeClassifier(random_state=random_state, **params)
         else:
@@ -847,7 +865,8 @@ class Bagging(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return BaggingClassifier(random_state=random_state, n_jobs=n_jobs, **params)
         else:
@@ -904,8 +923,11 @@ class ExtraTrees(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
-        kwargs = dict(random_state=random_state, n_jobs=n_jobs, **params)
+        kwargs = dict(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
         if self.T.goal.startswith("class"):
             return ExtraTreesClassifier(**kwargs)
         else:
@@ -971,8 +993,11 @@ class RandomForest(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
-        kwargs = dict(random_state=random_state, n_jobs=n_jobs, **params)
+        kwargs = dict(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
         if self.T.goal.startswith("class"):
             return RandomForestClassifier(**kwargs)
         else:
@@ -1020,7 +1045,7 @@ class AdaBoost(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return AdaBoostClassifier(random_state=random_state, **params)
         else:
@@ -1079,7 +1104,7 @@ class GradientBoostingMachine(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return GradientBoostingClassifier(random_state=random_state, **params)
         else:
@@ -1136,27 +1161,32 @@ class XGBoost(ModelOptimizer):
         """Return the model's estimator with unpacked parameters."""
         from xgboost import XGBClassifier, XGBRegressor
 
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if random_state is None:  # XGBoost can't handle random_state to be None
             random_state = random.randint(0, np.iinfo(np.int16).max)
-        kwargs = dict(n_jobs=n_jobs, random_state=random_state, verbosity=0, **params)
+        kwargs = dict(
+            n_jobs=params.pop("n_jobs", self.T.n_jobs),
+            random_state=random_state,
+            verbosity=0,
+            **params,
+        )
         if self.T.goal.startswith("class"):
             return XGBClassifier(**kwargs)
         else:
             return XGBRegressor(**kwargs)
 
-    def custom_fit(self, estimator, train, validation=None, params={}):
+    def custom_fit(self, est, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if "early_stopping_rounds" in params:
             rounds = params["early_stopping_rounds"]
-        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
-            rounds = self._early_stopping
-        elif self._early_stopping < 1:
-            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
+        elif not self.T._early_stopping or self.T._early_stopping >= 1:  # None or int
+            rounds = self.T._early_stopping
+        elif self.T._early_stopping < 1:
+            rounds = int(est.get_params()["n_estimators"] * self.T._early_stopping)
 
         pre_defined_params = ["early_stopping_rounds", "verbose"]
-        estimator.fit(
+        est.fit(
             X=train[0],
             y=train[1],
             eval_set=[train, validation] if validation else None,
@@ -1167,15 +1197,15 @@ class XGBoost(ModelOptimizer):
 
         if validation:
             # Create evals attribute with train and validation scores
-            metric_name = list(estimator.evals_result()["validation_0"])[0]
+            metric_name = list(est.evals_result()["validation_0"])[0]
             self.evals = {
                 "metric": metric_name,
-                "train": estimator.evals_result()["validation_0"][metric_name],
-                "test": estimator.evals_result()["validation_1"][metric_name],
+                "train": est.evals_result()["validation_0"][metric_name],
+                "test": est.evals_result()["validation_1"][metric_name],
             }
 
             iters = len(self.evals["train"])  # Iterations reached
-            tot = int(estimator.get_params()["n_estimators"])  # Iterations in params
+            tot = int(est.get_params()["n_estimators"])  # Iterations in params
             self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
@@ -1223,24 +1253,25 @@ class LightGBM(ModelOptimizer):
         """Return the model's estimator with unpacked parameters."""
         from lightgbm.sklearn import LGBMClassifier, LGBMRegressor
 
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return LGBMClassifier(n_jobs=n_jobs, random_state=random_state, **params)
         else:
             return LGBMRegressor(n_jobs=n_jobs, random_state=random_state, **params)
 
-    def custom_fit(self, estimator, train, validation=None, params={}):
+    def custom_fit(self, est, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if "early_stopping_rounds" in params:
             rounds = params["early_stopping_rounds"]
-        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
-            rounds = self._early_stopping
-        elif self._early_stopping < 1:
-            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
+        elif not self.T._early_stopping or self.T._early_stopping >= 1:  # None or int
+            rounds = self.T._early_stopping
+        elif self.T._early_stopping < 1:
+            rounds = int(est.get_params()["n_estimators"] * self.T._early_stopping)
 
         pre_defined_params = ["early_stopping_rounds", "verbose"]
-        estimator.fit(
+        est.fit(
             X=train[0],
             y=train[1],
             eval_set=[train, validation] if validation else None,
@@ -1251,15 +1282,15 @@ class LightGBM(ModelOptimizer):
 
         if validation:
             # Create evals attribute with train and validation scores
-            metric_name = list(estimator.evals_result_["training"])[0]  # Get first key
+            metric_name = list(est.evals_result_["training"])[0]  # Get first key
             self.evals = {
                 "metric": metric_name,
-                "train": estimator.evals_result_["training"][metric_name],
-                "test": estimator.evals_result_["valid_1"][metric_name],
+                "train": est.evals_result_["training"][metric_name],
+                "test": est.evals_result_["valid_1"][metric_name],
             }
 
             iters = len(self.evals["train"])  # Iterations reached
-            tot = int(estimator.get_params()["n_estimators"])  # Iterations in params
+            tot = int(est.get_params()["n_estimators"])  # Iterations in params
             self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
@@ -1304,14 +1335,13 @@ class CatBoost(ModelOptimizer):
         """Return the model's estimator with unpacked parameters."""
         from catboost import CatBoostClassifier, CatBoostRegressor
 
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
         # The subsample parameter only works when bootstrap_type=Bernoulli
         kwargs = dict(
             bootstrap_type="Bernoulli",
             train_dir="",
             allow_writing_files=False,
-            thread_count=n_jobs,
-            random_state=random_state,
+            thread_count=params.pop("n_jobs", self.T.n_jobs),
+            random_state=params.pop("random_state", self.T.random_state),
             verbose=False,
             **params
         )
@@ -1320,17 +1350,17 @@ class CatBoost(ModelOptimizer):
         else:
             return CatBoostRegressor(**kwargs)
 
-    def custom_fit(self, estimator, train, validation=None, params={}):
+    def custom_fit(self, est, train, validation=None, params={}):
         """Fit the model using early stopping and update evals attr."""
         # Determine early stopping rounds
         if "early_stopping_rounds" in params:
             rounds = params["early_stopping_rounds"]
-        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
-            rounds = self._early_stopping
-        elif self._early_stopping < 1:
-            rounds = int(estimator.get_params()["n_estimators"] * self._early_stopping)
+        elif not self.T._early_stopping or self.T._early_stopping >= 1:  # None or int
+            rounds = self.T._early_stopping
+        elif self.T._early_stopping < 1:
+            rounds = int(est.get_params()["n_estimators"] * self.T._early_stopping)
 
-        estimator.fit(
+        est.fit(
             X=train[0],
             y=train[1],
             eval_set=validation,
@@ -1340,15 +1370,15 @@ class CatBoost(ModelOptimizer):
 
         if validation:
             # Create evals attribute with train and validation scores
-            metric_name = list(estimator.evals_result_["learn"])[0]  # Get first key
+            metric_name = list(est.evals_result_["learn"])[0]  # Get first key
             self.evals = {
                 "metric": metric_name,
-                "train": estimator.evals_result_["learn"][metric_name],
-                "test": estimator.evals_result_["validation"][metric_name],
+                "train": est.evals_result_["learn"][metric_name],
+                "test": est.evals_result_["validation"][metric_name],
             }
 
             iters = len(self.evals["train"])  # Iterations reached
-            tot = int(estimator.get_all_params()["iterations"])  # Iterations in params
+            tot = int(est.get_all_params()["iterations"])  # Iterations in params
             self._stopped = (iters, tot) if iters < tot else None
 
     def get_dimensions(self):
@@ -1399,7 +1429,7 @@ class LinearSVM(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return LinearSVC(random_state=random_state, **params)
         else:
@@ -1459,7 +1489,7 @@ class KernelSVM(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return SVC(random_state=random_state, **params)
         else:
@@ -1497,8 +1527,11 @@ class PassiveAggressive(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
-        kwargs = dict(random_state=random_state, **params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
+        kwargs = dict(
+            random_state=params.pop("random_state", self.T.random_state),
+            **params,
+        )
         if self.T.goal.startswith("class"):
             return PassiveAggressiveClassifier(n_jobs=n_jobs, **kwargs)
         else:
@@ -1561,7 +1594,8 @@ class StochasticGradientDescent(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        n_jobs, random_state = self._get_default(["n_jobs", "random_state"], params)
+        n_jobs = params.pop("n_jobs", self.T.n_jobs)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return SGDClassifier(random_state=random_state, n_jobs=n_jobs, **params)
         else:
@@ -1665,7 +1699,7 @@ class MultilayerPerceptron(ModelOptimizer):
 
     def get_estimator(self, params={}):
         """Return the model's estimator with unpacked parameters."""
-        random_state = self._get_default(["random_state"], params)
+        random_state = params.pop("random_state", self.T.random_state)
         if self.T.goal.startswith("class"):
             return MLPClassifier(random_state=random_state, **params)
         else:

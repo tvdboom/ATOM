@@ -566,8 +566,9 @@ Model's estimator. Can be a class or an instance.
 </blockquote>
 <strong>acronym: str, optional (default=None)</strong>
 <blockquote>
-Model's acronym. Used to call the model from the trainer.
- If None, the estimator's __name__ will be used (not recommended).
+Model's acronym. Used to call the model from the trainer. If
+None and there are 2 or more capital letters in the estimator's
+__name__, those are used. Else, the full __name__ is used.
 </blockquote>
 <strong>fullname: str, optional (default=None)</strong>
 <blockquote>

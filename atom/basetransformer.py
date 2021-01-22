@@ -26,7 +26,7 @@ from .utils import (
 )
 
 
-class BaseTransformer(object):
+class BaseTransformer:
     """Base class for estimators in the package.
 
     Contains shared properties (n_jobs, verbose, warnings, logger,
@@ -324,10 +324,10 @@ class BaseTransformer(object):
 
         if self.logger is not None and level != 42:
             if isinstance(msg, str):
-                while msg.startswith("\n"):  # Insert empty lines
-                    self.logger.info("")
-                    msg = msg[1:]
-            self.logger.info(str(msg))
+                for text in msg.split("\n"):
+                    self.logger.info(text)
+            else:
+                self.logger.info(str(msg))
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: Optional[str] = None, **kwargs):

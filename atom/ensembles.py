@@ -22,7 +22,7 @@ from .models import MODEL_LIST
 from .utils import (
     flt, lst, arr, merge, check_is_fitted, check_scaling, get_acronym,
     get_best_score, catch_return, transform, composed, method_to_log,
-    crash,
+    crash, CustomDict,
 )
 
 
@@ -31,8 +31,9 @@ class Voting(BaseModel):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, acronym="Vote", fullname="Voting", **kwargs)
-        self.models_ = [getattr(self.T, model) for model in self.models]
-
+        self._models = CustomDict(
+            {k: v for k, v in self.T._models.items() if v.name in self.models}
+        )
         if len(self.models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting "
@@ -64,13 +65,13 @@ class Voting(BaseModel):
 
         def get_average_score(index):
             """Return the average score of the models on a metric."""
-            scores = [get_best_score(m, index) for m in self.models_]
+            scores = [get_best_score(m, index) for m in self._models]
             return np.average(scores, weights=self.weights)
 
-        check_is_fitted(self.T, "results")
+        check_is_fitted(self.T, "_models")
         out = "   ".join([
-            f"{m.name}: {get_average_score(i):.3f}"
-            for i, m, in enumerate(self.T.metric_)
+            f"{m.name}: {round(get_average_score(i), 3)}"
+            for i, m in enumerate(self.T._metric)
         ])
         return out
 
@@ -96,7 +97,7 @@ class Voting(BaseModel):
         if metric is None:
             return self._final_output()
 
-        pred = [m.scoring(metric, dataset, **kwargs) for m in self.models_]
+        pred = [m.scoring(metric, dataset, **kwargs) for m in self._models]
         return np.average(pred, axis=0, weights=self.weights)
 
     def _prediction(self, X, y=None, sample_weight=None, method="predict", **kwargs):
@@ -133,7 +134,7 @@ class Voting(BaseModel):
         """
         # Attribute check also done in BaseModel but better to
         # do it before all the data transformations
-        for m in self.models_:
+        for m in self._models:
             if not hasattr(m.estimator, method):
                 raise AttributeError(
                     f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
@@ -159,19 +160,18 @@ class Voting(BaseModel):
 
                     for b2, v2 in self.T._branches.items():
                         try:  # Can fail if pipeline is shorter than i
-                            est2 = v2.pipeline[i]
-                            if b1 != b2 and est1 is est2:
+                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
                                 # Update the data and step for the other branch
                                 data[b2] = copy(data[b1])
                                 step[b2] = i
-                        except KeyError:
+                        except IndexError:
                             continue
 
         # Use pipeline=[] to skip the transformations
         if method == "predict":
             pred = np.array([
                 m.predict(data[m.branch.name][0], pipeline=[])
-                for m in self.models_
+                for m in self._models
             ])
             majority = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
@@ -183,14 +183,14 @@ class Voting(BaseModel):
         elif method in ("predict_proba", "predict_log_proba"):
             pred = np.array([
                 getattr(m, method)(data[m.branch.name][0], pipeline=[])
-                for m in self.models_
+                for m in self._models
             ])
             return np.average(pred, axis=0, weights=self.weights)
 
         else:
             pred = np.array([
                 m.score(*data[m.branch.name], sample_weight, pipeline=[])
-                for m in self.models_
+                for m in self._models
             ])
             return np.average(pred, axis=0, weights=self.weights)
 
@@ -199,21 +199,21 @@ class Voting(BaseModel):
     @property
     def metric_train(self):
         if self._pred_attrs[0] is None:
-            pred = np.array([m.metric_train for m in self.models_])
+            pred = np.array([m.metric_train for m in self._models])
             self._pred_attrs[0] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[0]
 
     @property
     def metric_test(self):
         if self._pred_attrs[1] is None:
-            pred = np.array([m.metric_test for m in self.models_])
+            pred = np.array([m.metric_test for m in self._models])
             self._pred_attrs[1] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[1]
 
     @property
     def predict_train(self):
         if self._pred_attrs[2] is None:
-            pred = np.array([m.predict_train for m in self.models_])
+            pred = np.array([m.predict_train for m in self._models])
             self._pred_attrs[2] = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
@@ -224,7 +224,7 @@ class Voting(BaseModel):
     @property
     def predict_test(self):
         if self._pred_attrs[3] is None:
-            pred = np.array([m.predict_test for m in self.models_])
+            pred = np.array([m.predict_test for m in self._models])
             self._pred_attrs[3] = np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
@@ -235,42 +235,42 @@ class Voting(BaseModel):
     @property
     def predict_proba_train(self):
         if self._pred_attrs[4] is None:
-            pred = np.array([m.predict_proba_train for m in self.models_])
+            pred = np.array([m.predict_proba_train for m in self._models])
             self._pred_attrs[4] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[4]
 
     @property
     def predict_proba_test(self):
         if self._pred_attrs[5] is None:
-            pred = np.array([m.predict_proba_test for m in self.models_])
+            pred = np.array([m.predict_proba_test for m in self._models])
             self._pred_attrs[5] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[5]
 
     @property
     def predict_log_proba_train(self):
         if self._pred_attrs[6] is None:
-            pred = np.array([m.predict_log_proba_train for m in self.models_])
+            pred = np.array([m.predict_log_proba_train for m in self._models])
             self._pred_attrs[6] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[6]
 
     @property
     def predict_log_proba_test(self):
         if self._pred_attrs[7] is None:
-            pred = np.array([m.predict_log_proba_test for m in self.models_])
+            pred = np.array([m.predict_log_proba_test for m in self._models])
             self._pred_attrs[7] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[7]
 
     @property
     def score_train(self):
         if self._pred_attrs[8] is None:
-            pred = np.array([m.score_train for m in self.models_])
+            pred = np.array([m.score_train for m in self._models])
             self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[8]
 
     @property
     def score_test(self):
         if self._pred_attrs[9] is None:
-            pred = np.array([m.score_test for m in self.models_])
+            pred = np.array([m.score_test for m in self._models])
             self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[9]
 
@@ -281,7 +281,9 @@ class Stacking(BaseModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, acronym="Stack", fullname="Stacking", **kwargs)
         self.estimator = kwargs["estimator"]
-        self.models_ = [getattr(self.T, model) for model in self.models]
+        self._models = CustomDict(
+            {k: v for k, v in self.T._models.items() if v.name in self.models}
+        )
         self._fxs_scaler = None
 
         if len(self.models) < 2:
@@ -292,7 +294,7 @@ class Stacking(BaseModel):
 
         # Create the dataset for the Stacking instance
         dataset = pd.DataFrame()
-        for m in self.models_:
+        for m in self._models:
             attr = self._get_stack_attr(m)
             pred = np.concatenate((
                 getattr(m, f"{attr}_train"), getattr(m, f"{attr}_test")
@@ -336,11 +338,11 @@ class Stacking(BaseModel):
         # Save metric scores on complete training and test set
         self.metric_train = flt([
             metric(self.estimator, arr(self.X_train), self.y_train)
-            for metric in self.T.metric_
+            for metric in self.T._metric
         ])
         self.metric_test = flt([
             metric(self.estimator, arr(self.X_test), self.y_test)
-            for metric in self.T.metric_
+            for metric in self.T._metric
         ])
 
     def __repr__(self):
@@ -367,8 +369,8 @@ class Stacking(BaseModel):
     def _final_output(self):
         """Returns the output of the final estimator."""
         out = "   ".join([
-            f"{m.name}: {lst(self.metric_test)[i]:.3f}"
-            for i, m, in enumerate(self.T.metric_)
+            f"{m.name}: {round(lst(self.metric_test)[i], 3)}"
+            for i, m in enumerate(self.T._metric)
         ])
 
         # Annotate if model overfitted when train 20% > test
@@ -415,7 +417,7 @@ class Stacking(BaseModel):
         """
         # Attribute check also done in BaseModel but better to
         # do it before all the data transformations
-        for m in self.models_:
+        for m in self._models:
             if not hasattr(m.estimator, method):
                 raise AttributeError(
                     f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
@@ -441,17 +443,16 @@ class Stacking(BaseModel):
 
                     for b2, v2 in self.T._branches.items():
                         try:  # Can fail if pipeline is shorter than i
-                            est2 = v2.pipeline[i]
-                            if b1 != b2 and est1 is est2:
+                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
                                 # Update the data and step for the other branch
                                 data[b2] = copy(data[b1])
                                 step[b2] = i
-                        except KeyError:
+                        except IndexError:
                             continue
 
         # Create the new dataset
         dataset = pd.DataFrame()
-        for m in self.models_:
+        for m in self._models:
             attr = self._get_stack_attr(m)
             pred = getattr(m, attr)(data[m.branch.name][0], pipeline=[])
             if attr == "predict_proba" and self.T.task.startswith("bin"):
@@ -474,5 +475,5 @@ class Stacking(BaseModel):
         if y is None:
             return getattr(self.estimator, method)(dataset)
         else:
-            y = data[self.models_[0].branch.name][1]
+            y = data[self._models[0].branch.name][1]
             return getattr(self.estimator, method)(dataset, y, sample_weight)

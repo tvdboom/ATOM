@@ -53,28 +53,24 @@ class BaseModel(BaseModelPlotter):
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
+        self._group = self.name  # sh and ts models belong to the same group
         self._pred_attrs = [None] * 10
 
-    def _get_default(self, x, params):
-        """Get the standard parameter from params or the trainer.
-
-        Parameters
-        ----------
-        x: list
-            Standard parameter. Can be n_jobs and/or random_state.
-
-        params: dict
-            Parameters for the estimator provided by est_params.
-
-        """
-        args = []
-        for i in x:
-            args.append(params.pop(i) if params.get(i) else getattr(self.T, i))
-
-        if len(args) == 1:
-            return args[0]
-        else:
-            return args[0], args[1]
+    @property
+    def results(self):
+        """Return the results as a pd.Series."""
+        data = {
+            "metric_bo": getattr(self, "metric_bo", None),
+            "time_bo": getattr(self, "time_bo", None),
+            "metric_train": getattr(self, "metric_train", None),
+            "metric_test": getattr(self, "metric_test", None),
+            "time_fit": getattr(self, "time_fit", None),
+            "mean_bagging": getattr(self, "mean_bagging", None),
+            "std_bagging": getattr(self, "std_bagging", None),
+            "time_bagging": getattr(self, "time_bagging", None),
+            "time": getattr(self, "time", None),
+        }
+        return pd.Series(data, name=self.name)
 
     # Prediction methods =========================================== >>
 
@@ -311,7 +307,7 @@ class BaseModel(BaseModelPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Get the scoring fora specific metric.
+        """Get the scoring for a specific metric.
 
         Parameters
         ----------
@@ -326,6 +322,11 @@ class BaseModel(BaseModelPlotter):
 
         **kwargs
             Additional keyword arguments for the metric function.
+
+        Returns
+        -------
+        score: float or np.ndarray
+            Model's score for the selected metric.
 
         """
         metric_opts = CUSTOM_METRICS + list(SCORERS)

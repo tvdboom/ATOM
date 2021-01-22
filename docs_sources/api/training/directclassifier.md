@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.training.<strong style="color:#008AB8">DirectClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                      needs_threshold=False, n_calls=10, n_initial_points=5,
-                                     st_params={}, bo_params={}, bagging=None, n_jobs=1,
+                                     st_params={}, bo_params={}, bagging=0, n_jobs=1,
                                      verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L284">[source]</a></div></pre>
 Fit and evaluates the models to the data in the pipeline. The following steps are applied:
@@ -142,10 +142,10 @@ Additional parameters to for the BO. These can include:
 <li><b>Additional keyword arguments for skopt's optimizer.</b></li>                
 </ul>
 </blockquote>
-<strong>bagging: int, sequence or None, optional (default=None)</strong>
+<strong>bagging: int or sequence, optional (default=0)</strong>
 <blockquote>
 Number of data sets (bootstrapped from the training set) to use in
- the bagging algorithm. If None or 0, no bagging is performed.
+ the bagging algorithm. If 0, no bagging is performed.
  If sequence, the n-th value will apply to the n-th model.
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
@@ -523,6 +523,14 @@ Return class weights for a balanced data set. Statistically, the class weights
 Data set from which to get the weights. Choose between "train", "test" or "dataset".
 </blockquote>
 </tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>class_weights: dict</strong>
+<blockquote>
+Classes with the corresponding weights.
+</blockquote>
+</tr>
 </table>
 <br />
 
@@ -639,7 +647,7 @@ Whether to save the data as an attribute of the instance. If False, remember to
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L296">[source]</a></div></pre>
-Get the scoring for a specific metric.
+Print all the models' scoring for a specific metric.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -663,20 +671,8 @@ If None, returns the models' final results (ignores the <code>dataset</code> par
 </blockquote>
 <strong>dataset: str, optional (default="test")</strong>
 <blockquote>
-Data set on which to calculate the metric. Options are "train" or "test".
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
 Additional keyword arguments for the metric function.
 </blockquote>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>score: str</strong>
-<blockquote>
-Overview of the models' scoring for the selected metric.
-</blockquote>
-</tr>
 </table>
 <br />
 

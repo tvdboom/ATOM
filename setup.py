@@ -17,10 +17,10 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="v4.2.1",
+    version="v4.3.0",
     license="MIT",
-    description="A Python AutoML tool for fast exploration and experimentation of supervised machine learning pipelines.",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.2.1.tar.gz",
+    description="A Python package for fast exploration and experimentation of supervised machine learning pipelines.",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.3.0.tar.gz",
     url="http://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
@@ -38,7 +38,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "numpy >= 1.17.2",
+        "numpy >= 1.19.5",
         "scipy >= 1.4.1",
         "pandas >= 1.0.3",
         "tqdm >= 4.35.0",
@@ -47,6 +47,7 @@ setuptools.setup(
         "tabulate >= 0.8.6",
         "scikit-learn >= 0.24",
         "scikit-optimize >= 0.8.1",
+        "tpot >= 0.11.7",
         "category-encoders >= 2.1.0",
         "imbalanced-learn >= 0.5.0",
         "pandas-profiling >= 2.3.0",
@@ -54,7 +55,7 @@ setuptools.setup(
         "gplearn >= 0.4.1",
         "matplotlib >= 3.3.0",
         "seaborn >= 0.10.0",
-        "shap >= 0.37.0"
+        "shap >= 0.38.1"
     ],
     extras_require={
         "models": [
