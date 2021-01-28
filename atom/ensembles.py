@@ -68,7 +68,6 @@ class Voting(BaseModel):
             scores = [get_best_score(m, index) for m in self._models]
             return np.average(scores, weights=self.weights)
 
-        check_is_fitted(self.T, "_models")
         out = "   ".join([
             f"{m.name}: {round(get_average_score(i), 3)}"
             for i, m in enumerate(self.T._metric)

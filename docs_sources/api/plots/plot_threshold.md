@@ -15,7 +15,7 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>metric: str, callable, list, tuple or None, optional (default=None)</strong>
 <blockquote>
-Metric(s) to plot. These can be one of sklearn's pre-defined scorers, a metric function
+Metric(s) to plot. These can be one of sklearn's predefined scorers, a metric function
  or a sklearn scorer object (see the <a href="../../../user_guide/#metric">user guide</a>). If
  None, the metric used to run the pipeline is used.
 </blockquote>

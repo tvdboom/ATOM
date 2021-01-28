@@ -178,7 +178,6 @@ def test_plot_successive_halving():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_successive_halving)
     atom.run("LGB")
-    pytest.raises(PermissionError, atom.plot_successive_halving)
     atom.delete()  # Clear the pipeline to allow sh
     atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"], bagging=4)
     pytest.raises(ValueError, atom.plot_successive_halving, models="unknown")
@@ -203,7 +202,6 @@ def test_plot_learning_curve():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_learning_curve)
     atom.run("LGB")
-    pytest.raises(PermissionError, atom.plot_learning_curve)
     atom.delete()  # Clear the pipeline to allow ts
     atom.train_sizing(["Tree", "LGB"], metric="max_error", bagging=4)
     atom.plot_learning_curve(filename=FILE_DIR + "train_sizing_1", display=False)

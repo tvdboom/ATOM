@@ -97,6 +97,28 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         ]
         return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
 
+    def _check_est_params(self):
+        """Make sure the parameters are valid keyword argument for the estimator."""
+        signature_init = signature(self.get_estimator().__init__).parameters
+        signature_fit = signature(self.get_estimator().fit).parameters
+
+        # The parameter is always accepted if the estimator accepts kwargs
+        for param in self._est_params:
+            if param not in signature_init and "kwargs" not in signature_init:
+                raise ValueError(
+                    f"Invalid value for the est_params parameter. "
+                    f"Got unknown parameter {param} for estimator "
+                    f"{self.get_estimator().__class__.__name__}."
+                )
+
+        for param in self._est_params_fit:
+            if param not in signature_fit and "kwargs" not in signature_fit:
+                raise ValueError(
+                    f"Invalid value for the est_params parameter. Got "
+                    f"unknown parameter {param} for the fit method of "
+                    f"estimator {self.get_estimator().__class__.__name__}."
+                )
+
     def get_params(self, x):
         """Get a dictionary of the model's hyperparameters.
 
@@ -283,15 +305,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         if self.T.verbose == 1:
             self._pbar = tqdm(total=self._n_calls, desc="Random start 1")
 
+        self._check_est_params()  # Check validity of parameters
+
         # Drop dimensions from BO if already in est_params
         for param in self._est_params:
-            if param not in signature(self.get_estimator().__init__).parameters:
-                raise ValueError(
-                    f"Invalid value for the est_params parameter. "
-                    f"Got unknown parameter {param} for estimator "
-                    f"{self.get_estimator().__class__.__name__}."
-                )
-            elif param in self.params:
+            if param in self.params:
                 self.params.pop(param)
 
         # Specify model dimensions
@@ -380,6 +398,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
+            self._check_est_params()
             self.estimator = self.get_estimator(self._est_params)
 
         # Fit the selected model on the complete training set
@@ -565,8 +584,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         name = self.acronym + name
 
         # Replace the model in the _models attribute
-        self.T._models.insert(self.name.lower(), name, self)
-        self.T._models.pop(self.name.lower())
+        self.T._models.insert(self.name, name, self)
+        self.T._models.pop(self.name)
         self.T.log(f"Model {self.name} successfully renamed to {name}!")
         self.name = name
 

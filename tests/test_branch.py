@@ -206,7 +206,7 @@ def test_n_classes_property():
     assert atom.branch.n_classes == 3
 
 
-# Test property getters ============================================ >>
+# Test property setters ============================================ >>
 
 def test_dataset_setter():
     """Assert that the dataset setter changes the whole dataset."""

@@ -9,7 +9,6 @@ Description: Unit tests for training.py
 
 # Standard packages
 import pytest
-import pandas as pd
 
 # Own modules
 from atom.training import (
@@ -23,7 +22,7 @@ from atom.training import (
 from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
 
 
-# Test Trainer ===================================================== >>
+# Test trainers ============================================== >>
 
 def test_infer_task():
     """Assert that the correct task is inferred from the data."""
@@ -40,59 +39,32 @@ def test_infer_task():
     assert trainer.task == "regression"
 
 
-# Test SuccessiveHalving =========================================== >>
-
-def test_skip_runs_below_zero():
+def test_sh_skip_runs_below_zero():
     """Assert that an error is raised if skip_runs < 0."""
     sh = SuccessiveHalvingRegressor(models="OLS", skip_runs=-1)
     pytest.raises(ValueError, sh.run, reg_train, reg_test)
 
 
-def test_skip_runs_too_large():
+def test_sh_skip_runs_too_large():
     """Assert that an error is raised if skip_runs >= n_runs."""
     sh = SuccessiveHalvingRegressor(models=["OLS", "BR"], skip_runs=2)
     pytest.raises(ValueError, sh.run, reg_train, reg_test)
 
 
-def test_successive_halving_results_is_multi_index():
-    """Assert that the results property is a multi-index dataframe."""
+def test_models_are_restored():
+    """Assert that the models attributes are all restored after fitting."""
     sh = SuccessiveHalvingRegressor(["Tree", "RF", "AdaB", "LGB"], random_state=1)
     sh.run(reg_train, reg_test)
-    assert len(sh.results) == 7  # 4 + 2 + 1
-    assert isinstance(sh.results.index, pd.MultiIndex)
-    assert sh.results.index.names == ["n_models", "model"]
+    assert "Tree" not in sh._models  # Original model is deleted
+    assert all(m in sh.models for m in ("Tree4", "LGB2", "RF1"))
 
 
-def test_models_are_reset():
-    """Assert that the models attributes is reset after fitting."""
-    sh = SuccessiveHalvingRegressor(["Tree", "RF", "AdaB", "LGB"], random_state=1)
+def test_ts_different_train_sizes_types():
+    """Assert that train sizing accepts different types as sizes."""
+    sh = TrainSizingClassifier("Tree", train_sizes=[0.2, 200], random_state=1)
     sh.run(reg_train, reg_test)
-    assert len(sh.models) == 7
-
-
-def test_successive_halving_train_index_is_reset():
-    """Assert that the train index is reset after fitting."""
-    sh = SuccessiveHalvingRegressor(["Tree", "RF", "AdaB", "LGB"], random_state=1)
-    sh.run(reg_train, reg_test)
-    assert sh.branch.idx[0] == len(reg_train)
-
-
-# Test TrainSizing ================================================= >>
-
-def test_train_sizing_results_is_multi_index():
-    """Assert that the results property is a multi-index dataframe."""
-    ts = TrainSizingRegressor(["RF", "LGB"], train_sizes=[100, 200], random_state=1)
-    ts.run(reg_train, reg_test)
-    assert len(ts.results) == 4  # 2 models * 2 runs
-    assert isinstance(ts.results.index, pd.MultiIndex)
-    assert ts.results.index.names == ["frac", "model"]
-
-
-def test_train_sizing_train_index_is_reset():
-    """Assert that the train index is reset after fitting."""
-    ts = TrainSizingRegressor("LGB", train_sizes=[0.6, 0.8], random_state=1)
-    ts.run(reg_train, reg_test)
-    assert ts.branch.idx[0] == len(reg_train)
+    assert len(sh.tree02.train) == 61
+    assert len(sh.tree0647.train) == 200
 
 
 # Test goals ======================================================= >>

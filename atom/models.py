@@ -1165,6 +1165,7 @@ class XGBoost(ModelOptimizer):
         if random_state is None:  # XGBoost can't handle random_state to be None
             random_state = random.randint(0, np.iinfo(np.int16).max)
         kwargs = dict(
+            use_label_encoder=False,
             n_jobs=params.pop("n_jobs", self.T.n_jobs),
             random_state=random_state,
             verbosity=0,

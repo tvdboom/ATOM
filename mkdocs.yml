@@ -122,6 +122,7 @@ nav:
     - Deep learning: examples/deep_learning.html" target="_blank
     - Imbalanced datasets: examples/imbalanced_datasets.html" target="_blank
     - Feature engineering: examples/feature_engineering.html" target="_blank
+    - AutoML: examples/automl.html" target="_blank
     - Multi-metric runs: examples/multi_metric.html" target="_blank
     - Early stopping: examples/early_stopping.html" target="_blank
     - Ensembles: examples/ensembles.html" target="_blank

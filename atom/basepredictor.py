@@ -81,7 +81,7 @@ class BasePredictor:
         """Return the results as a pd.DataFrame."""
         return pd.DataFrame(
             data=[m.results for m in self._models],
-            columns=[m.results.index for m in self._models][0],
+            columns=self._models[0].results.index if self._models else [],
             index=lst(self.models),
         ).dropna(axis=1, how="all")
 

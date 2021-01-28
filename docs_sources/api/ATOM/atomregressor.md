@@ -441,7 +441,8 @@ on the complete dataset.
 Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
-merged with atom's pipeline. Read more in the [user guide](../../../user_guide/#automl).
+merged with atom's pipeline. The tpot instance can be accessed through the
+`tpot` attribute.Read more in the [user guide](../../../user_guide/#automl).
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -449,14 +450,6 @@ merged with atom's pipeline. Read more in the [user guide](../../../user_guide/#
 <strong>**kwargs</strong>
 <blockquote>
 Keyword arguments for tpot's regressor.
-</blockquote>
-</tr>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>tpot: <a href="http://epistasislab.github.io/tpot/api/#regression">TPOTRegressor</a></strong>
-<blockquote>
-Fitted tpot object.
 </blockquote>
 </tr>
 </table>

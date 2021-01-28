@@ -9,7 +9,6 @@ Description: Module containing the ATOM class.
 
 # Standard packages
 import numpy as np
-import pandas as pd
 from typeguard import typechecked
 from typing import Union, Optional
 from sklearn.pipeline import Pipeline
@@ -724,17 +723,13 @@ class ATOM(BasePredictor, ATOMPlotter):
         Uses the TPOT package to perform an automated search of
         transformers and a final estimator that maximizes a metric
         on the dataset. The resulting transformations and estimator
-        are merged with atom's pipeline.
+        are merged with atom's pipeline. The tpot instance can be
+        accessed through the `tpot` attribute.
 
         Parameters
         ----------
         **kwargs
             Keyword arguments for tpot's classifier/regressor.
-
-        Returns
-        -------
-        tpot: TPOTClassifier or TPOTRegressor
-            Fitted tpot object.
 
         """
         from tpot import TPOTClassifier, TPOTRegressor
@@ -760,19 +755,19 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
         if self.goal.startswith("class"):
-            tpot = TPOTClassifier(**kwargs)
+            self.tpot = TPOTClassifier(**kwargs)
         else:
-            tpot = TPOTRegressor(**kwargs)
+            self.tpot = TPOTRegressor(**kwargs)
 
         self.log("Fitting automl algorithm...", 1)
 
-        tpot.fit(self.X_train, self.y_train)
+        self.tpot.fit(self.X_train, self.y_train)
 
-        self.log("Merging automl results with atom...", 1)
+        self.log("\nMerging automl results with atom...", 1)
 
         # A pipeline could consist of just a single estimator
-        if len(tpot.fitted_pipeline_) > 1:
-            for name, est in tpot.fitted_pipeline_[:-1].named_steps.items():
+        if len(self.tpot.fitted_pipeline_) > 1:
+            for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
                 add_transformer(self, est, name)
                 self.log(
                     f" --> Transformer {self.pipeline[-1].__class__.__name__} "
@@ -780,7 +775,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 )
 
         # Add the final estimator as a model to atom
-        est = tpot.fitted_pipeline_[-1]
+        est = self.tpot.fitted_pipeline_[-1]
         est.acronym, est.fullname = names_from_estimator(self, est)
         model = CustomModel(self, estimator=est)
         model.estimator = model.est
@@ -796,8 +791,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             metric(model.estimator, self.X_test, self.y_test)
             for metric in self._metric
         ])
-
-        return tpot
 
     # Training methods ============================================= >>
 
@@ -833,7 +826,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             else:
                 # If there's a metric, it should be the same as previous run
                 _metric = BaseTrainer._prepare_metric(
-                    lst(metric), gib, needs_proba, needs_threshold
+                    metric=lst(metric),
+                    greater_is_better=gib,
+                    needs_proba=needs_proba,
+                    needs_threshold=needs_threshold,
                 )
 
                 if list(_metric.keys()) != list(self._metric.keys()):

@@ -262,7 +262,7 @@ the most common transformations fast and easy.
 Standardization of a dataset is a common requirement for many machine
 learning estimators: they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
-Gaussian with 0 mean and unit variance). The [Scaler](../API/data_cleaning/scaler.md)
+Gaussian with 0 mean and unit variance). The [Scaler](../API/data_cleaning/scaler)
 class scales data to mean=0 and std=1. It can be accessed from atom 
 through the [scale](../API/ATOM/atomclassifier/#scale) method. 
 
@@ -272,7 +272,7 @@ through the [scale](../API/ATOM/atomclassifier/#scale) method.
 
 There are many data cleaning steps that are useful to perform on any
 dataset before modelling. These are general rules that apply almost
-on every use-case and every task. The [Cleaner](API/data_cleaning/cleaner.md)
+on every use-case and every task. The [Cleaner](../API/data_cleaning/cleaner)
 class is a convenient tool to apply such steps. It can be accessed
 from atom through the [clean](../API/ATOM/atomclassifier/#clean)
 method. Use the class' parameters to choose which transformations to
@@ -293,7 +293,7 @@ For various reasons, many real world datasets contain missing values,
 often encoded as blanks, NaNs or other placeholders. Such datasets
 however are incompatible with ATOM's models which assume that all
 values in an array are numerical, and that all have and hold meaning.
-The [Imputer](API/data_cleaning/imputer.md) class handles missing
+The [Imputer](../API/data_cleaning/imputer) class handles missing
 values in the dataset by either dropping or imputing the value. It can 
 be accessed from atom through the [impute](../API/ATOM/atomclassifier/#impute)
 method.
@@ -312,7 +312,7 @@ examples include color (“Red”, “Yellow”, “Blue”), size (“Small”,
 “Medium”, “Large”) or geographic designations (city or country).
 Regardless of what the value is used for, the challenge is determining
 how to use this data in the analysis. ATOM's models don't support
-direct manipulation of this kind of data. Use the [Encoder](API/data_cleaning/encoder.md)
+direct manipulation of this kind of data. Use the [Encoder](../API/data_cleaning/encoder)
 class to encode categorical features to numerical values. It can be
 accessed from atom through the [encode](../API/ATOM/atomclassifier/#encode) 
 method.
@@ -330,7 +330,7 @@ the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
 learning modeling and model skill in general can be improved by 
-understanding and even removing these outlier values. The [Outliers](API/data_cleaning/outliers.md) 
+understanding and even removing these outlier values. The [Outliers](../API/data_cleaning/outliers) 
 class can drop or impute outliers in the dataset. It can be accessed
 from atom through the [outliers](../API/ATOM/atomclassifier/#outliers)
 method.
@@ -344,7 +344,7 @@ classification is imbalanced classes. Data imbalance usually reflects
 an unequal distribution of classes within a dataset. For example, in
 a credit card fraud detection dataset, most of the transactions are
 non-fraud, and a very few cases are fraud. This leaves us with a very
-unbalanced ratio of fraud vs non-fraud cases. The [Balancer](API/data_cleaning/balancer.md)
+unbalanced ratio of fraud vs non-fraud cases. The [Balancer](../API/data_cleaning/balancer)
 class can oversample the minority class or undersample the majority
 class. It can be accessed from atom through the [balance](../API/ATOM/atomclassifier/#balance)
 method.
@@ -383,7 +383,7 @@ in the dataset. See the <a href="../examples/feature_engineering.html" target="_
 
 ### Generating new features
 
-The [FeatureGenerator](API/feature_engineering/feature_generator.md)
+The [FeatureGenerator](../API/feature_engineering/feature_generator)
 class creates new non-linear features based on the original feature
 set. It can be accessed from atom through the [feature_generation](../API/ATOM/atomclassifier/#feature-generation)
 method. You can choose between two strategies: Deep Feature Synthesis
@@ -413,13 +413,13 @@ ATOM's implementation of DFS uses the [featuretools](https://www.featuretools.co
 
 !!! tip
     DFS can create many new features and not all of them will be useful.
-    Use [FeatureSelector](./API/feature_engineering/feature_selector.md)
+    Use [FeatureSelector](./../API/feature_engineering/feature_selector)
     to reduce the number of features!
 
 !!! warning
     Using the div, log or sqrt operators can return new features with
     `inf` or `NaN` values. Check the warnings that may pop up or use
-    atom's [missing](/API/ATOM/atomclassifier/#properties) property.
+    atom's [missing](/../API/ATOM/atomclassifier/#properties) property.
 
 !!! warning
     When using DFS with `n_jobs>1`, make sure to protect your code with
@@ -455,7 +455,7 @@ ATOM uses the [SymbolicTransformer](https://gplearn.readthedocs.io/en/stable/ref
 
 ### Selecting useful features
 
-The [FeatureSelector](API/feature_engineering/feature_selector.md) class
+The [FeatureSelector](../API/feature_engineering/feature_selector) class
 provides tooling to select the relevant features from a dataset. It can
 be accessed from atom through the [feature_selection](../API/ATOM/atomclassifier/#feature-selection)
 method. The following strategies are implemented: univariate, PCA, SFM,
@@ -484,7 +484,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/d
 SFM uses an estimator with `feature_importances_` or `coef_` attributes
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the `solver` parameter and can be
-already fitted. ATOM allows you to use one its pre-defined [models](#models),
+already fitted. ATOM allows you to use one its predefined [models](#models),
 e.g. `solver="RF"`. If you didn't call the FeatureSelector through atom,
 don't forget to indicate the estimator's task adding `_class` or `_reg`
 after the name, e.g. `RF_class` to use a random forest classifier.
@@ -516,7 +516,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 Variance is the expectation of the squared deviation of a random
 variable from its mean. Features with low variance have many values
 repeated, which means the model will not learn much from them.
-[FeatureSelector](API/feature_engineering/feature_selector.md) removes
+[FeatureSelector](../API/feature_engineering/feature_selector) removes
 all features where the same value is repeated in at least
 `max_frac_repeated` fraction of the rows. The default option is to
 remove a feature if all values in it are the same.
@@ -527,7 +527,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 **Removing features with multi-collinearity**<br>
 Two features that are highly correlated are redundant, i.e. two will
 not contribute more to the model than only one of them.
-[FeatureSelector](API/feature_engineering/feature_selector.md) will
+[FeatureSelector](../API/feature_engineering/feature_selector) will
 drop a feature that has a Pearson correlation coefficient larger than
 `max_correlation` with another feature. A correlation of 1 means the
 two columns are equal. A dataframe of the removed features and their
@@ -536,10 +536,10 @@ correlation values can be accessed through the `collinear` attribute.
 <br>
 
 !!! tip
-    Use the [plot_feature_importance](API/plots/plot_feature_importance.md)
+    Use the [plot_feature_importance](../API/plots/plot_feature_importance)
     method to examine how much a specific feature contributes to the
     final predictions. If the model doesn't have a `feature_importances_`
-    attribute, use [plot_permutation_importance](API/plots/plot_permutation_importance.md) instead.
+    attribute, use [plot_permutation_importance](../API/plots/plot_permutation_importance) instead.
 
 !!!warning
     The RFE and RFECV strategies don't work when the solver is a 
@@ -730,6 +730,8 @@ parameters or on different data sets. See the <a href="../examples/imbalanced_da
 
 Additional things to take into account:
 
+* Models that need feature scaling will do so automatically before
+  training if the features are not already scaled.
 * If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model and save the
   exception in the `errors` attribute. Note that in that case,

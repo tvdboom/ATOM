@@ -10,11 +10,21 @@ Description: Unit tests for basemodel.py
 # Standard packages
 import pytest
 import numpy as np
+import pandas as pd
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_reg, y_reg, X10_str, y10
+
+
+# Test utility properties ========================================== >>
+
+def test_results_property():
+    """Assert that an error is raised when the model doesn't have the method."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    assert isinstance(atom.tree.results, pd.Series)
 
 
 # Test prediction methods ========================================== >>
@@ -23,7 +33,7 @@ def test_invalid_method():
     """Assert that an error is raised when the model doesn't have the method."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("SGD")
-    pytest.raises(AttributeError, atom.SGD.predict_proba, X_bin)
+    pytest.raises(AttributeError, atom.sgd.predict_proba, X_bin)
 
 
 def test_transformations_first():
@@ -31,7 +41,14 @@ def test_transformations_first():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
     atom.run("Tree")
-    assert isinstance(atom.Tree.predict(X10_str), np.ndarray)
+    assert isinstance(atom.tree.predict(X10_str), np.ndarray)
+
+
+def test_data_is_scaled():
+    """Assert that the data is scaled for models that need it."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("SGD")
+    assert sum(atom.sgd.predict(X_bin)) > 0  # Always 0 if not scaled
 
 
 def test_score_with_sample_weights():
@@ -191,6 +208,7 @@ def test_delete():
     atom.run("RF")
     atom.rf.delete()
     assert not atom.models
+    assert not atom.metric
 
 
 def test_scoring_metric_None():

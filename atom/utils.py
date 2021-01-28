@@ -504,7 +504,7 @@ def get_acronym(model, must_be_equal=True):
     )
 
 
-def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
+def get_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
     """Get the right metric depending on the input type.
 
     Parameters
@@ -512,16 +512,16 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
     metric: str or callable
         Metric as a string, function or scorer.
 
-    greater_is_better: bool
+    gib: bool, optional (default=True)
         whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
         better. Will be ignored if the metric is a string or a scorer.
 
-    needs_proba: bool
+    needs_proba: bool, optional (default=False)
         Whether the metric function requires probability estimates of
         a classifier. Is ignored if the metric is a string or a scorer.
 
-    needs_threshold: bool
+    needs_threshold: bool, optional (default=False)
         Whether the metric function takes a continuous decision
         certainty. Is ignored if the metric is a string or a scorer.
 
@@ -554,7 +554,7 @@ def get_metric(metric, greater_is_better, needs_proba, needs_threshold):
     else:  # Metric is a function with signature metric(y, y_pred)
         metric = make_scorer(
             score_func=metric,
-            greater_is_better=greater_is_better,
+            greater_is_better=gib,
             needs_proba=needs_proba,
             needs_threshold=needs_threshold,
         )
@@ -993,13 +993,13 @@ class PlotCallback:
 
     Parameters
     ----------
-    M: class
-        Model subclass.
+    cls: class
+        Trainer from which the callback is called.
 
     """
 
-    def __init__(self, *args):
-        self.M = args[0]
+    def __init__(self, cls):
+        self.cls = cls
 
         # Plot attributes
         max_len = 15  # Maximum steps to show at once in the plot
@@ -1044,28 +1044,28 @@ class PlotCallback:
         # First subplot
         (line1,) = ax1.plot(self.x, self.y1, "-o", alpha=0.8)
         ax1.set_title(
-            label=f"Bayesian Optimization for {self.M.fullname}",
-            fontsize=self.M.T.title_fontsize,
+            label=f"Bayesian Optimization performance",
+            fontsize=self.cls.title_fontsize,
             pad=20,
         )
         ax1.set_ylabel(
-            ylabel=self.M.T.metric_[0].name,
-            fontsize=self.M.T.label_fontsize,
+            ylabel=self.cls._metric[0].name,
+            fontsize=self.cls.label_fontsize,
             labelpad=12,
         )
         ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
 
         # Second subplot
         (line2,) = ax2.plot(self.x, self.y2, "-o", alpha=0.8)
-        ax2.set_xlabel(xlabel="Call", fontsize=self.M.T.label_fontsize, labelpad=12)
-        ax2.set_ylabel(ylabel="d", fontsize=self.M.T.label_fontsize, labelpad=12)
+        ax2.set_xlabel(xlabel="Call", fontsize=self.cls.label_fontsize, labelpad=12)
+        ax2.set_ylabel(ylabel="d", fontsize=self.cls.label_fontsize, labelpad=12)
         ax2.set_xticks(self.x)
         ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
         ax2.set_ylim([-0.05, 0.1])
 
         plt.setp(ax1.get_xticklabels(), visible=False)
-        plt.xticks(fontsize=self.M.T.tick_fontsize)
-        plt.yticks(fontsize=self.M.T.tick_fontsize)
+        plt.xticks(fontsize=self.cls.tick_fontsize)
+        plt.yticks(fontsize=self.cls.tick_fontsize)
 
         return line1, line2, ax1, ax2
 
@@ -1177,9 +1177,9 @@ class CustomDict(MutableMapping):
 
     def insert(self, pos, new_key, value):
         if isinstance(pos, str):
-            pos = self.__keys.index(pos)
+            pos = self.__keys.index(self._conv(pos))
         try:
-            self.__keys.insert(pos, new_key)
+            self.__keys.insert(pos, self._conv(new_key))
             self.__data[self._conv(new_key)] = value
         except ValueError:
             raise KeyError(pos) from ValueError
@@ -1210,7 +1210,7 @@ class CustomDict(MutableMapping):
 
     def update(self, mapping={}, **kwargs):
         for key, value in mapping.items():
-            if key not in self.__keys:
+            if self._conv(key) not in self.__keys:
                 self.__keys.append(self._conv(key))
             self.__data[self._conv(key)] = value
 
@@ -1220,3 +1220,6 @@ class CustomDict(MutableMapping):
         except KeyError:
             self[self._conv(key)] = default
             return self[self._conv(key)]
+
+    def index(self, key):
+        return self.__keys.index(self._conv(key))

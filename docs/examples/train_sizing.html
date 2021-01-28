@@ -14625,7 +14625,7 @@ Train evaluation --&gt; f1: 0.8179
 Test evaluation --&gt; f1: 0.6092
 Time elapsed: 0.000s
 Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.5920 ± 0.0024
+Evaluation --&gt; f1: 0.592 ± 0.0024
 Time elapsed: 0.000s
 -------------------------------------------------
 Total time: 0.000s
@@ -14644,7 +14644,7 @@ Size of test set: 25366
 
 Results for LightGBM:         
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7440
+Train evaluation --&gt; f1: 0.744
 Test evaluation --&gt; f1: 0.6234
 Time elapsed: 0.000s
 Bagging -----------------------------------------
@@ -14737,7 +14737,7 @@ Size of test set: 25366
 Results for LightGBM:         
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6807
-Test evaluation --&gt; f1: 0.6390
+Test evaluation --&gt; f1: 0.639
 Time elapsed: 0.000s
 Bagging -----------------------------------------
 Evaluation --&gt; f1: 0.6315 ± 0.0036
@@ -14761,7 +14761,7 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6775
 Test evaluation --&gt; f1: 0.6403
-Time elapsed: 0.000s
+Time elapsed: -0.000s
 Bagging -----------------------------------------
 Evaluation --&gt; f1: 0.6363 ± 0.0029
 Time elapsed: 0.000s
@@ -14784,7 +14784,7 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6732
 Test evaluation --&gt; f1: 0.6375
-Time elapsed: -0.000s
+Time elapsed: 0.000s
 Bagging -----------------------------------------
 Evaluation --&gt; f1: 0.6342 ± 0.0027
 Time elapsed: 0.000s
@@ -14828,7 +14828,7 @@ Size of test set: 25366
 
 Results for LightGBM:         
 Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6620
+Train evaluation --&gt; f1: 0.662
 Test evaluation --&gt; f1: 0.6396
 Time elapsed: 0.000s
 Bagging -----------------------------------------
@@ -14861,7 +14861,8 @@ LightGBM --&gt; f1: 0.638 ± 0.002
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># The results dataframe now is multi-index</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that the model&#39;s names are followed by</span>
+<span class="c1"># the fraction of data used</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">results</span>
 </pre></div>
 
@@ -14901,7 +14902,6 @@ LightGBM --&gt; f1: 0.638 ± 0.002
   <thead>
     <tr style="text-align: right;">
       <th></th>
-      <th></th>
       <th>metric_train</th>
       <th>metric_test</th>
       <th>time_fit</th>
@@ -14910,126 +14910,105 @@ LightGBM --&gt; f1: 0.638 ± 0.002
       <th>time_bagging</th>
       <th>time</th>
     </tr>
-    <tr>
-      <th>frac</th>
-      <th>model</th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
   </thead>
   <tbody>
     <tr>
-      <th>0.1</th>
-      <th>LGB0</th>
+      <th>LGB01</th>
       <td>0.817852</td>
-      <td>0.60916</td>
+      <td>0.609160</td>
       <td>0.000s</td>
       <td>0.592008</td>
-      <td>0.00240723</td>
+      <td>0.002407</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.2</th>
-      <th>LGB1</th>
+      <th>LGB02</th>
       <td>0.744018</td>
       <td>0.623409</td>
       <td>0.000s</td>
       <td>0.611083</td>
-      <td>0.00359688</td>
+      <td>0.003597</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.3</th>
-      <th>LGB2</th>
+      <th>LGB03</th>
       <td>0.709584</td>
       <td>0.630853</td>
       <td>0.000s</td>
-      <td>0.62052</td>
-      <td>0.00256971</td>
+      <td>0.620520</td>
+      <td>0.002570</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.4</th>
-      <th>LGB3</th>
+      <th>LGB04</th>
       <td>0.693374</td>
       <td>0.632718</td>
       <td>0.000s</td>
       <td>0.624846</td>
-      <td>0.00418664</td>
+      <td>0.004187</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.5</th>
-      <th>LGB4</th>
+      <th>LGB05</th>
       <td>0.683844</td>
       <td>0.637217</td>
       <td>0.000s</td>
       <td>0.624575</td>
-      <td>0.00629896</td>
+      <td>0.006299</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.6</th>
-      <th>LGB5</th>
-      <td>0.68072</td>
+      <th>LGB06</th>
+      <td>0.680720</td>
       <td>0.639012</td>
       <td>0.000s</td>
       <td>0.631484</td>
-      <td>0.00359773</td>
+      <td>0.003598</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.7</th>
-      <th>LGB6</th>
+      <th>LGB07</th>
       <td>0.677526</td>
       <td>0.640312</td>
-      <td>0.000s</td>
+      <td>-0.000s</td>
       <td>0.636251</td>
-      <td>0.00291042</td>
+      <td>0.002910</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.8</th>
-      <th>LGB7</th>
+      <th>LGB08</th>
       <td>0.673214</td>
       <td>0.637478</td>
-      <td>-0.000s</td>
+      <td>0.000s</td>
       <td>0.634215</td>
-      <td>0.00267483</td>
+      <td>0.002675</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>0.9</th>
-      <th>LGB8</th>
+      <th>LGB09</th>
       <td>0.666742</td>
-      <td>0.64163</td>
+      <td>0.641630</td>
       <td>0.000s</td>
       <td>0.638174</td>
-      <td>0.0039345</td>
+      <td>0.003935</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
     <tr>
-      <th>1.0</th>
-      <th>LGB9</th>
+      <th>LGB10</th>
       <td>0.661984</td>
       <td>0.639596</td>
       <td>0.000s</td>
       <td>0.637845</td>
-      <td>0.00212498</td>
+      <td>0.002125</td>
       <td>0.000s</td>
       <td>0.000s</td>
     </tr>
@@ -15048,47 +15027,6 @@ LightGBM --&gt; f1: 0.638 ± 0.002
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
-<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
-     <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that the models are followed by a number so</span>
-<span class="c1"># they can be called individually</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">LGB6</span>
-</pre></div>
-
-     </div>
-</div>
-</div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[6]:</div>
-
-
-
-
-<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>LightGBM
- --&gt; Estimator: LGBMClassifier
- --&gt; f1: 0.6362513197686991</pre>
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
-<div class="jp-Cell-inputWrapper">
-<div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Plot the train sizing&#39;s results</span>

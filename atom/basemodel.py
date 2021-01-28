@@ -41,10 +41,6 @@ class BaseModel(BaseModelPlotter):
         Whether the model needs scaled features. Can not be True for
         deep learning datasets.
 
-    type: str
-        Model's type. Used to select shap's explainer for plotting.
-        Options are: "linear", "tree" or "kernel".
-
     """
 
     def __init__(self, *args, **kwargs):
@@ -55,6 +51,8 @@ class BaseModel(BaseModelPlotter):
         self.estimator = None
         self._group = self.name  # sh and ts models belong to the same group
         self._pred_attrs = [None] * 10
+
+    # Utility properties =========================================== >>
 
     @property
     def results(self):
@@ -224,7 +222,7 @@ class BaseModel(BaseModelPlotter):
             self._pred_attrs[9] = self.estimator.score(arr(self.X_test), self.y_test)
         return self._pred_attrs[9]
 
-    # Properties =================================================== >>
+    # Data Properties ============================================== >>
 
     @property
     def dataset(self):
@@ -286,13 +284,14 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def classes(self):
-        df = pd.DataFrame({
-            "dataset": self.y.value_counts(sort=False, dropna=False),
-            "train": self.y_train.value_counts(sort=False, dropna=False),
-            "test": self.y_test.value_counts(sort=False, dropna=False),
-        }, index=self.branch.mapping.values())
-
-        return df.fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
+        return pd.DataFrame(
+            {
+                "dataset": self.y.value_counts(sort=False, dropna=False),
+                "train": self.y_train.value_counts(sort=False, dropna=False),
+                "test": self.y_test.value_counts(sort=False, dropna=False),
+            },
+            index=self.branch.mapping.values()
+        ).fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
 
     @property
     def n_classes(self):
@@ -394,6 +393,8 @@ class BaseModel(BaseModelPlotter):
         else:
             y_pred = getattr(self, f"predict_{dataset}")
 
-        return scorer._sign * float(scorer._score_func(
-            getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
-        ))
+        return scorer._sign * float(
+            scorer._score_func(
+                getattr(self, f"y_{dataset}"), y_pred, **scorer._kwargs, **kwargs
+            )
+        )

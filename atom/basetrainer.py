@@ -18,6 +18,7 @@ from .branch import Branch
 from .models import MODEL_LIST, CustomModel
 from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
+from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst,
     time_to_string, get_acronym, get_metric, get_default_metric,
@@ -243,8 +244,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
                 models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
 
-            else:  # Model is custom estimator
+            elif not isinstance(m, BaseModel):  # Model is custom estimator
                 models.append(CustomModel(self, estimator=m))
+
+            else:  # Model is already a model subclass (can happen with reruns)
+                models.append(m)
 
         self._models = CustomDict({m.name: m for m in models})
 
@@ -257,7 +261,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         elif not all([hasattr(m, "name") for m in self._metric]):
             self._metric = self._prepare_metric(
                 metric=self._metric,
-                gib=self.greater_is_better,
+                greater_is_better=self.greater_is_better,
                 needs_proba=self.needs_proba,
                 needs_threshold=self.needs_threshold,
             )
@@ -297,12 +301,13 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Choose a base estimator (GP is chosen as default)
         self._base_estimator = self.bo_params.get("base_estimator", "GP")
-        if str(self._base_estimator).lower() not in ("gp", "et", "rf", "gbrt"):
-            raise ValueError(
-                f"Invalid value for the base_estimator parameter, got "
-                f"{self._base_estimator}. Value should be one of: 'GP', "
-                f"'ET', 'RF', 'GBRT'."
-            )
+        if isinstance(self._base_estimator, str):
+            if self._base_estimator.lower() not in ("gp", "et", "rf", "gbrt"):
+                raise ValueError(
+                    f"Invalid value for the base_estimator parameter, got "
+                    f"{self._base_estimator}. Value should be one of: 'GP', "
+                    f"'ET', 'RF', 'GBRT'."
+                )
 
         if self.bo_params.get("callbacks"):
             self._callbacks = lst(self.bo_params["callbacks"])
@@ -399,41 +404,23 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                         model._est_params[key] = value
 
     @staticmethod
-    def _prepare_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
+    def _prepare_metric(metric, **kwargs):
         """Return a list of scorers given the parameters."""
-        if isinstance(gib, SEQUENCE):
-            if len(gib) != len(metric):
-                raise ValueError(
-                    "Invalid value for the greater_is_better parameter. Length "
-                    "should be equal to the number of metrics, got len(metric)="
-                    f"{len(metric)} and len(greater_is_better)={len(gib)}."
-                )
-        else:
-            gib = [gib for _ in metric]
-
-        if isinstance(needs_proba, SEQUENCE):
-            if len(needs_proba) != len(metric):
-                raise ValueError(
-                    "Invalid value for the needs_proba parameter. Length should "
-                    "be equal to the number of metrics, got len(metric)="
-                    f"{len(metric)} and len(needs_proba)={len(needs_proba)}."
-                )
-        else:
-            needs_proba = [needs_proba for _ in metric]
-
-        if isinstance(needs_threshold, SEQUENCE):
-            if len(needs_threshold) != len(metric):
-                raise ValueError(
-                    "Invalid value for the needs_threshold parameter. Length should "
-                    "be equal to the number of metrics, got len(metric)="
-                    f"{len(metric)} and len(needs_threshold)={len(needs_threshold)}."
-                )
-        else:
-            needs_threshold = [needs_threshold for _ in metric]
+        metric_params = {}
+        for key, value in kwargs.items():
+            if isinstance(value, SEQUENCE):
+                if len(value) != len(metric):
+                    raise ValueError(
+                        "Invalid value for the greater_is_better parameter. Length "
+                        "should be equal to the number of metrics, got len(metric)="
+                        f"{len(metric)} and len({key})={len(value)}."
+                    )
+            else:
+                metric_params[key] = [value for _ in metric]
 
         metric_dict = CustomDict()
-        for i, j, m, n in zip(metric, gib, needs_proba, needs_threshold):
-            metric = get_metric(i, j, m, n)
+        for args in zip(metric, *metric_params.values()):
+            metric = get_metric(*args)
             metric_dict[metric.name] = metric
 
         return metric_dict
@@ -448,25 +435,21 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             try:  # If an error occurs, skip the model
                 # If it has predefined or custom dimensions, run the BO
-                bo = True if m._dimensions or hasattr(m, "get_dimensions") else False
-
-                if bo and m._n_calls > 0:
+                if (m._dimensions or hasattr(m, "get_dimensions")) and m._n_calls > 0:
                     m.bayesian_optimization()
 
                 m.fit()
 
                 if m._bagging:
-                    m.bootstrap_aggregating(m._bagging)
+                    m.bootstrap_aggregating()
 
                 # Get the total time spend on this model
                 setattr(m, "time", time_to_string(model_time))
                 self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
 
             except Exception as ex:
-                if i != 0 or (bo and m._n_calls > 0):
-                    self.log("", 1)  # Add extra line to separate the error message
                 self.log(
-                    f"Exception encountered while running the {m.name} model."
+                    f"\nException encountered while running the {m.name} model."
                     f" Removing model from pipeline. \n{type(ex).__name__}: {ex}", 1
                 )
 

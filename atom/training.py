@@ -153,7 +153,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             self.log(f"Size of test set: {len(self.test)}", 1)
 
             self._core_iteration()
-            models.update({m.name.lower(): m for m in self._models})
+            models.update({m.name: m for m in self._models})
 
             # Select next models for halving
             best = self.results.apply(lambda row: get_best_score(row), axis=1)

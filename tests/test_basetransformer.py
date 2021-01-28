@@ -323,7 +323,6 @@ def test_reset_index():
     assert list(atom.dataset.index) == list(range(len(X_bin)))
 
 
-
 def test_merger_to_dataset():
     """Assert that the merger between X and y was successful."""
     # Reset index since order of rows is different after shuffling

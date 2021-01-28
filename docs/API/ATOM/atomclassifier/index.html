@@ -473,6 +473,10 @@
 </li>
                                     
 <li>
+    <a href="../../../examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
@@ -1013,7 +1017,8 @@ on the complete dataset.
 <p>Uses the <a href="http://epistasislab.github.io/tpot/">TPOT</a> package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
-merged with atom's pipeline. Read more in the <a href="../../../user_guide/#automl">user guide</a>.</p>
+merged with atom's pipeline. The tpot instance can be accessed through the
+<code>tpot</code> attribute.Read more in the <a href="../../../user_guide/#automl">user guide</a>.</p>
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1021,14 +1026,6 @@ merged with atom's pipeline. Read more in the <a href="../../../user_guide/#auto
 <strong>**kwargs</strong>
 <blockquote>
 Keyword arguments for tpot's classifier.
-</blockquote>
-</tr>
-<tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>tpot: <a href="http://epistasislab.github.io/tpot/api/#classification">TPOTClassifier</a></strong>
-<blockquote>
-Fitted tpot object.
 </blockquote>
 </tr>
 </table>

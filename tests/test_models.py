@@ -72,7 +72,6 @@ def test_deep_learning_models():
     atom = ATOMClassifier((X_train, y_train), (X_test, y_test), random_state=1)
     pytest.raises(PermissionError, atom.clean)
     atom.run(models=model)
-    assert not atom.errors
 
 
 # Test predefined models =========================================== >>

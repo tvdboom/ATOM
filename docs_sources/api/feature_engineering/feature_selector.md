@@ -57,7 +57,7 @@ and PCA).
 <li>for "SFM", "RFE", "RFECV" and "SFS":<br>
 The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
-attribute after fitting. You can use one of ATOM's pre-defined
+attribute after fitting. You can use one of ATOM's predefined
 <a href="../../../user_guide/#predefined-models">models</a>. Add
 <code>_class</code> or <code>_reg</code> after the model's name to
 specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
