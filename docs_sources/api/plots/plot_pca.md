@@ -11,7 +11,7 @@ Plot the explained variance ratio vs the number of components. Only available if
 <td width="75%" style="background:white;">
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple, optional (default=(10, 6))</strong>
 <blockquote>

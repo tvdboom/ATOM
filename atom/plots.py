@@ -8,7 +8,6 @@ Description: Module containing the plotting classes.
 """
 
 # Standard packages
-import random
 import numpy as np
 import pandas as pd
 from itertools import chain
@@ -39,8 +38,8 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted,
-    check_dim, check_goal, check_binary_task, check_predict_proba,
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, lst, check_is_fitted,
+    check_method, check_goal, check_binary_task, check_predict_proba,
     get_best_score, partial_dependence, composed, crash, plot_from_model,
 )
 
@@ -263,7 +262,7 @@ class BasePlotter:
 
     def _get_show(self, show):
         """Check and return the provided parameter show."""
-        max_fxs = max([len(branch.features) for branch in self._branches.values()])
+        max_fxs = max([branch.n_features for branch in self._branches.values()])
         if show is None or show > max_fxs:
             return max_fxs
         elif show < 1:
@@ -289,38 +288,32 @@ class BasePlotter:
 
         if rows.empty:
             raise ValueError(
-                "Invalid value for parameter index. Couldn't find "
-                f"the specified rows in X, got index: {index}."
+                "Invalid value for the index parameter. Couldn't find "
+                f"the specified rows in the dataset, got: {index}."
             )
 
         return rows
 
     def _get_target(self, target):
-        """Check and return the provided parameter target."""
-        if self.task.startswith("reg"):
-            return None, None
-
+        """Check and return the provided target's index."""
         if isinstance(target, str):
             if target not in self.mapping:
                 raise ValueError(
                     f"Invalid value for the target parameter. Value {target} "
                     "not found in the mapping of the target column."
                 )
-            tgt_int = self.mapping[target]
-            return tgt_int, target
+            return self.mapping[target]
 
-        else:
-            if not 0 <= target < self.n_classes:
-                raise ValueError(
-                    "Invalid value for the target parameter. There are "
-                    f"{self.n_classes} classes, got {target}."
-                )
-            # Get mapping key from value
-            tgt_str = list(self.mapping)[list(self.mapping.values()).index(target)]
-            return target, tgt_str
+        elif not 0 <= target < self.n_classes:
+            raise ValueError(
+                "Invalid value for the target parameter. There are "
+                f"{self.n_classes} classes, got {target}."
+            )
+
+        return target
 
     @staticmethod
-    def _get_shap(model, data, target):
+    def _get_shap(model, index, target):
         """Get the SHAP information of a model.
 
         Parameters
@@ -328,49 +321,36 @@ class BasePlotter:
         model: class
          Model subclass.
 
-        data: pd.DataFrame
-            Data on which to calculate the shap values.
+        index: pd.DataFrame
+            Rows on which to calculate the shap values.
 
         target: int
-            Index of the target class in the target column.
+            Index of the class to look at in the target column.
 
         Returns
         -------
         shap_values: np.ndarray
             SHAP values for the target class.
 
-        expected_value: float
+        expected_value: float or list
             Difference between the model output for that sample and
             the expected value of the model output.
 
         """
-        # TODO: Refactor to shap's newest API
-        if model.type == "tree":
-            explainer = shap.TreeExplainer(
-                model.estimator, feature_perturbation="tree_path_dependent"
-            )
-        elif model.type == "linear":
-            explainer = shap.LinearExplainer(model.estimator, model.X_train)
-        else:
-            if len(model.X_train) <= 100:
-                k_data = model.X_train
-            else:
-                k_data = shap.kmeans(model.X_train, 100)
-            explainer = shap.KernelExplainer(model.estimator.predict, k_data)
+        # Create the explainer if not invoked before
+        if not model.explainer:
+            model.explainer = shap.Explainer(model.estimator, model.X_train)
 
-        shap_values = explainer.shap_values(data)
-        expected_value = explainer.expected_value
+        # Get the shap values on the specified rows
+        shap_values = model.explainer(index)
 
-        # Select the values corresponding to the target
-        if not np.array(shap_values).shape == (len(data), model.X.shape[1]):
-            shap_values = shap_values[target]
+        # Select the target values from the array
+        if shap_values.values.ndim > 2:
+            shap_values = shap_values[:, :, target]
+        if shap_values.shape[0] == 1:  # Rows is a df with one row only
+            shap_values = shap_values[0]
 
-        # Select the target expected value or return all
-        if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == model.n_classes:
-                expected_value = expected_value[target]
-
-        return shap_values, expected_value
+        return shap_values
 
     def _plot(self, ax=None, **kwargs):
         """Make the plot.
@@ -496,7 +476,7 @@ class FSPlotter(BasePlotter):
         Parameters
         ----------
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -535,7 +515,7 @@ class FSPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="PCA explained variances" if title is None else title,
+            title=title,
             legend=("lower right", 1),
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
@@ -558,11 +538,10 @@ class FSPlotter(BasePlotter):
         Parameters
         ----------
         show: int or None, optional (default=None)
-            Number of components to show. If None, the number of
-            components in the data are plotted.
+            Number of components to show. None to show all.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size
@@ -605,7 +584,7 @@ class FSPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Explained variance per component" if title is None else title,
+            title=title,
             legend=("lower right", 1),
             xlabel="Explained variance ratio",
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -630,7 +609,7 @@ class FSPlotter(BasePlotter):
         Parameters
         ----------
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y).
@@ -682,7 +661,7 @@ class FSPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="RFECV scores" if title is None else title,
+            title=title,
             legend=("best", 1),
             xlabel="Number of features",
             ylabel=ylabel,
@@ -725,7 +704,7 @@ class BaseModelPlotter(BasePlotter):
             Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
@@ -790,7 +769,7 @@ class BaseModelPlotter(BasePlotter):
         ax.set_yticklabels(names)
         self._plot(
             ax=ax,
-            title="Model evaluation" if title is None else title,
+            title=title,
             xlabel=self._metric[metric].name,
             xlim=(min_lim, max_lim) if not all_bagging else None,
             figsize=figsize if figsize else (10, 4 + len(models) // 2),
@@ -827,7 +806,7 @@ class BaseModelPlotter(BasePlotter):
             Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 8))
             Figure's size, format as (x, y).
@@ -871,7 +850,7 @@ class BaseModelPlotter(BasePlotter):
         plt.setp(ax1.get_xticklabels(), visible=False)
         self._plot(
             ax=ax1,
-            title="Bayesian optimization performance" if title is None else title,
+            title=title,
             legend=("lower right", len(models)),
             ylabel=self._metric[metric].name,
         )
@@ -916,7 +895,7 @@ class BaseModelPlotter(BasePlotter):
             Options are "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -928,7 +907,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_evals")
+        check_method(self, "plot_evals")
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         dataset = self._get_set(dataset)
@@ -947,7 +926,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Evaluation curves" if title is None else title,
+            title=title,
             legend=("best", len(dataset)),
             xlabel=m.get_dimensions()[0].name,  # First param is always the iter
             ylabel=m.evals["metric"],
@@ -982,7 +961,7 @@ class BaseModelPlotter(BasePlotter):
             "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10,6))
             Figure's size, format as (x, y).
@@ -1021,7 +1000,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="ROC curve" if title is None else title,
+            title=title,
             legend=("lower right", len(models)),
             xlabel="FPR",
             ylabel="TPR",
@@ -1056,7 +1035,7 @@ class BaseModelPlotter(BasePlotter):
             "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -1093,7 +1072,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Precision-recall curve" if title is None else title,
+            title=title,
             legend=("lower left", len(models)),
             xlabel="Recall",
             ylabel="Precision",
@@ -1127,17 +1106,18 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         show: int or None, optional (default=None)
-            Number of best features to show. None to show all.
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         n_repeats: int, optional (default=10)
             Number of times to permute each feature.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the number of features shown.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -1146,7 +1126,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_permutation_importance")
+        check_method(self, "plot_permutation_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show)
@@ -1222,7 +1202,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Permutation importance" if title is None else title,
+            title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
             xlabel="Score",
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -1253,15 +1233,15 @@ class BaseModelPlotter(BasePlotter):
             pipeline are selected.
 
         show: int or None, optional (default=None)
-            Number of best features to show in the plot. None to
-            show all.
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the number of features shown.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -1270,7 +1250,7 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "plot_feature_importance")
+        check_method(self, "plot_feature_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         show = self._get_show(show)
@@ -1320,7 +1300,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Normalized feature importance" if title is None else title,
+            title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
@@ -1367,7 +1347,7 @@ class BaseModelPlotter(BasePlotter):
             Only for multi-class classification tasks.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -1431,14 +1411,10 @@ class BaseModelPlotter(BasePlotter):
 
             return cols
 
-        check_dim(self, "plot_partial_dependence")
+        check_method(self, "plot_partial_dependence")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        tgt_int, tgt_str = self._get_target(target)
-
-        # Only for this plot, target index is always 0 if not multiclass
-        if not self.task.startswith("multi"):
-            tgt_int = 0
+        target = self._get_target(target) if self.task.startswith("multi") else 0
 
         axes = []
         fig = self._get_figure()
@@ -1471,7 +1447,7 @@ class BaseModelPlotter(BasePlotter):
             # Get global min and max average predictions of PD grouped by plot type
             pdp_lim = {}
             for pred, values in pd_results:
-                min_pd, max_pd = pred[tgt_int].min(), pred[tgt_int].max()
+                min_pd, max_pd = pred[target].min(), pred[target].max()
                 old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
                 pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
 
@@ -1490,14 +1466,14 @@ class BaseModelPlotter(BasePlotter):
 
                 # Draw line or contour plot
                 if len(values) == 1:
-                    axi.plot(values[0], pred[tgt_int].ravel(), lw=2, label=m.name)
+                    axi.plot(values[0], pred[target].ravel(), lw=2, label=m.name)
                 else:
                     # Create contour levels for two-way plots
                     levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
 
                     # Draw contour plot
                     XX, YY = np.meshgrid(values[0], values[1])
-                    Z = pred[tgt_int].T
+                    Z = pred[target].T
                     CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
                     axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
                     axi.contourf(
@@ -1529,18 +1505,14 @@ class BaseModelPlotter(BasePlotter):
                 )
                 break
 
-        if title is None:
-            title = "Partial dependence"
-            if self.task.startswith("multi"):
-                title += f" for {m.y.name}={tgt_str}"
-
-        # Place title if not in canvas, else above first or middle image
-        if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
-            axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
-        elif len(cols) == 3:
-            axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
-        elif not BasePlotter._fig.is_canvas:
-            plt.suptitle(title, fontsize=self.title_fontsize)
+        if title:
+            # Place title if not in canvas, else above first or middle image
+            if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
+                axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
+            elif len(cols) == 3:
+                axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
+            elif not BasePlotter._fig.is_canvas:
+                plt.suptitle(title, fontsize=self.title_fontsize)
 
         self._plot(figsize=figsize, filename=filename, display=display)
 
@@ -1573,7 +1545,7 @@ class BaseModelPlotter(BasePlotter):
             "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -1629,7 +1601,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Prediction errors" if title is None else title,
+            title=title,
             legend=("upper left", len(models)),
             xlabel="True value",
             ylabel="Predicted value",
@@ -1672,7 +1644,7 @@ class BaseModelPlotter(BasePlotter):
             "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -1714,12 +1686,11 @@ class BaseModelPlotter(BasePlotter):
         ax2.set_yticklabels([])
         self._plot(ax=ax2, xlabel="Distribution")
 
-        if title is None:
-            title = "Residuals plot"
-        if not BasePlotter._fig.is_canvas:
-            plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
-        else:
-            ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
+        if title:
+            if not BasePlotter._fig.is_canvas:
+                plt.suptitle(title, fontsize=self.title_fontsize, y=0.98)
+            else:
+                ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
 
         self._plot(
             ax=ax1,
@@ -1765,7 +1736,7 @@ class BaseModelPlotter(BasePlotter):
            Whether to normalize the matrix. Only for the heatmap plot.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
@@ -1797,17 +1768,12 @@ class BaseModelPlotter(BasePlotter):
                 "True positives",
             ]
         )
-        if title is None:
-            title = "Confusion matrix"
-
         for m in models:
             cm = m.scoring("cm", dataset.lower())
 
             if len(models) == 1:  # Create matrix heatmap
                 if normalize:
                     cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
-                    if title == "Confusion matrix":
-                        title = "Normalized confusion matrix"
 
                 fig = self._get_figure()
                 ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -1909,7 +1875,7 @@ class BaseModelPlotter(BasePlotter):
             Number of thresholds measured.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -1973,7 +1939,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Performance vs threshold" if title is None else title,
+            title=title,
             legend=("best", len(models)),
             xlabel="Threshold",
             ylabel="Score",
@@ -2012,7 +1978,7 @@ class BaseModelPlotter(BasePlotter):
             index or name. Only for multiclass classification.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -2028,7 +1994,7 @@ class BaseModelPlotter(BasePlotter):
         check_goal(self, "plot_probabilities", "classification")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-        tgt_int, tgt_str = self._get_target(target)
+        target = self._get_target(target)
         check_predict_proba(models, "plot_probabilities")
 
         fig = self._get_figure()
@@ -2046,14 +2012,12 @@ class BaseModelPlotter(BasePlotter):
                         l_set = f" - {set_}" if len(dataset) > 1 else ""
                         label = f"{m.name}{l_set} (Category: {key})"
                     sns.kdeplot(
-                        x=getattr(m, f"predict_proba_{set_}")[idx, tgt_int],
+                        x=getattr(m, f"predict_proba_{set_}")[idx, target],
                         fill=True,
                         ax=ax,
                         label=label,
                     )
 
-        if title is None:
-            title = f"Probability distribution for {m.y.name}={tgt_str}"
         self._plot(
             ax=ax,
             title=title,
@@ -2103,7 +2067,7 @@ class BaseModelPlotter(BasePlotter):
             histogram. Minimum of 5 required.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 10))
             Figure's size, format as (x, y).
@@ -2146,7 +2110,7 @@ class BaseModelPlotter(BasePlotter):
         plt.setp(ax1.get_xticklabels(), visible=False)
         self._plot(
             ax=ax1,
-            title="Calibration curve" if title is None else title,
+            title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
@@ -2186,7 +2150,7 @@ class BaseModelPlotter(BasePlotter):
             are "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -2232,7 +2196,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Cumulative gains curve" if title is None else title,
+            title=title,
             legend=("lower right", len(models)),
             xlabel="Fraction of sample",
             ylabel="Gain",
@@ -2269,7 +2233,7 @@ class BaseModelPlotter(BasePlotter):
             "train", "test" or "both".
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -2283,7 +2247,6 @@ class BaseModelPlotter(BasePlotter):
         """
         check_is_fitted(self, attributes="_models")
         check_binary_task(self, "plot_lift")
-
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
         check_predict_proba(models, "plot_lift")
@@ -2315,7 +2278,7 @@ class BaseModelPlotter(BasePlotter):
 
         self._plot(
             ax=ax,
-            title="Lift curve" if title is None else title,
+            title=title,
             legend=("upper right", len(models)),
             xlabel="Fraction of sample",
             ylabel="Lift",
@@ -2328,25 +2291,24 @@ class BaseModelPlotter(BasePlotter):
     # SHAP plots =================================================== >>
 
     @composed(crash, plot_from_model, typechecked)
-    def force_plot(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple]] = None,
-        target: Union[str, int] = 1,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (14, 6),
-        filename: Optional[str] = None,
-        display: bool = True,
-        **kwargs,
+    def bar_plot(
+            self,
+            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            index: Optional[Union[int, tuple]] = None,
+            show: Optional[int] = None,
+            target: Union[int, str] = 1,
+            title: Optional[str] = None,
+            figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+            filename: Optional[str] = None,
+            display: bool = True,
+            **kwargs,
     ):
-        """Plot SHAP's force plot.
+        """Plot SHAP's bar plot.
 
-        Visualize the given SHAP values with an additive force layout.
-        The explainer will be chosen automatically based on the model's
-        type. Note that by default this plot will render using
-        javascript. For a regular figure use `matplotlib=True` (this
-        option is only available when only 1 row is selected through
-        the `index` parameter).
+        Create a bar plot of a set of SHAP values. If a single sample
+        is passed, then the SHAP values are plotted. If many samples
+        are passed, then the mean absolute value for each feature
+        column is plotted.
 
         Parameters
         ----------
@@ -2357,9 +2319,13 @@ class BaseModelPlotter(BasePlotter):
             a model.
 
         index: int, tuple or None, optional (default=None)
-            Indices of the rows in the dataset to plot. If (n, m),
-            select rows n until m. If None, select all rows in the
-            test set.
+            Indices of the rows in the dataset to plot. If shape
+            (n, m), it selects rows n until m. If None, it selects
+            all rows in the test set.
+
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         target: int or str, optional (default=1)
             Index or name of the class in the target column to look at.
@@ -2368,80 +2334,57 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=(14, 6))
-            Figure's size, format as (x, y).
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
-            Name of the file. If matplotlib=False, the figure will
-            be saved as an html file. If None, the figure is not saved.
+            Name of the file. If None, the figure is not saved.
 
         display: bool, optional (default=True)
             Whether to render the plot.
 
         **kwargs
-            Additional keyword arguments for shap's force_plot.
+            Additional keyword arguments for SHAP's bar plot.
 
         """
-        check_dim(self, "force_plot")
+        check_method(self, "bar_plot")
         check_is_fitted(self, attributes="_models")
-
-        if getattr(BasePlotter._fig, "is_canvas", None):
-            raise PermissionError(
-                "The force_plot method can not be called from a "
-                "canvas because of incompatibility of the APIs."
-            )
-
         m = self._get_subclass(models, max_one=True)
-        rows = self._get_index(index, m)
-        tgt_int, tgt_str = self._get_target(target)
-        shap_values, expected_value = self._get_shap(m, rows, tgt_int)
+        index = self._get_index(index, m)
+        show = self._get_show(show)
+        target = self._get_target(target)
+        shap_values = self._get_shap(m, index, target)
 
-        sns.set_style("white")  # Only for this plot
-        plot = shap.force_plot(
-            base_value=expected_value,
-            shap_values=shap_values,
-            features=rows,
-            figsize=figsize,
-            show=False,
-            **kwargs,
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        shap.plots.bar(shap_values, max_display=show, show=False, **kwargs)
+
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        self._plot(
+            ax=ax,
+            title=title,
+            figsize=figsize if figsize else (10, 4 + show // 2),
+            filename=filename,
+            display=display,
         )
 
-        sns.set_style(self.style)
-        if kwargs.get("matplotlib"):
-            self._plot(title, filename=filename, display=display)
-        else:
-            if filename:  # Save to an html file
-                fn = filename if filename.endswith(".html") else filename + ".html"
-                shap.save_html(fn, plot)
-            if display:
-                try:  # Render if possible (for notebooks)
-                    from IPython.display import display
-
-                    shap.initjs()
-                    display(plot)
-                except ModuleNotFoundError:
-                    pass
-
     @composed(crash, plot_from_model, typechecked)
-    def dependence_plot(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Union[int, str] = "rank(1)",
-        target: Union[int, str] = 1,
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: bool = True,
-        **kwargs,
+    def beeswarm_plot(
+            self,
+            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            index: Optional[tuple] = None,
+            show: Optional[int] = None,
+            target: Union[int, str] = 1,
+            title: Optional[str] = None,
+            figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+            filename: Optional[str] = None,
+            display: bool = True,
+            **kwargs,
     ):
-        """Plot SHAP's dependence plot.
+        """Plot SHAP's beeswarm plot.
 
-        Plots the value of the feature on the x-axis and the SHAP value
-        of the same feature on the y-axis. This shows how the model
-        depends on the given feature, and is like a richer extension of
-        the classical partial dependence plots. Vertical dispersion of
-        the data points represents interaction effects. The explainer
-        will be chosen automatically based on the model's type.
+        The plot is colored by feature values.
 
         Parameters
         ----------
@@ -2451,86 +2394,15 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: int or str, optional (default="rank(1)")
-            If int, it is the index of the feature to plot. If string
-            it is either the name of the feature to plot, or it can
-            have the form "rank(int)" to specify the feature with that
-            rank (ordered by mean absolute SHAP value over all samples).
-
-        target: int or str, optional (default=1)
-            Index or name of the class in the target column to look at.
-            Only for multi-class classification tasks.
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y).
-
-        filename: str or None, optional (default=None)
-            Name of the file. If None, the figure is not saved.
-
-        display: bool, optional (default=True)
-            Whether to render the plot.
-
-        **kwargs
-            Additional keyword arguments for shap's dependence_plot.
-
-        """
-        check_dim(self, "dependence_plot")
-        check_is_fitted(self, attributes="_models")
-
-        m = self._get_subclass(models, max_one=True)
-        tgt_int, tgt_str = self._get_target(target)
-        shap_values, _ = self._get_shap(m, m.X_test, tgt_int)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.dependence_plot(
-            ind=index,
-            shap_values=shap_values,
-            features=m.X_test,
-            ax=ax,
-            show=False,
-            **kwargs,
-        )
-
-        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
-        if title is None:
-            title = "Dependence plot"
-            if tgt_int == 0 or self.task.startswith("multi"):
-                title += f" for {m.y.name}={tgt_str}"
-        self._plot(ax, title=title, figsize=figsize, filename=filename, display=display)
-
-    @composed(crash, plot_from_model, typechecked)
-    def summary_plot(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: bool = True,
-        **kwargs,
-    ):
-        """Plot SHAP's summary plot.
-
-        Create a SHAP beeswarm plot, colored by feature values when
-        they are provided. The explainer will be chosen automatically
-        based on the model's type.
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected. Note that selecting multiple
-            models will raise an exception. To avoid this, call
-            the plot from a model.
+        index: tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If shape
+            (n, m), it selects rows n until m. If None, it selects
+            all rows in the test set. The beeswarm plot does not
+            support plotting a single sample.
 
         show: int or None, optional (default=None)
-            Number of features to show in the plot. None to show all.
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
 
         target: int or str, optional (default=1)
             Index or name of the class in the target column to look at.
@@ -2539,9 +2411,9 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the`show` parameter.
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -2550,33 +2422,22 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         **kwargs
-            Additional keyword arguments for shap's summary_plot.
+            Additional keyword arguments for SHAP's beeswarm plot.
 
         """
-        check_dim(self, "summary_plot")
+        check_method(self, "beeswarm_plot")
         check_is_fitted(self, attributes="_models")
-
         m = self._get_subclass(models, max_one=True)
+        index = self._get_index(index, m)
         show = self._get_show(show)
-        tgt_int, tgt_str = self._get_target(target)
-        shap_values, _ = self._get_shap(m, m.X_test, tgt_int)
+        target = self._get_target(target)
+        shap_values = self._get_shap(m, index, target)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.summary_plot(
-            shap_values=shap_values,
-            features=m.X_test,
-            max_display=show,
-            plot_size=figsize,
-            show=False,
-            **kwargs,
-        )
+        shap.plots.beeswarm(shap_values, max_display=show, show=False, **kwargs)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        if title is None:
-            title = "Summary plot"
-            if tgt_int == 0 or self.task.startswith("multi"):
-                title += f" for {m.y.name}={tgt_str}"
         self._plot(
             ax=ax,
             title=title,
@@ -2606,8 +2467,6 @@ class BaseModelPlotter(BasePlotter):
         plot (if supplied). If multiple predictions are plotted
         together, feature values will not be printed. Plotting too
         many predictions together will make the plot unintelligible.
-        The explainer will be chosen automatically based on the model's
-        type.
 
         Parameters
         ----------
@@ -2619,8 +2478,8 @@ class BaseModelPlotter(BasePlotter):
 
         index: int, tuple or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
-            (n, m), select rows n until m. If None, select all
-            rows in the test set.
+            (n, m), it selects rows n until m. If None, it selects
+            all rows in the test set.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show in
@@ -2644,24 +2503,38 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         **kwargs
-            Additional keyword arguments for shap's decision_plot.
+            Additional keyword arguments for SHAP's decision plot.
 
         """
-        check_dim(self, "decision_plot")
+        check_method(self, "decision_plot")
         check_is_fitted(self, attributes="_models")
-
         m = self._get_subclass(models, max_one=True)
-        rows = self._get_index(index, m)
+        index = self._get_index(index, m)
         show = self._get_show(show)
-        tgt_int, tgt_str = self._get_target(target)
-        shap_values, expected_value = self._get_shap(m, rows, tgt_int)
+        target = self._get_target(target)
+
+        # Get shap information from old API
+        if not m.explainer:
+            m.explainer = shap.Explainer(m.estimator, m.X_train)
+
+        shap_values = m.explainer.shap_values(index)
+        expected_value = m.explainer.expected_value
+
+        # Select the values corresponding to the target
+        if not np.array(shap_values).shape == (len(index), m.X.shape[1]):
+            shap_values = shap_values[target]
+
+        # Select the target expected value or return all
+        if isinstance(expected_value, (list, np.ndarray)):
+            if len(expected_value) == m.n_classes:
+                expected_value = expected_value[target]
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.decision_plot(
             base_value=expected_value,
             shap_values=shap_values,
-            features=rows,
+            features=index,
             feature_display_range=slice(-1, -show - 1, -1),
             auto_size_plot=False,
             show=False,
@@ -2669,10 +2542,6 @@ class BaseModelPlotter(BasePlotter):
         )
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
-        if title is None:
-            title = "Decision plot"
-            if tgt_int == 0 or self.task.startswith("multi"):
-                title += f" for {m.y.name}={tgt_str}"
         self._plot(
             ax=ax,
             title=title,
@@ -2682,18 +2551,278 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def waterfall_plot(
+    def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[int] = None,
-        show: Optional[int] = None,
-        target: Union[int, str] = 1,
+        index: Optional[Union[int, tuple]] = None,
+        target: Union[str, int] = 1,
         title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (14, 6),
         filename: Optional[str] = None,
         display: bool = True,
+        **kwargs,
     ):
-        """Plot SHAP's waterfall plot for a single prediction.
+        """Plot SHAP's force plot.
+
+        Visualize the given SHAP values with an additive force layout.
+        Note that by default this plot will render using javascript.
+        For a regular figure use `matplotlib=True` (this option is
+        only available when only a single sample is plotted).
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
+
+        index: int, tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If (n, m),
+            it selects rows n until m. If None, it selects all rows
+            in the test set.
+
+        target: int or str, optional (default=1)
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(14, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. If matplotlib=False, the figure will
+            be saved as an html file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for SHAP's force plot.
+
+        """
+        check_method(self, "force_plot")
+        check_is_fitted(self, attributes="_models")
+
+        if getattr(BasePlotter._fig, "is_canvas", None):
+            raise PermissionError(
+                "The force_plot method can not be called from a "
+                "canvas because of incompatibility of the APIs."
+            )
+
+        m = self._get_subclass(models, max_one=True)
+        index = self._get_index(index, m)
+        target = self._get_target(target)
+
+        # Get shap information from old API
+        if not m.explainer:
+            m.explainer = shap.Explainer(m.estimator, m.X_train)
+
+        shap_values = m.explainer.shap_values(index)
+        expected_value = m.explainer.expected_value
+
+        # Select the values corresponding to the target
+        if not np.array(shap_values).shape == (len(index), m.X.shape[1]):
+            shap_values = shap_values[target]
+
+        # Select the target expected value or return all
+        if isinstance(expected_value, (list, np.ndarray)):
+            if len(expected_value) == m.n_classes:
+                expected_value = expected_value[target]
+
+        sns.set_style("white")  # Only for this plot
+        plot = shap.force_plot(
+            base_value=expected_value,
+            shap_values=shap_values,
+            features=index,
+            figsize=figsize,
+            show=False,
+            **kwargs,
+        )
+
+        sns.set_style(self.style)
+        if kwargs.get("matplotlib"):
+            self._plot(title=title, filename=filename, display=display)
+        else:
+            if filename:  # Save to an html file
+                fn = filename if filename.endswith(".html") else filename + ".html"
+                shap.save_html(fn, plot)
+            if display:
+                try:  # Render if possible (for notebooks)
+                    from IPython.display import display
+
+                    shap.initjs()
+                    display(plot)
+                except ModuleNotFoundError:
+                    pass
+
+    @composed(crash, plot_from_model, typechecked)
+    def heatmap_plot(
+            self,
+            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            index: Optional[tuple] = None,
+            show: Optional[int] = None,
+            target: Union[int, str] = 1,
+            title: Optional[str] = None,
+            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+            filename: Optional[str] = None,
+            display: bool = True,
+            **kwargs,
+    ):
+        """Plot SHAP's heatmap plot.
+
+        This plot is designed to show the population substructure of a
+        dataset using supervised clustering and a heatmap. Supervised
+        clustering involves clustering data points not by their original
+        feature values but by their explanations.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
+
+        index: tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If shape
+            (n, m), it selects rows n until m. If None, it selects
+            all rows in the test set. The heatmap plot does not
+            support plotting a single sample.
+
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show in
+            the plot. None to show all.
+
+        target: int or str, optional (default=1)
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=(10, 6)))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for SHAP's heatmap plot.
+
+        """
+        check_method(self, "heatmap_plot")
+        check_is_fitted(self, attributes="_models")
+        m = self._get_subclass(models, max_one=True)
+        index = self._get_index(index, m)
+        show = self._get_show(show)
+        target = self._get_target(target)
+        shap_values = self._get_shap(m, index, target)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        shap.plots.heatmap(shap_values, max_display=show, show=False, **kwargs)
+
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        self._plot(ax, title=title, figsize=figsize, filename=filename, display=display)
+
+    @composed(crash, plot_from_model, typechecked)
+    def scatter_plot(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        index: Optional[tuple] = None,
+        feature: Union[int, str] = 0,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: bool = True,
+        **kwargs,
+    ):
+        """Plot SHAP's scatter plot.
+
+        Plots the value of the feature on the x-axis and the SHAP value
+        of the same feature on the y-axis. This shows how the model
+        depends on the given feature, and is like a richer extension of
+        the classical partial dependence plots. Vertical dispersion of
+        the data points represents interaction effects.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
+
+        index: tuple or None, optional (default=None)
+            Indices of the rows in the dataset to plot. If shape
+            (n, m), it selects rows n until m. If None, it selects
+            all rows in the test set. The scatter plot does not
+            support plotting a single sample.
+
+        feature: int or str, optional (default=0)
+            Index or name of the feature to plot.
+
+        target: int or str, optional (default=1)
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        **kwargs
+            Additional keyword arguments for SHAP's scatter plot.
+
+        """
+        check_method(self, "scatter_plot")
+        check_is_fitted(self, attributes="_models")
+        m = self._get_subclass(models, max_one=True)
+        index = self._get_index(index, m)
+        target = self._get_target(target)
+        shap_values = self._get_shap(m, index, target)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        shap.plots.scatter(
+            shap_values[:, feature],
+            color=shap_values,
+            ax=ax,
+            show=False,
+            **kwargs
+        )
+
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+        ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
+        self._plot(ax, title=title, figsize=figsize, filename=filename, display=display)
+
+    @composed(crash, plot_from_model, typechecked)
+    def waterfall_plot(
+            self,
+            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+            index: Optional[int] = None,
+            show: Optional[int] = None,
+            target: Union[int, str] = 1,
+            title: Optional[str] = None,
+            figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+            filename: Optional[str] = None,
+            display: bool = True,
+    ):
+        """Plot SHAP's waterfall plot.
 
         The SHAP value of a feature represents the impact of the
         evidence provided by that feature on the model’s output. The
@@ -2710,13 +2839,15 @@ class BaseModelPlotter(BasePlotter):
         ----------
         models: str, sequence or None, optional (default=None)
             Name of the models to plot. If None, all models in the
-            pipeline are selected. Note that selecting multiple
-            models will raise an exception. To avoid this, call
-            the plot from a model.
+            pipeline are selected. Note that selecting multiple models
+            will raise an exception. To avoid this, call the plot from
+            a model.
 
         index: int or None, optional (default=None)
             Index of the row in the dataset to plot. If None,
-            selects a random row in the test set.
+            it selects the first row in the test set. The
+            waterfall plot does not support plotting multiple
+            samples.
 
         show: int or None, optional (default=None)
             Number of features (ordered by importance) to show in
@@ -2729,9 +2860,9 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the number of features.
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -2740,40 +2871,25 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        check_dim(self, "waterfall_plot")
+        check_method(self, "waterfall_plot")
         check_is_fitted(self, attributes="_models")
-
         m = self._get_subclass(models, max_one=True)
-        # If index is None, give a random index of the test set
-        if index is None:
-            index = random.randint(len(m.train), len(m.dataset))
-
-        rows = self._get_index(index, m)
+        index = m.X_test.iloc[[0]] if index is None else self._get_index(index, m)
         show = self._get_show(show)
-        tgt_int, tgt_str = self._get_target(target)
-        shap_values, expected_value = self._get_shap(m, rows, tgt_int)
+        target = self._get_target(target)
+        shap_values = self._get_shap(m, index, target)
 
-        # Use legacy for consistency with other plot methods
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots._waterfall.waterfall_legacy(
-            expected_value=expected_value,
-            shap_values=shap_values[0],
-            features=rows.iloc[0],
-            max_display=show,
-            show=False,
-        )
+        shap.plots.waterfall(shap_values, max_display=show, show=False)
 
-        if title is None:
-            title = "Waterfall plot"
-            if tgt_int == 0 or self.task.startswith("multi"):
-                title += f" for {m.y.name}={tgt_str}"
+        ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
         self._plot(
             ax=ax,
             title=title,
             figsize=figsize if figsize else (10, 4 + show // 2),
             filename=filename,
-            display=display
+            display=display,
         )
 
 
@@ -2804,7 +2920,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -2844,7 +2960,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         ax.set_xticks(range(1, max(n_models) + 1))
         self._plot(
             ax=ax,
-            title="Successive halving results" if title is None else title,
+            title=title,
             legend=("lower right", len(x)),
             xlabel="n_models",
             ylabel=self._metric[metric].name,
@@ -2881,7 +2997,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             Index or name of the metric. Only for multi-metric runs.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(10, 6))
             Figure's size, format as (x, y).
@@ -2919,7 +3035,7 @@ class TrainSizingPlotter(BaseModelPlotter):
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
         self._plot(
             ax=ax,
-            title="Learning curve" if title is None else title,
+            title=title,
             legend=("lower right", len(x)),
             xlabel="Number of training samples",
             ylabel=self._metric[metric].name,
@@ -2946,7 +3062,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         Parameters
         ----------
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         method: str, optional (default="pearson")
             Method of correlation. Choose from "pearson", "kendall"
@@ -2989,7 +3105,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         sns.set_style(self.style)  # Set back to original style
         self._plot(
             ax=ax,
-            title="Feature correlation matrix" if title is None else title,
+            title=title,
             figsize=figsize,
             filename=filename,
             display=display,
@@ -3017,7 +3133,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             active branch.
 
         title: str or None, optional (default=None)
-            Plot's title. If None, the default option is used.
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
@@ -3086,7 +3202,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             if show_params:
                 for j, key in enumerate(params[i]):
                     ax.annotate(
-                        text=key + ": " + str(flt(getattr(est, key))),
+                        text=f"{key}: {getattr(est, key)}",
                         xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
                         xytext=(40, pos_param - 12),
                         ha="left",

@@ -32,7 +32,7 @@ Number of bins for the calibration calculation and the histogram.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple, optional (default=(10, 10))</strong>
 <blockquote>

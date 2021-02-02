@@ -108,25 +108,27 @@ nav:
         - plot_calibration: API/plots/plot_calibration.md
         - plot_gains: API/plots/plot_gains.md
         - plot_lift: API/plots/plot_lift.md
-        - force_plot: API/plots/force_plot.md
-        - dependence_plot: API/plots/dependence_plot.md
-        - summary_plot: API/plots/summary_plot.md
+        - bar_plot: API/plots/bar_plot.md
+        - beeswarm_plot: API/plots/beeswarm_plot.md
         - decision_plot: API/plots/decision_plot.md
+        - force_plot: API/plots/force_plot.md
+        - heatmap_plot: API/plots/heatmap_plot.md
+        - scatter_plot: API/plots/scatter_plot.md
         - waterfall_plot: API/plots/waterfall_plot.md
 - Examples:
+    - AutoML: examples/automl.html" target="_blank
     - Binary classification: examples/binary_classification.html" target="_blank
+    - Calibration: examples/calibration.html" target="_blank
+    - Deep learning: examples/deep_learning.html" target="_blank
+    - Early stopping: examples/early_stopping.html" target="_blank
+    - Ensembles: examples/ensembles.html" target="_blank
+    - Feature engineering: examples/feature_engineering.html" target="_blank
+    - Imbalanced datasets: examples/imbalanced_datasets.html" target="_blank
     - Multiclass classification: examples/multiclass_classification.html" target="_blank
+    - Multi-metric runs: examples/multi_metric.html" target="_blank
     - Regression: examples/regression.html" target="_blank
     - Successive halving: examples/successive_halving.html" target="_blank
     - Train sizing: examples/train_sizing.html" target="_blank
-    - Deep learning: examples/deep_learning.html" target="_blank
-    - Imbalanced datasets: examples/imbalanced_datasets.html" target="_blank
-    - Feature engineering: examples/feature_engineering.html" target="_blank
-    - AutoML: examples/automl.html" target="_blank
-    - Multi-metric runs: examples/multi_metric.html" target="_blank
-    - Early stopping: examples/early_stopping.html" target="_blank
-    - Ensembles: examples/ensembles.html" target="_blank
-    - Calibration: examples/calibration.html" target="_blank
     - Utilities: examples/utilities.html" target="_blank
 - Dependencies: dependencies.md
 - License: license.md

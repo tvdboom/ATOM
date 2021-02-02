@@ -14,7 +14,7 @@ import pandas as pd
 # Own modules
 from atom import ATOMClassifier
 from atom.utils import merge
-from .utils import X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array
+from .utils import X_bin, y_bin, X_class, y_class, X_bin_array, y_bin_array, mnist
 
 
 # Test __init__ ==================================================== >>
@@ -174,6 +174,9 @@ def test_shape_property():
     """Assert that the shape property returns the shape of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch.shape == (len(X_bin), X_bin.shape[1] + 1)
+
+    atom = ATOMClassifier(*mnist, random_state=1)
+    assert atom.branch.shape == (70000, (28, 28, 1), 2)
 
 
 def test_columns_property():

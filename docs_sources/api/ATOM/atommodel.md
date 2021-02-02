@@ -28,7 +28,7 @@ Whether the model needs scaled features. Can not be True for deep learning datas
 </blockquote>
 <strong>type: str, optional (default="kernel")</strong>
 <blockquote>
-Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.html#core-explainers">shap's explainer</a>
+Model's type. Used to select <a href="https://shap.readthedocs.io/en/latest/api.html#core-explainers">SHAP's explainer</a>
  for plotting. Choose from:
 <ul>
 <li>"linear" for linear models.</li>

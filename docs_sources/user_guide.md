@@ -1210,7 +1210,7 @@ default value.
 
 ### Canvas
 
-Sometimes it is desirable to draw multiple plots side by side in order
+Sometimes it might be desirable to draw multiple plots side by side in order
 to be able to compare them easier. Use the atom's [canvas](../API/ATOM/atomclassifier/#canvas)
 method for this. The canvas method is a `@contextmanager`, i.e. it is
 used through the `with` command. Plots in a canvas will ignore the
@@ -1245,26 +1245,24 @@ with atom.canvas(2, 2, title="XGBoost vs LightGBM", filename="canvas"):
 The [SHAP](https://github.com/slundberg/shap) (SHapley Additive exPlanations)
 python package uses a game theoretic approach to explain the output of
 any machine learning model. It connects optimal credit allocation with
-local explanations using the classic Shapley values from game theory
-and their related extensions. ATOM implements methods to plot 5 of
-shap's plotting functions directly from its API. The explainer will be
-chosen automatically based on the model's type. For kernelExplainer,
-the data used to estimate the expected values is the complete training
-set when <100 rows, else its summarized with a set of 10 weighted
-K-means, each weighted by the number of points they represent. The five
-plots are: [force_plot](../API/plots/force_plot), [dependence_plot](../API/plots/dependence_plot),
-[summary_plot](../API/plots/summary_plot), [decision_plot](../API/plots/decision_plot)
+local explanations using the classic [Shapley values](https://en.wikipedia.org/wiki/Shapley_value)
+from game theory and their related extensions. ATOM implements methods to
+plot 7 of SHAP's plotting functions directly from its API. The seven
+plots are: [bar_plot](../API/plots/bar_plot), [beeswarm_plot](../API/plots/beeswarm_plot),
+[decision_plot](../API/plots/decision_plot), [force_plot](../API/plots/force_plot),
+[heatmap_plot](../API/plots/heatmap_plot), [scatter_plot](../API/plots/scatter_plot)
 and [waterfall_plot](../API/plots/waterfall_plot).
 
 Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
-To avoid this, call the plot from a model, e.g. `atom.xgb.force_plot()`.
+To avoid this, call the plot directly from a model, e.g. `atom.xgb.force_plot()`.
 
 !!!info
     You can recognize the SHAP plots by the fact that they end (instead
-    of start) with plot.
+    of start) with the word `plot`.
 
 <br>
+
 
 ### Available plots
 
@@ -1388,23 +1386,33 @@ A list of available plots can be find hereunder. Note that not all plots can be
 </tr>
 
 <tr>
-<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
-<td>Plot SHAP's force plot.</td>
+<td width="15%"><a href="../API/plots/bar_plot">bar_plot</a></td>
+<td>Plot SHAP's bar plot.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="../API/plots/dependence_plot">dependence_plot</a></td>
-<td>Plot SHAP's dependence plot.</td>
-</tr>
-
-<tr>
-<td width="15%"><a href="../API/plots/summary_plot">summary_plot</a></td>
-<td>Plot SHAP's summary plot.</td>
+<td width="15%"><a href="../API/plots/beeswarm_plot">beeswarm_plot</a></td>
+<td>Plot SHAP's beeswarm plot.</td>
 </tr>
 
 <tr>
 <td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
 <td>Plot SHAP's decision plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
+<td>Plot SHAP's force plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/heatmap_plot">heatmap_plot</a></td>
+<td>Plot SHAP's heatmap plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/scatter_plot">scatter_plot</a></td>
+<td>Plot SHAP's scatter plot.</td>
 </tr>
 
 <tr>

@@ -20,9 +20,8 @@ from .basemodel import BaseModel
 from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
-    flt, lst, arr, merge, check_is_fitted, check_scaling, get_acronym,
-    get_best_score, catch_return, transform, composed, method_to_log,
-    crash, CustomDict,
+    flt, lst, arr, merge, check_scaling, get_acronym, get_best_score,
+    catch_return, transform, composed, method_to_log, crash, CustomDict,
 )
 
 

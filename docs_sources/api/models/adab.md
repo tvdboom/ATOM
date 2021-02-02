@@ -108,11 +108,19 @@ Dataset's shape: (n_rows x n_columns).
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>
-List of columns in the dataset.
+Names of the columns in the dataset.
+</blockquote>
+<strong>n_columns: int</strong>
+<blockquote>
+Number of columns in the dataset.
 </blockquote>
 <strong>features: list</strong>
 <blockquote>
-List of features in the dataset.
+Names of the features in the dataset.
+</blockquote>
+<strong>n_features: int</strong>
+<blockquote>
+Number of features in the dataset.
 </blockquote>
 <strong>target: str</strong>
 <blockquote>

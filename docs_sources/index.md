@@ -99,8 +99,11 @@ Example steps taken by ATOM's pipeline:
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
 * Plots and methods now accept `winner` as model name.
 * Fixed a bug where custom metrics didn't show the correct name.
+* Fixed a bug where timers were not displayed correctly.
+* Further compatibility with deep learning datasets.
 * Large refactoring for performance optimization.
 * Cleaner output of messages to the logger.
+* Plots no longer show a default title.
 * Added the <a href="https://tvdboom.github.io/ATOM/examples/automl.html" target="_blank">AutoML</a> example notebook.
 * Minor bug fixes.
 
@@ -289,24 +292,27 @@ Example steps taken by ATOM's pipeline:
         - [plot_calibration](./API/plots/plot_calibration)
         - [plot_gains](./API/plots/plot_gains)
         - [plot_lift](./API/plots/plot_lift)
-        - [force_plot](./API/plots/force_plot)
-        - [dependence_plot](./API/plots/dependence_plot)
-        - [summary_plot](./API/plots/summary_plot)
+        - [bar_plot](./API/plots/bar_plot)
+        - [beeswarm_plot](./API/plots/beeswarm_plot)
         - [decision_plot](./API/plots/decision_plot)
+        - [force_plot](./API/plots/force_plot)
+        - [heatmap_plot](./API/plots/heatmap_plot)
+        - [scatter_plot](./API/plots/scatter_plot)
         - [waterfall_plot](./API/plots/waterfall_plot)
 - Examples
+    - <a href="./examples/automl.html" target="_blank">AutoML</a>
     - <a href="./examples/binary_classification.html" target="_blank">Binary classification</a>
+    - <a href="./examples/calibration.html" target="_blank">Calibration</a>
+    - <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>
+    - <a href="./examples/early_stopping.html" target="_blank">Early stopping</a>
+    - <a href="./examples/ensembles.html" target="_blank">Ensembles</a>
+    - <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
+    - <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
     - <a href="./examples/multiclass_classification.html" target="_blank">Multiclass classification</a>
+    - <a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a>
     - <a href="./examples/regression.html" target="_blank">Regression</a>
     - <a href="./examples/successive_halving.html" target="_blank">Successive halving</a>
     - <a href="./examples/train_sizing.html" target="_blank">Train sizing</a>
-    - <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>
-    - <a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a>
-    - <a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a>
-    - <a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a>
-    - <a href="./examples/early_stopping.html" target="_blank">Early stopping</a>
-    - <a href="./examples/ensembles.html" target="_blank">Ensembles</a>
-    - <a href="./examples/calibration.html" target="_blank">Calibration</a>
     - <a href="./examples/utilities.html" target="_blank">Utilities</a>
 - [Dependencies](./dependencies)
 - [License](./license)

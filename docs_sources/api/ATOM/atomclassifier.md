@@ -176,11 +176,19 @@ Dataset's shape: (n_rows x n_columns).
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>
-List of columns in the dataset.
+Names of the columns in the dataset.
+</blockquote>
+<strong>n_columns: int</strong>
+<blockquote>
+Number of columns in the dataset.
 </blockquote>
 <strong>features: list</strong>
 <blockquote>
-List of features in the dataset.
+Names of the features in the dataset.
+</blockquote>
+<strong>n_features: int</strong>
+<blockquote>
+Number of features in the dataset.
 </blockquote>
 <strong>target: str</strong>
 <blockquote>
@@ -464,7 +472,7 @@ Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
 merged with atom's pipeline. The tpot instance can be accessed through the
-`tpot` attribute.Read more in the [user guide](../../../user_guide/#automl).
+`tpot` attribute. Read more in the [user guide](../../../user_guide/#automl).
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1055,7 +1063,7 @@ as the [models](../../../user_guide/#models), and the
 
 <a name="run"></a>
 <pre><em>method</em> <strong style="color:#008AB8">run</strong>(models, metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
-           n_calls=10, n_initial_points=5, est_params={}, bo_params={}, bagging=0) 
+           n_calls=10, n_initial_points=5, est_params=None, bo_params=None, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L783">[source]</a></div></pre>
 Runs a [DirectClassifier](../training/directclassifier.md) instance.
 <br /><br /><br />
@@ -1064,7 +1072,7 @@ Runs a [DirectClassifier](../training/directclassifier.md) instance.
 <a name="successive-halving"></a>
 <pre><em>method</em> <strong style="color:#008AB8">successive_halving</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                           needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
-                          est_params={}, bo_params={}, bagging=0) 
+                          est_params=None, bo_params=None, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L824">[source]</a></div></pre>
 Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md) instance.
 <br /><br /><br />
@@ -1073,7 +1081,7 @@ Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md)
 <a name="train-sizing"></a>
 <pre><em>method</em> <strong style="color:#008AB8">train_sizing</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                     needs_threshold=False, train_sizes=np.linspace(0.2, 1.0, 5), n_calls=0,
-                    n_initial_points=5, est_params={}, bo_params={}, bagging=0) 
+                    n_initial_points=5, est_params=None, bo_params=None, bagging=0) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L872">[source]</a></div></pre>
 Runs a [TrainSizingClassifier](../training/trainsizingclassifier.md) instance.
 <br /><br /><br />

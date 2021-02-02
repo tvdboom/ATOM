@@ -1,13 +1,14 @@
 # force_plot
 ------------
 
-<pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1, title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2337">[source]</a></div></pre>
-Plot SHAP's force plot. Visualize the given SHAP values with an additive force layout.
- The explainer will be chosen automatically based on the model's type. Note that by
- default this plot will render using javascript. For a regular figure use `matplotlib=True`
- (this option is only available when only 1 row is selected through the `index` parameter).
- Read more about SHAP plots in the [user guide](../../../user_guide/#shap).
+<pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1,
+                  title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2554">[source]</a></div></pre>
+Plot SHAP's force plot. Visualize the given SHAP values with an additive
+force layout. Note that by default this plot will render using javascript.
+For a regular figure use `matplotlib=True` (this option is only available
+when only a single sample is plotted). Read more about SHAP plots in the
+[user guide](../../../user_guide/#shap).
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -20,8 +21,8 @@ Name of the models to plot. If None, all models in the pipeline are selected. No
 </blockquote>
 <strong>index: int, tuple or None, optional (default=None)</strong>
 <blockquote>
-Indices of the rows in the dataset to plot. If tuple (n, m), select rows n until m.
- If None, select all rows in the test set.
+Indices of the rows in the dataset to plot. If tuple (n, m), it selects rows
+n until m. If None, it selects all rows in the test set.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
@@ -30,7 +31,7 @@ Index or name of the class in the target column to look at. Only for multi-class
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple, optional (default=(14, 6))</strong>
 <blockquote>
@@ -47,7 +48,7 @@ Whether to render the plot.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
-Additional keyword arguments for shap's force_plot.
+Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html">force plot</a>.
 </blockquote>
 </tr>
 </table>
@@ -63,7 +64,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run("lr")
-atom.force_plot(index=atom.X_test.index[0], matplotlib=True, filename="force_plot")
+atom.force_plot(index=120, matplotlib=True, filename="force_plot")
 ```
 <div align="center">
     <img src="../../../img/plots/force_plot.png" alt="force_plot" width="1000" height="420"/>

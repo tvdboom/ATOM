@@ -12,6 +12,7 @@ import pandas as pd
 from typeguard import typechecked
 from typing import Optional
 from sklearn.metrics import SCORERS, confusion_matrix
+from shap import Explainer
 
 # Own modules
 from .plots import BaseModelPlotter
@@ -49,6 +50,7 @@ class BaseModel(BaseModelPlotter):
         self.name = self.acronym if len(args) == 1 else args[1]
         self.scaler = None
         self.estimator = None
+        self.explainer = None  # Explainer object for shap plots
         self._group = self.name  # sh and ts models belong to the same group
         self._pred_attrs = [None] * 10
 

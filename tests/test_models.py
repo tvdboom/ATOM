@@ -22,7 +22,7 @@ from keras.wrappers.scikit_learn import KerasClassifier
 from atom import ATOMClassifier, ATOMRegressor
 from atom.models import MODEL_LIST
 from atom.utils import ONLY_CLASS, ONLY_REG
-from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg
+from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 
 # Variables ======================================================== >>
@@ -59,19 +59,9 @@ def test_custom_models(model):
 
 def test_deep_learning_models():
     """Assert that ATOM works with deep learning models."""
-    # Since ATOM uses sklearn's API, use Keras' wrapper
-    model = KerasClassifier(neural_network, epochs=1, batch_size=512, verbose=0)
-
-    # Download the MNIST dataset
-    (X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-    # Reshape data to fit model
-    X_train = X_train.reshape(60000, 28, 28, 1)
-    X_test = X_test.reshape(10000, 28, 28, 1)
-
-    atom = ATOMClassifier((X_train, y_train), (X_test, y_test), random_state=1)
+    atom = ATOMClassifier(*mnist, n_rows=0.1, random_state=1)
     pytest.raises(PermissionError, atom.clean)
-    atom.run(models=model)
+    atom.run(KerasClassifier(neural_network, epochs=1, batch_size=512, verbose=0))
 
 
 # Test predefined models =========================================== >>

@@ -188,8 +188,11 @@ Release history
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
 * Plots and methods now accept `winner` as model name.
 * Fixed a bug where custom metrics didn't show the correct name.
+* Fixed a bug where timers were not displayed correctly.
+* Further compatibility with deep learning datasets.
 * Large refactoring for performance optimization.
 * Cleaner output of messages to the logger.
+* Plots no longer show a default title.
 * Added the <a href="https://tvdboom.github.io/ATOM/examples/automl.html" target="_blank">AutoML</a> example notebook.
 * Minor bug fixes.
 

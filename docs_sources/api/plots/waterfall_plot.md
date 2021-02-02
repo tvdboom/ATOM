@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">waterfall_plot</strong>(models=None, index=None, show=None, target=1,
                       title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2691">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2814">[source]</a></div></pre>
 Plot SHAP's waterfall plot for a single prediction.
  The SHAP value of a feature represents the impact of the evidence
  provided by that feature on the model’s output. The waterfall plot
@@ -27,7 +27,9 @@ Name of the models to plot. If None, all models in the pipeline are selected. No
 </blockquote>
 <strong>index: int or None, optional (default=None)</strong>
 <blockquote>
-Index of the row in the dataset to plot. If None, selects a random row in the test set.
+Index of the row in the dataset to plot. If None, it selects the
+first row in the test set. The waterfall plot does not support
+plotting multiple samples.
 </blockquote>
 <strong>show: int or None, optional (default=None)</strong>
 <blockquote>
@@ -40,11 +42,12 @@ Index or name of the class in the target column to look at. Only for multi-class
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
@@ -68,7 +71,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run("Tree")
-atom.tree.waterfall_plot(show=11)
+atom.tree.waterfall_plot(index=120)
 ```
 <div align="center">
     <img src="../../../img/plots/waterfall_plot.png" alt="waterfall_plot" width="700" height="700"/>

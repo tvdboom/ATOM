@@ -9,7 +9,7 @@ Description: Module containing the parent class for the trainers.
 
 # Standard packages
 import importlib
-from time import time
+from datetime import datetime
 import matplotlib.pyplot as plt
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
 
@@ -20,7 +20,7 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst,
+    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, dct,
     time_to_string, get_acronym, get_metric, get_default_metric,
     delete, PlotCallback, CustomDict,
 )
@@ -77,14 +77,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         technically be performing a random search. If sequence, the
         n-th value will apply to the n-th model.
 
-    est_params: dict, optional (default={})
+    est_params: dict or None, optional (default=None)
         Additional parameters for the estimators. See the corresponding
         documentation for the available options. For multiple models,
         use the acronyms as key and a dict of the parameters as value.
         Add _fit to the parameter's name to pass it to the fit method
         instead of the initializer.
 
-    bo_params: dict, optional (default={})
+    bo_params: dict or None, optional (default=None)
         Additional parameters to for the BO. These can include:
             - base_estimator: str, optional (default="GP")
                 Surrogate model to use. Choose from:
@@ -196,8 +196,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.needs_threshold = needs_threshold
         self.n_calls = n_calls
         self.n_initial_points = n_initial_points
-        self.est_params = est_params
-        self.bo_params = bo_params
+        self.est_params = dct(est_params)
+        self.bo_params = dct(bo_params)
         self.bagging = bagging
 
         # Branching attributes
@@ -427,11 +427,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def _core_iteration(self):
         """Fit and evaluate the models in the pipeline."""
-        t_init = time()  # To measure the time the whole pipeline takes
+        t_init = datetime.now()  # Measure the time the whole pipeline takes
 
         to_remove = []
         for i, m in enumerate(self._models):
-            model_time = time()
+            model_time = datetime.now()
 
             try:  # If an error occurs, skip the model
                 # If it has predefined or custom dimensions, run the BO

@@ -12,7 +12,6 @@ import math
 import logging
 import numpy as np
 import pandas as pd
-from time import time
 from functools import wraps
 from datetime import datetime
 from inspect import signature
@@ -155,20 +154,25 @@ BALANCER_TYPES = dict(
 # Functions ======================================================== >>
 
 def flt(item):
-    """Return value if item is sequence of length 1."""
+    """Utility to reduce sequences with just one item."""
     return item[0] if isinstance(item, SEQUENCE) and len(item) == 1 else item
 
 
 def lst(item):
-    """Return list if item is not a sequence."""
+    """Utility used to make sure an item is iterable."""
     return [item] if not isinstance(item, SEQUENCE) else item
 
 
+def dct(item):
+    """Utility used to handle mutable arguments."""
+    return {} if item is None else item
+
+
 def it(item):
-    """Return int if it's a rounded float, else item."""
+    """Utility to convert rounded floats to int."""
     try:
         is_equal = int(item) == float(item)
-    except ValueError:
+    except ValueError:  # Item may not be numerical
         return item
 
     return int(item) if is_equal else item
@@ -200,9 +204,14 @@ def variable_return(X, y):
         return X, y
 
 
-def check_dim(cls, method):
+def check_deep(X):
+    """Check if the trainer contains a deep learning dataset."""
+    return list(X.columns) == ["Features"]
+
+
+def check_method(cls, method):
     """Raise an error if it's a deep learning dataset."""
-    if list(cls.X.columns) == ["Features"]:
+    if check_deep(cls.X):
         raise PermissionError(
             f"The {method} method is not available for deep learning datasets!"
         )
@@ -267,7 +276,7 @@ def time_to_string(t_init):
 
     Parameters
     ----------
-    t_init: float
+    t_init: datetime
         Time to convert (in seconds).
 
     Returns
@@ -276,13 +285,13 @@ def time_to_string(t_init):
         Time representation.
 
     """
-    t = time() - t_init  # Total time in seconds
-    h = t // 3600
-    m = t / 60 - h * 60
-    s = t - h * 3600 - m * 60
-    if h < 1 and m < 1:  # Only seconds
+    t = datetime.now() - t_init
+    h = t.seconds // 3600
+    m = t.seconds % 3600 // 60
+    s = t.seconds % 3600 % 60 + t.microseconds / 1e6
+    if not h and not m:  # Only seconds
         return f"{s:.3f}s"
-    elif h < 1:  # Also minutes
+    elif not h:  # Also minutes
         return f"{m}m:{s:02}s"
     else:  # Also hours
         return f"{h}h:{m:02}m:{s:02}s"
@@ -354,11 +363,18 @@ def arr(df):
     it in a df with a single column, "Features". This function
     extracts the arrays from every row and returns them stacked.
 
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataset to check.
+
+    Returns
+    -------
+    df: pd.DataFrame
+        Stacked dataframe.
+
      """
-    if list(df.columns) == ["Features"]:
-        return np.stack(df["Features"].values)
-    else:
-        return df
+    return np.stack(df["Features"].values) if check_deep(df) else df
 
 
 def prepare_logger(logger, class_name):
@@ -504,6 +520,64 @@ def get_acronym(model, must_be_equal=True):
     )
 
 
+def create_acronym(fullname):
+    """Create an acronym for an estimator.
+
+    The acronym consists of the capital letters in the name if
+    there are at least two. If not, the entire name is used.
+
+    Parameters
+    ----------
+    fullname: str
+        Estimator's __name__.
+
+    Returns
+    -------
+    acronym:str
+        Created acronym.
+
+    """
+    from .models import MODEL_LIST
+
+    acronym = "".join([c for c in fullname if c.isupper()])
+    if len(acronym) < 2 or acronym.lower() in map(str.lower, MODEL_LIST):
+        return fullname
+    else:
+        return acronym
+
+
+def names_from_estimator(cls, estimator):
+    """Get the model's acronym and fullname from an estimator.
+
+    Parameters
+    ----------
+    cls: class
+        Trainer from which the function is called.
+
+    estimator: class
+        Estimator instance to get the information from.
+
+    Returns
+    -------
+    acronym: str
+        Model's acronym.
+
+    fullname: str
+        Model's complete name.
+
+    """
+    from .models import MODEL_LIST
+
+    get_name = lambda est: est.__class__.__name__
+    for key, value in MODEL_LIST.items():
+        model = value(cls)
+        if get_name(model.get_estimator()) == get_name(estimator):
+            return model.acronym, model.fullname
+
+    # If it's not any of the predefined models, create a new acronym
+    return create_acronym(get_name(estimator)), get_name(estimator)
+
+
 def get_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
     """Get the right metric depending on the input type.
 
@@ -611,35 +685,6 @@ def infer_task(y, goal="classification"):
         return "binary classification"
     else:
         return "multiclass classification"
-
-
-def names_from_estimator(cls, estimator):
-    """Get the model's acronym and fullname from an estimator.
-
-    Parameters
-    ----------
-    cls: class
-        Trainer from which the function is called.
-
-    estimator: class
-        Estimator instance to get the information from.
-
-    Returns
-    -------
-    acronym: str
-        Model's acronym.
-
-    fullname: str
-        Model's complete name.
-
-    """
-    from .models import MODEL_LIST
-
-    get_name = lambda est: est.__class__.__name__
-    for key, value in MODEL_LIST.items():
-        model = value(cls)
-        if get_name(model.get_estimator()) == get_name(estimator):
-            return model.acronym, model.fullname
 
 
 def partial_dependence(estimator, X, features):
@@ -1208,8 +1253,8 @@ class CustomDict(MutableMapping):
         self.__keys = []
         self.__data = {}
 
-    def update(self, mapping={}, **kwargs):
-        for key, value in mapping.items():
+    def update(self, mapping=None, **kwargs):
+        for key, value in dct(mapping).items():
             if self._conv(key) not in self.__keys:
                 self.__keys.append(self._conv(key))
             self.__data[self._conv(key)] = value

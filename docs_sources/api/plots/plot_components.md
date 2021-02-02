@@ -11,11 +11,11 @@ Plot the explained variance ratio per components. Only available if PCA was appl
 <td width="75%" style="background:white;">
 <strong>show: int or None, optional (default=None)</strong>
 <blockquote>
-Number of components to show. If None, the number of components in the data are plotted.
+Number of components to show. None to show all.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>

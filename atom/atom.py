@@ -41,9 +41,9 @@ from .models import CustomModel
 from .plots import ATOMPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst,
-    infer_task, check_dim, check_scaling, names_from_estimator,
-    add_transformer, transform, method_to_log, composed, crash,
-    CustomDict,
+    infer_task, check_method, check_scaling, check_deep,
+    names_from_estimator, add_transformer, transform,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -163,7 +163,10 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def categorical(self):
         """Returns the names of categorical columns in the dataset."""
-        return list(self.X.select_dtypes(include=["category", "object"]).columns)
+        if not check_deep(self.X):
+            return list(self.X.select_dtypes(include=["category", "object"]).columns)
+        else:
+            return []
 
     @property
     def n_categorical(self):
@@ -188,7 +191,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         self.log("Dataset stats ================== >>", _vb)
-        self.log(f"Shape: {self.dataset.shape}", _vb)
+        self.log(f"Shape: {self.shape}", _vb)
 
         if self.n_nans:
             self.log(f"Missing values: {self.n_nans}", _vb)
@@ -434,7 +437,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         only on the training set to avoid data leakage.
 
         """
-        check_dim(self, "scale")
+        check_method(self, "scale")
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
         add_transformer(self, Scaler(**kwargs), name="scale")
 
@@ -462,7 +465,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        check_dim(self, "clean")
+        check_method(self, "clean")
         kwargs = self._prepare_kwargs(kwargs, Cleaner().get_params())
         cleaner = Cleaner(
             prohibited_types=prohibited_types,
@@ -501,7 +504,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        check_dim(self, "impute")
+        check_method(self, "impute")
         kwargs = self._prepare_kwargs(kwargs, Imputer().get_params())
         imputer = Imputer(
             strat_num=strat_num,
@@ -539,7 +542,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        check_dim(self, "encode")
+        check_method(self, "encode")
         kwargs = self._prepare_kwargs(kwargs, Encoder().get_params())
         encoder = Encoder(
             strategy=strategy,
@@ -569,7 +572,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        check_dim(self, "outliers")
+        check_method(self, "outliers")
         kwargs = self._prepare_kwargs(kwargs, Outliers().get_params())
         outliers = Outliers(
             strategy=strategy,
@@ -591,7 +594,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the data_cleaning.py module for a description of the parameters.
 
         """
-        check_dim(self, "balance")
+        check_method(self, "balance")
         if not self.goal.startswith("class"):
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
@@ -628,7 +631,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the feature_engineering.py module for a description of the parameters.
 
         """
-        check_dim(self, "feature_generation")
+        check_method(self, "feature_generation")
         kwargs = self._prepare_kwargs(kwargs, FeatureGenerator().get_params())
         feature_generator = FeatureGenerator(
             strategy=strategy,
@@ -670,7 +673,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         See the feature_engineering.py module for a description of the parameters.
 
         """
-        check_dim(self, "feature_selection")
+        check_method(self, "feature_selection")
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
                 if self.goal.startswith("reg"):
@@ -734,6 +737,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         from tpot import TPOTClassifier, TPOTRegressor
 
+        check_method(self, "automl")
         # Define the scoring parameter
         if self._metric and not kwargs.get("scoring"):
             kwargs["scoring"] = self._metric[0]
@@ -779,8 +783,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         est.acronym, est.fullname = names_from_estimator(self, est)
         model = CustomModel(self, estimator=est)
         model.estimator = model.est
-        self._models.update({model.name: model})
-        self.log(f" --> Model {model.fullname} successfully added to the models.", 2)
 
         # Save metric scores on complete training and test set
         model.metric_train = flt([
@@ -791,6 +793,11 @@ class ATOM(BasePredictor, ATOMPlotter):
             metric(model.estimator, self.X_test, self.y_test)
             for metric in self._metric
         ])
+
+        self._models.update({model.name: model})
+        self.log(
+            f" --> {model.fullname} ({model.name}) successfully added to the models.", 2
+        )
 
     # Training methods ============================================= >>
 
@@ -882,8 +889,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
@@ -922,8 +929,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         skip_runs: int = 0,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
@@ -968,8 +975,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):

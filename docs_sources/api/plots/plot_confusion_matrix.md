@@ -27,7 +27,7 @@ Whether to normalize the matrix. Only for the heatmap plot.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple, optional (default=None)</strong>
 <blockquote>

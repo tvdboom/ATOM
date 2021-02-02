@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.training.<strong style="color:#008AB8">SuccessiveHalvingClassifier</strong>(models, metric=None, greater_is_better=True, needs_proba=False,
                                                 needs_threshold=False, skip_runs=0, n_calls=10,
-                                                n_initial_points=5, est_params={}, bo_params={}, bagging=0,
+                                                n_initial_points=5, est_params=None, bo_params=None, bagging=0,
                                                 n_jobs=1, verbose=0, logger=None, random_state=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L344">[source]</a></div></pre>
 Fit and evaluate the models in a [successive halving](../../../user_guide/#successive-halving)
@@ -106,7 +106,7 @@ Initial number of random tests of the BO before fitting the
  technically be performing a random search. If sequence, the n-th
  value will apply to the n-th model.
 </blockquote>
-<strong>est_params: dict, optional (default={})</strong>
+<strong>est_params: dict or None, optional (default=None)</strong>
 <blockquote>
 Additional parameters for the estimators. See the corresponding
  documentation for the available options. For multiple models, use
@@ -114,7 +114,7 @@ Additional parameters for the estimators. See the corresponding
  Add _fit to the parameter's name to pass it to the fit method instead
  of the initializer.
 </blockquote>
-<strong>bo_params: dict, optional (default={})</strong>
+<strong>bo_params: dict or None, optional (default=None)</strong>
 <blockquote>
 Additional parameters to for the BO. These can include:
 <ul>
@@ -252,11 +252,19 @@ Dataset's shape: (n_rows x n_columns).
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>
-List of columns in the dataset.
+Names of the columns in the dataset.
+</blockquote>
+<strong>n_columns: int</strong>
+<blockquote>
+Number of columns in the dataset.
 </blockquote>
 <strong>features: list</strong>
 <blockquote>
-List of features in the dataset.
+Names of the features in the dataset.
+</blockquote>
+<strong>n_features: int</strong>
+<blockquote>
+Number of features in the dataset.
 </blockquote>
 <strong>target: str</strong>
 <blockquote>

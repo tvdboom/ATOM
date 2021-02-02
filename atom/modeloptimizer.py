@@ -11,12 +11,12 @@ Description: Module containing the ModelOptimizer class.
 import pickle
 import numpy as np
 import pandas as pd
-from time import time
 from tqdm import tqdm
-from joblib import Parallel, delayed
-from typeguard import typechecked
 from typing import Optional
 from inspect import signature
+from datetime import datetime
+from joblib import Parallel, delayed
+from typeguard import typechecked
 
 # Sklearn
 from sklearn.base import clone
@@ -218,7 +218,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 # Calculate metrics on the validation set
                 return [metric(est, arr(X_val), y_val) for metric in self.T._metric]
 
-            t_iter = time()  # Get current time for start of the iteration
+            t_iter = datetime.now()  # Get current time for start of the iteration
 
             # Print iteration and time
             self._iter += 1
@@ -282,9 +282,9 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             # Print output of the BO
             out = [
-                f"{metric}: {scores[i]:.4f}  Best {metric}: "
+                f"{m.name}: {scores[i]:.4f}  Best {m.name}: "
                 f"{max([lst(s)[i] for s in self.bo.score]):.4f}"
-                for i, metric in enumerate(self.T._metric)
+                for i, m in enumerate(self.T._metric)
             ]
             self.T.log(f"Evaluation --> {'   '.join(out)}", 2)
             self.T.log(f"Time iteration: {t}   Total time: {t_tot}", 2)
@@ -301,7 +301,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
-        self._init_bo = time()
+        self._init_bo = datetime.now()
         if self.T.verbose == 1:
             self._pbar = tqdm(total=self._n_calls, desc="Random start 1")
 
@@ -394,7 +394,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     def fit(self):
         """Fit and validate the model."""
-        t_init = time()
+        t_init = datetime.now()
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
@@ -453,7 +453,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         the test set to get a distribution of the model's results.
 
         """
-        t_init = time()
+        t_init = datetime.now()
 
         self.metric_bagging = []
         for _ in range(self._bagging):

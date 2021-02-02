@@ -219,6 +219,12 @@ class BaseTransformer:
             if use_n_rows:
                 if self.n_rows <= 1:
                     kwargs = dict(frac=self.n_rows, random_state=self.random_state)
+                elif self.n_rows > len(data):
+                    raise ValueError(
+                        "Invalid value for the n_rows parameter. The provided"
+                        " number is larger than the number of samples, got "
+                        f"len(data)={len(data)} and n_rows={int(self.n_rows)}."
+                    )
                 else:
                     kwargs = dict(n=int(self.n_rows), random_state=self.random_state)
                 data = data.sample(**kwargs)
@@ -251,8 +257,8 @@ class BaseTransformer:
                     test = test.sample(**kwargs)
                 else:
                     raise ValueError(
-                        "Invalid value for the n_rows parameter. value "
-                        "should be <=1 when train and test are provided."
+                        "Invalid value for the n_rows parameter. Value has "
+                        "to be <1 when a train and test set are provided."
                     )
 
             data = pd.concat([train, test]).reset_index(drop=True)

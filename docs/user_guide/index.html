@@ -414,19 +414,27 @@
 </li>
             
 <li>
-    <a href="../API/plots/force_plot/" class="dropdown-item">force_plot</a>
+    <a href="../API/plots/bar_plot/" class="dropdown-item">bar_plot</a>
 </li>
             
 <li>
-    <a href="../API/plots/dependence_plot/" class="dropdown-item">dependence_plot</a>
-</li>
-            
-<li>
-    <a href="../API/plots/summary_plot/" class="dropdown-item">summary_plot</a>
+    <a href="../API/plots/beeswarm_plot/" class="dropdown-item">beeswarm_plot</a>
 </li>
             
 <li>
     <a href="../API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/heatmap_plot/" class="dropdown-item">heatmap_plot</a>
+</li>
+            
+<li>
+    <a href="../API/plots/scatter_plot/" class="dropdown-item">scatter_plot</a>
 </li>
             
 <li>
@@ -441,11 +449,43 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
+    <a href="../examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
+</li>
+                                    
+<li>
     <a href="../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
+    <a href="../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
+</li>
+                                    
+<li>
+    <a href="../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
+</li>
+                                    
+<li>
+    <a href="../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
+    <a href="../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
+</li>
+                                    
+<li>
     <a href="../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
+</li>
+                                    
+<li>
+    <a href="../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -458,38 +498,6 @@
                                     
 <li>
     <a href="../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
-</li>
-                                    
-<li>
-    <a href="../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
-</li>
-                                    
-<li>
-    <a href="../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
-</li>
-                                    
-<li>
-    <a href="../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
-</li>
-                                    
-<li>
-    <a href="../examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
-</li>
-                                    
-<li>
-    <a href="../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
-</li>
-                                    
-<li>
-    <a href="../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
-</li>
-                                    
-<li>
-    <a href="../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
-</li>
-                                    
-<li>
-    <a href="../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
@@ -1627,7 +1635,7 @@ values are:</p>
 default value.</p>
 <p><br></p>
 <h3 id="canvas">Canvas</h3>
-<p>Sometimes it is desirable to draw multiple plots side by side in order
+<p>Sometimes it might be desirable to draw multiple plots side by side in order
 to be able to compare them easier. Use the atom's <a href="../API/ATOM/atomclassifier/#canvas">canvas</a>
 method for this. The canvas method is a <code>@contextmanager</code>, i.e. it is
 used through the <code>with</code> command. Plots in a canvas will ignore the
@@ -1655,23 +1663,20 @@ with atom.canvas(2, 2, title=&quot;XGBoost vs LightGBM&quot;, filename=&quot;can
 <p>The <a href="https://github.com/slundberg/shap">SHAP</a> (SHapley Additive exPlanations)
 python package uses a game theoretic approach to explain the output of
 any machine learning model. It connects optimal credit allocation with
-local explanations using the classic Shapley values from game theory
-and their related extensions. ATOM implements methods to plot 5 of
-shap's plotting functions directly from its API. The explainer will be
-chosen automatically based on the model's type. For kernelExplainer,
-the data used to estimate the expected values is the complete training
-set when &lt;100 rows, else its summarized with a set of 10 weighted
-K-means, each weighted by the number of points they represent. The five
-plots are: <a href="../API/plots/force_plot">force_plot</a>, <a href="../API/plots/dependence_plot">dependence_plot</a>,
-<a href="../API/plots/summary_plot">summary_plot</a>, <a href="../API/plots/decision_plot">decision_plot</a>
+local explanations using the classic <a href="https://en.wikipedia.org/wiki/Shapley_value">Shapley values</a>
+from game theory and their related extensions. ATOM implements methods to
+plot 7 of SHAP's plotting functions directly from its API. The seven
+plots are: <a href="../API/plots/bar_plot">bar_plot</a>, <a href="../API/plots/beeswarm_plot">beeswarm_plot</a>,
+<a href="../API/plots/decision_plot">decision_plot</a>, <a href="../API/plots/force_plot">force_plot</a>,
+<a href="../API/plots/heatmap_plot">heatmap_plot</a>, <a href="../API/plots/scatter_plot">scatter_plot</a>
 and <a href="../API/plots/waterfall_plot">waterfall_plot</a>.</p>
 <p>Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
-To avoid this, call the plot from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
+To avoid this, call the plot directly from a model, e.g. <code>atom.xgb.force_plot()</code>.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>You can recognize the SHAP plots by the fact that they end (instead
-of start) with plot.</p>
+of start) with the word <code>plot</code>.</p>
 </div>
 <p><br></p>
 <h3 id="available-plots">Available plots</h3>
@@ -1794,23 +1799,33 @@ of start) with plot.</p>
 </tr>
 
 <tr>
-<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
-<td>Plot SHAP's force plot.</td>
+<td width="15%"><a href="../API/plots/bar_plot">bar_plot</a></td>
+<td>Plot SHAP's bar plot.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="../API/plots/dependence_plot">dependence_plot</a></td>
-<td>Plot SHAP's dependence plot.</td>
-</tr>
-
-<tr>
-<td width="15%"><a href="../API/plots/summary_plot">summary_plot</a></td>
-<td>Plot SHAP's summary plot.</td>
+<td width="15%"><a href="../API/plots/beeswarm_plot">beeswarm_plot</a></td>
+<td>Plot SHAP's beeswarm plot.</td>
 </tr>
 
 <tr>
 <td width="15%"><a href="../API/plots/decision_plot">decision_plot</a></td>
 <td>Plot SHAP's decision plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/force_plot">force_plot</a></td>
+<td>Plot SHAP's force plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/heatmap_plot">heatmap_plot</a></td>
+<td>Plot SHAP's heatmap plot.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/scatter_plot">scatter_plot</a></td>
+<td>Plot SHAP's scatter plot.</td>
 </tr>
 
 <tr>

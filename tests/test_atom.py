@@ -24,7 +24,7 @@ from atom.data_cleaning import Imputer, Outliers
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X10, X10_nan, X10_str, y10, y10_str, y10_sn,
+    X10, X10_nan, X10_str, y10, y10_str, y10_sn, mnist,
 )
 
 
@@ -160,6 +160,9 @@ def test_categorical():
     """Assert that categorical returns a list of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     assert atom.categorical == ["Feature 2"]
+
+    atom = ATOMClassifier(*mnist, random_state=1)
+    assert atom.categorical == []
 
 
 def test_n_categorical():
@@ -483,18 +486,18 @@ def test_automl_classification():
     """Assert that the automl method works for classification tasks."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="accuracy")
-    tpot = atom.automl(max_time_mins=0.2, template="Selector-Transformer-Classifier")
-    assert tpot.scoring == get_scorer("accuracy")
-    assert len(atom) == 2
-    assert atom.models == ["Tree", "BNB"]
+    atom.automl(max_time_mins=0.2, template="Transformer-Classifier")
+    assert atom.tpot.scoring == get_scorer("accuracy")
+    assert len(atom) == 1
+    assert atom.models == ["Tree", "MLP"]
 
 
 def test_automl_regression():
     """Assert that the automl method works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    tpot = atom.automl(max_time_mins=0.2, scoring="accuracy", random_state=2)
-    assert atom.metric == "accuracy"
-    assert tpot.random_state == 2
+    atom.automl(max_time_mins=0.2, scoring="r2", random_state=2)
+    assert atom.metric == "r2"
+    assert atom.tpot.random_state == 2
 
 
 def test_invalid_scoring():

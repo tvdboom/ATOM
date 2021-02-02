@@ -136,7 +136,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
-        models = {}
+        models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}
         while len(self._models) > 2 ** self.skip_runs - 1:
             # Create the new set of models for the run
@@ -221,7 +221,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
-        models = {}
+        models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
@@ -265,8 +265,8 @@ class DirectClassifier(Direct):
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -295,8 +295,8 @@ class DirectRegressor(Direct):
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -326,8 +326,8 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         skip_runs: int = 0,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -357,8 +357,8 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         skip_runs: int = 0,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -388,8 +388,8 @@ class TrainSizingClassifier(TrainSizing):
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -419,8 +419,8 @@ class TrainSizingRegressor(TrainSizing):
         train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
-        est_params: dict = {},
-        bo_params: dict = {},
+        est_params: Optional[dict] = None,
+        bo_params: Optional[dict] = None,
         bagging: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,

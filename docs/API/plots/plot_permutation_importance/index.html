@@ -414,19 +414,27 @@
 </li>
             
 <li>
-    <a href="../force_plot/" class="dropdown-item">force_plot</a>
+    <a href="../bar_plot/" class="dropdown-item">bar_plot</a>
 </li>
             
 <li>
-    <a href="../dependence_plot/" class="dropdown-item">dependence_plot</a>
-</li>
-            
-<li>
-    <a href="../summary_plot/" class="dropdown-item">summary_plot</a>
+    <a href="../beeswarm_plot/" class="dropdown-item">beeswarm_plot</a>
 </li>
             
 <li>
     <a href="../decision_plot/" class="dropdown-item">decision_plot</a>
+</li>
+            
+<li>
+    <a href="../force_plot/" class="dropdown-item">force_plot</a>
+</li>
+            
+<li>
+    <a href="../heatmap_plot/" class="dropdown-item">heatmap_plot</a>
+</li>
+            
+<li>
+    <a href="../scatter_plot/" class="dropdown-item">scatter_plot</a>
 </li>
             
 <li>
@@ -441,11 +449,43 @@
                                 <ul class="dropdown-menu">
                                     
 <li>
+    <a href="../../../examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
 </li>
                                     
 <li>
+    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
+</li>
+                                    
+<li>
     <a href="../../../examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
+</li>
+                                    
+<li>
+    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
 </li>
                                     
 <li>
@@ -458,38 +498,6 @@
                                     
 <li>
     <a href="../../../examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
-</li>
-                                    
-<li>
-    <a href="../../../examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
 </li>
                                     
 <li>
@@ -575,7 +583,7 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>show: int, optional (default=None)</strong>
 <blockquote>
-Number of best features to show in the plot. None to show all.
+Number of features (ordered by importance) to show in the plot. None to show all.
 </blockquote>
 <strong>n_repeats: int, optional (default=10)</strong>
 <blockquote>
@@ -583,7 +591,7 @@ Number of times to permute each feature.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>

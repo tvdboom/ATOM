@@ -17,8 +17,8 @@ from typing import Optional
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series, composed,
-    crash, method_to_log
+    X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
+    check_deep, composed, crash, method_to_log,
 )
 
 
@@ -325,8 +325,11 @@ class Branch:
 
     @property
     def shape(self):
-        """Shape of the dataset (n_rows, n_columns)."""
-        return self.data.shape
+        """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
+        if not check_deep(self.X):
+            return self.data.shape
+        else:
+            return len(self.data), self.X.iloc[0, 0].shape, 2
 
     @property
     def columns(self):
@@ -334,9 +337,19 @@ class Branch:
         return list(self.data.columns)
 
     @property
+    def n_columns(self):
+        """Number of columns."""
+        return len(self.columns)
+
+    @property
     def features(self):
         """Name of the features."""
         return self.columns[:-1]
+
+    @property
+    def n_features(self):
+        """Number of features."""
+        return len(self.features)
 
     @property
     def target(self):

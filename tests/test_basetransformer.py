@@ -237,6 +237,11 @@ def test_n_rows_X_y_int():
     assert len(atom.dataset) == 200
 
 
+def test_n_rows_too_large():
+    """Assert that an error is raised when n_rows>len(data)."""
+    pytest.raises(ValueError, ATOMClassifier, X_bin, y_bin, n_rows=1e6, random_state=1)
+
+
 @pytest.mark.parametrize("ts", [-2, 0, 1000])
 def test_test_size_parameter(ts):
     """Assert that the test_size parameter is in correct range."""
@@ -307,7 +312,7 @@ def test_n_rows_train_test_frac():
 
 def test_n_rows_train_test_int():
     """Assert that an error is raised when n_rows>1 for input with train and test."""
-    with pytest.raises(ValueError, match=r".*should be <=1 when train and test.*"):
+    with pytest.raises(ValueError, match=r".*has to be <1 when a train and test.*"):
         ATOMClassifier(bin_train, bin_test, n_rows=100, random_state=1)
 
 

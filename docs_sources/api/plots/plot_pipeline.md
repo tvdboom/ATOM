@@ -18,7 +18,7 @@ Name of the branch to plot. If None, plot the current active branch.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>

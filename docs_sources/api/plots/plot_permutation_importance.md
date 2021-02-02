@@ -19,7 +19,7 @@ Name of the models to plot. If None, all models in the pipeline are selected.
 </blockquote>
 <strong>show: int, optional (default=None)</strong>
 <blockquote>
-Number of best features to show in the plot. None to show all.
+Number of features (ordered by importance) to show in the plot. None to show all.
 </blockquote>
 <strong>n_repeats: int, optional (default=10)</strong>
 <blockquote>
@@ -27,7 +27,7 @@ Number of times to permute each feature.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>

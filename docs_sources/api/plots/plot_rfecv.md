@@ -11,7 +11,7 @@ Plot the RFECV results, i.e. the scores obtained by the estimator fitted on ever
 <td width="75%" style="background:white;">
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
-Plot's title. If None, the default option is used.
+Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple, optional (default=(10, 6))</strong>
 <blockquote>
