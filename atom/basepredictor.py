@@ -79,11 +79,30 @@ class BasePredictor:
     @property
     def results(self):
         """Return the results as a pd.DataFrame."""
-        return pd.DataFrame(
+        def frac(m):
+            """Return the fraction of the train set used for the model."""
+            n_models = m.branch.idx[0] / m._train_idx
+            if n_models == int(n_models):
+                return round(1.0 / n_models, 2)
+            else:
+                return round(m._train_idx / m.branch.idx[0], 2)
+
+        df = pd.DataFrame(
             data=[m.results for m in self._models],
             columns=self._models[0].results.index if self._models else [],
             index=lst(self.models),
         ).dropna(axis=1, how="all")
+
+        # For sh and ts runs, include the fraction of training set
+        if any(m._train_idx != len(m.branch.train) for m in self._models):
+            df = df.set_index(
+                pd.MultiIndex.from_arrays(
+                    [[frac(m) for m in self._models], self.models],
+                    names=["frac", "model"],
+                )
+            ).sort_index(level=0, ascending=True)
+
+        return df
 
     @property
     def winner(self):

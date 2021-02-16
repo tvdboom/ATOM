@@ -16,7 +16,7 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SEQUENCE_TYPES, merge, catch_return, transform
+from .utils import SEQUENCE_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
@@ -108,12 +108,6 @@ def ATOMLoader(
         This parameter is ignored if `transform_data=False`.
 
     """
-    if verbose and (verbose < 0 or verbose > 2):
-        raise ValueError(
-            "Invalid value for the verbose parameter."
-            f"Value should be between 0 and 2, got {verbose}."
-        )
-
     with open(filename, "rb") as f:
         cls = pickle.load(f)
 
@@ -131,22 +125,14 @@ def ATOMLoader(
         # Prepare the provided data
         data, idx = cls._get_data_and_idx(data, use_n_rows=transform_data)
 
-        # Apply all transformers, also those only for the train set
-        # Verbosity is set to class' verbosity if left to default
-        kwargs = dict(
-            outliers=True,
-            balance=True,
-            verbose=cls.verbose if verbose is None else verbose
-        )
-
         # Apply transformations per branch
         step = {}  # Current step in the pipeline per branch
         for b1, v1 in cls._branches.items():
-            brch = cls._branches[b1]
+            branch = cls._branches[b1]
 
             # Provide the input data if not already filled from another branch
-            if brch.data is None:
-                brch.data, brch.idx = data, idx
+            if branch.data is None:
+                branch.data, branch.idx = data, idx
 
             if transform_data:
                 if not v1.pipeline.empty:
@@ -154,41 +140,18 @@ def ATOMLoader(
 
                 for i, est1 in enumerate(v1.pipeline):
                     # Skip if the transformation was already applied
-                    if step.get(b1, -1) >= i:
-                        continue
+                    if step.get(b1, -1) < i:
+                        custom_transform(est1, branch, verbose=verbose)
 
-                    kwargs["_one_trans"] = i
-                    if est1.train_only:
-                        X, y = catch_return(
-                            transform(
-                                est_branch=v1.pipeline,
-                                X=brch.X_train,
-                                y=brch.y_train,
-                                **kwargs,
-                            )
-                        )
-                        brch.train = merge(X, brch.y_train if y is None else y)
-                    else:
-                        X, y = catch_return(
-                            transform(v1.pipeline, brch.X, brch.y, **kwargs)
-                        )
-                        brch.dataset = merge(X, brch.y if y is None else y)
-
-                        # Update the indices for the train and test set
-                        brch.idx[1] = len(brch.data[brch.data.index >= brch.idx[0]])
-                        brch.idx[0] = len(brch.data[brch.data.index < brch.idx[0]])
-
-                    brch.data = brch.data.reset_index(drop=True)
-
-                    for b2, v2 in cls._branches.items():
-                        try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
-                                # Update the data and step for the other branch
-                                cls._branches[b2].data = copy(brch.data)
-                                cls._branches[b2].idx = copy(brch.idx)
-                                step[b2] = i
-                        except IndexError:
-                            continue
+                        for b2, v2 in cls._branches.items():
+                            try:  # Can fail if pipeline is shorter than i
+                                if b1 != b2 and est1 is v2.pipeline.iloc[i]:
+                                    # Update the data and step for the other branch
+                                    cls._branches[b2].data = copy(branch.data)
+                                    cls._branches[b2].idx = copy(branch.idx)
+                                    step[b2] = i
+                            except IndexError:
+                                continue
 
     cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
 

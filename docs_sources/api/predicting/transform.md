@@ -4,8 +4,8 @@
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None, **kwargs) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
 Transform new data through all transformers in a branch. By default,
- all transformers are included except [outliers](../../ATOM/atomclassifier/#outliers)
- and [balance](../../ATOM/atomclassifier/#balance) since they should
+ all transformers are included except [Pruner](../../data_cleaning/pruner)
+ and [Balancer](../../data_cleaning/balancer) since they should
  only be applied on the training set. Can only be called from atom.
 <table>
 <tr>
@@ -26,7 +26,7 @@ Features to transform, with shape=(n_samples, n_features).
 </blockquote>
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the `training`'s verbosity. Possible values are:
+Verbosity level of the output. If None, it uses the trainer's verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -38,7 +38,7 @@ Verbosity level of the output. If None, it uses the `training`'s verbosity. Poss
 Additional keyword arguments to customize which transformers to apply. You can
  either select them including their index in the <code>pipeline</code> parameter,
  e.g. <code>pipeline=[0, 1, 4]</code> or include/exclude them individually using their
- methods, e.g. <code>outliers=True</code> or <code>feature_selection=False</code>.
+ methods, e.g. <code>pruner=True</code> or <code>featureselector=False</code>.
 </blockquote>
 </tr>
 <tr>
@@ -67,7 +67,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.clean()
 atom.impute(strat_num="knn", strat_cat="drop")
-atom.outliers(strategy="min_max", max_sigma=2)
+atom.prune(strategy="z-score", method="min_max", max_sigma=2)
 
 # Transform new data through all data cleaning steps
 X_transformed = atom.transform(X_new)

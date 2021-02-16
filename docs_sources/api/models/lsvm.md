@@ -61,12 +61,74 @@ Categorical(["l1", "l2"], name="penalty").
 
 ### Data attributes
 
-You can use the same [data attributes](../../ATOM/atomclassifier#data-attributes)
- as the `training` instances to check the dataset that was used to fit a particular
- model. These can differ from each other if the model needs scaled features and the
- data wasn't already scaled. Note that, unlike with the `training` instances, these
- attributes not be updated (i.e. they have no `@setter`).
-<br><br>
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="75%" style="background:white;">
+<strong>dataset: pd.DataFrame</strong>
+<blockquote>
+Complete dataset in the pipeline.
+</blockquote>
+<strong>train: pd.DataFrame</strong>
+<blockquote>
+Training set.
+</blockquote>
+<strong>test: pd.DataFrame</strong>
+<blockquote>
+Test set.
+</blockquote>
+<strong>X: pd.DataFrame</strong>
+<blockquote>
+Feature set.
+</blockquote>
+<strong>y: pd.Series</strong>
+<blockquote>
+Target column.
+</blockquote>
+<strong>X_train: pd.DataFrame</strong>
+<blockquote>
+Training features.
+</blockquote>
+<strong>y_train: pd.Series</strong>
+<blockquote>
+Training target.
+</blockquote>
+<strong>X_test: pd.DataFrame</strong>
+<blockquote>
+Test features.
+</blockquote>
+<strong>y_test: pd.Series</strong>
+<blockquote>
+Test target.
+</blockquote>
+<strong>shape: tuple</strong>
+<blockquote>
+Dataset's shape: (n_rows x n_columns) or
+(n_rows, (shape_sample), n_cols) for deep learning datasets.
+</blockquote>
+<strong>columns: list</strong>
+<blockquote>
+Names of the columns in the dataset.
+</blockquote>
+<strong>n_columns: int</strong>
+<blockquote>
+Number of columns in the dataset.
+</blockquote>
+<strong>features: list</strong>
+<blockquote>
+Names of the features in the dataset.
+</blockquote>
+<strong>n_features: int</strong>
+<blockquote>
+Number of features in the dataset.
+</blockquote>
+<strong>target: str</strong>
+<blockquote>
+Name of the target column.
+</blockquote>
+</tr>
+</table>
+<br>
 
 
 ### Utility attributes

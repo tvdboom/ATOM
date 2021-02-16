@@ -20,11 +20,11 @@ from sklearn.pipeline import Pipeline
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Imputer, Outliers
+from atom.data_cleaning import Imputer, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X10, X10_nan, X10_str, y10, y10_str, y10_sn, mnist,
+    X10, X10_nan, X10_str, y10, y10_str, y10_sn, X20_out, mnist,
 )
 
 
@@ -32,7 +32,7 @@ from .utils import (
 
 def test_test_size_attribute():
     """Assert that the _test_size attribute is created."""
-    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, n_jobs=2, random_state=1)
     assert atom._test_size == len(atom.test) / len(atom.dataset)
 
 
@@ -80,7 +80,7 @@ def test_iter():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
-    assert [item for item in atom][1] == ("impute", atom.pipeline[1])
+    assert [item for item in atom][1] == ("imputer", atom.pipeline[1])
 
 
 def test_len():
@@ -98,7 +98,7 @@ def test_getitem():
     atom.impute()
     atom.encode()
     assert len(atom[1:3]) == 2
-    assert isinstance(atom["impute"], Imputer)
+    assert isinstance(atom["imputer"], Imputer)
     assert isinstance(atom[1], Imputer)
 
 
@@ -144,22 +144,45 @@ def test_branch_setter_from_invalid():
         atom.branch = "new_branch_from_invalid"
 
 
+def test_scaled():
+    """Assert that scaled returns if the dataset is scaled."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.scaled
+    atom.scale()
+    assert atom.scaled
+
+
 def test_nans():
     """Assert that nans returns a series of missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    assert atom.nans.sum() == 1
+    assert atom.nans.sum() == 2
 
 
 def test_n_nans():
-    """Assert that n_nans returns the number of missing values."""
+    """Assert that n_nans returns the number of rows with missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    assert atom.n_nans == 1
+    assert atom.n_nans == 2
+
+
+def test_numerical():
+    """Assert that numerical returns the names of the numerical columns."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.numerical == ["Feature 1", "Feature 2"]
+
+    atom = ATOMClassifier(*mnist, random_state=1)
+    assert atom.numerical == []
+
+
+def test_n_numerical():
+    """Assert that n_categorical returns the number of numerical columns."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.n_numerical == 2
 
 
 def test_categorical():
-    """Assert that categorical returns a list of categorical columns."""
+    """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["Feature 2"]
+    assert atom.categorical == ["Feature 3"]
 
     atom = ATOMClassifier(*mnist, random_state=1)
     assert atom.categorical == []
@@ -168,15 +191,31 @@ def test_categorical():
 def test_n_categorical():
     """Assert that n_categorical returns the number of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.categorical == ["Feature 2"]
+    assert atom.n_categorical == 1
 
 
-def test_scaled():
-    """Assert that scaled returns if the dataset is scaled."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert not atom.scaled
-    atom.scale()
-    assert atom.scaled
+def test_outliers():
+    """Assert that nans returns a series of outlier values."""
+    atom = ATOMClassifier(X20_out, y10 * 2, random_state=1)
+    assert atom.outliers.sum() == 2
+
+
+def test_n_outliers():
+    """Assert that n_outliers returns the number of rows with outliers."""
+    atom = ATOMClassifier(X20_out, y10 * 2, random_state=1)
+    assert atom.n_outliers == 2
+
+
+def test_classes_property():
+    """Assert that the classes property returns a df of the classes in y."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert list(atom.classes.index) == [0, 1, 2]
+
+
+def test_n_classes_property():
+    """Assert that the n_classes property returns the number of classes."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    assert atom.n_classes == 3
 
 
 # Test utility methods ============================================= >>
@@ -197,16 +236,17 @@ def test_transform_method():
 
     # With default arguments
     X_trans = atom.transform(X10_str)
-    assert X_trans["Feature 2"].dtype.kind in "ifu"
+    assert X_trans["Feature 3"].dtype.kind in "ifu"
 
     # Changing arguments
-    X_trans = atom.transform(X10_str, encode=False)
-    assert X_trans["Feature 2"].dtype.kind not in "ifu"
+    X_trans = atom.transform(X10_str, encoder=False)
+    assert X_trans["Feature 3"].dtype.kind not in "ifu"
 
 
 def test_verbose_raises_when_invalid():
     """Assert an error is raised for an invalid value of verbose."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
     pytest.raises(ValueError, atom.transform, X_bin, verbose=3)
 
 
@@ -214,13 +254,13 @@ def test_pipeline_parameter():
     """Assert that the pipeline parameter is obeyed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
-    atom.outliers(max_sigma=1)
+    atom.prune(max_sigma=1)
     X = atom.transform(X_bin, pipeline=[0])  # Only use Cleaner
     assert len(X) == len(X_bin)
 
 
 def test_default_parameters():
-    """Assert that outliers and balance are False by default."""
+    """Assert that prune and balance are False by default."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.balance()
     X = atom.transform(X_bin)
@@ -228,18 +268,18 @@ def test_default_parameters():
 
 
 def test_parameters_are_obeyed():
-    """Assert that only the transformations for the selected parameters are done."""
+    """Assert that it only transforms for the selected parameters."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.outliers(max_sigma=1)
-    X = atom.transform(X_bin, outliers=True)
+    atom.prune(max_sigma=1)
+    X = atom.transform(X_bin, pruner=True)
     assert len(X) != len(X_bin)
 
 
 def test_transform_with_y():
     """Assert that the transform method works when y is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.outliers(max_sigma=2, include_target=True)
-    X, y = atom.transform(X_bin, y_bin, outliers=True)
+    atom.prune(max_sigma=2, include_target=True)
+    X, y = atom.transform(X_bin, y_bin, pruner=True)
     assert len(y) < len(y_bin)
 
 
@@ -287,7 +327,7 @@ def test_add_pipeline():
             ("sfm", SelectFromModel(RandomForestClassifier())),
         ]
     )
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, verbose=2, random_state=1)
     atom.add(pipeline)
     assert list(atom.pipeline.index) == ["scaler", "sfm"]
 
@@ -314,7 +354,7 @@ def test_add_train_only():
     assert check_scaling(atom.X_train) and not check_scaling(atom.X_test)
 
     len_train, len_test = len(atom.train), len(atom.test)
-    atom.add(Outliers(), train_only=True)
+    atom.add(Pruner(), train_only=True)
     assert len(atom.train) != len_train and len(atom.test) == len_test
 
 
@@ -325,7 +365,7 @@ def test_add_complete_dataset():
     assert check_scaling(atom.dataset)
 
     len_dataset = len(atom.dataset)
-    atom.add(Outliers())
+    atom.add(Pruner())
     assert len(atom.dataset) != len_dataset
 
 
@@ -344,11 +384,31 @@ def test_keep_column_names():
     assert all(col in cols for col in atom.columns)
 
 
+def test_subset_columns():
+    """Assert that you can use a subset of the columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+
+    # Column indices
+    cols = atom.columns.copy()
+    atom.scale(columns=[3, 4])
+    assert atom.columns == cols  # All columns are kept
+    assert check_scaling(atom.X.iloc[:, [3, 4]])
+    assert not check_scaling(atom.dataset.iloc[:, [7, 8]])
+
+    # Column names
+    atom.scale(columns=["mean radius", "mean texture"])
+    assert check_scaling(atom.dataset.iloc[:, [0, 1]])
+
+    # Column slice
+    atom.scale(columns=slice(10, 12))
+    assert check_scaling(atom.dataset.iloc[:, [10, 11]])
+
+
 def test_sets_are_kept_equal():
     """Assert that the train and test sets always keep the same rows."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     len_train, len_test = len(atom.train), len(atom.test)
-    atom.add(Outliers())
+    atom.add(Pruner())
     assert len(atom.train) < len_train and len(atom.test) < len_test
 
 
@@ -381,11 +441,11 @@ def test_encode():
     assert all([atom.X[col].dtype.kind in "ifu" for col in atom.X.columns])
 
 
-def test_outliers():
-    """Assert that the outliers method handles outliers in the training set."""
+def test_prune():
+    """Assert that the prune method handles outliers in the training set."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     len_train, len_test = len(atom.train), len(atom.test)
-    atom.outliers()
+    atom.prune()
     assert len(atom.train) != len_train and len(atom.test) == len_test
 
 
@@ -522,6 +582,14 @@ def test_raises_invalid_metric_consecutive_runs():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR", metric="recall")
     pytest.raises(ValueError, atom.run, "Tree", metric="f1")
+
+
+def test_scaling_is_passed():
+    """Assert that the scaling is passed to the trainer."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.scale("minmax")
+    atom.run("LGB")
+    assert atom.dataset.equals(atom.lgb.dataset)
 
 
 def test_errors_are_updated():

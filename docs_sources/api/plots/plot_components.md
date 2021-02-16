@@ -19,7 +19,8 @@ Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>

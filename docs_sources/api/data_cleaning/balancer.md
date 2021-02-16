@@ -4,7 +4,7 @@
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L961">[source]</a></div></pre>
-Balance the number of rows per class in the target column. Use only for classification tasks.
+Balance the number of samples per class in the target column. Use only for classification tasks.
 This class can be accessed from atom through the
  [balance](../../ATOM/atomclassifier/#balance) method. Read more in
  the [user guide](../../../user_guide/#balancing-the-data).
@@ -62,7 +62,11 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 </table>
 <br>
 
+!!!tip
+    Use atom's [classes](../../ATOM/atomclassifier/#data-attributes) attribute
+    for an overview of the target class distribution per data set.
 
+<br>
 
 
 ## Attributes
@@ -72,10 +76,10 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>&lt;estimator_name&gt;: class</strong>
+<strong>&lt;strategy&gt;: imblearn estimator</strong>
 <blockquote>
-Estimator instance (attribute name in all lowercase) used to oversample/undersample
- the data, e.g. <code>balancer.adasyn</code> for the default option.
+Estimator instance (lowercase strategy) used to oversample/undersample
+the data, e.g. <code>balancer.adasyn</code> for the default option.
 </blockquote>
 <strong>mapping: dict</strong>
 <blockquote>

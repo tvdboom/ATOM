@@ -30,7 +30,7 @@ nav:
          - Cleaner: API/data_cleaning/cleaner.md
          - Imputer: API/data_cleaning/imputer.md
          - Encoder: API/data_cleaning/encoder.md
-         - Outliers: API/data_cleaning/outliers.md
+         - Pruner: API/data_cleaning/pruner.md
          - Balancer: API/data_cleaning/balancer.md
     - Feature engineering:
         - FeatureGenerator: API/feature_engineering/feature_generator.md

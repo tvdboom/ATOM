@@ -24,7 +24,8 @@ Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
@@ -48,7 +49,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(["LR", "RF"], metric="recall_weighted")
-atom.RF.plot_feature_importance(show=11, filename="random_forest_importance.png")
+atom.RF.plot_feature_importance(show=11, filename="random_forest_importance")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_feature_importance.png" alt="plot_feature_importance" width="700" height="700"/>

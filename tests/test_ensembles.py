@@ -137,11 +137,19 @@ def test_passthrough():
 
 
 def test_passthrough_scaled():
-    """Assert that the features are scaled when passthrough=True."""
+    """Assert that the features are scaled when models need it."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run(["Tree", "LGB"])
     atom.stacking(passthrough=True)
-    assert check_scaling(atom.stack.dataset.iloc[:, 6:-1])
+    assert check_scaling(atom.stack.X.iloc[:, 2:])
+
+
+def test_passthrough_not_scaled():
+    """Assert that the features are not scaled when models don't need it."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["Tree", "RF"])
+    atom.stacking(passthrough=True)
+    assert not check_scaling(atom.stack.X.iloc[:, 2:])
 
 
 def test_predefined_model():

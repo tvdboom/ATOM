@@ -57,7 +57,7 @@ atom.run(["Tree", "Bag"])
 atom.Tree.plot_confusion_matrix(normalize=True)
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="560"/>
+    <img src="../../../img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="420"/>
 </div>
 
 ```python

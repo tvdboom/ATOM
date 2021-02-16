@@ -41,11 +41,6 @@ def test_needs_scaling():
 
 # Test ATOMLoader ================================================== >>
 
-def test_invalid_verbose():
-    """Assert that an error is raised when verbose is invalid."""
-    pytest.raises(ValueError, ATOMLoader, FILE_DIR + "trainer", verbose=3)
-
-
 def test_load():
     """Assert that a trainer is loaded correctly."""
     trainer = DirectClassifier("LR", random_state=1)
@@ -91,7 +86,7 @@ def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
-    atom.outliers()
+    atom.prune(columns=slice(3, 10))
     atom.balance()
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
@@ -108,7 +103,7 @@ def test_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
-    atom.outliers()
+    atom.prune()
     atom.branch = "branch_2"
     atom.balance()
     atom.feature_generation(strategy="dfs", n_features=5)

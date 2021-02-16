@@ -9,6 +9,7 @@ Description: Module containing the training classes.
 
 # Standard packages
 import numpy as np
+import pandas as pd
 from copy import copy
 from typeguard import typechecked
 from typing import Optional, Union
@@ -141,7 +142,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
         while len(self._models) > 2 ** self.skip_runs - 1:
             # Create the new set of models for the run
             for m in self._models:
-                m.name += str(len(self._models))  # Add n_models to the name
+                m.name += str(len(self._models))
                 m._pred_attrs = [None] * 10  # Avoid shallow copy
                 m._train_idx = len(self.train) // len(self._models)
 
@@ -156,8 +157,10 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
             models.update({m.name: m for m in self._models})
 
             # Select next models for halving
-            best = self.results.apply(lambda row: get_best_score(row), axis=1)
-            best = best.nlargest(n=len(self._models) // 2, keep="first")
+            best = pd.Series(
+                data=[get_best_score(m) for m in self._models],
+                index=[m.name for m in self._models],
+            ).nlargest(n=len(self._models) // 2, keep="first")
             acronyms = [m.acronym for m in self._models if m.name in best.index]
             self._models = CustomDict(
                 {k: copy(v) for k, v in og_models.items() if v.acronym in acronyms}
@@ -226,10 +229,10 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         for run, size in enumerate(self.train_sizes):
             # Select fraction of data to use in this run
             if size <= 1:
-                frac = round(size, 3)
+                frac = round(size, 2)
                 train_idx = int(size * self.branch.idx[0])
             else:
-                frac = round(size / self.branch.idx[0], 3)
+                frac = round(size / self.branch.idx[0], 2)
                 train_idx = size
 
             for m in self._models:

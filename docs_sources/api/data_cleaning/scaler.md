@@ -1,18 +1,27 @@
 # Scaler
 --------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(verbose=0, logger=None)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard", verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L63">[source]</a></div></pre>
-Scales data to mean=0 and std=1. This class is equal to sklearn's
- [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)
- except that it returns a dataframe when provided, and it ignores
- non-numerical columns (instead of raising an exception). This class 
- can be accessed from atom through the [scale](../../ATOM/atomclassifier/#scale)
- method. Read more in the [user guide](../../../user_guide/#scaling-the-feature-set).
+This class applies one of sklearn's scalers. It also returns a dataframe
+when provided, and it ignores non-numerical columns (instead of raising
+an exception). This class can be accessed from atom through the
+[scale](../../ATOM/atomclassifier/#scale) method. Read more in the
+[user guide](../../../user_guide/#scaling-the-feature-set).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
+<strong>strategy: str, optional (default="standard")</strong>
+<blockquote>
+Scaler object with which to scale the data. Options are:
+<ul>
+<li>standard: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">StandardScaler</a>.</li>
+<li>minmax: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">MinMaxScaler</a>.</li>
+<li>maxabs: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">MaxAbsScaler</a>.</li>
+<li>robust: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">RobustScaler</a>.</li>
+</ul>
+</blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
 Verbosity level of the class. Possible values are:
@@ -36,6 +45,12 @@ The default name consists of the class' name followed by the
 </table>
 <br>
 
+!!!tip
+    Use atom's [scaled](../../ATOM/atomclassifier/#data-attributes) attribute
+    to check if the feature set is scaled.
+
+<br>
+
 
 ## Attributes
 -------------
@@ -44,9 +59,9 @@ The default name consists of the class' name followed by the
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="75%" style="background:white;">
-<strong>standard_scaler: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">StandardScaler</a></strong>
+<strong>scaler: sklearn transformer</strong>
 <blockquote>
-Instance with which the data is scaled.
+Estimator's instance with which the data is scaled.
 </blockquote>
 </td>
 </tr>

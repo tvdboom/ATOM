@@ -186,20 +186,6 @@ def test_target_property():
     assert atom.lr.target == atom.target
 
 
-def test_classes_property():
-    """Assert that the classes property returns the unique target classes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.classes.equals(atom.classes)
-
-
-def test_n_classes_property():
-    """Assert that the n_classes property returns the number of target classes."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.n_classes == atom.n_classes
-
-
 # Test utility methods ============================================= >>
 
 def test_delete():

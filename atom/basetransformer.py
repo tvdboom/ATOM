@@ -329,11 +329,8 @@ class BaseTransformer:
             print(msg)
 
         if self.logger is not None and level != 42:
-            if isinstance(msg, str):
-                for text in msg.split("\n"):
-                    self.logger.info(text)
-            else:
-                self.logger.info(str(msg))
+            for text in str(msg).split("\n"):
+                self.logger.info(str(text))
 
     @composed(crash, method_to_log, typechecked)
     def save(self, filename: Optional[str] = None, **kwargs):

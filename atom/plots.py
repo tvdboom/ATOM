@@ -283,6 +283,8 @@ class BasePlotter:
                 rows = model.X.iloc[[len(model.X) + index]]
             else:
                 rows = model.X.iloc[[index]]
+        elif isinstance(index, slice):
+            rows = model.X.iloc[index]
         else:
             rows = model.X.iloc[slice(*index)]
 
@@ -304,10 +306,10 @@ class BasePlotter:
                 )
             return self.mapping[target]
 
-        elif not 0 <= target < self.n_classes:
+        elif not 0 <= target < len(self.y.unique()):
             raise ValueError(
                 "Invalid value for the target parameter. There are "
-                f"{self.n_classes} classes, got {target}."
+                f"{len(self.y.unique())} classes, got {target}."
             )
 
         return target
@@ -662,7 +664,7 @@ class FSPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            legend=("best", 1),
+            legend=("lower right", 1),
             xlabel="Number of features",
             ylabel=ylabel,
             xlim=xlim,
@@ -791,7 +793,7 @@ class BaseModelPlotter(BasePlotter):
         """Plot the bayesian optimization scoring.
 
         Only for models that ran the hyperparameter optimization. This
-        is the same plot as produced by `bo_params={"plot_bo": True}`
+        is the same plot as produced by `bo_params={"plot": True}`
         while running the BO. Creates a canvas with two plots: the
         first plot shows the score of every trial and the second shows
         the distance between the last consecutive steps.
@@ -988,12 +990,8 @@ class BaseModelPlotter(BasePlotter):
                     getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
                 )
 
-                if len(models) == 1:
-                    l_set = f"{set_} - " if len(dataset) > 1 else ""
-                    label = f"{l_set}AUC={m.scoring('roc_auc', set_):.3f}"
-                else:
-                    l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (AUC={m.scoring('roc_auc', set_):.3f})"
+                roc = f" (AUC={round(m.scoring('roc_auc', dataset=set_), 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
         ax.plot([0, 1], [0, 1], lw=2, color="black", alpha=0.7, linestyle="--")
@@ -1062,12 +1060,8 @@ class BaseModelPlotter(BasePlotter):
                     getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
                 )
 
-                if len(models) == 1:
-                    l_set = f"{set_} - " if len(dataset) > 1 else ""
-                    label = f"{l_set}AP={m.scoring('ap', set_):.3f}"
-                else:
-                    l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (AP={m.scoring('ap', set_):.3f})"
+                ap = f" (AP={round(m.scoring('ap', dataset=set_), 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(recall, precision, lw=2, label=label)
 
         self._plot(
@@ -1566,13 +1560,8 @@ class BaseModelPlotter(BasePlotter):
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
-                if len(models) == 1:
-                    l_set = f"{set_} - " if len(dataset) > 1 else ""
-                    label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
-                else:
-                    l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
-
+                r2 = f" (R$^2$={round(m.scoring('r2', dataset=set_), 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
                 ax.scatter(
                     x=getattr(self, f"y_{set_}"),
                     y=getattr(m, f"predict_{set_}"),
@@ -1668,16 +1657,15 @@ class BaseModelPlotter(BasePlotter):
 
         for m in models:
             for set_ in dataset:
-                if len(models) == 1:
-                    l_set = f"{set_} - " if len(dataset) > 1 else ""
-                    label = f"{l_set}R$^2$={m.scoring('r2', set_):.3f}"
-                else:
-                    l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (R$^2$={m.scoring('r2', set_):.3f})"
+                r2 = f" (R$^2$={round(m.scoring('r2', dataset=set_), 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
+                res = np.subtract(
+                    getattr(m, f"predict_{set_}"),
+                    getattr(self, f"y_{set_}"),
+                )
 
-            res = np.subtract(getattr(m, f"predict_{set_}"), getattr(self, f"y_{set_}"))
-            ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
-            ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
+                ax1.scatter(getattr(m, f"predict_{set_}"), res, alpha=0.7, label=label)
+                ax2.hist(res, orientation="horizontal", histtype="step", linewidth=1.2)
 
         # Get limits before drawing the identity line
         xlim, ylim = ax1.get_xlim(), ax1.get_ylim()
@@ -1835,7 +1823,7 @@ class BaseModelPlotter(BasePlotter):
                 title=title,
                 xlabel="Predicted label",
                 ylabel="True label",
-                figsize=figsize if figsize else (8, 8),
+                figsize=figsize if figsize else (8, 6),
                 filename=filename,
                 display=display
             )
@@ -2175,9 +2163,10 @@ class BaseModelPlotter(BasePlotter):
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
 
-                # Get sorted indices and correct for the test set
+                # Get sorted indices
                 sort_idx = np.argsort(getattr(m, f"predict_proba_{set_}")[:, 1])[::-1]
 
+                # Correct indices for the test set (add train set length)
                 if set_ == "test":
                     sort_idx = [i + len(m.y_train) for i in sort_idx]
 
@@ -2185,13 +2174,7 @@ class BaseModelPlotter(BasePlotter):
                 gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
 
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                label = ""
-                if len(models) > 1:
-                    label += m.name
-                if len(models) > 1 and len(dataset) > 1:
-                    label += " - "
-                if len(dataset) > 1:
-                    label += set_
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
                 ax.plot(x, gains, lw=2, label=label)
 
         self._plot(
@@ -2261,19 +2244,16 @@ class BaseModelPlotter(BasePlotter):
                 # Get sorted indices and correct for the test set
                 sort_idx = np.argsort(getattr(m, f"predict_proba_{set_}")[:, 1])[::-1]
 
+                # Correct indices for the test set (add train set length)
                 if set_ == "test":  # Add the training set length to the indices
                     sort_idx = [i + len(m.y_train) for i in sort_idx]
 
                 # Compute cumulative gains
                 gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
 
-                if len(models) == 1:
-                    l_set = f"{set_} - " if len(dataset) > 1 else ""
-                    label = f"{l_set}Lift={round(m.scoring('lift'), 3)}"
-                else:
-                    l_set = f" - {set_}" if len(dataset) > 1 else ""
-                    label = f"{m.name}{l_set} (Lift={round(m.scoring('lift'), 3)})"
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
+                lift = f" (Lift={round(m.scoring('lift', dataset=set_), 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
                 ax.plot(x, gains / x, lw=2, label=label)
 
         self._plot(
@@ -2294,7 +2274,7 @@ class BaseModelPlotter(BasePlotter):
     def bar_plot(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[Union[int, tuple]] = None,
+            index: Optional[Union[int, tuple, slice]] = None,
             show: Optional[int] = None,
             target: Union[int, str] = 1,
             title: Optional[str] = None,
@@ -2318,7 +2298,7 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: int, tuple or None, optional (default=None)
+        index: int, tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), it selects rows n until m. If None, it selects
             all rows in the test set.
@@ -2373,7 +2353,7 @@ class BaseModelPlotter(BasePlotter):
     def beeswarm_plot(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[tuple] = None,
+            index: Optional[Union[tuple, slice]] = None,
             show: Optional[int] = None,
             target: Union[int, str] = 1,
             title: Optional[str] = None,
@@ -2394,7 +2374,7 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: tuple or None, optional (default=None)
+        index: tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), it selects rows n until m. If None, it selects
             all rows in the test set. The beeswarm plot does not
@@ -2450,7 +2430,7 @@ class BaseModelPlotter(BasePlotter):
     def decision_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple]] = None,
+        index: Optional[Union[int, tuple, slice]] = None,
         show: Optional[int] = None,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2476,7 +2456,7 @@ class BaseModelPlotter(BasePlotter):
             models will raise an exception. To avoid this, call
             the plot from a model.
 
-        index: int, tuple or None, optional (default=None)
+        index: int, tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), it selects rows n until m. If None, it selects
             all rows in the test set.
@@ -2526,7 +2506,7 @@ class BaseModelPlotter(BasePlotter):
 
         # Select the target expected value or return all
         if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == m.n_classes:
+            if len(expected_value) == len(m.y.unique()):
                 expected_value = expected_value[target]
 
         fig = self._get_figure()
@@ -2554,7 +2534,7 @@ class BaseModelPlotter(BasePlotter):
     def force_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[Union[int, tuple]] = None,
+        index: Optional[Union[int, tuple, slice]] = None,
         target: Union[str, int] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
@@ -2577,7 +2557,7 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: int, tuple or None, optional (default=None)
+        index: int, tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If (n, m),
             it selects rows n until m. If None, it selects all rows
             in the test set.
@@ -2629,7 +2609,7 @@ class BaseModelPlotter(BasePlotter):
 
         # Select the target expected value or return all
         if isinstance(expected_value, (list, np.ndarray)):
-            if len(expected_value) == m.n_classes:
+            if len(expected_value) == len(m.y.unique()):
                 expected_value = expected_value[target]
 
         sns.set_style("white")  # Only for this plot
@@ -2662,11 +2642,11 @@ class BaseModelPlotter(BasePlotter):
     def heatmap_plot(
             self,
             models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[tuple] = None,
+            index: Optional[Union[tuple, slice]] = None,
             show: Optional[int] = None,
             target: Union[int, str] = 1,
             title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+            figsize: Tuple[SCALAR, SCALAR] = (8, 6),
             filename: Optional[str] = None,
             display: bool = True,
             **kwargs,
@@ -2686,7 +2666,7 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: tuple or None, optional (default=None)
+        index: tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), it selects rows n until m. If None, it selects
             all rows in the test set. The heatmap plot does not
@@ -2703,7 +2683,7 @@ class BaseModelPlotter(BasePlotter):
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
-        figsize: tuple or None, optional (default=(10, 6)))
+        figsize: tuple or None, optional (default=(8, 6)))
             Figure's size, format as (x, y).
 
         filename: str or None, optional (default=None)
@@ -2735,7 +2715,7 @@ class BaseModelPlotter(BasePlotter):
     def scatter_plot(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        index: Optional[tuple] = None,
+        index: Optional[Union[tuple, slice]] = None,
         feature: Union[int, str] = 0,
         target: Union[int, str] = 1,
         title: Optional[str] = None,
@@ -2760,7 +2740,7 @@ class BaseModelPlotter(BasePlotter):
             will raise an exception. To avoid this, call the plot from
             a model.
 
-        index: tuple or None, optional (default=None)
+        index: tuple, slice or None, optional (default=None)
             Indices of the rows in the dataset to plot. If shape
             (n, m), it selects rows n until m. If None, it selects
             all rows in the test set. The scatter plot does not
@@ -2942,7 +2922,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
         for m in models:
             y[m._group].append(get_best_score(m, metric))
-            x[m._group].append(len(self.train) // m._train_idx)
+            x[m._group].append(m.branch.idx[0] // m._train_idx)
             if m.std_bagging:
                 std[m._group].append(lst(m.std_bagging)[metric])
 

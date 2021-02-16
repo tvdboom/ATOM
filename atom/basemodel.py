@@ -12,14 +12,12 @@ import pandas as pd
 from typeguard import typechecked
 from typing import Optional
 from sklearn.metrics import SCORERS, confusion_matrix
-from shap import Explainer
 
 # Own modules
 from .plots import BaseModelPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS,
-    merge, arr, check_scaling, catch_return, transform, composed,
-    crash, method_to_log,
+    merge, arr, catch_return, custom_transform, composed, crash, method_to_log,
 )
 
 
@@ -59,18 +57,20 @@ class BaseModel(BaseModelPlotter):
     @property
     def results(self):
         """Return the results as a pd.Series."""
-        data = {
-            "metric_bo": getattr(self, "metric_bo", None),
-            "time_bo": getattr(self, "time_bo", None),
-            "metric_train": getattr(self, "metric_train", None),
-            "metric_test": getattr(self, "metric_test", None),
-            "time_fit": getattr(self, "time_fit", None),
-            "mean_bagging": getattr(self, "mean_bagging", None),
-            "std_bagging": getattr(self, "std_bagging", None),
-            "time_bagging": getattr(self, "time_bagging", None),
-            "time": getattr(self, "time", None),
-        }
-        return pd.Series(data, name=self.name)
+        return pd.Series(
+            {
+                "metric_bo": getattr(self, "metric_bo", None),
+                "time_bo": getattr(self, "time_bo", None),
+                "metric_train": getattr(self, "metric_train", None),
+                "metric_test": getattr(self, "metric_test", None),
+                "time_fit": getattr(self, "time_fit", None),
+                "mean_bagging": getattr(self, "mean_bagging", None),
+                "std_bagging": getattr(self, "std_bagging", None),
+                "time_bagging": getattr(self, "time_bagging", None),
+                "time": getattr(self, "time", None),
+            },
+            name=self.name,
+        )
 
     # Prediction methods =========================================== >>
 
@@ -112,13 +112,21 @@ class BaseModel(BaseModelPlotter):
             )
 
         # When there is a pipeline, apply transformations first
-        if not self.branch.pipeline.empty:
-            if kwargs.get("verbose") is None:
-                kwargs["verbose"] = self.T.verbose
-            X, y = catch_return(transform(self.branch.pipeline, X, y, **kwargs))
+        for i, (idx, est) in enumerate(self.branch.pipeline.iteritems()):
+            p = kwargs.get("pipeline", [])
+            default = not p and not est.train_only and kwargs.get(idx) is None
+            if i in p or idx in p or kwargs.get(idx) or default:
+                X, y = catch_return(
+                    custom_transform(
+                        transformer=est,
+                        branch=self.branch,
+                        data=(X, y),
+                        verbose=kwargs.get("verbose", self.T.verbose),
+                    )
+                )
 
         # Scale the data if needed
-        if self.needs_scaling and not check_scaling(X):
+        if self.scaler:
             X = self.scaler.transform(X)
 
         if y is None:
@@ -270,34 +278,27 @@ class BaseModel(BaseModelPlotter):
 
     @property
     def shape(self):
-        return self.dataset.shape
+        return self.branch.shape
 
     @property
     def columns(self):
         return self.branch.columns
 
     @property
+    def n_columns(self):
+        return self.branch.n_columns
+
+    @property
     def features(self):
         return self.branch.features
 
     @property
+    def n_features(self):
+        return self.branch.n_features
+
+    @property
     def target(self):
         return self.branch.target
-
-    @property
-    def classes(self):
-        return pd.DataFrame(
-            {
-                "dataset": self.y.value_counts(sort=False, dropna=False),
-                "train": self.y_train.value_counts(sort=False, dropna=False),
-                "test": self.y_test.value_counts(sort=False, dropna=False),
-            },
-            index=self.branch.mapping.values()
-        ).fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-
-    @property
-    def n_classes(self):
-        return len(self.y.unique())
 
     # Utility methods ============================================== >>
 

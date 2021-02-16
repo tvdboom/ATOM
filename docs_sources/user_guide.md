@@ -69,6 +69,11 @@ concepts related to this package.
   and a random state.
 * **missing values**: Values in the `missing` attribute.
 * **model**: Instance of a [model](#models) in the pipeline.
+* **outlier**: Sample that contains one or more outlier values. Note that the
+  [Pruner](../API/data_cleaning/pruner) class can use a different definition for
+  outliers depending on the chosen strategy.
+* **outlier value**: Value that lies further than 3 times the standard_deviation away
+  from the mean of its column (|z-score| > 3).
 * **pipeline**: All the content in atom for a specific branch.
 * **predictor**: An estimator implementing a `predict` method. This encompasses all
   classifiers and regressors.
@@ -219,11 +224,11 @@ before they are ready to be ingested by a model. ATOM provides various
 classes to apply [data cleaning](#data-cleaning) and
 [feature engineering](#feature-engineering) transformations to the data.
 This tooling should be able to help you apply most of the typically needed
-transformations to get the data ready for modelling. For further fine-tuning,
-it is also possible to pre-process the data using custom transformers. They
-can be added to the pipeline using atom's [add](../API/ATOM/atomclassifier/#add)
-method. Remember that all transformers are only applied on the dataset in
-the current branch.
+transformations to get the data ready for modelling. For further
+fine-tuning, it is also possible to pre-process the data using
+custom transformers. They can be added to the pipeline using atom's
+[add](../API/ATOM/atomclassifier/#add) method. Remember that all
+transformations are only applied to the dataset in the current branch.
 
 <br>
 
@@ -255,16 +260,29 @@ and writing many lines of code. Since ATOM is all about fast exploration
 and experimentation, it provides various data cleaning classes to apply 
 the most common transformations fast and easy.
 
+!!!note
+    All of atom's data cleaning methods automatically adopt the relevant
+    attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
+    atom. A different choice can be added as parameter to the method call,
+    e.g. `atom.scale(verbose=2)`.
+
+!!!note
+    Like the [add](../API/ATOM/atomclassifier/#add) method, the data cleaning
+    methods accept the `columns` parameter to only transform a subset of the
+    dataset's features, e.g. `atom.scale(columns=[0, 1]`.
+
+
 <br>
 
 ### Scaling the feature set
 
 Standardization of a dataset is a common requirement for many machine
-learning estimators: they might behave badly if the individual features
+learning estimators; they might behave badly if the individual features
 do not more or less look like standard normally distributed data (e.g.
-Gaussian with 0 mean and unit variance). The [Scaler](../API/data_cleaning/scaler)
-class scales data to mean=0 and std=1. It can be accessed from atom 
-through the [scale](../API/ATOM/atomclassifier/#scale) method. 
+Gaussian with zero mean and unit variance). The [Scaler](../API/data_cleaning/scaler)
+class let you quickly scale atom's dataset using one of sklearn's scalers.
+It can be accessed from atom through the [scale](../API/ATOM/atomclassifier/#scale)
+method. 
 
 <br>
 
@@ -279,10 +297,11 @@ method. Use the class' parameters to choose which transformations to
 perform. The available steps are:
 
 * Remove columns with prohibited data types.
-* Strip categorical features from white spaces.
 * Remove categorical columns with maximal cardinality.
 * Remove columns with minimum cardinality.
-* Remove rows with missing values in the target column.
+* Strip categorical features from white spaces.
+* Drop duplicate rows.
+* Drop rows with missing values in the target column.
 * Encode the target column.
 
 <br>
@@ -300,7 +319,7 @@ method.
 
 !!!tip
     Use atom's [missing](../API/ATOM/atomclassifier/#data-attributes) attribute
-    for an overview of the missing values in the dataset.
+    to check the amount of missing values per feature.
 
 <br>
 
@@ -318,10 +337,10 @@ accessed from atom through the [encode](../API/ATOM/atomclassifier/#encode)
 method.
 
 !!!tip
-    Use atom's [categorical](../API/ATOM/atomclassifier/#data-attributes) attribute
-    for a list of the categorical columns in the dataset.
+    Use atom's [categorical](../API/ATOM/atomclassifier/#data-attributes)
+    attribute for a list of the categorical features in the dataset.
 
-<br> 
+<br>
 
 ### Handling outliers
 
@@ -330,12 +349,93 @@ the observations best represent the problem. Sometimes a dataset can
 contain extreme values that are outside the range of what is expected
 and unlike the other data. These are called outliers. Often, machine
 learning modeling and model skill in general can be improved by 
-understanding and even removing these outlier values. The [Outliers](../API/data_cleaning/outliers) 
-class can drop or impute outliers in the dataset. It can be accessed
-from atom through the [outliers](../API/ATOM/atomclassifier/#outliers)
+understanding and even removing these outlier samples. The [Pruner](../API/data_cleaning/pruner) 
+class offers 5 different strategies to detect outliers (described
+hereunder). It can be accessed from atom through the [prune](../API/ATOM/atomclassifier/#prune)
 method.
 
-<br> 
+!!!tip
+    Use atom's [outliers](../API/ATOM/atomclassifier/#data-attributes) attribute
+    to check the number of outliers per column.
+
+
+**z-score**<br>
+The z-score of a value in the dataset is defined as the number of standard
+deviations by which the value is above or below the mean of the column.
+Values above or below a certain threshold (specified with the parameter
+`max_sigma`) are considered outliers. Note that, contrary to the rest of
+the strategies, this approach selects outlier values, not outlier samples!
+Because of this, it is possible to replace the outlier value instead of
+simply dropping the sample.
+
+
+**Isolation Forest**<br>
+Uses a tree-based anomaly detection algorithm. It is based
+on modeling the normal data in such a way as to isolate anomalies that are
+both few and different in the feature space.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#isolation-forest).
+
+
+**Elliptic Envelope**<br>
+If the input variables have a Gaussian distribution, then simple statistical
+methods can be used to detect outliers. For example, if the dataset has two
+input variables and both are Gaussian, then the feature space forms a
+multi-dimensional Gaussian and knowledge of this distribution can be used to
+identify values far from the distribution. This approach can be generalized by
+defining a hypersphere (ellipsoid) that covers the normal data, and data that
+falls outside this shape is considered an outlier.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#fitting-an-elliptic-envelope).
+
+
+**Local Outlier Factor**<br>
+A simple approach to identifying outliers is to locate those examples that
+are far from the other examples in the feature space. This can work well
+for feature spaces with low dimensionality (few features) but will become
+less reliable as the number of features is increased. This is referred to
+as the curse of dimensionality.
+
+The local outlier factor is a technique that attempts to harness the idea
+of nearest neighbors for outlier detection. Each example is assigned a
+scoring of how isolated or how likely it is to be outliers based on the size
+of its local neighborhood. Those examples with the largest score are more
+likely to be outliers.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#local-outlier-factor).
+
+
+**One-class SVM**<br>
+The support vector machine algorithm developed initially for binary
+classification can be used for one-class classification. When modeling
+one class, the algorithm captures the density of the majority class and
+classifies examples on the extremes of the density function as outliers.
+This modification of SVM is referred to as One-Class SVM.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#novelty-detection).
+
+
+**DBSCAN**<br>
+The DBSCAN algorithm views clusters as areas of high density separated by
+areas of low density. Due to this rather generic view, clusters found by
+DBSCAN can be any shape, as opposed to k-means which assumes that clusters
+are convex shaped. Samples that lie outside any cluster are considered outliers.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/clustering.html#dbscan).
+
+
+**OPTICS**<br>
+The OPTICS algorithm shares many similarities with the DBSCAN algorithm,
+and can be considered a generalization of DBSCAN that relaxes the eps
+requirement from a single value to a value range. The key difference
+between DBSCAN and OPTICS is that the OPTICS algorithm builds a reachability
+graph, and a spot within the cluster ordering. These two attributes are
+assigned when the model is fitted, and are used to determine cluster membership.
+
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/clustering.html#optics).
+
+
+<br>
 
 ### Balancing the data
 
@@ -378,6 +478,16 @@ useless features can drop your performance. To avoid this, we perform
 feature selection, a process in which we select the relevant features 
 in the dataset. See the <a href="../examples/feature_engineering.html" target="_blank">Feature engineering</a> example.
 
+!!!note
+    All of atom's feature engineering methods automatically adopt the relevant
+    attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
+    atom. A different choice can be added as parameter to the method call,
+    e.g. `atom.feature_selection("SFM", solver="LGB", n_features=10, n_jobs=4)`.
+
+!!!note
+    Like the [add](../API/ATOM/atomclassifier/#add) method, the feature engineering
+    methods accept the `columns` parameter to only transform a subset of the
+    dataset's features, e.g. `atom.feature_selection("SFM", solver="LGB", n_features=10, columns=slice(5, 15))`.
 
 <br>
 
@@ -474,8 +584,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 **Principal Components Analysis**<br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
 the variance of each dimension. The new features will be called Component
-0, Component 1, etc... The dataset will be scaled before applying the
-transformation (if it wasn't already).
+1, Component 2, etc... The data will be scaled to mean=0 and std=1 before
+fitting the transformer (if it wasn't already).
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
 
@@ -733,14 +843,14 @@ Additional things to take into account:
 * Models that need feature scaling will do so automatically before
   training if the features are not already scaled.
 * If an exception is encountered while fitting an estimator, the
-  pipeline will automatically jump to the next model and save the
-  exception in the `errors` attribute. Note that in that case,
-  there will be no model for that estimator.
+  pipeline will automatically jump to the next model. The errors are
+  stored in the `errors` attribute. Note that in case a model is skipped,
+  there will be no model subclass for that estimator.
 * When showing the final results, a `!` indicates the highest score
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
 * The winning model (the one with the highest `mean_bagging` or
-  `metric_test`) will be attached to the `winner` attribute.
+  `metric_test`) can be accessed through the `winner` attribute.
 
 <br>
 

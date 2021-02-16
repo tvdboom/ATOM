@@ -167,13 +167,13 @@ def test_invalid_delta_y():
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-def test_plot_bo():
-    """Assert than plot_bo runs without errors."""
+def test_plot():
+    """Assert that plotting the BO runs without errors."""
     trainer = DirectClassifier(
         models=["lSVM", "kSVM", "MLP"],
         n_calls=35,
         n_initial_points=20,
-        bo_params={"plot_bo": True},
+        bo_params={"plot": True},
         random_state=1,
     )
     trainer.run(bin_train, bin_test)

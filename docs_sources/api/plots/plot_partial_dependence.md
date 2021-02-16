@@ -60,14 +60,14 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.feature_selection(strategy="PCA", n_features=6)
 atom.run(["Tree", "Bag"], metric="precision")
-atom.Tree.plot_partial_dependence(features=[0, 1, (1, 3)])
+atom.plot_partial_dependence()
 ```
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_1.png" alt="plot_partial_dependence_1" width="700" height="420"/>
 </div>
 <br>
 ```python
-atom.plot_partial_dependence()
+atom.tree.plot_partial_dependence(features=[0, 1, (1, 3)])
 ```
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>

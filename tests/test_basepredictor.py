@@ -126,6 +126,22 @@ def test_results_property_dropna():
     assert "mean_bagging" not in atom.results
 
 
+def test_results_property_successive_halving():
+    """Assert that the results works for successive halving runs."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.successive_halving(["LR", "Tree"])
+    assert atom.results.shape == (3, 4)
+    assert list(atom.results.index.get_level_values(0)) == [0.5, 0.5, 1.0]
+
+
+def test_results_property_train_sizing():
+    """Assert that the results works for train sizing runs."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.train_sizing("LR")
+    assert atom.results.shape == (5, 4)
+    assert list(atom.results.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
+
+
 def test_winner_property():
     """Assert that the winner property returns the best model in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

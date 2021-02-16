@@ -61,7 +61,12 @@ class Branch:
         # Make copies of the params to not overwrite mutable variables
         self.T, self.name = args[0], args[1]
         if not parent:
-            self.pipeline = pd.Series([], name=self.name, dtype="object")
+            self.pipeline = pd.Series(
+                data=[],
+                name=self.name,
+                index=pd.Index([], dtype=str),
+                dtype="object",
+            )
             self.data = None
             self.idx = None
             self.mapping = None
@@ -355,19 +360,3 @@ class Branch:
     def target(self):
         """Name of the target column."""
         return self.columns[-1]
-
-    @property
-    def classes(self):
-        """Number of samples per class and per data set."""
-        df = pd.DataFrame({
-            "dataset": self.y.value_counts(sort=False, dropna=False),
-            "train": self.y_train.value_counts(sort=False, dropna=False),
-            "test": self.y_test.value_counts(sort=False, dropna=False),
-        }, index=self.mapping.values())
-
-        return df.fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
-
-    @property
-    def n_classes(self):
-        """Number of classes in the target column."""
-        return len(self.y.unique())

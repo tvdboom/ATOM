@@ -22,7 +22,7 @@ from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, dct,
     time_to_string, get_acronym, get_metric, get_default_metric,
-    delete, PlotCallback, CustomDict,
+    check_scaling, delete, PlotCallback, CustomDict,
 )
 
 
@@ -116,13 +116,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 array to share the same dimensions across models
                 or a dictionary with the model names as key. If
                 None, ATOM's predefined dimensions are used.
-            - plot_bo: bool, optional (default=False)
+            - plot: bool, optional (default=False)
                 Whether to plot the BO's progress as it runs.
                 Creates a canvas with two plots: the first plot
                 shows the score of every trial and the second shows
                 the distance between the last consecutive steps.
-                Don't forget to call `%matplotlib` at the start of
-                the cell if you are using an interactive notebook!
             - Additional keyword arguments for skopt's optimizer.
 
     bagging: int or sequence, optional (default=0)
@@ -206,6 +204,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Training attributes
         self.task = None
+        self.scaled = None
         self.errors = {}
 
         # BO attributes
@@ -217,6 +216,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def _check_parameters(self):
         """Check the validity of the input parameters."""
+        if self.mapping is None:
+            self.mapping = {str(v): v for v in sorted(self.y.unique())}
+
+        if self.scaled is None:
+            self.scaled = check_scaling(self.X)
+
+        # Create model subclasses ================================== >>
+
         models = []
         for m in self._models:
             if isinstance(m, str):
@@ -265,12 +272,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 needs_proba=self.needs_proba,
                 needs_threshold=self.needs_threshold,
             )
-
-        # Assign mapping =========================================== >>
-
-        # Is already filled if called from atom
-        if not self.mapping:
-            self.mapping = {str(v): v for v in sorted(self.y.unique())}
 
         # Check validity sequential parameters ===================== >>
 
@@ -336,7 +337,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
             self._callbacks.append(DeltaYStopper(self.bo_params["delta_y"], n_best=5))
 
-        if self.bo_params.get("plot_bo"):
+        if self.bo_params.get("plot"):
             self._callbacks.append(PlotCallback(self))
 
         if "cv" in self.bo_params:
@@ -378,7 +379,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             "cv",
             "callbacks",
             "dimensions",
-            "plot_bo",
+            "plot",
         ]
 
         # The remaining bo_params are added as kwargs to the optimizer
@@ -460,18 +461,15 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 # Cannot remove immediately to maintain the iteration order
                 to_remove.append(m.name)
 
-        # Close the BO plot if there was one
-        if self.bo_params.get("plot_bo"):
-            plt.close()
+                if self.bo_params.get("plot"):
+                    PlotCallback.c += 1  # Next model
+                    plt.close()  # Close the crashed plot
 
-        # Remove faulty models
-        delete(self, to_remove)
+        delete(self, to_remove)  # Remove faulty models
 
         # Raise an exception if all models failed
         if not self._models:
             raise RuntimeError("It appears all models failed to run...")
-
-        # Print final results ====================================== >>
 
         self.log("\n\nFinal results ========================= >>", 1)
         self.log(f"Duration: {time_to_string(t_init)}\n" + "-" * 42, 1)

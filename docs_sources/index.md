@@ -90,13 +90,14 @@ Example steps taken by ATOM's pipeline:
 ### Version 4.3.0 - dev
 
 * Possibility to [add](./API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
-* The [export_pipeline](./API/ATOM/atomclassifier/#export-pipeline) utility method extracts atom's current pipeline as a sklearn object.
+* The [export_pipeline](./API/ATOM/atomclassifier/#export-pipeline) utility method exports atom's current pipeline to a sklearn object.
 * Use [AutoML](./user_guide/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](./user_guide/#training) can now be combined in the same atom instance.
-* The results dataframe is now equal for all training approaches (multi-index is deprecated).
 * Complete rework of all the [shap plots](./user_guide#shap) to be consistent with their new API.
+* Improvements for the [Scaler](./API/ATOM/data_cleaning/scaler) and [Pruner](./API/ATOM/data_cleaning/pruner) classes.
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
+* Possibility to apply transformations on only a subset of the columns.
 * Plots and methods now accept `winner` as model name.
 * Fixed a bug where custom metrics didn't show the correct name.
 * Fixed a bug where timers were not displayed correctly.
@@ -214,7 +215,7 @@ Example steps taken by ATOM's pipeline:
         - [Cleaner](./API/data_cleaning/cleaner)
         - [Imputer](./API/data_cleaning/imputer)
         - [Encoder](./API/data_cleaning/encoder)
-        - [Outliers](./API/data_cleaning/outliers)
+        - [Pruner](./API/data_cleaning/pruner)
         - [Balancer](./API/data_cleaning/balancer)
     - Feature engineering
         - [FeatureGenerator](./API/feature_engineering/feature_generator)

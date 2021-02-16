@@ -14,16 +14,16 @@ from typeguard import typechecked
 from typing import Union, Optional
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, ENCODER_TYPES, BALANCER_TYPES,
-    it, variable_return, to_df, to_series, merge, check_is_fitted,
-    composed, crash, method_to_log
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS, ENCODING_STRATS,
+    PRUNING_STRATS, BALANCING_STRATS, it, variable_return, to_df,
+    to_series, merge, check_is_fitted, composed, crash, method_to_log,
 )
 
 
@@ -69,14 +69,21 @@ class TransformerMixin:
 
 
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Scale data to mean=0 and std=1.
+    """Scale the data.
 
-    This class is equal to sklearn's StandardScaler except that it
-    returns a dataframe when provided, and it ignores non-numerical
+    This class applies one of sklearn's scalers. Additionally, it
+    returns a dataframe when provided and it ignores non-numerical
     columns (instead of raising an exception).
 
     Parameters
     ----------
+    strategy: str, optional (default="standard")
+        Scaler object with which to scale the data. Options are:
+            - standard: Scale with StandardScaler.
+            - minmax: Scale with MinMaxScaler.
+            - maxabs: Scale with MaxAbsScaler.
+            - robust: Scale with RobustScaler.
+
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -92,15 +99,21 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    standard_scaler: StandardScaler
+    scaler: class
         Instance with which the data is scaled.
 
     """
 
     @typechecked
-    def __init__(self, verbose: int = 0, logger: Optional[Union[str, callable]] = None):
+    def __init__(
+            self,
+            strategy: str = "standard",
+            verbose: int = 0,
+            logger: Optional[Union[str, callable]] = None
+    ):
         super().__init__(verbose=verbose, logger=logger)
-        self.standard_scaler = None
+        self.strategy = strategy
+        self.scaler = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -121,8 +134,16 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
-        self.standard_scaler = StandardScaler().fit(X.select_dtypes(include="number"))
 
+        if self.strategy.lower() in SCALING_STRATS:
+            self.scaler = SCALING_STRATS[self.strategy.lower()]()
+        else:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                "Available options are: standard, minmax, maxabs, robust."
+            )
+
+        self.scaler.fit(X.select_dtypes(include="number"))
         self._is_fitted = True
         return self
 
@@ -148,8 +169,8 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
-        X_numerical = X.select_dtypes(include="number")
-        X_transformed = self.standard_scaler.transform(X_numerical)
+        X_numerical = X.select_dtypes(include=["int64", "float64"])
+        X_transformed = self.scaler.transform(X_numerical)
 
         # Replace the numerical columns with the transformed values
         for i, col in enumerate(X_numerical):
@@ -164,19 +185,17 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     Use the parameters to choose which transformations to perform.
     The available steps are:
         - Remove columns with prohibited data types.
-        - Strip categorical features from white spaces.
         - Remove categorical columns with maximal cardinality.
         - Remove columns with minimum cardinality.
-        - Remove rows with missing values in the target column.
+        - Strip categorical features from white spaces.
+        - Drop duplicate rows.
+        - Drop rows with missing values in the target column.
         - Encode the target column.
 
     Parameters
     ----------
     prohibited_types: str, sequence or None, optional (default=None)
         Columns with these types will be removed from the dataset.
-
-    strip_categorical: bool, optional (default=True)
-        Whether to strip spaces from the categorical columns.
 
     maximum_cardinality: bool, optional (default=True)
         Whether to remove categorical columns with maximum cardinality,
@@ -187,8 +206,15 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Whether to remove columns with minimum cardinality, i.e. all
         values in the column are the same.
 
+    strip_categorical: bool, optional (default=True)
+        Whether to strip spaces from the categorical columns.
+
+    drop_duplicates: bool, optional (default=False)
+        Whether to drop duplicate rows. Only the first occurrence of
+        every duplicated row is kept.
+
     missing_target: bool, optional (default=True)
-        Whether to remove rows with missing values in the target column.
+        Whether to drop rows with missing values in the target column.
         Is ignored if y is not provided.
 
     encode_target: bool, optional (default=True)
@@ -227,9 +253,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        strip_categorical: bool = True,
         maximum_cardinality: bool = True,
         minimum_cardinality: bool = True,
+        strip_categorical: bool = True,
+        drop_duplicates: bool = False,
         missing_target: bool = True,
         encode_target: bool = True,
         verbose: int = 0,
@@ -237,9 +264,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.prohibited_types = prohibited_types
-        self.strip_categorical = strip_categorical
         self.maximum_cardinality = maximum_cardinality
         self.minimum_cardinality = minimum_cardinality
+        self.strip_categorical = strip_categorical
+        self.drop_duplicates = drop_duplicates
         self.missing_target = missing_target
         self.encode_target = encode_target
 
@@ -316,8 +344,12 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
                 X = X.drop(col, axis=1)
 
+        # Drop duplicate samples
+        if self.drop_duplicates:
+            X = X.drop_duplicates(ignore_index=True)
+
         if y is not None:
-            # Delete rows with NaN in target
+            # Delete samples with NaN in target
             if self.missing_target:
                 length = len(y)  # Save original length to count deleted rows later
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
@@ -325,7 +357,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                 diff = length - len(y)  # Difference in size
                 if diff > 0:
                     self.log(
-                        f" --> Dropping {diff} rows with "
+                        f" --> Dropping {diff} samples with "
                         "missing values in target column.", 2
                     )
 
@@ -521,7 +553,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         # Replace missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
-        # Drop rows with too many NaN values
+        # Drop samples with too many NaN values
         length = len(X)
         X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
         if y is not None:
@@ -529,7 +561,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         diff = length - len(X)
         if diff > 0:
             self.log(
-                f" --> Dropping {diff} rows for containing less than "
+                f" --> Dropping {diff} samples for containing less than "
                 f"{int(self.min_frac_rows*100)}% non-missing values.", 2
             )
 
@@ -562,7 +594,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
-                        f" --> Dropping {nans} rows due to missing "
+                        f" --> Dropping {nans} samples due to missing "
                         f"values in feature {col}.", 2
                     )
 
@@ -594,7 +626,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     if y is not None:
                         y = y[y.index.isin(X.index)]
                     self.log(
-                        f" --> Dropping {nans} rows due to missing "
+                        f" --> Dropping {nans} samples due to missing "
                         f"values in feature {col}.", 2
                     )
 
@@ -704,12 +736,12 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         # Check Parameters
         if self.strategy.lower().endswith("encoder"):
             self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
-        if self.strategy.lower() not in ENCODER_TYPES:
+        if self.strategy.lower() not in ENCODING_STRATS:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(ENCODER_TYPES)}."
+                f"Choose from: {', '.join(ENCODING_STRATS)}."
             )
-        strategy = ENCODER_TYPES[self.strategy.lower()]
+        strategy = ENCODING_STRATS[self.strategy.lower()]
 
         if self.max_onehot is None:
             self.max_onehot = 0
@@ -814,27 +846,40 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         return X
 
 
-class Outliers(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Remove or replace outliers in the data.
+class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Prune outliers from the data.
 
-    Outliers are values that lie further than `max_sigma` * std
-    away from the mean of the column. Ignores categorical columns.
+    Replace or remove outliers. The definition of outlier depends
+    on the selected strategy and can greatly differ from one each
+    other. Ignores categorical columns.
 
     Parameters
     ----------
-    strategy: int, float or str, optional (default="drop")
-        Strategy to apply on the outliers. Choose from:
-            - "drop": Drop any row with outliers.
+    strategy: str, optional (default="z-score")
+        Strategy with which to select the outliers. Choose from:
+            - "z-score": Uses the z-score of each data value.
+            - "iForest": Uses an Isolation Forest.
+            - "EE": Uses an Elliptic Envelope.
+            - "LOF": Uses a Local Outlier Factor.
+            - "SVM": Uses a One-class SVM.
+            - "DBSCAN": Uses DBSCAN clustering.
+            - "OPTICS": Uses OPTICS clustering.
+
+    method: int, float or str, optional (default="drop")
+        Method to apply on the outliers. Only the z-score strategy
+        accepts another method than "drop". Choose from:
+            - "drop": Drop any sample with outlier values.
             - "min_max": Replace outlier with the min/max of the column.
             - Any numerical value with which to replace the outliers.
 
     max_sigma: int or float, optional (default=3)
-        Maximum allowed standard deviations from the mean of the column.
-        If more, it is considered an outlier.
+        Maximum allowed standard deviations from the mean of the
+        column. If more, it is considered an outlier. Only if
+        strategy="z-score".
 
     include_target: bool, optional (default=False)
-        Whether to include the target column in the transformation. This
-        can be useful for regression tasks.
+        Whether to include the target column in the transformation.
+        This can be useful for regression tasks.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -850,21 +895,28 @@ class Outliers(BaseEstimator, TransformerMixin, BaseTransformer):
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
 
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
     """
 
     @typechecked
     def __init__(
         self,
-        strategy: Union[int, float, str] = "drop",
+        strategy: str = "z-score",
+        method: Union[int, float, str] = "drop",
         max_sigma: Union[int, float] = 3,
         include_target: bool = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
+        **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
+        self.method = method
         self.max_sigma = max_sigma
         self.include_target = include_target
+        self.kwargs = kwargs
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -893,70 +945,87 @@ class Outliers(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         # Check Parameters
-        if isinstance(self.strategy, str):
-            if self.strategy.lower() not in ["drop", "min_max"]:
+        if self.strategy.lower() not in ["z-score"] + list(PRUNING_STRATS):
+            raise ValueError(
+                "Invalid value for the strategy parameter. Choose from: "
+                f"z-score, {', '.join(PRUNING_STRATS)}."
+            )
+        if isinstance(self.method, str):
+            if self.method.lower() not in ["drop", "min_max"]:
                 raise ValueError(
-                    "Invalid value for the strategy parameter."
+                    "Invalid value for the method parameter."
                     f"Choose from: 'drop', 'min_max'."
                 )
+        if self.strategy.lower() != "z-score" and str(self.method).lower() != "drop":
+            raise ValueError(
+                "Invalid value for the method parameter. Only the z-score "
+                f"strategy accepts another method than 'drop', got {self.method}."
+            )
         if self.max_sigma <= 0:
             raise ValueError(
                 "Invalid value for the max_sigma parameter."
                 f"Value should be > 0, got {self.max_sigma}."
             )
 
-        self.log("Handling outliers...", 1)
+        self.log("Pruning outliers...", 1)
 
         # Prepare dataset (merge with y and exclude categorical columns)
         objective = merge(X, y) if self.include_target and y is not None else X
         objective = objective.select_dtypes(exclude=["category", "object"])
 
-        # Get z-scores
-        z_scores = zscore(objective, nan_policy="propagate")
+        if self.strategy.lower() == "z-score":
+            z_scores = zscore(objective, nan_policy="propagate")
 
-        if not isinstance(self.strategy, str):
-            cond = np.abs(z_scores) > self.max_sigma
-            objective = objective.mask(cond, self.strategy)
-            if cond.sum() > 0:
+            if not isinstance(self.method, str):
+                cond = np.abs(z_scores) > self.max_sigma
+                objective = objective.mask(cond, self.method)
                 self.log(
-                    f" --> Replacing {cond.sum()} outliers with "
-                    f"value {self.strategy}.", 2
+                    f" --> Replacing {cond.sum()} outlier values with {self.method}.", 2
                 )
 
-        elif self.strategy.lower() == "min_max":
-            counts = 0
-            for i, col in enumerate(objective):
-                # Replace outliers with NaN and after that with max,
-                # so that the max is not calculated with the outliers in it
-                cond1 = z_scores[:, i] > self.max_sigma
-                mask = objective[col].mask(cond1, np.NaN)
-                objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
+            elif self.method.lower() == "min_max":
+                counts = 0
+                for i, col in enumerate(objective):
+                    # Replace outliers with NaN and after that with max,
+                    # so that the max is not calculated with the outliers in it
+                    cond1 = z_scores[:, i] > self.max_sigma
+                    mask = objective[col].mask(cond1, np.NaN)
+                    objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
 
-                # Replace outliers with minimum
-                cond2 = z_scores[:, i] < -self.max_sigma
-                mask = objective[col].mask(cond2, np.NaN)
-                objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
+                    # Replace outliers with minimum
+                    cond2 = z_scores[:, i] < -self.max_sigma
+                    mask = objective[col].mask(cond2, np.NaN)
+                    objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
 
-                # Sum number of replacements
-                counts += cond1.sum() + cond2.sum()
+                    # Sum number of replacements
+                    counts += cond1.sum() + cond2.sum()
 
-            if counts > 0:
                 self.log(
-                    f" --> Replacing {counts} outliers with the min "
-                    "or max of the column.", 2
+                    f" --> Replacing {counts} outlier values "
+                    "with the min or max of the column.", 2
                 )
 
-        elif self.strategy.lower() == "drop":
-            ix = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
-            delete = len(ix) - ix.sum()  # Number of False values in index
-            if delete > 0:
-                self.log(f" --> Dropping {delete} rows due to outliers.", 2)
+            elif self.method.lower() == "drop":
+                ix = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
+                delete = len(ix) - ix.sum()  # Number of False values in index
+                self.log(f" --> Dropping {delete} samples due to outlier values.", 2)
 
-            # Drop rows based on index
-            objective = objective[ix]
-            X = X[ix]
+                # Drop rows based on index
+                X, objective = X[ix], objective[ix]
+                if y is not None:
+                    y = y[ix]
+
+        else:
+            estimator = PRUNING_STRATS[self.strategy.lower()](**self.kwargs)
+            mask = estimator.fit_predict(X) != -1
+            self.log(f" --> Dropping {len(mask) - mask.sum()} outliers.", 2)
+
+            # Add the estimator as attribute to Balancer
+            setattr(self, self.strategy.lower(), estimator)
+
+            X, objective = X.loc[mask, :], objective.loc[mask, :]
             if y is not None:
-                y = y[ix]
+                y = y[mask]
 
         # Replace the numerical columns in X with the new values from objective
         for col in objective:
@@ -973,7 +1042,7 @@ class Outliers(BaseEstimator, TransformerMixin, BaseTransformer):
 
 
 class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Balance the number of rows per class in the target column.
+    """Balance the number of samples per class in the target column.
 
     Use only for classification tasks.
 
@@ -1071,12 +1140,12 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        if self.strategy.lower() not in BALANCER_TYPES:
+        if self.strategy.lower() not in BALANCING_STRATS:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(BALANCER_TYPES)}."
+                f"Choose from: {', '.join(BALANCING_STRATS)}."
             )
-        strategy = BALANCER_TYPES[self.strategy.lower()]
+        estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
 
         # Save index and columns to re-convert to pandas
         index = X.index
@@ -1090,11 +1159,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         for key, value in self.mapping.items():
             counts[key] = np.sum(y == value)
 
-        if "over_sampling" in strategy.__module__:
-            self.log(f"Oversampling with {strategy.__name__}...", 1)
+        if "over_sampling" in estimator.__module__:
+            self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
         else:
-            self.log(f"Undersampling with {strategy.__name__}...", 1)
-        estimator = strategy(**self.kwargs)
+            self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
 
         # Add n_jobs or random_state if its one of the balancer's parameters
         for param in ["n_jobs", "random_state"]:
@@ -1104,17 +1172,17 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = estimator.fit_resample(X, y)
 
         # Add the estimator as attribute to Balancer
-        setattr(self, strategy.__name__.lower(), estimator)
+        setattr(self, self.strategy.lower(), estimator)
 
         # Print changes
         for key, value in self.mapping.items():
             diff = counts[key] - np.sum(y == value)
             if diff > 0:
-                self.log(f" --> Removing {diff} rows from class: {key}.", 2)
+                self.log(f" --> Removing {diff} samples from class: {key}.", 2)
             elif diff < 0:
                 # Add new indices to the total index
                 index = list(index) + list(np.arange(len(index) + diff))
-                self.log(f" --> Adding {-diff} rows to class: {key}.", 2)
+                self.log(f" --> Adding {-diff} samples to class: {key}.", 2)
 
         X = to_df(X, index=index, columns=columns)
         y = to_series(y, index=index, name=name)

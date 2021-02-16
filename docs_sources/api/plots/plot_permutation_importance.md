@@ -31,7 +31,8 @@ Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
@@ -55,7 +56,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(["LR", "LDA"], metric="average_precision")
-atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
+atom.lda.plot_permutation_importance(show=10, n_repeats=7)
 ```
 <div align="center">
     <img src="../../../img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>

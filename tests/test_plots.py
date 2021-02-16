@@ -101,8 +101,8 @@ def test_canvas():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
     with atom.canvas(1, 2, title="Title", filename=FILE_DIR + "canvas", display=False):
-        atom.plot_residuals()
-        atom.plot_feature_importance()
+        atom.plot_residuals(title="Residuals plot")
+        atom.plot_feature_importance(title="Feature importance plot")
     assert glob.glob(FILE_DIR + "canvas.png")
 
 
@@ -130,12 +130,13 @@ def test_plot_pipeline(show_params):
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
-    atom.outliers()
+    atom.prune()
     atom.feature_selection("univariate", n_features=10)
     atom.successive_halving(["Tree", "AdaB"])
     pytest.raises(ValueError, atom.plot_pipeline, branch="invalid")
     atom.plot_pipeline(
         show_params=show_params,
+        title="Pipeline plot",
         filename=FILE_DIR + f"pipeline_{show_params}",
         display=False,
     )
@@ -329,7 +330,7 @@ def test_plot_feature_importance():
     assert glob.glob(FILE_DIR + "feature_importance_2.png")
 
 
-@pytest.mark.parametrize("features", [(("ash", "alcohol"), 2), "ash", 2])
+@pytest.mark.parametrize("features", [(("ash", "alcohol"), 2, "ash"), ("ash", 2), 2])
 def test_plot_partial_dependence(features):
     """Assert that the plot_partial_dependence method work as intended."""
     # For binary classification tasks
@@ -391,6 +392,7 @@ def test_plot_partial_dependence(features):
     atom.lgb.plot_partial_dependence(
         features=features,
         target=2,
+        title="Partial dependence plot",
         filename=FILE_DIR + "partial_dependence_3",
         display=False,
     )
@@ -421,7 +423,7 @@ def test_plot_residuals():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_residuals)
     atom.run(["Tree", "Bag"], metric="MSE")
-    atom.plot_residuals(filename=FILE_DIR + "residuals_1", display=False)
+    atom.plot_residuals(title="plot", filename=FILE_DIR + "residuals_1", display=False)
     atom.tree.plot_residuals(filename=FILE_DIR + "residuals_2", display=False)
     assert glob.glob(FILE_DIR + f"residuals_1.png")
     assert glob.glob(FILE_DIR + f"residuals_2.png")
@@ -558,7 +560,7 @@ def test_plot_lift():
     assert glob.glob(FILE_DIR + f"lift_2.png")
 
 
-@pytest.mark.parametrize("index", [None, 100, (100, 200)])
+@pytest.mark.parametrize("index", [None, 100, -10, (100, 200), slice(100, 200)])
 def test_bar_plot(index):
     """Assert that the bar_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -589,7 +591,7 @@ def test_decision_plot():
 
 def test_force_plot():
     """Assert that the force_plot method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
     atom.run("Tree", metric="MSE")
     with atom.canvas():

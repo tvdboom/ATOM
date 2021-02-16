@@ -13,11 +13,22 @@ import logging
 import numpy as np
 import pandas as pd
 from functools import wraps
+from collections import deque
 from datetime import datetime
 from inspect import signature
-from collections import deque
 from typing import Union, Sequence
 from collections.abc import MutableMapping
+from sklearn.preprocessing import (
+    StandardScaler,
+    MinMaxScaler,
+    MaxAbsScaler,
+    RobustScaler,
+)
+from sklearn.ensemble import IsolationForest
+from sklearn.covariance import EllipticEnvelope
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.svm import OneClassSVM
+from sklearn.cluster import DBSCAN, OPTICS
 
 # Encoders
 from category_encoders.backward_difference import BackwardDifferenceEncoder
@@ -109,8 +120,17 @@ METRIC_ACRONYMS = dict(
     gamma="neg_mean_gamma_deviance",
 )
 
+# All available scaling strategies
+SCALING_STRATS = dict(
+    standard=StandardScaler,
+    minmax=MinMaxScaler,
+    maxabs=MaxAbsScaler,
+    robust=RobustScaler,
+)
+
+
 # All available encoding strategies
-ENCODER_TYPES = dict(
+ENCODING_STRATS = dict(
     backwarddifference=BackwardDifferenceEncoder,
     basen=BaseNEncoder,
     binary=BinaryEncoder,
@@ -128,8 +148,18 @@ ENCODER_TYPES = dict(
     woe=WOEEncoder,
 )
 
+# All available pruning strategies
+PRUNING_STRATS = dict(
+    iforest=IsolationForest,
+    ee=EllipticEnvelope,
+    lof=LocalOutlierFactor,
+    svm=OneClassSVM,
+    dbscan=DBSCAN,
+    optics=OPTICS,
+)
+
 # All available balancing strategies
-BALANCER_TYPES = dict(
+BALANCING_STRATS = dict(
     clustercentroids=ClusterCentroids,
     condensednearestneighbour=CondensedNearestNeighbour,
     editednearestneighborus=EditedNearestNeighbours,
@@ -204,9 +234,9 @@ def variable_return(X, y):
         return X, y
 
 
-def check_deep(X):
+def check_deep(df):
     """Check if the trainer contains a deep learning dataset."""
-    return list(X.columns) == ["Features"]
+    return df.columns[0] == "Features" and len(df.columns) <= 2
 
 
 def check_method(cls, method):
@@ -244,10 +274,8 @@ def check_predict_proba(models, method):
 
 
 def check_scaling(X):
-    """Check if the provided data is scaled to mean=0 and std=1."""
-    mean = X.mean(axis=1).mean()
-    std = X.std(axis=1).mean()
-    return True if mean < 0.05 and 0.5 < std < 1.5 else False
+    """Check if the data is scaled to mean=0 and std=1."""
+    return True if X.mean().mean() < 0.05 and 0.95 < X.std().mean() < 1.05 else False
 
 
 def get_best_score(item, metric=0):
@@ -292,9 +320,9 @@ def time_to_string(t_init):
     if not h and not m:  # Only seconds
         return f"{s:.3f}s"
     elif not h:  # Also minutes
-        return f"{m}m:{s:02}s"
+        return f"{m}m:{s:02.0f}s"
     else:  # Also hours
-        return f"{h}h:{m:02}m:{s:02}s"
+        return f"{h}h:{m}m:{s:02.0f}s"
 
 
 def to_df(data, index=None, columns=None, pca=False):
@@ -303,7 +331,8 @@ def to_df(data, index=None, columns=None, pca=False):
     Parameters
     ----------
     data: sequence
-        Dataset to convert to a dataframe.
+        Dataset to convert to a dataframe.  If None, return
+        unchanged.
 
     index: sequence or Index
         Values for the dataframe's index.
@@ -316,15 +345,15 @@ def to_df(data, index=None, columns=None, pca=False):
 
     Returns
     -------
-    df: pd.DataFrame
+    df: pd.DataFrame or None
         Transformed dataframe.
 
     """
-    if not isinstance(data, pd.DataFrame):
+    if not isinstance(data, (pd.DataFrame, type(None))):
         if columns is None and not pca:
-            columns = [f"Feature {str(i)}" for i in range(len(data[0]))]
+            columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
         elif columns is None:
-            columns = [f"Component {str(i)}" for i in range(len(data[0]))]
+            columns = [f"Component {str(i)}" for i in range(1, len(data[0]) + 1)]
         data = pd.DataFrame(data, index=index, columns=columns)
 
     return data
@@ -335,8 +364,8 @@ def to_series(data, index=None, name="target"):
 
     Parameters
     ----------
-    data: list, tuple or np.ndarray
-        Data to convert.
+    data: list, tuple, np.ndarray or None
+        Data to convert. If None, return unchanged.
 
     index: array or Index, optional (default=None)
         Values for the series" index.
@@ -346,11 +375,11 @@ def to_series(data, index=None, name="target"):
 
     Returns
     -------
-    series: pd.Series
+    series: pd.Series or None
         Transformed series.
 
     """
-    if not isinstance(data, pd.Series):
+    if not isinstance(data, (pd.Series, type(None))):
         data = pd.Series(data, index=index, name=name)
 
     return data
@@ -733,9 +762,144 @@ def partial_dependence(estimator, X, features):
     return averaged_predictions, values
 
 
+def custom_transform(transformer, branch, data=None, verbose=None):
+    """Applies a transformer on a branch.
+
+    Parameters
+    ----------
+    transformer: estimator
+        Transformer to apply on the data.
+
+    branch: Branch
+        Transformer's branch.
+
+    data: tuple or None
+        New data to transform on. If tuple, should have form
+        (X, y). If None, the transformation is applied directly
+        on the branch.
+
+    verbose: int or None, optional (default=None)
+        Verbosity level for the transformation. If None, the
+        transformer's verbosity is used.
+
+    """
+    def name_cols(array, df):
+        """Get the column names after a transformation.
+
+        If the number of columns is unchanged, the original
+        column names are returned. Else, give the column a
+        default name if the column values changed.
+
+        Parameters
+        ----------
+        array: np.ndarray
+            Transformed dataset.
+
+        df: pd.DataFrame
+            Original dataset.
+
+        """
+        # If columns were only transformed, return og names
+        if array.shape[1] == df.shape[1]:
+            return df.columns
+
+        # If columns were added or removed
+        temp_cols = []
+        for i, col in enumerate(array.T, start=1):
+            mask = df.apply(lambda c: all(c == col))
+            if any(mask):
+                temp_cols.append(mask[mask].index.values[0])
+            else:
+                temp_cols.append(f"Feature {str(i + (branch.n_features - len(cols)))}")
+
+        return temp_cols
+
+    def reorder_cols(df, original_df):
+        """Reorder the columns to their original order.
+
+        This function is necessary in case only a subset of the
+        columns in the dataset was used. In that case, we need
+        to reorder them to their original form.
+
+        Parameters
+        ----------
+        df: pd.DataFrame
+            DataFrame to reorder.
+
+        original_df: pd.DataFrame
+            Original dataframe (states the order).
+
+        """
+        temp_df = pd.DataFrame([])
+        new_cols = [c for c in df.columns if c not in branch.features]
+        for col in branch.features + new_cols:
+            if col in df.columns:
+                temp_df[col] = df[col]
+            elif col not in transformer.cols:
+                temp_df[col] = original_df[col]
+
+        return temp_df
+
+    # Prepare the provided data
+    if data:
+        X_now = to_df(data[0], columns=branch.features)
+        y_now = to_series(data[1], name=branch.target)
+    else:
+        if transformer.train_only:
+            X_now, y_now = branch.X_train, branch.y_train
+        else:
+            X_now, y_now = branch.X, branch.y
+
+    # Adapt the transformer's verbosity
+    if verbose is not None:
+        if verbose < 0 or verbose > 2:
+            raise ValueError(
+                "Invalid value for the verbose parameter."
+                f"Value should be between 0 and 2, got {verbose}."
+            )
+        elif hasattr(transformer, "verbose"):
+            vb = transformer.get_params()["verbose"]  # Save original verbosity
+            transformer.verbose = verbose
+
+    cols = transformer.cols  # Columns to use for transformation
+    if "y" in signature(transformer.transform).parameters:
+        X, y = catch_return(transformer.transform(X_now[cols], y_now))
+    else:
+        X, y = catch_return(transformer.transform(X_now[cols]))
+
+    # Convert to pandas and assign proper column names
+    X = reorder_cols(to_df(X, columns=name_cols(X, X_now[cols])), X_now)
+    y = to_series(y, name=branch.target)
+
+    # Apply changes to the branch
+    if not data:
+        if transformer.train_only:
+            if y is None:
+                branch.train = merge(X, branch.y_train)
+            else:
+                branch.train = merge(X, to_series(y, branch.target))
+        else:
+            if y is None:
+                branch.dataset = merge(X, branch.y)
+            else:
+                branch.dataset = merge(X, to_series(y, branch.target))
+
+            # Since rows can be removed from train and test, reset indices
+            branch.idx[1] = len(X[X.index >= branch.idx[0]])
+            branch.idx[0] = len(X[X.index < branch.idx[0]])
+
+        branch.dataset = branch.dataset.reset_index(drop=True)
+
+    # Back to the original verbosity
+    if verbose is not None and hasattr(transformer, "verbose"):
+        transformer.verbose = vb
+
+    return X, y
+
+
 # Functions shared by classes ======================================= >>
 
-def add_transformer(self, transformer, name=None, train_only=False):
+def add_transformer(self, transformer, name=None, columns=None, train_only=False):
     """Add a transformer to the current branch.
 
     If the transformer is not fitted, it is fitted on the
@@ -760,41 +924,25 @@ def add_transformer(self, transformer, name=None, train_only=False):
         Name of the transformation step. If None, it defaults to
         the __name__ of the transformer's class (lower case).
 
+    columns: slice, list or None, optional (default=None)
+        Names or indices of the columns in the dataset to transform.
+        If None, transform all columns.
+
     train_only: bool, optional (default=False)
         Whether to apply the transformer only on the train set or
         on the complete dataset.
 
     """
-    def get_cols(array, dataframe):
-        """Get the column names after a transformation.
-
-        If the number of columns is unchanged, the original
-        column names are returned. Else, give the column a
-        default name if the column values changed.
-
-        Parameters
-        ----------
-        array: np.ndarray
-            Transformed dataset.
-
-        dataframe: pd.DataFrame
-            Original dataset.
-
-        """
-        # If columns were only transformed, return og names
-        if array.shape[1] == dataframe.shape[1]:
-            return dataframe.columns
-
-        # If columns were added or removed
-        cols = []
-        for i, col in enumerate(array.T):
-            mask = dataframe.apply(lambda c: all(c == col))
-            if any(mask):
-                cols.append(mask[mask].index.values[0])
-            else:
-                cols.append(f"Feature {str(i)}")
-
-        return cols
+    def select_cols(columns):
+        """Select certain columns from a dataset."""
+        if columns is None:
+            return self.features
+        elif isinstance(columns, slice):
+            return self.features[columns]
+        elif isinstance(columns[0], int):
+            return [self.features[col] for col in columns]
+        else:
+            return columns  # Already list of columns
 
     if not hasattr(transformer, "transform"):
         raise ValueError("The transformer should have a transform method!")
@@ -806,43 +954,14 @@ def add_transformer(self, transformer, name=None, train_only=False):
             if p in sign and transformer.get_params()[p] == sign[p]._default:
                 transformer.set_params(**{p: getattr(self, p)})
 
-    if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
-        transformer.fit(self.X_train, self.y_train)
-
-    if train_only:
-        if "y" in signature(transformer.transform).parameters:
-            X, y = catch_return(transformer.transform(self.X_train, self.y_train))
-        else:
-            X, y = catch_return(transformer.transform(self.X_train))
-
-        if not isinstance(X, pd.DataFrame):
-            X = to_df(X, columns=get_cols(X, self.X_train))
-        if y is None:
-            self.train = merge(X, self.y_train)
-        else:
-            self.train = merge(X, to_series(y, name=self.target))
-
-    else:
-        if "y" in signature(transformer.transform).parameters:
-            X, y = catch_return(transformer.transform(self.X, self.y))
-        else:
-            X, y = catch_return(transformer.transform(self.X))
-
-        if not isinstance(X, pd.DataFrame):
-            X = to_df(X, columns=get_cols(X, self.X))
-        if y is None:
-            self.dataset = merge(X, self.y)
-        else:
-            self.dataset = merge(X, to_series(y, name=self.target))
-
-        # Since rows can be removed from train and test, reset indices
-        self.branch.idx[1] = len(X[X.index >= self.branch.idx[0]])
-        self.branch.idx[0] = len(X[X.index < self.branch.idx[0]])
-
-    self.dataset = self.dataset.reset_index(drop=True)
-
-    # Add the train_only parameter as attr to the transformer
+    # Transformers remember the train_only and columns parameters
     transformer.train_only = train_only
+    transformer.cols = select_cols(columns)
+
+    if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
+        transformer.fit(self.X_train[transformer.cols], self.y_train)
+
+    custom_transform(transformer, self.branch, verbose=self.verbose)
 
     # Add the transformer to the pipeline
     self.branch.pipeline = self.pipeline.append(
@@ -852,76 +971,6 @@ def add_transformer(self, transformer, name=None, train_only=False):
             name=self._current,
         )
     )
-
-
-def transform(est_branch, X, y, verbose, **kwargs):
-    """Transform new data through all transformers in a branch.
-
-    The outliers and balance transformations are not included by
-    default since they should only be applied on the training set.
-
-    Parameters
-    ----------
-    est_branch: pd.Series
-        Estimators in a branch.
-
-    X: dict, list, tuple, np.ndarray or pd.DataFrame
-        Feature set with shape=(n_samples, n_features).
-
-    y: int, str, sequence or None
-        - If None: y is not used in the transformation.
-        - If int: Index of the target column in X.
-        - If str: Name of the target column in X.
-        - Else: Target column with shape=(n_samples,).
-
-    verbose: int
-        Verbosity level of the transformers.
-
-    **kwargs
-        Additional keyword arguments to customize which transforming
-        methods to apply. You can either select them via their index,
-        e.g. pipeline = [0, 1, 4] or include/exclude them via every
-        individual transformer, e.g. impute=True, encode=False.
-
-    Returns
-    -------
-    X: pd.DataFrame
-        Transformed dataset.
-
-    y: pd.Series
-        Transformed target column. Only returned if provided.
-
-    """
-    def transform_one(est):
-        """Transform a single estimator."""
-        nonlocal X, y
-
-        vb = est.get_params()["verbose"]  # Save original verbosity
-        est.verbose = verbose
-
-        # Some transformers return no y, but we need the original
-        X, y_returned = catch_return(est.transform(X, y))
-        y = y if y_returned is None else y_returned
-
-        # Reset the original verbosity
-        est.verbose = vb
-
-    # Check verbose parameter
-    if verbose < 0 or verbose > 2:
-        raise ValueError(
-            "Invalid value for the verbose parameter."
-            f"Value should be between 0 and 2, got {verbose}."
-        )
-
-    # Transform either one or all the transformers in the pipeline
-    p = kwargs.get("pipeline", [])
-    for i, (idx, est) in enumerate(est_branch.iteritems()):
-        is_default = not p and not est.train_only and kwargs.get(idx) is None
-        if i in p or idx in p or kwargs.get(idx) or is_default:
-            if kwargs.get("_one_trans", i) == i:
-                transform_one(est)
-
-    return variable_return(X, y)
 
 
 def delete(self, models):
@@ -1043,33 +1092,42 @@ class PlotCallback:
 
     """
 
+    c = 0  # Counter to track which model is being plotted
+
     def __init__(self, cls):
         self.cls = cls
 
         # Plot attributes
         max_len = 15  # Maximum steps to show at once in the plot
-        self.x = deque(list(range(1, max_len + 1)), maxlen=max_len)
-        self.y1 = deque([np.NaN for _ in self.x], maxlen=max_len)
-        self.y2 = deque([np.NaN for _ in self.x], maxlen=max_len)
+        self.x, self.y1, self.y2 = {}, {}, {}
+        for i in range(len(self.cls._models)):
+            self.x[i] = deque(list(range(1, max_len + 1)), maxlen=max_len)
+            self.y1[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
+            self.y2[i] = deque([np.NaN for _ in self.x[i]], maxlen=max_len)
 
     def __call__(self, result):
         # Start to fill NaNs with encountered metric values
-        if np.isnan(self.y1).any():
-            for i, value in enumerate(self.y1):
+        if np.isnan(self.y1[self.c]).any():
+            for i, value in enumerate(self.y1[self.c]):
                 if math.isnan(value):
-                    self.y1[i] = -result.func_vals[-1]
+                    self.y1[self.c][i] = -result.func_vals[-1]
                     if i > 0:  # The first value must remain empty
-                        self.y2[i] = abs(self.y1[i] - self.y1[i - 1])
+                        self.y2[self.c][i] = abs(
+                            self.y1[self.c][i] - self.y1[self.c][i - 1]
+                        )
                     break
         else:  # If no NaNs anymore, continue deque
-            self.x.append(max(self.x) + 1)
-            self.y1.append(-result.func_vals[-1])
-            self.y2.append(abs(self.y1[-1] - self.y1[-2]))
+            self.x[self.c].append(max(self.x[self.c]) + 1)
+            self.y1[self.c].append(-result.func_vals[-1])
+            self.y2[self.c].append(abs(self.y1[self.c][-1] - self.y1[self.c][-2]))
 
         if len(result.func_vals) == 1:  # After the 1st iteration, create plot
             self.line1, self.line2, self.ax1, self.ax2 = self.create_figure()
         else:
             self.animate_plot()
+            if len(result.func_vals) == self.cls.n_calls:
+                self.c += 1  # After the last iteration, go to the next model
+                plt.close()
 
     def create_figure(self):
         """Create the plot.
@@ -1087,9 +1145,9 @@ class PlotCallback:
         ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
 
         # First subplot
-        (line1,) = ax1.plot(self.x, self.y1, "-o", alpha=0.8)
+        (line1,) = ax1.plot(self.x[self.c], self.y1[self.c], "-o", alpha=0.8)
         ax1.set_title(
-            label=f"Bayesian Optimization performance",
+            label=f"Bayesian Optimization for {self.cls._models[self.c].fullname}",
             fontsize=self.cls.title_fontsize,
             pad=20,
         )
@@ -1098,14 +1156,14 @@ class PlotCallback:
             fontsize=self.cls.label_fontsize,
             labelpad=12,
         )
-        ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
+        ax1.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
 
         # Second subplot
-        (line2,) = ax2.plot(self.x, self.y2, "-o", alpha=0.8)
+        (line2,) = ax2.plot(self.x[self.c], self.y2[self.c], "-o", alpha=0.8)
         ax2.set_xlabel(xlabel="Call", fontsize=self.cls.label_fontsize, labelpad=12)
         ax2.set_ylabel(ylabel="d", fontsize=self.cls.label_fontsize, labelpad=12)
-        ax2.set_xticks(self.x)
-        ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
+        ax2.set_xticks(self.x[self.c])
+        ax2.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
         ax2.set_ylim([-0.05, 0.1])
 
         plt.setp(ax1.get_xticklabels(), visible=False)
@@ -1116,28 +1174,32 @@ class PlotCallback:
 
     def animate_plot(self):
         """Plot the BO's progress as it runs."""
-        self.line1.set_xdata(self.x)
-        self.line1.set_ydata(self.y1)
-        self.line2.set_xdata(self.x)
-        self.line2.set_ydata(self.y2)
-        self.ax1.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
-        self.ax2.set_xlim(min(self.x) - 0.5, max(self.x) + 0.5)
-        self.ax1.set_xticks(self.x)
-        self.ax2.set_xticks(self.x)
+        self.line1.set_xdata(self.x[self.c])
+        self.line1.set_ydata(self.y1[self.c])
+        self.line2.set_xdata(self.x[self.c])
+        self.line2.set_ydata(self.y2[self.c])
+        self.ax1.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
+        self.ax2.set_xlim(min(self.x[self.c]) - 0.5, max(self.x[self.c]) + 0.5)
+        self.ax1.set_xticks(self.x[self.c])
+        self.ax2.set_xticks(self.x[self.c])
 
         # Adjust y limits if new data goes beyond bounds
         lim = self.line1.axes.get_ylim()
-        if np.nanmin(self.y1) <= lim[0] or np.nanmax(self.y1) >= lim[1]:
-            self.ax1.set_ylim([
-                np.nanmin(self.y1) - np.nanstd(self.y1),
-                np.nanmax(self.y1) + np.nanstd(self.y1),
-            ])
+        if np.nanmin(self.y1[self.c]) <= lim[0] or np.nanmax(self.y1[self.c]) >= lim[1]:
+            self.ax1.set_ylim(
+                [
+                    np.nanmin(self.y1[self.c]) - np.nanstd(self.y1[self.c]),
+                    np.nanmax(self.y1[self.c]) + np.nanstd(self.y1[self.c]),
+                ]
+            )
         lim = self.line2.axes.get_ylim()
-        if np.nanmax(self.y2) >= lim[1]:
-            self.ax2.set_ylim([-0.05, np.nanmax(self.y2) + np.nanstd(self.y2)])
+        if np.nanmax(self.y2[self.c]) >= lim[1]:
+            self.ax2.set_ylim(
+                [-0.05, np.nanmax(self.y2[self.c]) + np.nanstd(self.y2[self.c])]
+            )
 
         # Pause the data so the figure/axis can catch up
-        plt.pause(0.01)
+        plt.pause(0.05)
 
 
 class CustomDict(MutableMapping):
@@ -1223,11 +1285,8 @@ class CustomDict(MutableMapping):
     def insert(self, pos, new_key, value):
         if isinstance(pos, str):
             pos = self.__keys.index(self._conv(pos))
-        try:
-            self.__keys.insert(pos, self._conv(new_key))
-            self.__data[self._conv(new_key)] = value
-        except ValueError:
-            raise KeyError(pos) from ValueError
+        self.__keys.insert(pos, self._conv(new_key))
+        self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
         try:

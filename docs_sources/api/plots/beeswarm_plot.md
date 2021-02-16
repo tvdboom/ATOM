@@ -16,7 +16,7 @@ Name of the models to plot. If None, all models in the pipeline are selected. No
  that selecting multiple models will raise an exception. To avoid this, call the
  plot from a model.
 </blockquote>
-<strong>index: tuple or None, optional (default=None)</strong>
+<strong>index: tuple, slice or None, optional (default=None)</strong>
 <blockquote>
 Indices of the rows in the dataset to plot. If tuple (n, m), it selects
 rows n until m. If None, it selects all rows in the test set. The beeswarm

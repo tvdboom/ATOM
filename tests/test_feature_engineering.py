@@ -14,7 +14,6 @@ from sklearn.feature_selection import f_regression
 
 # Own modules
 from atom.feature_engineering import FeatureGenerator, FeatureSelector
-from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg
 
 
@@ -213,13 +212,6 @@ def test_univariate_strategy_custom_solver():
     assert set(fs.feature_importance) == set(X.columns)
 
 
-def test_PCA_strategy_normalization():
-    """Assert that the PCA strategy normalizes the features."""
-    fs = FeatureSelector(strategy="PCA")
-    X = fs.fit_transform(X_bin, y_bin)
-    assert check_scaling(X)
-
-
 def test_PCA_strategy():
     """Assert that the PCA strategy works as intended."""
     fs = FeatureSelector(strategy="PCA", n_features=0.7)
@@ -231,7 +223,7 @@ def test_PCA_components():
     """Assert that the PCA strategy creates components instead of features."""
     fs = FeatureSelector(strategy="PCA")
     X = fs.fit_transform(X_bin)
-    assert "Component 0" in X.columns
+    assert "Component 1" in X.columns
 
 
 def test_SFM_prefit_invalid_estimator():

@@ -1,18 +1,19 @@
 # Cleaner
 ---------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
-                                 minimum_cardinality=True, missing_target=True, encode_target=True,
-                                 verbose=0, logger=None)
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, maximum_cardinality=True, minimum_cardinality=True,
+                                 strip_categorical=True, drop_duplicates=False, missing_target=True,
+                                 encode_target=True, verbose=0, logger=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L151">[source]</a></div></pre>
 Performs standard data cleaning steps on a dataset. Use the parameters to choose
- which transformations to perform. The available steps are:
+which transformations to perform. The available steps are:
 
   * Remove columns with prohibited data types.
-  * Strip categorical features from white spaces.
   * Remove categorical columns with maximal cardinality.
   * Remove columns with minimum cardinality.
-  * Remove rows with missing values in the target column.
+  * Strip categorical features from white spaces.
+  * Drop duplicate rows.
+  * Drop rows with missing values in the target column.
   * Encode the target column.
 
 This class can be accessed from atom through the [clean](../../ATOM/atomclassifier/#clean)
@@ -25,10 +26,6 @@ This class can be accessed from atom through the [clean](../../ATOM/atomclassifi
 <blockquote>
 Columns with these types will be removed from the dataset.
 </blockquote>
-<strong>strip_categorical: bool, optional (default=True)</strong>
-<blockquote>
-Whether to strip the spaces from the categorical columns.
-</blockquote>
 <strong>maximum_cardinality: bool, optional (default=True)</strong>
 <blockquote>
 Whether to remove categorical columns with maximum cardinality,
@@ -40,10 +37,19 @@ instances. Usually the case for names, IDs, etc...
 Whether to remove columns with minimum cardinality, i.e. all values in the
  column are the same.
 </blockquote>
+<strong>strip_categorical: bool, optional (default=True)</strong>
+<blockquote>
+Whether to strip the spaces from the categorical columns.
+</blockquote>
+<strong>drop_duplicates: bool, optional (default=False)</strong>
+<blockquote>
+Whether to drop duplicate rows. Only the first occurrence of
+every duplicated row is kept.
+</blockquote>
 <strong>missing_target: bool, optional (default=True)</strong>
 <blockquote>
-Whether to remove rows with missing values in the target column.
- Is ignored if y is not provided.
+Whether to drop rows with missing values in the target column.
+Is ignored if y is not provided.
 </blockquote>
 <strong>encode_target: bool, optional (default=True)</strong>
 <blockquote>

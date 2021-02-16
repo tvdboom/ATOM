@@ -47,7 +47,7 @@ from atom import ATOMClassifier
 atom = ATOMClassifier(X, y)
 atom.impute(strat_num="median", strat_cat="drop", min_frac_rows=0.8)
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.02)
-atom.outliers(strategy="drop", max_sigma=4, include_target=False)
+atom.prune(strategy="drop", max_sigma=4, include_target=False)
 atom.feature_selection(
     strategy="PCA",
     n_features=10,

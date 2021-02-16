@@ -13,14 +13,17 @@ import numpy as np
 import pandas as pd
 
 # Own modules
-from atom.utils import ENCODER_TYPES, BALANCER_TYPES, NotFittedError, check_scaling
 from atom.data_cleaning import (
     Scaler,
     Cleaner,
     Imputer,
     Encoder,
-    Outliers,
+    Pruner,
     Balancer,
+)
+from atom.utils import (
+    SCALING_STRATS, ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS,
+    NotFittedError, check_scaling,
 )
 from .utils import (
     X_bin, y_bin, X_class, y_class, X10, X10_nan, X10_str,
@@ -51,6 +54,19 @@ def test_fit_transform_no_fit():
 def test_check_is_fitted():
     """Assert that an error is raised when not fitted."""
     pytest.raises(NotFittedError, Scaler().transform, X_bin)
+
+
+def test_invalid_strategy():
+    """Assert that an error is raised when strategy is invalid."""
+    scaler = Scaler(strategy="invalid")
+    pytest.raises(ValueError, scaler.fit, X_bin)
+
+
+@pytest.mark.parametrize("strategy", SCALING_STRATS)
+def test_all_strategies(strategy):
+    """Assert that all strategies work as intended."""
+    scaler = Scaler(strategy=strategy)
+    scaler.fit_transform(X_bin)
 
 
 def test_y_is_ignored():
@@ -103,20 +119,6 @@ def test_drop_invalid_column_list_types():
     assert "string_col" not in X.columns
 
 
-def test_strip_categorical_features():
-    """Assert that categorical features are stripped from blank spaces."""
-    X = X_bin.copy()
-    X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner(maximum_cardinality=False).transform(X)
-    assert X["string_col"].equals(pd.Series([str(i) for i in range(len(X))]))
-
-
-def test_strip_ignores_nan():
-    """Assert that the stripping ignores missing values."""
-    X = Cleaner(maximum_cardinality=False).transform(X10_sn)
-    assert X.isna().sum().sum() == 1
-
-
 def test_drop_maximum_cardinality():
     """Assert that categorical columns with maximum cardinality are dropped."""
     X = X_bin.copy()
@@ -132,6 +134,26 @@ def test_drop_minimum_cardinality():
     X["invalid_column"] = 2.3  # Create column with only one value
     X = Cleaner().transform(X)
     assert "invalid_column" not in X.columns
+
+
+def test_strip_categorical_features():
+    """Assert that categorical features are stripped from blank spaces."""
+    X = X_bin.copy()
+    X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
+    X = Cleaner(maximum_cardinality=False).transform(X)
+    assert X["string_col"].equals(pd.Series([str(i) for i in range(len(X))]))
+
+
+def test_strip_ignores_nan():
+    """Assert that the stripping ignores missing values."""
+    X = Cleaner(maximum_cardinality=False).transform(X10_sn)
+    assert X.isna().sum().sum() == 1
+
+
+def test_drop_duplicate_rows():
+    """Assert that that duplicate rows are removed."""
+    X = Cleaner(maximum_cardinality=False, drop_duplicates=True).transform(X10)
+    assert len(X) == 7
 
 
 def test_drop_missing_target():
@@ -237,7 +259,7 @@ def test_imputing_numeric_drop():
     """Assert that imputing drop for numerical values works."""
     imputer = Imputer(strat_num="drop")
     X, y = imputer.fit_transform(X10_nan, y10)
-    assert len(X) == 9
+    assert len(X) == 8
     assert X.isna().sum().sum() == 0
 
 
@@ -317,7 +339,7 @@ def test_strategy_with_encoder_at_end():
     """Assert that the strategy works with Encoder at the end of the string."""
     encoder = Encoder(strategy="TargetEncoder", max_onehot=None)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["Feature 2"].__class__.__name__ == "TargetEncoder"
+    assert encoder._encoders["Feature 3"].__class__.__name__ == "TargetEncoder"
 
 
 def test_max_onehot_parameter():
@@ -336,7 +358,7 @@ def test_frac_to_other():
     """Assert that the other values are created when encoding."""
     encoder = Encoder(max_onehot=5, frac_to_other=0.3)
     X = encoder.fit_transform(X10_str, y10)
-    assert "Feature 2_other" in X.columns
+    assert "Feature 3_other" in X.columns
 
 
 def test_raise_missing_fit():
@@ -356,17 +378,17 @@ def test_label_encoder():
     """Assert that the Label-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
-    assert np.all((X["Feature 2"] == 0) | (X["Feature 2"] == 1))
+    assert np.all((X["Feature 3"] == 0) | (X["Feature 3"] == 1))
 
 
 def test_one_hot_encoder():
     """Assert that the OneHot-encoder works as intended."""
     encoder = Encoder(max_onehot=4)
     X = encoder.fit_transform(X10_str, y10)
-    assert "Feature 2_c" in X.columns
+    assert "Feature 3_c" in X.columns
 
 
-@pytest.mark.parametrize("strategy", ENCODER_TYPES)
+@pytest.mark.parametrize("strategy", ENCODING_STRATS)
 def test_all_encoder_types(strategy):
     """Assert that all estimators work as intended."""
     encoder = Encoder(strategy=strategy, max_onehot=None)
@@ -378,63 +400,91 @@ def test_kwargs_parameters():
     """Assert that the kwargs parameter works as intended."""
     encoder = Encoder(strategy="LeaveOneOut", max_onehot=None, sigma=0.5)
     encoder.fit(X10_str, y10)
-    assert encoder._encoders["Feature 2"].get_params()["sigma"] == 0.5
+    assert encoder._encoders["Feature 3"].get_params()["sigma"] == 0.5
 
 
-# Test Outliers ==================================================== >>
+# Test Pruner ====================================================== >>
 
 def test_invalid_strategy_parameter():
-    """Assert that the strategy parameter is set correctly."""
-    outliers = Outliers(strategy="invalid")
-    pytest.raises(ValueError, outliers.transform, X_bin)
+    """Assert that an error is raised for an invalid strategy parameter."""
+    pruner = Pruner(strategy="invalid")
+    pytest.raises(ValueError, pruner.transform, X_bin)
 
 
-def test_max_sigma_parameter():
-    """Assert that the max_sigma parameter is set correctly."""
-    outliers = Outliers(strategy="min_max", max_sigma=0)
-    pytest.raises(ValueError, outliers.transform, X_bin)
+def test_invalid_method_parameter():
+    """Assert that an error is raised for an invalid method parameter."""
+    pruner = Pruner(method="invalid")
+    pytest.raises(ValueError, pruner.transform, X_bin)
+
+
+def test_invalid_method_for_non_z_score():
+    """Assert that an error is raised for an invalid method and strat combination."""
+    pruner = Pruner(strategy="if", method="min_max")
+    pytest.raises(ValueError, pruner.transform, X_bin)
+
+
+def test_invalid_max_sigma_parameter():
+    """Assert that an error is raised for an invalid max_sigma parameter."""
+    pruner = Pruner(max_sigma=0)
+    pytest.raises(ValueError, pruner.transform, X_bin)
 
 
 def test_max_sigma_functionality():
     """Assert that the max_sigma parameter works as intended."""
     # Test 3 different values for sigma and number of rows they drop
-    X_1 = Outliers(max_sigma=1).fit_transform(X_bin)
-    X_2 = Outliers(max_sigma=4).fit_transform(X_bin)
-    X_3 = Outliers(max_sigma=8).fit_transform(X_bin)
+    X_1 = Pruner(max_sigma=1).fit_transform(X_bin)
+    X_2 = Pruner(max_sigma=4).fit_transform(X_bin)
+    X_3 = Pruner(max_sigma=8).fit_transform(X_bin)
     assert len(X_1) < len(X_2) < len(X_3)
 
 
-def test_drop_outliers():
+def test_kwargs_parameter():
+    """Assert that the kwargs are passed to the strategy estimator."""
+    pruner = Pruner(strategy="iForest", n_estimators=50)
+    pruner.transform(X10)
+    assert pruner.iforest.get_params()["n_estimators"] == 100
+
+
+def test_drop_pruner():
     """Assert that rows with outliers are dropped when strategy="drop"."""
-    X = Outliers(strategy="drop", max_sigma=2).transform(X10)
+    X = Pruner(method="drop", max_sigma=2).transform(X10)
     assert len(X) + 2 == len(X10)
 
 
-def test_min_max_outliers():
+def test_min_max_pruner():
     """Assert that the method works as intended when strategy="min_max"."""
-    X = Outliers(strategy="min_max", max_sigma=2).transform(X10)
+    X = Pruner(method="min_max", max_sigma=2).transform(X10)
     assert X.iloc[3, 0] == 0.23  # Max of column
     assert X.iloc[5, 1] == 2  # Min of column
 
 
-def test_value_outliers():
+def test_value_pruner():
     """Assert that the method works as intended when strategy=value."""
-    X = Outliers(strategy=-99, max_sigma=2).transform(X10)
+    X = Pruner(method=-99, max_sigma=2).transform(X10)
     assert X.iloc[3, 0] == -99
     assert X.iloc[5, 1] == -99
 
 
-def test_categorical_cols_are_ignores():
+def test_categorical_cols_are_ignored():
     """Assert that categorical columns are returned untouched."""
     Feature_2 = np.array(X10_str)[:, 2]
-    X, y = Outliers(strategy="min_max", max_sigma=2).transform(X10_str, y10)
+    X, y = Pruner(method="min_max", max_sigma=2).transform(X10_str, y10)
     assert [i == j for i, j in zip(X["Feature 2"], Feature_2)]
 
 
 def test_drop_outlier_in_target():
     """Assert that method works as intended for target columns as well."""
-    X, y = Outliers(max_sigma=2, include_target=True).transform(X10, y10)
+    X, y = Pruner(max_sigma=2, include_target=True).transform(X10, y10)
     assert len(y) + 2 == len(y10)
+
+
+@pytest.mark.parametrize("strategy", PRUNING_STRATS)
+def test_strategies(strategy):
+    """Assert that all estimator requiring strategies work."""
+    pruner = Pruner(strategy=strategy)
+    X, y = pruner.transform(X_bin, y_bin)
+    assert len(X) < len(X_bin)
+    assert hasattr(pruner, strategy.lower())
 
 
 # Test Balancer ==================================================== >>
@@ -452,7 +502,7 @@ def test_kwargs_parameter():
     assert balancer.smote.get_params()["k_neighbors"] == 12
 
 
-@pytest.mark.parametrize("strategy", [i for i in BALANCER_TYPES if i != "smotenc"])
+@pytest.mark.parametrize("strategy", [i for i in BALANCING_STRATS if i != "smotenc"])
 def test_all_balancers(strategy):
     """Assert that all estimators work as intended."""
     balancer = Balancer(strategy=strategy, sampling_strategy="all")

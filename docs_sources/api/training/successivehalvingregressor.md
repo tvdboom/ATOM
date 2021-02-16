@@ -137,11 +137,9 @@ Additional parameters to for the BO. These can include:
 <li><b>dimensions: dict, array or None, optional (default=None)</b><br>Custom hyperparameter
  space for the bayesian optimization. Can be an array to share dimensions across
  models or a dictionary with the model's name as key. If None, ATOM's predefined dimensions are used.</li>
-<li><b>plot_bo: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
+<li><b>plot: bool, optional (default=False)</b><br>Whether to plot the BO's progress as it runs.
  Creates a canvas with two plots: the first plot shows the score of every trial
- and the second shows the distance between the last consecutive steps. Don't
- forget to call <code>%matplotlib</code> at the start of the cell if you are using an interactive
- notebook!</li>
+ and the second shows the distance between the last consecutive steps.</li>
 <li><b>Additional keyword arguments for skopt's optimizer.</b></li>                
 </ul>
 </blockquote>
@@ -246,7 +244,8 @@ Test target.
 </blockquote>
 <strong>shape: tuple</strong>
 <blockquote>
-Dataset's shape: (n_rows x n_columns).
+Dataset's shape: (n_rows x n_columns) or
+(n_rows, (shape_sample), n_cols) for deep learning datasets.
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>

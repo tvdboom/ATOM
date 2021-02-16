@@ -69,7 +69,7 @@ The default name consists of the class' name followed by the
 
 !!!tip
     Use atom's [nans](../../ATOM/atomclassifier/#data-attributes) attribute
-    for an overview of the missing values in the dataset.
+    for an overview of the number of missing values per column.
 
 <br>
 

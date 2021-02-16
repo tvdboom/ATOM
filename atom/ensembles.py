@@ -20,8 +20,8 @@ from .basemodel import BaseModel
 from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
-    flt, lst, arr, merge, check_scaling, get_acronym, get_best_score,
-    catch_return, transform, composed, method_to_log, crash, CustomDict,
+    flt, lst, arr, merge, get_acronym, get_best_score, catch_return,
+    custom_transform, composed, method_to_log, crash, CustomDict,
 )
 
 
@@ -152,9 +152,8 @@ class Voting(BaseModel):
 
             for i, est1 in enumerate(v1.pipeline):
                 # Skip if the transformation was already applied
-                if step.get(b1, -1) < i:
-                    kwargs["_one_trans"] = i
-                    data[b1] = catch_return(transform(v1.pipeline, *data[b1], **kwargs))
+                if step.get(b1, -1) < i and not est1.train_only:
+                    custom_transform(est1, v1)
 
                     for b2, v2 in self.T._branches.items():
                         try:  # Can fail if pipeline is shorter than i
@@ -308,8 +307,8 @@ class Stacking(BaseModel):
 
         # Add scaled features from the branch to the set
         if self.passthrough:
-            fxs = self.T.X
-            if not check_scaling(fxs):
+            fxs = self.T.X  # Doesn't point to the same id
+            if any(m.needs_scaling for m in self._models) and not self.T.scaled:
                 self._fxs_scaler = Scaler().fit(self.T.X_train)
                 fxs = self._fxs_scaler.transform(fxs)
 
@@ -422,8 +421,7 @@ class Stacking(BaseModel):
                 )
 
         # Verbosity is set to trainer's verbosity if left to default
-        if kwargs.get("verbose") is None:
-            kwargs["verbose"] = self.T.verbose
+        verbose = kwargs.get("verbose", self.T.verbose)
 
         # Apply transformations per branch. Shared transformations are
         # not repeated. A unique copy of the data is stored per branch
@@ -433,15 +431,19 @@ class Stacking(BaseModel):
             if not v1.pipeline.empty:
                 self.T.log(f"Transforming data for branch {b1}...", 1)
 
-            for i, est1 in enumerate(v1.pipeline):
+            for i, (idx, est) in enumerate(v1.pipeline.iteritems()):
                 # Skip if the transformation was already applied
                 if step.get(b1, -1) < i:
-                    kwargs["_one_trans"] = i
-                    data[b1] = catch_return(transform(v1.pipeline, *data[b1], **kwargs))
+                    p = kwargs.get("pipeline", [])
+                    default = not p and not est.train_only and kwargs.get(idx) is None
+                    if i in p or idx in p or kwargs.get(idx) or default:
+                        data[b1] = catch_return(
+                            custom_transform(est, v1, data=data[b1], verbose=verbose)
+                        )
 
                     for b2, v2 in self.T._branches.items():
-                        try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
+                        try:  # Fails if pipeline is shorter than i
+                            if b1 != b2 and est is v2.pipeline.iloc[i]:
                                 # Update the data and step for the other branch
                                 data[b2] = copy(data[b1])
                                 step[b2] = i

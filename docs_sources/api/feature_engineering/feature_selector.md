@@ -136,6 +136,10 @@ See the corresponding sklearn documentation for the available options.
 </table>
 <br>
 
+!!!info
+    If strategy="PCA", the data will be scaled to mean=0 and std=1 before
+    fitting the transformer (if it wasn't already).
+
 !!! tip
     Use the [plot_feature_importance](../plots/plot_feature_importance.md) method to
     examine how much a specific feature contributes to the final predictions. If the
@@ -175,35 +179,11 @@ Remaining features ordered by importance. Only if strategy in ["univariate", "SF
  "RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
  estimator fitted on the reduced set. 
 </blockquote>
-<strong>univariate: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectKBest.html">SelectKBest</a></strong>
+<strong>&lt;strategy&gt;: sklearn estimator</strong>
 <blockquote>
-Instance used to fit the estimator. Only if strategy="univariate".
+Estimator instance (lowercase strategy) used to transform
+the data, e.g. <code>balancer.pca</code> for the PCA strategy.
 </blockquote>
-<strong>scaler: <a href="../../data_cleaning/scaler/">Scaler</a></strong>
-<blockquote>
-Instance used to scale the data. Only if strategy="PCA" and the data was not already scaled.
-</blockquote>
-<strong>pca: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html">PCA</a></strong>
-<blockquote>
-Instance used to fit the estimator. Only if strategy="PCA".
-</blockquote>
-<strong>sfm: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SelectFromModel.html">SelectFromModel</a></strong>
-<blockquote>
-Instance used to fit the estimator. Only if strategy="SFM".
-</blockquote>
-<strong>rfe: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFE.html">RFE</a></strong>
-<blockquote>
-Instance used to fit the estimator. Only if strategy="RFE".
-</blockquote>
-<strong>rfecv: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.RFECV.html">RFECV</a></strong>
-<blockquote>
-Instance used to fit the estimator. Only if strategy="RFECV".
-</blockquote>
-<strong>sfs: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_selection.SequentialFeatureSelector.html">SequentialFeatureSelector</a></strong>
-<blockquote>
-Instance used to fit the estimator. Only if strategy="SFS".
-</blockquote>
-</td>
 </tr>
 </table>
 <br>

@@ -14521,19 +14521,19 @@ a.anchor-link {
 Algorithm task: binary classification.
 Parallel processing with 8 cores.
 
-Dataset stats ================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (7110, 22)
-Missing values: 15896
-Categorical columns: 5
 Scaled: False
------------------------------------
+Missing values: 15896 (10.16%)
+Categorical columns: 5 (22.73%)
+Duplicate samples: 2 (0.03%)
+-------------------------------------
 Train set size: 5688
 Test set size: 1422
------------------------------------
+-------------------------------------
 Train set balance: No:Yes &lt;==&gt; 3.7:1.0
 Test set balance: No:Yes &lt;==&gt; 4.1:1.0
------------------------------------
-Distribution of classes:
+-------------------------------------
 |     |   dataset |   train |   test |
 |:----|----------:|--------:|-------:|
 | No  |      5615 |    4473 |   1142 |
@@ -14718,28 +14718,28 @@ Results for Extra-Trees:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 1.0
 Test evaluation --&gt; f1: 0.5568
-Time elapsed: 0.254s
+Time elapsed: 0.186s
 Bagging -----------------------------------------
 Evaluation --&gt; f1: 0.5809 ± 0.0211
-Time elapsed: 0.977s
+Time elapsed: 0.724s
 -------------------------------------------------
-Total time: 1.233s
+Total time: 0.910s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 1.0
 Test evaluation --&gt; f1: 0.594
-Time elapsed: 0.311s
+Time elapsed: 0.231s
 Bagging -----------------------------------------
 Evaluation --&gt; f1: 0.5977 ± 0.0134
-Time elapsed: 1.356s
+Time elapsed: 0.979s
 -------------------------------------------------
-Total time: 1.668s
+Total time: 1.210s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.901s
+Duration: 2.120s
 ------------------------------------------
 Extra-Trees   --&gt; f1: 0.581 ± 0.021 ~
 Random Forest --&gt; f1: 0.598 ± 0.013 ~

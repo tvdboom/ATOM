@@ -86,7 +86,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+    <a href="../../data_cleaning/pruner/" class="dropdown-item">Pruner</a>
 </li>
             
 <li>
@@ -606,7 +606,7 @@ Whether to render the plot.
 atom = ATOMClassifier(X, y)
 atom.impute(strat_num=&quot;median&quot;, strat_cat=&quot;drop&quot;, min_frac_rows=0.8)
 atom.encode(strategy=&quot;LeaveOneOut&quot;, max_onehot=8, frac_to_other=0.02)
-atom.outliers(strategy=&quot;drop&quot;, max_sigma=4, include_target=False)
+atom.prune(strategy=&quot;drop&quot;, max_sigma=4, include_target=False)
 atom.feature_selection(
     strategy=&quot;PCA&quot;,
     n_features=10,

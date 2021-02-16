@@ -64,7 +64,7 @@ def test_ts_different_train_sizes_types():
     sh = TrainSizingClassifier("Tree", train_sizes=[0.2, 200], random_state=1)
     sh.run(reg_train, reg_test)
     assert len(sh.tree02.train) == 61
-    assert len(sh.tree0647.train) == 200
+    assert len(sh.tree065.train) == 200
 
 
 # Test goals ======================================================= >>

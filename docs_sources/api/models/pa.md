@@ -57,10 +57,6 @@ Categorical([True, False], name="average")
 
 ### Data attributes
 
-The dataset can be accessed at any time through multiple attributes, e.g. calling
-`trainer.train` will return the training set. The data can differ from the trainer's
-dataset if the model needs scaled features and the data wasn't scaled already.
-
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
@@ -103,7 +99,8 @@ Test target.
 </blockquote>
 <strong>shape: tuple</strong>
 <blockquote>
-Dataset's shape: (n_rows x n_columns).
+Dataset's shape: (n_rows x n_columns) or
+(n_rows, (shape_sample), n_cols) for deep learning datasets.
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>
@@ -125,15 +122,7 @@ Number of features in the dataset.
 <blockquote>
 Name of the target column.
 </blockquote>
-<strong>classes: pd.DataFrame</strong>
-<blockquote>
-Number of rows per target class in the train, test and complete dataset (only if classifier).
-</blockquote>
-<strong>n_classes: int</strong>
-<blockquote>
-Number of unique classes in the target column (only if classifier).
-</blockquote>
-</td></tr>
+</tr>
 </table>
 <br>
 

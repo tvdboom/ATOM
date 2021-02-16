@@ -46,7 +46,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(["GNB", "RF", "LGB"], metric="roc_auc")
-atom.plot_gains(filename="cumulative_gains_curve.png")
+atom.plot_gains(filename="cumulative_gains_curve")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_gains.png" alt="plot_gains" width="700" height="420"/>

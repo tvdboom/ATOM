@@ -86,7 +86,7 @@
 </li>
             
 <li>
-    <a href="API/data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+    <a href="API/data_cleaning/pruner/" class="dropdown-item">Pruner</a>
 </li>
             
 <li>
@@ -646,13 +646,14 @@ use case-specific feature engineering or data cleaning steps! </p>
 <h3 id="version-430-dev">Version 4.3.0 - dev</h3>
 <ul>
 <li>Possibility to <a href="./API/ATOM/atomclassifier/#add">add</a> custom transformers to the pipeline.</li>
-<li>The <a href="./API/ATOM/atomclassifier/#export-pipeline">export_pipeline</a> utility method extracts atom's current pipeline as a sklearn object.</li>
+<li>The <a href="./API/ATOM/atomclassifier/#export-pipeline">export_pipeline</a> utility method exports atom's current pipeline to a sklearn object.</li>
 <li>Use <a href="./user_guide/#automl">AutoML</a> to automate the search for an optimized pipeline.</li>
 <li>New magic methods makes atom behave similarly to sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.</li>
 <li>All <a href="./user_guide/#training">training approaches</a> can now be combined in the same atom instance.</li>
-<li>The results dataframe is now equal for all training approaches (multi-index is deprecated).</li>
 <li>Complete rework of all the <a href="./user_guide#shap">shap plots</a> to be consistent with their new API.</li>
+<li>Improvements for the <a href="./API/ATOM/data_cleaning/scaler">Scaler</a> and <a href="./API/ATOM/data_cleaning/pruner">Pruner</a> classes.</li>
 <li>The acronym for custom models now defaults to the capital letters in the class' __name__.</li>
+<li>Possibility to apply transformations on only a subset of the columns.</li>
 <li>Plots and methods now accept <code>winner</code> as model name.</li>
 <li>Fixed a bug where custom metrics didn't show the correct name.</li>
 <li>Fixed a bug where timers were not displayed correctly.</li>
@@ -765,7 +766,7 @@ use case-specific feature engineering or data cleaning steps! </p>
 <li><a href="./API/data_cleaning/cleaner">Cleaner</a></li>
 <li><a href="./API/data_cleaning/imputer">Imputer</a></li>
 <li><a href="./API/data_cleaning/encoder">Encoder</a></li>
-<li><a href="./API/data_cleaning/outliers">Outliers</a></li>
+<li><a href="./API/data_cleaning/pruner">Pruner</a></li>
 <li><a href="./API/data_cleaning/balancer">Balancer</a></li>
 </ul>
 </li>
@@ -974,5 +975,5 @@ use case-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2021-02-02 16:23:54.243493+00:00
+Build Date UTC : 2021-02-16 16:09:41.298803+00:00
 -->

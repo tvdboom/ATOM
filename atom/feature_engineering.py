@@ -749,9 +749,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             ).fit(X, y)
 
         elif self.strategy.lower() == "pca":
-            # Always fit in case the data to transform is not scaled
-            self.scaler = Scaler().fit(X)
             if not check_scaling(X):
+                self.scaler = Scaler().fit(X)
                 X = self.scaler.transform(X)
 
             # Define PCA
@@ -923,7 +922,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         elif self.strategy.lower() == "pca":
             self.log(f" --> Applying Principal Component Analysis...", 2)
 
-            if not check_scaling(X):
+            if self.scaler:
                 self.log("   >>> Scaling features...", 2)
                 X = self.scaler.transform(X)
 

@@ -86,7 +86,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+    <a href="../../data_cleaning/pruner/" class="dropdown-item">Pruner</a>
 </li>
             
 <li>
@@ -605,7 +605,7 @@ Whether to render the plot.
 
 atom = ATOMClassifier(X, y)
 atom.run([&quot;GNB&quot;, &quot;RF&quot;, &quot;LGB&quot;], metric=&quot;roc_auc&quot;)
-atom.plot_lift(filename=&quot;lift_curve.png&quot;)
+atom.plot_lift(filename=&quot;lift_curve&quot;)
 </code></pre>
 <div align="center">
     <img src="../../../img/plots/plot_lift.png" alt="plot_lift" width="700" height="420"/>

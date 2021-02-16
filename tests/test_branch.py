@@ -185,28 +185,28 @@ def test_columns_property():
     assert atom.branch.columns == list(X_bin.columns) + [y_bin.name]
 
 
+def test_n_columns_property():
+    """Assert that the n_columns property returns the number of columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.branch.n_columns == len(X_bin.columns) + 1
+
+
 def test_features_property():
     """Assert that the features property returns the features of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.branch.features == list(X_bin.columns)
 
 
+def test_n_features_property():
+    """Assert that the n_features property returns the number of features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom.branch.n_features == len(X_bin.columns)
+
+
 def test_target_property():
     """Assert that the target property returns the last column in the dataset."""
     atom = ATOMClassifier(X_bin, "mean radius", random_state=1)
     assert atom.branch.target == "mean radius"
-
-
-def test_classes_property():
-    """Assert that the classes property returns a df of the classes in y."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert list(atom.branch.classes.index) == [0, 1, 2]
-
-
-def test_n_classes_property():
-    """Assert that the n_classes property returns the number of classes."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    assert atom.branch.n_classes == 3
 
 
 # Test property setters ============================================ >>

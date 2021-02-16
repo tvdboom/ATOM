@@ -86,7 +86,7 @@
 </li>
             
 <li>
-    <a href="../../data_cleaning/outliers/" class="dropdown-item">Outliers</a>
+    <a href="../../data_cleaning/pruner/" class="dropdown-item">Pruner</a>
 </li>
             
 <li>
@@ -595,7 +595,8 @@ Plot's title. If None, the title is left empty.
 </blockquote>
 <strong>figsize: tuple or None, optional (default=None)</strong>
 <blockquote>
-Figure's size, format as (x, y). If None, adapts size to <code>show</code> parameter.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of features shown.
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
@@ -614,7 +615,7 @@ Whether to render the plot.
 
 atom = ATOMClassifier(X, y)
 atom.run([&quot;LR&quot;, &quot;LDA&quot;], metric=&quot;average_precision&quot;)
-atom.LDA.plot_permutation_importance(show=10, n_repeats=7)
+atom.lda.plot_permutation_importance(show=10, n_repeats=7)
 </code></pre>
 <div align="center">
     <img src="../../../img/plots/plot_permutation_importance.png" alt="plot_permutation_importance" width="700" height="700"/>

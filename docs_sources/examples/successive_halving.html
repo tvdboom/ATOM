@@ -14271,8 +14271,7 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[1]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Import packages</span>
-<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_boston</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">load_boston</span>
 <span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 </pre></div>
 
@@ -14307,7 +14306,7 @@ a.anchor-link {
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[3]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14394,73 +14393,73 @@ Test evaluation --&gt; neg_mean_absolute_error: -3.3257
 Time elapsed: 0.007s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.3307 ± 0.525
-Time elapsed: 0.028s
+Time elapsed: 0.021s
 -------------------------------------------------
-Total time: 0.037s
+Total time: 0.028s
 
 
 Results for Bagging Regressor:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -1.3054
 Test evaluation --&gt; neg_mean_absolute_error: -2.695
-Time elapsed: 0.023s
+Time elapsed: 0.021s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677
-Time elapsed: 0.084s
+Time elapsed: 0.080s
 -------------------------------------------------
-Total time: 0.108s
+Total time: 0.101s
 
 
 Results for Extra-Trees:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -2.1541
-Time elapsed: 0.085s
+Time elapsed: 0.087s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708
-Time elapsed: 0.432s
+Time elapsed: 0.355s
 -------------------------------------------------
-Total time: 0.517s
+Total time: 0.443s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -1.1509
 Test evaluation --&gt; neg_mean_absolute_error: -2.4143
-Time elapsed: 0.130s
+Time elapsed: 0.108s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9574 ± 0.2253
-Time elapsed: 0.494s
+Time elapsed: 0.491s
 -------------------------------------------------
-Total time: 0.623s
+Total time: 0.600s
 
 
 Results for LightGBM:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -3.3965
 Test evaluation --&gt; neg_mean_absolute_error: -4.4873
-Time elapsed: 0.028s
+Time elapsed: 0.025s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.8485 ± 0.2679
-Time elapsed: 0.082s
+Time elapsed: 0.071s
 -------------------------------------------------
-Total time: 0.111s
+Total time: 0.097s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0806
 Test evaluation --&gt; neg_mean_absolute_error: -2.3991
-Time elapsed: 1.244s
+Time elapsed: 1.303s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9193 ± 0.2604
-Time elapsed: 4.001s
+Time elapsed: 4.186s
 -------------------------------------------------
-Total time: 5.244s
+Total time: 5.490s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.641s
+Duration: 6.761s
 ------------------------------------------
 Decision Tree     --&gt; neg_mean_absolute_error: -4.331 ± 0.525 ~
 Bagging Regressor --&gt; neg_mean_absolute_error: -3.096 ± 0.268 ~
@@ -14480,40 +14479,40 @@ Results for Extra-Trees:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -2.2361
-Time elapsed: 0.111s
+Time elapsed: 0.105s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.6016 ± 0.289
-Time elapsed: 0.401s
+Time elapsed: 0.469s
 -------------------------------------------------
-Total time: 0.512s
+Total time: 0.575s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.982
 Test evaluation --&gt; neg_mean_absolute_error: -2.5055
-Time elapsed: 0.127s
+Time elapsed: 0.133s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.7619 ± 0.1947
-Time elapsed: 0.567s
+Time elapsed: 0.576s
 -------------------------------------------------
-Total time: 0.695s
+Total time: 0.710s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.2835
 Test evaluation --&gt; neg_mean_absolute_error: -2.42
-Time elapsed: 1.698s
+Time elapsed: 1.764s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5595 ± 0.2768
-Time elapsed: 6.450s
+Time elapsed: 6.569s
 -------------------------------------------------
-Total time: 8.150s
+Total time: 8.334s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.358s
+Duration: 9.618s
 ------------------------------------------
 Extra-Trees   --&gt; neg_mean_absolute_error: -2.602 ± 0.289 ~
 Random Forest --&gt; neg_mean_absolute_error: -2.762 ± 0.195 ~
@@ -14530,16 +14529,16 @@ Results for CatBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.3978
 Test evaluation --&gt; neg_mean_absolute_error: -1.8776
-Time elapsed: 3.209s
+Time elapsed: 3.287s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902
-Time elapsed: 14.044s
+Time elapsed: 14.830s
 -------------------------------------------------
-Total time: 17.253s
+Total time: 18.119s
 
 
 Final results ========================= &gt;&gt;
-Duration: 17.253s
+Duration: 18.119s
 ------------------------------------------
 CatBoost --&gt; neg_mean_absolute_error: -2.051 ± 0.09 ~
 </pre>
@@ -14561,7 +14560,9 @@ CatBoost --&gt; neg_mean_absolute_error: -2.051 ± 0.09 ~
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that the models end with the number of models in the run</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># The results is now multi-index, where frac is the fraction</span>
+<span class="c1"># of the training set used to fit the model. The model names</span>
+<span class="c1"># end with the number of models fitted in that run</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">results</span>
 </pre></div>
 
@@ -14601,6 +14602,7 @@ CatBoost --&gt; neg_mean_absolute_error: -2.051 ± 0.09 ~
   <thead>
     <tr style="text-align: right;">
       <th></th>
+      <th></th>
       <th>metric_train</th>
       <th>metric_test</th>
       <th>time_fit</th>
@@ -14609,8 +14611,70 @@ CatBoost --&gt; neg_mean_absolute_error: -2.051 ± 0.09 ~
       <th>time_bagging</th>
       <th>time</th>
     </tr>
+    <tr>
+      <th>frac</th>
+      <th>model</th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
   </thead>
   <tbody>
+    <tr>
+      <th rowspan="6" valign="top">0.17</th>
+      <th>Bag6</th>
+      <td>-1.305373e+00</td>
+      <td>-2.695050</td>
+      <td>0.021s</td>
+      <td>-3.095663</td>
+      <td>0.267668</td>
+      <td>0.080s</td>
+      <td>0.101s</td>
+    </tr>
+    <tr>
+      <th>CatB6</th>
+      <td>-8.055503e-02</td>
+      <td>-2.399073</td>
+      <td>1.303s</td>
+      <td>-2.919304</td>
+      <td>0.260378</td>
+      <td>4.186s</td>
+      <td>5.490s</td>
+    </tr>
+    <tr>
+      <th>ET6</th>
+      <td>-2.256238e-14</td>
+      <td>-2.154089</td>
+      <td>0.087s</td>
+      <td>-2.555434</td>
+      <td>0.170823</td>
+      <td>0.355s</td>
+      <td>0.443s</td>
+    </tr>
+    <tr>
+      <th>LGB6</th>
+      <td>-3.396511e+00</td>
+      <td>-4.487270</td>
+      <td>0.025s</td>
+      <td>-4.848536</td>
+      <td>0.267874</td>
+      <td>0.071s</td>
+      <td>0.097s</td>
+    </tr>
+    <tr>
+      <th>RF6</th>
+      <td>-1.150866e+00</td>
+      <td>-2.414297</td>
+      <td>0.108s</td>
+      <td>-2.957400</td>
+      <td>0.225311</td>
+      <td>0.491s</td>
+      <td>0.600s</td>
+    </tr>
     <tr>
       <th>Tree6</th>
       <td>-0.000000e+00</td>
@@ -14618,98 +14682,50 @@ CatBoost --&gt; neg_mean_absolute_error: -2.051 ± 0.09 ~
       <td>0.007s</td>
       <td>-4.330693</td>
       <td>0.525026</td>
+      <td>0.021s</td>
       <td>0.028s</td>
-      <td>0.037s</td>
     </tr>
     <tr>
-      <th>Bag6</th>
-      <td>-1.305373e+00</td>
-      <td>-2.695050</td>
-      <td>0.023s</td>
-      <td>-3.095663</td>
-      <td>0.267668</td>
-      <td>0.084s</td>
-      <td>0.108s</td>
-    </tr>
-    <tr>
-      <th>ET6</th>
-      <td>-2.256238e-14</td>
-      <td>-2.154089</td>
-      <td>0.085s</td>
-      <td>-2.555434</td>
-      <td>0.170823</td>
-      <td>0.432s</td>
-      <td>0.517s</td>
-    </tr>
-    <tr>
-      <th>RF6</th>
-      <td>-1.150866e+00</td>
-      <td>-2.414297</td>
-      <td>0.130s</td>
-      <td>-2.957400</td>
-      <td>0.225311</td>
-      <td>0.494s</td>
-      <td>0.623s</td>
-    </tr>
-    <tr>
-      <th>LGB6</th>
-      <td>-3.396511e+00</td>
-      <td>-4.487270</td>
-      <td>0.028s</td>
-      <td>-4.848536</td>
-      <td>0.267874</td>
-      <td>0.082s</td>
-      <td>0.111s</td>
-    </tr>
-    <tr>
-      <th>CatB6</th>
-      <td>-8.055503e-02</td>
-      <td>-2.399073</td>
-      <td>1.244s</td>
-      <td>-2.919304</td>
-      <td>0.260378</td>
-      <td>4.001s</td>
-      <td>5.244s</td>
+      <th rowspan="3" valign="top">0.33</th>
+      <th>CatB3</th>
+      <td>-2.835499e-01</td>
+      <td>-2.420032</td>
+      <td>1.764s</td>
+      <td>-2.559497</td>
+      <td>0.276791</td>
+      <td>6.569s</td>
+      <td>8.334s</td>
     </tr>
     <tr>
       <th>ET3</th>
       <td>-2.315185e-14</td>
       <td>-2.236079</td>
-      <td>0.111s</td>
+      <td>0.105s</td>
       <td>-2.601648</td>
       <td>0.289034</td>
-      <td>0.401s</td>
-      <td>0.512s</td>
+      <td>0.469s</td>
+      <td>0.575s</td>
     </tr>
     <tr>
       <th>RF3</th>
       <td>-9.819778e-01</td>
       <td>-2.505465</td>
-      <td>0.127s</td>
+      <td>0.133s</td>
       <td>-2.761887</td>
       <td>0.194678</td>
-      <td>0.567s</td>
-      <td>0.695s</td>
+      <td>0.576s</td>
+      <td>0.710s</td>
     </tr>
     <tr>
-      <th>CatB3</th>
-      <td>-2.835499e-01</td>
-      <td>-2.420032</td>
-      <td>1.698s</td>
-      <td>-2.559497</td>
-      <td>0.276791</td>
-      <td>6.450s</td>
-      <td>8.150s</td>
-    </tr>
-    <tr>
+      <th>1.00</th>
       <th>CatB1</th>
       <td>-3.977985e-01</td>
       <td>-1.877590</td>
-      <td>3.209s</td>
+      <td>3.287s</td>
       <td>-2.051462</td>
       <td>0.090227</td>
-      <td>14.044s</td>
-      <td>17.253s</td>
+      <td>14.830s</td>
+      <td>18.119s</td>
     </tr>
   </tbody>
 </table>

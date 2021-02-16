@@ -172,7 +172,8 @@ Test target.
 </blockquote>
 <strong>shape: tuple</strong>
 <blockquote>
-Dataset's shape: (n_rows x n_columns).
+Dataset's shape: (n_rows x n_columns) or
+(n_rows, (shape_sample), n_cols) for deep learning datasets.
 </blockquote>
 <strong>columns: list</strong>
 <blockquote>
@@ -194,25 +195,42 @@ Number of features in the dataset.
 <blockquote>
 Name of the target column.
 </blockquote>
+<strong>scaled: bool</strong>
+<blockquote>
+Whether the feature set is scaled. It is considered scaled when
+it has mean=0 and std=1, or when atom has a scaler in the pipeline.
+</blockquote>
 <strong>nans: pd.Series</strong>
 <blockquote>
-Returns columns with number of missing values.
+Columns with the number of missing values in them.
 </blockquote>
 <strong>n_nans: int</strong>
 <blockquote>
-Returns the total number of missing values in the dataset.
+Number of samples containing missing values.
+</blockquote>
+<strong>numerical: list</strong>
+<blockquote>
+Names of the numerical columns in the dataset.
+</blockquote>
+<strong>n_numerical: int</strong>
+<blockquote>
+Number of numerical columns in the dataset.
 </blockquote>
 <strong>categorical: list</strong>
 <blockquote>
-Returns the names of categorical columns in the dataset.
+Names of the categorical columns in the dataset.
 </blockquote>
 <strong>n_categorical: int</strong>
 <blockquote>
-Returns the number of categorical columns in the dataset.
+Number of categorical columns in the dataset.
 </blockquote>
-<strong>scaled: bool</strong>
+<strong>outliers: pd.Series</strong>
 <blockquote>
-Returns whether the feature set is scaled.
+Columns in training set with amount of outlier values.
+</blockquote>
+<strong>n_outliers: int</strong>
+<blockquote>
+Returns the total number of rows containing outliers.
 </blockquote>
 </td></tr>
 </table>
@@ -232,26 +250,6 @@ and <a href="#impute">impute</a> methods). Default values are: "", "?", "None", 
 "nan", "NaN" and "inf". Note that <code>None</code>, <code>NaN</code>, <code>+inf</code>
 and <code>-inf</code> are always considered missing since they are incompatible with
 sklearn estimators.
-</blockquote>
-<strong>genetic_features: pd.DataFrame</strong>
-<blockquote>
-Dataframe of the non-linear features created by the <a href="#feature-generation">feature_generation</a> method.
- Columns include:
-<ul>
-<li><b>name:</b> Name of the feature (automatically created).</li>
-<li><b>description:</b> Operators used to create this feature.</li>
-<li><b>fitness:</b> Fitness score.</li>
-</ul>
-</blockquote>
-<strong>collinear: pd.DataFrame</strong>
-<blockquote>
-Dataframe of the collinear features removed by the <a href="#feature-selection">feature_selection</a> method.
- Columns include:
-<ul>
-<li><b>drop_feature:</b> name of the feature dropped by the method.</li>
-<li><b>correlated feature:</b> Name of the correlated feature(s).</li>
-<li><b>correlation_value:</b> Pearson correlation coefficient(s) of the feature pairs.</li>
-</ul>
 </blockquote>
 <strong>models: list</strong>
 <blockquote>
@@ -408,7 +406,7 @@ inspect the pipeline.
 
 
 <a name="add"></a>
-<pre><em>method</em> <strong style="color:#008AB8">add</strong>(transformer, name=None, train_only=False)
+<pre><em>method</em> <strong style="color:#008AB8">add</strong>(transformer, name=None, columns=None, train_only=False)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L365">[source]</a></div></pre>
 Add a transformer to the current branch. If the transformer is not fitted,
 it is fitted on the complete training set. Afterwards, the data set is
@@ -432,6 +430,11 @@ Transformer to add to the pipeline. Should implement a <code>transform</code> me
 <blockquote>
 Name of the transformation step. If None, it defaults to
 the __name__ of the transformer's class (lower case).
+</blockquote>
+<strong>columns: slice, list or None, optional (default=None)</strong>
+<blockquote>
+Names or indices of the columns in the dataset to transform.
+If None, all columns are used.
 </blockquote>
 <strong>train_only: bool, optional (default=False)</strong>
 <blockquote>
@@ -704,21 +707,23 @@ Models that feed the stacking.
 <strong>estimator: str, callable or None, optional (default=None)</strong>
 <blockquote>
 The final estimator, which will be used to combine the base estimators. If str,
- choose from ATOM's <a href="../../../user_guide/#predefined-models">predefined models</a>.
- If None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge</a> is selected.
+choose from ATOM's <a href="../../../user_guide/#predefined-models">predefined models</a>.
+If None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge</a> is selected.
 </blockquote>
 <strong>stack_method: str, optional (default="auto")</strong>
 <blockquote>
 Methods called for each base estimator. If "auto", it will try to 
- invoke <code>predict_proba</code>, <code>decision_function</code>
- or <code>predict</code> in that order.
+invoke <code>predict_proba</code>, <code>decision_function</code>
+or <code>predict</code> in that order.
 </blockquote>
 <strong>passthrough: bool, optional (default=False)</strong>
 <blockquote>
 When False, only the predictions of estimators will be used
- as training data for the final estimator. When True, the
- estimator is trained on the predictions as well as the
- original training data.
+as training data for the final estimator. When True, the
+estimator is trained on the predictions as well as the
+original training data. The passed dataset will be scaled
+if any of the models require scaled features and they are
+not already.
 </blockquote>
 </tr>
 </table>
@@ -773,7 +778,7 @@ automatically apply the method on the dataset in the pipeline.
 <table>
 <tr>
 <td><a href="#scale">scale</a></td>
-<td>Scale all the features to mean=1 and std=0.</td>
+<td>Scale the dataset.</td>
 </tr>
 
 <tr>
@@ -792,17 +797,18 @@ automatically apply the method on the dataset in the pipeline.
 </tr>
 
 <tr>
-<td><a href="#outliers">outliers</a></td>
-<td>Remove or replace outliers in the training set.</td>
+<td><a href="#prune">prune</a></td>
+<td>Prune outliers from the training set.</td>
 </tr>
 </table>
 <br>
 
 
 <a name="scale"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scale</strong>()
+<pre><em>method</em> <strong style="color:#008AB8">scale</strong>(strategy="standard")
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L340">[source]</a></div></pre>
-Scale features to mean=1 and std=0. See the [Scaler](../data_cleaning/scaler.md) class.
+Applies one of sklearn's scalers. Non-numerical columns are ignored (instead
+of raising an exception). See the [Scaler](../data_cleaning/scaler.md) class.
 <br /><br /><br />
 
 
@@ -810,13 +816,15 @@ Scale features to mean=1 and std=0. See the [Scaler](../data_cleaning/scaler.md)
 <pre><em>method</em> <strong style="color:#008AB8">clean</strong>(prohibited_types=None, strip_categorical=True, maximum_cardinality=True,
              minimum_cardinality=True, missing_target=True, encode_target=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L359">[source]</a></div></pre>
-Applies standard data cleaning steps on the dataset. These steps can include:
+Applies standard data cleaning steps on the dataset. Use the parameters
+to choose which transformations to perform. The available steps are:
 
+* Remove columns with prohibited data types.
+* Remove categorical columns with maximal cardinality.
+* Remove columns with minimum cardinality.
 * Strip categorical features from white spaces.
-* Removing columns with prohibited data types.
-* Removing categorical columns with maximal cardinality.
-* Removing columns with minimum cardinality.
-* Removing rows with missing values in the target column.
+* Drop duplicate rows.
+* Drop rows with missing values in the target column.
 * Encode the target column.
 
 See [Cleaner](../data_cleaning/cleaner.md) for a description of the parameters.
@@ -854,14 +862,15 @@ for a description of the parameters.
 <br /><br /><br />
 
 
-<a name="outliers"></a>
-<pre><em>method</em> <strong style="color:#008AB8">outliers</strong>(strategy="drop", max_sigma=3, include_target=False) 
+<a name="prune"></a>
+<pre><em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="z-score", method="drop", max_sigma=3, include_target=False, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L493">[source]</a></div></pre>
-Remove or replace outliers in the training set. Outliers are defined as values that
-lie further than `max_sigma` * standard_deviation away from the mean of the column.
-Only outliers from the training set are removed to maintain the original distribution
-of target values in the test set. Ignores categorical columns. See
-[Outliers](../data_cleaning/outliers.md) for a description of the parameters.
+Prune outliers from the training set. The definition of outlier depends
+on the selected strategy and can greatly differ from one each other. 
+Ignores categorical columns. Only outliers from the training set are pruned
+in order to maintain the original distribution of samples in the test
+set. Ignores categorical columns. See [Pruner](../data_cleaning/pruner.md)
+for a description of the parameters.
 <br /><br /><br />
 
 
@@ -999,7 +1008,7 @@ X, y = load_boston(return_X_y=True)
 atom = ATOMRegressor(X, y, logger="auto", n_jobs=2, verbose=2)
 
 # Apply data cleaning methods
-atom.outliers(strategy="min_max", max_sigma=2, include_target=True)
+atom.prune(strategy="min_max", max_sigma=2, include_target=True)
 
 # Fit the models to the data
 atom.run(

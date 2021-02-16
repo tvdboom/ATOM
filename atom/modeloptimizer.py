@@ -34,8 +34,7 @@ from .data_cleaning import Scaler
 from .basemodel import BaseModel
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    flt, lst, arr, check_scaling, time_to_string, composed,
-    get_best_score, crash, method_to_log,
+    flt, lst, arr, time_to_string, composed, get_best_score, crash, method_to_log,
 )
 
 
@@ -55,8 +54,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         if hasattr(self.T, "_branches"):
             self.branch = self.T._branches[self.T._current]
             self._train_idx = self.branch.idx[0]  # Can change for sh and ts
-            if self.needs_scaling and not check_scaling(self.branch.X):
-                self.scaler = Scaler().fit(self.branch.X_train)
+            if self.needs_scaling and not self.T.scaled:
+                self.scaler = Scaler().fit(self.X_train)
 
         # BO attributes
         self._iter = 0
