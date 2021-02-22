@@ -533,27 +533,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         importance is extracted from the external estimator fitted on
         the reduced set.
 
-    univariate: SelectKBest
-        Instance used to fit the estimator. Only if strategy="univariate".
-
-    scaler: Scaler
-        Instance used to scale the data. Only if strategy="PCA" and the
-        data was not already scaled.
-
-    pca: PCA
-        Instance used to fit the estimator. Only if strategy="PCA".
-
-    sfm: SelectFromModel
-        Instance used to fit the estimator. Only if strategy="SFM".
-
-    rfe: RFE
-        Instance used to fit the estimator. Only if strategy="RFE".
-
-    rfecv: RFECV
-        Instance used to fit the estimator. Only if strategy="RFECV".
-
-    sfs: SequentialFeatureSelector
-        Instance used to fit the estimator. Only if strategy="SFS".
+    <strategy>: sklearn estimator
+        Estimator instance (lowercase strategy) used to transform
+        the data, e.g. `balancer.pca` for the PCA strategy.
 
     """
 
@@ -584,13 +566,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             columns=["drop_feature", "correlated_feature", "correlation_value"]
         )
         self.feature_importance = None
-        self.univariate = None
         self.scaler = None
-        self.pca = None
-        self.sfm = None
-        self.rfe = None
-        self.rfecv = None
-        self.sfs = None
         self._low_variance = {}
         self._is_fitted = False
 

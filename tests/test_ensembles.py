@@ -46,7 +46,7 @@ def test_vote_scoring():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"], metric=["precision", "recall"])
     atom.voting()
-    assert atom.vote.scoring() == "precision: 0.944   recall: 0.993"
+    assert atom.vote.scoring() == "precision: 0.9442   recall: 0.9926"
 
 
 def test_vote_scoring_with_weights():

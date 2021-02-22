@@ -296,7 +296,7 @@ def get_best_score(item, metric=0):
         return lst(item.metric_test)[metric]
 
 
-def time_to_string(t_init):
+def time_to_str(t_init):
     """Convert time integer to string.
 
     Convert a time duration to a string of format 00h:00m:00s
@@ -322,7 +322,7 @@ def time_to_string(t_init):
     elif not h:  # Also minutes
         return f"{m}m:{s:02.0f}s"
     else:  # Also hours
-        return f"{h}h:{m}m:{s:02.0f}s"
+        return f"{h}h:{m:02.0f}m:{s:02.0f}s"
 
 
 def to_df(data, index=None, columns=None, pca=False):
@@ -452,12 +452,6 @@ def prepare_logger(logger, class_name):
         if logger.hasHandlers():  # Remove existing handlers
             logger.handlers.clear()
         logger.addHandler(file_handler)  # Add file handler to logger
-
-    elif type(logger) != logging.Logger:  # Should be python "Logger" object"
-        raise TypeError(
-            "Invalid value for the logger parameter. Expected a "
-            f"logging.Logger object, got {type(logger)}!"
-        )
 
     return logger
 
@@ -842,13 +836,13 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 
     # Prepare the provided data
     if data:
-        X_now = to_df(data[0], columns=branch.features)
-        y_now = to_series(data[1], name=branch.target)
+        X_og = to_df(data[0], columns=branch.features)
+        y_og = to_series(data[1], name=branch.target)
     else:
         if transformer.train_only:
-            X_now, y_now = branch.X_train, branch.y_train
+            X_og, y_og = branch.X_train, branch.y_train
         else:
-            X_now, y_now = branch.X, branch.y
+            X_og, y_og = branch.X, branch.y
 
     # Adapt the transformer's verbosity
     if verbose is not None:
@@ -863,12 +857,14 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 
     cols = transformer.cols  # Columns to use for transformation
     if "y" in signature(transformer.transform).parameters:
-        X, y = catch_return(transformer.transform(X_now[cols], y_now))
+        X, y = catch_return(transformer.transform(X_og[cols], y_og))
     else:
-        X, y = catch_return(transformer.transform(X_now[cols]))
+        X, y = catch_return(transformer.transform(X_og[cols]))
 
     # Convert to pandas and assign proper column names
-    X = reorder_cols(to_df(X, columns=name_cols(X, X_now[cols])), X_now)
+    if not isinstance(X, pd.DataFrame):
+        X = to_df(X, columns=name_cols(X, X_og[cols]))
+    X = reorder_cols(X, X_og)
     y = to_series(y, name=branch.target)
 
     # Apply changes to the branch

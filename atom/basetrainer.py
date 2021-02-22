@@ -21,7 +21,7 @@ from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
     SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, dct,
-    time_to_string, get_acronym, get_metric, get_default_metric,
+    time_to_str, get_acronym, get_metric, get_default_metric,
     check_scaling, delete, PlotCallback, CustomDict,
 )
 
@@ -445,7 +445,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     m.bootstrap_aggregating()
 
                 # Get the total time spend on this model
-                setattr(m, "time", time_to_string(model_time))
+                setattr(m, "time", time_to_str(model_time))
                 self.log("-" * 49 + f"\nTotal time: {m.time}", 1)
 
             except Exception as ex:
@@ -472,5 +472,5 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             raise RuntimeError("It appears all models failed to run...")
 
         self.log("\n\nFinal results ========================= >>", 1)
-        self.log(f"Duration: {time_to_string(t_init)}\n" + "-" * 42, 1)
+        self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 42, 1)
         self.scoring(_vb=1)

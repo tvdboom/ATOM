@@ -1,10 +1,10 @@
-# plot_correlation
-------------------
+# plot_scatter_matrix
+---------------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, method="pearson", title=None, figsize=(8, 8), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
-Plot the data's correlation matrix. Ignores categorical columns.
+Plot the data's scatter matrix. Ignores categorical columns.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -14,15 +14,11 @@ Plot the data's correlation matrix. Ignores categorical columns.
 Slice, names or indices of the columns to plot. If None, plot
 all columns in the dataset.
 </blockquote>
-<strong>method: str, optional (default="pearson")</strong>
-<blockquote>
-Method of correlation. Choose from "pearson", "kendall" or "spearman".
-</blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
 Plot's title. If None, the title is left empty.
 </blockquote>
-<strong>figsize: tuple, optional (default=(8, 8))</strong>
+<strong>figsize: tuple, optional (default=(10, 10))</strong>
 <blockquote>
 Figure's size, format as (x, y).
 </blockquote>
@@ -46,8 +42,8 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.plot_correlation()
+atom.plot_scatter_matrix(columns=slice(0, 5))
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_correlation.png" alt="plot_correlation" width="560" height="560"/>
+    <img src="../../../img/plots/plot_scatter_matrix.png" alt="plot_scatter_matrix" width="720" height="720"/>
 </div>

@@ -11,6 +11,7 @@ Description: Unit tests for atom.py
 import glob
 import pytest
 import numpy as np
+from mock import patch
 from sklearn.metrics import get_scorer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -23,8 +24,8 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Imputer, Pruner
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
-    X10, X10_nan, X10_str, y10, y10_str, y10_sn, X20_out, mnist,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10,
+    X10_nan, X10_str, y10, y10_str, y10_sn, X20_out, mnist,
 )
 
 
@@ -220,11 +221,12 @@ def test_n_classes_property():
 
 # Test utility methods ============================================= >>
 
-def test_report():
+@patch("atom.atom.ProfileReport")
+def test_report(cls):
     """Assert that the report attribute and file are created."""
     atom = ATOMClassifier(X_reg, y_reg, random_state=1)
-    atom.report(n_rows=10, filename=FILE_DIR + "report")
-    assert glob.glob(FILE_DIR + "report.html")
+    atom.report(n_rows=10, filename="report")
+    cls.return_value.to_file.assert_called_once_with("report.html")
 
 
 def test_transform_method():
@@ -278,7 +280,7 @@ def test_parameters_are_obeyed():
 def test_transform_with_y():
     """Assert that the transform method works when y is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.prune(max_sigma=2, include_target=True)
+    atom.prune(strategy="iforest", include_target=True)
     X, y = atom.transform(X_bin, y_bin, pruner=True)
     assert len(y) < len(y_bin)
 
@@ -530,7 +532,7 @@ def test_default_solver_from_task():
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
+    atom.feature_selection(strategy="rfe", solver="lgb", n_features=25)
     assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
 
 
@@ -538,7 +540,7 @@ def test_default_scoring():
     """Assert that the scoring is atom's metric when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")
-    atom.feature_selection(strategy="sfs", solver="lgb", n_features=8)
+    atom.feature_selection(strategy="sfs", solver="lgb", n_features=25)
     assert atom.pipeline[0].kwargs["scoring"].name == "recall"
 
 
@@ -555,7 +557,7 @@ def test_automl_classification():
 def test_automl_regression():
     """Assert that the automl method works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.automl(max_time_mins=0.2, scoring="r2", random_state=2)
+    atom.automl(max_time_mins=0.1, scoring="r2", random_state=2)
     assert atom.metric == "r2"
     assert atom.tpot.random_state == 2
 

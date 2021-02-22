@@ -169,7 +169,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         self.log("Scaling features...", 1)
-        X_numerical = X.select_dtypes(include=["int64", "float64"])
+        X_numerical = X.select_dtypes(include=["number"])
         X_transformed = self.scaler.transform(X_numerical)
 
         # Replace the numerical columns with the transformed values
@@ -497,11 +497,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
 
         # Loop over all columns to fit the impute classes
+        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
 
             # Column is numerical
-            if X[col].dtype.kind in "ifu":
+            if col in num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
                         self._imputers[col] = KNNImputer().fit(values)
@@ -566,6 +567,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             )
 
         # Loop over all columns to apply strategy dependent on type
+        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
 
@@ -581,7 +583,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 continue  # Skip to side column
 
             # Column is numerical and contains missing values
-            if X[col].dtype.kind in "ifu" and nans > 0:
+            if col in num_cols and nans > 0:
                 if not isinstance(self.strat_num, str):
                     self.log(
                         f" --> Imputing {nans} missing values with number "
@@ -898,6 +900,12 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     **kwargs
         Additional keyword arguments for the `strategy` estimator.
 
+    Attributes
+    ----------
+    <strategy>: sklearn estimator
+        Estimator instance (lowercase strategy) used to prune the data,
+        e.g. `pruner.iforest` for the isolation forest strategy.
+
     """
 
     @typechecked
@@ -971,7 +979,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         # Prepare dataset (merge with y and exclude categorical columns)
         objective = merge(X, y) if self.include_target and y is not None else X
-        objective = objective.select_dtypes(exclude=["category", "object"])
+        objective = objective.select_dtypes(include=["number"])
 
         if self.strategy.lower() == "z-score":
             z_scores = zscore(objective, nan_policy="propagate")
@@ -1085,10 +1093,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Attributes
     ----------
-    <estimator_name>: class
-        Estimator instance (attribute name in all lowercase) used to
-        oversample/undersample the data, e.g. `balancer.adasyn` for the
-        default option.
+    <strategy>: imblearn estimator
+        Estimator instance (lowercase strategy) used to oversample or
+        undersample the data, e.g. `balancer.adasyn` for the default
+        strategy.
 
     mapping: dict
         Dictionary of the target values mapped to their respective

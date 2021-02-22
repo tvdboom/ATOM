@@ -16,6 +16,7 @@ from skopt.callbacks import TimerCallback
 
 # Own modules
 from atom.training import DirectClassifier, DirectRegressor
+from atom.utils import PlotCallback
 from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
 
 
@@ -343,6 +344,19 @@ def test_error_handling():
     assert trainer.errors.get("LDA")
     assert "LDA" not in trainer.models
     assert "LDA" not in trainer.results.index
+
+
+def test_close_plot_after_error():
+    """Assert that the BO plot is closed after an error."""
+    trainer = DirectClassifier(
+        models=["LR", "LDA"],
+        n_calls=4,
+        n_initial_points=[2, 5],
+        bo_params={"plot": True},
+        random_state=1,
+    )
+    trainer.run(bin_train, bin_test)
+    assert PlotCallback.c == 1  # First model is 0, after error passes to 1
 
 
 def test_all_models_failed():

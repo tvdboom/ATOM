@@ -34,7 +34,7 @@ from .data_cleaning import Scaler
 from .basemodel import BaseModel
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    flt, lst, arr, time_to_string, composed, get_best_score, crash, method_to_log,
+    flt, lst, arr, time_to_str, composed, get_best_score, crash, method_to_log,
 )
 
 
@@ -265,8 +265,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 scores = list(np.mean(jobs, axis=0))
 
             # Append row to the bo attribute
-            t = time_to_string(t_iter)
-            t_tot = time_to_string(self._init_bo)
+            t = time_to_str(t_iter)
+            t_tot = time_to_str(self._init_bo)
             self.bo.loc[call] = {
                 "params": params,
                 "estimator": est,
@@ -378,7 +378,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.estimator = self.get_estimator({**self._est_params, **self.best_params})
 
         # Get the BO duration
-        self.time_bo = time_to_string(self._init_bo)
+        self.time_bo = time_to_str(self._init_bo)
 
         # Print results
         self.T.log(f"\nResults for {self.fullname}:{' ':9s}", 1)
@@ -442,7 +442,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.T.log(f"Test evaluation --> {'   '.join(out_test)}", 1)
 
         # Get duration and print to log
-        self.time_fit = time_to_string(t_init)
+        self.time_fit = time_to_str(t_init)
         self.T.log(f"Time elapsed: {self.time_fit}", 1)
 
     def bootstrap_aggregating(self):
@@ -497,7 +497,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         ]
         self.T.log(f"Evaluation --> {'   '.join(out)}", 1)
 
-        self.time_bagging = time_to_string(t_init)
+        self.time_bagging = time_to_str(t_init)
         self.T.log(f"Time elapsed: {self.time_bagging}", 1)
 
     # Utility methods ============================================== >>
@@ -507,13 +507,13 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # If bagging was used, we use a different format
         if self.mean_bagging is None:
             out = "   ".join([
-                f"{m.name}: {round(lst(self.metric_test)[i], 3)}"
+                f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
                 for i, m in enumerate(self.T._metric)
             ])
         else:
             out = "   ".join([
-                f"{m.name}: {round(lst(self.mean_bagging)[i], 3)} "
-                f"\u00B1 {round(lst(self.std_bagging)[i], 3)}"
+                f"{m.name}: {round(lst(self.mean_bagging)[i], 4)} "
+                f"\u00B1 {round(lst(self.std_bagging)[i], 4)}"
                 for i, m in enumerate(self.T._metric)
             ])
 
@@ -604,6 +604,5 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         elif filename == "auto" or filename.endswith("/auto"):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
 
-        with open(filename, "wb") as file:
-            pickle.dump(self.estimator, file)
+        pickle.dump(self.estimator, open(filename, "wb"))
         self.T.log(f"{self.fullname} estimator saved successfully!", 1)

@@ -62,7 +62,7 @@ concepts related to this package.
 * **branch**: Collection of estimators in the pipeline fitted to a specific dataset.
   See the [branches](#branches) section.
 * **BO**: Bayesian optimization algorithm used for hyperparameter optimization.
-* **categorical columns**: Refers to all columns with dtype.kind not in `ifu`.
+* **categorical columns**: Refers to all non-numerical columns.
 * **class**: Unique value in a column, e.g. a binary classifier has 2 classes in the target column.
 * **estimator**: An object which manages the estimation and decoding of an algorithm. The
   algorithm is estimated as a deterministic function of a set of parameters, a dataset
@@ -262,14 +262,14 @@ the most common transformations fast and easy.
 
 !!!note
     All of atom's data cleaning methods automatically adopt the relevant
-    attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
+    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
     e.g. `atom.scale(verbose=2)`.
 
 !!!note
     Like the [add](../API/ATOM/atomclassifier/#add) method, the data cleaning
     methods accept the `columns` parameter to only transform a subset of the
-    dataset's features, e.g. `atom.scale(columns=[0, 1]`.
+    dataset's features, e.g. `atom.scale(columns=[0, 1])`.
 
 
 <br>
@@ -446,7 +446,9 @@ a credit card fraud detection dataset, most of the transactions are
 non-fraud, and a very few cases are fraud. This leaves us with a very
 unbalanced ratio of fraud vs non-fraud cases. The [Balancer](../API/data_cleaning/balancer)
 class can oversample the minority class or undersample the majority
-class. It can be accessed from atom through the [balance](../API/ATOM/atomclassifier/#balance)
+class using any of the transformers implemented in
+[imblearn](https://imbalanced-learn.org/stable/index.html). It can be
+accessed from atom through the [balance](../API/ATOM/atomclassifier/#balance)
 method.
 
 
@@ -480,7 +482,7 @@ in the dataset. See the <a href="../examples/feature_engineering.html" target="_
 
 !!!note
     All of atom's feature engineering methods automatically adopt the relevant
-    attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
+    transformer attributes (`n_jobs`, `verbose`, `logger`, `random_state`) from
     atom. A different choice can be added as parameter to the method call,
     e.g. `atom.feature_selection("SFM", solver="LGB", n_features=10, n_jobs=4)`.
 
@@ -1383,6 +1385,16 @@ A list of available plots can be find hereunder. Note that not all plots can be
 <tr>
 <td width="15%"><a href="../API/plots/plot_correlation">plot_correlation</a></td>
 <td>Plot the data's correlation matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_scatter_matrix">plot_scatter_matrix</a></td>
+<td>Plot the data's scatter matrix.</td>
+</tr>
+
+<tr>
+<td width="15%"><a href="../API/plots/plot_distributions">plot_distributions</a></td>
+<td>Plot feature distributions.</td>
 </tr>
 
 <tr>

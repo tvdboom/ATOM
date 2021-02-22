@@ -419,7 +419,7 @@ def test_invalid_method_parameter():
 
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
-    pruner = Pruner(strategy="if", method="min_max")
+    pruner = Pruner(strategy="iforest", method="min_max")
     pytest.raises(ValueError, pruner.transform, X_bin)
 
 
@@ -438,11 +438,11 @@ def test_max_sigma_functionality():
     assert len(X_1) < len(X_2) < len(X_3)
 
 
-def test_kwargs_parameter():
+def test_kwargs_parameter_pruner():
     """Assert that the kwargs are passed to the strategy estimator."""
     pruner = Pruner(strategy="iForest", n_estimators=50)
     pruner.transform(X10)
-    assert pruner.iforest.get_params()["n_estimators"] == 100
+    assert pruner.iforest.get_params()["n_estimators"] == 50
 
 
 def test_drop_pruner():
@@ -495,7 +495,7 @@ def test_strategy_parameter_balancer():
     pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
 
 
-def test_kwargs_parameter():
+def test_kwargs_parameter_balancer():
     """Assert that the kwargs are passed to the estimator."""
     balancer = Balancer(strategy="SMOTE", k_neighbors=12)
     balancer.transform(X_class, y_class)

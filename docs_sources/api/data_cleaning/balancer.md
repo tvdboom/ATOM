@@ -78,8 +78,8 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <td width="75%" style="background:white;">
 <strong>&lt;strategy&gt;: imblearn estimator</strong>
 <blockquote>
-Estimator instance (lowercase strategy) used to oversample/undersample
-the data, e.g. <code>balancer.adasyn</code> for the default option.
+Estimator instance (lowercase strategy) used to oversample or undersample
+the data, e.g. <code>balancer.adasyn</code> for the default strategy.
 </blockquote>
 <strong>mapping: dict</strong>
 <blockquote>

@@ -90,7 +90,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <td width="75%" style="background:white;">
 <strong>&lt;strategy>: sklearn estimator</strong>
 <blockquote>
-Estimator instance (lowercase strategy) used to fit the data, e.g.
+Estimator instance (lowercase strategy) used to prune the data, e.g.
 <code>pruner.iforest</code> for the isolation forest strategy.
 </blockquote>
 </td>

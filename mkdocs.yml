@@ -86,6 +86,8 @@ nav:
           - score: API/predicting/score.md
     - Plots:
         - plot_correlation: API/plots/plot_correlation.md
+        - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
+        - plot_distributions: API/plots/plot_distributions.md
         - plot_pipeline: API/plots/plot_pipeline.md
         - plot_pca: API/plots/plot_pca.md
         - plot_components: API/plots/plot_components.md

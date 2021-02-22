@@ -175,7 +175,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def numerical(self):
         """Names of the numerical columns in the dataset."""
         if not check_deep(self.X):
-            return list(self.X.select_dtypes(include=["int64", "float64"]).columns)
+            return list(self.X.select_dtypes(include=["number"]).columns)
         else:
             return []
 
@@ -188,7 +188,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def categorical(self):
         """Names of the categorical columns in the dataset."""
         if not check_deep(self.X):
-            return list(self.X.select_dtypes(exclude=["int64", "float64"]).columns)
+            return list(self.X.select_dtypes(exclude=["number"]).columns)
         else:
             return []
 
@@ -398,13 +398,15 @@ class ATOM(BasePredictor, ATOMPlotter):
             Data set to save.
 
         """
+        default = f"{self.__class__.__name__}_{dataset}"
         if not filename:
-            filename = f"{self.__class__.__name__}_{dataset}"
-        elif filename == "auto" or filename.endswith("/auto"):
-            filename = filename.replace("auto", f"{self.__class__.__name__}_{dataset}")
+            filename = default + ".csv"
+        else:
+            if not filename.endswith(".csv"):
+                filename += ".csv"
+            if filename == "auto.csv" or filename.endswith("/auto.csv"):
+                filename = filename.replace("auto", default)
 
-        if not filename.endswith(".csv"):
-            filename += ".csv"
         getattr(self, dataset).to_csv(filename, index=False)
         self.log("Data set saved successfully!", 1)
 
@@ -492,6 +494,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             on the complete dataset.
 
         """
+        check_method(self, "add")
         if isinstance(transformer, Pipeline):
             self.log("Adding sklearn Pipeline to atom's pipeline...", 1)
 

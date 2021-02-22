@@ -12,6 +12,7 @@ import glob
 import pytest
 import pandas as pd
 import multiprocessing
+from mock import patch
 from tensorflow.keras.datasets import mnist
 
 # Own modules
@@ -58,7 +59,7 @@ def test_verbose_parameter(verbose):
 
 
 def test_warnings_parameter_bool():
-    """Assert that the warnings parameter works for a boolean value."""
+    """Assert that the warnings parameter works for a bool."""
     base = BaseTransformer(warnings=True)
     assert base.warnings == "default"
 
@@ -72,44 +73,27 @@ def test_warnings_parameter_invalid_str():
 
 
 def test_warnings_parameter_str():
-    """Assert that the warnings parameter works for a boolean value."""
+    """Assert that the warnings parameter works for a str."""
     base = BaseTransformer(warnings="always")
     assert base.warnings == "always"
 
 
-def test_log_is_none():
-    """Assert that no logging file is created when log=None."""
+@patch("atom.utils.logging.getLogger")
+def test_logger_creator(cls):
+    """Assert that the logger is created correctly."""
     BaseTransformer(logger=None)
-    assert not glob.glob("log.log")
+    cls.assert_not_called()
 
-
-def test_create_log_file():
-    """Assert that a logging file is created when log is not None."""
-    BaseTransformer(logger=FILE_DIR + "log.log")
-    assert glob.glob(FILE_DIR + "log.log")
-
-
-def test_log_file_ends_with_log():
-    """Assert that the logging file always ends with log."""
-    BaseTransformer(logger=FILE_DIR + "logger")
-    assert glob.glob(FILE_DIR + "logger.log")
-
-
-def test_log_file_named_auto():
-    """Assert that when log="auto", an automatic logging file is created."""
     BaseTransformer(logger=FILE_DIR + "auto")
-    assert glob.glob(FILE_DIR + "BaseTransformer_*")
+    cls.assert_called_once()
 
 
-def test_logger_invalid_class():
-    """Assert that an error is raised when logger is of invalid class."""
-    pytest.raises(TypeError, BaseTransformer, logger=BaseTransformer)
-
-
-def test_crash_with_logger():
+@patch("atom.utils.logging.getLogger")
+def test_crash_with_logger(cls):
     """Assert that the crash decorator works with a logger."""
-    atom = ATOMClassifier(X_bin, y_bin, logger=FILE_DIR + "logger")
+    atom = ATOMClassifier(X_bin, y_bin, logger=FILE_DIR + "log")
     pytest.raises(ValueError, atom.run, ["LR", "LDA"], n_calls=-1)
+    cls.return_value.exception.assert_called()
 
 
 def test_random_state_setter():
@@ -341,32 +325,26 @@ def test_merger_to_dataset():
 
 # Test log ========================================================= >>
 
-def test_log():
+@patch("atom.utils.logging.getLogger")
+def test_log(cls):
     """Assert the log method works."""
-    atom = ATOMClassifier(X_bin, y_bin, verbose=2, logger=FILE_DIR + "auto")
-    atom.log("test", 1)
+    base = BaseTransformer(verbose=2, logger=FILE_DIR + "log")
+    base.log("test", 1)
+    cls.return_value.info.assert_called()
 
 
 # Test save ======================================================== >>
 
 def test_file_is_saved():
-    """Assert that the pickle file is created."""
+    """Assert that the pickle file is saved."""
     atom = ATOMClassifier(X_bin, y_bin)
     atom.save(FILE_DIR + "auto")
     assert glob.glob(FILE_DIR + "ATOMClassifier")
 
 
-def test_save_data():
-    """Assert that the pickle file is created for save_data=False."""
-    # From ATOM
+@patch("atom.basetransformer.pickle")
+def test_save_data_false(cls):
+    """Assert that the dataset is restored after saving with save_data=False"""
     atom = ATOMClassifier(X_bin, y_bin)
-    dataset = atom.dataset.copy()
     atom.save(filename=FILE_DIR + "atom", save_data=False)
-    assert atom.dataset.equals(dataset)
-
-    # From a trainer
-    trainer = DirectClassifier("LR")
-    trainer.run(bin_train, bin_test)
-    dataset = trainer.dataset.copy()
-    trainer.save(filename=FILE_DIR + "trainer", save_data=False)
-    assert trainer.dataset.equals(dataset)
+    assert atom.dataset is not None  # Dataset is restored after saving

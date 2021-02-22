@@ -10,10 +10,20 @@ Description: Unit tests for utils.py
 # Standard packages
 import pytest
 import pandas as pd
+from datetime import datetime, timedelta
 from sklearn.base import BaseEstimator
 
 # Own modules
-from atom.utils import check_is_fitted, create_acronym, NotFittedError, CustomDict
+from atom.utils import (
+    time_to_str, check_is_fitted, create_acronym, NotFittedError, CustomDict,
+)
+
+
+def test_time_to_string():
+    """Assert that the time strings are formatted properly."""
+    assert time_to_str(datetime.now() - timedelta(seconds=17)) == "17.000s"
+    assert time_to_str(datetime.now() - timedelta(minutes=1, seconds=2)) == "1m:02s"
+    assert time_to_str(datetime.now() - timedelta(hours=3, minutes=8)) == "3h:08m:00s"
 
 
 def test_check_is_fitted_with_pandas():

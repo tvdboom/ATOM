@@ -52,7 +52,7 @@ from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, "RainTomorrow")
 atom.run("rf")
-atom.plot_probabilities(target="Yes", filename="probabilities_class_yes")
+atom.plot_probabilities()
 ```
 <div align="center">
     <img src="../../../img/plots/plot_probabilities.png" alt="plot_probabilities" width="700" height="420"/>

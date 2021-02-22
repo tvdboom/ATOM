@@ -68,7 +68,7 @@ class Voting(BaseModel):
             return np.average(scores, weights=self.weights)
 
         out = "   ".join([
-            f"{m.name}: {round(get_average_score(i), 3)}"
+            f"{m.name}: {round(get_average_score(i), 4)}"
             for i, m in enumerate(self.T._metric)
         ])
         return out

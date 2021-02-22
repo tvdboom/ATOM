@@ -14,7 +14,7 @@ Whether to show the parameters used for every estimator.
 </blockquote>
 <strong>branch: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the branch to plot. If None, plot the current active branch.
+Name of the branch to plot. If None, plot the current branch.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>

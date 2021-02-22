@@ -58,13 +58,13 @@ Example steps taken by ATOM's pipeline:
 1. Data Cleaning
 	* Handle missing values
 	* Encode categorical features
-    * Remove outliers
-	* Balance the dataset
+    * Detect and remove outliers
+	* Balance the training set
 2. Feature engineering
     * Create new non-linear features
 	* Remove multi-collinear features
 	* Remove features with too low variance
-	* Select the most promising features based on a statistical test
+	* Select the most promising features
 3. Train and validate multiple models
 	* Select hyperparameters using a Bayesian Optimization approach
 	* Train and test the models on the provided data
@@ -94,8 +94,9 @@ Example steps taken by ATOM's pipeline:
 * Use [AutoML](./user_guide/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](./user_guide/#training) can now be combined in the same atom instance.
+* New [plot_scatter_matrix](./API/plots/plot_scatter_matrix) and [plot_distributions](./API/plots/plot_distributions) for data inspection. 
 * Complete rework of all the [shap plots](./user_guide#shap) to be consistent with their new API.
-* Improvements for the [Scaler](./API/ATOM/data_cleaning/scaler) and [Pruner](./API/ATOM/data_cleaning/pruner) classes.
+* Improvements for the [Scaler](./API/data_cleaning/scaler) and [Pruner](./API/data_cleaning/pruner) classes.
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
 * Possibility to apply transformations on only a subset of the columns.
 * Plots and methods now accept `winner` as model name.
@@ -271,6 +272,8 @@ Example steps taken by ATOM's pipeline:
           - [score](./API/predicting/score)
     - Plots
         - [plot_correlation](./API/plots/plot_correlation)
+        - [plot_scatter_matrix](./API/plots/plot_scatter_matrix)
+        - [plot_distributions](./API/plots/plot_distributions)
         - [plot_pipeline](./API/plots/plot_pipeline)
         - [plot_pca](./API/plots/plot_pca)
         - [plot_components](./API/plots/plot_components)
@@ -317,4 +320,3 @@ Example steps taken by ATOM's pipeline:
     - <a href="./examples/utilities.html" target="_blank">Utilities</a>
 - [Dependencies](./dependencies)
 - [License](./license)
-

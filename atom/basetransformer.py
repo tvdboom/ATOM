@@ -359,8 +359,7 @@ class BaseTransformer:
         elif filename == "auto" or filename.endswith("/auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
-        with open(filename, "wb") as file:
-            pickle.dump(self, file)
+        pickle.dump(self, open(filename, "wb"))
 
         # Restore the data to the attributes
         if kwargs.get("save_data") is False and hasattr(self, "dataset"):

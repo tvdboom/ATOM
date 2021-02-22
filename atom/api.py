@@ -108,8 +108,7 @@ def ATOMLoader(
         This parameter is ignored if `transform_data=False`.
 
     """
-    with open(filename, "rb") as f:
-        cls = pickle.load(f)
+    cls = pickle.load(open(filename, "rb"))
 
     if data is not None:
         if not hasattr(cls, "_branches"):
@@ -117,7 +116,7 @@ def ATOMLoader(
                 "Data is provided but the class is not a "
                 f"trainer, got {cls.__class__.__name__}."
             )
-        elif cls.branch.data is not None:
+        elif any(branch.data is not None for branch in cls._branches.values()):
             raise ValueError(
                 f"The loaded {cls.__class__.__name__} instance already contains data!"
             )

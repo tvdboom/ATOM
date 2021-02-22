@@ -172,11 +172,25 @@ def test_columns_property():
     assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
 
 
+def test_n_columns_property():
+    """Assert that the n_columns property returns the number of columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert atom.lr.n_columns == atom.n_columns
+
+
 def test_features_property():
     """Assert that the features property returns the features of the dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
     assert [i == j for i, j in zip(atom.lr.features, atom.features)]
+
+
+def test_n_features_property():
+    """Assert that the n_features property returns the number of features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert atom.lr.n_features == atom.n_features
 
 
 def test_target_property():

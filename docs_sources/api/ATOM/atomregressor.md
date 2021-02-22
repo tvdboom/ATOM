@@ -415,6 +415,14 @@ is a sklearn Pipeline, every step will be transformed independently on the
 complete data set.
 
 !!!note
+    If the transformer doesn't return a dataframe,  the column naming happens as
+    follows. If the transformer returns the same number of columns, the names are
+    kept equal. If the number of columns change, old columns will keep their name
+    (as long as the column is unchanged) and new columns will receive the name
+    `Feature n`, where n stands for the n-th feature. This means that a transformer
+    should only transform, add or drop columns, not combinations of these.
+
+!!!note
     If the transformer has a `n_jobs` and/or `random_state` parameter and it
     is left to its default value, it adopts atom's value.
 

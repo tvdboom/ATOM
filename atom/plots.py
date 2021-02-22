@@ -10,6 +10,7 @@ Description: Module containing the plotting classes.
 # Standard packages
 import numpy as np
 import pandas as pd
+from itertools import cycle
 from itertools import chain
 from inspect import signature
 from collections import defaultdict
@@ -296,6 +297,32 @@ class BasePlotter:
 
         return rows
 
+    def _get_columns(self, columns):
+        """Check and return the provided column names (if numerical)."""
+        num_cols = self.dataset.select_dtypes(include=["number"]).columns
+        if columns is None:
+            return num_cols
+        elif isinstance(columns, int):
+            return self.columns[columns]
+        elif isinstance(columns, str):
+            return columns
+        elif isinstance(columns, slice):
+            columns = self.columns[columns]
+
+        cols = []
+        for col in lst(columns):
+            if isinstance(col, int):
+                cols.append(self.columns[col])
+            else:
+                if col not in self.columns:
+                    raise ValueError(
+                        "Invalid value for the columns parameter. "
+                        f"Column {col} not found in the dataset."
+                    )
+                cols.append(col)
+
+        return [col for col in cols if col in num_cols]
+
     def _get_target(self, target):
         """Check and return the provided target's index."""
         if isinstance(target, str):
@@ -490,7 +517,7 @@ class FSPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not hasattr(self.branch, "pca") or not self.pca:
+        if not hasattr(self, "pca"):
             raise PermissionError(
                 "The plot_pca method is only available if PCA was applied on the data!"
             )
@@ -556,7 +583,7 @@ class FSPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        if not hasattr(self.branch, "pca") or not self.pca:
+        if not hasattr(self, "pca"):
             raise PermissionError(
                 "The plot_components method is only available "
                 "if PCA was applied on the data!"
@@ -1360,7 +1387,7 @@ class BaseModelPlotter(BasePlotter):
                 except ValueError:
                     raise ValueError(
                         "Invalid value for the features parameter. "
-                        f"Unknown column: {feature}."
+                        f"Feature {feature} not found in the dataset."
                     )
             elif feature > m.X.shape[1] - 1:  # -1 because of index 0
                 raise ValueError(
@@ -1984,6 +2011,7 @@ class BaseModelPlotter(BasePlotter):
         dataset = self._get_set(dataset)
         target = self._get_target(target)
         check_predict_proba(models, "plot_probabilities")
+        palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -1993,17 +2021,14 @@ class BaseModelPlotter(BasePlotter):
                     # Get indices per class
                     idx = np.where(getattr(m, f"y_{set_}") == value)[0]
 
-                    if len(models) == 1:
-                        l_set = f"{set_} - " if len(dataset) > 1 else ""
-                        label = f"{l_set}Category:{key}"
-                    else:
-                        l_set = f" - {set_}" if len(dataset) > 1 else ""
-                        label = f"{m.name}{l_set} (Category: {key})"
-                    sns.kdeplot(
-                        x=getattr(m, f"predict_proba_{set_}")[idx, target],
-                        fill=True,
+                    label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                    sns.histplot(
+                        data=getattr(m, f"predict_proba_{set_}")[idx, target],
+                        kde=True,
+                        bins=50,
+                        label=label + f" ({self.target}={key})",
+                        color=next(palette),
                         ax=ax,
-                        label=label,
                     )
 
         self._plot(
@@ -2011,7 +2036,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             legend=("best", len(models)),
             xlabel="Probability",
-            ylabel="Count",
+            ylabel="Counts",
             xlim=(0, 1),
             figsize=figsize,
             filename=filename,
@@ -2583,15 +2608,14 @@ class BaseModelPlotter(BasePlotter):
             Additional keyword arguments for SHAP's force plot.
 
         """
-        check_method(self, "force_plot")
-        check_is_fitted(self, attributes="_models")
-
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
                 "The force_plot method can not be called from a "
                 "canvas because of incompatibility of the APIs."
             )
 
+        check_method(self, "force_plot")
+        check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
         target = self._get_target(target)
@@ -3031,22 +3055,27 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     @composed(crash, typechecked)
     def plot_correlation(
         self,
+        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
         method: str = "pearson",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (8, 7),
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot the correlation matrix. Ignores non-numeric columns.
+        """Plot a correlation matrix. Ignores categorical columns.
 
         Parameters
         ----------
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
+        columns: slice, sequence or None, optional (default=None)
+            Slice, names or indices of the columns to plot. If None,
+            plot all columns in the dataset.
 
         method: str, optional (default="pearson")
             Method of correlation. Choose from "pearson", "kendall"
             or "spearman".
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=(8, 7))
             Figure's size, format as (x, y).
@@ -3058,11 +3087,19 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Whether to render the plot.
 
         """
+        check_method(self, "plot_correlation")
+        columns = self._get_columns(columns)
+        if method.lower() not in ("pearson", "kendall", "spearman"):
+            raise ValueError(
+                f"Invalid value for the method parameter, got {method}. "
+                "Available options are: pearson, kendall or spearman."
+            )
+
         # Compute the correlation matrix
-        corr = self.dataset.corr(method=method)
+        corr = self.dataset[columns].corr(method=method.lower())
 
         # Drop first row and last column (diagonal line)
-        corr = corr.iloc[1:].drop(self.target, axis=1)
+        corr = corr.iloc[1:].drop(columns[-1], axis=1)
 
         # Generate a mask for the upper triangle
         # k=1 means keep outermost diagonal line
@@ -3092,6 +3129,142 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         )
 
     @composed(crash, typechecked)
+    def plot_scatter_matrix(
+        self,
+        columns: Optional[Union[slice, SEQUENCE_TYPES]] = None,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 10),
+        filename: Optional[str] = None,
+        display: bool = True,
+    ):
+        """Plot a scatter matrix. Ignores categorical columns.
+
+        Parameters
+        ----------
+        columns: slice, sequence or None, optional (default=None)
+            Slice, names or indices of the columns to plot. If None,
+            plot all columns in the dataset.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=(10, 10)))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        """
+        if getattr(BasePlotter._fig, "is_canvas", None):
+            raise PermissionError(
+                "The plot_scatter_matrix method can not be called from a "
+                "canvas because of incompatibility of the APIs."
+            )
+
+        check_method(self, "plot_scatter_matrix")
+        columns = self._get_columns(columns)
+        grid = sns.pairplot(self.dataset[columns],  diag_kind="kde")
+
+        # Set right fontsize for all axes in grid
+        for axi in grid.axes.flatten():
+            axi.tick_params(axis='both', labelsize=self.tick_fontsize)
+            axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
+            axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
+
+        self._plot(
+            title=title,
+            figsize=figsize if figsize else (10, 10),
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_distributions(
+        self,
+        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: bool = True,
+    ):
+        """Plot column distributions.
+
+        Parameters
+        ----------
+        columns: int, str, slice or sequence, optional (default=0)
+            Slice, names or indices of the columns to plot. It is only
+            possible to plot one categorical column (which will show the
+            seven most frequent values). If more than one categorical
+            columns are selected, the categorical features are ignored.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, adapts size to
+            the length of the pipeline.
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        """
+        check_method(self, "plot_distributions")
+        columns = self._get_columns(columns)
+        palette = cycle(sns.color_palette())
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        if columns in list(self.dataset.select_dtypes(exclude="number").columns):
+            data = self.dataset[columns].value_counts(ascending=True)
+            data[-min(len(data), 7):].plot.barh(
+                ax=ax,
+                width=0.6,
+                label=data.name + f": {len(data)} classes",
+            )
+
+            # Add the counts at the end of the bar
+            for i, v in enumerate(data[-min(len(data), 7):]):
+                ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
+
+            self._plot(
+                ax=ax,
+                xlim=(min(data) - 0.1*min(data), max(data) + 0.1 * max(data)),
+                title=title,
+                xlabel="Counts",
+                legend=("lower right", 1),
+                figsize=figsize if figsize else (10, 7),
+                filename=filename,
+                display=display,
+            )
+        else:
+            for c in lst(columns):
+                sns.histplot(
+                    data=self.dataset,
+                    x=c,
+                    kde=True,
+                    label=c,
+                    color=next(palette),
+                    ax=ax,
+                )
+
+            self._plot(
+                ax=ax,
+                title=title,
+                xlabel="Values",
+                ylabel="Counts",
+                legend=("best", len(columns)),
+                figsize=figsize if figsize else (10, 6),
+                filename=filename,
+                display=display,
+            )
+
+    @composed(crash, typechecked)
     def plot_pipeline(
         self,
         show_params: bool = True,
@@ -3110,7 +3283,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         branch: str or None, optional (default=None)
             Name of the branch to plot. If None, plot the current
-            active branch.
+            branch.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
