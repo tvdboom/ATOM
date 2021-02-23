@@ -1,8 +1,8 @@
-# plot_distributions
+# plot_distribution
 --------------------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_distributions</strong>(columns=0, title=None, figsize=(10, 6), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_distribution</strong>(columns=0, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
 Plot column distributions.
 <table width="100%">
@@ -44,15 +44,15 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.plot_distributions(columns=[1, 2])  # With numerical features
+atom.plot_distribution(columns=[1, 2])  # With numerical features
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_distributions_1.png" alt="plot_distributions_1" width="720" height="460"/>
+    <img src="../../../img/plots/plot_distribution_1.png" alt="plot_distribution_1" width="720" height="460"/>
 </div>
 
 ```python
-atom.plot_distributions(columns="Location")  # With categorical columns
+atom.plot_distribution(columns="Location")  # With categorical columns
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_distributions_2.png" alt="plot_distributions_2" width="720" height="460"/>
+    <img src="../../../img/plots/plot_distribution_2.png" alt="plot_distribution_2" width="720" height="460"/>
 </div>

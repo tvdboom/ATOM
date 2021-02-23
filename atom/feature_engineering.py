@@ -750,7 +750,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.kwargs["threshold"] = -np.inf
 
             self.sfm = SelectFromModel(
-                estimator=self.solver, max_features=self.n_features, **self.kwargs
+                estimator=self.solver,
+                max_features=self.n_features,
+                **self.kwargs,
             )
             if self.kwargs["prefit"]:
                 if len(self.sfm.get_support()) != X.shape[1]:

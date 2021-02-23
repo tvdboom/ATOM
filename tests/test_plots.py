@@ -9,7 +9,7 @@ Description: Unit tests for plots.py
 
 # Standard packages
 import pytest
-from mock import patch
+from unittest.mock import patch
 from sklearn.metrics import f1_score, get_scorer
 
 # Own modules
@@ -155,11 +155,10 @@ def test_plot_scatter_matrix():
 
 
 @pytest.mark.parametrize("columns", [[0, 1], 2])
-def test_plot_distributions(columns):
-    """Assert that the plot_distributions method work as intended."""
+def test_plot_distribution(columns):
+    """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.plot_distributions(columns=columns, display=False)
-    atom.plot_distributions(columns=columns, display=False)
+    atom.plot_distribution(columns=columns, display=False)
 
 
 @pytest.mark.parametrize("show_params", [True, False])

@@ -348,6 +348,11 @@ inspect the pipeline.
 </tr>
 
 <tr>
+<td width="15%"><a href="#distribution">distribution</a></td>
+<td>Get statistics on a column's distribution.</td>
+</tr>
+
+<tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
 <td>Export atom's pipeline to a sklearn's Pipeline object.</td>
 </tr>
@@ -528,6 +533,38 @@ some memory before saving the instance.
 <strong>models: str or sequence, optional (default=None)</strong>
 <blockquote>
 Name of the models to clear from the pipeline. If None, clear all models.
+</blockquote>
+</tr>
+</table>
+<br />
+
+
+<a name="distribution"></a>
+<pre><em>method</em> <strong style="color:#008AB8">distribution</strong>(column=0)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L290">[source]</a></div></pre>
+Compute the [KS-statistic](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
+for various distributions against a column in the dataset.
+
+!!!tip
+    Use the [plot_distribution](../../plots/plot_distribution) method to plot
+    the column's distribution.
+
+<table>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="75%" style="background:white;">
+<strong>column: int or str, optional (default=0)</strong>
+<blockquote>
+Index or name of the column to get the statistics from. Only
+numerical columns are accepted.
+</blockquote>
+</tr>
+<tr>
+<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="75%" style="background:white;">
+<strong>stats: pd.DataFrame</strong>
+<blockquote>
+Dataframe with the statistic results.
 </blockquote>
 </tr>
 </table>

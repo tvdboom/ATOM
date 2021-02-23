@@ -12,7 +12,7 @@ import glob
 import pytest
 import pandas as pd
 import multiprocessing
-from mock import patch
+from unittest.mock import patch
 from tensorflow.keras.datasets import mnist
 
 # Own modules

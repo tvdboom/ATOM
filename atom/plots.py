@@ -8,6 +8,7 @@ Description: Module containing the plotting classes.
 """
 
 # Standard packages
+import os
 import numpy as np
 import pandas as pd
 from itertools import cycle
@@ -21,7 +22,6 @@ from scipy.stats.mstats import mquantiles
 from typing import Optional, Union, Tuple
 
 # Plotting packages
-import shap
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.transforms import blended_transform_factory
@@ -43,6 +43,11 @@ from .utils import (
     check_method, check_goal, check_binary_task, check_predict_proba,
     get_best_score, partial_dependence, composed, crash, plot_from_model,
 )
+
+# Catch annoying tensorflow warnings when importing shap
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
+import shap
+os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 class BaseFigure:
@@ -298,8 +303,8 @@ class BasePlotter:
         return rows
 
     def _get_columns(self, columns):
-        """Check and return the provided column names (if numerical)."""
-        num_cols = self.dataset.select_dtypes(include=["number"]).columns
+        """Get a subset of the numerical columns."""
+        num_cols = list(self.dataset.select_dtypes(include=["number"]).columns)
         if columns is None:
             return num_cols
         elif isinstance(columns, int):
@@ -3182,7 +3187,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         )
 
     @composed(crash, typechecked)
-    def plot_distributions(
+    def plot_distribution(
         self,
         columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
         title: Optional[str] = None,
@@ -3214,7 +3219,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Whether to render the plot.
 
         """
-        check_method(self, "plot_distributions")
+        check_method(self, "plot_distribution")
         columns = self._get_columns(columns)
         palette = cycle(sns.color_palette())
 

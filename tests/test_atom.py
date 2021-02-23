@@ -11,7 +11,7 @@ Description: Unit tests for atom.py
 import glob
 import pytest
 import numpy as np
-from mock import patch
+from unittest.mock import patch
 from sklearn.metrics import get_scorer
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
@@ -221,9 +221,18 @@ def test_n_classes_property():
 
 # Test utility methods ============================================= >>
 
+@pytest.mark.parametrize("column", ["Feature 1", 1])
+def test_distribution(column):
+    """Assert that the distribution method and file are created."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    pytest.raises(ValueError, atom.distribution, column="Feature 3")
+    df = atom.distribution(column=column)
+    assert len(df) == 11
+
+
 @patch("atom.atom.ProfileReport")
 def test_report(cls):
-    """Assert that the report attribute and file are created."""
+    """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_reg, y_reg, random_state=1)
     atom.report(n_rows=10, filename="report")
     cls.return_value.to_file.assert_called_once_with("report.html")
@@ -536,7 +545,8 @@ def test_default_solver_from_task():
     assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
 
 
-def test_default_scoring():
+@patch("atom.feature_engineering.SequentialFeatureSelector")
+def test_default_scoring(cls):
     """Assert that the scoring is atom's metric when exists."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("lr", metric="recall")

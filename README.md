@@ -183,7 +183,7 @@ Release history
 * Use [AutoML](https://tvdboom.github.io/ATOM/user_guide/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](https://tvdboom.github.io/ATOM/user_guide/#training) can now be combined in the same atom instance.
-* New [plot_scatter_matrix](https://tvdboom.github.io/ATOM/API/plots/plot_scatter_matrix) and [plot_distributions](https://tvdboom.github.io/ATOM/API/plots/plot_distributions) for data inspection. 
+* New [plot_scatter_matrix](https://tvdboom.github.io/ATOM/API/plots/plot_scatter_matrix) and [plot_distribution](https://tvdboom.github.io/ATOM/API/plots/plot_distribution) for data inspection. 
 * Complete rework of all the [shap plots](https://tvdboom.github.io/ATOM/user_guide#shap) to be consistent with their new API.
 * Improvements for the [Scaler](https://tvdboom.github.io/ATOM/API/data_cleaning/scaler) and [Pruner](https://tvdboom.github.io/ATOM/API/data_cleaning/pruner) classes.
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.

@@ -326,6 +326,14 @@
 </li>
             
 <li>
+    <a href="API/plots/plot_scatter_matrix/" class="dropdown-item">plot_scatter_matrix</a>
+</li>
+            
+<li>
+    <a href="API/plots/plot_distribution/" class="dropdown-item">plot_distribution</a>
+</li>
+            
+<li>
     <a href="API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
 </li>
             
@@ -612,15 +620,15 @@ use case-specific feature engineering or data cleaning steps! </p>
 <li>Data Cleaning<ul>
 <li>Handle missing values</li>
 <li>Encode categorical features</li>
-<li>Remove outliers</li>
-<li>Balance the dataset</li>
+<li>Detect and remove outliers</li>
+<li>Balance the training set</li>
 </ul>
 </li>
 <li>Feature engineering<ul>
 <li>Create new non-linear features</li>
 <li>Remove multi-collinear features</li>
 <li>Remove features with too low variance</li>
-<li>Select the most promising features based on a statistical test</li>
+<li>Select the most promising features</li>
 </ul>
 </li>
 <li>Train and validate multiple models<ul>
@@ -650,8 +658,9 @@ use case-specific feature engineering or data cleaning steps! </p>
 <li>Use <a href="./user_guide/#automl">AutoML</a> to automate the search for an optimized pipeline.</li>
 <li>New magic methods makes atom behave similarly to sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.</li>
 <li>All <a href="./user_guide/#training">training approaches</a> can now be combined in the same atom instance.</li>
+<li>New <a href="./API/plots/plot_scatter_matrix">plot_scatter_matrix</a> and <a href="./API/plots/plot_distribution">plot_distribution</a> for data inspection. </li>
 <li>Complete rework of all the <a href="./user_guide#shap">shap plots</a> to be consistent with their new API.</li>
-<li>Improvements for the <a href="./API/ATOM/data_cleaning/scaler">Scaler</a> and <a href="./API/ATOM/data_cleaning/pruner">Pruner</a> classes.</li>
+<li>Improvements for the <a href="./API/data_cleaning/scaler">Scaler</a> and <a href="./API/data_cleaning/pruner">Pruner</a> classes.</li>
 <li>The acronym for custom models now defaults to the capital letters in the class' __name__.</li>
 <li>Possibility to apply transformations on only a subset of the columns.</li>
 <li>Plots and methods now accept <code>winner</code> as model name.</li>
@@ -838,6 +847,8 @@ use case-specific feature engineering or data cleaning steps! </p>
 </li>
 <li>Plots<ul>
 <li><a href="./API/plots/plot_correlation">plot_correlation</a></li>
+<li><a href="./API/plots/plot_scatter_matrix">plot_scatter_matrix</a></li>
+<li><a href="./API/plots/plot_distribution">plot_distribution</a></li>
 <li><a href="./API/plots/plot_pipeline">plot_pipeline</a></li>
 <li><a href="./API/plots/plot_pca">plot_pca</a></li>
 <li><a href="./API/plots/plot_components">plot_components</a></li>
@@ -975,5 +986,5 @@ use case-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2021-02-16 16:09:41.298803+00:00
+Build Date UTC : 2021-02-23 19:22:13.057078+00:00
 -->

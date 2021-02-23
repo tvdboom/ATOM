@@ -100,6 +100,21 @@ OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
 ONLY_CLASS = ["GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA"]
 ONLY_REG = ["OLS", "Lasso", "EN", "BR", "ARD"]
 
+# List of available distributions
+DISTRIBUTIONS = [
+    "beta",
+    "expon",
+    "gamma",
+    "invgauss",
+    "lognorm",
+    "norm",
+    "pearson3",
+    "triang",
+    "uniform",
+    "weibull_min",
+    "weibull_max",
+]
+
 # List of custom metrics for the scoring method
 CUSTOM_METRICS = ["cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "sup"]
 
@@ -337,7 +352,7 @@ def to_df(data, index=None, columns=None, pca=False):
     index: sequence or Index
         Values for the dataframe's index.
 
-    columns: sequence or None, optional(default=None)
+    columns: sequence or None, optional (default=None)
         Name of the columns. If None, the names are autofilled.
 
     pca: bool, optional (default=False)

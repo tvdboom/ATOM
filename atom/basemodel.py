@@ -9,8 +9,8 @@ Description: Module containing the BaseModel class.
 
 # Standard packages
 import pandas as pd
-from typeguard import typechecked
 from typing import Optional
+from typeguard import typechecked
 from sklearn.metrics import SCORERS, confusion_matrix
 
 # Own modules

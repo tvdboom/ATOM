@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/plots/plot_distributions/">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/API/plots/plot_distribution/">
         <link rel="shortcut icon" href="../../../img/favicon.ico">
-        <title>plot_distributions - ATOM</title>
+        <title>plot_distribution - ATOM</title>
         <link href="../../../css/bootstrap.min.css" rel="stylesheet">
         <link href="../../../css/font-awesome.min.css" rel="stylesheet">
         <link href="../../../css/base.css" rel="stylesheet">
@@ -330,7 +330,7 @@
 </li>
             
 <li>
-    <a href="./" class="dropdown-item active">plot_distributions</a>
+    <a href="./" class="dropdown-item active">plot_distribution</a>
 </li>
             
 <li>
@@ -558,7 +558,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#plot_distributions" class="nav-link">plot_distributions</a>
+            <li class="nav-item" data-level="1"><a href="#plot_distribution" class="nav-link">plot_distribution</a>
               <ul class="nav flex-column">
             <li class="nav-item" data-level="2"><a href="#example" class="nav-link">Example</a>
               <ul class="nav flex-column">
@@ -571,10 +571,10 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="plot_distributions">plot_distributions</h1>
+<h1 id="plot_distribution">plot_distribution</h1>
 <hr />
 <p><a name="atom"></a></p>
-<pre><em>method</em> <strong style="color:#008AB8">plot_distributions</strong>(columns=0, title=None, figsize=(10, 6), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_distribution</strong>(columns=0, title=None, figsize=(10, 6), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
 <p>Plot column distributions.</p>
 <table width="100%">
@@ -612,16 +612,16 @@ Whether to render the plot.
 <pre><code class="language-python">from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.plot_distributions(columns=[1, 2])  # With numerical features
+atom.plot_distribution(columns=[1, 2])  # With numerical features
 </code></pre>
 <div align="center">
-    <img src="../../../img/plots/plot_distributions_1.png" alt="plot_distributions_1" width="720" height="460"/>
+    <img src="../../../img/plots/plot_distribution_1.png" alt="plot_distribution_1" width="720" height="460"/>
 </div>
 
-<pre><code class="language-python">atom.plot_distributions(columns=&quot;Location&quot;)  # With categorical columns
+<pre><code class="language-python">atom.plot_distribution(columns=&quot;Location&quot;)  # With categorical columns
 </code></pre>
 <div align="center">
-    <img src="../../../img/plots/plot_distributions_2.png" alt="plot_distributions_2" width="720" height="460"/>
+    <img src="../../../img/plots/plot_distribution_2.png" alt="plot_distribution_2" width="720" height="460"/>
 </div></div>
             </div>
         </div>

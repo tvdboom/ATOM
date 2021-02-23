@@ -326,6 +326,14 @@
 </li>
             
 <li>
+    <a href="../plot_scatter_matrix/" class="dropdown-item">plot_scatter_matrix</a>
+</li>
+            
+<li>
+    <a href="../plot_distribution/" class="dropdown-item">plot_distribution</a>
+</li>
+            
+<li>
     <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
 </li>
             
@@ -525,7 +533,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../plot_pipeline/" class="nav-link">
+                                <a rel="next" href="../plot_scatter_matrix/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -566,13 +574,18 @@
 <h1 id="plot_correlation">plot_correlation</h1>
 <hr />
 <p><a name="atom"></a></p>
-<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(method="pearson", title=None, figsize=(8, 8), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, method="pearson", title=None, figsize=(8, 8), filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
-<p>Plot the data's correlation matrix. Ignores non-numeric columns.</p>
+<p>Plot the data's correlation matrix. Ignores categorical columns.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
+<strong>columns: slice, sequence or None, optional (default=None)</strong>
+<blockquote>
+Slice, names or indices of the columns to plot. If None, plot
+all columns in the dataset.
+</blockquote>
 <strong>method: str, optional (default="pearson")</strong>
 <blockquote>
 Method of correlation. Choose from "pearson", "kendall" or "spearman".

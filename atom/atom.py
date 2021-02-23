@@ -10,7 +10,7 @@ Description: Module containing the ATOM class.
 # Standard packages
 import numpy as np
 import pandas as pd
-from scipy.stats import zscore
+from scipy import stats
 from typeguard import typechecked
 from typing import Union, Optional
 from sklearn.pipeline import Pipeline
@@ -41,9 +41,9 @@ from .training import (
 from .models import CustomModel
 from .plots import ATOMPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, flt, lst,
-    arr, infer_task, check_method, check_scaling, check_deep,
-    names_from_estimator, catch_return, variable_return,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, DISTRIBUTIONS,
+    flt, lst, arr, infer_task, check_method, check_scaling,
+    check_deep, names_from_estimator, catch_return, variable_return,
     custom_transform, add_transformer, method_to_log, composed,
     crash, CustomDict,
 )
@@ -144,7 +144,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             if from_branch not in self._branches:
                 raise ValueError(
                     "The selected branch to split from does not exist! Print "
-                    "atom.branch for an overview of the branches in the pipeline."
+                    "atom.branch for an overview of the available branches."
                 )
 
             self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
@@ -200,14 +200,14 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        z_scores = zscore(self.train[self.numerical], nan_policy="propagate")
+        z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
         srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.numerical)
         return srs[srs > 0]
 
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        z_scores = zscore(self.train[self.numerical], nan_policy="propagate")
+        z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
         return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
 
     @property
@@ -285,6 +285,45 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log("-------------------------------------", _vb + 1)
             self.log(df.to_markdown(), _vb + 1)
 
+    @composed(crash, typechecked)
+    def distribution(self, column: Union[int, str] = 0):
+        """Get statistics on a column's distribution.
+
+        Compute the KS-statistic for various distributions against
+        a column in the dataset.
+
+        Parameters
+        ----------
+        column: int or str, optional (default=0)
+            Index or name of the column to get the statistics from.
+            Only numerical columns are accepted.
+
+        Returns
+        -------
+        df: pd.DataFrame
+            Dataframe with the statistic results.
+
+        """
+        if isinstance(column, int):
+            column = self.columns[column]
+
+        if column in self.categorical:
+            raise ValueError(
+                "Invalid value for the column parameter. Column should "
+                f"be numerical, got categorical column {column}."
+            )
+
+        df = pd.DataFrame(columns=["ks", "p_value"])
+        for dist in DISTRIBUTIONS:
+            # Get KS-statistic with fitted distribution parameters
+            param = getattr(stats, dist).fit(self.dataset[column])
+            stat = stats.kstest(self.dataset[column], dist, args=param)
+
+            # Add as row to the dataframe
+            df.loc[dist] = {"ks": round(stat[0], 4), "p_value": round(stat[1], 4)}
+
+        return df.sort_values(["ks"])
+
     @composed(crash, method_to_log, typechecked)
     def report(
         self,
@@ -299,10 +338,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        dataset: str, optional(default="dataset")
+        dataset: str, optional (default="dataset")
             Data set to get the report from.
 
-        n_rows: int or None, optional(default=None)
+        n_rows: int or None, optional (default=None)
             Number of (randomly picked) rows in to process. None for
             all rows.
 

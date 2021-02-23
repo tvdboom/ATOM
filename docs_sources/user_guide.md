@@ -1393,8 +1393,8 @@ A list of available plots can be find hereunder. Note that not all plots can be
 </tr>
 
 <tr>
-<td width="15%"><a href="../API/plots/plot_distributions">plot_distributions</a></td>
-<td>Plot feature distributions.</td>
+<td width="15%"><a href="../API/plots/plot_distribution">plot_distribution</a></td>
+<td>Plot column distributions.</td>
 </tr>
 
 <tr>
