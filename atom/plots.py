@@ -11,6 +11,7 @@ Description: Module containing the plotting classes.
 import os
 import numpy as np
 import pandas as pd
+from scipy import stats
 from itertools import cycle
 from itertools import chain
 from inspect import signature
@@ -39,7 +40,7 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, lst, check_is_fitted,
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted,
     check_method, check_goal, check_binary_task, check_predict_proba,
     get_best_score, partial_dependence, composed, crash, plot_from_model,
 )
@@ -418,7 +419,7 @@ class BasePlotter:
         if kwargs.get("legend"):
             ax.legend(
                 loc=kwargs["legend"][0],
-                ncol=kwargs["legend"][1] // 3 if kwargs["legend"][1] // 3 > 0 else 1,
+                ncol=max(1, kwargs["legend"][1] // 3),
                 fontsize=self.label_fontsize
             )
         if kwargs.get("xlabel"):
@@ -1327,7 +1328,7 @@ class BaseModelPlotter(BasePlotter):
         self._plot(
             ax=ax,
             title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
+            legend=("lower right", len(models)) if len(models) > 1 else None,
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -3067,13 +3068,14 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         filename: Optional[str] = None,
         display: bool = True,
     ):
-        """Plot a correlation matrix. Ignores categorical columns.
+        """Plot a correlation matrix.
 
         Parameters
         ----------
         columns: slice, sequence or None, optional (default=None)
             Slice, names or indices of the columns to plot. If None,
-            plot all columns in the dataset.
+            plot all columns in the dataset. Selected categorical
+            columns are ignored.
 
         method: str, optional (default="pearson")
             Method of correlation. Choose from "pearson", "kendall"
@@ -3108,7 +3110,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Generate a mask for the upper triangle
         # k=1 means keep outermost diagonal line
-        mask = np.zeros_like(corr, dtype=np.bool)
+        mask = np.zeros_like(corr, dtype=bool)
         mask[np.triu_indices_from(mask, k=1)] = True
 
         sns.set_style("white")  # Only for this plot
@@ -3141,14 +3143,16 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
         display: bool = True,
+        **kwargs,
     ):
-        """Plot a scatter matrix. Ignores categorical columns.
+        """Plot a matrix of scatter plots.
 
         Parameters
         ----------
         columns: slice, sequence or None, optional (default=None)
             Slice, names or indices of the columns to plot. If None,
-            plot all columns in the dataset.
+            plot all columns in the dataset. Selected categorical
+            columns are ignored.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -3162,6 +3166,9 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         display: bool, optional (default=True)
             Whether to render the plot.
 
+        **kwargs
+            Additional keyword arguments for seaborn's pairplot.
+
         """
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
@@ -3171,7 +3178,9 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         check_method(self, "plot_scatter_matrix")
         columns = self._get_columns(columns)
-        grid = sns.pairplot(self.dataset[columns],  diag_kind="kde")
+
+        diag_kind = kwargs.get("diag_kind", "kde")
+        grid = sns.pairplot(self.dataset[columns],  diag_kind=diag_kind, **kwargs)
 
         # Set right fontsize for all axes in grid
         for axi in grid.axes.flatten():
@@ -3190,27 +3199,43 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def plot_distribution(
         self,
         columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        distribution: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        show: Optional[int] = None,
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
         display: bool = True,
+        **kwargs,
     ):
         """Plot column distributions.
+
+        Additionally, it is possible to plot a standard distribution
+        fitted to the column.
 
         Parameters
         ----------
         columns: int, str, slice or sequence, optional (default=0)
             Slice, names or indices of the columns to plot. It is only
-            possible to plot one categorical column (which will show the
-            seven most frequent values). If more than one categorical
-            columns are selected, the categorical features are ignored.
+            possible to plot one categorical column. If more than just
+            the one categorical column is selected, all categorical
+            columns are ignored.
+
+        distribution: str, sequence or None, optional (default=None)
+            Names of the `scipy.stats` distribution to fit to the
+            column. If None, no distribution is fitted. Only for
+            numerical columns.
+
+        show: int or None, optional (default=None)
+            Number of classes (ordered by number of occurrences) to
+            show in the plot. None to show all. Only for categorical
+            columns.
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
             Figure's size, format as (x, y). If None, adapts size to
-            the length of the pipeline.
+            the plot's type.
 
         filename: str or None, optional (default=None)
             Name of the file. If None, the figure is not saved.
@@ -3218,23 +3243,36 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         display: bool, optional (default=True)
             Whether to render the plot.
 
+        **kwargs
+            Additional keyword arguments for seaborn's histplot.
+
         """
         check_method(self, "plot_distribution")
         columns = self._get_columns(columns)
-        palette = cycle(sns.color_palette())
+        palette_1 = cycle(sns.color_palette())
+        palette_2 = sns.color_palette("Blues_r", 3)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         if columns in list(self.dataset.select_dtypes(exclude="number").columns):
             data = self.dataset[columns].value_counts(ascending=True)
-            data[-min(len(data), 7):].plot.barh(
+
+            if show is None or show > len(data):
+                show = len(data)
+            elif show < 1:
+                raise ValueError(
+                    "Invalid value for the show parameter."
+                    f"Value should be >0, got {show}."
+                )
+
+            data[-show:].plot.barh(
                 ax=ax,
                 width=0.6,
-                label=data.name + f": {len(data)} classes",
+                label=f"{columns}: {len(data)} classes",
             )
 
             # Add the counts at the end of the bar
-            for i, v in enumerate(data[-min(len(data), 7):]):
+            for i, v in enumerate(data[-show:]):
                 ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
 
             self._plot(
@@ -3243,31 +3281,118 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 title=title,
                 xlabel="Counts",
                 legend=("lower right", 1),
-                figsize=figsize if figsize else (10, 7),
+                figsize=figsize if figsize else (10, 4 + show // 2),
                 filename=filename,
                 display=display,
             )
         else:
-            for c in lst(columns):
+            columns = lst(columns)
+            kde = kwargs.pop("kde", False if distribution else True)
+            bins = kwargs.pop("bins", 40)
+            for i, col in enumerate(columns):
                 sns.histplot(
                     data=self.dataset,
-                    x=c,
-                    kde=True,
-                    label=c,
-                    color=next(palette),
+                    x=col,
+                    kde=kde,
+                    label=col,
+                    bins=bins,
+                    color=next(palette_1),
                     ax=ax,
+                    **kwargs,
                 )
+
+                if distribution:
+                    x = np.linspace(*ax.get_xlim(), 100)
+                    h = np.histogram(self.dataset[col], bins=bins)
+
+                    # Get a line for each distribution
+                    for j, dist in enumerate(lst(distribution)):
+                        params = getattr(stats, dist).fit(self.dataset[col])
+
+                        # Calculate pdf and scale to match observed data
+                        pdf = getattr(stats, dist).pdf(x, *params)
+                        scale = np.trapz(h[0], h[1][:-1]) / np.trapz(pdf, x)
+
+                        label = dist if i == 0 else None  # Label for the first iter
+                        plt.plot(x, pdf * scale, lw=2, c=palette_2[j], label=label)
 
             self._plot(
                 ax=ax,
                 title=title,
                 xlabel="Values",
                 ylabel="Counts",
-                legend=("best", len(columns)),
+                legend=("best", len(columns) + len(lst(distribution))),
                 figsize=figsize if figsize else (10, 6),
                 filename=filename,
                 display=display,
             )
+
+    @composed(crash, typechecked)
+    def plot_qq(
+        self,
+        columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
+        distribution: str = "norm",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: bool = True,
+    ):
+        """Plot a quantile-quantile plot.
+
+        Parameters
+        ----------
+        columns: int, str, slice or sequence, optional (default=0)
+            Slice, names or indices of the columns to plot. Selected
+            categorical features are ignored.
+
+        distribution: str, optional (default="norm")
+            Name of the `scipy.stats` distribution to fit to the
+            columns.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. If None, the figure is not saved.
+
+        display: bool, optional (default=True)
+            Whether to render the plot.
+
+        """
+        check_method(self, "plot_qq")
+        columns = self._get_columns(columns)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+
+        percentiles = np.linspace(0, 100, 101)
+        stat = getattr(stats, distribution)
+        for col in lst(columns):
+            params = stat.fit(self.dataset[col])
+            samples = stat.rvs(*params, size=101, random_state=self.random_state)
+            qn_a = np.percentile(samples, percentiles)
+
+            qn_b = np.percentile(self.dataset[col], percentiles)
+            plt.scatter(qn_a, qn_b, marker="+", s=50, label=col)
+
+        xlim, ylim = ax.get_xlim(), ax.get_ylim()
+        plt.plot((1e-9, 1e9), (1e-9, 1e9), lw=2, color="black", alpha=0.7, linestyle="--")
+
+        self._plot(
+            ax=ax,
+            title=title,
+            xlim=xlim,
+            ylim=ylim,
+            xlabel="Theoretical quantiles",
+            ylabel="Observed quantiles",
+            legend=("best", len(lst(columns))),
+            figsize=figsize if figsize else (10, 6),
+            filename=filename,
+            display=display,
+        )
 
     @composed(crash, typechecked)
     def plot_pipeline(

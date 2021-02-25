@@ -1,25 +1,28 @@
-# plot_scatter_matrix
----------------------
+# plot_qq
+---------
 
 <a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True, **kwargs)
+<pre><em>method</em> <strong style="color:#008AB8">plot_qq</strong>(columns=0, distribution="norm", title=None, figsize=None, filename=None, display=True)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
-Plot a matrix of scatter plots.
+Plot a quantile-quantile plot.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
-<strong>columns: slice, sequence or None, optional (default=None)</strong>
+<strong>columns: int, str, slice or sequence, optional (default=0)</strong>
 <blockquote>
-Slice, names or indices of the columns to plot. If None,
-plot all columns in the dataset. Selected categorical
-columns are ignored.
+Slice, names or indices of the columns to plot. Selected
+categorical features are ignored.
+</blockquote>
+<strong>distribution: str, optional (default="norm")</strong>
+<blockquote>
+Name of the <code>scipy.stats</code> distribution to fit to the columns.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
 Plot's title. If None, the title is left empty.
 </blockquote>
-<strong>figsize: tuple, optional (default=(10, 10))</strong>
+<strong>figsize: tuple, optional (default=(10, 6)))</strong>
 <blockquote>
 Figure's size, format as (x, y).
 </blockquote>
@@ -30,10 +33,6 @@ Name of the file. If None, the figure is not saved.
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
 Whether to render the plot.
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
-Additional keyword arguments for seaborn's <a href="https://seaborn.pydata.org/generated/seaborn.pairplot.html">pairplot</a>.
 </blockquote>
 </tr>
 </table>
@@ -47,8 +46,8 @@ Additional keyword arguments for seaborn's <a href="https://seaborn.pydata.org/g
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.plot_scatter_matrix(columns=slice(0, 5))
+atom.plot_qq(columns=[0, 1], distribution="triang")
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_scatter_matrix.png" alt="plot_scatter_matrix" width="720" height="720"/>
+    <img src="../../../img/plots/plot_qq.png" alt="plot_qq" width="720" height="460"/>
 </div>

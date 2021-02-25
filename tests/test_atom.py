@@ -567,7 +567,7 @@ def test_automl_classification():
 def test_automl_regression():
     """Assert that the automl method works for regression tasks."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.automl(max_time_mins=0.1, scoring="r2", random_state=2)
+    atom.automl(max_time_mins=0.2, scoring="r2", random_state=2)
     assert atom.metric == "r2"
     assert atom.tpot.random_state == 2
 

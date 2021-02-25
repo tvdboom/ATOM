@@ -154,11 +154,18 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-@pytest.mark.parametrize("columns", [[0, 1], 2])
-def test_plot_distribution(columns):
+def test_plot_distribution():
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom.plot_distribution(columns=columns, display=False)
+    pytest.raises(ValueError, atom.plot_distribution, columns=2, show=-1, display=False)
+    atom.plot_distribution(columns=2, show=None, display=False)
+    atom.plot_distribution(columns=[0, 1], distribution="pearson3", display=False)
+
+
+def test_plot_qq():
+    """Assert that the plot_qq method work as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.plot_qq(columns=[0, 1], distribution="pearson3", display=False)
 
 
 @pytest.mark.parametrize("show_params", [True, False])

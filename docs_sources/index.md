@@ -94,7 +94,7 @@ Example steps taken by ATOM's pipeline:
 * Use [AutoML](./user_guide/#automl) to automate the search for an optimized pipeline.
 * New magic methods makes atom behave similarly to sklearn's [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html).
 * All [training approaches](./user_guide/#training) can now be combined in the same atom instance.
-* New [plot_scatter_matrix](./API/plots/plot_scatter_matrix) and [plot_distribution](./API/plots/plot_distribution) for data inspection. 
+* New [plot_scatter_matrix](./API/plots/plot_scatter_matrix), [plot_distribution](./API/plots/plot_distribution) and [plot_qq](./API/plots/plot_qq) for data inspection.
 * Complete rework of all the [shap plots](./user_guide#shap) to be consistent with their new API.
 * Improvements for the [Scaler](./API/data_cleaning/scaler) and [Pruner](./API/data_cleaning/pruner) classes.
 * The acronym for custom models now defaults to the capital letters in the class' \_\_name__.
@@ -274,6 +274,7 @@ Example steps taken by ATOM's pipeline:
         - [plot_correlation](./API/plots/plot_correlation)
         - [plot_scatter_matrix](./API/plots/plot_scatter_matrix)
         - [plot_distribution](./API/plots/plot_distribution)
+        - [plot_qq](./API/plots/plot_qq)
         - [plot_pipeline](./API/plots/plot_pipeline)
         - [plot_pca](./API/plots/plot_pca)
         - [plot_components](./API/plots/plot_components)

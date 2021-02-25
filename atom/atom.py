@@ -334,7 +334,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Create an extensive profile analysis report of the data.
 
         The profile report is rendered in HTML5 and CSS3. Note that
-        this method can be slow for rows>10k.
+        this method can be slow for n_rows>10k.
 
         Parameters
         ----------
