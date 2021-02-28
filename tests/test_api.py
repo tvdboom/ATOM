@@ -108,7 +108,7 @@ def test_transform_data_multiple_branches():
     atom.balance()
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.branch = "branch_3"
-    atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
+    atom.feature_selection(strategy="sfm", solver="lgb", n_features=20)
     atom.save(FILE_DIR + "atom_2", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)

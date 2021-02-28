@@ -25,12 +25,13 @@ def test_pipeline_to_empty_series():
     assert atom.branch.pipeline.empty
 
 
-@pytest.mark.parametrize("param", ["pipeline", "data", "idx", "mapping"])
-def test_input_is_copied(param):
-    """Assert that the parameters are copied to attributes."""
+def test_attrs_are_passed():
+    """Assert that the attributes from the parent are passed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.balance()
     atom.branch = "branch_2"
-    assert getattr(atom.branch, param) is not getattr(atom._branches["master"], param)
+    assert atom.branch_2.idx is not atom.master.idx
+    assert atom.branch_2.adasyn is atom.master.adasyn
 
 
 # Test __repr__ ==================================================== >>
@@ -38,8 +39,7 @@ def test_input_is_copied(param):
 def test_repr():
     """Assert that the __repr__  method returns the list of available branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch = "branch_2"
-    assert str(atom.branch) == "Branches:\n --> master\n --> branch_2 !"
+    assert str(atom.branch).startswith("Branch: master\n --> Pipeline")
 
 
 # Test status ====================================================== >>
@@ -47,8 +47,9 @@ def test_repr():
 def test_status_method():
     """Assert that the status method prints the estimators without errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.impute(strat_num=0, strat_cat="missing")
+    atom.impute()
     atom.branch.status()
+    assert str(atom.branch).endswith("min_frac_cols: 0.5\n --> Models: None")
 
 
 # Test rename ====================================================== >>

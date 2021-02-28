@@ -14255,7 +14255,7 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Calibration">Calibration<a class="anchor-link" href="#Calibration">&#182;</a></h1><hr>
-<p>This example shows us how to use the calibration method to calibrate a classifier.</p>
+<p>This example shows how to calibrate a classifier through atom.</p>
 <p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target <code>RainTomorrow</code>.</p>
 
 </div>
@@ -14287,7 +14287,7 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Get the dataset&#39;s features and targets</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./datasets/weatherAUS.csv&#39;</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
 
 <span class="c1"># Let&#39;s have a look at the data</span>
 <span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -14497,15 +14497,15 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize the ATOM class</span>
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s1">&#39;RainTomorrow&#39;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="s2">&quot;RainTomorrow&quot;</span><span class="p">,</span> <span class="n">n_rows</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
 
 <span class="c1"># Handle missing values and categorical columns in the dataset</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s1">&#39;most_frequent&#39;</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s1">&#39;target&#39;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;target&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">frac_to_other</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 
 <span class="c1"># Fit a linear SVM to the data</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s1">&#39;lsvm&#39;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;lsvm&quot;</span><span class="p">)</span>
 </pre></div>
 
      </div>
@@ -14528,12 +14528,13 @@ a.anchor-link {
 <pre>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
 
-Dataset stats ================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (10000, 22)
-Missing values: 22613
-Categorical columns: 5
 Scaled: False
------------------------------------
+Missing values: 22613 (10.28%)
+Categorical columns: 5 (22.73%)
+Duplicate samples: 2 (0.02%)
+-------------------------------------
 Train set size: 8000
 Test set size: 2000
 
@@ -14552,15 +14553,15 @@ Results for Linear-SVM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.5634
 Test evaluation --&gt; f1: 0.5898
-Time elapsed: 0.515s
+Time elapsed: 0.462s
 -------------------------------------------------
-Total time: 0.515s
+Total time: 0.462s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.515s
+Duration: 0.462s
 ------------------------------------------
-Linear-SVM --&gt; f1: 0.59
+Linear-SVM --&gt; f1: 0.5898
 </pre>
 </div>
 </div>
@@ -14621,7 +14622,7 @@ Linear-SVM --&gt; f1: 0.59
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s try to improve it using the calibrate method</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;isotonic&#39;</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">calibrate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;isotonic&quot;</span><span class="p">,</span> <span class="n">cv</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">plot_calibration</span><span class="p">()</span>
 </pre></div>
 
@@ -14634,6 +14635,18 @@ Linear-SVM --&gt; f1: 0.59
 
 
 <div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
+
+
+<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
+<pre>Model lSVM successfully calibrated!
+</pre>
+</div>
+</div>
 
 <div class="jp-OutputArea-child">
 

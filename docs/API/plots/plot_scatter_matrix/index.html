@@ -334,6 +334,10 @@
 </li>
             
 <li>
+    <a href="../plot_qq/" class="dropdown-item">plot_qq</a>
+</li>
+            
+<li>
     <a href="../plot_pipeline/" class="dropdown-item">plot_pipeline</a>
 </li>
             
@@ -574,17 +578,18 @@
 <h1 id="plot_scatter_matrix">plot_scatter_matrix</h1>
 <hr />
 <p><a name="atom"></a></p>
-<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True)
+<pre><em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
-<p>Plot the data's scatter matrix. Ignores categorical columns.</p>
+<p>Plot a matrix of scatter plots.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="75%" style="background:white;">
 <strong>columns: slice, sequence or None, optional (default=None)</strong>
 <blockquote>
-Slice, names or indices of the columns to plot. If None, plot
-all columns in the dataset.
+Slice, names or indices of the columns to plot. If None,
+plot all columns in the dataset. Selected categorical
+columns are ignored.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
@@ -601,6 +606,10 @@ Name of the file. If None, the figure is not saved.
 <strong>display: bool, optional (default=True)</strong>
 <blockquote>
 Whether to render the plot.
+</blockquote>
+<strong>**kwargs</strong>
+<blockquote>
+Additional keyword arguments for seaborn's <a href="https://seaborn.pydata.org/generated/seaborn.pairplot.html">pairplot</a>.
 </blockquote>
 </tr>
 </table>

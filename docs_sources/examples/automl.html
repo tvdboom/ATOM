@@ -14255,7 +14255,7 @@ a.anchor-link {
 <div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="AutoML">AutoML<a class="anchor-link" href="#AutoML">&#182;</a></h1><hr>
-<p>This example shows how we can use AutoML to search for an optimized pipeline for our task.</p>
+<p>This example shows how to use atom's AutoML implementation to automatically search for an optimized pipeline.</p>
 <p>Import the breast cancer dataset from <a href="https://scikit-learn.org/stable/datasets/index.html#wine-dataset">sklearn.datasets</a>. This is a small and easy to train dataset whose goal is to predict whether a patient has breast cancer or not.</p>
 
 </div>
@@ -14331,17 +14331,17 @@ a.anchor-link {
 Algorithm task: binary classification.
 Parallel processing with 6 cores.
 
-Dataset stats ================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (569, 31)
 Scaled: False
------------------------------------
+Outlier values: 174 (1.23%)
+-------------------------------------
 Train set size: 456
 Test set size: 113
------------------------------------
+-------------------------------------
 Train set balance: 0:1 &lt;==&gt; 1.0:1.7
 Test set balance: 0:1 &lt;==&gt; 1.0:1.5
------------------------------------
-Distribution of classes:
+-------------------------------------
 |    |   dataset |   train |   test |
 |---:|----------:|--------:|-------:|
 |  0 |       212 |     167 |     45 |
@@ -14397,8 +14397,7 @@ Distribution of classes:
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Check that the scaling worked</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">scaled</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">scaled</span>  <span class="c1"># Check that the scaling worked</span>
 </pre></div>
 
      </div>
@@ -14472,12 +14471,12 @@ Distribution of classes:
 
 
 
-<div id="883d984f-f96f-40c2-b075-60acae06b715" class="jupyter-widgets jp-OutputArea-output ">
+<div id="ed33db85-1f70-4090-877b-1590637214d9" class="jupyter-widgets jp-OutputArea-output ">
 <script type="text/javascript">
-var element = document.getElementById('883d984f-f96f-40c2-b075-60acae06b715');
+var element = document.getElementById('ed33db85-1f70-4090-877b-1590637214d9');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "88ac8a9c2bb94ac1bf627b39a1281361", "version_major": 2, "version_minor": 0}
+{"model_id": "214e3aeb1f4b4921a3036d4ae57cd976", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -14511,7 +14510,7 @@ Generation 9 - Current best internal CV score: 0.9824653607262303
 
 Generation 10 - Current best internal CV score: 0.9824653607262303
 
-Generation 11 - Current best internal CV score: 0.9824653607262303
+Generation 11 - Current best internal CV score: 0.9846631629240324
 
 Generation 12 - Current best internal CV score: 0.9868848542761587
 
@@ -14527,7 +14526,9 @@ Generation 17 - Current best internal CV score: 0.9868848542761587
 
 Generation 18 - Current best internal CV score: 0.9868848542761587
 
-10.03 minutes have elapsed. TPOT will close down.
+Generation 19 - Current best internal CV score: 0.9868848542761587
+
+10.12 minutes have elapsed. TPOT will close down.
 TPOT closed during evaluation in one generation.
 WARNING: TPOT may not provide a good pipeline if TPOT is stopped/interrupted in a early generation.
 
@@ -14557,6 +14558,45 @@ Merging automl results with atom...
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># The tpot estimator can be accessed for further analysis</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">tpot</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[7]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>TPOTClassifier(max_time_mins=10, n_jobs=6, random_state=1, scoring=&#39;accuracy&#39;,
+               template=&#39;Transformer-Transformer-Classifier&#39;, verbosity=2)</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Check the new transformers in the branch</span>
@@ -14603,7 +14643,7 @@ Merging automl results with atom...
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Or draw the pipeline</span>
@@ -14646,7 +14686,7 @@ Merging automl results with atom...
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that the MLP model is also merged with atom</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that the model is also merged with atom</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">mlp</span>
 </pre></div>
 

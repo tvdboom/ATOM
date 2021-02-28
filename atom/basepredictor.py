@@ -31,7 +31,9 @@ class BasePredictor:
         props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
         if self.__dict__.get("_branches"):  # Add public attrs from branch
             props.extend([k for k in self.branch.__dict__ if k not in Branch.private])
-        if item in props:
+        if self.__dict__.get("_branches").get(item):
+            return self._branches[item]  # Get branch
+        elif item in props:
             return getattr(self.branch, item)  # Get attr from branch
         elif self.__dict__.get("_models").get(item.lower()):
             return self._models[item.lower()]   # Get model subclass

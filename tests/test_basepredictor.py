@@ -21,7 +21,14 @@ from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
 
 # Test magic methods =============================================== >>
 
-def test_getattr_from_branch():
+def test_getattr_branch():
+    """Assert that branches can be called from the trainer."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "branch_2"
+    assert atom.branch_2 is atom._branches["branch_2"]
+
+
+def test_getattr_attr_from_branch():
     """Assert that branch attributes can be called from the trainer."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.pipeline is atom.branch.pipeline

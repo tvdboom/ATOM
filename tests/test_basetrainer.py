@@ -38,9 +38,9 @@ def test_model_is_custom():
 
 def test_models_get_right_name():
     """Assert that the model names are transformed to the correct acronyms."""
-    trainer = DirectClassifier(["lR", "et", "CATB"], random_state=1)
+    trainer = DirectClassifier(["lR", "tReE"], random_state=1)
     trainer.run(bin_train, bin_test)
-    assert trainer.models == ["LR", "ET", "CatB"]
+    assert trainer.models == ["LR", "Tree"]
 
 
 def test_invalid_model_name():

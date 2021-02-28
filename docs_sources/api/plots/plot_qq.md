@@ -12,9 +12,9 @@ Plot a quantile-quantile plot.
 <strong>columns: int, str, slice or sequence, optional (default=0)</strong>
 <blockquote>
 Slice, names or indices of the columns to plot. Selected
-categorical features are ignored.
+categorical columns are ignored.
 </blockquote>
-<strong>distribution: str, optional (default="norm")</strong>
+<strong>distribution: str, sequence or None, optional (default="norm")</strong>
 <blockquote>
 Name of the <code>scipy.stats</code> distribution to fit to the columns.
 </blockquote>

@@ -67,23 +67,30 @@ class Branch:
                 index=pd.Index([], dtype=str),
                 dtype="object",
             )
-            self.data = None
-            self.idx = None
-            self.mapping = None
-            self.feature_importance = None
+            for attr in ["data", "idx", "mapping", "feature_importance"]:
+                setattr(self, attr, None)
         else:
-            self.pipeline = copy(self.T._branches[parent].pipeline)
-            self.data = copy(self.T._branches[parent].data)
-            self.idx = copy(self.T._branches[parent].idx)
-            self.mapping = copy(self.T._branches[parent].mapping)
-            self.feature_importance = copy(self.T._branches[parent].feature_importance)
+            # Copy the branch attrs and point to the rest
+            for attr in ["pipeline", "data", "idx", "mapping", "feature_importance"]:
+                setattr(self, attr, copy(getattr(self.T._branches[parent], attr)))
+            for attr in vars(self.T._branches[parent]):
+                if not hasattr(self, attr):  # If not already assigned...
+                    setattr(self, attr, getattr(self.T._branches[parent], attr))
 
     def __repr__(self):
-        out = "Branches:"
-        for branch in self.T._branches.keys():
-            out += f"\n --> {branch}"
-            if branch == self.T._current:
-                out += " !"
+        out = f"Branch: {self.name}"
+
+        # Add the transformers with their parameters
+        out += f"\n --> Pipeline: {None if self.pipeline.empty else ''}"
+        for est in self.pipeline:
+            out += f"\n   >>> {est.__class__.__name__}"
+            for param in signature(est.__init__).parameters:
+                if param not in BaseTransformer.attrs + ["self"]:
+                    out += f"\n     --> {param}: {str(flt(getattr(est, param)))}"
+
+        # Add the models linked to the branch
+        dependent = self._get_depending_models()
+        out += f"\n --> Models: {', '.join(dependent) if dependent else None}"
 
         return out
 
@@ -96,19 +103,7 @@ class Branch:
     @composed(crash, method_to_log)
     def status(self):
         """Print the status of the branch."""
-        self.T.log(f"Branch: {self.name}")
-
-        # Add the transformers with their parameters
-        self.T.log(f" --> Pipeline: {None if self.pipeline.empty else ''}")
-        for est in self.pipeline:
-            self.T.log(f"   >>> {est.__class__.__name__}")
-            for param in signature(est.__init__).parameters:
-                if param not in BaseTransformer.attrs + ["self"]:
-                    self.T.log(f"     --> {param}: {str(flt(getattr(est, param)))}")
-
-        # Add the models linked to the branch
-        dependent = self._get_depending_models()
-        self.T.log(f" --> Models: {', '.join(dependent) if dependent else None}")
+        self.T.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: str):

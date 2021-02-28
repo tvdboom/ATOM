@@ -200,6 +200,10 @@ Name of the target column.
 Whether the feature set is scaled. It is considered scaled when
 it has mean=0 and std=1, or when atom has a scaler in the pipeline.
 </blockquote>
+<strong>duplicates: int</strong>
+<blockquote>
+Number of duplicate rows in the dataset.
+</blockquote>
 <strong>nans: pd.Series</strong>
 <blockquote>
 Columns with the number of missing values in them.
@@ -230,7 +234,7 @@ Columns in training set with amount of outlier values.
 </blockquote>
 <strong>n_outliers: int</strong>
 <blockquote>
-Returns the total number of rows containing outliers.
+Number of samples in the training set containing outliers.
 </blockquote>
 </td></tr>
 </table>

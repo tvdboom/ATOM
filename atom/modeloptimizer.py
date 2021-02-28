@@ -557,6 +557,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:
             self.estimator = calibrator.fit(self.X_test, self.y_test)
 
+        self.T.log(f"Model {self.name} successfully calibrated!")
+
         # Reset all prediction attrs since the model's estimator changed
         self._pred_attrs = [None] * 10
 

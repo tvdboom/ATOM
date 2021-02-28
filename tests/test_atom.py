@@ -13,11 +13,14 @@ import pytest
 import numpy as np
 from unittest.mock import patch
 from sklearn.metrics import get_scorer
-from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectFromModel
+from sklearn.kernel_approximation import RBFSampler
+from sklearn.linear_model import LassoLarsCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler, RobustScaler
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -72,8 +75,10 @@ def test_mapping_with_nans():
 def test_repr():
     """Assert that the __repr__ method visualizes the pipeline(s)."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    assert str(atom).startswith("ATOMClassifier")
+    atom.scale()
+    assert "Branches: master" in str(atom)
+    atom.branch = "branch_2"
+    assert "Branches:\n   >>> master\n   >>> branch_2 !" in str(atom)
 
 
 def test_iter():
@@ -153,6 +158,12 @@ def test_scaled():
     assert atom.scaled
 
 
+def test_duplicates():
+    """Assert that duplicates returns the number of duplicated samples."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    assert atom.duplicates == 2
+
+
 def test_nans():
     """Assert that nans returns a series of missing values."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
@@ -170,9 +181,6 @@ def test_numerical():
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     assert atom.numerical == ["Feature 1", "Feature 2"]
 
-    atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.numerical == []
-
 
 def test_n_numerical():
     """Assert that n_categorical returns the number of numerical columns."""
@@ -184,9 +192,6 @@ def test_categorical():
     """Assert that categorical returns the names of categorical columns."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     assert atom.categorical == ["Feature 3"]
-
-    atom = ATOMClassifier(*mnist, random_state=1)
-    assert atom.categorical == []
 
 
 def test_n_categorical():
@@ -554,22 +559,46 @@ def test_default_scoring(cls):
     assert atom.pipeline[0].kwargs["scoring"].name == "recall"
 
 
-def test_automl_classification():
+@patch("tpot.TPOTClassifier")
+def test_automl_classification(cls):
     """Assert that the automl method works for classification tasks."""
+    pl = Pipeline(
+        steps=[
+            ('standardscaler', StandardScaler()),
+            ('robustscaler', RobustScaler()),
+            ('mlpclassifier', MLPClassifier(alpha=0.001, random_state=1))
+        ]
+    )
+    cls.return_value.fitted_pipeline_ = pl.fit(X_bin, y_bin)
+
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree", metric="accuracy")
-    atom.automl(max_time_mins=0.2, template="Transformer-Classifier")
-    assert atom.tpot.scoring == get_scorer("accuracy")
-    assert len(atom) == 1
+    atom.automl()
+    cls.assert_called_with(
+        n_jobs=1,
+        random_state=1,
+        scoring=atom._metric[0],  # Called using atom's metric
+        verbosity=0
+    )
+    assert len(atom) == 2
     assert atom.models == ["Tree", "MLP"]
 
 
-def test_automl_regression():
+@patch("tpot.TPOTRegressor")
+def test_automl_regression(cls):
     """Assert that the automl method works for regression tasks."""
+    pl = Pipeline(
+        steps=[
+            ('rbfsampler', RBFSampler(gamma=0.95, random_state=2)),
+            ('lassolarscv', LassoLarsCV(normalize=False))
+        ]
+    )
+    cls.return_value.fitted_pipeline_ = pl.fit(X_reg, y_reg)
+
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.automl(max_time_mins=0.2, scoring="r2", random_state=2)
+    atom.automl(scoring="r2", random_state=2)
+    cls.assert_called_with(n_jobs=1, scoring="r2", verbosity=0, random_state=2)
     assert atom.metric == "r2"
-    assert atom.tpot.random_state == 2
 
 
 def test_invalid_scoring():
@@ -609,27 +638,27 @@ def test_errors_are_updated():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
 
     # Produce an error on one model (when n_initial_points > n_calls)
-    atom.run(["XGB", "LGB"], n_calls=(6, 5), n_initial_points=(2, 7))
+    atom.run(["Tree", "LGB"], n_calls=(3, 2), n_initial_points=(2, 5))
     assert list(atom.errors) == ["LGB"]
 
     # Subsequent runs should remove the original model
-    atom.run(["XGB", "LGB"], n_calls=(5, 6), n_initial_points=(7, 2))
+    atom.run(["Tree", "LGB"], n_calls=(5, 3), n_initial_points=(7, 1))
     assert atom.models == "LGB"
 
 
 def test_models_and_metric_are_updated():
     """Assert that the models and metric attributes are updated correctly."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["LGB", "CatB"], metric=get_scorer("max_error"))
-    assert atom.models == ["LGB", "CatB"]
+    atom.run(["OLS", "Tree"], metric=get_scorer("max_error"))
+    assert atom.models == ["OLS", "Tree"]
     assert atom.metric == "max_error"
 
 
 def test_errors_are_removed():
     """Assert that the errors are removed if subsequent runs are successful."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["BNB", "LGB"], bo_params={"dimensions": {"LGB": 2}})  # Invalid dims
-    atom.run("LGB")  # Runs correctly
+    atom.run(["BNB", "Tree"], bo_params={"dimensions": {"Tree": 2}})  # Invalid dims
+    atom.run("Tree")  # Runs correctly
     assert not atom.errors  # Errors should be empty
 
 

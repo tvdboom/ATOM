@@ -42,8 +42,8 @@ from .models import CustomModel
 from .plots import ATOMPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, DISTRIBUTIONS,
-    flt, lst, arr, infer_task, check_method, check_scaling,
-    check_deep, names_from_estimator, catch_return, variable_return,
+    flt, lst, infer_task, check_method, check_scaling, check_deep,
+    names_from_estimator, catch_return, variable_return,
     custom_transform, add_transformer, method_to_log, composed,
     crash, CustomDict,
 )
@@ -103,7 +103,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __repr__(self):
         out = f"{self.__class__.__name__}"
-        out += f"\n --> Branches: {', '.join(list(self._branches.keys()))}"
+        out += f"\n --> Branches:"
+        if len(self._branches) == 1:
+            out += f" {self._current}"
+        else:
+            for branch in self._branches:
+                out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
         out += f"\n --> Errors: {len(self.errors)}"
@@ -152,32 +157,47 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log(f"New branch '{self._current}' successfully created!", 1)
 
     @property
+    def branches(self):
+        out = "Branches:"
+        for branch in self.T._branches.keys():
+            out += f"\n --> {branch}"
+            if branch == self.T._current:
+                out += " !"
+
+        return out
+
+    @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if check_scaling(self.X) or any(self.pipeline.index.str.contains("scale")):
-            return True
-        else:
-            return False
+        return check_scaling(self.X) or any(self.pipeline.index.str.contains("scale"))
+
+    @property
+    def duplicates(self):
+        """Number of duplicate rows in the dataset."""
+        if not check_deep(self.X):
+            return self.dataset.duplicated().sum()
 
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        nans = self.dataset.replace(self.missing, np.NaN).isna().sum()
-        return nans[nans > 0]
+        if not check_deep(self.X):
+            nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
+            nans = nans.isna().sum()
+            return nans[nans > 0]
 
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        nans = self.dataset.replace(self.missing, np.NaN).isna().sum(axis=1)
-        return len(nans[nans > 0])
+        if not check_deep(self.X):
+            nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
+            nans = nans.isna().sum(axis=1)
+            return len(nans[nans > 0])
 
     @property
     def numerical(self):
         """Names of the numerical columns in the dataset."""
         if not check_deep(self.X):
             return list(self.X.select_dtypes(include=["number"]).columns)
-        else:
-            return []
 
     @property
     def n_numerical(self):
@@ -189,8 +209,6 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Names of the categorical columns in the dataset."""
         if not check_deep(self.X):
             return list(self.X.select_dtypes(exclude=["number"]).columns)
-        else:
-            return []
 
     @property
     def n_categorical(self):
@@ -200,15 +218,17 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
-        srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.numerical)
-        return srs[srs > 0]
+        if not check_deep(self.X):
+            z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
+            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.numerical)
+            return srs[srs > 0]
 
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
-        return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
+        if not check_deep(self.X):
+            z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
+            return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
 
     @property
     def classes(self):
@@ -241,28 +261,26 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         self.log("Dataset stats ==================== >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
-        self.log(f"Scaled: {self.scaled}", _vb)
 
-        nans = self.nans.sum()
-        n_categorical = self.n_categorical
-        outliers = self.outliers.sum()
         if not check_deep(self.X):
-            duplicates = self.X.duplicated().sum()
-        else:
-            duplicates = len(self.dataset) - len(np.unique(arr(self.X), axis=0))
+            nans = self.nans.sum()
+            n_categorical = self.n_categorical
+            outliers = self.outliers.sum()
+            duplicates = self.dataset.duplicated().sum()
 
-        if self.nans.sum():
-            p_nans = 100. * nans / (self.shape[0] * self.shape[1])
-            self.log(f"Missing values: {nans} ({p_nans:.2f}%)", _vb)
-        if n_categorical:
-            p_cat = 100. * n_categorical / self.n_columns
-            self.log(f"Categorical columns: {n_categorical} ({p_cat:.2f}%)", _vb)
-        if outliers:
-            p_out = 100. * outliers / (self.train.shape[0] * self.train.shape[1])
-            self.log(f"Outlier values: {outliers} ({p_out:.2f}%)", _vb)
-        if duplicates:
-            p_dup = 100. * duplicates / len(self.dataset)
-            self.log(f"Duplicate samples: {duplicates} ({p_dup:.2f}%)", _vb)
+            self.log(f"Scaled: {self.scaled}", _vb)
+            if self.nans.sum():
+                p_nans = 100. * nans / (self.shape[0] * self.shape[1])
+                self.log(f"Missing values: {nans} ({p_nans:.2f}%)", _vb)
+            if n_categorical:
+                p_cat = 100. * n_categorical / self.n_columns
+                self.log(f"Categorical columns: {n_categorical} ({p_cat:.2f}%)", _vb)
+            if outliers:
+                p_out = 100. * outliers / (self.train.shape[0] * self.train.shape[1])
+                self.log(f"Outlier values: {outliers} ({p_out:.2f}%)", _vb)
+            if duplicates:
+                p_dup = 100. * duplicates / len(self.dataset)
+                self.log(f"Duplicate samples: {duplicates} ({p_dup:.2f}%)", _vb)
 
         self.log("-------------------------------------", _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
@@ -892,9 +910,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
         if self.goal.startswith("class"):
-            self.tpot = TPOTClassifier(**kwargs)
+            self.branch.tpot = TPOTClassifier(**kwargs)
         else:
-            self.tpot = TPOTRegressor(**kwargs)
+            self.branch.tpot = TPOTRegressor(**kwargs)
 
         self.log("Fitting automl algorithm...", 1)
 

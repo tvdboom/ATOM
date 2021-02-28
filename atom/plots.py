@@ -267,9 +267,10 @@ class BasePlotter:
                 "Choose between 'train', 'test' or 'both'."
             )
 
-    def _get_show(self, show):
+    @staticmethod
+    def _get_show(show, model):
         """Check and return the provided parameter show."""
-        max_fxs = max([branch.n_features for branch in self._branches.values()])
+        max_fxs = max([m.n_features for m in lst(model)])
         if show is None or show > max_fxs:
             return max_fxs
         elif show < 1:
@@ -1156,7 +1157,7 @@ class BaseModelPlotter(BasePlotter):
         check_method(self, "plot_permutation_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        show = self._get_show(show)
+        show = self._get_show(show, models)
 
         if n_repeats <= 0:
             raise ValueError(
@@ -1280,7 +1281,7 @@ class BaseModelPlotter(BasePlotter):
         check_method(self, "plot_feature_importance")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
-        show = self._get_show(show)
+        show = self._get_show(show, models)
 
         # Create dataframe with columns as indices to plot with barh
         df = pd.DataFrame()
@@ -2363,7 +2364,7 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
-        show = self._get_show(show)
+        show = self._get_show(show, m)
         target = self._get_target(target)
         shap_values = self._get_shap(m, index, target)
 
@@ -2440,7 +2441,7 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
-        show = self._get_show(show)
+        show = self._get_show(show, m)
         target = self._get_target(target)
         shap_values = self._get_shap(m, index, target)
 
@@ -2521,7 +2522,7 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
-        show = self._get_show(show)
+        show = self._get_show(show, m)
         target = self._get_target(target)
 
         # Get shap information from old API
@@ -2730,7 +2731,7 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = self._get_index(index, m)
-        show = self._get_show(show)
+        show = self._get_show(show, m)
         target = self._get_target(target)
         shap_values = self._get_shap(m, index, target)
 
@@ -2885,7 +2886,7 @@ class BaseModelPlotter(BasePlotter):
         check_is_fitted(self, attributes="_models")
         m = self._get_subclass(models, max_one=True)
         index = m.X_test.iloc[[0]] if index is None else self._get_index(index, m)
-        show = self._get_show(show)
+        show = self._get_show(show, m)
         target = self._get_target(target)
         shap_values = self._get_shap(m, index, target)
 
@@ -3222,7 +3223,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         distribution: str, sequence or None, optional (default=None)
             Names of the `scipy.stats` distribution to fit to the
-            column. If None, no distribution is fitted. Only for
+            columns. If None, no distribution is fitted. Only for
             numerical columns.
 
         show: int or None, optional (default=None)
@@ -3331,7 +3332,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def plot_qq(
         self,
         columns: Union[int, str, slice, SEQUENCE_TYPES] = 0,
-        distribution: str = "norm",
+        distribution: Union[str, SEQUENCE_TYPES] = "norm",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
@@ -3343,10 +3344,10 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         ----------
         columns: int, str, slice or sequence, optional (default=0)
             Slice, names or indices of the columns to plot. Selected
-            categorical features are ignored.
+            categorical columns are ignored.
 
-        distribution: str, optional (default="norm")
-            Name of the `scipy.stats` distribution to fit to the
+        distribution: str, sequence or None, optional (default="norm")
+            Names of the `scipy.stats` distribution to fit to the
             columns.
 
         title: str or None, optional (default=None)
@@ -3364,22 +3365,29 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         """
         check_method(self, "plot_qq")
         columns = self._get_columns(columns)
+        palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
         percentiles = np.linspace(0, 100, 101)
-        stat = getattr(stats, distribution)
         for col in lst(columns):
-            params = stat.fit(self.dataset[col])
-            samples = stat.rvs(*params, size=101, random_state=self.random_state)
-            qn_a = np.percentile(samples, percentiles)
-
+            color = next(palette)
+            m = cycle(["+", "1", "x", "*", "d", "p", "h"])
             qn_b = np.percentile(self.dataset[col], percentiles)
-            plt.scatter(qn_a, qn_b, marker="+", s=50, label=col)
+            for dist in lst(distribution):
+                stat = getattr(stats, dist)
+                params = stat.fit(self.dataset[col])
+
+                # Get the theoretical percentiles
+                samples = stat.rvs(*params, size=101, random_state=self.random_state)
+                qn_a = np.percentile(samples, percentiles)
+
+                label = col + (" - " + dist if len(lst(distribution)) > 1 else "")
+                plt.scatter(qn_a, qn_b, color=color, marker=next(m), s=50, label=label)
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        plt.plot((1e-9, 1e9), (1e-9, 1e9), lw=2, color="black", alpha=0.7, linestyle="--")
+        plt.plot((1e-9, 1e9), (1e-9, 1e9), "k--", lw=2, alpha=0.7)
 
         self._plot(
             ax=ax,
@@ -3388,7 +3396,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             ylim=ylim,
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
-            legend=("best", len(lst(columns))),
+            legend=("best", len(lst(columns)) + len(lst(distribution))),
             figsize=figsize if figsize else (10, 6),
             filename=filename,
             display=display,
