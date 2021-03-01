@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_partial_dependence</strong>(models=None, features=None, target=None,
                                title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1339">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1334">[source]</a></div></pre>
 Plot the partial dependence of features. The partial dependence of a feature (or a
  set of features) corresponds to the average response of the model for each possible
  value of the feature. Two-way partial dependence plots are plotted as contour plots

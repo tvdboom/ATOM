@@ -2,11 +2,11 @@
 -----------
 
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None, **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L264">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L380">[source]</a></div></pre>
 Transform new data through all transformers in a branch. By default,
- all transformers are included except [Pruner](../../data_cleaning/pruner)
- and [Balancer](../../data_cleaning/balancer) since they should
- only be applied on the training set. Can only be called from atom.
+all transformers are included except [Pruner](../../data_cleaning/pruner)
+and [Balancer](../../data_cleaning/balancer) since they should
+only be applied on the training set. Can only be called from atom.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -36,9 +36,9 @@ Verbosity level of the output. If None, it uses the trainer's verbosity. Possibl
 <strong>**kwargs</strong>
 <blockquote>
 Additional keyword arguments to customize which transformers to apply. You can
- either select them including their index in the <code>pipeline</code> parameter,
- e.g. <code>pipeline=[0, 1, 4]</code> or include/exclude them individually using their
- methods, e.g. <code>pruner=True</code> or <code>featureselector=False</code>.
+either select them including their index in the <code>pipeline</code> parameter,
+e.g. <code>pipeline=[0, 1, 4]</code> or include/exclude them individually using their
+methods, e.g. <code>pruner=True</code> or <code>featureselector=False</code>.
 </blockquote>
 </tr>
 <tr>

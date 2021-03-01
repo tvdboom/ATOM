@@ -176,7 +176,7 @@ Make plots to analyze the results:
 Release history
 -----------------
 
-### Version 4.3.0 - dev
+### Version 4.3.0
 
 * Possibility to [add](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
 * The [export_pipeline](https://tvdboom.github.io/ATOM/API/ATOM/atomclassifier/#export-pipeline) utility method exports atom's current pipeline to a sklearn object.

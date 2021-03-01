@@ -2,7 +2,7 @@
 ------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_lift</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2253">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2219">[source]</a></div></pre>
 Plot the lift curve. Only for binary classification.
 <table width="100%">
 <tr>

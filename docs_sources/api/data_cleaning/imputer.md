@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
                                  min_frac_cols=0.5, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L334">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L377">[source]</a></div></pre>
 Impute or remove missing values according to the selected strategy.
  Also removes rows and columns with too many missing values. Use
  the `missing` attribute to customize what are considered "missing
@@ -60,7 +60,7 @@ Verbosity level of the class. Possible values are:
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 The default name consists of the class' name followed by the
- timestamp of the logger's creation.
+timestamp of the logger's creation.
 </blockquote>
 </td>
 </tr>
@@ -141,7 +141,7 @@ considered missing since they are incompatible with sklearn estimators.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L411">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L455">[source]</a></div></pre>
 Fit to data.
 <table width="100%">
 <tr>
@@ -170,7 +170,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></div></pre>
 Fit the Imputer and return the imputed data. Note that leaving y=None
  can lead to inconsistencies in data length between X and y if rows are
  dropped during the transformation.
@@ -235,7 +235,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
 <table>
 <tr>
@@ -256,7 +256,7 @@ Minimum verbosity level to print the message.
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
 Save the instance to a pickle file.
 <table>
 <tr>
@@ -298,7 +298,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L482">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L526">[source]</a></div></pre>
 Impute the data. Note that leaving y=None can lead to inconsistencies in
  data length between X and y if rows are dropped during the transformation.
 <table width="100%">

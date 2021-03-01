@@ -2,21 +2,21 @@
 ------------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None, n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2076">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2047">[source]</a></div></pre>
 Plot the calibration curve for a binary classifier.
- Well calibrated classifiers are probabilistic classifiers for which the
- output of the `predict_proba` method can be directly interpreted as a
- confidence level. For instance a well calibrated (binary) classifier
- should classify the samples such that among the samples to which it gave
- a `predict_proba` value close to 0.8, approx. 80% actually belong to the
- positive class. Read more in sklearn's
- [documentation](https://scikit-learn.org/stable/modules/calibration.html).
- 
- This figure shows two plots: the calibration curve, where
- the x-axis represents the average predicted probability in each bin and the
- y-axis is the fraction of positives, i.e. the proportion of samples whose
- class is the positive class (in each bin); and a distribution of all
- predicted probabilities of the classifier.
+Well calibrated classifiers are probabilistic classifiers for which the
+output of the `predict_proba` method can be directly interpreted as a
+confidence level. For instance a well calibrated (binary) classifier
+should classify the samples such that among the samples to which it gave
+a `predict_proba` value close to 0.8, approx. 80% actually belong to the
+positive class. Read more in sklearn's
+[documentation](https://scikit-learn.org/stable/modules/calibration.html).
+
+This figure shows two plots: the calibration curve, where
+the x-axis represents the average predicted probability in each bin and the
+y-axis is the fraction of positives, i.e. the proportion of samples whose
+class is the positive class (in each bin); and a distribution of all
+predicted probabilities of the classifier.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

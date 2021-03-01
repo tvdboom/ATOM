@@ -6,10 +6,10 @@
                                                 operators=None, n_jobs=1, verbose=0, logger=None, random_state=None)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L49">[source]</a></div></pre>
 Use Deep feature Synthesis or a genetic algorithm to create new combinations
- of existing features to capture the non-linear relations between the original
- features. This class can be accessed from atom through the
- [feature_generation](../../ATOM/atomclassifier/#feature-generation)
- method. Read more in the [user guide](../../../user_guide/#generating-new-features).
+of existing features to capture the non-linear relations between the original
+features. This class can be accessed from atom through the
+[feature_generation](../../ATOM/atomclassifier/#feature-generation)
+method. Read more in the [user guide](../../../user_guide/#generating-new-features).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -25,8 +25,8 @@ Strategy to crate new features. Choose from:
 <strong>n_features: int or None, optional (default=None)</strong>
 <blockquote>
 Number of newly generated features to add to the dataset (no
- more than 1% of the population for the genetic strategy). If
- None, select all created features.
+more than 1% of the population for the genetic strategy). If
+None, select all created features.
 </blockquote>
 <strong>generations: int, optional (default=20)</strong>
 <blockquote>
@@ -39,7 +39,7 @@ Number of programs in each generation. Only for the genetic strategy.
 <strong>operators: str, list, tuple or None, optional (default=None)</strong>
 <blockquote>
 Name of the operators to be used on the features. None to use all.
- Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
+Choose from: "add", "sub", "mul", "div", "sqrt", "log", "sin", "cos", "tan".
 </blockquote>
 <strong>n_jobs: int, optional (default=1)</strong>
 <blockquote>
@@ -69,12 +69,12 @@ Verbosity level of the class. Possible values are:
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 The default name consists of the class' name followed by the
- timestamp of the logger's creation.
+timestamp of the logger's creation.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 </td>
 </tr>
@@ -173,7 +173,7 @@ Dataframe of the newly created non-linear features. Only for the genetic strateg
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L147">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L149">[source]</a></div></pre>
 Fit to data.
 <table width="100%">
 <tr>
@@ -206,7 +206,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></div></pre>
 Fit to data, then transform it.
 <table width="100%">
 <tr>
@@ -263,7 +263,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
 <table>
 <tr>
@@ -284,7 +284,7 @@ Minimum verbosity level to print the message.
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
 Save the instance to a pickle file.
 <table>
 <tr>
@@ -326,7 +326,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L306">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L309">[source]</a></div></pre>
 Generate new features.
 <table width="100%">
 <tr>

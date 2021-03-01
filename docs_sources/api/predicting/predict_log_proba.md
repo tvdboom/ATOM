@@ -2,12 +2,12 @@
 -------------------
 
 <pre><em>method</em> <strong style="color:#008AB8">predict_log_proba</strong>(X, verbose=None, **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L116">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L136">[source]</a></div></pre>
 Transform new data through all transformers in a branch and return
- class log-probabilities. If called from a trainer, it will use the
- best model in the pipeline (under the `winner` attribute). If called
- from a model, it will use that model. The estimator must have a
- `predict_log_proba` method.
+class log-probabilities. If called from a trainer, it will use the
+best model in the pipeline (under the `winner` attribute). If called
+from a model, it will use that model. The estimator must have a
+`predict_log_proba` method.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -19,7 +19,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
 Verbosity level of the output. If None, it uses the trainer's
- verbosity. Possible values are:
+verbosity. Possible values are:
 <ul>
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
@@ -29,7 +29,7 @@ Verbosity level of the output. If None, it uses the trainer's
 <strong>**kwargs</strong>
 <blockquote>
 Same keyword arguments as the <a href="../transform">transform</a> method to
- include/exclude transformers from the transformations.
+include/exclude transformers from the transformations.
 </blockquote>
 </tr>
 <tr>
@@ -38,7 +38,7 @@ Same keyword arguments as the <a href="../transform">transform</a> method to
 <strong>p: np.ndarray</strong>
 <blockquote>
 The class log-probabilities of the input samples, with shape=(n_samples,) for binary
- classification tasks and (n_samples, n_classes) for multiclass classification tasks.
+classification tasks and (n_samples, n_classes) for multiclass classification tasks.
 </blockquote>
 </td>
 </tr>

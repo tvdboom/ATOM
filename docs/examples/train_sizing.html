@@ -14288,7 +14288,7 @@ a.anchor-link {
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Load the Australian weather dataset</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s1">&#39;./datasets/weatherAUS.csv&#39;</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;./datasets/weatherAUS.csv&quot;</span><span class="p">)</span>
 
 <span class="c1"># Let&#39;s have a look at the data</span>
 <span class="n">X</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
@@ -14500,7 +14500,7 @@ a.anchor-link {
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Initialize ATOM and prepare the data</span>
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s1">&#39;median&#39;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s1">&#39;most_frequent&#39;</span><span class="p">,</span> <span class="n">min_frac_rows</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">,</span> <span class="n">min_frac_rows</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
 </pre></div>
 
@@ -14524,18 +14524,18 @@ a.anchor-link {
 <pre>&lt;&lt; ================== ATOM ================== &gt;&gt;
 Algorithm task: binary classification.
 
-Dataset stats ================== &gt;&gt;
+Dataset stats ==================== &gt;&gt;
 Shape: (142193, 22)
-Missing values: 316559
-Categorical columns: 5
 Scaled: False
------------------------------------
+Missing values: 316559 (10.12%)
+Categorical columns: 5 (22.73%)
+Duplicate samples: 45 (0.03%)
+-------------------------------------
 Train set size: 113755
 Test set size: 28438
------------------------------------
+-------------------------------------
 Dataset balance: No:Yes &lt;==&gt; 3.5:1.0
------------------------------------
-Distribution of classes:
+-------------------------------------
 |     |   dataset |   train |   test |
 |:----|----------:|--------:|-------:|
 | No  |    110316 |   88263 |  22053 |
@@ -14545,7 +14545,7 @@ Applying data cleaning...
  --&gt; Label-encoding the target column.
 Fitting Imputer...
 Imputing missing values...
- --&gt; Dropping 15182 rows for containing less than 80% non-missing values.
+ --&gt; Dropping 15182 samples for containing less than 80% non-missing values.
  --&gt; Imputing 100 missing values with median in feature MinTemp.
  --&gt; Imputing 57 missing values with median in feature MaxTemp.
  --&gt; Imputing 640 missing values with median in feature Rainfall.
@@ -14588,7 +14588,8 @@ Encoding categorical columns...
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We can analyze the impact of the training set&#39;s size on a LightGBM model</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">train_sizing</span><span class="p">(</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">train_sizes</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">bagging</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">train_sizing</span><span class="p">(</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">train_sizes</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">bagging</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">scoring</span><span class="p">()</span>
 </pre></div>
 
      </div>
@@ -14608,240 +14609,16 @@ Encoding categorical columns...
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>
-Training ===================================== &gt;&gt;
-Models: LGB
-Metric: f1
-
-
-Run: 0 ================================ &gt;&gt;
-Size of training set: 10164 (10%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.8179
-Test evaluation --&gt; f1: 0.6092
-Time elapsed: 0.740s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.592 ± 0.0024
-Time elapsed: 1.595s
--------------------------------------------------
-Total time: 2.337s
-
-
-Final results ========================= &gt;&gt;
-Duration: 2.337s
-------------------------------------------
-LightGBM --&gt; f1: 0.592 ± 0.002 ~
-
-
-Run: 1 ================================ &gt;&gt;
-Size of training set: 20329 (20%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.744
-Test evaluation --&gt; f1: 0.6234
-Time elapsed: 0.909s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6111 ± 0.0036
-Time elapsed: 1.927s
--------------------------------------------------
-Total time: 2.837s
-
-
-Final results ========================= &gt;&gt;
-Duration: 2.837s
-------------------------------------------
-LightGBM --&gt; f1: 0.611 ± 0.004
-
-
-Run: 2 ================================ &gt;&gt;
-Size of training set: 30493 (30%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.7096
-Test evaluation --&gt; f1: 0.6309
-Time elapsed: 1.095s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6205 ± 0.0026
-Time elapsed: 2.366s
--------------------------------------------------
-Total time: 3.461s
-
-
-Final results ========================= &gt;&gt;
-Duration: 3.462s
-------------------------------------------
-LightGBM --&gt; f1: 0.621 ± 0.003
-
-
-Run: 3 ================================ &gt;&gt;
-Size of training set: 40658 (40%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6934
-Test evaluation --&gt; f1: 0.6327
-Time elapsed: 1.283s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6248 ± 0.0042
-Time elapsed: 2.958s
--------------------------------------------------
-Total time: 4.242s
-
-
-Final results ========================= &gt;&gt;
-Duration: 4.243s
-------------------------------------------
-LightGBM --&gt; f1: 0.625 ± 0.004
-
-
-Run: 4 ================================ &gt;&gt;
-Size of training set: 50822 (50%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6838
-Test evaluation --&gt; f1: 0.6372
-Time elapsed: 1.636s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6246 ± 0.0063
-Time elapsed: 3.421s
--------------------------------------------------
-Total time: 5.059s
-
-
-Final results ========================= &gt;&gt;
-Duration: 5.059s
-------------------------------------------
-LightGBM --&gt; f1: 0.625 ± 0.006
-
-
-Run: 5 ================================ &gt;&gt;
-Size of training set: 60987 (60%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6807
-Test evaluation --&gt; f1: 0.639
-Time elapsed: 1.819s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6315 ± 0.0036
-Time elapsed: 4.033s
--------------------------------------------------
-Total time: 5.853s
-
-
-Final results ========================= &gt;&gt;
-Duration: 5.853s
-------------------------------------------
-LightGBM --&gt; f1: 0.631 ± 0.004
-
-
-Run: 6 ================================ &gt;&gt;
-Size of training set: 71151 (70%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6775
-Test evaluation --&gt; f1: 0.6403
-Time elapsed: 1.988s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6363 ± 0.0029
-Time elapsed: 4.500s
--------------------------------------------------
-Total time: 6.489s
-
-
-Final results ========================= &gt;&gt;
-Duration: 6.489s
-------------------------------------------
-LightGBM --&gt; f1: 0.636 ± 0.003
-
-
-Run: 7 ================================ &gt;&gt;
-Size of training set: 81316 (80%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6732
-Test evaluation --&gt; f1: 0.6375
-Time elapsed: 2.280s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6342 ± 0.0027
-Time elapsed: 4.921s
--------------------------------------------------
-Total time: 7.202s
-
-
-Final results ========================= &gt;&gt;
-Duration: 7.202s
-------------------------------------------
-LightGBM --&gt; f1: 0.634 ± 0.003
-
-
-Run: 8 ================================ &gt;&gt;
-Size of training set: 91480 (90%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.6667
-Test evaluation --&gt; f1: 0.6416
-Time elapsed: 2.576s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6382 ± 0.0039
-Time elapsed: 5.307s
--------------------------------------------------
-Total time: 7.884s
-
-
-Final results ========================= &gt;&gt;
-Duration: 7.884s
-------------------------------------------
-LightGBM --&gt; f1: 0.638 ± 0.004
-
-
-Run: 9 ================================ &gt;&gt;
-Size of training set: 101645 (100%)
-Size of test set: 25366
-
-
-Results for LightGBM:         
-Fit ---------------------------------------------
-Train evaluation --&gt; f1: 0.662
-Test evaluation --&gt; f1: 0.6396
-Time elapsed: 2.674s
-Bagging -----------------------------------------
-Evaluation --&gt; f1: 0.6378 ± 0.0021
-Time elapsed: 6.001s
--------------------------------------------------
-Total time: 8.677s
-
-
-Final results ========================= &gt;&gt;
-Duration: 8.677s
-------------------------------------------
-LightGBM --&gt; f1: 0.638 ± 0.002
+<pre>LightGBM --&gt; f1: 0.592 ± 0.0024 ~
+LightGBM --&gt; f1: 0.6111 ± 0.0036
+LightGBM --&gt; f1: 0.6205 ± 0.0026
+LightGBM --&gt; f1: 0.6248 ± 0.0042
+LightGBM --&gt; f1: 0.6246 ± 0.0063
+LightGBM --&gt; f1: 0.6315 ± 0.0036
+LightGBM --&gt; f1: 0.6363 ± 0.0029
+LightGBM --&gt; f1: 0.6342 ± 0.0027
+LightGBM --&gt; f1: 0.6382 ± 0.0039
+LightGBM --&gt; f1: 0.6378 ± 0.0021
 </pre>
 </div>
 </div>
@@ -14930,110 +14707,110 @@ LightGBM --&gt; f1: 0.638 ± 0.002
       <th>LGB01</th>
       <td>0.817852</td>
       <td>0.609160</td>
-      <td>0.740s</td>
+      <td>0.667s</td>
       <td>0.592008</td>
       <td>0.002407</td>
-      <td>1.595s</td>
-      <td>2.337s</td>
+      <td>1.402s</td>
+      <td>2.070s</td>
     </tr>
     <tr>
       <th>0.2</th>
       <th>LGB02</th>
       <td>0.744018</td>
       <td>0.623409</td>
-      <td>0.909s</td>
+      <td>0.835s</td>
       <td>0.611083</td>
       <td>0.003597</td>
-      <td>1.927s</td>
-      <td>2.837s</td>
+      <td>1.828s</td>
+      <td>2.663s</td>
     </tr>
     <tr>
       <th>0.3</th>
       <th>LGB03</th>
       <td>0.709584</td>
       <td>0.630853</td>
-      <td>1.095s</td>
+      <td>1.033s</td>
       <td>0.620520</td>
       <td>0.002570</td>
-      <td>2.366s</td>
-      <td>3.461s</td>
+      <td>2.246s</td>
+      <td>3.280s</td>
     </tr>
     <tr>
       <th>0.4</th>
       <th>LGB04</th>
       <td>0.693374</td>
       <td>0.632718</td>
-      <td>1.283s</td>
+      <td>1.216s</td>
       <td>0.624846</td>
       <td>0.004187</td>
-      <td>2.958s</td>
-      <td>4.242s</td>
+      <td>2.695s</td>
+      <td>3.913s</td>
     </tr>
     <tr>
       <th>0.5</th>
       <th>LGB05</th>
       <td>0.683844</td>
       <td>0.637217</td>
-      <td>1.636s</td>
+      <td>1.474s</td>
       <td>0.624575</td>
       <td>0.006299</td>
-      <td>3.421s</td>
-      <td>5.059s</td>
+      <td>3.149s</td>
+      <td>4.624s</td>
     </tr>
     <tr>
       <th>0.6</th>
       <th>LGB06</th>
       <td>0.680720</td>
       <td>0.639012</td>
-      <td>1.819s</td>
+      <td>1.678s</td>
       <td>0.631484</td>
       <td>0.003598</td>
-      <td>4.033s</td>
-      <td>5.853s</td>
+      <td>3.577s</td>
+      <td>5.255s</td>
     </tr>
     <tr>
       <th>0.7</th>
       <th>LGB07</th>
       <td>0.677526</td>
       <td>0.640312</td>
-      <td>1.988s</td>
+      <td>1.977s</td>
       <td>0.636251</td>
       <td>0.002910</td>
-      <td>4.500s</td>
-      <td>6.489s</td>
+      <td>4.074s</td>
+      <td>6.052s</td>
     </tr>
     <tr>
       <th>0.8</th>
       <th>LGB08</th>
       <td>0.673214</td>
       <td>0.637478</td>
-      <td>2.280s</td>
+      <td>2.078s</td>
       <td>0.634215</td>
       <td>0.002675</td>
-      <td>4.921s</td>
-      <td>7.202s</td>
+      <td>4.467s</td>
+      <td>6.546s</td>
     </tr>
     <tr>
       <th>0.9</th>
       <th>LGB09</th>
       <td>0.666742</td>
       <td>0.641630</td>
-      <td>2.576s</td>
+      <td>2.289s</td>
       <td>0.638174</td>
       <td>0.003935</td>
-      <td>5.307s</td>
-      <td>7.884s</td>
+      <td>4.967s</td>
+      <td>7.257s</td>
     </tr>
     <tr>
       <th>1.0</th>
       <th>LGB10</th>
       <td>0.661984</td>
       <td>0.639596</td>
-      <td>2.674s</td>
+      <td>2.498s</td>
       <td>0.637845</td>
       <td>0.002125</td>
-      <td>6.001s</td>
-      <td>8.677s</td>
+      <td>5.466s</td>
+      <td>7.966s</td>
     </tr>
   </tbody>
 </table>

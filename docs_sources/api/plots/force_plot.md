@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1,
                   title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2554">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2559">[source]</a></div></pre>
 Plot SHAP's force plot. Visualize the given SHAP values with an additive
 force layout. Note that by default this plot will render using javascript.
 For a regular figure use `matplotlib=True` (this option is only available

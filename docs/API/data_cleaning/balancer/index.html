@@ -587,11 +587,11 @@
 <hr />
 <p><a name="atom"></a></p>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L961">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1052">[source]</a></div></pre>
 <p>Balance the number of samples per class in the target column. Use only for classification tasks.
 This class can be accessed from atom through the
- <a href="../../ATOM/atomclassifier/#balance">balance</a> method. Read more in
- the <a href="../../../user_guide/#balancing-the-data">user guide</a>.</p>
+<a href="../../ATOM/atomclassifier/#balance">balance</a> method. Read more in
+the <a href="../../../user_guide/#balancing-the-data">user guide</a>.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -630,12 +630,12 @@ Verbosity level of the class. Possible values are:
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 The default name consists of the class' name followed by the
- timestamp of the logger's creation.
+timestamp of the logger's creation.
 </blockquote>
 <strong>random_state: int or None, optional (default=None)</strong>
 <blockquote>
 Seed used by the random number generator. If None, the random number
- generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
@@ -724,7 +724,7 @@ Dictionary of the parameter names mapped to their values.
 <p><br /></p>
 <p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
 <p>Write a message to the logger and print it to stdout.</p>
 <table>
 <tr>
@@ -743,7 +743,7 @@ Minimum verbosity level to print the message.
 <p><br /></p>
 <p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
 <p>Save the instance to a pickle file.</p>
 <table>
 <tr>
@@ -781,7 +781,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1040">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1127">[source]</a></div></pre>
 <p>Oversample or undersample the data.</p>
 <table>
 <tr>

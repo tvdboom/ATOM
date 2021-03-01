@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">decision_plot</strong>(models=None, index=None, show=None, target=1,
                      title=None, figsize=None, filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2450">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2455">[source]</a></div></pre>
 Plot SHAP's decision plot. Visualize model decisions using cumulative SHAP values.
  Each plotted line explains a single model prediction. If a single prediction is
  plotted, feature values will be printed in the plot (if supplied). If multiple

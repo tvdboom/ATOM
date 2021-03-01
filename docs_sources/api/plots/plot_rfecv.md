@@ -2,9 +2,9 @@
 ------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L623">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L632">[source]</a></div></pre>
 Plot the RFECV results, i.e. the scores obtained by the estimator fitted on every
- subset of the dataset. Only available if RFECV was applied on the data.
+subset of the dataset. Only available if RFECV was applied on the data.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

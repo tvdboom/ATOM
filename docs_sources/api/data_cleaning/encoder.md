@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L599">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L645">[source]</a></div></pre>
 Perform encoding of categorical features. The encoding type depends on the number
  of unique values in the column:
 
@@ -12,10 +12,10 @@ Perform encoding of categorical features. The encoding type depends on the numbe
 * If n_unique > max_onehot, use `strategy`-encoding.
 
 Also replaces classes with low occurrences with the value `other` in
- order to prevent too high cardinality. Categorical features are defined as
- all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
- missing values or unknown classes when transforming. This class can be accessed
- from atom through the [encode](../../ATOM/atomclassifier/#encode)
+order to prevent too high cardinality. Categorical features are defined as
+all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
+missing values or unknown classes when transforming. This class can be accessed
+from atom through the [encode](../../ATOM/atomclassifier/#encode)
  method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <table>
 <tr>
@@ -24,8 +24,8 @@ Also replaces classes with low occurrences with the value `other` in
 <strong>strategy: str, optional (default="LeaveOneOut")</strong>
 <blockquote>
 Type of encoding to use for high cardinality features. Choose from one of the
- estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
- package except for:
+estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+package except for:
 <ul>
 <li>OneHotEncoder: Use the <code>max_onehot</code> parameter.</li>
 <li>HashingEncoder: Incompatibility of APIs.</li>
@@ -34,12 +34,12 @@ Type of encoding to use for high cardinality features. Choose from one of the
 <strong>max_onehot: int or None, optional (default=10)</strong>
 <blockquote>
 Maximum number of unique values in a feature to perform one-hot-encoding.
- If None, it will always use <code>strategy</code> when n_unique > 2.
+If None, it will always use <code>strategy</code> when n_unique > 2.
 </blockquote>
 <strong>frac_to_other: float, optional (default=None)</strong>
 <blockquote>
 Classes with less occurrences than n_rows * <code>frac_to_other</code> are replaced
- with the string <code>other</code>. If None, skip this step.
+with the string <code>other</code>. If None, skip this step.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -58,7 +58,7 @@ Verbosity level of the class. Possible values are:
 <li>If class: python <code>Logger</code> object.</li>
 </ul>
 The default name consists of the class' name followed by the
- timestamp of the logger's creation.
+timestamp of the logger's creation.
 </blockquote>
 <strong>**kwargs</strong>
 <blockquote>
@@ -121,7 +121,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L675">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a></div></pre>
 Fit to data.
 <table>
 <tr>
@@ -154,7 +154,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></div></pre>
 Fit to data, then transform it.
 <table>
 <tr>
@@ -211,7 +211,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
 <table>
 <tr>
@@ -232,7 +232,7 @@ Minimum verbosity level to print the message.
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
 Save the instance to a pickle file.
 <table>
 <tr>
@@ -274,7 +274,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L754">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L797">[source]</a></div></pre>
 Encode the data.
 <table>
 <tr>

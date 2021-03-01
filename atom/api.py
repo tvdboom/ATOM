@@ -38,12 +38,12 @@ def ATOMModel(
     estimator: class
         Model's estimator. Can be a class or an instance.
 
-    acronym: str, optional (default=None)
-        Model's acronym. Used to call the model from the trainer. If
-        None and there are 2 or more capital letters in the estimator's
-        __name__, those are used. Else, the full __name__ is used.
+    acronym: str or None, optional (default=None)
+        Model's acronym. Used to call the model from the trainer.
+        If None, the capital letters in the estimator's __name__
+        are used (if 2 or more, else it uses the entire name).
 
-    fullname: str, optional (default=None)
+    fullname: str or None, optional (default=None)
         Full model's name. If None, the estimator's __name__ is used.
 
     needs_scaling: bool, optional (default=False)

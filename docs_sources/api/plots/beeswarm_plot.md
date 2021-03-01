@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">beeswarm_plot</strong>(models=None, index=None, show=None, target=1,
                      title=None, figsize=None, filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2294">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2378">[source]</a></div></pre>
 Plot SHAP's beeswarm plot. The plot is colored by feature values.
 Read more about SHAP plots in the [user guide](../../../user_guide/#shap).
 <table width="100%">

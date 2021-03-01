@@ -8,6 +8,7 @@ Description: Unit tests for plots.py
 """
 
 # Standard packages
+import glob
 import pytest
 from unittest.mock import patch
 from sklearn.metrics import f1_score, get_scorer
@@ -16,7 +17,7 @@ from sklearn.metrics import f1_score, get_scorer
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
+from .utils import FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
 
 
 # Test BasePlotter ================================================= >>
@@ -142,6 +143,7 @@ def test_figure_is_saved_canvas(func):
 def test_plot_correlation(columns):
     """Assert that the plot_correlation method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.plot_correlation, columns=["invalid"])
     pytest.raises(ValueError, atom.plot_correlation, method="invalid")
     atom.plot_correlation(columns, display=False)
 
@@ -154,12 +156,12 @@ def test_plot_scatter_matrix():
     atom.plot_scatter_matrix(columns=[0, 1, 2], display=False)
 
 
-def test_plot_distribution():
+@pytest.mark.parametrize("columns", [2, "Feature 1", [0, 1]])
+def test_plot_distribution(columns):
     """Assert that the plot_distribution method work as intended."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
     pytest.raises(ValueError, atom.plot_distribution, columns=2, show=-1, display=False)
-    atom.plot_distribution(columns=2, show=None, display=False)
-    atom.plot_distribution(columns=[0, 1], distribution="pearson3", display=False)
+    atom.plot_distribution(columns=columns, distribution="pearson3", display=False)
 
 
 def test_plot_qq():
@@ -536,7 +538,8 @@ def test_force_plot():
     with atom.canvas(display=False):
         pytest.raises(PermissionError, atom.force_plot, matplotlib=True)
     atom.force_plot(index=100, matplotlib=True, display=False)
-    atom.force_plot(matplotlib=False, display=True)
+    atom.force_plot(matplotlib=False, filename=FILE_DIR + "force", display=True)
+    assert glob.glob(FILE_DIR + "force.html")
 
 
 def test_heatmap_plot():

@@ -687,7 +687,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             mtx = X.corr()  # Pearson correlation coefficient matrix
 
             # Extract the upper triangle of the correlation matrix
-            upper = mtx.where(np.triu(np.ones(mtx.shape).astype(np.bool), k=1))
+            upper = mtx.where(np.triu(np.ones(mtx.shape).astype(bool), k=1))
 
             # Select the features with correlations above the threshold
             to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]

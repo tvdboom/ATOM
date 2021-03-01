@@ -4,7 +4,7 @@
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Cleaner</strong>(prohibited_types=None, maximum_cardinality=True, minimum_cardinality=True,
                                  strip_categorical=True, drop_duplicates=False, missing_target=True,
                                  encode_target=True, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L151">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L182">[source]</a></div></pre>
 Performs standard data cleaning steps on a dataset. Use the parameters to choose
 which transformations to perform. The available steps are:
 
@@ -91,8 +91,8 @@ The default name consists of the class' name followed by
 <strong>missing: list</strong>
 <blockquote>
 List of values that are considered "missing". Default values are: "",
- "?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
- <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
+"?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
+<code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
 considered missing since they are incompatible with sklearn estimators.
 </blockquote>
 <strong>mapping: dict</strong>
@@ -148,7 +148,7 @@ Dictionary of the target values mapped to their respective encoded integer.
 
 <a name="fit-transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L34">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></div></pre>
 Fit to data, then transform it.
 <table width="100%">
 <tr>
@@ -210,7 +210,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L309">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
 <table>
 <tr>
@@ -231,7 +231,7 @@ Minimum verbosity level to print the message.
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L333">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
 Save the instance to a pickle file.
 <table>
 <tr>
@@ -276,7 +276,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L239">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L278">[source]</a></div></pre>
 Apply the data cleaning steps on the data.
 <table width="100%">
 <tr>

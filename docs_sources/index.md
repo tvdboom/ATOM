@@ -87,7 +87,7 @@ Example steps taken by ATOM's pipeline:
 # Release history
 -----------------
 
-### Version 4.3.0 - dev
+### Version 4.3.0
 
 * Possibility to [add](./API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
 * The [export_pipeline](./API/ATOM/atomclassifier/#export-pipeline) utility method exports atom's current pipeline to a sklearn object.

@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">heatmap_plot</strong>(models=None, index=None, show=None, target=1,
                     title=None, figsize=(8, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2663">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2666">[source]</a></div></pre>
 Plot SHAP's heatmap plot. This plot is designed to show the population
 substructure of a dataset using supervised clustering and a heatmap.
 Supervised clustering involves clustering data points not by their original

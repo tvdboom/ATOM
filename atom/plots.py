@@ -40,7 +40,7 @@ from sklearn.metrics import SCORERS, roc_curve, precision_recall_curve
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, flt, lst, check_is_fitted,
+    SEQUENCE_TYPES, SCALAR, METRIC_ACRONYMS, lst, check_is_fitted,
     check_method, check_goal, check_binary_task, check_predict_proba,
     get_best_score, partial_dependence, composed, crash, plot_from_model,
 )
@@ -321,12 +321,12 @@ class BasePlotter:
             if isinstance(col, int):
                 cols.append(self.columns[col])
             else:
+                cols.append(col)
                 if col not in self.columns:
                     raise ValueError(
                         "Invalid value for the columns parameter. "
                         f"Column {col} not found in the dataset."
                     )
-                cols.append(col)
 
         return [col for col in cols if col in num_cols]
 
@@ -684,15 +684,8 @@ class FSPlotter(BasePlotter):
         x = xline[np.argmax(self.rfecv.grid_scores_)]
         y = max(self.rfecv.grid_scores_)
         ax.vlines(x, -1e4, y, ls="--", color="k", alpha=0.7)
-        ax.hlines(
-            y=y,
-            xmin=-1,
-            xmax=x,
-            ls="--",
-            color="k",
-            alpha=0.7,
-            label=f"Features: {x}   {ylabel}: {round(y, 3)}",
-        )
+        label = f"Features: {x}   {ylabel}: {round(y, 3)}"
+        ax.hlines(y, xmin=-1, xmax=x, color="k", ls="--", alpha=0.7, label=label)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
         self._plot(
@@ -1028,7 +1021,7 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
-        ax.plot([0, 1], [0, 1], lw=2, color="black", alpha=0.7, linestyle="--")
+        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
 
         self._plot(
             ax=ax,
@@ -1529,7 +1522,7 @@ class BaseModelPlotter(BasePlotter):
                 self._plot(
                     ax=axi,
                     ylabel="Score",
-                    legend=("best" if len(models) > 1 else False, len(models))
+                    legend=("best", len(models)) if len(models) > 1 else None,
                 )
                 break
 
@@ -1620,7 +1613,7 @@ class BaseModelPlotter(BasePlotter):
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
 
         # Draw identity line
-        ax.plot(xlim, ylim, ls="--", lw=1, color="k", alpha=0.7)
+        ax.plot(xlim, ylim, "k--", lw=2, alpha=0.7, zorder=-2)
 
         self._plot(
             ax=ax,
@@ -1703,7 +1696,7 @@ class BaseModelPlotter(BasePlotter):
 
         # Get limits before drawing the identity line
         xlim, ylim = ax1.get_xlim(), ax1.get_ylim()
-        ax1.hlines(0, *xlim, ls="--", lw=1, color="k", alpha=0.8)  # Identity line
+        ax1.hlines(0, *xlim, color="k", ls="--", lw=2, alpha=0.7, zorder=-2)
 
         ax2.set_yticklabels([])
         self._plot(ax=ax2, xlabel="Distribution")
@@ -2190,7 +2183,7 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7)
+        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
@@ -2268,7 +2261,7 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7)
+        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
             for set_ in dataset:
                 y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
@@ -3148,6 +3141,9 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     ):
         """Plot a matrix of scatter plots.
 
+        A subset of max 250 random samples are selected from every
+        column to not clutter the plot.
+
         Parameters
         ----------
         columns: slice, sequence or None, optional (default=None)
@@ -3180,8 +3176,14 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         check_method(self, "plot_scatter_matrix")
         columns = self._get_columns(columns)
 
+        # Use max 250 samples to not clutter the plot
+        samples = self.dataset[columns].sample(
+            n=min(len(self.dataset), 250),
+            random_state=self.random_state
+        )
+
         diag_kind = kwargs.get("diag_kind", "kde")
-        grid = sns.pairplot(self.dataset[columns],  diag_kind=diag_kind, **kwargs)
+        grid = sns.pairplot(samples,  diag_kind=diag_kind, **kwargs)
 
         # Set right fontsize for all axes in grid
         for axi in grid.axes.flatten():
@@ -3387,7 +3389,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 plt.scatter(qn_a, qn_b, color=color, marker=next(m), s=50, label=label)
 
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
-        plt.plot((1e-9, 1e9), (1e-9, 1e9), "k--", lw=2, alpha=0.7)
+        plt.plot((-9e9, 9e9), (-9e9, 9e9), "k--", lw=2, alpha=0.7, zorder=-2)
 
         self._plot(
             ax=ax,

@@ -157,16 +157,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log(f"New branch '{self._current}' successfully created!", 1)
 
     @property
-    def branches(self):
-        out = "Branches:"
-        for branch in self.T._branches.keys():
-            out += f"\n --> {branch}"
-            if branch == self.T._current:
-                out += " !"
-
-        return out
-
-    @property
     def scaled(self):
         """Whether the feature set is scaled."""
         return check_scaling(self.X) or any(self.pipeline.index.str.contains("scale"))

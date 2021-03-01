@@ -28,7 +28,7 @@ from atom.data_cleaning import Imputer, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10,
-    X10_nan, X10_str, y10, y10_str, y10_sn, X20_out, mnist,
+    X10_nan, X10_str, y10, y10_str, y10_sn, X20_out,
 )
 
 

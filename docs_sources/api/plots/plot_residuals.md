@@ -2,14 +2,14 @@
 ----------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_residuals</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1650">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1632">[source]</a></div></pre>
 The plot shows the residuals (difference between the predicted and the
- true value) on the vertical axis and the independent variable on the
- horizontal axis. The gray, intersected line shows the identity line. This
- plot can be useful to analyze the variance of the error of the regressor.
- If the points are randomly dispersed around the horizontal axis, a linear
- regression model is appropriate for the data; otherwise, a non-linear model
- is more appropriate. Only for regression tasks.
+true value) on the vertical axis and the independent variable on the
+horizontal axis. The gray, intersected line shows the identity line. This
+plot can be useful to analyze the variance of the error of the regressor.
+If the points are randomly dispersed around the horizontal axis, a linear
+regression model is appropriate for the data; otherwise, a non-linear model
+is more appropriate. Only for regression tasks.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

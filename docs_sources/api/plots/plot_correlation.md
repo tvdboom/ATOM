@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, method="pearson", title=None, figsize=(8, 7), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2960">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3056">[source]</a></div></pre>
 Plot the data's correlation matrix.
 <table width="100%">
 <tr>

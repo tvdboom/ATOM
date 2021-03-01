@@ -172,7 +172,7 @@ def test_plot():
     """Assert that plotting the BO runs without errors."""
     trainer = DirectClassifier(
         models=["lSVM", "kSVM", "MLP"],
-        n_calls=35,
+        n_calls=45,
         n_initial_points=20,
         bo_params={"plot": True},
         random_state=1,

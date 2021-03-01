@@ -2,10 +2,10 @@
 -------------------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_feature_importance</strong>(models=None, show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1240">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1235">[source]</a></div></pre>
 Plot a tree-based model's feature importance. The importances are normalized in order
- to be able to compare them between models. The `feature_importance` attribute is
- updated with the extracted importance ranking.
+to be able to compare them between models. The `feature_importance` attribute is
+updated with the extracted importance ranking.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
