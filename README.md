@@ -7,7 +7,12 @@
 # Automated Tool for Optimized Modelling
 ### A Python package for fast exploration and experimentation of machine learning pipelines
 
-<br>
+<br><br>
+
+
+
+Description 
+-----------
 
 Author: [tvdboom](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
 
@@ -42,8 +47,8 @@ Author: [tvdboom](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.
 
 
 
-Description  
------------
+Introduction  
+------------
 
 There is no magic formula in data science that can tell us which type
 of machine learning estimator in combination with which pipeline will
@@ -119,8 +124,8 @@ Example steps taken by ATOM's pipeline:
 <br/><br/>
 
 <p align="center">
-    <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
-    <figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.jpg?raw=true" alt="diagram" title="diagram" width="900" height="300" />
+	<figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
 </p>
 
 <br><br>
