@@ -52,12 +52,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -141,7 +141,7 @@ considered missing since they are incompatible with sklearn estimators.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L455">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L456">[source]</a></div></pre>
 Fit to data.
 <table width="100%">
 <tr>

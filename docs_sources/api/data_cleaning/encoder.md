@@ -3,20 +3,19 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L645">[source]</a></div></pre>
-Perform encoding of categorical features. The encoding type depends on the number
- of unique values in the column:
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L643">[source]</a></div></pre>
+Perform encoding of categorical features. The encoding type depends on
+the number of classes in the column:
 
-* If n_unique=2, use Label-encoding.
-* If 2 < n_unique <= max_onehot, use OneHot-encoding.
-* If n_unique > max_onehot, use `strategy`-encoding.
+* If n_classes=2, use Ordinal-encoding.
+* If 2 < n_classes <= max_onehot, use OneHot-encoding.
+* If n_classes > max_onehot, use `strategy`-encoding.
 
-Also replaces classes with low occurrences with the value `other` in
-order to prevent too high cardinality. Categorical features are defined as
-all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
-missing values or unknown classes when transforming. This class can be accessed
-from atom through the [encode](../../ATOM/atomclassifier/#encode)
- method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
+Also replaces classes with low occurrences with the value `other`
+in order to prevent too high cardinality. An error is raised if
+it encounters missing values or unknown classes when transforming.
+This class can be accessed from atom through the [encode](../../ATOM/atomclassifier/#encode)
+method. Read more in the [user guide](../../../user_guide/#encoding-categorical-features).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -50,12 +49,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -121,7 +120,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L715">[source]</a></div></pre>
 Fit to data.
 <table>
 <tr>
@@ -274,7 +273,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L797">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L800">[source]</a></div></pre>
 Encode the data.
 <table>
 <tr>

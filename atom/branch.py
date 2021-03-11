@@ -102,7 +102,7 @@ class Branch:
 
     @composed(crash, method_to_log)
     def status(self):
-        """Print the status of the branch."""
+        """Get the status of the branch."""
         self.T.log(str(self))
 
     @composed(crash, method_to_log, typechecked)

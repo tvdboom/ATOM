@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1052">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1055">[source]</a></div></pre>
 Balance the number of samples per class in the target column. Use only for classification tasks.
 This class can be accessed from atom through the
 [balance](../../ATOM/atomclassifier/#balance) method. Read more in
@@ -38,12 +38,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -213,7 +213,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1127">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1130">[source]</a></div></pre>
 Oversample or undersample the data.
 <table>
 <tr>

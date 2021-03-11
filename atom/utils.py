@@ -429,7 +429,7 @@ def prepare_logger(logger, class_name):
     logger: str, class or None
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.

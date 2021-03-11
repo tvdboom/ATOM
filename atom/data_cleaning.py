@@ -14,8 +14,8 @@ from typeguard import typechecked
 from typing import Union, Optional
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
+from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
@@ -89,10 +89,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             - 0 to not print anything.
             - 1 to print basic information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -227,10 +227,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -413,10 +413,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -449,6 +449,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
         self._imputers = {}
+        self._num_cols = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -469,6 +470,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._num_cols = X.select_dtypes(include="number")
 
         # Check input Parameters
         strats = ["drop", "mean", "median", "knn", "most_frequent"]
@@ -496,13 +498,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         # Drop rows with too many NaN values
         X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
 
-        # Loop over all columns to fit the impute classes
-        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
 
             # Column is numerical
-            if col in num_cols:
+            if col in self._num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
                         self._imputers[col] = KNNImputer().fit(values)
@@ -566,8 +566,6 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"{int(self.min_frac_rows*100)}% non-missing values.", 2
             )
 
-        # Loop over all columns to apply strategy dependent on type
-        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
 
@@ -582,8 +580,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 X = X.drop(col, axis=1)
                 continue  # Skip to side column
 
-            # Column is numerical and contains missing values
-            if col in num_cols and nans > 0:
+            # Apply only if column is numerical and contains missing values
+            if col in self._num_cols and nans > 0:
                 if not isinstance(self.strat_num, str):
                     self.log(
                         f" --> Imputing {nans} missing values with number "
@@ -646,15 +644,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
-        - If n_unique=2, use Label-encoding.
-        - If 2 < n_unique <= max_onehot, use OneHot-encoding.
-        - If n_unique > max_onehot, use `strategy`-encoding.
+        - If n_classes=2, use Ordinal-encoding.
+        - If 2 < n_classes <= max_onehot, use OneHot-encoding.
+        - If n_classes > max_onehot, use `strategy`-encoding.
 
     Also replaces classes with low occurrences with the value `other`
-    in order to prevent too high cardinality. Categorical features are
-    defined as all columns whose dtype.kind not in `ifu`. Will raise
-    an error if it encounters missing values or unknown classes when
-    transforming.
+    in order to prevent too high cardinality. An error is raised if
+    it encounters missing values or unknown classes when transforming.
 
     Parameters
     ----------
@@ -681,10 +677,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -712,6 +708,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._to_other = {}
         self._encoders = {}
+        self._cat_cols = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -734,6 +731,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._cat_cols = X.select_dtypes(exclude="number")
 
         # Check Parameters
         if self.strategy.lower().endswith("encoder"):
@@ -763,7 +761,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         for col in X:
             self._to_other[col] = []
-            if X[col].dtype.kind not in "ifu":  # If column is categorical
+            if col in self._cat_cols:
                 # Group uncommon classes into "other"
                 if self.frac_to_other:
                     for category, count in X[col].value_counts().items():
@@ -776,7 +774,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
-                    self._encoders[col] = LabelEncoder().fit(X[col])
+                    self._encoders[col] = OrdinalEncoder(
+                        dtype=np.int8,
+                        handle_unknown="error",
+                    ).fit(X[col].values.reshape(-1, 1))
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._encoders[col] = OneHotEncoder(
@@ -787,7 +788,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 else:
                     self._encoders[col] = strategy(
-                        handle_missing="error", handle_unknown="error", **self.kwargs
+                        handle_missing="error",
+                        handle_unknown="error",
+                        **self.kwargs,
                     ).fit(pd.DataFrame(X[col]), y)
 
         self._is_fitted = True
@@ -817,20 +820,20 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Encoding categorical columns...", 1)
 
         for idx, col in enumerate(X):
-            if X[col].dtype.kind not in "ifu":  # If column is categorical
+            if col in self._cat_cols:
                 # Convert classes to "other"
                 X[col] = X[col].replace(self._to_other[col], "other")
 
                 self.log(
                     f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                    f"feature {col}. Contains {len(X[col].unique())} unique classes.", 2
+                    f"feature {col}. Contains {len(X[col].unique())} classes.", 2
                 )
 
-                # Perform encoding type dependent on number of unique values
-                if self._encoders[col].__class__.__name__[:-7] == "Label":
-                    X[col] = self._encoders[col].transform(X[col])
+                # Perform encoding type dependent on number of classes
+                if self._encoders[col].__module__.startswith("sklearn"):
+                    X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
 
-                elif self._encoders[col].__class__.__name__[:-7] == "OneHot":
+                elif self._encoders[col].__class__.__name__.startswith("OneHot"):
                     onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
@@ -852,8 +855,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Prune outliers from the data.
 
     Replace or remove outliers. The definition of outlier depends
-    on the selected strategy and can greatly differ from one each
-    other. Ignores categorical columns.
+    on the selected strategy and can greatly differ from one another.
+    Ignores categorical columns.
 
     Parameters
     ----------
@@ -889,10 +892,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -1076,10 +1079,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.

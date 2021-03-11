@@ -10,6 +10,7 @@ Description: Module containing the API classes.
 # Standard packages
 import pickle
 from copy import copy
+from logging import Logger
 from typeguard import typechecked
 from typing import Optional, Union
 
@@ -216,10 +217,10 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.
@@ -241,7 +242,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -313,10 +314,10 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.
@@ -338,7 +339,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(

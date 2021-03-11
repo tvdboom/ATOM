@@ -240,13 +240,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     # Utility methods =============================================== >>
 
     @composed(crash, method_to_log)
+    def status(self):
+        """Get an overview of atom's status."""
+        self.log(str(self))
+
+    @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
         """Print basic information about the dataset.
 
         Parameters
         ----------
         _vb: int, optional (default=-2)
-            Parameter to always print if the user calls this method.
+            Internal parameter to always print if called by user.
 
         """
         self.log("Dataset stats ==================== >>", _vb)
@@ -706,10 +711,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Prune outliers from the training set.
 
         Replace or remove outliers. The definition of outlier depends
-        on the selected strategy and can greatly differ from one each
-        other. Only outliers from the training set are pruned in order
-        to maintain the original distribution of samples in the test
-        set. Ignores categorical columns.
+        on the selected strategy and can greatly differ from one
+        another. Only outliers from the training set are pruned in
+        order to maintain the original distribution of samples in the
+        test set. Ignores categorical columns.
 
         See the data_cleaning.py module for a description of the parameters.
 

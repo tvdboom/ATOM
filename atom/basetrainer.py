@@ -154,10 +154,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.

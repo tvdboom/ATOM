@@ -366,8 +366,9 @@ class BasePredictor:
                 else:  # If confusion matrix...
                     out_score = list(score.ravel())
                 out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
-                if get_best_score(m) == best_score and len(self._models) > 1:
-                    out += " !"
+
+            if get_best_score(m) == best_score and len(self._models) > 1:
+                out += " !"
 
             self.log(out, kwargs.get("_vb", -2))  # Always print if called by user
 

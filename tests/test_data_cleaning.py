@@ -374,8 +374,8 @@ def test_raise_missing_transform():
     pytest.raises(ValueError, encoder.transform, X10_sn, y10)
 
 
-def test_label_encoder():
-    """Assert that the Label-encoder works as intended."""
+def test_ordinal_encoder():
+    """Assert that the Ordinal-encoder works as intended."""
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["Feature 3"] == 0) | (X["Feature 3"] == 1))

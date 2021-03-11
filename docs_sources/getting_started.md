@@ -14,7 +14,8 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
-To also install the [optional dependencies](../dependencies/#optional), add [models]
+Note that using these commands also install/update all [required dependencies](../dependencies/#required).
+To install the [optional dependencies](../dependencies/#optional), add [models]
 after the package's name.
 
     $ pip install -U atom-ml[models]
@@ -38,7 +39,7 @@ ATOM has multiple data cleaning methods to help you prepare the data for modelli
 
 ```Python
 atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
-atom.encode(strategy="Target", max_onehot=8, frac_to_other=0.05)  
+atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy="PCA", n_features=12)
 ```
 
@@ -50,7 +51,7 @@ atom.run(
     metric="f1",
     n_calls=25,
     n_initial_points=10,
-    bagging=4
+    bagging=4,
 )
 ```
 
@@ -58,5 +59,5 @@ Make plots to analyze the results:
 
 ```Python
 atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
-atom.LDA.plot_confusion_matrix(normalize=True, filename="cm.png")
+atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 ```

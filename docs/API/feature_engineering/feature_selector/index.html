@@ -518,6 +518,9 @@
                                 </ul>
                             </li>
                             <li class="navitem">
+                                <a href="../../../faq/" class="nav-link">FAQ</a>
+                            </li>
+                            <li class="navitem">
                                 <a href="../../../dependencies/" class="nav-link">Dependencies</a>
                             </li>
                             <li class="navitem">
@@ -695,12 +698,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.

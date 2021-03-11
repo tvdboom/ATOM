@@ -226,6 +226,12 @@ def test_n_classes_property():
 
 # Test utility methods ============================================= >>
 
+def test_status():
+    """Assert that the status method prints an overview of the instance."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.status()
+
+
 @pytest.mark.parametrize("column", ["Feature 1", 1])
 def test_distribution(column):
     """Assert that the distribution method and file are created."""

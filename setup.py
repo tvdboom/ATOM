@@ -19,7 +19,7 @@ setuptools.setup(
     name="atom-ml",
     version="v4.3.0",
     license="MIT",
-    description="A Python package for fast exploration and experimentation of supervised machine learning pipelines.",
+    description="A Python package for fast exploration and experimentation of machine learning pipelines.",
     download_url="https://github.com/tvdboom/ATOM/archive/v4.3.0.tar.gz",
     url="http://github.com/tvdboom/ATOM",
     author="tvdboom",
