@@ -5,8 +5,9 @@
 <br>
 
 # Automated Tool for Optimized Modelling
-#### A Python package for fast exploration and experimentation of machine learning pipelines
-----------------------------------------
+### A Python package for fast exploration and experimentation of machine learning pipelines
+
+<br>
 
 Author: [tvdboom](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
 
@@ -117,10 +118,10 @@ Example steps taken by ATOM's pipeline:
 
 <br/><br/>
 
-<div align="center">
+<p align="center">
     <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
     <figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
-</div>
+</p>
 
 <br><br>
 

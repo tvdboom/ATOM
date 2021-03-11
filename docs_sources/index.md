@@ -4,8 +4,10 @@
 <br><br>
 
 # Automated Tool for Optimized Modelling
-#### A Python package for fast exploration and experimentation of machine learning pipelines
 ----------------------------------------
+#### A Python package for fast exploration and experimentation of machine learning pipelines
+
+<br><br>
 
 There is no magic formula in data science that can tell us which type
 of machine learning estimator in combination with which pipeline will
