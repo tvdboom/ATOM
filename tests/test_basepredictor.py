@@ -10,13 +10,16 @@ Description: Unit tests for basepredictor.py
 # Standard packages
 import pytest
 import numpy as np
+import pandas as pd
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
+from .utils import (
+    X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train, X10_str, y10
+)
 
 
 # Test magic methods =============================================== >>
@@ -39,6 +42,19 @@ def test_getattr_model():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("Tree")
     assert atom.tree is atom._models[0]
+
+
+def test_getattr_column():
+    """Assert that the columns can be accessed as attributes."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.apply(lambda x: np.log(x["mean radius"]), column="log_column")
+    assert isinstance(atom.log_column, pd.Series)
+
+
+def test_getattr_dataframe():
+    """Assert that the dataset attributes can be called from atom."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert isinstance(atom.head(), pd.DataFrame)
 
 
 def test_getattr_invalid():
@@ -217,6 +233,40 @@ def test_score_method_sample_weights():
 
 
 # Test utility methods ============================================= >>
+
+def test_get_columns_is_None():
+    """Assert that all or only numerical columns are returned."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom._get_columns(columns=None, only_numerical=True)
+    assert len(atom._get_columns(columns=None, only_numerical=True)) == 3
+    assert len(atom._get_columns(columns=None, only_numerical=False)) == 4
+
+
+def test_get_columns_slice():
+    """Assert that a slice of columns is returned."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert len(atom._get_columns(slice(2, 6))) == 4
+
+
+def test_get_columns_by_index():
+    """Assert that columns can be retrieved by index."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom._get_columns, 40)
+    assert atom._get_columns(0) == ["mean radius"]
+
+
+def test_get_columns_by_name():
+    """Assert that columns can be retrieved by name."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom._get_columns, "invalid")
+    assert atom._get_columns("mean radius") == ["mean radius"]
+
+
+def test_get_columns_remove_duplicates():
+    """Assert that duplicate columns are ignored."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert atom._get_columns([0, 1, 0]) == ["mean radius", "mean texture"]
+
 
 def test_get_model_name_winner():
     """Assert that the winner is returned when used as name."""

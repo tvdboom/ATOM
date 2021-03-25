@@ -8,15 +8,16 @@ Description: Module containing the API classes.
 """
 
 # Standard packages
-import pickle
+import dill
 from copy import copy
+from logging import Logger
 from typeguard import typechecked
 from typing import Optional, Union
 
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import SEQUENCE_TYPES, custom_transform
+from .utils import Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
@@ -63,7 +64,7 @@ def ATOMModel(
 @typechecked
 def ATOMLoader(
     filename: str,
-    data: Optional[SEQUENCE_TYPES] = None,
+    data: Optional[tuple] = None,
     transform_data: bool = True,
     verbose: Optional[int] = None,
 ):
@@ -79,10 +80,10 @@ def ATOMLoader(
         Name of the pickle file to load.
 
     data: tuple of indexables or None, optional (default=None)
-        Tuple containing the features and target. Only use this
-        parameter if the file is a trainer that was saved using
-        `save_data=False`. Allowed formats are:
-            - X, y
+        Tuple containing the dataset. Only use this parameter if the
+        file is a trainer that was saved using`save_data=False`.
+        Allowed formats are:
+            - X or X, y
             - train, test
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
@@ -108,7 +109,7 @@ def ATOMLoader(
         This parameter is ignored if `transform_data=False`.
 
     """
-    cls = pickle.load(open(filename, "rb"))
+    cls = dill.load(open(filename, "rb"))
 
     if data is not None:
         if not hasattr(cls, "_branches"):
@@ -135,12 +136,12 @@ def ATOMLoader(
 
             if transform_data:
                 if not v1.pipeline.empty:
-                    cls.log(f"Transforming data for branch {b1}...", 1)
+                    cls.log(f"Transforming data for branch {b1}:", 1)
 
                 for i, est1 in enumerate(v1.pipeline):
                     # Skip if the transformation was already applied
                     if step.get(b1, -1) < i:
-                        custom_transform(est1, branch, verbose=verbose)
+                        custom_transform(cls, est1, branch, verbose=verbose)
 
                         for b2, v2 in cls._branches.items():
                             try:  # Can fail if pipeline is shorter than i
@@ -166,19 +167,25 @@ class ATOMClassifier(BaseTransformer, ATOM):
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
+            - X
             - X, y
             - train, test
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
         X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_features, n_samples). If
-            no y is provided, the last column is used as target.
+            Feature set with shape=(n_features, n_samples).
 
         y: int, str or sequence
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
+
+    y: int, str or sequence, optional (default=-1)
+        Target column in X. Ignored if provided through `arrays`.
+        - If int: Index of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Target column with shape=(n_samples,).
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the dataset to use.
@@ -216,10 +223,10 @@ class ATOMClassifier(BaseTransformer, ATOM):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.
@@ -236,12 +243,13 @@ class ATOMClassifier(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
+        y: Y_TYPES = -1,
         n_rows: Union[int, float] = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -253,7 +261,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         )
 
         self.goal = "classification"
-        ATOM.__init__(self, arrays, n_rows=n_rows, test_size=test_size)
+        ATOM.__init__(self, arrays, y=y, n_rows=n_rows, test_size=test_size)
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -263,19 +271,25 @@ class ATOMRegressor(BaseTransformer, ATOM):
     ----------
     *arrays: sequence of indexables
         Dataset containing features and target. Allowed formats are:
+            - X
             - X, y
             - train, test
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
         X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_features, n_samples). If
-            no y is provided, the last column is used as target.
+            Feature set with shape=(n_features, n_samples).
 
         y: int, str or sequence
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
+
+    y: int, str or sequence, optional (default=-1)
+        Target column in X. Ignored if provided through `arrays`.
+        - If int: Index of the target column in X.
+        - If str: Name of the target column in X.
+        - Else: Target column with shape=(n_samples,).
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the dataset to use.
@@ -313,10 +327,10 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.
@@ -333,12 +347,13 @@ class ATOMRegressor(BaseTransformer, ATOM):
     def __init__(
         self,
         *arrays,
+        y: Y_TYPES = -1,
         n_rows: Union[int, float] = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
-        logger: Optional[Union[str, callable]] = None,
+        logger: Optional[Union[str, Logger]] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -350,4 +365,4 @@ class ATOMRegressor(BaseTransformer, ATOM):
         )
 
         self.goal = "regression"
-        ATOM.__init__(self, arrays, n_rows=n_rows, test_size=test_size)
+        ATOM.__init__(self, arrays, y=y, n_rows=n_rows, test_size=test_size)

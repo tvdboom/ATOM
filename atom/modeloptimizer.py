@@ -530,9 +530,9 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Calibrate the model.
 
         Applies probability calibration on the winning model. The
-        calibration is done with the CalibratedClassifierCV class from
-        sklearn. The estimator will be trained via cross-validation on
-        a subset of the training data, using the rest to fit the
+        calibration is done with the CalibratedClassifierCV class
+        from sklearn. The estimator is trained via cross-validation
+        on a subset of the training data, using the rest to fit the
         calibrator. The new classifier will replace the `estimator`
         attribute. All prediction attributes will reset.
 

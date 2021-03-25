@@ -4,7 +4,7 @@
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Documentation for ATOM, a Python AutoML package for fast exploration and experimentation of supervised machine learning pipelines.">
+        <meta name="description" content="Documentation for ATOM, a Python package for fast exploration and experimentation of supervised machine learning pipelines.">
         <meta name="author" content="tvdboom">
         <link rel="canonical" href="http://tvdboom.github.io/ATOM/">
         <link rel="shortcut icon" href="img/favicon.ico">
@@ -518,6 +518,9 @@
                                 </ul>
                             </li>
                             <li class="navitem">
+                                <a href="faq/" class="nav-link">FAQ</a>
+                            </li>
+                            <li class="navitem">
                                 <a href="dependencies/" class="nav-link">Dependencies</a>
                             </li>
                             <li class="navitem">
@@ -577,48 +580,28 @@
 <p><br><br></p>
 <h1 id="automated-tool-for-optimized-modelling">Automated Tool for Optimized Modelling</h1>
 <hr />
-<p>There is no magic formula in data science that can tell us which type of machine
- learning algorithm will perform best for a specific use-case. Different models
- are better suited for different types of data and different problems. At best,
- you can follow some <a href="https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html">rough guide</a>
- on how to approach problems with regard to which model to try on your data, but
- these are often more confusing than helpful. Best practices tell
- us to start with a simple model (e.g. linear regression) and build up to more
- complicated models (e.g. logistic regression -&gt; random forest -&gt; multi-layer perceptron)
- if you are not satisfied with the results. Unfortunately, different models require
- different data cleaning steps, different type/amount of features, tuning a new set
- of hyperparameters, etc. Refactoring the code for this purpose can be quite boring
- and time-consuming. Because of this, many data scientists end up just using the model
- best known to them and fine-tuning this particular model without ever trying different
- ones. This can result in poor performance (because the model is just not the right one
- for the task) or in poor time management (because you could have achieved a similar
- performance with a simpler/faster model).</p>
-<p>ATOM is here to help us solve these issues. With just a few lines of code, you can
- perform basic data cleaning steps, select relevant features and compare the performance
- of multiple models on a given dataset. ATOM should be able to provide quick insights
- on which algorithms perform best for the task at hand and provide an indication of
- the feasibility of the ML solution.</p>
-<p>It is important to realize that ATOM is not here to replace all the work a data
- scientist has to do before getting his model into production. ATOM doesn't spit out
- production-ready models just by tuning some parameters in its API. After helping you
- to determine the right model, you will most probably need to fine-tune it using
- use-case specific features and data cleaning steps in order to achieve maximum performance.</p>
-<p>So, this sounds a bit like AutoML, how is ATOM different than 
- <a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or <a href="http://epistasislab.github.io/tpot/">TPOT</a>?
- Well, ATOM does AutoML in the sense that it helps you find the best model for a
- specific task, but contrary to the aforementioned packages, it does not actively
- search for the best model. It simply runs all of them and let you pick the one that
- you think suites you best. AutoML packages are often black boxes: if you provide
- data, it will magically return a working model. Although it works great, they often
- produce complicated pipelines with low explainability, hard to sell to the business.
- In this, ATOM excels. Every step of the pipeline is accounted for, and using the
- provided plotting methods, it’s easy to demonstrate why a model is better/worse than
- the other.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>A data scientist with domain knowledge can outperform ATOM if he applies
-use case-specific feature engineering or data cleaning steps! </p>
-</div>
+<h4 id="a-python-package-for-fast-exploration-of-machine-learning-pipelines">A Python package for fast exploration of machine learning pipelines</h4>
+<p><br><br></p>
+<p>During the exploration phase of a machine learning project, a data
+scientist tries to find the optimal pipeline for his specific use case.
+This usually involves applying standard data cleaning steps, creating
+or selecting useful features, trying out different models, etc. Testing
+multiple pipelines requires many lines of code, and writing it all in
+the same notebook often makes it long and cluttered. On the other hand,
+using multiple notebooks makes it harder to compare the results and to
+keep an overview. On top of that, refactoring the code for every test
+can be time-consuming. How many times have you conducted the same action
+to pre-process a raw dataset? How many times have you copy-and-pasted
+code from an old repository to re-use it in a new use case?</p>
+<p>ATOM is here to help solve these common issues. The package acts as
+a wrapper of the whole machine learning pipeline, helping the data
+scientist to rapidly find a good model for his problem. Avoid
+endless imports and documentation lookups. Avoid rewriting the same
+code over and over again. With just a few lines of code, it's now
+possible to perform basic data cleaning steps, select relevant
+features and compare the performance of multiple models on a given
+dataset, providing quick insights on which pipeline performs best
+for the task at hand.</p>
 <p>Example steps taken by ATOM's pipeline:</p>
 <ol>
 <li>Data Cleaning<ul>
@@ -638,7 +621,7 @@ use case-specific feature engineering or data cleaning steps! </p>
 <li>Train and validate multiple models<ul>
 <li>Select hyperparameters using a Bayesian Optimization approach</li>
 <li>Train and test the models on the provided data</li>
-<li>Perform bagging to assess the robustness of the output</li>
+<li>Assess the robustness of the output using a bagging algorithm</li>
 </ul>
 </li>
 <li>Analyze the results<ul>
@@ -650,11 +633,33 @@ use case-specific feature engineering or data cleaning steps! </p>
 <p><br/><br/></p>
 <div align="center">
     <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
+    <figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
 </div>
 
 <p><br><br><br><br></p>
 <h1 id="release-history">Release history</h1>
 <hr />
+<h3 id="version-440">Version 4.4.0</h3>
+<ul>
+<li>The <a href="./API/ATOM/atomclassifier/#drop">drop</a> method now allows the user
+  to drop columns as part of the pipeline.</li>
+<li>It is now possible to add data transformations as function to the pipeline
+  through the <a href="./API/ATOM/atomclassifier/#apply">apply</a> method.</li>
+<li>Added the <a href="./API/ATOM/atomclassifier/#status">status</a> method to save an
+  overview of atom's branches and models to the logger.</li>
+<li>Improved the output messages for the <a href="./API/data_cleaning/imputer">Imputer</a> class.</li>
+<li>The dataset's columns can now be called directly from atom.</li>
+<li>The <a href="./API/ATOM/atomclassifier/#distribution">distribution</a> and
+  <a href="./API/plots/plot_distribution">plot_distribution</a> methods now ignore missing
+  values instead of raising an exception.</li>
+<li>Fixed a bug where transformations failed when columns were added after
+  initializing the pipeline.</li>
+<li>Fixed a bug where the <a href="./API/data_cleaning/cleaner">Cleaner</a> class didn't drop
+  columns with only missing values for <code>minimum_cardinality=True</code>.</li>
+<li>Fixed a bug where the winning model wasn't displayed correctly.</li>
+<li>Refactored the way transformers are added or removed from predicting methods.</li>
+<li>Improved documentation.</li>
+</ul>
 <h3 id="version-430">Version 4.3.0</h3>
 <ul>
 <li>Possibility to <a href="./API/ATOM/atomclassifier/#add">add</a> custom transformers to the pipeline.</li>
@@ -904,6 +909,7 @@ use case-specific feature engineering or data cleaning steps! </p>
 <li><a href="./examples/utilities.html" target="_blank">Utilities</a></li>
 </ul>
 </li>
+<li><a href="./faq">FAQ</a></li>
 <li><a href="./dependencies">Dependencies</a></li>
 <li><a href="./license">License</a></li>
 </ul></div>
@@ -991,5 +997,5 @@ use case-specific feature engineering or data cleaning steps! </p>
 
 <!--
 MkDocs version : 1.1.2
-Build Date UTC : 2021-03-01 15:38:50.867882+00:00
+Build Date UTC : 2021-03-25 18:01:53.317309+00:00
 -->

@@ -1,7 +1,7 @@
 site_name: ATOM
 site_url: http://tvdboom.github.io/ATOM
 site_author: tvdboom
-site_description: Documentation for ATOM, a Python AutoML package for fast exploration and experimentation of supervised machine learning pipelines.
+site_description: Documentation for ATOM, a Python package for fast exploration and experimentation of supervised machine learning pipelines.
 
 repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
@@ -133,5 +133,6 @@ nav:
     - Successive halving: examples/successive_halving.html" target="_blank
     - Train sizing: examples/train_sizing.html" target="_blank
     - Utilities: examples/utilities.html" target="_blank
+- FAQ: faq.md
 - Dependencies: dependencies.md
 - License: license.md

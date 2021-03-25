@@ -59,7 +59,7 @@ Description: Module containing all available models. All classes must
             Return the model's estimator with unpacked parameters.
 
         custom_fit(model, train, validation, est_params):
-            This method will be called instead of directly running the
+            This method is called instead of directly running the
             estimator's fit method. Implement only to customize the fit.
 
         get_dimensions(self):

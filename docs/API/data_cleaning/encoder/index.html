@@ -518,6 +518,9 @@
                                 </ul>
                             </li>
                             <li class="navitem">
+                                <a href="../../../faq/" class="nav-link">FAQ</a>
+                            </li>
+                            <li class="navitem">
                                 <a href="../../../dependencies/" class="nav-link">Dependencies</a>
                             </li>
                             <li class="navitem">
@@ -583,20 +586,19 @@
 <hr />
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L645">[source]</a></div></pre>
-<p>Perform encoding of categorical features. The encoding type depends on the number
- of unique values in the column:</p>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L659">[source]</a></div></pre>
+<p>Perform encoding of categorical features. The encoding type depends on
+the number of classes in the column:</p>
 <ul>
-<li>If n_unique=2, use Label-encoding.</li>
-<li>If 2 &lt; n_unique &lt;= max_onehot, use OneHot-encoding.</li>
-<li>If n_unique &gt; max_onehot, use <code>strategy</code>-encoding.</li>
+<li>If n_classes=2, use Ordinal-encoding.</li>
+<li>If 2 &lt; n_classes &lt;= <code>max_onehot</code>, use OneHot-encoding.</li>
+<li>If n_classes &gt; <code>max_onehot</code>, use <code>strategy</code>-encoding.</li>
 </ul>
-<p>Also replaces classes with low occurrences with the value <code>other</code> in
-order to prevent too high cardinality. Categorical features are defined as
-all columns whose dtype.kind not in <code>ifu</code>. Will raise an error if it encounters
-missing values or unknown classes when transforming. This class can be accessed
-from atom through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
- method. Read more in the <a href="../../../user_guide/#encoding-categorical-features">user guide</a>.</p>
+<p>Also replaces classes with low occurrences with the value <code>other</code>
+in order to prevent too high cardinality. An error is raised if
+it encounters missing values or unknown classes when transforming.
+This class can be accessed from atom through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
+method. Read more in the <a href="../../../user_guide/#encoding-categorical-features">user guide</a>.</p>
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -630,12 +632,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -696,7 +698,7 @@ for a list of the categorical columns in the dataset.</p>
 <p><br></p>
 <p><a name="fit"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L718">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L731">[source]</a></div></pre>
 <p>Fit to data.</p>
 <table>
 <tr>
@@ -838,7 +840,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L797">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L816">[source]</a></div></pre>
 <p>Encode the data.</p>
 <table>
 <tr>

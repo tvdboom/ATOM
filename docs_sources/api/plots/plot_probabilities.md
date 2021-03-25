@@ -50,7 +50,7 @@ Whether to render the plot.
 ```python
 from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, "RainTomorrow")
+atom = ATOMClassifier(X, y="RainTomorrow")
 atom.run("rf")
 atom.plot_probabilities()
 ```

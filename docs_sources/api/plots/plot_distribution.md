@@ -6,7 +6,8 @@
                          title=None, figsize=None, filename=None, display=True, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3202">[source]</a></div></pre>
 Plot column distributions. Additionally, it is possible to plot any of
-`scipy.stats` probability distributions fitted to the column.
+`scipy.stats` probability distributions fitted to the column. Missing
+values are ignored.
 
 !!!tip
     Use atom's [distribution](../../ATOM/atomclassifier/#distribution) method to

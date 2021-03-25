@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from typeguard import typechecked
-from typing import Union, Optional
+from typing import Union, Optional, Any
 from sklearn.pipeline import Pipeline
 from pandas_profiling import ProfileReport
 
@@ -22,6 +22,8 @@ from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .basetransformer import BaseTransformer
 from .data_cleaning import (
+    DropTransformer,
+    FuncTransformer,
     Cleaner,
     Scaler,
     Imputer,
@@ -43,9 +45,8 @@ from .plots import ATOMPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, DISTRIBUTIONS,
     flt, lst, infer_task, check_method, check_scaling, check_deep,
-    names_from_estimator, catch_return, variable_return,
-    custom_transform, add_transformer, method_to_log, composed,
-    crash, CustomDict,
+    names_from_estimator, variable_return, custom_transform,
+    add_transformer, method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -63,7 +64,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, n_rows, test_size):
+    def __init__(self, arrays, y, n_rows, test_size):
         self.n_rows = n_rows
         self.test_size = test_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
@@ -80,7 +81,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
-        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays)
+        self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
 
         # Save the test_size fraction for later use
         self._test_size = self.branch.idx[1] / len(self.dataset)
@@ -115,19 +116,20 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return out
 
-    def __iter__(self):
-        yield from self.pipeline.iteritems()
-
     def __len__(self):
         return len(self.pipeline)
 
+    def __iter__(self):
+        yield from self.pipeline.values
+
+    def __contains__(self, item):
+        return item in self.dataset
+
     def __getitem__(self, item):
-        if isinstance(item, slice):
-            return self.pipeline[item]
+        if isinstance(item, int):
+            return self.pipeline.iloc[item]   # Transformer from pipeline
         elif isinstance(item, str):
-            return self.pipeline.loc[item]
-        else:
-            return self.pipeline.iloc[item]
+            return self.dataset[item]  # Column from dataset
 
     # Utility properties =========================================== >>
 
@@ -138,7 +140,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             raise ValueError("Can't create a branch with an empty name!")
         elif branch.lower() in self._branches:
             self._current = branch.lower()
-            self.log(f"Switched to branch '{branch}'.", 1)
+            self.log(f"Switched to branch {branch}.", 1)
         else:
             # Branch can be created from current or another
             if "_from_" in branch:
@@ -154,12 +156,14 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
             self._current = new_branch
-            self.log(f"New branch '{self._current}' successfully created!", 1)
+            self.log(f"New branch {self._current} successfully created!", 1)
 
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        return check_scaling(self.X) or any(self.pipeline.index.str.contains("scale"))
+        if not check_deep(self.X):
+            est_names = [est.__class__.__name__.lower() for est in self.pipeline]
+            return check_scaling(self.X) or "scaler" in est_names
 
     @property
     def duplicates(self):
@@ -192,7 +196,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_numerical(self):
         """Number of numerical columns in the dataset."""
-        return len(self.numerical)
+        if not check_deep(self.X):
+            return len(self.numerical)
 
     @property
     def categorical(self):
@@ -203,7 +208,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_categorical(self):
         """Number of categorical columns in the dataset."""
-        return len(self.categorical)
+        if not check_deep(self.X):
+            return len(self.categorical)
 
     @property
     def outliers(self):
@@ -240,13 +246,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     # Utility methods =============================================== >>
 
     @composed(crash, method_to_log)
+    def status(self):
+        """Get an overview of atom's status."""
+        self.log(str(self))
+
+    @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
         """Print basic information about the dataset.
 
         Parameters
         ----------
         _vb: int, optional (default=-2)
-            Parameter to always print if the user calls this method.
+            Internal parameter to always print if called by user.
 
         """
         self.log("Dataset stats ==================== >>", _vb)
@@ -260,13 +271,13 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self.log(f"Scaled: {self.scaled}", _vb)
             if self.nans.sum():
-                p_nans = 100. * nans / (self.shape[0] * self.shape[1])
+                p_nans = 100. * nans / self.dataset.size
                 self.log(f"Missing values: {nans} ({p_nans:.2f}%)", _vb)
             if n_categorical:
                 p_cat = 100. * n_categorical / self.n_columns
                 self.log(f"Categorical columns: {n_categorical} ({p_cat:.2f}%)", _vb)
             if outliers:
-                p_out = 100. * outliers / (self.train.shape[0] * self.train.shape[1])
+                p_out = 100. * outliers / self.train.size
                 self.log(f"Outlier values: {outliers} ({p_out:.2f}%)", _vb)
             if duplicates:
                 p_dup = 100. * duplicates / len(self.dataset)
@@ -321,11 +332,14 @@ class ATOM(BasePredictor, ATOMPlotter):
                 f"be numerical, got categorical column {column}."
             )
 
+        # Drop missing values from the column before fitting
+        X = self[column].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+
         df = pd.DataFrame(columns=["ks", "p_value"])
         for dist in DISTRIBUTIONS:
             # Get KS-statistic with fitted distribution parameters
-            param = getattr(stats, dist).fit(self.dataset[column])
-            stat = stats.kstest(self.dataset[column], dist, args=param)
+            param = getattr(stats, dist).fit(X)
+            stat = stats.kstest(X, dist, args=param)
 
             # Add as row to the dataframe
             df.loc[dist] = {"ks": round(stat[0], 4), "p_value": round(stat[1], 4)}
@@ -378,7 +392,11 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def transform(
-        self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None, **kwargs
+        self,
+        X: X_TYPES,
+        y: Y_TYPES = None,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Transform new data through all transformers in a branch.
 
@@ -398,15 +416,18 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             Feature set with shape=(n_samples, n_features).
 
-        verbose: int or None, optional (default=None)
-            Verbosity level of the transformers. If None, it uses
-            the atom's verbosity.
+        pipeline: bool, sequence or None, optional (default=None)
+            Transformers to use on the data before predicting.
+                - If None: Only transformers that are applied on the
+                           whole dataset are used.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
 
-        **kwargs
-            Additional keyword arguments to customize which transforming
-            methods to apply. You can either select them via their index,
-            e.g. pipeline = [0, 1, 4] or include/exclude them via every
-            individual transformer, e.g. pruner=True, encoder=False.
+        verbose: int or None, optional (default=None)
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
 
         Returns
         -------
@@ -417,18 +438,16 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        for i, (idx, est) in enumerate(self.branch.pipeline.iteritems()):
-            p = kwargs.get("pipeline", [])
-            default = not p and not est.train_only and kwargs.get(idx) is None
-            if i in p or idx in p or kwargs.get(idx) or default:
-                X, y = catch_return(
-                    custom_transform(
-                        transformer=est,
-                        branch=self.branch,
-                        data=(X, y),
-                        verbose=self.verbose if verbose is None else verbose,
-                    )
-                )
+        if pipeline is None:
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+        elif pipeline is False:
+            pipeline = []
+        elif pipeline is True:
+            pipeline = list(range(len(self.pipeline)))
+
+        for idx, est in enumerate(self.pipeline):
+            if idx in pipeline:
+                X, y = custom_transform(self, est, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
 
@@ -463,7 +482,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Optionally, you can add a model as final estimator. If the
         model needs feature scaling and there is no scaler in the
-        pipeline, a Scaler will be added. The returned pipeline is
+        pipeline, a Scaler is added. The returned pipeline is
         already fitted.
 
         Parameters
@@ -478,10 +497,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             Pipeline in the current branch as a sklearn object.
 
         """
-        if len(self.pipeline) == 0:
-            raise PermissionError("The pipeline seems to be empty!")
+        if len(self) == 0:
+            raise RuntimeError("The pipeline seems to be empty!")
 
-        steps = [item for item in self.pipeline.iteritems()]
+        steps = [(est.__class__.__name__.lower(), est) for est in self.pipeline]
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
@@ -502,39 +521,104 @@ class ATOM(BasePredictor, ATOMPlotter):
         return kwargs
 
     @composed(crash, method_to_log, typechecked)
+    def drop(self, columns: Union[int, str, slice, SEQUENCE_TYPES], **kwargs):
+        """Drop columns from the dataset.
+
+        This approach is preferred over dropping columns from the
+        dataset directly through the property's `@setter` since
+        the transformation is saved to atom's pipeline.
+
+        Parameters
+        ----------
+        columns: int, str, slice or sequence
+            Names or indices of the columns to drop.
+
+        """
+        check_method(self, "drop")
+        columns = self._get_columns(columns)
+        if self.target in columns:
+            raise ValueError(
+               "Invalid value for the columns parameter. "
+               "The target column can not be dropped."
+            )
+
+        kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
+        transformer = DropTransformer(columns=columns, **kwargs)
+        custom_transform(self, transformer, self.branch)
+
+        self.branch.pipeline = self.pipeline.append(
+            pd.Series([transformer], name=self._current), ignore_index=True
+        )
+
+    @composed(crash, method_to_log, typechecked)
+    def apply(self, func: callable, column: Union[int, str], **kwargs):
+        """Apply a function to the dataset.
+
+        Transform one column in the dataset using a function (can
+        be a lambda). If the provided column is present in the dataset,
+        that same column is transformed. If it's not a column in the
+        dataset, a new column with that name is created. The input of
+        function is the complete dataset as pd.DataFrame.
+
+        This approach is preferred over changing the dataset directly
+        through the property's `@setter` since the transformation
+        is saved to atom's pipeline.
+
+        Parameters
+        ----------
+        func: function
+            Function to apply to the dataset.
+
+        column: int or str
+            Name or index of the column in the dataset to create
+            or transform.
+
+        """
+        check_method(self, "apply")
+        if not callable(func):
+            raise TypeError(
+                "Invalid value for the func parameter. Argument is not callable!"
+            )
+
+        if isinstance(column, int):
+            column = self._get_columns(column)[0]
+
+        kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
+        transformer = FuncTransformer(func, column=column, **kwargs)
+        custom_transform(self, transformer, self.branch)
+
+        self.branch.pipeline = self.pipeline.append(
+            pd.Series([transformer], name=self._current), ignore_index=True
+        )
+
+    @composed(crash, method_to_log, typechecked)
     def add(
         self,
-        transformer,
-        name: Optional[str] = None,
-        columns: Optional[Union[slice, list]] = None,
+        transformer: Any,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
         train_only: bool = False
     ):
         """Add a transformer to the current branch.
 
-        If the transformer is not fitted, it is fitted on the
-        complete training set. Afterwards, the data set is
-        transformed and the transformer is added to atom's
-        pipeline. If the transformer is a sklearn Pipeline,
-        every step will be transformed independently on the
-        complete data set.
+        If the transformer is not fitted, it is fitted on the complete
+        training set. Afterwards, the data set is transformed and the
+        transformer is added to atom's pipeline. If the transformer is
+        a sklearn Pipeline, every transformer is merged independently
+        with atom.
 
-        If the transformer has a n_jobs and/or random_state
-        parameter and it is left to its default value, it
-        adopts atom's value.
+        If the transformer has the n_jobs and/or random_state
+        parameters and they are left to their default value,
+        they adopt atom's values.
 
         Parameters
         ----------
-        transformer: class
+        transformer: estimator
             Transformer to add to the pipeline. Should implement a
             `transform` method.
 
-        name: str or None, optional (default=None)
-            Name of the transformation step. If None, it defaults to
-            the __name__ of the transformer's class (lower case).
-
-        columns: slice, list or None, optional (default=None)
+        columns: int, str, slice, sequence or None, optional (default=None)
             Names or indices of the columns in the dataset to transform.
-            If None, all columns are used.
+            If None, transform all columns.
 
         train_only: bool, optional (default=False)
             Whether to apply the transformer only on the train set or
@@ -543,22 +627,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         """
         check_method(self, "add")
         if isinstance(transformer, Pipeline):
-            self.log("Adding sklearn Pipeline to atom's pipeline...", 1)
-
             # Recursively add all transformers to the pipeline
             for name, est in transformer.named_steps.items():
-                add_transformer(self, est, name, columns, train_only)
-                self.log(
-                    f" --> Transformer {est.__class__.__name__} "
-                    f"successfully added to the pipeline.", 2
-                )
+                add_transformer(self, est, columns, train_only)
 
         else:
-            add_transformer(self, transformer, name, columns, train_only)
-            self.log(
-                f"Transformer {self.pipeline[-1].__class__.__name__} "
-                f"successfully added to the pipeline.", 1
-            )
+            add_transformer(self, transformer, columns, train_only)
 
     @composed(crash, method_to_log)
     def scale(self, strategy: str = "standard", **kwargs):
@@ -591,9 +665,9 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Use the parameters to choose which transformations to perform.
         The available steps are:
-            - Remove columns with prohibited data types.
-            - Remove categorical columns with maximal cardinality.
-            - Remove columns with minimum cardinality.
+            - Drop columns with prohibited data types.
+            - Drop categorical columns with maximal cardinality.
+            - Drop columns with minimum cardinality.
             - Strip categorical features from white spaces.
             - Drop duplicate rows.
             - Drop rows with missing values in the target column.
@@ -629,8 +703,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strat_num: Union[int, float, str] = "drop",
         strat_cat: str = "drop",
-        min_frac_rows: float = 0.5,
-        min_frac_cols: float = 0.5,
+        min_frac_rows: Optional[float] = None,
+        min_frac_cols: Optional[float] = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
@@ -706,10 +780,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Prune outliers from the training set.
 
         Replace or remove outliers. The definition of outlier depends
-        on the selected strategy and can greatly differ from one each
-        other. Only outliers from the training set are pruned in order
-        to maintain the original distribution of samples in the test
-        set. Ignores categorical columns.
+        on the selected strategy and can greatly differ from one
+        another. Only outliers from the training set are pruned in
+        order to maintain the original distribution of samples in the
+        test set. Ignores categorical columns.
 
         See the data_cleaning.py module for a description of the parameters.
 
@@ -812,7 +886,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Apply feature selection techniques.
 
         Remove features according to the selected strategy. Ties
-        between features with equal scores will be broken in an
+        between features with equal scores are broken in an
         unspecified way. Additionally, removes features with too low
         variance and finds pairs of collinear features based on the
         Pearson correlation coefficient. For each pair above the
@@ -913,11 +987,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # A pipeline could consist of just a single estimator
         if len(self.tpot.fitted_pipeline_) > 1:
             for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
-                add_transformer(self, est, name)
-                self.log(
-                    f" --> Transformer {self.pipeline[-1].__class__.__name__} "
-                    f"successfully added to the pipeline.", 2
-                )
+                add_transformer(self, est)
 
         # Add the final estimator as a model to atom
         est = self.tpot.fitted_pipeline_[-1]
@@ -936,9 +1006,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         ])
 
         self._models.update({model.name: model})
-        self.log(
-            f" --> {model.fullname} ({model.name}) successfully added to the models.", 2
-        )
+        self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
 
     # Training methods ============================================= >>
 

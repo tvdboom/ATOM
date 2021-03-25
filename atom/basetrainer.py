@@ -39,8 +39,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Metric on which to fit the models. Choose from any of sklearn's
         SCORERS, a function with signature metric(y, y_pred, **kwargs),
         a scorer object or a sequence of these. If multiple metrics are
-        selected, only the first will be used to optimize the BO. If
-        None, a default metric is selected:
+        selected, only the first is used to optimize the BO. If None, a
+        default metric is selected:
             - "f1" for binary classification
             - "f1_weighted" for multiclass classification
             - "r2" for regression
@@ -107,8 +107,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 in-training evaluation.
             - cv: int, optional (default=5)
                 Number of folds for the cross-validation. If 1, the
-                training set will be randomly split in a (sub)train
-                and validation set.
+                training set is randomly split in a (sub)train and
+                validation set.
             - callbacks: callable or sequence, optional (default=None)
                 Callbacks for the BO.
             - dimensions: dict, sequence or None, optional (default=None)
@@ -154,10 +154,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Note that ATOM can't manage warnings that go directly
         from C/C++ code to the stdout/stderr.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.

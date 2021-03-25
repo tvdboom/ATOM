@@ -27,7 +27,7 @@ class BasePredictor:
     """Properties and shared methods for the trainers."""
 
     def __getattr__(self, item):
-        """Get some attributes from the current branch."""
+        """Get attributes from the current branch."""
         props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
         if self.__dict__.get("_branches"):  # Add public attrs from branch
             props.extend([k for k in self.branch.__dict__ if k not in Branch.private])
@@ -37,6 +37,10 @@ class BasePredictor:
             return getattr(self.branch, item)  # Get attr from branch
         elif self.__dict__.get("_models").get(item.lower()):
             return self._models[item.lower()]   # Get model subclass
+        elif item in self.columns:
+            return self.dataset[item]  # Get column
+        elif item in ["size", "head", "tail", "loc", "iloc", "at", "iat", "iterrows"]:
+            return getattr(self.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
@@ -158,11 +162,41 @@ class BasePredictor:
 
     # Utility methods ============================================== >>
 
+    def _get_columns(self, columns, only_numerical=False):
+        """Get a subset of the columns. Duplicate inputs are ignored."""
+        if columns is None:
+            if only_numerical:
+                return list(self.dataset.select_dtypes(include=["number"]).columns)
+            else:
+                return self.columns
+        elif isinstance(columns, slice):
+            return self.columns[columns]
+
+        cols = []
+        for col in lst(columns):
+            if isinstance(col, int):
+                try:
+                    cols.append(self.columns[col])
+                except IndexError:
+                    raise ValueError(
+                        f"Invalid value for the columns parameter, got {col} "
+                        f"but length of columns is {self.n_columns}."
+                    )
+            else:
+                cols.append(col)
+                if col not in self.columns:
+                    raise ValueError(
+                        "Invalid value for the columns parameter. "
+                        f"Column {col} not found in the dataset."
+                    )
+
+        return list(dict.fromkeys(cols))  # Avoid duplicates
+
     def _get_model_name(self, model):
         """Return a model's name.
 
         If there are multiple models that start with the same
-        acronym, all will be return. If the input is a number,
+        acronym, all are returned. If the input is a number,
         select all models that end with that number. The input
         is case-insensitive.
 
@@ -215,8 +249,8 @@ class BasePredictor:
         Parameters
         ----------
         models: sequence or None, optional (default=None)
-            Models that feed the voting. If None, all models depending
-            on the current branch are selected.
+            Models that feed the voting. If None, it selects all models
+            depending on the current branch.
 
         weights: sequence or None, optional (default=None)
             Sequence of weights (int or float) to weight the
@@ -250,10 +284,11 @@ class BasePredictor:
         Parameters
         ----------
         models: sequence or None, optional (default=None)
-            Models that feed the stacking.
+            Models that feed the stacking. If None, it selects all
+            models depending on the current branch.
 
         estimator: str, callable or None, optional (default=None)
-            The final estimator, which will be used to combine the base
+            The final estimator, which is used to combine the base
             estimators. If str, choose from ATOM's predefined models.
             If None, a default estimator is selected:
                 - LogisticRegression for classification tasks.
@@ -265,7 +300,7 @@ class BasePredictor:
             `predict` in that order.
 
         passthrough: bool, optional (default=False)
-            When False, only the predictions of estimators will be used
+            When False, only the predictions of estimators are used
             as training data for the final estimator. When True, the
             estimator is trained on the predictions as well as the
             original training data.
@@ -366,8 +401,9 @@ class BasePredictor:
                 else:  # If confusion matrix...
                     out_score = list(score.ravel())
                 out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
-                if get_best_score(m) == best_score and len(self._models) > 1:
-                    out += " !"
+
+            if get_best_score(m) == best_score and len(self._models) > 1:
+                out += " !"
 
             self.log(out, kwargs.get("_vb", -2))  # Always print if called by user
 

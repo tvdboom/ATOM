@@ -1,8 +1,8 @@
 # score
 -------
 
-<pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, sample_weights=None, verbose=None, **kwargs) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L148">[source]</a></div></pre>
+<pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, sample_weights=None, pipeline=None, verbose=None) 
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L150">[source]</a></div></pre>
 Transform new data through all transformers in a branch and return
 the model's score. If called from a trainer, it will use the
 best model in the pipeline (under the `winner` attribute). If called
@@ -28,20 +28,19 @@ Feature set with shape=(n_samples, n_features).
 <blockquote>
 Sample weights corresponding to y.
 </blockquote>
-<strong>verbose: int or None, optional (default=None)</strong>
+<strong>pipeline: bool, sequence or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the trainer's
-verbosity. Possible values are:
+Transformers to use on the data before predicting.
 <ul>
-<li>0 to not print anything.</li>
-<li>1 to print basic information.</li>
-<li>2 to print detailed information.</li>
+<li>If None: Only transformers that are applied on the whole dataset are used.</li>
+<li>If False: Don't use any transformers.</li>
+<li>If True: Use all transformers in the pipeline.</li>
+<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
 </ul>
 </blockquote>
-<strong>**kwargs</strong>
+<strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Same keyword arguments as the <a href="../transform">transform</a> method to
-include/exclude transformers from the transformations.
+Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </blockquote>
 </tr>
 <tr>

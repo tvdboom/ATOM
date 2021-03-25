@@ -14256,7 +14256,7 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Utilities">Utilities<a class="anchor-link" href="#Utilities">&#182;</a></h1><hr>
 <p>This example shows various useful utilities that can be used to improve atom's pipelines.</p>
-<p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target <code>RainTomorrow</code>.</p>
+<p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target <code>RainTomorrow</code>.</p>
 
 </div>
 </div>
@@ -14894,23 +14894,133 @@ Dataset balance: 0:1 &lt;==&gt; 3.5:1.0
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h2 id="Change-the-data-mid-pipeline">Change the data mid-pipeline<a class="anchor-link" href="#Change-the-data-mid-pipeline">&#182;</a></h2>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+</div>
+<div class="jp-Cell-inputWrapper"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
+<p>There are two ways to quickly transform the dataset mid-pipeline. The first way is through the property's <code>@setter</code>.
+The downside for this approach is that the transformation is not stored in atom's pipeline, so the transformation is
+not applied on new data. Therefore, it is advised to use the second approach, using the add method.</p>
+
+</div>
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[9]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We can change atom&#39;s data mid-pipeline, adding a column for example</span>
-<span class="c1"># Note that we can only replace a dataframe with a new dataframe!</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that we can only replace a dataframe with a new dataframe!</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">AvgTemp</span><span class="o">=</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;MaxTemp&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="c1"># This will automatically update all other data attributes</span>
+<span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span>
+
+<span class="c1"># But it&#39;s not saved to atom&#39;s pipeline</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">pipeline</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[9]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>cleaner    Cleaner(prohibited_types=[])
+imputer                       Imputer()
+encoder                       Encoder()
+Name: master, dtype: object</pre>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s drop the column to re-do the operation using add</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;AvgTemp&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Same transformation, different approach</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">MaxTemp</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">MinTemp</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;add_avgtemp&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;AvgTemp&quot;</span><span class="p">)</span>
+
 <span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span>
 </pre></div>
 
      </div>
 </div>
 </div>
+</div>
+
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+<div class="jp-Cell-inputWrapper">
+<div class="jp-InputArea jp-Cell-inputArea">
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
+     <div class="CodeMirror cm-s-jupyter">
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Now the function appears in the pipeline</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">pipeline</span>
+</pre></div>
+
+     </div>
+</div>
+</div>
+</div>
+
+<div class="jp-Cell-outputWrapper">
+
+
+<div class="jp-OutputArea jp-Cell-outputArea">
+
+<div class="jp-OutputArea-child">
+
+    
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+
+
+
+
+<div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
+<pre>cleaner        Cleaner(prohibited_types=[])
+imputer                           Imputer()
+encoder                           Encoder()
+add_avgtemp                        &lt;lambda&gt;
+Name: master, dtype: object</pre>
+</div>
+
+</div>
+
+</div>
+
 </div>
 
 </div>
@@ -14921,7 +15031,7 @@ Dataset balance: 0:1 &lt;==&gt; 3.5:1.0
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="mi">1</span>
@@ -14961,13 +15071,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5677
 Test evaluation --&gt; f2_score: 0.5691
-Time elapsed: 0.204s
+Time elapsed: 0.202s
 -------------------------------------------------
-Total time: 0.205s
+Total time: 0.202s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.205s
+Duration: 0.202s
 ------------------------------------------
 Logistic Regression --&gt; f2_score: 0.5691
 </pre>
@@ -14986,7 +15096,7 @@ Logistic Regression --&gt; f2_score: 0.5691
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># You can use the est_params parameter to customize the estimator</span>
@@ -15021,13 +15131,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5577
 Test evaluation --&gt; f2_score: 0.5523
-Time elapsed: 2.603s
+Time elapsed: 2.524s
 -------------------------------------------------
-Total time: 2.603s
+Total time: 2.524s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.603s
+Duration: 2.524s
 ------------------------------------------
 AdaBoost --&gt; f2_score: 0.5523
 </pre>
@@ -15041,7 +15151,7 @@ AdaBoost --&gt; f2_score: 0.5523
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[15]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="n">atom</span><span class="o">.</span><span class="n">adab</span><span class="o">.</span><span class="n">estimator</span>
@@ -15060,7 +15170,7 @@ AdaBoost --&gt; f2_score: 0.5523
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[12]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[15]:</div>
 
 
 
@@ -15079,7 +15189,7 @@ AdaBoost --&gt; f2_score: 0.5523
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[13]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[16]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Note that parameters specified by est_params are not optimized in the BO</span>
@@ -15113,31 +15223,31 @@ Running BO for Decision Tree...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Evaluation --&gt; f2_score: 0.4938  Best f2_score: 0.4938
-Time iteration: 0.402s   Total time: 0.421s
+Time iteration: 0.399s   Total time: 0.419s
 Iteration 2 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 4, &#39;min_samples_leaf&#39;: 20, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.014}
 Evaluation --&gt; f2_score: 0.4444  Best f2_score: 0.4938
-Time iteration: 0.152s   Total time: 0.577s
+Time iteration: 0.150s   Total time: 0.574s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;entropy&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 6, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.0}
 Evaluation --&gt; f2_score: 0.3052  Best f2_score: 0.4938
-Time iteration: 0.155s   Total time: 0.978s
+Time iteration: 0.154s   Total time: 0.974s
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Best evaluation --&gt; f2_score: 0.4938
-Time elapsed: 1.281s
+Time elapsed: 1.276s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.4939
 Test evaluation --&gt; f2_score: 0.4871
-Time elapsed: 0.104s
+Time elapsed: 0.105s
 -------------------------------------------------
-Total time: 1.387s
+Total time: 1.381s
 
 
 Final results ========================= &gt;&gt;
-Duration: 1.387s
+Duration: 1.381s
 ------------------------------------------
 Decision Tree --&gt; f2_score: 0.4871
 </pre>
@@ -15156,7 +15266,7 @@ Decision Tree --&gt; f2_score: 0.4871
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[14]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Save the atom instance as a pickle</span>
@@ -15193,7 +15303,7 @@ Decision Tree --&gt; f2_score: 0.4871
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Load the instance again with ATOMLoader</span>
@@ -15222,7 +15332,7 @@ Decision Tree --&gt; f2_score: 0.4871
 
 
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>Transforming data for branch master...
+<pre>Transforming data for branch master:
 Applying data cleaning...
  --&gt; Label-encoding the target column.
 Imputing missing values...
@@ -15242,11 +15352,11 @@ Imputing missing values...
  --&gt; Dropping 5361 samples due to missing values in feature Cloud9am.
  --&gt; Dropping 1386 samples due to missing values in feature Cloud3pm.
 Encoding categorical columns...
- --&gt; LeaveOneOut-encoding feature Location. Contains 26 unique classes.
- --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 unique classes.
- --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 unique classes.
- --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique classes.
- --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
+ --&gt; LeaveOneOut-encoding feature Location. Contains 26 classes.
+ --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
+ --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.
+ --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.
+ --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.
 ATOMClassifier loaded successfully!
 </pre>
 </div>
@@ -15264,7 +15374,7 @@ ATOMClassifier loaded successfully!
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[16]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[19]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Use the plotting attributes to further customize your plots!</span>
@@ -15307,7 +15417,7 @@ ATOMClassifier loaded successfully!
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[20]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Reset the aesthetics to their original values</span>

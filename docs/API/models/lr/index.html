@@ -518,6 +518,9 @@
                                 </ul>
                             </li>
                             <li class="navitem">
+                                <a href="../../../faq/" class="nav-link">FAQ</a>
+                            </li>
+                            <li class="navitem">
                                 <a href="../../../dependencies/" class="nav-link">Dependencies</a>
                             </li>
                             <li class="navitem">
@@ -607,9 +610,9 @@
 <li>By default, the estimator adopts the default parameters provided by its package.
   See the <a href="../../../user_guide/#parameter-customization">user guide</a> on how to
   customize them.</li>
-<li>The <code>penalty</code> parameter will be automatically set to "l2" when penalty = "none" and solver = "liblinear".</li>
-<li>The <code>penalty</code> parameter will be automatically set to "l2" when penalty = "l1" and solver != "liblinear" or "saga".</li>
-<li>The <code>penalty</code> parameter will be automatically set to "l2" when penalty = "elasticnet" and solver != "saga".</li>
+<li>The <code>penalty</code> parameter is automatically set to "l2" when penalty = "none" and solver = "liblinear".</li>
+<li>The <code>penalty</code> parameter is automatically set to "l2" when penalty = "l1" and solver != "liblinear" or "saga".</li>
+<li>The <code>penalty</code> parameter is automatically set to "l2" when penalty = "elasticnet" and solver != "saga".</li>
 <li>The <code>C</code> parameter is not used when penalty = "none".</li>
 <li>The <code>l1_ratio</code> parameter is only used when penalty = "elasticnet".</li>
 <li>The <code>n_jobs</code> and <code>random_state</code> parameters are set equal to those of the
@@ -887,7 +890,7 @@ Model's score on the test set.
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a></div></pre>
 <p>Applies probability calibration on the estimator. The calibration is done using the
  <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
- class from sklearn. The calibrator will be trained via cross-validation on a subset
+ class from sklearn. The calibrator is trained via cross-validation on a subset
  of the training data, using the rest to fit the calibrator. The new classifier will
  replace the <code>estimator</code> attribute. After calibrating, all prediction attributes will
  reset.</p>

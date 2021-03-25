@@ -6,9 +6,9 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/getting_started/">
+        <link rel="canonical" href="http://tvdboom.github.io/ATOM/faq/">
         <link rel="shortcut icon" href="../img/favicon.ico">
-        <title>Getting started - ATOM</title>
+        <title>FAQ - ATOM</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/font-awesome.min.css" rel="stylesheet">
         <link href="../css/base.css" rel="stylesheet">
@@ -33,8 +33,8 @@
                 <div id="navbar-collapse" class="navbar-collapse collapse">
                         <!-- Main navigation -->
                         <ul class="nav navbar-nav">
-                            <li class="navitem active">
-                                <a href="./" class="nav-link">Getting started</a>
+                            <li class="navitem">
+                                <a href="../getting_started/" class="nav-link">Getting started</a>
                             </li>
                             <li class="navitem">
                                 <a href="../user_guide/" class="nav-link">User guide</a>
@@ -517,8 +517,8 @@
 </li>
                                 </ul>
                             </li>
-                            <li class="navitem">
-                                <a href="../faq/" class="nav-link">FAQ</a>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">FAQ</a>
                             </li>
                             <li class="navitem">
                                 <a href="../dependencies/" class="nav-link">Dependencies</a>
@@ -535,12 +535,12 @@
                             </a>
                         </li>
                             <li class="nav-item">
-                                <a rel="prev" class="nav-link disabled">
+                                <a rel="prev" href="../API/plots/waterfall_plot/" class="nav-link">
                                     <i class="fa fa-arrow-left"></i> Previous
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a rel="next" href="../user_guide/" class="nav-link">
+                                <a rel="next" href="../dependencies/" class="nav-link">
                                     Next <i class="fa fa-arrow-right"></i>
                                 </a>
                             </li>
@@ -565,12 +565,7 @@
     <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
         <ul class="nav flex-column">
             
-            <li class="nav-item" data-level="1"><a href="#installation" class="nav-link">Installation</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            
-            <li class="nav-item" data-level="1"><a href="#usage" class="nav-link">Usage</a>
+            <li class="nav-item" data-level="1"><a href="#frequently-asked-questions" class="nav-link">Frequently asked questions</a>
               <ul class="nav flex-column">
               </ul>
             </li>
@@ -579,51 +574,117 @@
 </div></div>
                     <div class="col-md-9" role="main">
 
-<h1 id="installation">Installation</h1>
+<h1 id="frequently-asked-questions">Frequently asked questions</h1>
 <hr />
-<p>Install ATOM's newest release easily via <code>pip</code>:</p>
-<pre><code>$ pip install -U atom-ml
-</code></pre>
-<p>or via <code>conda</code>:</p>
-<pre><code>$ conda install -c conda-forge atom-ml
-</code></pre>
-<p>Note that using these commands also install/update all <a href="../dependencies/#required">required dependencies</a>.
-To install the <a href="../dependencies/#optional">optional dependencies</a>, add [models]
-after the package's name.</p>
-<pre><code>$ pip install -U atom-ml[models]
-</code></pre>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
-</div>
-<p><br><br></p>
-<h1 id="usage">Usage</h1>
+<ul>
+<li><a href="#q1">There already is an atom text editor. Does this has anything to do with that?</a></li>
+<li><a href="#q2">How does ATOM relate to AutoML?</a></li>
+<li><a href="#q3">Is it possible to run deep learning models?</a></li>
+<li><a href="#q4">Can I run atom's methods on just a subset of the columns?</a></li>
+<li><a href="#q5">How can I compare the same model on different datasets?</a></li>
+<li><a href="#q6">Can I train models through atom using a GPU?</a></li>
+<li><a href="#q7">How are numerical and categorical columns differentiated?</a></li>
+<li><a href="#q8">Can I run unsupervised learning pipelines?</a></li>
+<li><a href="#q9">Is there a way to plot multiple models in the same shap plot?</a></li>
+<li><a href="#q10">Can I merge a sklearn pipeline with atom?</a></li>
+<li><a href="#q11">Is it possible to initialize atom with an existing train and test set?</a></li>
+</ul>
+<p><br></p>
 <hr />
-<p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:</p>
-<pre><code class="language-Python">from sklearn.datasets import load_breast_cancer
-from atom import ATOMClassifier
-
-X, y = load_breast_cancer(return_X_y)
-atom = ATOMClassifier(X, y, logger=&quot;auto&quot;, n_jobs=2, verbose=2)
-</code></pre>
-<p>ATOM has multiple data cleaning methods to help you prepare the data for modelling:</p>
-<pre><code class="language-Python">atom.impute(strat_num=&quot;knn&quot;, strat_cat=&quot;most_frequent&quot;, min_frac_rows=0.1)  
-atom.encode(strategy=&quot;LeaveOneOut&quot;, max_onehot=8, frac_to_other=0.05)  
-atom.feature_selection(strategy=&quot;PCA&quot;, n_features=12)
-</code></pre>
-<p>Train and evaluate the models you want to compare:</p>
-<pre><code class="language-Python">atom.run(
-    models=[&quot;LR&quot;, &quot;LDA&quot;, &quot;XGB&quot;, &quot;lSVM&quot;],
-    metric=&quot;f1&quot;,
-    n_calls=25,
-    n_initial_points=10,
-    bagging=4,
-)
-</code></pre>
-<p>Make plots to analyze the results: </p>
-<pre><code class="language-Python">atom.plot_results(figsize=(9, 6), filename=&quot;bagging_results.png&quot;)  
-atom.lda.plot_confusion_matrix(normalize=True, filename=&quot;cm.png&quot;)
-</code></pre></div>
+<p><br></p>
+<p><a name="q1"></a></p>
+<h3 id="there-already-is-an-atom-text-editor-does-this-has-anything-to-do-with-that">There already is an atom text editor. Does this has anything to do with that?</h3>
+<p>There is, indeed, a text editor with the same name and a similar logo. Is this
+a shameless copy? No. When I started the project, I didn't know about the text
+editor, and it doesn't require much thinking to come up with the idea of replacing
+the letter O of the word atom with the image of an atom.</p>
+<p><br></p>
+<p><a name="q2"></a></p>
+<h3 id="how-does-atom-relate-to-automl">How does ATOM relate to AutoML?</h3>
+<p>ATOM is not an AutoML tool since it does not automate the search for
+an optimal pipeline like well known AutoML tools such as
+<a href="https://automl.github.io/auto-sklearn/master/">auto-sklearn</a> or
+<a href="http://epistasislab.github.io/tpot/">TPOT</a> do. Instead, ATOM helps
+the user find the optimal pipeline himself. One of the goals of this
+package is to help data scientists produce explainable pipelines, and
+using an AutoML black box function would impede that. That said, it is
+possible to integrate a TPOT pipeline with atom through the
+<a href="../API/ATOM/atomclassifier/#automl">automl</a> method.</p>
+<p><br></p>
+<p><a name="q3"></a></p>
+<h3 id="is-it-possible-to-run-deep-learning-models">Is it possible to run deep learning models?</h3>
+<p>Yes. Deep learning models can be added as custom models to the pipeline
+as long as they follow <a href="https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects">sklearn's API</a>.
+If the dataset is 2-dimensional, everything should work normally. If
+the dataset has more than 2 dimensions (referred in the documentation as
+deep learning datasets, often the case for images or text embeddings),
+only a subset of atom's methods will work. For more information, see
+the <a href="../user_guide/#deep-learning">deep learning</a> section of the user guide.</p>
+<p><br></p>
+<p><a name="q4"></a></p>
+<h3 id="can-i-run-atoms-methods-on-just-a-subset-of-the-columns">Can I run atom's methods on just a subset of the columns?</h3>
+<p>Yes, all <a href="../user_guide/#data-cleaning">data cleaning</a> and
+<a href="../user_guide/#feature-engineering">feature engineering</a> methods accept
+a <code>columns</code> parameter to only transform the selected features. For example,
+to only impute the numerical columns in the dataset we could type
+<code>atom.impute(strat_num="mean", columns=atom.numerical)</code>. The parameter
+accepts column names, column indices or a slice object.</p>
+<p><br></p>
+<p><a name="q5"></a></p>
+<h3 id="how-can-i-compare-the-same-model-on-different-datasets">How can I compare the same model on different datasets?</h3>
+<p>In many occasions you might want to test how a model performs on datasets
+processed with different pipelines. For this, atom has the <a href="../user_guide/#branches">branch system</a>.
+Create a new branch for every new pipeline you want to test and use the plot
+methods to compare all models, independent of the branch it was trained on.</p>
+<p><br></p>
+<p><a name="q6"></a></p>
+<h3 id="can-i-train-models-through-atom-using-a-gpu">Can I train models through atom using a GPU?</h3>
+<p>ATOM doesn't fit the models himself. The underlying models' package does. 
+Since the majority of predefined models are implemented through sklearn
+and sklearn works on CPU only, they can not be trained on any GPU. If you
+are using a custom model whose package, Keras for example, allows GPU
+implementation and the settings or model parameters are tuned to do so, the
+model will train on the GPU like it would do outside atom.</p>
+<p><br></p>
+<p><a name="q7"></a></p>
+<h3 id="how-are-numerical-and-categorical-columns-differentiated">How are numerical and categorical columns differentiated?</h3>
+<p>The columns are separated using pandas' <a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html"><code>select_dtypes</code></a>
+method for dataframes. Numerical columns are selected using <code>include="number"</code>
+whereas categorical columns are selected using <code>exclude="number"</code>.</p>
+<p><br></p>
+<p><a name="q8"></a></p>
+<h3 id="can-i-run-unsupervised-learning-pipelines">Can I run unsupervised learning pipelines?</h3>
+<p>No. As for now, ATOM only supports supervised machine learning pipelines.
+However, various unsupervised algorithms can be chosen as strategy in the
+<a href="../API/data_cleaning/pruner">Pruner</a> class to detect and remove outliers
+from the dataset.</p>
+<p><br></p>
+<p><a name="q9"></a></p>
+<h3 id="is-there-a-way-to-plot-multiple-models-in-the-same-shap-plot">Is there a way to plot multiple models in the same shap plot?</h3>
+<p>No. Unfortunately, there is no way to plot multiple models in the same
+<a href="../user_guide/#shap">shap plot</a> since the plots are made by the SHAP
+package and passed as matplotlib.axes objects to atom. This means
+that it's not within the reach of this package to implement such an utility.</p>
+<p><br></p>
+<p><a name="q10"></a></p>
+<h3 id="can-i-merge-a-sklearn-pipeline-with-atom">Can I merge a sklearn pipeline with atom?</h3>
+<p>Yes. Like any other transformer, it is possible to add a sklearn
+pipeline to atom using the <a href="../API/ATOM/atomclassifier/#add">add</a>
+method. Every transformer in the pipeline is merged
+independently. The pipeline is not allowed to end with a model
+since atom manages its own models. If that is the case, add the
+pipeline using <code>atom.add(pipeline[:-1])</code>.</p>
+<p><br></p>
+<p><a name="q11"></a></p>
+<h3 id="is-it-possible-to-initialize-atom-with-an-existing-train-and-test-set">Is it possible to initialize atom with an existing train and test set?</h3>
+<p>Yes. If you already have a separated train and test set you can initialize
+atom in two ways:</p>
+<ul>
+<li><code>atom = ATOMClassifier(train, test)</code></li>
+<li><code>atom = ATOMClassifier((X_train, y_train), (X_test, y_test))</code></li>
+</ul>
+<p>Make sure the train and test size have the same number of columns. If
+initialized like this, the <code>test_size</code> parameter is ignored.</p></div>
             </div>
         </div>
 

@@ -233,14 +233,6 @@ def merge(X, y):
     return X.merge(y.to_frame(), left_index=True, right_index=True)
 
 
-def catch_return(args):
-    """Returns always two arguments independent of length arrays."""
-    if not isinstance(args, tuple):
-        return args, None
-    else:
-        return args[0], args[1]
-
-
 def variable_return(X, y):
     """Return one or two arguments depending on if y is None."""
     if y is None:
@@ -429,7 +421,7 @@ def prepare_logger(logger, class_name):
     logger: str, class or None
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by
         the timestamp of the logger's creation.
@@ -741,7 +733,7 @@ def partial_dependence(estimator, X, features):
 
     X : pd.DataFrame
         Feature set used to generate a grid of values for the target
-        features (where the partial dependence will be evaluated), and
+        features (where the partial dependence is evaluated), and
         also to generate values for the complement features.
 
     features : int, str or sequence
@@ -771,13 +763,21 @@ def partial_dependence(estimator, X, features):
     return averaged_predictions, values
 
 
-def custom_transform(transformer, branch, data=None, verbose=None):
+# Functions shared by classes ======================================= >>
+
+def custom_transform(self, transformer, branch, data=None, verbose=None):
     """Applies a transformer on a branch.
+
+    This function is generic and should work for all
+    methods with parameters X and/or y.
 
     Parameters
     ----------
+    self: class
+        Instance from which the function is called.
+
     transformer: estimator
-        Transformer to apply on the data.
+        Transformer to apply to the data.
 
     branch: Branch
         Transformer's branch.
@@ -819,7 +819,8 @@ def custom_transform(transformer, branch, data=None, verbose=None):
             if any(mask):
                 temp_cols.append(mask[mask].index.values[0])
             else:
-                temp_cols.append(f"Feature {str(i + (branch.n_features - len(cols)))}")
+                diff = branch.n_features - len(transformer.cols)
+                temp_cols.append(f"Feature {str(i + diff)}")
 
         return temp_cols
 
@@ -828,7 +829,7 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 
         This function is necessary in case only a subset of the
         columns in the dataset was used. In that case, we need
-        to reorder them to their original form.
+        to reorder them to their original order.
 
         Parameters
         ----------
@@ -840,8 +841,7 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 
         """
         temp_df = pd.DataFrame([])
-        new_cols = [c for c in df.columns if c not in branch.features]
-        for col in branch.features + new_cols:
+        for col in list(dict.fromkeys(list(original_df.columns) + list(df.columns))):
             if col in df.columns:
                 temp_df[col] = df[col]
             elif col not in transformer.cols:
@@ -849,10 +849,9 @@ def custom_transform(transformer, branch, data=None, verbose=None):
 
         return temp_df
 
-    # Prepare the provided data
+    # Select provided data or from the branch
     if data:
-        X_og = to_df(data[0], columns=branch.features)
-        y_og = to_series(data[1], name=branch.target)
+        X_og, y_og = to_df(data[0]), to_series(data[1])
     else:
         if transformer.train_only:
             X_og, y_og = branch.X_train, branch.y_train
@@ -866,34 +865,44 @@ def custom_transform(transformer, branch, data=None, verbose=None):
                 "Invalid value for the verbose parameter."
                 f"Value should be between 0 and 2, got {verbose}."
             )
-        elif hasattr(transformer, "verbose"):
+        elif all(hasattr(transformer, attr) for attr in ("get_params", "verbose")):
             vb = transformer.get_params()["verbose"]  # Save original verbosity
             transformer.verbose = verbose
 
-    cols = transformer.cols  # Columns to use for transformation
-    if "y" in signature(transformer.transform).parameters:
-        X, y = catch_return(transformer.transform(X_og[cols], y_og))
+    if transformer.__class__.__name__ in ("DropTransformer", "FuncTransformer"):
+        X, y = transformer.transform(X_og, y_og)
     else:
-        X, y = catch_return(transformer.transform(X_og[cols]))
+        if not transformer.__module__.startswith("atom"):
+            self.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
 
-    # Convert to pandas and assign proper column names
-    if not isinstance(X, pd.DataFrame):
-        X = to_df(X, columns=name_cols(X, X_og[cols]))
-    X = reorder_cols(X, X_og)
-    y = to_series(y, name=branch.target)
+        args = []
+        if "X" in signature(transformer.transform).parameters:
+            args.append(X_og[transformer.cols])
+        if "y" in signature(transformer.transform).parameters:
+            args.append(y_og)
+        output = transformer.transform(*args)
+
+        # Transform can return X, y or both
+        if not isinstance(output, tuple):
+            if len(output.shape) > 1:
+                X, y = output, y_og  # Only X
+            else:
+                X, y = X_og, output  # Only y
+        else:
+            X, y = output[0], output[1]
+
+        # Convert to pandas and assign proper column names
+        if not isinstance(X, pd.DataFrame):
+            X = to_df(X, columns=name_cols(X, X_og[transformer.cols]))
+        X = reorder_cols(X, X_og)
+        y = to_series(y, name=branch.target)
 
     # Apply changes to the branch
     if not data:
         if transformer.train_only:
-            if y is None:
-                branch.train = merge(X, branch.y_train)
-            else:
-                branch.train = merge(X, to_series(y, branch.target))
+            branch.train = merge(X, branch.y_train if y is None else y)
         else:
-            if y is None:
-                branch.dataset = merge(X, branch.y)
-            else:
-                branch.dataset = merge(X, to_series(y, branch.target))
+            branch.dataset = merge(X, branch.y if y is None else y)
 
             # Since rows can be removed from train and test, reset indices
             branch.idx[1] = len(X[X.index >= branch.idx[0]])
@@ -902,15 +911,14 @@ def custom_transform(transformer, branch, data=None, verbose=None):
         branch.dataset = branch.dataset.reset_index(drop=True)
 
     # Back to the original verbosity
-    if verbose is not None and hasattr(transformer, "verbose"):
-        transformer.verbose = vb
+    if verbose is not None:
+        if all(hasattr(transformer, attr) for attr in ("get_params", "verbose")):
+            transformer.verbose = vb
 
     return X, y
 
 
-# Functions shared by classes ======================================= >>
-
-def add_transformer(self, transformer, name=None, columns=None, train_only=False):
+def add_transformer(self, transformer, columns=None, train_only=False):
     """Add a transformer to the current branch.
 
     If the transformer is not fitted, it is fitted on the
@@ -927,15 +935,11 @@ def add_transformer(self, transformer, name=None, columns=None, train_only=False
     self: class
         Instance of atom from which the function is called.
 
-    transformer: class
+    transformer: class instance
         Transformer to add to the pipeline. Should implement a
         `transform` method.
 
-    name: str or None, optional (default=None)
-        Name of the transformation step. If None, it defaults to
-        the __name__ of the transformer's class (lower case).
-
-    columns: slice, list or None, optional (default=None)
+    columns: int, str, slice, sequence or None, optional (default=None)
         Names or indices of the columns in the dataset to transform.
         If None, transform all columns.
 
@@ -943,20 +947,9 @@ def add_transformer(self, transformer, name=None, columns=None, train_only=False
         Whether to apply the transformer only on the train set or
         on the complete dataset.
 
-    """
-    def select_cols(columns):
-        """Select certain columns from a dataset."""
-        if columns is None:
-            return self.features
-        elif isinstance(columns, slice):
-            return self.features[columns]
-        elif isinstance(columns[0], int):
-            return [self.features[col] for col in columns]
-        else:
-            return columns  # Already list of columns
-
+        """
     if not hasattr(transformer, "transform"):
-        raise ValueError("The transformer should have a transform method!")
+        raise ValueError("Added transformers should have a transform method!")
 
     # Add BaseTransformer params to the estimator if left to default
     if all(hasattr(transformer, attr) for attr in ["get_params", "set_params"]):
@@ -967,20 +960,24 @@ def add_transformer(self, transformer, name=None, columns=None, train_only=False
 
     # Transformers remember the train_only and columns parameters
     transformer.train_only = train_only
-    transformer.cols = select_cols(columns)
+    transformer.cols = [col for col in self._get_columns(columns) if col != self.target]
 
     if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
-        transformer.fit(self.X_train[transformer.cols], self.y_train)
+        if not transformer.__module__.startswith("atom"):
+            self.log(f"Fitting {transformer.__class__.__name__}...", 1)
 
-    custom_transform(transformer, self.branch, verbose=self.verbose)
+        args = []
+        if "X" in signature(transformer.fit).parameters:
+            args.append(self.X_train[transformer.cols])
+        if "y" in signature(transformer.fit).parameters:
+            args.append(self.y_train)
+        transformer.fit(*args)
+
+    custom_transform(self, transformer, self.branch, verbose=self.verbose)
 
     # Add the transformer to the pipeline
     self.branch.pipeline = self.pipeline.append(
-        pd.Series(
-            data=[transformer],
-            index=[name if name else transformer.__class__.__name__.lower()],
-            name=self._current,
-        )
+        pd.Series([transformer], name=self._current), ignore_index=True
     )
 
 

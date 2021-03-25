@@ -139,13 +139,11 @@ def test_figure_is_saved_canvas(func):
 
 # Test plots ======================================================= >>
 
-@pytest.mark.parametrize("columns", [None, slice(0, 4), [1, 2, 3, 4]])
-def test_plot_correlation(columns):
+def test_plot_correlation():
     """Assert that the plot_correlation method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.plot_correlation, columns=["invalid"])
     pytest.raises(ValueError, atom.plot_correlation, method="invalid")
-    atom.plot_correlation(columns, display=False)
+    atom.plot_correlation(display=False)
 
 
 def test_plot_scatter_matrix():

@@ -9,7 +9,7 @@ Description: Module containing the BaseTransformer class.
 
 # Standard packages
 import os
-import pickle
+import dill
 import random
 import numpy as np
 import pandas as pd
@@ -201,13 +201,16 @@ class BaseTransformer:
 
         return X, y
 
-    def _get_data_and_idx(self, arrays, use_n_rows=True):
+    def _get_data_and_idx(self, arrays, y=-1, use_n_rows=True):
         """Get the dataset and indices from a sequence of indexables.
 
         Parameters
         ----------
         arrays: tuple of indexables
-            Dataset(s) provided. Should follow the API's input format.
+            Data set(s) provided. Should follow the API's input format.
+
+        y: int, str or sequence, optional (default=-1)
+            Target column corresponding to X.
 
         use_n_rows: bool, optional (default=True)
             Whether to use the n_rows parameter on the dataset.
@@ -279,7 +282,7 @@ class BaseTransformer:
 
         elif len(arrays) == 1:
             # arrays=(X,)
-            data, _ = self._prepare_input(arrays[0])
+            data = merge(*self._prepare_input(arrays[0], y=y))
             data, idx = _no_train_test(data)
 
         elif len(arrays) == 2:
@@ -294,8 +297,8 @@ class BaseTransformer:
                 data, idx = _no_train_test(data)
             else:
                 # arrays=(train, test)
-                train, _ = self._prepare_input(arrays[0])
-                test, _ = self._prepare_input(arrays[1])
+                train = merge(*self._prepare_input(arrays[0], y=y))
+                test = merge(*self._prepare_input(arrays[1], y=y))
                 data, idx = _has_train_test(train, test)
 
         elif len(arrays) == 4:
@@ -359,7 +362,7 @@ class BaseTransformer:
         elif filename == "auto" or filename.endswith("/auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
-        pickle.dump(self, open(filename, "wb"))
+        dill.dump(self, open(filename, "wb"))  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes
         if kwargs.get("save_data") is False and hasattr(self, "dataset"):

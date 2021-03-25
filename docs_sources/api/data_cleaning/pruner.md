@@ -3,10 +3,10 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="z-score", method="drop", max_sigma=3,
                                 include_target=False, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L851">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L870">[source]</a></div></pre>
 Replace or remove outliers. The definition of outlier depends
-on the selected strategy and can greatly differ from one each
-other. Ignores categorical columns. This class can be accessed
+on the selected strategy and can greatly differ from one
+another. Ignores categorical columns. This class can be accessed
 from atom through the [prune](../../ATOM/atomclassifier/#prune)
 method. Read more in the [user guide](../../../user_guide/#handling-outliers).
 <table>
@@ -55,12 +55,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -222,7 +222,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L930">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L949">[source]</a></div></pre>
 Apply the outlier strategy on the data.
 <table>
 <tr>

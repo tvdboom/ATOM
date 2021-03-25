@@ -61,12 +61,7 @@ class Branch:
         # Make copies of the params to not overwrite mutable variables
         self.T, self.name = args[0], args[1]
         if not parent:
-            self.pipeline = pd.Series(
-                data=[],
-                name=self.name,
-                index=pd.Index([], dtype=str),
-                dtype="object",
-            )
+            self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
             for attr in ["data", "idx", "mapping", "feature_importance"]:
                 setattr(self, attr, None)
         else:
@@ -102,7 +97,7 @@ class Branch:
 
     @composed(crash, method_to_log)
     def status(self):
-        """Print the status of the branch."""
+        """Get the status of the branch."""
         self.T.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
@@ -114,7 +109,7 @@ class Branch:
             self.name = name
             self.pipeline.name = name
             self.T._branches[name] = self.T._branches.pop(self.T._current)
-            self.T.log(f"Branch '{self.T._current}' was renamed to '{name}'.", 1)
+            self.T.log(f"Branch {self.T._current} was renamed to {name}.", 1)
             self.T._current = name
 
     @composed(crash, method_to_log, typechecked)
@@ -123,7 +118,7 @@ class Branch:
         if name is None:
             name = self.T._current
         elif name not in self.T._branches:
-            raise ValueError(f"Branch '{name}' not found in the pipeline!")
+            raise ValueError(f"Branch {name} not found in the pipeline!")
 
         dependent = self.T._branches[name]._get_depending_models()
         if len(self.T._branches) == 1:
@@ -137,7 +132,7 @@ class Branch:
             self.T._branches.pop(name)
             if name == self.T._current:  # Reset the current branch
                 self.T._current = list(self.T._branches.keys())[0]
-            self.T.log(f"Branch '{name}' successfully deleted!")
+            self.T.log(f"Branch {name} successfully deleted!")
 
     # Data properties ============================================== >>
 

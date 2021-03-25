@@ -6,7 +6,7 @@
                                                random_state=None, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L411">[source]</a></div></pre>
 Remove features according to the selected strategy. Ties between
-features with equal scores will be broken in an unspecified way.
+features with equal scores are broken in an unspecified way.
 Additionally, removes features with too low variance and finds pairs of
 collinear features based on the Pearson correlation coefficient. For
 each pair above the specified limit (in terms of absolute value), it
@@ -73,7 +73,7 @@ Number of features to select. Choose from:
 <li>if >= 1: Number of features to select.</li>
 </ul>
 If strategy="SFM" and the threshold parameter is not specified, the
-threshold will be set to <code>-np.inf</code> to select the
+threshold is set to <code>-np.inf</code> to select the
 <code>n_features</code> features.<br>
 If strategy="RFECV", it's the minimum number of features to select.
 </blockquote>
@@ -111,12 +111,12 @@ Verbosity level of the class. Possible values are:
 <li>2 to print detailed information.</li>
 </ul>
 </blockquote>
-<strong>logger: str, class or None, optional (default=None)</strong>
+<strong>logger: str, Logger or None, optional (default=None)</strong>
 <blockquote>
 <ul>
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the logging file. Use "auto" for default name.</li>
-<li>If class: python <code>Logger</code> object.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by the
 timestamp of the logger's creation.
@@ -137,7 +137,7 @@ See the corresponding sklearn documentation for the available options.
 <br>
 
 !!!info
-    If strategy="PCA", the data will be scaled to mean=0 and std=1 before
+    If strategy="PCA", the data is scaled to mean=0 and std=1 before
     fitting the transformer (if it wasn't already).
 
 !!! tip

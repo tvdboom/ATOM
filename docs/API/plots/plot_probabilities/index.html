@@ -518,6 +518,9 @@
                                 </ul>
                             </li>
                             <li class="navitem">
+                                <a href="../../../faq/" class="nav-link">FAQ</a>
+                            </li>
+                            <li class="navitem">
                                 <a href="../../../dependencies/" class="nav-link">Dependencies</a>
                             </li>
                             <li class="navitem">
@@ -621,7 +624,7 @@ Whether to render the plot.
 <hr />
 <pre><code class="language-python">from atom import ATOMClassifier
 
-atom = ATOMClassifier(X, &quot;RainTomorrow&quot;)
+atom = ATOMClassifier(X, y=&quot;RainTomorrow&quot;)
 atom.run(&quot;rf&quot;)
 atom.plot_probabilities()
 </code></pre>

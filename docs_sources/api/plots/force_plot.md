@@ -39,7 +39,7 @@ Figure's size, format as (x, y).
 </blockquote>
 <strong>filename: str or None, optional (default=None)</strong>
 <blockquote>
-Name of the file. If matplotlib=False, the figure will be saved as an html
+Name of the file. If matplotlib=False, the figure is saved as an html
  file. If None, the figure is not saved.
 </blockquote>
 <strong>display: bool, optional (default=True)</strong>

@@ -14,8 +14,8 @@ from typeguard import typechecked
 from typing import Union, Optional
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
-from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer, KNNImputer
+from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
@@ -68,6 +68,53 @@ class TransformerMixin:
             return self.transform(X, y)
 
 
+class DropTransformer(BaseTransformer):
+    """Custom transformer to drop columns."""
+
+    def __init__(self, columns, verbose, logger):
+        super().__init__(verbose=verbose, logger=logger)
+        self.columns = columns
+        self.train_only = False
+
+    def __repr__(self):
+        return f"DropTransformer(columns={self.columns})"
+
+    def transform(self, X, y):
+        """Drop columns from the dataset."""
+        self.log(f"Applying DropTransformer...", 1)
+        for col in self.columns:
+            self.log(f" --> Dropping column {col} from the dataset.", 2)
+            X = X.drop(col, axis=1)
+
+        return X, y
+
+
+class FuncTransformer(BaseTransformer):
+    """Custom transformer for functions."""
+
+    def __init__(self, func, column, verbose, logger):
+        super().__init__(verbose=verbose, logger=logger)
+        self.func = func
+        self.column = column
+        self.train_only = False
+
+    def __repr__(self):
+        return f"FuncTransformer(func={self.func.__name__}, column={self.column})"
+
+    def transform(self, X, y):
+        """Apply function to the dataset.
+
+        If the provided column is not in the dataset, a new
+        column is created at the right. If the column already
+        exists, the values are replaced.
+
+        """
+        self.log(f"Applying function {self.func.__name__} to the dataset...", 1)
+        X[self.column] = self.func(X if y is None else merge(X, y))
+
+        return X, y
+
+
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
@@ -89,10 +136,10 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
             - 0 to not print anything.
             - 1 to print basic information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -184,9 +231,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Use the parameters to choose which transformations to perform.
     The available steps are:
-        - Remove columns with prohibited data types.
-        - Remove categorical columns with maximal cardinality.
-        - Remove columns with minimum cardinality.
+        - Drop columns with prohibited data types.
+        - Drop categorical columns with maximal cardinality.
+        - Drop columns with minimum cardinality.
         - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
@@ -195,15 +242,15 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     Parameters
     ----------
     prohibited_types: str, sequence or None, optional (default=None)
-        Columns with these types will be removed from the dataset.
+        Columns with these types are dropped from the dataset.
 
     maximum_cardinality: bool, optional (default=True)
-        Whether to remove categorical columns with maximum cardinality,
+        Whether to drop categorical columns with maximum cardinality,
         i.e. the number of unique values is equal to the number of
         instances. Usually the case for names, IDs, etc...
 
     minimum_cardinality: bool, optional (default=True)
-        Whether to remove columns with minimum cardinality, i.e. all
+        Whether to drop columns with minimum cardinality, i.e. all
         values in the column are the same.
 
     strip_categorical: bool, optional (default=True)
@@ -227,10 +274,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -308,8 +355,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Applying data cleaning...", 1)
 
+        # Replace all missing values with NaN
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+
         for col in X:
-            unique = X[col].unique()
+            # Count occurrences in the column
             n_unique = X[col].nunique(dropna=True)
 
             # Drop features with invalid data type
@@ -335,14 +385,18 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Dropping feature {col} due to maximum cardinality.", 2
                     )
                     X = X.drop(col, axis=1)
+                    continue
 
             # Drop features with minimum cardinality (all values are the same)
-            if n_unique == 1 and self.minimum_cardinality:
-                self.log(
-                    f" --> Dropping feature {col} due to minimum "
-                    f"cardinality. Contains only 1 class: {unique[0]}.", 2
-                )
-                X = X.drop(col, axis=1)
+            if self.minimum_cardinality:
+                all_nan = X[col].isna().sum() == len(X)
+                if n_unique == 1 or all_nan:
+                    self.log(
+                        f" --> Dropping feature {col} due to minimum "
+                        f"cardinality. Contains only 1 class: "
+                        f"{'NaN' if all_nan else X[col].unique()[0]}."
+                    )
+                    X = X.drop(col, axis=1)
 
         # Drop duplicate samples
         if self.drop_duplicates:
@@ -399,13 +453,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "most_frequent": Impute with most frequent value.
             - str: Impute with provided string.
 
-    min_frac_rows: float, optional (default=0.5)
-        Minimum fraction of non-missing values in a row. If less,
-        the row is removed.
+    min_frac_rows: float or None, optional (default=None)
+        Minimum fraction of non-missing values in a row (if less,
+        the row is removed). If None, ignore this step.
 
-    min_frac_cols: float, optional (default=0.5)
-        Minimum fraction of non-missing values in a column. If less,
-        the column is removed.
+    min_frac_cols: float, optional (default=None)
+        Minimum fraction of non-missing values in a column (if
+        less, the column is removed). If None, ignore this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -413,10 +467,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -436,8 +490,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strat_num: Union[int, float, str] = "drop",
         strat_cat: str = "drop",
-        min_frac_rows: float = 0.5,
-        min_frac_cols: float = 0.5,
+        min_frac_rows: Optional[float] = None,
+        min_frac_cols: Optional[float] = None,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
@@ -449,6 +503,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
         self._imputers = {}
+        self._num_cols = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -469,6 +524,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._num_cols = X.select_dtypes(include="number")
 
         # Check input Parameters
         strats = ["drop", "mean", "median", "knn", "most_frequent"]
@@ -477,12 +533,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Unknown strategy for the strat_num parameter, got "
                 f"{self.strat_num}. Choose from: {', '.join(strats)}."
             )
-        if self.min_frac_rows <= 0 or self.min_frac_rows >= 1:
+        if self.min_frac_rows and (self.min_frac_rows <= 0 or self.min_frac_rows >= 1):
             raise ValueError(
                 "Invalid value for the min_frac_rows parameter. Value "
                 f"should be between 0 and 1, got {self.min_frac_rows}."
             )
-        if self.min_frac_cols <= 0 or self.min_frac_cols >= 1:
+        if self.min_frac_cols and (self.min_frac_cols <= 0 or self.min_frac_cols >= 1):
             raise ValueError(
                 "Invalid value for the min_frac_cols parameter. Value "
                 f"should be between 0 and 1, got {self.min_frac_cols}."
@@ -494,20 +550,25 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+        if self.min_frac_rows:
+            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
 
-        # Loop over all columns to fit the impute classes
-        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
 
             # Column is numerical
-            if col in num_cols:
+            if col in self._num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
                         self._imputers[col] = KNNImputer().fit(values)
 
-                    # Strategies: mean, median or most_frequent.
+                    elif self.strat_num.lower() == "most_frequent":
+                        self._imputers[col] = SimpleImputer(
+                            strategy="constant",
+                            fill_value=X[col].mode()[0],
+                        ).fit(values)
+
+                    # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
                         self._imputers[col] = SimpleImputer(
                             strategy=self.strat_num.lower()
@@ -516,7 +577,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[col] = SimpleImputer(
-                    strategy=self.strat_cat.lower()
+                    strategy="constant",
+                    fill_value=X[col].mode()[0],
                 ).fit(values)
 
         self._is_fitted = True
@@ -551,39 +613,39 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Imputing missing values...", 1)
 
-        # Replace missing values with NaN
+        # Replace all missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
-        # Drop samples with too many NaN values
-        length = len(X)
-        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
-        if y is not None:
-            y = y[y.index.isin(X.index)]  # Select only indices that remain
-        diff = length - len(X)
-        if diff > 0:
-            self.log(
-                f" --> Dropping {diff} samples for containing less than "
-                f"{int(self.min_frac_rows*100)}% non-missing values.", 2
-            )
+        # Drop rows with too many missing values
+        if self.min_frac_rows:
+            length = len(X)
+            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+            if y is not None:
+                y = y[y.index.isin(X.index)]  # Select only indices that remain
+            diff = length - len(X)
+            if diff > 0:
+                self.log(
+                    f" --> Dropping {diff} samples for containing less than "
+                    f"{int(self.min_frac_rows*100)}% non-missing values.", 2
+                )
 
-        # Loop over all columns to apply strategy dependent on type
-        num_cols = X.select_dtypes(include="number")
         for col in X:
             values = X[col].values.reshape(-1, 1)
-
-            # Drop columns with too many NaN values
             nans = X[col].isna().sum()  # Number of missing values in column
-            p_nans = nans * 100 // len(X)  # Percentage of NaNs
-            if (len(X) - nans) / len(X) < self.min_frac_cols:
-                self.log(
-                    f" --> Dropping feature {col} for containing "
-                    f"{nans} ({p_nans}%) missing values.", 2
-                )
-                X = X.drop(col, axis=1)
-                continue  # Skip to side column
 
-            # Column is numerical and contains missing values
-            if col in num_cols and nans > 0:
+            # Drop columns with too many missing values
+            if self.min_frac_cols:
+                p_nans = nans * 100 // len(X)  # Percentage of NaNs
+                if (len(X) - nans) / len(X) < self.min_frac_cols:
+                    self.log(
+                        f" --> Dropping feature {col} for containing "
+                        f"{nans} ({p_nans}%) missing values.", 2
+                    )
+                    X = X.drop(col, axis=1)
+                    continue  # Skip to side column
+
+            # Apply only if column is numerical and contains missing values
+            if col in self._num_cols and nans > 0:
                 if not isinstance(self.strat_num, str):
                     self.log(
                         f" --> Imputing {nans} missing values with number "
@@ -607,10 +669,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
                     X[col] = self._imputers[col].transform(values)
 
-                else:  # Strategies: mean, median or most_frequent.
+                else:  # Strategies mean, median or most_frequent
+                    mode = round(self._imputers[col].statistics_[0], 2)
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} in feature {col}.", 2
+                        f"{self.strat_num.lower()} ({mode}) in feature {col}.", 2
                     )
                     X[col] = self._imputers[col].transform(values)
 
@@ -633,9 +696,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 elif self.strat_cat.lower() == "most_frequent":
+                    mode = self._imputers[col].statistics_[0]
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"most_frequent in feature {col}.", 2
+                        f"most_frequent ({mode}) in feature {col}.", 2
                     )
                     X[col] = self._imputers[col].transform(values)
 
@@ -646,15 +710,13 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
-        - If n_unique=2, use Label-encoding.
-        - If 2 < n_unique <= max_onehot, use OneHot-encoding.
-        - If n_unique > max_onehot, use `strategy`-encoding.
+        - If n_classes=2, use Ordinal-encoding.
+        - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+        - If n_classes > `max_onehot`, use `strategy`-encoding.
 
     Also replaces classes with low occurrences with the value `other`
-    in order to prevent too high cardinality. Categorical features are
-    defined as all columns whose dtype.kind not in `ifu`. Will raise
-    an error if it encounters missing values or unknown classes when
-    transforming.
+    in order to prevent too high cardinality. An error is raised if
+    it encounters missing values or unknown classes when transforming.
 
     Parameters
     ----------
@@ -681,10 +743,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -712,6 +774,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self._to_other = {}
         self._encoders = {}
+        self._cat_cols = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -734,6 +797,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         """
         X, y = self._prepare_input(X, y)
+        self._cat_cols = X.select_dtypes(exclude="number")
 
         # Check Parameters
         if self.strategy.lower().endswith("encoder"):
@@ -763,7 +827,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         for col in X:
             self._to_other[col] = []
-            if X[col].dtype.kind not in "ifu":  # If column is categorical
+            if col in self._cat_cols:
                 # Group uncommon classes into "other"
                 if self.frac_to_other:
                     for category, count in X[col].value_counts().items():
@@ -776,7 +840,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Perform encoding type dependent on number of unique values
                 if n_unique == 2:
-                    self._encoders[col] = LabelEncoder().fit(X[col])
+                    self._encoders[col] = OrdinalEncoder(
+                        dtype=np.int8,
+                        handle_unknown="error",
+                    ).fit(X[col].values.reshape(-1, 1))
 
                 elif 2 < n_unique <= self.max_onehot:
                     self._encoders[col] = OneHotEncoder(
@@ -787,7 +854,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 else:
                     self._encoders[col] = strategy(
-                        handle_missing="error", handle_unknown="error", **self.kwargs
+                        handle_missing="error",
+                        handle_unknown="error",
+                        **self.kwargs,
                     ).fit(pd.DataFrame(X[col]), y)
 
         self._is_fitted = True
@@ -817,20 +886,20 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Encoding categorical columns...", 1)
 
         for idx, col in enumerate(X):
-            if X[col].dtype.kind not in "ifu":  # If column is categorical
+            if col in self._cat_cols:
                 # Convert classes to "other"
                 X[col] = X[col].replace(self._to_other[col], "other")
 
                 self.log(
                     f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                    f"feature {col}. Contains {len(X[col].unique())} unique classes.", 2
+                    f"feature {col}. Contains {len(X[col].unique())} classes.", 2
                 )
 
-                # Perform encoding type dependent on number of unique values
-                if self._encoders[col].__class__.__name__[:-7] == "Label":
-                    X[col] = self._encoders[col].transform(X[col])
+                # Perform encoding type dependent on number of classes
+                if self._encoders[col].__module__.startswith("sklearn"):
+                    X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
 
-                elif self._encoders[col].__class__.__name__[:-7] == "OneHot":
+                elif self._encoders[col].__class__.__name__.startswith("OneHot"):
                     onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
                     # Insert the new columns at old location
                     for i, column in enumerate(onehot_cols):
@@ -852,8 +921,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     """Prune outliers from the data.
 
     Replace or remove outliers. The definition of outlier depends
-    on the selected strategy and can greatly differ from one each
-    other. Ignores categorical columns.
+    on the selected strategy and can greatly differ from one another.
+    Ignores categorical columns.
 
     Parameters
     ----------
@@ -889,10 +958,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
@@ -1076,10 +1145,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             - 1 to print basic information.
             - 2 to print detailed information.
 
-    logger: str, class or None, optional (default=None)
+    logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
         - If str: Name of the logging file. Use "auto" for default name.
-        - If class: Python `Logger` object.
+        - Else: Python `logging.Logger` instance.
 
         The default name consists of the class' name followed by the
         timestamp of the logger's creation.
