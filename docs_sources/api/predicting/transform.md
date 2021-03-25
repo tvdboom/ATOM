@@ -1,12 +1,12 @@
 # transform
 -----------
 
-<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None, **kwargs) 
+<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, pipeline=None, verbose=None) 
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L380">[source]</a></div></pre>
 Transform new data through all transformers in a branch. By default,
-all transformers are included except [Pruner](../../data_cleaning/pruner)
-and [Balancer](../../data_cleaning/balancer) since they should
-only be applied on the training set. Can only be called from atom.
+transformers that are applied on the training set only are not used
+during the transformations. Use the `pipeline` parameter to customize
+this behaviour. This method can only be called from atom, not from the models.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -24,21 +24,19 @@ Features to transform, with shape=(n_samples, n_features).
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
 </blockquote>
-<strong>verbose: int or None, optional (default=None)</strong>
+<strong>pipeline: bool, sequence or None, optional (default=None)</strong>
 <blockquote>
-Verbosity level of the output. If None, it uses the trainer's verbosity. Possible values are:
+Transformers to use on the data before predicting.
 <ul>
-<li>0 to not print anything.</li>
-<li>1 to print basic information.</li>
-<li>2 to print detailed information.</li>
+<li>If None: Only transformers that are applied on the whole dataset are used.</li>
+<li>If False: Don't use any transformers.</li>
+<li>If True: Use all transformers in the pipeline.</li>
+<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
 </ul>
 </blockquote>
-<strong>**kwargs</strong>
+<strong>verbose: int or None, optional (default=None)</strong>
 <blockquote>
-Additional keyword arguments to customize which transformers to apply. You can
-either select them including their index in the <code>pipeline</code> parameter,
-e.g. <code>pipeline=[0, 1, 4]</code> or include/exclude them individually using their
-methods, e.g. <code>pruner=True</code> or <code>featureselector=False</code>.
+Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </blockquote>
 </tr>
 <tr>

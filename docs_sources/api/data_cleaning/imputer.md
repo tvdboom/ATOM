@@ -1,15 +1,15 @@
 # Imputer
 ---------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=0.5,
-                                 min_frac_cols=0.5, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L377">[source]</a></div></pre>
+<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=None,
+                                 min_frac_cols=None, verbose=0, logger=None)
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L384">[source]</a></div></pre>
 Impute or remove missing values according to the selected strategy.
- Also removes rows and columns with too many missing values. Use
- the `missing` attribute to customize what are considered "missing
- values". This class can be accessed from atom through the
- [impute](../../ATOM/atomclassifier/#impute) method. Read more in the
- [user guide](../../../user_guide/#imputing-missing-values).
+Also removes rows and columns with too many missing values. Use
+the `missing` attribute to customize what are considered "missing
+values". This class can be accessed from atom through the
+[impute](../../ATOM/atomclassifier/#impute) method. Read more in the
+[user guide](../../../user_guide/#imputing-missing-values).
 <table>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -35,13 +35,15 @@ Imputing strategy for categorical columns. Choose from:
 <li>str: Impute with provided string.</li>
 </ul>
 </blockquote>
-<strong>min_frac_rows: float, optional (default=0.5)</strong>
+<strong>min_frac_rows: float or None, optional (default=None)</strong>
 <blockquote>
-Minimum fraction of non-missing values in a row. If less, the row is removed.
+Minimum fraction of non-missing values in a row (if less, the
+row is removed). If None, ignore this step.
 </blockquote>
-<strong>min_frac_cols: float, optional (default=0.5)</strong>
+<strong>min_frac_cols: float or None, optional (default=None)</strong>
 <blockquote>
-Minimum fraction of non-missing values in a column. If less, the column is removed.
+Minimum fraction of non-missing values in a column (if less,
+the column is removed). If None, ignore this step.
 </blockquote>
 <strong>verbose: int, optional (default=0)</strong>
 <blockquote>
@@ -141,7 +143,7 @@ considered missing since they are incompatible with sklearn estimators.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L456">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L463">[source]</a></div></pre>
 Fit to data.
 <table width="100%">
 <tr>
@@ -298,7 +300,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L526">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L540">[source]</a></div></pre>
 Impute the data. Note that leaving y=None can lead to inconsistencies in
  data length between X and y if rows are dropped during the transformation.
 <table width="100%">

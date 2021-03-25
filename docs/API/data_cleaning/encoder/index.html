@@ -586,13 +586,13 @@
 <hr />
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L643">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L659">[source]</a></div></pre>
 <p>Perform encoding of categorical features. The encoding type depends on
 the number of classes in the column:</p>
 <ul>
 <li>If n_classes=2, use Ordinal-encoding.</li>
-<li>If 2 &lt; n_classes &lt;= max_onehot, use OneHot-encoding.</li>
-<li>If n_classes &gt; max_onehot, use <code>strategy</code>-encoding.</li>
+<li>If 2 &lt; n_classes &lt;= <code>max_onehot</code>, use OneHot-encoding.</li>
+<li>If n_classes &gt; <code>max_onehot</code>, use <code>strategy</code>-encoding.</li>
 </ul>
 <p>Also replaces classes with low occurrences with the value <code>other</code>
 in order to prevent too high cardinality. An error is raised if
@@ -698,7 +698,7 @@ for a list of the categorical columns in the dataset.</p>
 <p><br></p>
 <p><a name="fit"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L715">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L731">[source]</a></div></pre>
 <p>Fit to data.</p>
 <table>
 <tr>
@@ -840,7 +840,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="transform"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L800">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L816">[source]</a></div></pre>
 <p>Encode the data.</p>
 <table>
 <tr>

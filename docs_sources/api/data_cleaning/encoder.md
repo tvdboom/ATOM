@@ -3,13 +3,13 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut", max_onehot=10,
                                  frac_to_other=None, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L643">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L659">[source]</a></div></pre>
 Perform encoding of categorical features. The encoding type depends on
 the number of classes in the column:
 
 * If n_classes=2, use Ordinal-encoding.
-* If 2 < n_classes <= max_onehot, use OneHot-encoding.
-* If n_classes > max_onehot, use `strategy`-encoding.
+* If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+* If n_classes > `max_onehot`, use `strategy`-encoding.
 
 Also replaces classes with low occurrences with the value `other`
 in order to prevent too high cardinality. An error is raised if
@@ -120,7 +120,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L715">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L731">[source]</a></div></pre>
 Fit to data.
 <table>
 <tr>
@@ -273,7 +273,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L800">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L816">[source]</a></div></pre>
 Encode the data.
 <table>
 <tr>

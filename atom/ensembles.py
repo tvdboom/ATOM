@@ -20,19 +20,75 @@ from .basemodel import BaseModel
 from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
-    flt, lst, arr, merge, get_acronym, get_best_score, catch_return,
+    flt, lst, arr, merge, get_acronym, get_best_score,
     custom_transform, composed, method_to_log, crash, CustomDict,
 )
 
 
-class Voting(BaseModel):
+class BaseEnsemble:
+    """Base class for all ensembles."""
+
+    def _process_branches(self, X, y, pl, vb, method):
+        """Transform data through all branches.
+
+        This method transforms provided data through all the branches
+        from the models in the ensemble. Shared transformations are
+        not repeated. Note that a unique copy of the data is stored
+        per branch, so this method can cause memory issues for many
+        branches or large datasets.
+
+        """
+        for m in self._models:
+            if not hasattr(m.estimator, method):
+                raise AttributeError(
+                    f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
+                )
+
+        if pl is None:
+            pl = [i for i, est in enumerate(self.branch.pipeline) if not est.train_only]
+        elif pl is False:
+            pl = []
+        elif pl is True:
+            pl = list(range(len(self.branch.pipeline)))
+
+        # Branches used by the models in the instance
+        branch_names = set(m.branch.name for m in self._models)
+        branches = {k: v for k, v in self.T._branches.items() if k in branch_names}
+
+        data = {k: (copy(X), copy(y)) for k in branch_names}
+        step = {}  # Current step in the pipeline per branch
+        for b1, v1 in branches.items():
+            _print = True
+            for idx, est1 in enumerate(v1.pipeline):
+                # Skip if the transformation was already applied
+                if step.get(b1, -1) < idx and idx in pl:
+                    if _print:  # Just print message once per branch
+                        _print = False
+                        self.T.log(f"Transforming data for branch {b1}:", 1)
+                    data[b1] = custom_transform(self.T, est1, v1, data[b1], vb)
+
+                    for b2, v2 in branches.items():
+                        try:  # Can fail if pipeline is shorter than i
+                            if b1 != b2 and est1 is v2.pipeline.iloc[idx]:
+                                # Update the data and step for the other branch
+                                data[b2] = copy(data[b1])
+                                step[b2] = idx
+                        except IndexError:
+                            continue
+
+        return data
+
+
+class Voting(BaseModel, BaseEnsemble):
     """Class for voting with the models in the pipeline."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, acronym="Vote", fullname="Voting", **kwargs)
+        self._pred_attrs = [None] * 12  # With score_train and score_test
         self._models = CustomDict(
             {k: v for k, v in self.T._models.items() if v.name in self.models}
         )
+
         if len(self.models) < 2:
             raise ValueError(
                 "Invalid value for the models parameter. A Voting "
@@ -46,18 +102,20 @@ class Voting(BaseModel):
                 f"{len(self.models)} and len(weights)={len(self.weights)}."
             )
 
-        # The Voting instance uses the data from the current branch
-        # Note that using models from a different branch can cause
-        # unexpected errors
+        # Voting uses the data from the current branch for plots
+        # Using models from another branch can cause unexpected errors
         self.branch = self.T.branch
         self._train_idx = self.branch.idx[0]
 
     def __repr__(self):
-        out = f"{self.fullname}"
-        out += f"\n --> Models: {self.models}"
-        out += f"\n --> Weights: {self.weights}"
-
-        return out
+        out_1 = f"{self.fullname}"
+        out_1 += f"\n --> Models: {self.models}"
+        out_1 += f"\n --> Weights: {self.weights}"
+        out_2 = [
+            f"{m.name}: {round(get_best_score(self, i), 4)}"
+            for i, m in enumerate(self.T._metric)
+        ]
+        return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
 
     def _final_output(self):
         """Returns the average final output of the models."""
@@ -98,7 +156,7 @@ class Voting(BaseModel):
         pred = [m.scoring(metric, dataset, **kwargs) for m in self._models]
         return np.average(pred, axis=0, weights=self.weights)
 
-    def _prediction(self, X, y=None, sample_weight=None, method="predict", **kwargs):
+    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
         """Get the mean of the prediction methods on new data.
 
         First transform the new data and apply the attribute on all
@@ -115,14 +173,24 @@ class Voting(BaseModel):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sample_weight: sequence or None, optional (default=None)
+        sw: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        method: str, optional (default="predict")
-            Method of the model to be applied.
+        pl: bool, sequence or None, optional (default=None)
+            Transformers to use on the data before predicting.
+                - If None: Only transformers that are applied on the
+                           whole dataset are used.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
 
-        **kwargs
-            Keyword arguments for the transform method.
+        vb: int or None, optional (default=None)
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
+
+        method: str, optional (default="predict")
+            Prediction method to be applied to the estimator.
 
         Returns
         -------
@@ -130,63 +198,29 @@ class Voting(BaseModel):
             Return of the attribute.
 
         """
-        # Attribute check also done in BaseModel but better to
-        # do it before all the data transformations
-        for m in self._models:
-            if not hasattr(m.estimator, method):
-                raise AttributeError(
-                    f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
-                )
+        data = self._process_branches(X, y, pl, vb, method)
 
-        # Verbosity is set to trainer's verbosity if left to default
-        if kwargs.get("verbose") is None:
-            kwargs["verbose"] = self.T.verbose
-
-        # Apply transformations per branch. Shared transformations are
-        # not repeated. A unique copy of the data is stored per branch
-        data = {k: (copy(X), copy(y)) for k in self.T._branches}
-        step = {}  # Current step in the pipeline per branch
-        for b1, v1 in self.T._branches.items():
-            if not v1.pipeline.empty:
-                self.T.log(f"Transforming data for branch {b1}...", 1)
-
-            for i, est1 in enumerate(v1.pipeline):
-                # Skip if the transformation was already applied
-                if step.get(b1, -1) < i and not est1.train_only:
-                    custom_transform(est1, v1)
-
-                    for b2, v2 in self.T._branches.items():
-                        try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline.iloc[i]:
-                                # Update the data and step for the other branch
-                                data[b2] = copy(data[b1])
-                                step[b2] = i
-                        except IndexError:
-                            continue
-
-        # Use pipeline=[] to skip the transformations
         if method == "predict":
             pred = np.array([
-                m.predict(data[m.branch.name][0], pipeline=[])
+                m.predict(data[m.branch.name][0], pipeline=False)
                 for m in self._models
             ])
-            majority = np.apply_along_axis(
+            return np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
                 arr=pred.astype("int")
             )
-            return majority
 
-        elif method in ("predict_proba", "predict_log_proba"):
+        elif method in ("predict_proba", "predict_log_proba", "decision_function"):
             pred = np.array([
-                getattr(m, method)(data[m.branch.name][0], pipeline=[])
+                getattr(m, method)(data[m.branch.name][0], pipeline=False)
                 for m in self._models
             ])
             return np.average(pred, axis=0, weights=self.weights)
 
-        else:
+        elif method == "score":
             pred = np.array([
-                m.score(*data[m.branch.name], sample_weight, pipeline=[])
+                m.score(*data[m.branch.name], sw, pipeline=False)
                 for m in self._models
             ])
             return np.average(pred, axis=0, weights=self.weights)
@@ -258,21 +292,35 @@ class Voting(BaseModel):
         return self._pred_attrs[7]
 
     @property
-    def score_train(self):
+    def predict_decision_function_train(self):
         if self._pred_attrs[8] is None:
-            pred = np.array([m.score_train for m in self._models])
+            pred = np.array([m.decision_function_train for m in self._models])
             self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[8]
 
     @property
-    def score_test(self):
+    def predict_decision_function_test(self):
         if self._pred_attrs[9] is None:
-            pred = np.array([m.score_test for m in self._models])
+            pred = np.array([m.decision_function_test for m in self._models])
             self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[9]
 
+    @property
+    def score_train(self):
+        if self._pred_attrs[10] is None:
+            pred = np.array([m.score_train for m in self._models])
+            self._pred_attrs[10] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred_attrs[10]
 
-class Stacking(BaseModel):
+    @property
+    def score_test(self):
+        if self._pred_attrs[11] is None:
+            pred = np.array([m.score_test for m in self._models])
+            self._pred_attrs[11] = np.average(pred, axis=0, weights=self.weights)
+        return self._pred_attrs[11]
+
+
+class Stacking(BaseModel, BaseEnsemble):
     """Class for stacking the models in the pipeline."""
 
     def __init__(self, *args, **kwargs):
@@ -343,13 +391,16 @@ class Stacking(BaseModel):
         ])
 
     def __repr__(self):
-        out = f"{self.fullname}"
-        out += f"\n --> Models: {self.models}"
-        out += f"\n --> Estimator: {self.estimator.__class__.__name__}"
-        out += f"\n --> Stack method: {self.stack_method}"
-        out += f"\n --> Passthrough: {self.passthrough}"
-
-        return out
+        out_1 = f"{self.fullname}"
+        out_1 += f"\n --> Models: {self.models}"
+        out_1 += f"\n --> Estimator: {self.estimator.__class__.__name__}"
+        out_1 += f"\n --> Stack method: {self.stack_method}"
+        out_1 += f"\n --> Passthrough: {self.passthrough}"
+        out_2 = [
+            f"{m.name}: {round(get_best_score(self, i), 4)}"
+            for i, m in enumerate(self.T._metric)
+        ]
+        return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
 
     def _get_stack_attr(self, model):
         """Get the stack attribute for a specific model."""
@@ -380,7 +431,7 @@ class Stacking(BaseModel):
 
     # Prediction methods =========================================== >>
 
-    def _prediction(self, X, y=None, sample_weight=None, method="predict", **kwargs):
+    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
         """Get the prediction methods on new data.
 
         First transform the new data and apply the attribute on all
@@ -397,14 +448,24 @@ class Stacking(BaseModel):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sample_weight: sequence or None, optional (default=None)
+        sw: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        method: str, optional (default="predict")
-            Method of the model to be applied.
+        pl: bool, sequence or None, optional (default=None)
+            Transformers to use on the data before predicting.
+                - If None: Only transformers that are applied on the
+                           whole dataset are used.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
 
-        **kwargs
-            Keyword arguments for the transform method.
+        vb: int or None, optional (default=None)
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
+
+        method: str, optional (default="predict")
+            Prediction method to be applied to the estimator.
 
         Returns
         -------
@@ -412,68 +473,32 @@ class Stacking(BaseModel):
             Return of the attribute.
 
         """
-        # Attribute check also done in BaseModel but better to
-        # do it before all the data transformations
-        for m in self._models:
-            if not hasattr(m.estimator, method):
-                raise AttributeError(
-                    f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
-                )
+        data = self._process_branches(X, y, pl, vb, method)
 
-        # Verbosity is set to trainer's verbosity if left to default
-        verbose = kwargs.get("verbose", self.T.verbose)
-
-        # Apply transformations per branch. Shared transformations are
-        # not repeated. A unique copy of the data is stored per branch
-        data = {k: (copy(X), copy(y)) for k in self.T._branches}
-        step = {}  # Current step in the pipeline per branch
-        for b1, v1 in self.T._branches.items():
-            if not v1.pipeline.empty:
-                self.T.log(f"Transforming data for branch {b1}...", 1)
-
-            for i, (idx, est) in enumerate(v1.pipeline.iteritems()):
-                # Skip if the transformation was already applied
-                if step.get(b1, -1) < i:
-                    p = kwargs.get("pipeline", [])
-                    default = not p and not est.train_only and kwargs.get(idx) is None
-                    if i in p or idx in p or kwargs.get(idx) or default:
-                        data[b1] = catch_return(
-                            custom_transform(est, v1, data=data[b1], verbose=verbose)
-                        )
-
-                    for b2, v2 in self.T._branches.items():
-                        try:  # Fails if pipeline is shorter than i
-                            if b1 != b2 and est is v2.pipeline.iloc[i]:
-                                # Update the data and step for the other branch
-                                data[b2] = copy(data[b1])
-                                step[b2] = i
-                        except IndexError:
-                            continue
-
-        # Create the new dataset
-        dataset = pd.DataFrame()
+        # Create the feature set from which to make predictions
+        fxs_set = pd.DataFrame()
         for m in self._models:
             attr = self._get_stack_attr(m)
-            pred = getattr(m, attr)(data[m.branch.name][0], pipeline=[])
+            pred = getattr(m, attr)(data[m.branch.name][0], pipeline=False)
             if attr == "predict_proba" and self.T.task.startswith("bin"):
                 pred = pred[:, 1]
 
+            # Add features to the dataset
             if pred.ndim == 1:
-                dataset[f"{attr}_{m.name}"] = pred
+                fxs_set[f"{attr}_{m.name}"] = pred
             else:
                 for i in range(pred.shape[1]):
-                    dataset[f"{attr}_{m.name}_{i}"] = pred[:, i]
+                    fxs_set[f"{attr}_{m.name}_{i}"] = pred[:, i]
 
         # Add scaled features from the branch to the set
         if self.passthrough:
-            fxs = self.T.X
+            fxs_pass = self.T.X
             if self._fxs_scaler:
-                fxs = self._fxs_scaler.transform(fxs)
+                fxs_pass = self._fxs_scaler.transform(fxs_pass)
 
-            dataset = pd.concat([dataset, fxs], axis=1, join="inner")
+            fxs_set = pd.concat([fxs_set, fxs_pass], axis=1, join="inner")
 
         if y is None:
-            return getattr(self.estimator, method)(dataset)
+            return getattr(self.estimator, method)(fxs_set)
         else:
-            y = data[self._models[0].branch.name][1]
-            return getattr(self.estimator, method)(dataset, y, sample_weight)
+            return getattr(self.estimator, method)(fxs_set, self.T.y, sw)

@@ -22,9 +22,9 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/l
 * By default, the estimator adopts the default parameters provided by its package.
   See the [user guide](../../../user_guide/#parameter-customization) on how to
   customize them.
-* The `penalty` parameter will be automatically set to "l2" when penalty = "none" and solver = "liblinear".
-* The `penalty` parameter will be automatically set to "l2" when penalty = "l1" and solver != "liblinear" or "saga".
-* The `penalty` parameter will be automatically set to "l2" when penalty = "elasticnet" and solver != "saga".
+* The `penalty` parameter is automatically set to "l2" when penalty = "none" and solver = "liblinear".
+* The `penalty` parameter is automatically set to "l2" when penalty = "l1" and solver != "liblinear" or "saga".
+* The `penalty` parameter is automatically set to "l2" when penalty = "elasticnet" and solver != "saga".
 * The `C` parameter is not used when penalty = "none".
 * The `l1_ratio` parameter is only used when penalty = "elasticnet".
 * The `n_jobs` and `random_state` parameters are set equal to those of the
@@ -320,7 +320,7 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a></div></pre>
 Applies probability calibration on the estimator. The calibration is done using the
  [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
- class from sklearn. The calibrator will be trained via cross-validation on a subset
+ class from sklearn. The calibrator is trained via cross-validation on a subset
  of the training data, using the rest to fit the calibrator. The new classifier will
  replace the `estimator` attribute. After calibrating, all prediction attributes will
  reset.

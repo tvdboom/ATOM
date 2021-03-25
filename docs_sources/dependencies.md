@@ -22,6 +22,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[numpy](https://numpy.org/)** (>=1.19.5)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
 * **[pandas](https://pandas.pydata.org/)** (>=1.0.3)
+* **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)

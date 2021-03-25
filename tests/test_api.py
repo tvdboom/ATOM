@@ -52,8 +52,7 @@ def test_load():
 
 def test_load_data_with_no_trainer():
     """Assert that an error is raised when data is provided without a trainer."""
-    imputer = Imputer()
-    imputer.save(FILE_DIR + "imputer")
+    Imputer().save(FILE_DIR + "imputer")
     pytest.raises(TypeError, ATOMLoader, FILE_DIR + "imputer", data=(X_bin,))
 
 
@@ -65,7 +64,7 @@ def test_load_already_contains_data():
 
 
 def test_data():
-    """Assert that the method works when data is filled."""
+    """Assert that data can be loaded."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.save(FILE_DIR + "atom", save_data=False)
 
@@ -85,9 +84,8 @@ def test_load_ignores_n_rows_parameter():
 def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
     atom.prune(columns=slice(3, 10))
-    atom.balance()
+    atom.apply(lambda x: x+2, column="mean radius")
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
     atom.save(FILE_DIR + "atom", save_data=False)
@@ -102,7 +100,6 @@ def test_transform_data():
 def test_transform_data_multiple_branches():
     """Assert that the data is transformed with multiple branches."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
     atom.prune()
     atom.branch = "branch_2"
     atom.balance()

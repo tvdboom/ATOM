@@ -14256,7 +14256,7 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput " data-mime-type="text/markdown">
 <h1 id="Train-sizing">Train sizing<a class="anchor-link" href="#Train-sizing">&#182;</a></h1><hr>
 <p>This example shows how to asses a model's performance based on the size of the training set.</p>
-<p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binay classifier on target RainTomorrow.</p>
+<p>The data used is a variation on the Australian weather dataset from <a href="https://www.kaggle.com/jsphyg/weather-dataset-rattle-package">https://www.kaggle.com/jsphyg/weather-dataset-rattle-package</a>. The goal of this dataset is to predict whether or not it will rain tomorrow training a binary classifier on target RainTomorrow.</p>
 
 </div>
 </div>
@@ -14546,33 +14546,33 @@ Applying data cleaning...
 Fitting Imputer...
 Imputing missing values...
  --&gt; Dropping 15182 samples for containing less than 80% non-missing values.
- --&gt; Imputing 100 missing values with median in feature MinTemp.
- --&gt; Imputing 57 missing values with median in feature MaxTemp.
- --&gt; Imputing 640 missing values with median in feature Rainfall.
- --&gt; Imputing 46535 missing values with median in feature Evaporation.
- --&gt; Imputing 53034 missing values with median in feature Sunshine.
- --&gt; Imputing 4381 missing values with most_frequent in feature WindGustDir.
- --&gt; Imputing 4359 missing values with median in feature WindGustSpeed.
- --&gt; Imputing 6624 missing values with most_frequent in feature WindDir9am.
- --&gt; Imputing 612 missing values with most_frequent in feature WindDir3pm.
- --&gt; Imputing 80 missing values with median in feature WindSpeed9am.
- --&gt; Imputing 49 missing values with median in feature WindSpeed3pm.
- --&gt; Imputing 532 missing values with median in feature Humidity9am.
- --&gt; Imputing 1168 missing values with median in feature Humidity3pm.
- --&gt; Imputing 1028 missing values with median in feature Pressure9am.
- --&gt; Imputing 972 missing values with median in feature Pressure3pm.
- --&gt; Imputing 42172 missing values with median in feature Cloud9am.
- --&gt; Imputing 44251 missing values with median in feature Cloud3pm.
- --&gt; Imputing 98 missing values with median in feature Temp9am.
- --&gt; Imputing 702 missing values with median in feature Temp3pm.
- --&gt; Imputing 640 missing values with most_frequent in feature RainToday.
+ --&gt; Imputing 100 missing values with median (12.2) in feature MinTemp.
+ --&gt; Imputing 57 missing values with median (22.8) in feature MaxTemp.
+ --&gt; Imputing 640 missing values with median (0.0) in feature Rainfall.
+ --&gt; Imputing 46535 missing values with median (4.8) in feature Evaporation.
+ --&gt; Imputing 53034 missing values with median (8.5) in feature Sunshine.
+ --&gt; Imputing 4381 missing values with most_frequent (W) in feature WindGustDir.
+ --&gt; Imputing 4359 missing values with median (39.0) in feature WindGustSpeed.
+ --&gt; Imputing 6624 missing values with most_frequent (N) in feature WindDir9am.
+ --&gt; Imputing 612 missing values with most_frequent (SE) in feature WindDir3pm.
+ --&gt; Imputing 80 missing values with median (13.0) in feature WindSpeed9am.
+ --&gt; Imputing 49 missing values with median (19.0) in feature WindSpeed3pm.
+ --&gt; Imputing 532 missing values with median (69.0) in feature Humidity9am.
+ --&gt; Imputing 1168 missing values with median (52.0) in feature Humidity3pm.
+ --&gt; Imputing 1028 missing values with median (1017.6) in feature Pressure9am.
+ --&gt; Imputing 972 missing values with median (1015.2) in feature Pressure3pm.
+ --&gt; Imputing 42172 missing values with median (5.0) in feature Cloud9am.
+ --&gt; Imputing 44251 missing values with median (5.0) in feature Cloud3pm.
+ --&gt; Imputing 98 missing values with median (16.8) in feature Temp9am.
+ --&gt; Imputing 702 missing values with median (21.2) in feature Temp3pm.
+ --&gt; Imputing 640 missing values with most_frequent (No) in feature RainToday.
 Fitting Encoder...
 Encoding categorical columns...
- --&gt; LeaveOneOut-encoding feature Location. Contains 45 unique classes.
- --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 unique classes.
- --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 unique classes.
- --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 unique classes.
- --&gt; Label-encoding feature RainToday. Contains 2 unique classes.
+ --&gt; LeaveOneOut-encoding feature Location. Contains 45 classes.
+ --&gt; LeaveOneOut-encoding feature WindGustDir. Contains 16 classes.
+ --&gt; LeaveOneOut-encoding feature WindDir9am. Contains 16 classes.
+ --&gt; LeaveOneOut-encoding feature WindDir3pm. Contains 16 classes.
+ --&gt; Ordinal-encoding feature RainToday. Contains 2 classes.
 </pre>
 </div>
 </div>
@@ -14581,7 +14581,7 @@ Encoding categorical columns...
 
 </div>
 
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs  ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[4]:</div>
@@ -14589,42 +14589,11 @@ Encoding categorical columns...
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># We can analyze the impact of the training set&#39;s size on a LightGBM model</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">train_sizing</span><span class="p">(</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">train_sizes</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">bagging</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">scoring</span><span class="p">()</span>
 </pre></div>
 
      </div>
 </div>
 </div>
-</div>
-
-<div class="jp-Cell-outputWrapper">
-
-
-<div class="jp-OutputArea jp-Cell-outputArea">
-
-<div class="jp-OutputArea-child">
-
-    
-    <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-
-
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain">
-<pre>LightGBM --&gt; f1: 0.592 ± 0.0024 ~
-LightGBM --&gt; f1: 0.6111 ± 0.0036
-LightGBM --&gt; f1: 0.6205 ± 0.0026
-LightGBM --&gt; f1: 0.6248 ± 0.0042
-LightGBM --&gt; f1: 0.6246 ± 0.0063
-LightGBM --&gt; f1: 0.6315 ± 0.0036
-LightGBM --&gt; f1: 0.6363 ± 0.0029
-LightGBM --&gt; f1: 0.6342 ± 0.0027
-LightGBM --&gt; f1: 0.6382 ± 0.0039
-LightGBM --&gt; f1: 0.6378 ± 0.0021
-</pre>
-</div>
-</div>
-
-</div>
-
 </div>
 
 </div>
@@ -14640,7 +14609,7 @@ LightGBM --&gt; f1: 0.6378 ± 0.0021
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># The results is now multi-index, where frac is the fraction</span>
 <span class="c1"># of the training set used to fit the model. The model names</span>
-<span class="c1"># end with the fraction (without the dot)</span>
+<span class="c1"># end with the fraction as well (without the dot)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">results</span>
 </pre></div>
 
@@ -14707,110 +14676,110 @@ LightGBM --&gt; f1: 0.6378 ± 0.0021
       <th>LGB01</th>
       <td>0.817852</td>
       <td>0.609160</td>
-      <td>0.667s</td>
+      <td>0.710s</td>
       <td>0.592008</td>
       <td>0.002407</td>
-      <td>1.402s</td>
-      <td>2.070s</td>
+      <td>1.517s</td>
+      <td>2.227s</td>
     </tr>
     <tr>
       <th>0.2</th>
       <th>LGB02</th>
       <td>0.744018</td>
       <td>0.623409</td>
-      <td>0.835s</td>
+      <td>0.902s</td>
       <td>0.611083</td>
       <td>0.003597</td>
-      <td>1.828s</td>
-      <td>2.663s</td>
+      <td>2.283s</td>
+      <td>3.187s</td>
     </tr>
     <tr>
       <th>0.3</th>
       <th>LGB03</th>
       <td>0.709584</td>
       <td>0.630853</td>
-      <td>1.033s</td>
+      <td>1.121s</td>
       <td>0.620520</td>
       <td>0.002570</td>
-      <td>2.246s</td>
-      <td>3.280s</td>
+      <td>2.340s</td>
+      <td>3.462s</td>
     </tr>
     <tr>
       <th>0.4</th>
       <th>LGB04</th>
       <td>0.693374</td>
       <td>0.632718</td>
-      <td>1.216s</td>
+      <td>1.237s</td>
       <td>0.624846</td>
       <td>0.004187</td>
-      <td>2.695s</td>
-      <td>3.913s</td>
+      <td>2.701s</td>
+      <td>3.939s</td>
     </tr>
     <tr>
       <th>0.5</th>
       <th>LGB05</th>
       <td>0.683844</td>
       <td>0.637217</td>
-      <td>1.474s</td>
+      <td>1.423s</td>
       <td>0.624575</td>
       <td>0.006299</td>
-      <td>3.149s</td>
-      <td>4.624s</td>
+      <td>3.214s</td>
+      <td>4.638s</td>
     </tr>
     <tr>
       <th>0.6</th>
       <th>LGB06</th>
       <td>0.680720</td>
       <td>0.639012</td>
-      <td>1.678s</td>
+      <td>1.723s</td>
       <td>0.631484</td>
       <td>0.003598</td>
-      <td>3.577s</td>
-      <td>5.255s</td>
+      <td>3.609s</td>
+      <td>5.332s</td>
     </tr>
     <tr>
       <th>0.7</th>
       <th>LGB07</th>
       <td>0.677526</td>
       <td>0.640312</td>
-      <td>1.977s</td>
+      <td>1.861s</td>
       <td>0.636251</td>
       <td>0.002910</td>
-      <td>4.074s</td>
-      <td>6.052s</td>
+      <td>4.055s</td>
+      <td>5.917s</td>
     </tr>
     <tr>
       <th>0.8</th>
       <th>LGB08</th>
       <td>0.673214</td>
       <td>0.637478</td>
-      <td>2.078s</td>
+      <td>2.061s</td>
       <td>0.634215</td>
       <td>0.002675</td>
-      <td>4.467s</td>
-      <td>6.546s</td>
+      <td>4.645s</td>
+      <td>6.707s</td>
     </tr>
     <tr>
       <th>0.9</th>
       <th>LGB09</th>
       <td>0.666742</td>
       <td>0.641630</td>
-      <td>2.289s</td>
+      <td>2.301s</td>
       <td>0.638174</td>
       <td>0.003935</td>
-      <td>4.967s</td>
-      <td>7.257s</td>
+      <td>4.950s</td>
+      <td>7.253s</td>
     </tr>
     <tr>
       <th>1.0</th>
       <th>LGB10</th>
       <td>0.661984</td>
       <td>0.639596</td>
-      <td>2.498s</td>
+      <td>2.487s</td>
       <td>0.637845</td>
       <td>0.002125</td>
-      <td>5.466s</td>
-      <td>7.966s</td>
+      <td>5.440s</td>
+      <td>7.928s</td>
     </tr>
   </tbody>
 </table>

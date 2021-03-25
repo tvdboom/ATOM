@@ -581,10 +581,6 @@
 
 <h1 id="installation">Installation</h1>
 <hr />
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
-</div>
 <p>Install ATOM's newest release easily via <code>pip</code>:</p>
 <pre><code>$ pip install -U atom-ml
 </code></pre>
@@ -596,10 +592,14 @@ To install the <a href="../dependencies/#optional">optional dependencies</a>, ad
 after the package's name.</p>
 <pre><code>$ pip install -U atom-ml[models]
 </code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Since atom was already taken, download the package under the name <code>atom-ml</code>!</p>
+</div>
 <p><br><br></p>
 <h1 id="usage">Usage</h1>
 <hr />
-<p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:  </p>
+<p>Call the <code>ATOMClassifier</code> or <code>ATOMRegressor</code> class and provide the data you want to use:</p>
 <pre><code class="language-Python">from sklearn.datasets import load_breast_cancer
 from atom import ATOMClassifier
 

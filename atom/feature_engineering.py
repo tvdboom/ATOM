@@ -412,7 +412,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     """Apply feature selection techniques.
 
     Remove features according to the selected strategy. Ties between
-    features with equal scores will be broken in an unspecified way.
+    features with equal scores are broken in an unspecified way.
     Additionally, removes features with too low variance and finds
     pairs of collinear features based on the Pearson correlation
     coefficient. For each pair above the specified limit (in terms of
@@ -467,7 +467,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             - if >= 1: Number of features to select.
 
         If strategy="SFM" and the threshold parameter is not specified,
-        the threshold will be automatically set to `-inf` to select the
+        the threshold are automatically set to `-inf` to select the
         `n_features` features.
 
         If strategy="RFECV", `n_features` is the minimum number of

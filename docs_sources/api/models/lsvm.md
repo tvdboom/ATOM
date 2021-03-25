@@ -26,7 +26,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/s
   customize them.
 * The `penalty` parameter is only used with LinearSVC.
 * The `penalty` parameter is always set to "l2" when loss = "hinge".
-* The `dual` parameter will be automatically set to False when penalty = "l1" and loss = "squared_hinge".
+* The `dual` parameter is automatically set to False when penalty = "l1" and loss = "squared_hinge".
 * The `random_state` parameter is set equal to that of the `training` instance.
 
 <table>
@@ -298,7 +298,7 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a></div></pre>
 Applies probability calibration on the estimator. The calibration is done using the
  [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
- class from sklearn. The calibrator will be trained via cross-validation on a subset
+ class from sklearn. The calibrator is trained via cross-validation on a subset
  of the training data, using the rest to fit the calibrator. The new classifier will
  replace the `estimator` attribute. After calibrating, all prediction attributes will
  reset. Only if classifier.

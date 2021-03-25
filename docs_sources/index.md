@@ -5,59 +5,31 @@
 
 # Automated Tool for Optimized Modelling
 ----------------------------------------
-#### A Python package for fast exploration and experimentation of machine learning pipelines
+#### A Python package for fast exploration of machine learning pipelines
 
 <br><br>
 
-There is no magic formula in data science that can tell us which type
-of machine learning estimator in combination with which pipeline will
-perform best for a given raw dataset. Different models are better
-suited for different types of data and different types of problems. At
-best, you can follow some [rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
-on how to approach problems with regard to which model to try on your
-data, but these are often more confusing than helpful.
+During the exploration phase of a machine learning project, a data
+scientist tries to find the optimal pipeline for his specific use case.
+This usually involves applying standard data cleaning steps, creating
+or selecting useful features, trying out different models, etc. Testing
+multiple pipelines requires many lines of code, and writing it all in
+the same notebook often makes it long and cluttered. On the other hand,
+using multiple notebooks makes it harder to compare the results and to
+keep an overview. On top of that, refactoring the code for every test
+can be time-consuming. How many times have you conducted the same action
+to pre-process a raw dataset? How many times have you copy-and-pasted
+code from an old repository to re-use it in a new use case?
 
-During the exploration phase of a project, the data scientist tries
-to find the optimal pipeline for his specific use case. This usually
-involves applying standard data cleaning steps, creating or selecting
-useful features, trying out different models, etc. Testing many
-pipelines require many lines of code. These are usually written in one
-notebook, which becomes very long and cluttered, or in multiple
-notebooks, which makes it harder to compare the results and keep an
-overview.
-
-On top of that, refactoring the code for every test can be quite boring
-and time-consuming. How many times have you conducted the same action
-to pre-process the raw dataset? How many times have you copied code
-from an old repository to re-use it in the new use case? Although best
-practices tell us to start with a simple model and build up to more
-complicated ones, many data scientists just use the model best known to
-them in order to avoid the aforementioned issues. This can result in
-poor performance (because the model is just not the right one for the
-task) or in inefficient management of time and computing resources
-(because a simpler/faster model could have achieved a similar
-performance).
-
-ATOM is here to help solve these common issues. The package acts as a
-wrapper of the whole machine learning pipeline, helping the data
-scientist to rapidly perform data analysis, pipeline evaluations and 
-model comparisons, all while keeping the code short and simple. Avoid
-endless imports and documentation lookups. Avoid rewriting the code for
-the same plots over and over again. With just a few lines of code, it's
-now possible to perform basic data cleaning steps, select relevant
+ATOM is here to help solve these common issues. The package acts as
+a wrapper of the whole machine learning pipeline, helping the data
+scientist to rapidly find a good model for his problem. Avoid
+endless imports and documentation lookups. Avoid rewriting the same
+code over and over again. With just a few lines of code, it's now
+possible to perform basic data cleaning steps, select relevant
 features and compare the performance of multiple models on a given
-dataset. ATOM should be able to help you provide quick insights on
-which pipeline performs best for the task at hand and provide an
-indication of the feasibility of the ML solution.
-
-It is important to realize that ATOM is not here to replace all the
-work a data scientist has to do before getting his model into
-production. ATOM doesn't spit out production-ready models just by
-tuning some parameters in its API. After helping you determine the
-right pipeline, you will most probably need to fine-tune it using
-use-case specific features and data cleaning steps in order to
-achieve maximum performance.
-
+dataset, providing quick insights on which pipeline performs best
+for the task at hand.
 
 Example steps taken by ATOM's pipeline:
 
@@ -94,11 +66,25 @@ Example steps taken by ATOM's pipeline:
 # Release history
 -----------------
 
-### Version 4.3.1
+### Version 4.4.0
 
+* The [drop](./API/ATOM/atomclassifier/#drop) method now allows the user
+  to drop columns as part of the pipeline.
+* It is now possible to add data transformations as function to the pipeline
+  through the [apply](./API/ATOM/atomclassifier/#apply) method.
 * Added the [status](./API/ATOM/atomclassifier/#status) method to save an
   overview of atom's branches and models to the logger.
+* Improved the output messages for the [Imputer](./API/data_cleaning/imputer) class.
+* The dataset's columns can now be called directly from atom.
+* The [distribution](./API/ATOM/atomclassifier/#distribution) and
+  [plot_distribution](./API/plots/plot_distribution) methods now ignore missing
+  values instead of raising an exception.
+* Fixed a bug where transformations failed when columns were added after
+  initializing the pipeline.
+* Fixed a bug where the [Cleaner](./API/data_cleaning/cleaner) class didn't drop
+  columns with only missing values for `minimum_cardinality=True`.
 * Fixed a bug where the winning model wasn't displayed correctly.
+* Refactored the way transformers are added or removed from predicting methods.
 * Improved documentation.
 
 

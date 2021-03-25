@@ -8,9 +8,9 @@
 Performs standard data cleaning steps on a dataset. Use the parameters to choose
 which transformations to perform. The available steps are:
 
-  * Remove columns with prohibited data types.
-  * Remove categorical columns with maximal cardinality.
-  * Remove columns with minimum cardinality.
+  * Drop columns with prohibited data types.
+  * Drop categorical columns with maximal cardinality.
+  * Drop columns with minimum cardinality.
   * Strip categorical features from white spaces.
   * Drop duplicate rows.
   * Drop rows with missing values in the target column.
@@ -24,18 +24,18 @@ This class can be accessed from atom through the [clean](../../ATOM/atomclassifi
 <td width="80%" style="background:white;">
 <strong>prohibited_types: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Columns with these types will be removed from the dataset.
+Columns with these types are dropped from the dataset.
 </blockquote>
 <strong>maximum_cardinality: bool, optional (default=True)</strong>
 <blockquote>
-Whether to remove categorical columns with maximum cardinality,
+Whether to drop categorical columns with maximum cardinality,
 i.e. the number of unique values is equal to the number of
 instances. Usually the case for names, IDs, etc...
 </blockquote>
 <strong>minimum_cardinality: bool, optional (default=True)</strong>
 <blockquote>
-Whether to remove columns with minimum cardinality, i.e. all values in the
- column are the same.
+Whether to drop columns with minimum cardinality, i.e. all values in the
+column are the same.
 </blockquote>
 <strong>strip_categorical: bool, optional (default=True)</strong>
 <blockquote>
@@ -72,7 +72,7 @@ Verbosity level of the class. Possible values are:
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
 The default name consists of the class' name followed by
- the timestamp of the logger's creation.
+the timestamp of the logger's creation.
 </blockquote>
 </td>
 </tr>

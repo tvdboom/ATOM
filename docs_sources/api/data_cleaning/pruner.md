@@ -3,7 +3,7 @@
 
 <pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Pruner</strong>(strategy="z-score", method="drop", max_sigma=3,
                                 include_target=False, verbose=0, logger=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L854">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L870">[source]</a></div></pre>
 Replace or remove outliers. The definition of outlier depends
 on the selected strategy and can greatly differ from one
 another. Ignores categorical columns. This class can be accessed
@@ -222,7 +222,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L933">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L949">[source]</a></div></pre>
 Apply the outlier strategy on the data.
 <table>
 <tr>

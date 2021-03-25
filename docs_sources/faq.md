@@ -3,10 +3,15 @@
 
 * [There already is an atom text editor. Does this has anything to do with that?](#q1)
 * [How does ATOM relate to AutoML?](#q2)
-* [Is it possible to run deep learning models with ATOM?](#q3)
+* [Is it possible to run deep learning models?](#q3)
 * [Can I run atom's methods on just a subset of the columns?](#q4)
 * [How can I compare the same model on different datasets?](#q5)
 * [Can I train models through atom using a GPU?](#q6)
+* [How are numerical and categorical columns differentiated?](#q7)
+* [Can I run unsupervised learning pipelines?](#q8)
+* [Is there a way to plot multiple models in the same shap plot?](#q9)
+* [Can I merge a sklearn pipeline with atom?](#q10)
+* [Is it possible to initialize atom with an existing train and test set?](#q11)
 
 <br>
 
@@ -40,7 +45,7 @@ possible to integrate a TPOT pipeline with atom through the
 <br>
 
 <a name="q3"></a>
-### Is it possible to run deep learning models with ATOM?
+### Is it possible to run deep learning models?
 
 Yes. Deep learning models can be added as custom models to the pipeline
 as long as they follow [sklearn's API](https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects).
@@ -83,3 +88,58 @@ and sklearn works on CPU only, they can not be trained on any GPU. If you
 are using a custom model whose package, Keras for example, allows GPU
 implementation and the settings or model parameters are tuned to do so, the
 model will train on the GPU like it would do outside atom.
+
+<br>
+
+<a name="q7"></a>
+### How are numerical and categorical columns differentiated?
+
+The columns are separated using pandas' [`select_dtypes`](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
+method for dataframes. Numerical columns are selected using `include="number"`
+whereas categorical columns are selected using `exclude="number"`.
+
+<br>
+
+<a name="q8"></a>
+### Can I run unsupervised learning pipelines?
+
+No. As for now, ATOM only supports supervised machine learning pipelines.
+However, various unsupervised algorithms can be chosen as strategy in the
+[Pruner](../API/data_cleaning/pruner) class to detect and remove outliers
+from the dataset.
+
+<br>
+
+<a name="q9"></a>
+### Is there a way to plot multiple models in the same shap plot?
+
+No. Unfortunately, there is no way to plot multiple models in the same
+[shap plot](../user_guide/#shap) since the plots are made by the SHAP
+package and passed as matplotlib.axes objects to atom. This means
+that it's not within the reach of this package to implement such an utility.
+
+<br>
+
+<a name="q10"></a>
+### Can I merge a sklearn pipeline with atom?
+
+Yes. Like any other transformer, it is possible to add a sklearn
+pipeline to atom using the [add](../API/ATOM/atomclassifier/#add)
+method. Every transformer in the pipeline is merged
+independently. The pipeline is not allowed to end with a model
+since atom manages its own models. If that is the case, add the
+pipeline using `atom.add(pipeline[:-1])`.
+
+<br>
+
+<a name="q11"></a>
+### Is it possible to initialize atom with an existing train and test set?
+
+Yes. If you already have a separated train and test set you can initialize
+atom in two ways:
+
+* `atom = ATOMClassifier(train, test)`
+* `atom = ATOMClassifier((X_train, y_train), (X_test, y_test))`
+
+Make sure the train and test size have the same number of columns. If
+initialized like this, the `test_size` parameter is ignored.

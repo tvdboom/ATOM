@@ -197,13 +197,19 @@ def test_data_already_set():
 
 
 def test_input_is_X():
-    """Assert that input X works as intended."""
+    """Assert that input X works."""
     atom = ATOMClassifier(X_bin, random_state=1)
     assert atom.dataset.shape == X_bin.shape
 
 
+def test_input_is_X_with_parameter_y():
+    """Assert that input X can be combined with parameter y."""
+    atom = ATOMClassifier(X_bin, y="mean texture", random_state=1)
+    assert atom.target == "mean texture"
+
+
 def test_input_is_X_y():
-    """Assert that input X, y works as intended."""
+    """Assert that input X, y works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert atom.dataset.shape == merge(X_bin, y_bin).shape
 
@@ -247,7 +253,7 @@ def test_test_size_int():
 
 
 def test_train_test_provided():
-    """Assert that it runs when train and test are provided."""
+    """Assert that input train, test works."""
     dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
 
     trainer = DirectClassifier("LR", random_state=1)
@@ -255,8 +261,14 @@ def test_train_test_provided():
     assert trainer.dataset.equals(dataset)
 
 
+def test_train_test_provided_with_parameter_y():
+    """Assert that input X works can be combined with y."""
+    atom = ATOMClassifier(bin_train, bin_test, y="mean texture", random_state=1)
+    assert atom.target == "mean texture"
+
+
 def test_train_test_as_tuple_provided():
-    """Assert that it runs when (X_train, y_train), (X_test, y_test) is provided."""
+    """Assert that input (X_train, y_train), (X_test, y_test) works."""
     dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
@@ -269,7 +281,7 @@ def test_train_test_as_tuple_provided():
 
 
 def test_4_data_provided():
-    """Assert that it runs when X_train, X_test, etc... are provided."""
+    """Assert that input X_train, X_test, y_train, y_test works."""
     dataset = pd.concat([bin_train, bin_test]).reset_index(drop=True)
     X_train = bin_train.iloc[:, :-1]
     X_test = bin_test.iloc[:, :-1]
@@ -342,7 +354,7 @@ def test_file_is_saved():
     assert glob.glob(FILE_DIR + "ATOMClassifier")
 
 
-@patch("atom.basetransformer.pickle")
+@patch("atom.basetransformer.dill")
 def test_save_data_false(cls):
     """Assert that the dataset is restored after saving with save_data=False"""
     atom = ATOMClassifier(X_bin, y_bin)

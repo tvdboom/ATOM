@@ -20,11 +20,11 @@ from sklearn.linear_model import LassoLarsCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import StandardScaler, RobustScaler
+from sklearn.preprocessing import LabelEncoder, StandardScaler, RobustScaler
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from atom.data_cleaning import Imputer, Pruner
+from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10,
@@ -67,7 +67,7 @@ def test_mapping_assignment():
 def test_mapping_with_nans():
     """Assert that the mapping attribute is created when str and nans are mixed."""
     atom = ATOMClassifier(X10, y10_sn, random_state=1)
-    assert atom.mapping == {"n": 'n', "nan": np.NaN, "y": 'y'}
+    assert atom.mapping == {"n": "n", "nan": np.NaN, "y": "y"}
 
 
 # Test magic methods =============================================== >>
@@ -82,19 +82,24 @@ def test_repr():
 
 
 def test_iter():
-    """Assert that we can iterate over atom."""
+    """Assert that we can iterate over atom's pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
-    assert [item for item in atom][1] == ("imputer", atom.pipeline[1])
+    assert [item for item in atom][1] == atom.pipeline[1]
+
+
+def test_contains():
+    """Assert that we can test if atom contains a column."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert "mean radius" in atom
 
 
 def test_len():
     """Assert that the length of atom is the length of the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
-    atom.impute()
-    assert len(atom) == 2
+    assert len(atom) == 1
 
 
 def test_getitem():
@@ -102,10 +107,8 @@ def test_getitem():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
-    atom.encode()
-    assert len(atom[1:3]) == 2
-    assert isinstance(atom["imputer"], Imputer)
-    assert isinstance(atom[1], Imputer)
+    assert atom[1].__class__.__name__ == "Imputer"
+    assert atom["mean radius"].equals(atom.dataset["mean radius"])
 
 
 # Test utility properties =========================================== >>
@@ -127,7 +130,7 @@ def test_branch_setter_change():
 
 
 def test_branch_setter_new():
-    """Assert that we can create a new pipeline."""
+    """Assert that we can create a new branch."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.clean()
     atom.branch = "branch_2"
@@ -135,11 +138,12 @@ def test_branch_setter_new():
 
 
 def test_branch_setter_from_valid():
-    """Assert that we cna create a new pipeline not from the current one."""
+    """Assert that we can create a new branch, not from the current one."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.branch = "branch_2"
     atom.impute()
     atom.branch = "branch_3_from_master"
+    assert atom.branch.name == "branch_3"
     assert atom.n_nans > 0
 
 
@@ -251,18 +255,24 @@ def test_report(cls):
 
 def test_transform_method():
     """ Assert that the transform method works as intended."""
-    atom = ATOMClassifier(X10_str, y10_str, random_state=1)
-    atom.clean()
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
     atom.encode(max_onehot=None)
-    atom.run("Tree")
+    assert atom.transform(X10_str)["Feature 3"].dtype.kind in "ifu"
 
-    # With default arguments
-    X_trans = atom.transform(X10_str)
-    assert X_trans["Feature 3"].dtype.kind in "ifu"
 
-    # Changing arguments
-    X_trans = atom.transform(X10_str, encoder=False)
-    assert X_trans["Feature 3"].dtype.kind not in "ifu"
+def test_pipeline_parameter():
+    """Assert that the transformers used depend on the pipeline."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.impute(strat_num="median")
+    atom.prune(max_sigma=2)
+    X = atom.transform(X10_nan, pipeline=None)  # Only use imputer
+    assert len(X) == 10
+    X = atom.transform(X10_nan, pipeline=True)  # Use all
+    assert len(X) < 10
+    X = atom.transform(X10_nan, pipeline=False)  # Use None
+    assert isinstance(X, list)  # X is unchanged
+    X = atom.transform(X10_nan, pipeline=[0])  # Select from index
+    assert len(X) == 10 and X.isna().sum().sum() == 0
 
 
 def test_verbose_raises_when_invalid():
@@ -272,36 +282,11 @@ def test_verbose_raises_when_invalid():
     pytest.raises(ValueError, atom.transform, X_bin, verbose=3)
 
 
-def test_pipeline_parameter():
-    """Assert that the pipeline parameter is obeyed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.prune(max_sigma=1)
-    X = atom.transform(X_bin, pipeline=[0])  # Only use Cleaner
-    assert len(X) == len(X_bin)
-
-
-def test_default_parameters():
-    """Assert that prune and balance are False by default."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.balance()
-    X = atom.transform(X_bin)
-    assert len(X) == len(X_bin)
-
-
-def test_parameters_are_obeyed():
-    """Assert that it only transforms for the selected parameters."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.prune(max_sigma=1)
-    X = atom.transform(X_bin, pruner=True)
-    assert len(X) != len(X_bin)
-
-
 def test_transform_with_y():
     """Assert that the transform method works when y is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune(strategy="iforest", include_target=True)
-    X, y = atom.transform(X_bin, y_bin, pruner=True)
+    X, y = atom.transform(X_bin, y_bin, pipeline=[0])
     assert len(y) < len(y_bin)
 
 
@@ -315,14 +300,11 @@ def test_save_data():
 def test_export_pipeline():
     """Assert that we can export the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.export_pipeline)
+    pytest.raises(RuntimeError, atom.export_pipeline)
     atom.clean()
-    atom.run("GNB")
+    atom.run(["GNB", "LGB"])
     assert len(atom.export_pipeline("GNB")) == 2  # Without scaler
-    atom.run("LGB")
-    assert len(atom.export_pipeline("LGB")) == 3  # With StandardScaler
-    atom.scale()
-    assert len(atom.export_pipeline("LGB")) == 3  # With Scaler
+    assert isinstance(atom.export_pipeline("LGB")[1], Scaler)  # With scaler
 
 
 # Test transformer methods ========================================= >>
@@ -341,6 +323,41 @@ def test_custom_params_to_method():
     assert atom.pipeline[0].verbose == 2
 
 
+def test_drop_target_column():
+    """Assert that an error is raised when the target column is dropped."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.drop, columns=-1)
+
+
+def test_drop():
+    """Assert that columns can be dropped through the pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.drop([0, 1])
+    assert atom.n_features == X_bin.shape[1] - 2
+    assert str(atom.pipeline[0]).startswith("DropTransformer(columns")
+
+
+def test_apply_not_callable():
+    """Assert that an error is raised when func is not callable."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(TypeError, atom.apply, func=RandomForestClassifier(), column=0)
+
+
+def test_apply_same_column():
+    """Assert that apply can transform an existing columns."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.apply(lambda x: 1, column="mean texture")
+    assert atom["mean texture"].sum() == atom.shape[0]
+    assert str(atom.pipeline[0]).startswith("FuncTransformer(func=<lambda>")
+
+
+def test_apply_new_column():
+    """Assert that apply can create a new column."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.apply(lambda x: 1, column="new column")
+    assert atom["new column"].sum() == atom.shape[0]
+
+
 def test_add_pipeline():
     """Assert that adding a pipeline adds every individual step."""
     pipeline = Pipeline(
@@ -349,15 +366,16 @@ def test_add_pipeline():
             ("sfm", SelectFromModel(RandomForestClassifier())),
         ]
     )
-    atom = ATOMClassifier(X_bin, y_bin, verbose=2, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.add(pipeline)
-    assert list(atom.pipeline.index) == ["scaler", "sfm"]
+    assert isinstance(atom.pipeline[0], StandardScaler)
+    assert isinstance(atom.pipeline[1], SelectFromModel)
 
 
 def test_no_transformer():
-    """Assert that an error is raised if the estimator is not a transformer."""
+    """Assert that an error is raised if the estimator has no transformer."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.add, RandomForestClassifier)
+    pytest.raises(ValueError, atom.add, RandomForestClassifier())
 
 
 def test_basetransformer_params_are_attached():
@@ -370,7 +388,7 @@ def test_basetransformer_params_are_attached():
 
 
 def test_add_train_only():
-    """Assert that atom accepts custom transformers for the train set."""
+    """Assert that atom accepts transformers for the train set only."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.add(StandardScaler(), train_only=True)
     assert check_scaling(atom.X_train) and not check_scaling(atom.X_test)
@@ -381,7 +399,7 @@ def test_add_train_only():
 
 
 def test_add_complete_dataset():
-    """Assert that atom accepts custom transformers for the complete dataset."""
+    """Assert that atom accepts transformers for the complete dataset."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.add(StandardScaler())
     assert check_scaling(atom.dataset)
@@ -389,6 +407,13 @@ def test_add_complete_dataset():
     len_dataset = len(atom.dataset)
     atom.add(Pruner())
     assert len(atom.dataset) != len_dataset
+
+
+def test_transformer_only_y():
+    """Assert that atom accepts transformers with only an y parameter."""
+    atom = ATOMClassifier(X10, y10_str, random_state=1)
+    atom.add(LabelEncoder())
+    assert np.all((atom["target"] == 0) | (atom["target"] == 1))
 
 
 def test_keep_column_names():
@@ -424,6 +449,13 @@ def test_subset_columns():
     # Column slice
     atom.scale(columns=slice(10, 12))
     assert check_scaling(atom.dataset.iloc[:, [10, 11]])
+
+
+def test_duplicate_columns_are_ignored():
+    """Assert that duplicate columns are ignored for the transformers."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.add(StandardScaler(), columns=["mean radius", "mean radius"])
+    assert not atom["mean radius"].equals(X_bin["mean radius"])
 
 
 def test_sets_are_kept_equal():

@@ -7,40 +7,37 @@ perform best for a given raw dataset. Different models are better
 suited for different types of data and different types of problems. At
 best, you can follow some [rough guide](https://scikit-learn.org/stable/tutorial/machine_learning_map/index.html)
 on how to approach problems with regard to which model to try on your
-data, but these are often more confusing than helpful.
+data, but these are incomplete at best.
 
-During the exploration phase of a project, the data scientist tries
-to find the optimal pipeline for his specific use case. This usually
-involves applying standard data cleaning steps, creating or selecting
-useful features, trying out different models, etc. Testing many
-pipelines require many lines of code. These are usually written in one
-notebook, which becomes very long and cluttered, or in multiple
-notebooks, which makes it harder to compare the results and keep an
-overview.
+During the exploration phase of a machine learning project, a data
+scientist tries to find the optimal pipeline for his specific use case.
+This usually involves applying standard data cleaning steps, creating
+or selecting useful features, trying out different models, etc. Testing
+multiple pipelines requires many lines of code, and writing it all in
+the same notebook often makes it long and cluttered. On the other hand,
+using multiple notebooks makes it harder to compare the results and to
+keep an overview. On top of that, refactoring the code for every test
+can be time-consuming. How many times have you conducted the same action
+to pre-process a raw dataset? How many times have you copy-and-pasted
+code from an old repository to re-use it in a new use case?
 
-On top of that, refactoring the code for every test can be quite boring
-and time-consuming. How many times have you conducted the same action
-to pre-process the raw dataset? How many times have you copied code
-from an old repository to re-use it in the new use case? Although best
-practices tell us to start with a simple model and build up to more
-complicated ones, many data scientists just use the model best known to
-them in order to avoid the aforementioned issues. This can result in
-poor performance (because the model is just not the right one for the
-task) or in inefficient management of time and computing resources
-(because a simpler/faster model could have achieved a similar
-performance).
+Although best practices tell us to start with a simple model and build
+up to more complicated ones, many data scientists just use the model
+best known to them in order to avoid the aforementioned problems. This
+can result in poor performance (because the model is just not the
+right one for the task) or in inefficient management of time and
+computing resources (because a simpler/faster model could have achieved
+a similar performance).
 
-ATOM is here to help solve these common issues. The package acts as a
-wrapper of the whole machine learning pipeline, helping the data
-scientist to rapidly perform data analysis, pipeline evaluations and 
-model comparisons, all while keeping the code short and simple. Avoid
-endless imports and documentation lookups. Avoid rewriting the code for
-the same plots over and over again. With just a few lines of code, it's
-now possible to perform basic data cleaning steps, select relevant
+ATOM is here to help solve these common issues. The package acts as
+a wrapper of the whole machine learning pipeline, helping the data
+scientist to rapidly find a good model for his problem. Avoid
+endless imports and documentation lookups. Avoid rewriting the same
+code over and over again. With just a few lines of code, it's now
+possible to perform basic data cleaning steps, select relevant
 features and compare the performance of multiple models on a given
-dataset. ATOM should be able to help you provide quick insights on
-which pipeline performs best for the task at hand and provide an
-indication of the feasibility of the ML solution.
+dataset, providing quick insights on which pipeline performs best
+for the task at hand.
 
 It is important to realize that ATOM is not here to replace all the
 work a data scientist has to do before getting his model into
@@ -110,14 +107,13 @@ concepts related to this package.
 You can quickly install atom using `pip` or `conda`, see the [installation guide](../getting_started/#installation).
 ATOM contains a variety of classes to perform data cleaning, feature
 engineering, model training, plotting and much more. The easiest way
-to use all these classes on the same dataset is through one of the
-main classes:
+to use everything ATOM has to offer is through one of the main classes:
 
 * [ATOMClassifier](../API/ATOM/atomclassifier) for binary or multiclass classification tasks.
 * [ATOMRegressor](../API/ATOM/atomregressor) for regression tasks.
 
-These two classes are convenient wrappers for all the possibilities this
-package provides. Like a sklearn [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html),
+These two classes are convenient wrappers for the whole machine learning
+pipeline. Like a sklearn [Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html),
 they assemble several steps that can be cross-validated together while setting
 different parameters. There are some important differences with sklearn's API:
 
@@ -136,7 +132,7 @@ Let's get started with an example!
 First, initialize atom and provide it the data you want to use. You can
 either input a dataset and let ATOM split the train and test set or provide
 a train and test set already split. Note that if a dataframe is provided,
-the indices will be reset by atom.
+the indices are reset by atom.
 
 ```python
 atom = ATOMClassifier(X, y, test_size=0.25)
@@ -299,9 +295,9 @@ from atom through the [clean](../API/ATOM/atomclassifier/#clean)
 method. Use the class' parameters to choose which transformations to
 perform. The available steps are:
 
-* Remove columns with prohibited data types.
-* Remove categorical columns with maximal cardinality.
-* Remove columns with minimum cardinality.
+* Drop columns with prohibited data types.
+* Drop categorical columns with maximal cardinality.
+* Drop columns with minimum cardinality.
 * Strip categorical features from white spaces.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
@@ -395,7 +391,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/o
 **Local Outlier Factor**<br>
 A simple approach to identifying outliers is to locate those examples that
 are far from the other examples in the feature space. This can work well
-for feature spaces with low dimensionality (few features) but will become
+for feature spaces with low dimensionality (few features) but becomes
 less reliable as the number of features is increased. This is referred to
 as the curse of dimensionality.
 
@@ -588,8 +584,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/f
 
 **Principal Components Analysis**<br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
-the variance of each dimension. The new features will be called Component
-1, Component 2, etc... The data will be scaled to mean=0 and std=1 before
+the variance of each dimension. The new features are called Component
+1, Component 2, etc... The data is scaled to mean=0 and std=1 before
 fitting the transformer (if it wasn't already).
 
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
@@ -848,7 +844,7 @@ parameters or on different data sets. See the <a href="../examples/imbalanced_da
 Additional things to take into account:
 
 * Models that need feature scaling will do so automatically before
-  training if the features are not already scaled.
+  training if they are not already scaled.
 * If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The errors are
   stored in the `errors` attribute. Note that in case a model is skipped,
@@ -968,7 +964,7 @@ atom.run("XGB", est_params={"verbose_fit": True})
 ```
 
 !!!note
-    If a parameter is specified through `est_params`, it will be
+    If a parameter is specified through `est_params`, it is
     ignored by the bayesian optimization! 
 
 
@@ -985,7 +981,7 @@ parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
 iteration into a (sub) training set and a validation set. This process
 can create some data leakage but ensures maximal use of the provided
-data. The test set, however, does not contain any leakage and will be
+data. The test set, however, does not contain any leakage and is
 used to determine the final score of every model. Note that, if the
 dataset is relatively small, the BO's best score can consistently be 
 lower than the final score on the test set (despite the leakage) due
@@ -1005,7 +1001,7 @@ performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/be
     20 iterations of which the first 10 are random.
 
 !!!note
-    If `n_initial_points=1`, the first trial will be equal to the
+    If `n_initial_points=1`, the first trial is equal to the
     estimator's default parameters.
 
 Other settings can be changed through the `bo_params` parameter, a
@@ -1064,7 +1060,7 @@ after every round of the training, and that the training is stopped
 early if it didn't improve in the last `early_stopping` rounds. This
 can save the pipeline much time that would otherwise be wasted on an
 estimator that is unlikely to improve further. Note that this technique
-will be applied both during the BO and at the final fit on the complete
+is applied both during the BO and at the final fit on the complete
 training set.
 
 There are two ways to apply early stopping on these models:
@@ -1149,10 +1145,10 @@ useful for a set of equally well performing models in order to balance
 out their individual weaknesses. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier).
 
 A Voting model is created from a trainer through the [voting](../API/ATOM/atomclassifier/#voting)
-method. The Voting model will be added automatically to the list of
+method. The Voting model is added automatically to the list of
 models in the pipeline, under the `Vote` acronym. Although similar,
 this model is different from the VotingClassifier and VotingRegressor
-estimators from sklearn. Remember that the model will be added to the
+estimators from sklearn. Remember that the model is added to the
 plots if the `models` parameter is not specified. Plots that require
 a data set will use the one in the current branch. Plots that require
 an estimator object will raise an exception.
@@ -1186,9 +1182,9 @@ stacked together and used as input to a final estimator to compute the
 prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization).
 
 A Stacking model is created from a trainer through the [stacking](../API/ATOM/atomclassifier/#stacking)
-method. The Stacking model will be added automatically to the list of
+method. The Stacking model is added automatically to the list of
 models in the pipeline, under the `Stack` acronym. Remember that the
-model will be added to the plots if the `models` parameter is not
+model is added to the plots if the `models` parameter is not
 specified. Plots that require a data set will use the one in the
 current branch. The prediction methods, the scoring method and the
 plot methods that require an estimator object will use the Voting's

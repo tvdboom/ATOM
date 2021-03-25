@@ -39,8 +39,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Metric on which to fit the models. Choose from any of sklearn's
         SCORERS, a function with signature metric(y, y_pred, **kwargs),
         a scorer object or a sequence of these. If multiple metrics are
-        selected, only the first will be used to optimize the BO. If
-        None, a default metric is selected:
+        selected, only the first is used to optimize the BO. If None, a
+        default metric is selected:
             - "f1" for binary classification
             - "f1_weighted" for multiclass classification
             - "r2" for regression
@@ -107,8 +107,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 in-training evaluation.
             - cv: int, optional (default=5)
                 Number of folds for the cross-validation. If 1, the
-                training set will be randomly split in a (sub)train
-                and validation set.
+                training set is randomly split in a (sub)train and
+                validation set.
             - callbacks: callable or sequence, optional (default=None)
                 Callbacks for the BO.
             - dimensions: dict, sequence or None, optional (default=None)

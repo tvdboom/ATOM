@@ -1,10 +1,5 @@
-
 # Installation
------------------
-
-!!! note
-    Since atom was already taken, download the package under the name `atom-ml`!
-
+--------------
 
 Install ATOM's newest release easily via `pip`:
 
@@ -20,12 +15,16 @@ after the package's name.
 
     $ pip install -U atom-ml[models]
 
+!!! note
+    Since atom was already taken, download the package under the name `atom-ml`!
+
+
 <br><br>
 
 # Usage
------------------
+-------
 
-Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
+Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:
 
 ```Python
 from sklearn.datasets import load_breast_cancer

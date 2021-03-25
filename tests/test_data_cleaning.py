@@ -194,20 +194,20 @@ def test_strat_num_parameter():
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_min_frac_rows_parameter():
-    """Assert that the min_frac_rows parameter is set correctly."""
+def test_invalid_min_frac_rows():
+    """Assert that an error is raised for invalid min_frac_rows."""
     imputer = Imputer(min_frac_rows=1.0)
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_min_frac_cols_parameter():
-    """Assert that the min_frac_cols parameter is set correctly."""
+def test_invalid_min_frac_cols():
+    """Assert that an error is raised for invalid min_frac_cols."""
     imputer = Imputer(min_frac_cols=5.2)
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_is_fitted():
-    """Assert that an error is raised if class is not fitted."""
+def test_imputer_is_fitted():
+    """Assert that an error is raised if the instance is not fitted."""
     pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
 
 
@@ -233,23 +233,23 @@ def test_imputing_all_missing_values_categorical(missing):
 
 
 def test_rows_too_many_nans():
-    """Assert that rows with too many NaN values are dropped."""
+    """Assert that rows with too many missing values are dropped."""
     X = X_bin.copy()
     for i in range(5):  # Add 5 rows with all NaN values
         X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
     y = [np.random.randint(2) for _ in range(len(X))]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent")
+    impute = Imputer(strat_num="mean", strat_cat="most_frequent", min_frac_rows=0.5)
     X, y = impute.fit_transform(X, y)
     assert len(X) == 569  # Original size
     assert X.isna().sum().sum() == 0
 
 
 def test_cols_too_many_nans():
-    """Assert that columns with too many NaN values are dropped."""
+    """Assert that columns with too many missing values are dropped."""
     X = X_bin.copy()
     for i in range(5):  # Add 5 cols with all NaN values
         X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent")
+    impute = Imputer(strat_num="mean", strat_cat="most_frequent", min_frac_cols=0.5)
     X, y = impute.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
@@ -265,7 +265,7 @@ def test_imputing_numeric_drop():
 
 def test_imputing_numeric_number():
     """Assert that imputing a number for numerical values works."""
-    imputer = Imputer(strat_num=3.2, min_frac_cols=0.1, min_frac_rows=0.1)
+    imputer = Imputer(strat_num=3.2)
     X, y = imputer.fit_transform(X10_nan, y10)
     assert X.iloc[0, 0] == 3.2
     assert X.isna().sum().sum() == 0
@@ -359,6 +359,11 @@ def test_frac_to_other():
     encoder = Encoder(max_onehot=5, frac_to_other=0.3)
     X = encoder.fit_transform(X10_str, y10)
     assert "Feature 3_other" in X.columns
+
+
+def test_encoder_is_fitted():
+    """Assert that an error is raised if the instance is not fitted."""
+    pytest.raises(NotFittedError, Encoder().transform, X_bin, y_bin)
 
 
 def test_raise_missing_fit():

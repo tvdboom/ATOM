@@ -56,7 +56,7 @@ Metric on which to fit the models. Choose from any of sklearn's predefined
 <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>,
 a score (or loss) function with signature metric(y, y_pred, **kwargs), a
 scorer object or a sequence of these. If multiple metrics are selected, only
-the first will be used to optimize the BO. If None, a default metric is selected:
+the first is used to optimize the BO. If None, a default metric is selected:
 <ul>
 <li>"f1" for binary classification</li>
 <li>"f1_weighted" for multiclass classification</li>
@@ -128,7 +128,7 @@ Choose from:
 <li><b>delta_x: int or float, optional (default=0)</b><br>Stop the optimization when <code>|x1 - x2| < delta_x</code>.</li>
 <li><b>delta_y: int or float, optional (default=0)</b><br>Stop the optimization if the 5 minima are within <code>delta_y</code> (skopt always minimizes the function).</li>
 <li><b>cv: int, optional (default=5)</b><br>Number of folds for the cross-validation. If 1, the
-training set will be randomly split in a subtrain and validation set.</li>
+training set is randomly split in a subtrain and validation set.</li>
 <li><b>early stopping: int, float or None, optional (default=None)</b><br>Training
 will stop if the model didn't improve in last <code>early_stopping</code> rounds. If <1,
 fraction of rounds from the total. If None, no early stopping is performed. Only
@@ -458,7 +458,7 @@ Whether to render the plot.
 
 <a name="delete"></a>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L375">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L408">[source]</a></div></pre>
 Removes a model from the pipeline. If all models in the pipeline are removed,
 the metric is reset. Use this method to remove unwanted models or to free
 some memory before saving the instance.
@@ -530,7 +530,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L118">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L120">[source]</a></div></pre>
 Clear the [prediction attributes](../../../user_guide/#predicting) from all models.
 Use this method to free some memory before saving the trainer.
 <br /><br /><br />
@@ -585,7 +585,7 @@ add the data to <a href="../../ATOM/atomloader">ATOMLoader</a> when loading the 
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L328">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L360">[source]</a></div></pre>
 Print all the models' scoring for a specific metric.
 <table>
 <tr>
@@ -630,7 +630,7 @@ Estimator instance.
 
 <a name="stacking"></a>
 <pre><em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None, estimator=None, stack_method="auto", passthrough=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L241">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L273">[source]</a></div></pre>
 Add a Stacking instance to the models in the pipeline.
 <table>
 <tr>
@@ -638,11 +638,12 @@ Add a Stacking instance to the models in the pipeline.
 <td width="75%" style="background:white;">
 <strong>models: sequence or None, optional (default=None)</strong>
 <blockquote>
-Models that feed the stacking.
+Models that feed the stacking. If None, it selects all models
+depending on the current branch.
 </blockquote>
 <strong>estimator: str, callable or None, optional (default=None)</strong>
 <blockquote>
-The final estimator, which will be used to combine the base estimators. If str,
+The final estimator, which is used to combine the base estimators. If str,
  choose from ATOM's <a href="../../../user_guide/#predefined-models">predefined models</a>.
  If None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge</a> is selected.
 </blockquote>
@@ -654,7 +655,7 @@ Methods called for each base estimator. If "auto", it will try to
 </blockquote>
 <strong>passthrough: bool, optional (default=False)</strong>
 <blockquote>
-When False, only the predictions of estimators will be used
+When False, only the predictions of estimators are used
  as training data for the final estimator. When True, the
  estimator is trained on the predictions as well as the
  original training data.
@@ -666,7 +667,7 @@ When False, only the predictions of estimators will be used
 
 <a name="voting"></a>
 <pre><em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L208">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L240">[source]</a></div></pre>
 Add a Voting instance to the models in the pipeline.
 <table>
 <tr>
@@ -674,7 +675,8 @@ Add a Voting instance to the models in the pipeline.
 <td width="75%" style="background:white;">
 <strong>models: sequence or None, optional (default=None)</strong>
 <blockquote>
-Models that feed the voting.
+Models that feed the voting. If None, it selects all models
+depending on the current branch.
 </blockquote>
 <strong>weights: sequence or None, optional (default=None)</strong>
 <blockquote>

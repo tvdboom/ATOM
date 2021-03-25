@@ -68,6 +68,53 @@ class TransformerMixin:
             return self.transform(X, y)
 
 
+class DropTransformer(BaseTransformer):
+    """Custom transformer to drop columns."""
+
+    def __init__(self, columns, verbose, logger):
+        super().__init__(verbose=verbose, logger=logger)
+        self.columns = columns
+        self.train_only = False
+
+    def __repr__(self):
+        return f"DropTransformer(columns={self.columns})"
+
+    def transform(self, X, y):
+        """Drop columns from the dataset."""
+        self.log(f"Applying DropTransformer...", 1)
+        for col in self.columns:
+            self.log(f" --> Dropping column {col} from the dataset.", 2)
+            X = X.drop(col, axis=1)
+
+        return X, y
+
+
+class FuncTransformer(BaseTransformer):
+    """Custom transformer for functions."""
+
+    def __init__(self, func, column, verbose, logger):
+        super().__init__(verbose=verbose, logger=logger)
+        self.func = func
+        self.column = column
+        self.train_only = False
+
+    def __repr__(self):
+        return f"FuncTransformer(func={self.func.__name__}, column={self.column})"
+
+    def transform(self, X, y):
+        """Apply function to the dataset.
+
+        If the provided column is not in the dataset, a new
+        column is created at the right. If the column already
+        exists, the values are replaced.
+
+        """
+        self.log(f"Applying function {self.func.__name__} to the dataset...", 1)
+        X[self.column] = self.func(X if y is None else merge(X, y))
+
+        return X, y
+
+
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
@@ -184,9 +231,9 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Use the parameters to choose which transformations to perform.
     The available steps are:
-        - Remove columns with prohibited data types.
-        - Remove categorical columns with maximal cardinality.
-        - Remove columns with minimum cardinality.
+        - Drop columns with prohibited data types.
+        - Drop categorical columns with maximal cardinality.
+        - Drop columns with minimum cardinality.
         - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
@@ -195,15 +242,15 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     Parameters
     ----------
     prohibited_types: str, sequence or None, optional (default=None)
-        Columns with these types will be removed from the dataset.
+        Columns with these types are dropped from the dataset.
 
     maximum_cardinality: bool, optional (default=True)
-        Whether to remove categorical columns with maximum cardinality,
+        Whether to drop categorical columns with maximum cardinality,
         i.e. the number of unique values is equal to the number of
         instances. Usually the case for names, IDs, etc...
 
     minimum_cardinality: bool, optional (default=True)
-        Whether to remove columns with minimum cardinality, i.e. all
+        Whether to drop columns with minimum cardinality, i.e. all
         values in the column are the same.
 
     strip_categorical: bool, optional (default=True)
@@ -308,8 +355,11 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Applying data cleaning...", 1)
 
+        # Replace all missing values with NaN
+        X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
+
         for col in X:
-            unique = X[col].unique()
+            # Count occurrences in the column
             n_unique = X[col].nunique(dropna=True)
 
             # Drop features with invalid data type
@@ -335,14 +385,18 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Dropping feature {col} due to maximum cardinality.", 2
                     )
                     X = X.drop(col, axis=1)
+                    continue
 
             # Drop features with minimum cardinality (all values are the same)
-            if n_unique == 1 and self.minimum_cardinality:
-                self.log(
-                    f" --> Dropping feature {col} due to minimum "
-                    f"cardinality. Contains only 1 class: {unique[0]}.", 2
-                )
-                X = X.drop(col, axis=1)
+            if self.minimum_cardinality:
+                all_nan = X[col].isna().sum() == len(X)
+                if n_unique == 1 or all_nan:
+                    self.log(
+                        f" --> Dropping feature {col} due to minimum "
+                        f"cardinality. Contains only 1 class: "
+                        f"{'NaN' if all_nan else X[col].unique()[0]}."
+                    )
+                    X = X.drop(col, axis=1)
 
         # Drop duplicate samples
         if self.drop_duplicates:
@@ -399,13 +453,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "most_frequent": Impute with most frequent value.
             - str: Impute with provided string.
 
-    min_frac_rows: float, optional (default=0.5)
-        Minimum fraction of non-missing values in a row. If less,
-        the row is removed.
+    min_frac_rows: float or None, optional (default=None)
+        Minimum fraction of non-missing values in a row (if less,
+        the row is removed). If None, ignore this step.
 
-    min_frac_cols: float, optional (default=0.5)
-        Minimum fraction of non-missing values in a column. If less,
-        the column is removed.
+    min_frac_cols: float, optional (default=None)
+        Minimum fraction of non-missing values in a column (if
+        less, the column is removed). If None, ignore this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -436,8 +490,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strat_num: Union[int, float, str] = "drop",
         strat_cat: str = "drop",
-        min_frac_rows: float = 0.5,
-        min_frac_cols: float = 0.5,
+        min_frac_rows: Optional[float] = None,
+        min_frac_cols: Optional[float] = None,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
@@ -479,12 +533,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Unknown strategy for the strat_num parameter, got "
                 f"{self.strat_num}. Choose from: {', '.join(strats)}."
             )
-        if self.min_frac_rows <= 0 or self.min_frac_rows >= 1:
+        if self.min_frac_rows and (self.min_frac_rows <= 0 or self.min_frac_rows >= 1):
             raise ValueError(
                 "Invalid value for the min_frac_rows parameter. Value "
                 f"should be between 0 and 1, got {self.min_frac_rows}."
             )
-        if self.min_frac_cols <= 0 or self.min_frac_cols >= 1:
+        if self.min_frac_cols and (self.min_frac_cols <= 0 or self.min_frac_cols >= 1):
             raise ValueError(
                 "Invalid value for the min_frac_cols parameter. Value "
                 f"should be between 0 and 1, got {self.min_frac_cols}."
@@ -496,7 +550,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+        if self.min_frac_rows:
+            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
 
         for col in X:
             values = X[col].values.reshape(-1, 1)
@@ -507,7 +562,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     if self.strat_num.lower() == "knn":
                         self._imputers[col] = KNNImputer().fit(values)
 
-                    # Strategies: mean, median or most_frequent.
+                    elif self.strat_num.lower() == "most_frequent":
+                        self._imputers[col] = SimpleImputer(
+                            strategy="constant",
+                            fill_value=X[col].mode()[0],
+                        ).fit(values)
+
+                    # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
                         self._imputers[col] = SimpleImputer(
                             strategy=self.strat_num.lower()
@@ -516,7 +577,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[col] = SimpleImputer(
-                    strategy=self.strat_cat.lower()
+                    strategy="constant",
+                    fill_value=X[col].mode()[0],
                 ).fit(values)
 
         self._is_fitted = True
@@ -551,34 +613,36 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Imputing missing values...", 1)
 
-        # Replace missing values with NaN
+        # Replace all missing values with NaN
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
-        # Drop samples with too many NaN values
-        length = len(X)
-        X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
-        if y is not None:
-            y = y[y.index.isin(X.index)]  # Select only indices that remain
-        diff = length - len(X)
-        if diff > 0:
-            self.log(
-                f" --> Dropping {diff} samples for containing less than "
-                f"{int(self.min_frac_rows*100)}% non-missing values.", 2
-            )
+        # Drop rows with too many missing values
+        if self.min_frac_rows:
+            length = len(X)
+            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+            if y is not None:
+                y = y[y.index.isin(X.index)]  # Select only indices that remain
+            diff = length - len(X)
+            if diff > 0:
+                self.log(
+                    f" --> Dropping {diff} samples for containing less than "
+                    f"{int(self.min_frac_rows*100)}% non-missing values.", 2
+                )
 
         for col in X:
             values = X[col].values.reshape(-1, 1)
-
-            # Drop columns with too many NaN values
             nans = X[col].isna().sum()  # Number of missing values in column
-            p_nans = nans * 100 // len(X)  # Percentage of NaNs
-            if (len(X) - nans) / len(X) < self.min_frac_cols:
-                self.log(
-                    f" --> Dropping feature {col} for containing "
-                    f"{nans} ({p_nans}%) missing values.", 2
-                )
-                X = X.drop(col, axis=1)
-                continue  # Skip to side column
+
+            # Drop columns with too many missing values
+            if self.min_frac_cols:
+                p_nans = nans * 100 // len(X)  # Percentage of NaNs
+                if (len(X) - nans) / len(X) < self.min_frac_cols:
+                    self.log(
+                        f" --> Dropping feature {col} for containing "
+                        f"{nans} ({p_nans}%) missing values.", 2
+                    )
+                    X = X.drop(col, axis=1)
+                    continue  # Skip to side column
 
             # Apply only if column is numerical and contains missing values
             if col in self._num_cols and nans > 0:
@@ -605,10 +669,11 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
                     X[col] = self._imputers[col].transform(values)
 
-                else:  # Strategies: mean, median or most_frequent.
+                else:  # Strategies mean, median or most_frequent
+                    mode = round(self._imputers[col].statistics_[0], 2)
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"{self.strat_num.lower()} in feature {col}.", 2
+                        f"{self.strat_num.lower()} ({mode}) in feature {col}.", 2
                     )
                     X[col] = self._imputers[col].transform(values)
 
@@ -631,9 +696,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 elif self.strat_cat.lower() == "most_frequent":
+                    mode = self._imputers[col].statistics_[0]
                     self.log(
                         f" --> Imputing {nans} missing values with "
-                        f"most_frequent in feature {col}.", 2
+                        f"most_frequent ({mode}) in feature {col}.", 2
                     )
                     X[col] = self._imputers[col].transform(values)
 
@@ -645,8 +711,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     The encoding type depends on the number of classes in the column:
         - If n_classes=2, use Ordinal-encoding.
-        - If 2 < n_classes <= max_onehot, use OneHot-encoding.
-        - If n_classes > max_onehot, use `strategy`-encoding.
+        - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+        - If n_classes > `max_onehot`, use `strategy`-encoding.
 
     Also replaces classes with low occurrences with the value `other`
     in order to prevent too high cardinality. An error is raised if

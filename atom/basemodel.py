@@ -9,7 +9,7 @@ Description: Module containing the BaseModel class.
 
 # Standard packages
 import pandas as pd
-from typing import Optional
+from typing import Optional, Union
 from typeguard import typechecked
 from sklearn.metrics import SCORERS, confusion_matrix
 
@@ -17,7 +17,7 @@ from sklearn.metrics import SCORERS, confusion_matrix
 from .plots import BaseModelPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, CUSTOM_METRICS, METRIC_ACRONYMS,
-    merge, arr, catch_return, custom_transform, composed, crash, method_to_log,
+    merge, arr, custom_transform, composed, crash, method_to_log,
 )
 
 
@@ -74,11 +74,11 @@ class BaseModel(BaseModelPlotter):
 
     # Prediction methods =========================================== >>
 
-    def _prediction(self, X, y=None, sample_weight=None, method="predict", **kwargs):
+    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
         """Apply prediction methods on new data.
 
-        First transform the new data and apply the attribute on the
-        best model. The model needs to have the provided attribute.
+        First transform the new data and then apply the attribute on
+        the best model. The model has to have the provided attribute.
 
         Parameters
         ----------
@@ -91,14 +91,24 @@ class BaseModel(BaseModelPlotter):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sample_weight: sequence or None, optional (default=None)
+        sw: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        method: str, optional (default="predict")
-            Method of the model to be applied.
+        pl: bool, sequence or None, optional (default=None)
+            Transformers to use on the data before predicting.
+                - If None: Only transformers that are applied on the
+                           whole dataset are used.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
 
-        **kwargs
-            Keyword arguments for the transform method.
+        vb: int or None, optional (default=None)
+            Verbosity level for the transformers. If None, it uses the
+            transformer's own verbosity.
+
+        method: str, optional (default="predict")
+            Prediction method to be applied to the estimator.
 
         Returns
         -------
@@ -111,19 +121,17 @@ class BaseModel(BaseModelPlotter):
                 f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
             )
 
+        if pl is None:
+            pl = [i for i, est in enumerate(self.branch.pipeline) if not est.train_only]
+        elif pl is False:
+            pl = []
+        elif pl is True:
+            pl = list(range(len(self.branch.pipeline)))
+
         # When there is a pipeline, apply transformations first
-        for i, (idx, est) in enumerate(self.branch.pipeline.iteritems()):
-            p = kwargs.get("pipeline", [])
-            default = not p and not est.train_only and kwargs.get(idx) is None
-            if i in p or idx in p or kwargs.get(idx) or default:
-                X, y = catch_return(
-                    custom_transform(
-                        transformer=est,
-                        branch=self.branch,
-                        data=(X, y),
-                        verbose=kwargs.get("verbose", self.T.verbose),
-                    )
-                )
+        for idx, est in self.branch.pipeline.iteritems():
+            if idx in pl:
+                X, y = custom_transform(self.T, est, self.branch, (X, y), vb)
 
         # Scale the data if needed
         if self.scaler:
@@ -132,27 +140,47 @@ class BaseModel(BaseModelPlotter):
         if y is None:
             return getattr(self.estimator, method)(X)
         else:
-            return getattr(self.estimator, method)(X, y, sample_weight)
+            return getattr(self.estimator, method)(X, y, sw)
 
     @composed(crash, method_to_log, typechecked)
-    def predict(self, X: X_TYPES, **kwargs):
+    def predict(
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
+    ):
         """Get predictions on new data."""
-        return self._prediction(X, method="predict", **kwargs)
+        return self._prediction(X, pl=pipeline, vb=verbose, method="predict")
 
     @composed(crash, method_to_log, typechecked)
-    def predict_proba(self, X: X_TYPES, **kwargs):
+    def predict_proba(
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
+    ):
         """Get probability predictions on new data."""
-        return self._prediction(X, method="predict_proba", **kwargs)
+        return self._prediction(X, pl=pipeline, vb=verbose, method="predict_proba")
 
     @composed(crash, method_to_log, typechecked)
-    def predict_log_proba(self, X: X_TYPES, **kwargs):
+    def predict_log_proba(
+            self,
+            X: X_TYPES,
+            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+            verbose: Optional[int] = None,
+    ):
         """Get log probability predictions on new data."""
-        return self._prediction(X, method="predict_log_proba", **kwargs)
+        return self._prediction(X, pl=pipeline, vb=verbose, method="predict_log_proba")
 
     @composed(crash, method_to_log, typechecked)
-    def decision_function(self, X: X_TYPES, **kwargs):
+    def decision_function(
+            self,
+            X: X_TYPES,
+            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+            verbose: Optional[int] = None,
+    ):
         """Get the decision function on new data."""
-        return self._prediction(X, method="decision_function", **kwargs)
+        return self._prediction(X, pl=pipeline, vb=verbose, method="decision_function")
 
     @composed(crash, method_to_log, typechecked)
     def score(
@@ -160,10 +188,11 @@ class BaseModel(BaseModelPlotter):
         X: X_TYPES,
         y: Y_TYPES,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
-        **kwargs,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Get the score function on new data."""
-        return self._prediction(X, y, sample_weight, method="score", **kwargs)
+        return self._prediction(X, y, sample_weight, pipeline, verbose, method="score")
 
     # Prediction properties ======================================== >>
 

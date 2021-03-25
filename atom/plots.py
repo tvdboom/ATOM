@@ -304,32 +304,6 @@ class BasePlotter:
 
         return rows
 
-    def _get_columns(self, columns):
-        """Get a subset of the numerical columns."""
-        num_cols = list(self.dataset.select_dtypes(include=["number"]).columns)
-        if columns is None:
-            return num_cols
-        elif isinstance(columns, int):
-            return self.columns[columns]
-        elif isinstance(columns, str):
-            return columns
-        elif isinstance(columns, slice):
-            columns = self.columns[columns]
-
-        cols = []
-        for col in lst(columns):
-            if isinstance(col, int):
-                cols.append(self.columns[col])
-            else:
-                cols.append(col)
-                if col not in self.columns:
-                    raise ValueError(
-                        "Invalid value for the columns parameter. "
-                        f"Column {col} not found in the dataset."
-                    )
-
-        return [col for col in cols if col in num_cols]
-
     def _get_target(self, target):
         """Check and return the provided target's index."""
         if isinstance(target, str):
@@ -717,9 +691,9 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot of the model results after the evaluation.
 
-        If all models applied bagging, the plot will be a boxplot.
-        If not, the plot will be a barplot. Models are ordered based
-        on their score from the top down. The score is either the
+        If all models applied bagging, the plot is a boxplot. If
+        not, the plot is a barplot. Models are ordered based on
+        their score from the top down. The score is either the
         `mean_bagging` or `metric_test` attribute of the model,
         selected in that order.
 
@@ -1347,7 +1321,7 @@ class BaseModelPlotter(BasePlotter):
         corresponds to the average response of the model for each
         possible value of the feature. Two-way partial dependence
         plots are plotted as contour plots (only allowed for single
-        model plots). The deciles of the feature values will be shown
+        model plots). The deciles of the feature values are shown
         with tick marks on the x-axes for one-way plots, and on both
         axes for two-way plots.
 
@@ -1794,9 +1768,9 @@ class BaseModelPlotter(BasePlotter):
                 ax = fig.add_subplot(BasePlotter._fig.grid)
                 im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
 
-                # Create an axes on the right side of ax. The under of cax will
-                # be 5% of ax and the padding between cax and ax will be fixed
-                # at 0.3 inch.
+                # Create an axes on the right side of ax. The under of
+                # cax are 5% of ax and the padding between cax and ax
+                # are fixed at 0.3 inch.
                 divider = make_axes_locatable(ax)
                 cax = divider.append_axes("right", size="5%", pad=0.3)
                 cbar = ax.figure.colorbar(im, cax=cax)
@@ -2468,7 +2442,7 @@ class BaseModelPlotter(BasePlotter):
 
         Visualize model decisions using cumulative SHAP values. Each
         plotted line explains a single model prediction. If a single
-        prediction is plotted, feature values will be printed in the
+        prediction is plotted, feature values are printed in the
         plot (if supplied). If multiple predictions are plotted
         together, feature values will not be printed. Plotting too
         many predictions together will make the plot unintelligible.
@@ -3089,7 +3063,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         check_method(self, "plot_correlation")
-        columns = self._get_columns(columns)
+        columns = self._get_columns(columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
                 f"Invalid value for the method parameter, got {method}. "
@@ -3174,7 +3148,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             )
 
         check_method(self, "plot_scatter_matrix")
-        columns = self._get_columns(columns)
+        columns = self._get_columns(columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
         samples = self.dataset[columns].sample(
@@ -3212,8 +3186,9 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
     ):
         """Plot column distributions.
 
-        Additionally, it is possible to plot a standard distribution
-        fitted to the column.
+        Additionally, it is possible to plot any of `scipy.stats`
+        probability distributions fitted to the column. Missing
+        values are ignored.
 
         Parameters
         ----------
@@ -3257,7 +3232,9 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        if columns in list(self.dataset.select_dtypes(exclude="number").columns):
+
+        cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
+        if len(columns) == 1 and columns[0] in cat_columns:
             data = self.dataset[columns].value_counts(ascending=True)
 
             if show is None or show > len(data):
@@ -3271,7 +3248,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             data[-show:].plot.barh(
                 ax=ax,
                 width=0.6,
-                label=f"{columns}: {len(data)} classes",
+                label=f"{columns[0]}: {len(data)} classes",
             )
 
             # Add the counts at the end of the bar
@@ -3289,7 +3266,6 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 display=display,
             )
         else:
-            columns = lst(columns)
             kde = kwargs.pop("kde", False if distribution else True)
             bins = kwargs.pop("bins", 40)
             for i, col in enumerate(columns):
@@ -3306,11 +3282,17 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
                 if distribution:
                     x = np.linspace(*ax.get_xlim(), 100)
-                    h = np.histogram(self.dataset[col], bins=bins)
+
+                    # Drop the missing values form the column
+                    missing = self.missing + [np.inf, -np.inf]
+                    values = self.dataset[col].replace(missing, np.NaN).dropna()
+
+                    # Get the hist values
+                    h = np.histogram(values, bins=bins)
 
                     # Get a line for each distribution
                     for j, dist in enumerate(lst(distribution)):
-                        params = getattr(stats, dist).fit(self.dataset[col])
+                        params = getattr(stats, dist).fit(values)
 
                         # Calculate pdf and scale to match observed data
                         pdf = getattr(stats, dist).pdf(x, *params)
@@ -3366,14 +3348,14 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         check_method(self, "plot_qq")
-        columns = self._get_columns(columns)
+        columns = self._get_columns(columns, only_numerical=True)
         palette = cycle(sns.color_palette())
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
         percentiles = np.linspace(0, 100, 101)
-        for col in lst(columns):
+        for col in columns:
             color = next(palette)
             m = cycle(["+", "1", "x", "*", "d", "p", "h"])
             qn_b = np.percentile(self.dataset[col], percentiles)
@@ -3398,7 +3380,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             ylim=ylim,
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
-            legend=("best", len(lst(columns)) + len(lst(distribution))),
+            legend=("best", len(columns) + len(lst(distribution))),
             figsize=figsize if figsize else (10, 6),
             filename=filename,
             display=display,

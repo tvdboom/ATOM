@@ -20,7 +20,7 @@ None, the capital letters in the estimator's __name__ are used
 </blockquote>
 <strong>fullname: str or None, optional (default=None)</strong>
 <blockquote>
-Full model's name. If None, the estimator's __name__ will be used.
+Full model's name. If None, the estimator's __name__ is used.
 </blockquote>
 <strong>needs_scaling: bool, optional (default=False)</strong>
 <blockquote>
