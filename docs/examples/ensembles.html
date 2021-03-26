@@ -14333,7 +14333,7 @@ Algorithm task: binary classification.
 Dataset stats ==================== &gt;&gt;
 Shape: (569, 31)
 Scaled: False
-Outlier values: 174 (1.23%)
+Outlier values: 174 (1.2%)
 -------------------------------------
 Train set size: 456
 Test set size: 113
@@ -14356,35 +14356,35 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 0.9912
 Test evaluation --&gt; accuracy: 0.9646
-Time elapsed: 0.021s
+Time elapsed: 0.174s
 -------------------------------------------------
-Total time: 0.021s
+Total time: 0.176s
 
 
 Results for Decision Tree:         
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 1.0
 Test evaluation --&gt; accuracy: 0.9469
-Time elapsed: 0.016s
+Time elapsed: 0.025s
 -------------------------------------------------
-Total time: 0.016s
+Total time: 0.025s
 
 
 Results for LightGBM:         
 Fit ---------------------------------------------
 Train evaluation --&gt; accuracy: 1.0
 Test evaluation --&gt; accuracy: 0.9735
-Time elapsed: 0.140s
+Time elapsed: 0.279s
 -------------------------------------------------
-Total time: 0.140s
+Total time: 0.279s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.177s
+Duration: 0.481s
 ------------------------------------------
 Logistic Regression --&gt; accuracy: 0.9646
 Decision Tree       --&gt; accuracy: 0.9469
-LightGBM            --&gt; accuracy: 0.9735
+LightGBM            --&gt; accuracy: 0.9735 !
 </pre>
 </div>
 </div>
@@ -14503,7 +14503,8 @@ LightGBM            --&gt; accuracy: 0.9735
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
 <pre>Voting
  --&gt; Models: [&#39;LR&#39;, &#39;Tree&#39;, &#39;LGB&#39;]
- --&gt; Weights: None</pre>
+ --&gt; Weights: None
+ --&gt; Evaluation: accuracy: 0.9617</pre>
 </div>
 
 </div>

@@ -260,19 +260,31 @@ def test_transform_method():
     assert atom.transform(X10_str)["Feature 3"].dtype.kind in "ifu"
 
 
-def test_pipeline_parameter():
-    """Assert that the transformers used depend on the pipeline."""
+def test_pipeline_parameter_None():
+    """Assert that only some transformers are used."""
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.impute(strat_num="median")
     atom.prune(max_sigma=2)
     X = atom.transform(X10_nan, pipeline=None)  # Only use imputer
     assert len(X) == 10
-    X = atom.transform(X10_nan, pipeline=True)  # Use all
+
+
+def test_pipeline_parameter_True():
+    """Assert that all transformers are used."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.impute(strat_num="median")
+    atom.prune(max_sigma=2)
+    X = atom.transform(X10_nan, pipeline=True)  # Use both transformers
     assert len(X) < 10
+
+
+def test_pipeline_parameter_False():
+    """Assert that no transformers used."""
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.impute(strat_num="median")
+    atom.prune(max_sigma=2)
     X = atom.transform(X10_nan, pipeline=False)  # Use None
     assert isinstance(X, list)  # X is unchanged
-    X = atom.transform(X10_nan, pipeline=[0])  # Select from index
-    assert len(X) == 10 and X.isna().sum().sum() == 0
 
 
 def test_verbose_raises_when_invalid():
@@ -344,10 +356,10 @@ def test_apply_not_callable():
 
 
 def test_apply_same_column():
-    """Assert that apply can transform an existing columns."""
+    """Assert that apply can transform an existing column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: 1, column="mean texture")
-    assert atom["mean texture"].sum() == atom.shape[0]
+    atom.apply(lambda x: 1, column=0)
+    assert atom["mean radius"].sum() == atom.shape[0]
     assert str(atom.pipeline[0]).startswith("FuncTransformer(func=<lambda>")
 
 

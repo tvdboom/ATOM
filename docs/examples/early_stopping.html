@@ -14310,7 +14310,7 @@ a.anchor-link {
 <span class="c1"># An early stopping of 0.1 means that the model will stop if it</span>
 <span class="c1"># didn&#39;t improve in the last 10% of it&#39;s iterations.</span>
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">n_jobs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LGB&quot;</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;ap&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;early_stopping&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LGB&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;ap&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;early_stopping&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">&quot;cv&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 </pre></div>
 
      </div>
@@ -14337,7 +14337,7 @@ Parallel processing with 2 cores.
 Dataset stats ==================== &gt;&gt;
 Shape: (569, 31)
 Scaled: False
-Outlier values: 174 (1.23%)
+Outlier values: 174 (1.2%)
 -------------------------------------
 Train set size: 456
 Test set size: 113
@@ -14361,51 +14361,51 @@ Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 499, &#39;learning_rate&#39;: 0.73, &#39;max_depth&#39;: 1, &#39;num_leaves&#39;: 40, &#39;min_child_weight&#39;: 5, &#39;min_child_samples&#39;: 18, &#39;subsample&#39;: 0.7, &#39;colsample_bytree&#39;: 0.8, &#39;reg_alpha&#39;: 100.0, &#39;reg_lambda&#39;: 10.0}
 Early stop at iteration 50 of 499.
 Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
-Time iteration: 0.032s   Total time: 0.054s
+Time iteration: 0.026s   Total time: 0.048s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 170, &#39;learning_rate&#39;: 0.11, &#39;max_depth&#39;: 4, &#39;num_leaves&#39;: 25, &#39;min_child_weight&#39;: 11, &#39;min_child_samples&#39;: 28, &#39;subsample&#39;: 0.7, &#39;colsample_bytree&#39;: 0.6, &#39;reg_alpha&#39;: 100.0, &#39;reg_lambda&#39;: 10.0}
 Early stop at iteration 18 of 170.
 Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.6304
-Time iteration: 0.022s   Total time: 0.080s
+Time iteration: 0.022s   Total time: 0.074s
 Initial point 3 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 364, &#39;learning_rate&#39;: 0.4, &#39;max_depth&#39;: 1, &#39;num_leaves&#39;: 30, &#39;min_child_weight&#39;: 17, &#39;min_child_samples&#39;: 27, &#39;subsample&#39;: 0.9, &#39;colsample_bytree&#39;: 0.5, &#39;reg_alpha&#39;: 0.0, &#39;reg_lambda&#39;: 1.0}
 Early stop at iteration 42 of 364.
 Evaluation --&gt; average_precision: 0.9774  Best average_precision: 0.9774
-Time iteration: 0.022s   Total time: 0.106s
+Time iteration: 0.022s   Total time: 0.100s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 238, &#39;learning_rate&#39;: 0.49, &#39;max_depth&#39;: 2, &#39;num_leaves&#39;: 29, &#39;min_child_weight&#39;: 18, &#39;min_child_samples&#39;: 25, &#39;subsample&#39;: 0.9, &#39;colsample_bytree&#39;: 0.4, &#39;reg_alpha&#39;: 0.0, &#39;reg_lambda&#39;: 10.0}
 Early stop at iteration 30 of 238.
 Evaluation --&gt; average_precision: 0.9911  Best average_precision: 0.9911
-Time iteration: 0.024s   Total time: 1.672s
+Time iteration: 0.024s   Total time: 1.623s
 Iteration 5 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 31, &#39;learning_rate&#39;: 0.07, &#39;max_depth&#39;: 5, &#39;num_leaves&#39;: 21, &#39;min_child_weight&#39;: 18, &#39;min_child_samples&#39;: 28, &#39;subsample&#39;: 0.8, &#39;colsample_bytree&#39;: 0.5, &#39;reg_alpha&#39;: 0.0, &#39;reg_lambda&#39;: 100.0}
 Evaluation --&gt; average_precision: 0.9920  Best average_precision: 0.9920
-Time iteration: 0.023s   Total time: 2.041s
+Time iteration: 0.024s   Total time: 1.995s
 Iteration 6 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 42, &#39;learning_rate&#39;: 0.55, &#39;max_depth&#39;: 3, &#39;num_leaves&#39;: 39, &#39;min_child_weight&#39;: 11, &#39;min_child_samples&#39;: 12, &#39;subsample&#39;: 0.8, &#39;colsample_bytree&#39;: 0.4, &#39;reg_alpha&#39;: 0.01, &#39;reg_lambda&#39;: 100.0}
 Evaluation --&gt; average_precision: 0.9991  Best average_precision: 0.9991
-Time iteration: 0.024s   Total time: 2.426s
+Time iteration: 0.025s   Total time: 2.379s
 Iteration 7 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 238, &#39;learning_rate&#39;: 1.0, &#39;max_depth&#39;: 2, &#39;num_leaves&#39;: 40, &#39;min_child_weight&#39;: 1, &#39;min_child_samples&#39;: 10, &#39;subsample&#39;: 0.8, &#39;colsample_bytree&#39;: 0.3, &#39;reg_alpha&#39;: 100.0, &#39;reg_lambda&#39;: 100.0}
 Early stop at iteration 24 of 238.
 Evaluation --&gt; average_precision: 0.6304  Best average_precision: 0.9991
-Time iteration: 0.022s   Total time: 2.906s
+Time iteration: 0.024s   Total time: 2.864s
 
 Results for LightGBM:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;n_estimators&#39;: 42, &#39;learning_rate&#39;: 0.55, &#39;max_depth&#39;: 3, &#39;num_leaves&#39;: 39, &#39;min_child_weight&#39;: 11, &#39;min_child_samples&#39;: 12, &#39;subsample&#39;: 0.8, &#39;colsample_bytree&#39;: 0.4, &#39;reg_alpha&#39;: 0.01, &#39;reg_lambda&#39;: 100.0}
 Best evaluation --&gt; average_precision: 0.9991
-Time elapsed: 3.394s
+Time elapsed: 3.343s
 Fit ---------------------------------------------
 Train evaluation --&gt; average_precision: 0.9975
 Test evaluation --&gt; average_precision: 0.9885
 Time elapsed: 0.030s
 -------------------------------------------------
-Total time: 3.426s
+Total time: 3.374s
 
 
 Final results ========================= &gt;&gt;
-Duration: 3.426s
+Duration: 3.374s
 ------------------------------------------
 LightGBM --&gt; average_precision: 0.9885
 </pre>

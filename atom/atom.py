@@ -189,25 +189,25 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @property
     def numerical(self):
-        """Names of the numerical columns in the dataset."""
+        """Names of the numerical features in the dataset."""
         if not check_deep(self.X):
             return list(self.X.select_dtypes(include=["number"]).columns)
 
     @property
     def n_numerical(self):
-        """Number of numerical columns in the dataset."""
+        """Number of numerical features in the dataset."""
         if not check_deep(self.X):
             return len(self.numerical)
 
     @property
     def categorical(self):
-        """Names of the categorical columns in the dataset."""
+        """Names of the categorical features in the dataset."""
         if not check_deep(self.X):
             return list(self.X.select_dtypes(exclude=["number"]).columns)
 
     @property
     def n_categorical(self):
-        """Number of categorical columns in the dataset."""
+        """Number of categorical features in the dataset."""
         if not check_deep(self.X):
             return len(self.categorical)
 
@@ -215,15 +215,17 @@ class ATOM(BasePredictor, ATOMPlotter):
     def outliers(self):
         """Columns in training set with amount of outlier values."""
         if not check_deep(self.X):
-            z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
-            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=self.numerical)
+            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
+            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
+            srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
             return srs[srs > 0]
 
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
         if not check_deep(self.X):
-            z_scores = stats.zscore(self.train[self.numerical], nan_policy="propagate")
+            num_and_target = self.dataset.select_dtypes(include=["number"]).columns
+            z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
 
     @property
@@ -271,17 +273,17 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self.log(f"Scaled: {self.scaled}", _vb)
             if self.nans.sum():
-                p_nans = 100. * nans / self.dataset.size
-                self.log(f"Missing values: {nans} ({p_nans:.2f}%)", _vb)
+                p_nans = round(100. * nans / self.dataset.size, 1)
+                self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
             if n_categorical:
-                p_cat = 100. * n_categorical / self.n_columns
-                self.log(f"Categorical columns: {n_categorical} ({p_cat:.2f}%)", _vb)
+                p_cat = round(100. * n_categorical / self.n_columns, 1)
+                self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
             if outliers:
-                p_out = 100. * outliers / self.train.size
-                self.log(f"Outlier values: {outliers} ({p_out:.2f}%)", _vb)
+                p_out = round(100. * outliers / self.train.size, 1)
+                self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
             if duplicates:
-                p_dup = 100. * duplicates / len(self.dataset)
-                self.log(f"Duplicate samples: {duplicates} ({p_dup:.2f}%)", _vb)
+                p_dup = round(100. * duplicates / len(self.dataset), 1)
+                self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
         self.log("-------------------------------------", _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)

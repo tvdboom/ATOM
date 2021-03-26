@@ -14332,7 +14332,7 @@ Algorithm task: regression.
 Dataset stats ==================== &gt;&gt;
 Shape: (506, 14)
 Scaled: False
-Outlier values: 82 (1.45%)
+Outlier values: 82 (1.4%)
 -------------------------------------
 Train set size: 405
 Test set size: 101
@@ -14391,36 +14391,36 @@ Results for Decision Tree:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -3.3257
-Time elapsed: 0.006s
+Time elapsed: 0.005s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.3307 ± 0.525
 Time elapsed: 0.020s
 -------------------------------------------------
-Total time: 0.027s
+Total time: 0.025s
 
 
 Results for Bagging Regressor:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -1.3054
 Test evaluation --&gt; neg_mean_absolute_error: -2.695
-Time elapsed: 0.020s
+Time elapsed: 0.019s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677
-Time elapsed: 0.076s
+Time elapsed: 0.079s
 -------------------------------------------------
-Total time: 0.096s
+Total time: 0.098s
 
 
 Results for Extra-Trees:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -2.1541
-Time elapsed: 0.083s
+Time elapsed: 0.084s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708
-Time elapsed: 0.356s
+Time elapsed: 0.360s
 -------------------------------------------------
-Total time: 0.439s
+Total time: 0.444s
 
 
 Results for Random Forest:         
@@ -14430,9 +14430,9 @@ Test evaluation --&gt; neg_mean_absolute_error: -2.4143
 Time elapsed: 0.109s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9574 ± 0.2253
-Time elapsed: 0.492s
+Time elapsed: 0.496s
 -------------------------------------------------
-Total time: 0.601s
+Total time: 0.606s
 
 
 Results for LightGBM:         
@@ -14444,27 +14444,27 @@ Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.8485 ± 0.2679
 Time elapsed: 0.068s
 -------------------------------------------------
-Total time: 0.094s
+Total time: 0.095s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0806
 Test evaluation --&gt; neg_mean_absolute_error: -2.3991
-Time elapsed: 1.230s
+Time elapsed: 1.240s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9193 ± 0.2604
-Time elapsed: 3.930s
+Time elapsed: 4.016s
 -------------------------------------------------
-Total time: 5.161s
+Total time: 5.257s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.418s
+Duration: 6.525s
 ------------------------------------------
 Decision Tree     --&gt; neg_mean_absolute_error: -4.3307 ± 0.525 ~
 Bagging Regressor --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677 ~
-Extra-Trees       --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708 ~
+Extra-Trees       --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708 ~ !
 Random Forest     --&gt; neg_mean_absolute_error: -2.9574 ± 0.2253 ~
 LightGBM          --&gt; neg_mean_absolute_error: -4.8485 ± 0.2679 ~
 CatBoost          --&gt; neg_mean_absolute_error: -2.9193 ± 0.2604 ~
@@ -14483,41 +14483,41 @@ Test evaluation --&gt; neg_mean_absolute_error: -2.2361
 Time elapsed: 0.097s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.6016 ± 0.289
-Time elapsed: 0.405s
+Time elapsed: 0.408s
 -------------------------------------------------
-Total time: 0.502s
+Total time: 0.505s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.982
 Test evaluation --&gt; neg_mean_absolute_error: -2.5055
-Time elapsed: 0.127s
+Time elapsed: 0.128s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.7619 ± 0.1947
-Time elapsed: 0.570s
+Time elapsed: 0.580s
 -------------------------------------------------
-Total time: 0.698s
+Total time: 0.708s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.2835
 Test evaluation --&gt; neg_mean_absolute_error: -2.42
-Time elapsed: 1.738s
+Time elapsed: 1.716s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5595 ± 0.2768
-Time elapsed: 6.491s
+Time elapsed: 6.772s
 -------------------------------------------------
-Total time: 8.230s
+Total time: 8.489s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.430s
+Duration: 9.704s
 ------------------------------------------
 Extra-Trees   --&gt; neg_mean_absolute_error: -2.6016 ± 0.289 ~
 Random Forest --&gt; neg_mean_absolute_error: -2.7619 ± 0.1947 ~
-CatBoost      --&gt; neg_mean_absolute_error: -2.5595 ± 0.2768 ~
+CatBoost      --&gt; neg_mean_absolute_error: -2.5595 ± 0.2768 ~ !
 
 
 Run: 2 ================================ &gt;&gt;
@@ -14530,16 +14530,16 @@ Results for CatBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.3978
 Test evaluation --&gt; neg_mean_absolute_error: -1.8776
-Time elapsed: 3.019s
+Time elapsed: 3.207s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902
-Time elapsed: 13.745s
+Time elapsed: 14.707s
 -------------------------------------------------
-Total time: 16.764s
+Total time: 17.916s
 
 
 Final results ========================= &gt;&gt;
-Duration: 16.765s
+Duration: 17.916s
 ------------------------------------------
 CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
 </pre>
@@ -14630,31 +14630,31 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <th>Bag6</th>
       <td>-1.305373e+00</td>
       <td>-2.695050</td>
-      <td>0.020s</td>
+      <td>0.019s</td>
       <td>-3.095663</td>
       <td>0.267668</td>
-      <td>0.076s</td>
-      <td>0.096s</td>
+      <td>0.079s</td>
+      <td>0.098s</td>
     </tr>
     <tr>
       <th>CatB6</th>
       <td>-8.055503e-02</td>
       <td>-2.399073</td>
-      <td>1.230s</td>
+      <td>1.240s</td>
       <td>-2.919304</td>
       <td>0.260378</td>
-      <td>3.930s</td>
-      <td>5.161s</td>
+      <td>4.016s</td>
+      <td>5.257s</td>
     </tr>
     <tr>
       <th>ET6</th>
       <td>-2.256238e-14</td>
       <td>-2.154089</td>
-      <td>0.083s</td>
+      <td>0.084s</td>
       <td>-2.555434</td>
       <td>0.170823</td>
-      <td>0.356s</td>
-      <td>0.439s</td>
+      <td>0.360s</td>
+      <td>0.444s</td>
     </tr>
     <tr>
       <th>LGB6</th>
@@ -14664,7 +14664,7 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <td>-4.848536</td>
       <td>0.267874</td>
       <td>0.068s</td>
-      <td>0.094s</td>
+      <td>0.095s</td>
     </tr>
     <tr>
       <th>RF6</th>
@@ -14673,29 +14673,29 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <td>0.109s</td>
       <td>-2.957400</td>
       <td>0.225311</td>
-      <td>0.492s</td>
-      <td>0.601s</td>
+      <td>0.496s</td>
+      <td>0.606s</td>
     </tr>
     <tr>
       <th>Tree6</th>
       <td>-0.000000e+00</td>
       <td>-3.325743</td>
-      <td>0.006s</td>
+      <td>0.005s</td>
       <td>-4.330693</td>
       <td>0.525026</td>
       <td>0.020s</td>
-      <td>0.027s</td>
+      <td>0.025s</td>
     </tr>
     <tr>
       <th rowspan="3" valign="top">0.33</th>
       <th>CatB3</th>
       <td>-2.835499e-01</td>
       <td>-2.420032</td>
-      <td>1.738s</td>
+      <td>1.716s</td>
       <td>-2.559497</td>
       <td>0.276791</td>
-      <td>6.491s</td>
-      <td>8.230s</td>
+      <td>6.772s</td>
+      <td>8.489s</td>
     </tr>
     <tr>
       <th>ET3</th>
@@ -14704,29 +14704,29 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <td>0.097s</td>
       <td>-2.601648</td>
       <td>0.289034</td>
-      <td>0.405s</td>
-      <td>0.502s</td>
+      <td>0.408s</td>
+      <td>0.505s</td>
     </tr>
     <tr>
       <th>RF3</th>
       <td>-9.819778e-01</td>
       <td>-2.505465</td>
-      <td>0.127s</td>
+      <td>0.128s</td>
       <td>-2.761887</td>
       <td>0.194678</td>
-      <td>0.570s</td>
-      <td>0.698s</td>
+      <td>0.580s</td>
+      <td>0.708s</td>
     </tr>
     <tr>
       <th>1.00</th>
       <th>CatB1</th>
       <td>-3.977985e-01</td>
       <td>-1.877590</td>
-      <td>3.019s</td>
+      <td>3.207s</td>
       <td>-2.051462</td>
       <td>0.090227</td>
-      <td>13.745s</td>
-      <td>16.764s</td>
+      <td>14.707s</td>
+      <td>17.916s</td>
     </tr>
   </tbody>
 </table>

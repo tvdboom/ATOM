@@ -241,19 +241,19 @@ Number of samples containing missing values.
 </blockquote>
 <strong>numerical: list</strong>
 <blockquote>
-Names of the numerical columns in the dataset.
+Names of the numerical features in the dataset.
 </blockquote>
 <strong>n_numerical: int</strong>
 <blockquote>
-Number of numerical columns in the dataset.
+Number of numerical features in the dataset.
 </blockquote>
 <strong>categorical: list</strong>
 <blockquote>
-Names of the categorical columns in the dataset.
+Names of the categorical features in the dataset.
 </blockquote>
 <strong>n_categorical: int</strong>
 <blockquote>
-Number of categorical columns in the dataset.
+Number of categorical features in the dataset.
 </blockquote>
 <strong>outliers: pd.Series</strong>
 <blockquote>

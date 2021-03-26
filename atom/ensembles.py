@@ -292,14 +292,14 @@ class Voting(BaseModel, BaseEnsemble):
         return self._pred_attrs[7]
 
     @property
-    def predict_decision_function_train(self):
+    def decision_function_train(self):
         if self._pred_attrs[8] is None:
             pred = np.array([m.decision_function_train for m in self._models])
             self._pred_attrs[8] = np.average(pred, axis=0, weights=self.weights)
         return self._pred_attrs[8]
 
     @property
-    def predict_decision_function_test(self):
+    def decision_function_test(self):
         if self._pred_attrs[9] is None:
             pred = np.array([m.decision_function_test for m in self._models])
             self._pred_attrs[9] = np.average(pred, axis=0, weights=self.weights)

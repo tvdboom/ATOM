@@ -14596,9 +14596,9 @@ Is the dataset scaled? False
 <pre>Dataset stats ==================== &gt;&gt;
 Shape: (142193, 22)
 Scaled: False
-Missing values: 316559 (10.12%)
-Categorical columns: 5 (22.73%)
-Duplicate samples: 45 (0.03%)
+Missing values: 316559 (10.1%)
+Categorical features: 5 (22.7%)
+Duplicate samples: 45 (0.0%)
 -------------------------------------
 Train set size: 113755
 Test set size: 28438
@@ -14651,7 +14651,7 @@ Dataset balance: 0:1 &lt;==&gt; 3.5:1.0
 <pre>Dataset stats ==================== &gt;&gt;
 Shape: (56420, 22)
 Scaled: False
-Outlier values: 3181 (0.32%)
+Outlier values: 3181 (0.3%)
 -------------------------------------
 Train set size: 45021
 Test set size: 11399
@@ -14912,7 +14912,7 @@ not applied on new data. Therefore, it is advised to use the second approach, us
 <span class="n">atom</span><span class="o">.</span><span class="n">X</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">AvgTemp</span><span class="o">=</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;MaxTemp&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">atom</span><span class="o">.</span><span class="n">X</span><span class="p">[</span><span class="s2">&quot;MinTemp&quot;</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
 
 <span class="c1"># This will automatically update all other data attributes</span>
-<span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span>
+<span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span>
 
 <span class="c1"># But it&#39;s not saved to atom&#39;s pipeline</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">pipeline</span>
@@ -14937,9 +14937,9 @@ not applied on new data. Therefore, it is advised to use the second approach, us
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>cleaner    Cleaner(prohibited_types=[])
-imputer                       Imputer()
-encoder                       Encoder()
+<pre>0    Cleaner(prohibited_types=[])
+1                       Imputer()
+2                       Encoder()
 Name: master, dtype: object</pre>
 </div>
 
@@ -14955,7 +14955,7 @@ Name: master, dtype: object</pre>
 <div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s drop the column to re-do the operation using add</span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Let&#39;s drop the column to re-do the operation using apply</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s2">&quot;AvgTemp&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 
@@ -14971,9 +14971,9 @@ Name: master, dtype: object</pre>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
      <div class="CodeMirror cm-s-jupyter">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Same transformation, different approach</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">MaxTemp</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">MinTemp</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;add_avgtemp&quot;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">&quot;AvgTemp&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">MaxTemp</span> <span class="o">+</span> <span class="n">df</span><span class="o">.</span><span class="n">MinTemp</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="s2">&quot;AvgTemp&quot;</span><span class="p">)</span>
 
-<span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span><span class="o">.</span><span class="n">dataset</span>
+<span class="k">assert</span> <span class="s2">&quot;AvgTemp&quot;</span> <span class="ow">in</span> <span class="n">atom</span>
 </pre></div>
 
      </div>
@@ -15010,10 +15010,10 @@ Name: master, dtype: object</pre>
 
 
 <div class="jp-RenderedText jp-OutputArea-output jp-OutputArea-executeResult" data-mime-type="text/plain">
-<pre>cleaner        Cleaner(prohibited_types=[])
-imputer                           Imputer()
-encoder                           Encoder()
-add_avgtemp                        &lt;lambda&gt;
+<pre>0                      Cleaner(prohibited_types=[])
+1                                         Imputer()
+2                                         Encoder()
+3    FuncTransformer(func=&lt;lambda&gt;, column=AvgTemp)
 Name: master, dtype: object</pre>
 </div>
 
@@ -15071,13 +15071,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5677
 Test evaluation --&gt; f2_score: 0.5691
-Time elapsed: 0.202s
+Time elapsed: 0.194s
 -------------------------------------------------
-Total time: 0.202s
+Total time: 0.194s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.202s
+Duration: 0.194s
 ------------------------------------------
 Logistic Regression --&gt; f2_score: 0.5691
 </pre>
@@ -15131,13 +15131,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5577
 Test evaluation --&gt; f2_score: 0.5523
-Time elapsed: 2.524s
+Time elapsed: 2.508s
 -------------------------------------------------
-Total time: 2.524s
+Total time: 2.508s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.524s
+Duration: 2.508s
 ------------------------------------------
 AdaBoost --&gt; f2_score: 0.5523
 </pre>
@@ -15223,31 +15223,31 @@ Running BO for Decision Tree...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Evaluation --&gt; f2_score: 0.4938  Best f2_score: 0.4938
-Time iteration: 0.399s   Total time: 0.419s
+Time iteration: 0.394s   Total time: 0.411s
 Iteration 2 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 4, &#39;min_samples_leaf&#39;: 20, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.014}
 Evaluation --&gt; f2_score: 0.4444  Best f2_score: 0.4938
-Time iteration: 0.150s   Total time: 0.574s
+Time iteration: 0.138s   Total time: 0.553s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;entropy&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 6, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.0}
 Evaluation --&gt; f2_score: 0.3052  Best f2_score: 0.4938
-Time iteration: 0.154s   Total time: 0.974s
+Time iteration: 0.141s   Total time: 0.940s
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Best evaluation --&gt; f2_score: 0.4938
-Time elapsed: 1.276s
+Time elapsed: 1.243s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.4939
 Test evaluation --&gt; f2_score: 0.4871
-Time elapsed: 0.105s
+Time elapsed: 0.106s
 -------------------------------------------------
-Total time: 1.381s
+Total time: 1.350s
 
 
 Final results ========================= &gt;&gt;
-Duration: 1.381s
+Duration: 1.350s
 ------------------------------------------
 Decision Tree --&gt; f2_score: 0.4871
 </pre>
@@ -15336,13 +15336,12 @@ Decision Tree --&gt; f2_score: 0.4871
 Applying data cleaning...
  --&gt; Label-encoding the target column.
 Imputing missing values...
- --&gt; Dropping 1116 samples for containing less than 50% non-missing values.
- --&gt; Dropping 295 samples due to missing values in feature MinTemp.
- --&gt; Dropping 176 samples due to missing values in feature MaxTemp.
- --&gt; Dropping 1161 samples due to missing values in feature Rainfall.
- --&gt; Dropping 58505 samples due to missing values in feature Evaporation.
- --&gt; Dropping 10826 samples due to missing values in feature Sunshine.
- --&gt; Dropping 4153 samples due to missing values in feature WindGustDir.
+ --&gt; Dropping 637 samples due to missing values in feature MinTemp.
+ --&gt; Dropping 234 samples due to missing values in feature MaxTemp.
+ --&gt; Dropping 1236 samples due to missing values in feature Rainfall.
+ --&gt; Dropping 59142 samples due to missing values in feature Evaporation.
+ --&gt; Dropping 10829 samples due to missing values in feature Sunshine.
+ --&gt; Dropping 4154 samples due to missing values in feature WindGustDir.
  --&gt; Dropping 2199 samples due to missing values in feature WindDir9am.
  --&gt; Dropping 208 samples due to missing values in feature WindDir3pm.
  --&gt; Dropping 258 samples due to missing values in feature Humidity9am.

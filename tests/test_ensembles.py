@@ -66,16 +66,17 @@ def test_vote_invalid_method():
     pytest.raises(AttributeError, atom.vote.predict_log_proba, X_bin)
 
 
-def test_vote_branch_transformation():
+@pytest.mark.parametrize("pipeline", [None, False, True])
+def test_vote_branch_transformation(pipeline):
     """Assert that the branches transform every estimator only once."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
     atom.impute()
     atom.branch = "branch_2"
-    atom.balance()
+    atom.encode()
     atom.run(models=["Tree", "LGB"])
     atom.voting()
-    assert isinstance(atom.vote.predict(X_bin), np.ndarray)
+    assert isinstance(atom.vote.predict(X_bin, pipeline=pipeline), np.ndarray)
 
 
 def test_vote_prediction_methods():
@@ -108,6 +109,15 @@ def test_vote_prediction_attrs():
     assert isinstance(atom.vote.predict_log_proba_test, np.ndarray)
     assert isinstance(atom.vote.score_train, np.float64)
     assert isinstance(atom.vote.score_test, np.float64)
+
+
+def test_vote_decision_function_prediction_attrs():
+    """Assert that the decision functions can be calculated."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models=["lsvm", "pa"])
+    atom.voting()
+    assert isinstance(atom.vote.decision_function_train, np.ndarray)
+    assert isinstance(atom.vote.decision_function_test, np.ndarray)
 
 
 # Stacking ========================================================= >>

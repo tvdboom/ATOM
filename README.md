@@ -106,10 +106,6 @@ Example steps taken by ATOM's pipeline:
 Installation
 ------------
 
-| NOTE: Since atom was already taken, download the package under the name `atom-ml`! |
-| --- |
-
-
 Install ATOM's newest release easily via `pip`:
 
     $ pip install -U atom-ml
@@ -119,6 +115,8 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
+| NOTE: Since atom was already taken, download the package under the name `atom-ml`! |
+| --- |
 
 <br><br>
 

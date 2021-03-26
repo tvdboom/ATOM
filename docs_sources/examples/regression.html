@@ -14446,15 +14446,15 @@ Algorithm task: regression.
 Dataset stats ==================== &gt;&gt;
 Shape: (4177, 9)
 Scaled: False
-Categorical columns: 1 (11.11%)
-Outlier values: 137 (0.46%)
+Categorical features: 1 (11.1%)
+Outlier values: 192 (0.6%)
 -------------------------------------
 Train set size: 3342
 Test set size: 835
 
 Fitting Encoder...
 Encoding categorical columns...
- --&gt; OneHot-encoding feature Sex. Contains 3 unique classes.
+ --&gt; OneHot-encoding feature Sex. Contains 3 classes.
 </pre>
 </div>
 </div>
@@ -14670,122 +14670,122 @@ Running BO for Decision Tree...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;max_depth&#39;: 7, &#39;min_samples_split&#39;: 8, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0.016}
 Evaluation --&gt; neg_mean_squared_error: -8.3677  Best neg_mean_squared_error: -8.3677
-Time iteration: 0.041s   Total time: 0.046s
+Time iteration: 0.041s   Total time: 0.048s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;max_depth&#39;: 6, &#39;min_samples_split&#39;: 3, &#39;min_samples_leaf&#39;: 12, &#39;max_features&#39;: 0.9, &#39;ccp_alpha&#39;: 0.0}
 Evaluation --&gt; neg_mean_squared_error: -8.2055  Best neg_mean_squared_error: -8.2055
-Time iteration: 0.168s   Total time: 0.217s
+Time iteration: 0.168s   Total time: 0.219s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;max_depth&#39;: 6, &#39;min_samples_split&#39;: 14, &#39;min_samples_leaf&#39;: 9, &#39;max_features&#39;: 0.9, &#39;ccp_alpha&#39;: 0.005}
 Evaluation --&gt; neg_mean_squared_error: -6.1540  Best neg_mean_squared_error: -6.1540
-Time iteration: 0.171s   Total time: 0.500s
+Time iteration: 0.171s   Total time: 0.506s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;max_depth&#39;: 7, &#39;min_samples_split&#39;: 15, &#39;min_samples_leaf&#39;: 4, &#39;max_features&#39;: 0.7, &#39;ccp_alpha&#39;: 0.018}
 Evaluation --&gt; neg_mean_squared_error: -7.9567  Best neg_mean_squared_error: -6.1540
-Time iteration: 0.056s   Total time: 0.678s
+Time iteration: 0.057s   Total time: 0.689s
 Iteration 5 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;max_depth&#39;: 6, &#39;min_samples_split&#39;: 14, &#39;min_samples_leaf&#39;: 5, &#39;max_features&#39;: 0.9, &#39;ccp_alpha&#39;: 0.009}
 Evaluation --&gt; neg_mean_squared_error: -7.1330  Best neg_mean_squared_error: -6.1540
-Time iteration: 0.166s   Total time: 0.965s
+Time iteration: 0.176s   Total time: 0.991s
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;criterion&#39;: &#39;mae&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;max_depth&#39;: 6, &#39;min_samples_split&#39;: 14, &#39;min_samples_leaf&#39;: 9, &#39;max_features&#39;: 0.9, &#39;ccp_alpha&#39;: 0.005}
 Best evaluation --&gt; neg_mean_squared_error: -6.154
-Time elapsed: 1.084s
+Time elapsed: 1.117s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -6.3073
 Test evaluation --&gt; neg_mean_squared_error: -5.5317
-Time elapsed: 0.249s
+Time elapsed: 0.254s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -5.678 ± 0.2464
-Time elapsed: 1.035s
+Time elapsed: 1.055s
 -------------------------------------------------
-Total time: 2.370s
+Total time: 2.427s
 
 
 Running BO for Bagging Regressor...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 112, &#39;max_samples&#39;: 0.9, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: False}
 Evaluation --&gt; neg_mean_squared_error: -5.7680  Best neg_mean_squared_error: -5.7680
-Time iteration: 0.846s   Total time: 0.850s
+Time iteration: 0.849s   Total time: 0.853s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 131, &#39;max_samples&#39;: 0.5, &#39;max_features&#39;: 0.5, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: False}
 Evaluation --&gt; neg_mean_squared_error: -6.8254  Best neg_mean_squared_error: -5.7680
-Time iteration: 0.551s   Total time: 1.405s
+Time iteration: 0.612s   Total time: 1.470s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 50, &#39;max_samples&#39;: 0.9, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: True}
 Evaluation --&gt; neg_mean_squared_error: -5.4895  Best neg_mean_squared_error: -5.4895
-Time iteration: 0.369s   Total time: 1.884s
+Time iteration: 0.388s   Total time: 1.965s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 74, &#39;max_samples&#39;: 0.5, &#39;max_features&#39;: 0.5, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: True}
 Evaluation --&gt; neg_mean_squared_error: -6.0363  Best neg_mean_squared_error: -5.4895
-Time iteration: 0.324s   Total time: 2.316s
+Time iteration: 0.328s   Total time: 2.405s
 Iteration 5 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 36, &#39;max_samples&#39;: 0.9, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: True, &#39;bootstrap_features&#39;: False}
 Evaluation --&gt; neg_mean_squared_error: -6.0037  Best neg_mean_squared_error: -5.4895
-Time iteration: 0.189s   Total time: 2.613s
+Time iteration: 0.190s   Total time: 2.700s
 
 Results for Bagging Regressor:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;n_estimators&#39;: 50, &#39;max_samples&#39;: 0.9, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: False, &#39;bootstrap_features&#39;: True}
 Best evaluation --&gt; neg_mean_squared_error: -5.4895
-Time elapsed: 2.727s
+Time elapsed: 2.815s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -0.0867
 Test evaluation --&gt; neg_mean_squared_error: -4.9533
-Time elapsed: 0.498s
+Time elapsed: 0.508s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -5.2363 ± 0.1099
-Time elapsed: 2.110s
+Time elapsed: 2.134s
 -------------------------------------------------
-Total time: 5.336s
+Total time: 5.459s
 
 
 Running BO for Extra-Trees...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 112, &#39;criterion&#39;: &#39;mae&#39;, &#39;max_depth&#39;: 1, &#39;min_samples_split&#39;: 9, &#39;min_samples_leaf&#39;: 7, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.016, &#39;max_samples&#39;: 0.6}
 Evaluation --&gt; neg_mean_squared_error: -10.2607  Best neg_mean_squared_error: -10.2607
-Time iteration: 0.348s   Total time: 0.354s
+Time iteration: 0.351s   Total time: 0.357s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 369, &#39;criterion&#39;: &#39;mae&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 3, &#39;min_samples_leaf&#39;: 12, &#39;max_features&#39;: 0.9, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.035, &#39;max_samples&#39;: 0.8}
 Evaluation --&gt; neg_mean_squared_error: -9.4727  Best neg_mean_squared_error: -9.4727
-Time iteration: 4.765s   Total time: 5.123s
+Time iteration: 4.767s   Total time: 5.128s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 385, &#39;criterion&#39;: &#39;mse&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 6, &#39;min_samples_leaf&#39;: 18, &#39;max_features&#39;: 0.9, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.02}
 Evaluation --&gt; neg_mean_squared_error: -5.5174  Best neg_mean_squared_error: -5.5174
-Time iteration: 0.502s   Total time: 5.752s
+Time iteration: 0.507s   Total time: 5.762s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 425, &#39;criterion&#39;: &#39;mse&#39;, &#39;max_depth&#39;: 1, &#39;min_samples_split&#39;: 20, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: 0.7, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.016}
 Evaluation --&gt; neg_mean_squared_error: -9.1980  Best neg_mean_squared_error: -5.5174
-Time iteration: 0.294s   Total time: 6.179s
+Time iteration: 0.302s   Total time: 6.198s
 Iteration 5 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 445, &#39;criterion&#39;: &#39;mse&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 7, &#39;min_samples_leaf&#39;: 20, &#39;max_features&#39;: 0.6, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.004}
 Evaluation --&gt; neg_mean_squared_error: -6.9959  Best neg_mean_squared_error: -5.5174
-Time iteration: 0.411s   Total time: 6.726s
+Time iteration: 0.416s   Total time: 6.755s
 
 Results for Extra-Trees:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;n_estimators&#39;: 385, &#39;criterion&#39;: &#39;mse&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 6, &#39;min_samples_leaf&#39;: 18, &#39;max_features&#39;: 0.9, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.02}
 Best evaluation --&gt; neg_mean_squared_error: -5.5174
-Time elapsed: 6.870s
+Time elapsed: 6.899s
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_squared_error: -6.1021
 Test evaluation --&gt; neg_mean_squared_error: -5.0002
-Time elapsed: 0.644s
+Time elapsed: 0.645s
 Bagging -----------------------------------------
 Evaluation --&gt; neg_mean_squared_error: -4.9204 ± 0.0591
-Time elapsed: 2.999s
+Time elapsed: 3.010s
 -------------------------------------------------
-Total time: 10.513s
+Total time: 10.556s
 
 
 Final results ========================= &gt;&gt;
-Duration: 18.219s
+Duration: 18.442s
 ------------------------------------------
 Decision Tree     --&gt; neg_mean_squared_error: -5.678 ± 0.2464 ~
 Bagging Regressor --&gt; neg_mean_squared_error: -5.2363 ± 0.1099 ~
-Extra-Trees       --&gt; neg_mean_squared_error: -4.9204 ± 0.0591 ~
+Extra-Trees       --&gt; neg_mean_squared_error: -4.9204 ± 0.0591 ~ !
 </pre>
 </div>
 </div>
