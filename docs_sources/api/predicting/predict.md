@@ -2,7 +2,7 @@
 ---------
 
 <pre><em>method</em> <strong style="color:#008AB8">predict</strong>(X, pipeline=None, verbose=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L126">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L128">[source]</a></div></pre>
 Transform new data through all transformers in a branch and return
 class predictions. If called from a trainer, it will use the best model
 in the pipeline (under the `winner` attribute). If called from a

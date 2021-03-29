@@ -3,9 +3,9 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L968">[source]</a></div></pre>
-Plot the Receiver Operating Characteristics curve. The legend shows the Area Under
-the ROC Curve (AUC) score. Only for binary classification tasks.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L942">[source]</a></div></pre>
+Plot the Receiver Operating Characteristics curve. The legend shows the
+Area Under the ROC Curve (AUC) score. Only for binary classification tasks.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

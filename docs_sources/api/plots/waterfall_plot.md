@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">waterfall_plot</strong>(models=None, index=None, show=None, target=1,
                       title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2818">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2792">[source]</a></div></pre>
 Plot SHAP's waterfall plot for a single prediction.
 The SHAP value of a feature represents the impact of the evidence
 provided by that feature on the model’s output. The waterfall plot

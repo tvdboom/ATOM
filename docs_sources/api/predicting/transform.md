@@ -2,7 +2,7 @@
 -----------
 
 <pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, pipeline=None, verbose=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L380">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L396">[source]</a></div></pre>
 Transform new data through all transformers in a branch. By default,
 transformers that are applied on the training set only are not used
 during the transformations. Use the `pipeline` parameter to customize

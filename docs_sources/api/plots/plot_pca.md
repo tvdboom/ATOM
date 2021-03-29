@@ -2,9 +2,9 @@
 ----------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L503">[source]</a></div></pre>
-Plot the explained variance ratio vs the number of components. Only available if PCA
- was applied on the data.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L477">[source]</a></div></pre>
+Plot the explained variance ratio vs the number of components. Only
+available if PCA was applied on the data.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

@@ -29,7 +29,7 @@ def ATOMModel(
     fullname: str = None,
     needs_scaling: bool = False,
 ):
-    """Convert an estimator to a model that can be ingested by ATOM.
+    """Convert an estimator to a model that can be ingested by atom.
 
     This function adds the relevant attributes to the estimator so
     that they can be used when initializing the CustomModel class.

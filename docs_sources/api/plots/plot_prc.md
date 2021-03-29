@@ -2,9 +2,9 @@
 -----------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1038">[source]</a></div></pre>
-Plot the precision-recall curve. The legend shows the average precision (AP) score. 
-Only for binary classification tasks.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1012">[source]</a></div></pre>
+Plot the precision-recall curve. The legend shows the average
+precision (AP) score. Only for binary classification tasks.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

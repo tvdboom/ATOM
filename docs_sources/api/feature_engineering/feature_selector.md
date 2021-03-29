@@ -381,7 +381,7 @@ Dictionary of the parameter names mapped to their values.
 
 <a name="log"></a>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a></div></pre>
 Write a message to the logger and print it to stdout.
 <table>
 <tr>
@@ -402,7 +402,7 @@ Minimum verbosity level to print the message.
 
 <a name="plot-pca"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_pca</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L503">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L477">[source]</a></div></pre>
 Plot the explained variance ratio vs the number of components.
 See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <br /><br /><br />
@@ -410,7 +410,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 
 <a name="plot-components"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L564">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L538">[source]</a></div></pre>
 Plot the explained variance ratio per components.
 See [plot_components](../../plots/plot_components) for a description of the parameters.
 <br /><br /><br />
@@ -418,7 +418,7 @@ See [plot_components](../../plots/plot_components) for a description of the para
 
 <a name="plot-rfecv"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L632">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L606">[source]</a></div></pre>
 Plot the scores obtained by the estimator fitted on every subset of
  the data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the parameters.
 <br /><br /><br />
@@ -433,7 +433,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 
 <a name="save"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a></div></pre>
 Save the instance to a pickle file.
 <table>
 <tr>

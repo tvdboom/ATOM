@@ -2,8 +2,8 @@
 -----------
 
 <pre><em>function</em> <strong style="color:#008AB8">ATOMModel</strong>(estimator, acronym=None, fullname=None, needs_scaling=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L25">[source]</a></div></pre>
-Convert an estimator to a model that can be ingested by ATOM.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L26">[source]</a></div></pre>
+Convert an estimator to a model that can be ingested by atom.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

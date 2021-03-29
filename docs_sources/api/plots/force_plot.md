@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None, index=None, target=1,
                   title=None, figsize=(14, 6), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2559">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2533">[source]</a></div></pre>
 Plot SHAP's force plot. Visualize the given SHAP values with an additive
 force layout. Note that by default this plot will render using javascript.
 For a regular figure use `matplotlib=True` (this option is only available
@@ -15,9 +15,9 @@ when only a single sample is plotted). Read more about SHAP plots in the
 <td width="75%" style="background:white;">
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Name of the models to plot. If None, all models in the pipeline are selected. Note
- that selecting multiple models will raise an exception. To avoid this, call the
- plot from a model.
+Name of the models to plot. If None, all models in the pipeline are
+selected. Note that selecting multiple models will raise an exception.
+To avoid this, call the plot from a model.
 </blockquote>
 <strong>index: int, tuple, slice or None, optional (default=None)</strong>
 <blockquote>
@@ -26,8 +26,8 @@ n until m. If None, it selects all rows in the test set.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Index or name of the class in the target column to look at. Only for multi-class
- classification tasks.
+Index or name of the class in the target column to look at. Only for
+multi-class classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>

@@ -3,8 +3,9 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_probabilities</strong>(models=None, dataset="test", target=1,
                           title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1967">[source]</a></div></pre>
-Plot the probability distribution of the classes in the target column. Only for classification tasks.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1941">[source]</a></div></pre>
+Plot the probability distribution of the classes in the target column.
+Only for classification tasks.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

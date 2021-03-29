@@ -582,12 +582,13 @@
 <hr />
 <pre><em>method</em> <strong style="color:#008AB8">plot_permutation_importance</strong>(models=None, show=None, n_repeats=10,
                                    title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1106">[source]</a></div></pre>
-<p>Plot the feature permutation importance of models. Calculating all permutations can
- be time-consuming, especially if <code>n_repeats</code> is high. They are stored under
- the attribute <code>permutations</code>. This means that if a plot is repeated for
- the same model with the same <code>n_repeats</code>, it will be considerably faster.
- The <code>feature_importance</code> attribute is updated with the extracted importance ranking.</p>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1080">[source]</a></div></pre>
+<p>Plot the feature permutation importance of models. Calculating all
+permutations can be time-consuming, especially if <code>n_repeats</code> is high.
+They are stored under the attribute <code>permutations</code>. This means that if
+a plot is repeated for the same model with the same <code>n_repeats</code>, it
+will be considerably faster. The <code>feature_importance</code> attribute is
+updated with the extracted importance ranking.</p>
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

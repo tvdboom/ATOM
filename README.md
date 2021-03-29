@@ -115,9 +115,6 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
-| NOTE: Since atom was already taken, download the package under the name `atom-ml`! |
-| --- |
-
 <br><br>
 
 

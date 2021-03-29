@@ -2,7 +2,7 @@
 ---------------
 
 <pre><em>method</em> <strong style="color:#008AB8">predict_proba</strong>(X, pipeline=None, verbose=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L132">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L134">[source]</a></div></pre>
 Transform new data through all transformers in a branch and return
 class probabilities. If called from a trainer, it will use the best
 model in the pipeline (under the `winner` attribute). If called from

@@ -3,7 +3,7 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">bar_plot</strong>(models=None, index=None, show=None, target=1,
                 title=None, figsize=None, filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2299">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2273">[source]</a></div></pre>
 Plot SHAP's bar plot. Create a bar plot of a set of SHAP values. If a
 single sample is passed, then the SHAP values are plotted. If many
 samples are passed, then the mean absolute value for each feature
@@ -15,9 +15,9 @@ column is plotted. Read more about SHAP plots in the
 <td width="75%" style="background:white;">
 <strong>models: str, sequence or None, optional (default=None)</strong>
 <blockquote>
-Name of the models to plot. If None, all models in the pipeline are selected. Note
- that selecting multiple models will raise an exception. To avoid this, call the
- plot from a model.
+Name of the models to plot. If None, all models in the pipeline are
+selected. Note that selecting multiple models will raise an exception.
+To avoid this, call the plot from a model.
 </blockquote>
 <strong>index: int, tuple, slice or None, optional (default=None)</strong>
 <blockquote>

@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3313">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3107">[source]</a></div></pre>
 Plot a matrix of scatter plots. A subset of max 250 random samples are
 selected from every column to not clutter the plot.
 <table width="100%">

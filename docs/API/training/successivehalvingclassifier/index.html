@@ -1000,7 +1000,7 @@ Fontsize for the ticks along the plot's axes.
 <p><br></p>
 <p><a name="calibrate"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L354">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L357">[source]</a></div></pre>
 <p>Applies probability calibration on the winning model. The calibration is performed
 using sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>
 class. The model is trained via cross-validation on a subset of the training data,
@@ -1022,7 +1022,7 @@ this only if you have another, independent set for testing.
 <p><br /></p>
 <p><a name="canvas"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1, ncols=2, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L448">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L422">[source]</a></div></pre>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one figure. The default
 option is to add two plots side by side. See the <a href="../../../user_guide/#canvas">user guide</a>
 for an example use case.</p>
@@ -1060,7 +1060,7 @@ Whether to render the plot.
 <p><br /></p>
 <p><a name="delete"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L408">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L411">[source]</a></div></pre>
 <p>Removes a model from the pipeline. If all models in the pipeline are removed,
 the metric is reset. Use this method to remove unwanted models or to free
 some memory before saving the instance.</p>
@@ -1077,7 +1077,7 @@ Name of the models to clear from the pipeline. If None, clear all models.
 <p><br /></p>
 <p><a name="get-class-weight"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">get_class_weight</strong>(dataset="train")
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L323">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L326">[source]</a></div></pre>
 <p>Return class weights for a balanced data set. Statistically, the class weights
 re-balance the data set so that the sampled data set represents the target
 population as closely as reasonably possible. The returned weights are inversely
@@ -1126,7 +1126,7 @@ Dictionary of the parameter names mapped to their values.
 <p><br /></p>
 <p><a name="log"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L315">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a></div></pre>
 <p>Write a message to the logger and print it to stdout.</p>
 <table>
 <tr>
@@ -1150,7 +1150,7 @@ Minimum verbosity level to print the message.
 <br /><br /><br /></p>
 <p><a name="reset-predictions"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L120">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L122">[source]</a></div></pre>
 <p>Clear the <a href="../../../user_guide/#predicting">prediction attributes</a> from all models.
 Use this method to free some memory before saving the trainer.
 <br /><br /><br /></p>
@@ -1177,7 +1177,7 @@ Training set and test set. Allowed input formats are:
 <p><br /></p>
 <p><a name="save"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None, save_data=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L336">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a></div></pre>
 <p>Save the instance to a pickle file. Remember that the class contains the complete
 dataset as attribute, so the file can become large for big datasets! To avoid this,
 use <code>save_data=False</code>.</p>
@@ -1200,7 +1200,7 @@ add the data to <a href="../../ATOM/atomloader">ATOMLoader</a> when loading the 
 <p><br></p>
 <p><a name="scoring"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L360">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L363">[source]</a></div></pre>
 <p>Print all the models' scoring for a specific metric.</p>
 <table>
 <tr>
@@ -1254,7 +1254,7 @@ Estimator instance.
 <p><br /></p>
 <p><a name="stacking"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None, estimator=None, stack_method="auto", passthrough=False)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L273">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L275">[source]</a></div></pre>
 <p>Add a Stacking instance to the models in the pipeline.</p>
 <table>
 <tr>
@@ -1289,7 +1289,7 @@ original training data.
 <p><br /></p>
 <p><a name="voting"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L240">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor#L242">[source]</a></div></pre>
 <p>Add a Voting instance to the models in the pipeline.</p>
 <table>
 <tr>

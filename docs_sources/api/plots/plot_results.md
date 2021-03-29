@@ -2,13 +2,12 @@
 --------------
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_results</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L709">[source]</a></div></pre>
-Plot of the model results after the evaluation.
-If all models applied bagging, the plot is a boxplot.
-If not, the plot is a barplot. Models are ordered based
-on their score from the top down. The score is either the
-`mean_bagging` or `metric_test` attribute of the model,
-selected in that order.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L683">[source]</a></div></pre>
+Plot of the model results after the evaluation. If all models applied
+bagging, the plot is a boxplot. If not, the plot is a barplot. Models
+are ordered based on their score from the top down. The score is either
+the `mean_bagging` or `metric_test` attribute of the model, selected in
+that order.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

@@ -2,7 +2,7 @@
 -------
 
 <pre><em>method</em> <strong style="color:#008AB8">score</strong>(X, y, sample_weights=None, pipeline=None, verbose=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L150">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L152">[source]</a></div></pre>
 Transform new data through all transformers in a branch and return
 the model's score. If called from a trainer, it will use the
 best model in the pipeline (under the `winner` attribute). If called

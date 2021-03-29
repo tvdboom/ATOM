@@ -1,12 +1,13 @@
 # Bagging (Bag)
 ---------------
 
-Bagging uses an ensemble meta-estimator that fits base classifiers/regressors each on
- random subsets of the original dataset and then aggregate their individual predictions
- (either by voting or by averaging) to form a final prediction. Such a meta-estimator
- can typically be used as a way to reduce the variance of a black-box estimator
- (e.g., a [decision tree](../tree)), by introducing randomization into its construction
- procedure and then making an ensemble out of it.
+Bagging uses an ensemble meta-estimator that fits base classifiers/regressors
+each on random subsets of the original dataset and then aggregate their
+individual predictions (either by voting or by averaging) to form a final
+prediction. Such a meta-estimator can typically be used as a way to reduce
+the variance of a black-box estimator (e.g., a [decision tree](../tree)),
+by introducing randomization into its construction procedure and then
+making an ensemble out of it.
 
 Corresponding estimators are:
 
@@ -22,9 +23,9 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/e
 ## Hyperparameters
 ------------------
 
-* By default, the estimator adopts the default parameters provided by its package.
-  See the [user guide](../../../user_guide/#parameter-customization) on how to
-  customize them.
+* By default, the estimator adopts the default parameters provided by
+  its package. See the [user guide](../../../user_guide/#parameter-customization)
+  on how to customize them.
 * The `n_jobs` and `random_state` parameters are set equal to those of the
   trainer.
 
@@ -158,7 +159,8 @@ Dictionary of the best combination of hyperparameters found by the BO.
 </blockquote>
 <strong>estimator: class</strong>
 <blockquote>
-Estimator instance with the best combination of hyperparameters fitted on the complete training set.
+Estimator instance with the best combination of hyperparameters fitted
+on the complete training set.
 </blockquote>
 <strong>time_bo: str</strong>
 <blockquote>
@@ -170,8 +172,8 @@ Best metric score(s) on the BO.
 </blockquote>
 <strong>time_fit: str</strong>
 <blockquote>
-Time it took to train the model on the complete training set and calculate the
- metric(s) on the test set.
+Time it took to train the model on the complete training set and
+calculate the metric(s) on the test set.
 </blockquote>
 <strong>metric_train: float or list</strong>
 <blockquote>
@@ -183,7 +185,8 @@ Metric score(s) on the test set.
 </blockquote>
 <strong>metric_bagging: list</strong>
 <blockquote>
-Bagging's results with shape=(bagging,) for single-metric runs and shape=(metric, bagging) for multi-metric runs.
+Bagging's results with shape=(bagging,) for single-metric runs and
+shape=(metric, bagging) for multi-metric runs.
 </blockquote>
 <strong>mean_bagging: float or list</strong>
 <blockquote>
@@ -193,9 +196,9 @@ Mean of the bagging's results. List of values for multi-metric runs.
 <blockquote>
 Standard deviation of the bagging's results. List of values for multi-metric runs.
 </blockquote>
-<strong>results: pd.DataFrame</strong>
+<strong>results: pd.Series</strong>
 <blockquote>
-Dataframe of the training results with the model acronym as index. Columns can include:
+Series of the training results. Columns include:
 <ul>
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
@@ -216,9 +219,9 @@ Dataframe of the training results with the model acronym as index. Columns can i
 
 ### Prediction attributes
 
-The prediction attributes are not calculated until the attribute is called for the
- first time. This mechanism avoids having to calculate attributes that are never
- used, saving time and memory.
+The prediction attributes are not calculated until the attribute is
+called for the first time. This mechanism avoids having to calculate
+attributes that are never used, saving time and memory.
 
 <a name="atom"></a>
 <table width="100%">
@@ -266,8 +269,8 @@ Model's score on the test set.
 ----------
 
 The majority of the [plots](../../../user_guide/#plots) and [prediction methods](../../../user_guide/#predicting)
- can be called directly from the models, e.g. `atom.bag.plot_permutation_importance()`
- or `atom.bag.predict(X)`. The remaining utility methods can be found hereunder:
+can be called directly from the models, e.g. `atom.bag.plot_permutation_importance()`
+or `atom.bag.predict(X)`.The remaining utility methods can be found hereunder:
 <br><br>
 
 <table>
@@ -306,13 +309,13 @@ The majority of the [plots](../../../user_guide/#plots) and [prediction methods]
 
 <a name="calibrate"></a>
 <pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L685">[source]</a></div></pre>
-Applies probability calibration on the estimator. The calibration is done using the
- [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
- class from sklearn. The calibrator is trained via cross-validation on a subset
- of the training data, using the rest to fit the calibrator. The new classifier will
- replace the `estimator` attribute. After calibrating, all prediction attributes will
- reset. Only if classifier.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L529">[source]</a></div></pre>
+Applies probability calibration on the estimator. The calibration is done
+using the [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
+class from sklearn. The calibrator is trained via cross-validation on a
+subset of the training data, using the rest to fit the calibrator. The new
+classifier will replace the `estimator` attribute. After calibrating, all
+prediction attributes will reset. Only if classifier.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -331,15 +334,16 @@ test set. Use this only if you have another, independent set for testing.
 
 <a name="delete"></a>
 <pre><em>method</em> <strong style="color:#008AB8">delete</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L308">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L335">[source]</a></div></pre>
 Delete the model from the trainer.
 <br /><br /><br />
 
 
 <a name="rename"></a>
 <pre><em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L585">[source]</a></div></pre>
-Change the model's tag. Note that the acronym always stays at the beginning of the model's name.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L566">[source]</a></div></pre>
+Change the model's tag. Note that the acronym always stays at the
+beginning of the model's name.
 <table>
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -354,15 +358,15 @@ New tag for the model. If None, the tag is removed.
 
 <a name="reset-predictions"></a>
 <pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L167">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L200">[source]</a></div></pre>
 Clear all the [prediction attributes](../../../user_guide/#predicting).
- Use this method to free some memory before saving the model.
+Use this method to free some memory before saving the model.
 <br /><br /><br />
 
 
 <a name="scoring"></a>
 <pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L313">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L340">[source]</a></div></pre>
 Get the scoring for a specific metric.
 <table>
 <tr>
@@ -407,7 +411,7 @@ Model's score for the selected metric.
 
 <a name="save-estimator"></a>
 <pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L720">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L594">[source]</a></div></pre>
 Save the estimator to a pickle file.
 <table>
 <tr>

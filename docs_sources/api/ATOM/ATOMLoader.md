@@ -3,7 +3,7 @@
 
 <a name="atom"></a>
 <pre><em>function</em> <strong style="color:#008AB8">ATOMLoader</strong>(filename, data=None, transform_data=True, verbose=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L64">[source]</a></div></pre>
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L65">[source]</a></div></pre>
 Load a class instance from a pickle file. If the file is a trainer that
 was saved using `save_data=False`, you can load new data into it. For
 atom pickles, you can also apply all data transformations in the 

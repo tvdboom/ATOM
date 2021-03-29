@@ -3,13 +3,14 @@
 
 <pre><em>method</em> <strong style="color:#008AB8">plot_partial_dependence</strong>(models=None, features=None, target=None,
                                title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1334">[source]</a></div></pre>
-Plot the partial dependence of features. The partial dependence of a feature (or a
- set of features) corresponds to the average response of the model for each possible
- value of the feature. Two-way partial dependence plots are plotted as contour plots
- (only allowed for single model plots). The deciles of the feature values will be
- shown with tick marks on the x-axes for one-way plots, and on both axes for two-way
- plots.
+<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1308">[source]</a></div></pre>
+Plot the partial dependence of features. The partial dependence of a
+feature (or a set of features) corresponds to the average response of
+the model for each possible value of the feature. Two-way partial
+dependence plots are plotted as contour plots (only allowed for single
+model plots). The deciles of the feature values will be shown with tick
+marks on the x-axes for one-way plots, and on both axes for two-way
+plots.
 <table width="100%">
 <tr>
 <td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -26,8 +27,8 @@ attribute is defined else it uses the first 3 features in the dataset.
 </blockquote>
 <strong>target: int or str, optional (default=1)</strong>
 <blockquote>
-Index or name of the class in the target column to look at. Only for multi-class
- classification tasks.
+Index or name of the class in the target column to look at. Only for
+multi-class classification tasks.
 </blockquote>
 <strong>title: str or None, optional (default=None)</strong>
 <blockquote>
