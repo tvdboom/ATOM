@@ -30,7 +30,7 @@ Columns with these types are dropped from the dataset.
 <blockquote>
 Whether to drop categorical columns with maximum cardinality,
 i.e. the number of unique values is equal to the number of
-instances. Usually the case for names, IDs, etc...
+samples. Usually the case for names, IDs, etc...
 </blockquote>
 <strong>minimum_cardinality: bool, optional (default=True)</strong>
 <blockquote>

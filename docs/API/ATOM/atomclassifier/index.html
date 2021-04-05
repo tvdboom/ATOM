@@ -56,7 +56,7 @@
 </li>
             
 <li>
-    <a href="../atomloader.md" class="dropdown-item">ATOMLoader</a>
+    <a href="../atomloader/" class="dropdown-item">ATOMLoader</a>
 </li>
             
 <li>
@@ -1628,8 +1628,13 @@ order to prevent too high cardinality. Categorical features are defined as
 all columns whose dtype.kind not in <code>ifu</code>. Will raise an error if it encounters
 missing values or unknown classes when transforming. The encoder is fitted only
 on the training set to avoid data leakage. See <a href="../../data_cleaning/encoder/">Encoder</a>
-for a description of the parameters.
-<br /><br /><br /></p>
+for a description of the parameters.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This method only encodes the categorical features. It does not encode
+the target column! Use the <a href="#clean">clean</a> method for that.</p>
+</div>
+<p><br /><br /><br /></p>
 <p><a name="prune"></a></p>
 <pre><em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="z-score", method="drop", max_sigma=3, include_target=False, **kwargs)
 <div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L774">[source]</a></div></pre>

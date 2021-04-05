@@ -17,9 +17,10 @@ multiple pipelines requires many lines of code, and writing it all in
 the same notebook often makes it long and cluttered. On the other hand,
 using multiple notebooks makes it harder to compare the results and to
 keep an overview. On top of that, refactoring the code for every test
-can be time-consuming. How many times have you conducted the same action
-to pre-process a raw dataset? How many times have you copy-and-pasted
-code from an old repository to re-use it in a new use case?
+can be quite time-consuming. How many times have you conducted the same
+action to pre-process a raw dataset? How many times have you
+copy-and-pasted code from an old repository to re-use it in a new use
+case?
 
 Although best practices tell us to start with a simple model and build
 up to more complicated ones, many data scientists just use the model

@@ -39,7 +39,7 @@ class BasePredictor:
             return self._models[item.lower()]   # Get model subclass
         elif item in self.columns:
             return self.dataset[item]  # Get column
-        elif item in ["size", "head", "tail", "loc", "iloc", "at", "iat", "iterrows"]:
+        elif item in ["size", "head", "tail", "loc", "iloc", "describe", "iterrows"]:
             return getattr(self.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(

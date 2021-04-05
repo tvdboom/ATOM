@@ -1010,6 +1010,11 @@ all columns whose dtype.kind not in `ifu`. Will raise an error if it encounters
 missing values or unknown classes when transforming. The encoder is fitted only
 on the training set to avoid data leakage. See [Encoder](../data_cleaning/encoder.md)
 for a description of the parameters.
+
+!!!note
+    This method only encodes the categorical features. It does not encode
+    the target column! Use the [clean](#clean) method for that.
+
 <br /><br /><br />
 
 

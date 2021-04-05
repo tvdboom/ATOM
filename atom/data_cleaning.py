@@ -247,7 +247,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     maximum_cardinality: bool, optional (default=True)
         Whether to drop categorical columns with maximum cardinality,
         i.e. the number of unique values is equal to the number of
-        instances. Usually the case for names, IDs, etc...
+        samples. Usually the case for names, IDs, etc...
 
     minimum_cardinality: bool, optional (default=True)
         Whether to drop columns with minimum cardinality, i.e. all
