@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for basepredictor.py
 
 """
@@ -262,6 +262,13 @@ def test_get_columns_by_name():
     assert atom._get_columns("mean radius") == ["mean radius"]
 
 
+def test_get_columns_exclude():
+    """Assert that columns can be excluded using `!`."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom._get_columns("!Feature 2") == ["Feature 1", "Feature 3", "Target"]
+    assert atom._get_columns(["!Feature 1", "!Feature 2"]) == ["Feature 3", "Target"]
+
+
 def test_get_columns_remove_duplicates():
     """Assert that duplicate columns are ignored."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -392,6 +399,12 @@ def test_class_weights_invalid_dataset():
     pytest.raises(ValueError, atom.get_class_weight, "invalid")
 
 
+def test_get_class_weights_regression():
+    """Assert that an error is raised when called from regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(PermissionError, atom.get_class_weight)
+
+
 @pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
 def test_get_class_weights(dataset):
     """Assert that the get_class_weight method returns a dict of the classes."""
@@ -409,22 +422,12 @@ def test_calibrate():
     assert atom.winner.estimator.__class__.__name__ == "CalibratedClassifierCV"
 
 
-def test_scoring_metric_is_none():
+def test_scoring():
     """Assert that the scoring method works when metric is None."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.scoring)
     atom.run(["Tree", "RF"])
-    atom.run("LGB", bagging=5)  # Test with and without bagging
-    atom.scoring()
-
-
-def test_scoring_metric_is_given():
-    """Assert that the scoring method works for a specified metric_."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["GNB", "PA"])
-    atom.scoring("logloss")  # For _ProbaScorer
-    atom.scoring("ap")  # For _ThresholdScorer
-    atom.scoring("cm")  # For special case
+    assert isinstance(atom.scoring(), pd.DataFrame)
 
 
 def test_delete_default():

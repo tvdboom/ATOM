@@ -1,17 +1,19 @@
-# Python
---------
+# Dependencies
+--------------
 
-As of the moment, ATOM supports Python
-[3.6](https://www.python.org/downloads/release/python-360/),
-[3.7](https://www.python.org/downloads/release/python-370/),
-[3.8](https://www.python.org/downloads/release/python-380/) and
-[3.9](https://www.python.org/downloads/release/python-390/).
+## Python
+
+As of the moment, ATOM supports the following Python versions:
+
+* [Python 3.6](https://www.python.org/downloads/release/python-360/)
+* [Python 3.7](https://www.python.org/downloads/release/python-370/)
+* [Python 3.8](https://www.python.org/downloads/release/python-380/)
+* [Python 3.9](https://www.python.org/downloads/release/python-390/)
 
 <br><br>
 
 
-# Packages
-----------
+## Packages
 
 ATOM is built on top of several existing Python libraries. The required packages are
 necessary for it's correct functioning. Additionally, you can install some optional
@@ -22,6 +24,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[numpy](https://numpy.org/)** (>=1.19.5)
 * **[scipy](https://www.scipy.org/)** (>=1.4.1)
 * **[pandas](https://pandas.pydata.org/)** (>=1.0.3)
+* **[mlflow](https://mlflow.org/)** (>=1.15.0)
 * **[dill](https://pypi.org/project/dill/)** (>=0.3.3)
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
@@ -48,13 +51,12 @@ packages to use machine learning estimators not provided by sklearn.
 
 <br><br>
 
-# Support
----------
+## Support
 
 ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by providing
 core project contributors with a set of developer tools free of charge.
 
 <div align="center">
-    <a href="http://www.jetbrains.com"><img src="../img/jetbrains.png" alt="JetBrains" height="200" width="200" style="margin-right:120px"/></a>
-    <a href="https://www.jetbrains.com/pycharm/"><img src="../img/pycharm.png" alt="pyCharm" height="120" width="120"/></a>
+    <a href="https://www.jetbrains.com"><img src="../img/jetbrains.png" alt="JetBrains" height="200" width="200" style="margin-right:120px"/></a>
+    <a href="https://www.jetbrains.com/pycharm/"><img src="../img/pycharm.png" alt="pyCharm" height="200" width="200"/></a>
 </div>

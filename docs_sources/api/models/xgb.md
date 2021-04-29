@@ -15,7 +15,7 @@ Corresponding estimators are:
 
 Read more in XGBoost's [documentation](https://xgboost.readthedocs.io/en/latest/index.html).
 
-!!!note
+!!!info
     XGBoost allows [early stopping](../../../user_guide/#early-stopping)
     to stop the training of unpromising models prematurely!
 
@@ -23,7 +23,6 @@ Read more in XGBoost's [documentation](https://xgboost.readthedocs.io/en/latest/
 
 <br><br>
 ## Hyperparameters
-------------------
 
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/#parameter-customization)
@@ -31,122 +30,123 @@ Read more in XGBoost's [documentation](https://xgboost.readthedocs.io/en/latest/
 * The `n_jobs` and `random_state` parameters are set equal to those of the
  trainer.
 
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Dimensions:</strong></td>
-<td width="75%" style="background:white;">
-<strong>n_estimators: int, default=100</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Dimensions:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>n_estimators: int, default=100</strong><br>
 Integer(20, 500, name="n_estimators")
-</blockquote>
-<strong>learning_rate: float, default=0.1</strong>
-<blockquote>
+</p>
+<p>
+<strong>learning_rate: float, default=0.1</strong><br>
 Real(0.01, 1.0, "log-uniform", name="learning_rate")
-</blockquote>
-<strong>max_depth: int, default=6</strong>
-<blockquote>
+</p>
+<p>
+<strong>max_depth: int, default=6</strong><br>
 Integer(1, 10, name="max_depth")
-</blockquote>
-<strong>gamma: float, default=0.0</strong>
-<blockquote>
+</p>
+<p>
+<strong>gamma: float, default=0.0</strong><br>
 Real(0, 1.0, name="gamma")
-</blockquote>
-<strong>min_child_weight: int, default=1</strong>
-<blockquote>
+</p>
+<p>
+<strong>min_child_weight: int, default=1</strong><br>
 Integer(1, 20, name="min_child_weight")
-</blockquote>
-<strong>subsample: float, default=1.0</strong>
-<blockquote>
+</p>
+<p>
+<strong>subsample: float, default=1.0</strong><br>
 Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
-</blockquote>
-<strong>colsample_by_tree: float, default=1.0</strong>
-<blockquote>
+</p>
+<p>
+<strong>colsample_by_tree: float, default=1.0</strong><br>
 Categorical(np.linspace(0.3, 1.0, 8), name="colsample_by_tree")
-</blockquote>
-<strong>reg_alpha: float, default=0.0</strong>
-<blockquote>
+</p>
+<p>
+<strong>reg_alpha: float, default=0.0</strong><br>
 Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_alpha")
-</blockquote>
-<strong>reg_lambda: float, default=1.0</strong>
-<blockquote>
+</p>
+<p>
+<strong>reg_lambda: float, default=1.0</strong><br>
 Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda")
-</blockquote>
-</td></tr>
+</p>
+</td>
+</tr>
 </table>
 
 
 
-<br><br><br>
+<br><br>
 ## Attributes
--------------
 
 ### Data attributes
 
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="75%" style="background:white;">
-<strong>dataset: pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>dataset: pd.DataFrame</strong><br>
 Complete dataset in the pipeline.
-</blockquote>
-<strong>train: pd.DataFrame</strong>
-<blockquote>
+</p>
+<p>
+<strong>train: pd.DataFrame</strong><br>
 Training set.
-</blockquote>
-<strong>test: pd.DataFrame</strong>
-<blockquote>
+</p>
+<p>
+<strong>test: pd.DataFrame</strong><br>
 Test set.
-</blockquote>
-<strong>X: pd.DataFrame</strong>
-<blockquote>
+</p>
+<p>
+<strong>X: pd.DataFrame</strong><br>
 Feature set.
-</blockquote>
-<strong>y: pd.Series</strong>
-<blockquote>
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
 Target column.
-</blockquote>
-<strong>X_train: pd.DataFrame</strong>
-<blockquote>
+</p>
+<p>
+<strong>X_train: pd.DataFrame</strong><br>
 Training features.
-</blockquote>
-<strong>y_train: pd.Series</strong>
-<blockquote>
+</p>
+<p>
+<strong>y_train: pd.Series</strong><br>
 Training target.
-</blockquote>
-<strong>X_test: pd.DataFrame</strong>
-<blockquote>
+</p>
+<p>
+<strong>X_test: pd.DataFrame</strong><br>
 Test features.
-</blockquote>
-<strong>y_test: pd.Series</strong>
-<blockquote>
+</p>
+<p>
+<strong>y_test: pd.Series</strong><br>
 Test target.
-</blockquote>
-<strong>shape: tuple</strong>
-<blockquote>
-Dataset's shape: (n_rows x n_columns) or
-(n_rows, (shape_sample), n_cols) for deep learning datasets.
-</blockquote>
-<strong>columns: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>shape: tuple</strong><br>
+Dataset's shape: (n_rows x n_columns) or (n_rows, (shape_sample), n_cols)
+for datasets with more than two dimensions.
+</p>
+<p>
+<strong>columns: list</strong><br>
 Names of the columns in the dataset.
-</blockquote>
-<strong>n_columns: int</strong>
-<blockquote>
+</p>
+<p>
+<strong>n_columns: int</strong><br>
 Number of columns in the dataset.
-</blockquote>
-<strong>features: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>features: list</strong><br>
 Names of the features in the dataset.
-</blockquote>
-<strong>n_features: int</strong>
-<blockquote>
+</p>
+<p>
+<strong>n_features: int</strong><br>
 Number of features in the dataset.
-</blockquote>
-<strong>target: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>target: str</strong><br>
 Name of the target column.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br>
@@ -154,80 +154,65 @@ Name of the target column.
 
 ### Utility attributes
 
-<a name="atom"></a>
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="75%" style="background:white;">
-<strong>bo: pd.DataFrame</strong>
-<blockquote>
-Dataframe containing the information of every step taken by the BO. Columns include:
-<ul>
-<li>"params": Parameters used in the model.</li>
-<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
-<li>"time_iteration": Time spent on this iteration.</li>
-<li>"time": Total time spent since the start of the BO.</li>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="80%" style="background:white;">
+<strong>bo: pd.DataFrame</strong><br>
+Information of every step taken by the BO. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
+<li><b>params</b>: Parameters used in the model.</li>
+<li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
+<li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
+<li><b>time_iteration</b>: Time spent on this iteration.</li>
+<li><b>time</b>: Total time spent since the start of the BO.</li>
 </ul>
-</blockquote>
-<strong>best_params: dict</strong>
-<blockquote>
+<p>
+<strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
-</blockquote>
-<strong>estimator: class</strong>
-<blockquote>
+</p>
+<p>
+<strong>estimator: class</strong><br>
 Estimator instance with the best combination of hyperparameters fitted
 on the complete training set.
-</blockquote>
-<strong>time_bo: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_bo: str</strong><br>
 Time it took to run the bayesian optimization algorithm.
-</blockquote>
-<strong>metric_bo: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bo: float or list</strong><br>
 Best metric score(s) on the BO.
-</blockquote>
-<strong>time_fit: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_fit: str</strong><br>
 Time it took to train the model on the complete training set and
 calculate the metric(s) on the test set.
-</blockquote>
-<strong>metric_train: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_train: float or list</strong><br>
 Metric score(s) on the training set.
-</blockquote>
-<strong>metric_test: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_test: float or list</strong><br>
 Metric score(s) on the test set.
-</blockquote>
-<strong>evals: dict</strong>
-<blockquote>
-Dictionary of the metric calculated during training. The metric is
-provided by the estimator's package and is different for every task.
-Available keys are:
-<ul>
-<li>"metric": Name of the metric. </li>
-<li>"train": List of scores calculated on the training set.</li>
-<li>"test": List of scores calculated on the test set.</li>
-</ul>
-</blockquote>
-<strong>metric_bagging: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bagging: list</strong><br>
 Bagging's results with shape=(bagging,) for single-metric runs and
 shape=(metric, bagging) for multi-metric runs.
-</blockquote>
-<strong>mean_bagging: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>mean_bagging: float or list</strong><br>
 Mean of the bagging's results. List of values for multi-metric runs.
-</blockquote>
-<strong>std_bagging: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>std_bagging: float or list</strong><br>
 Standard deviation of the bagging's results. List of values for multi-metric runs.
-</blockquote>
-<strong>results: pd.Series</strong>
-<blockquote>
-Series of the training results. Columns include:
-<ul>
+</p>
+<strong>results: pd.Series</strong><br>
+Training results. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
@@ -238,7 +223,6 @@ Series of the training results. Columns include:
 <li><b>time_bagging:</b> Time spent on the bagging algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
-</blockquote>
 </td>
 </tr>
 </table>
@@ -251,79 +235,78 @@ The prediction attributes are not calculated until the attribute is
 called for the first time. This mechanism avoids having to calculate
 attributes that are never used, saving time and memory.
 
-<a name="atom"></a>
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Prediction attributes:</strong></td>
-<td width="75%" style="background:white;">
-<strong>predict_train: np.ndarray</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Prediction attributes:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>predict_train: np.ndarray</strong><br>
 Predictions of the model on the training set.
-</blockquote>
-<strong> predict_test: np.ndarray</strong>
-<blockquote>
+</p>
+<p>
+<strong> predict_test: np.ndarray</strong><br>
 Predictions of the model on the test set.
-</blockquote>
-<strong>predict_proba_train: np.ndarray</strong>
-<blockquote>
+</p>
+<p>
+<strong>predict_proba_train: np.ndarray</strong><br>
 Predicted probabilities of the model on the training set (only if classifier).
-</blockquote>
-<strong>predict_proba_test: np.ndarray</strong>
-<blockquote>
+</p>
+<p>
+<strong>predict_proba_test: np.ndarray</strong><br>
 Predicted probabilities of the model on the test set (only if classifier).
-</blockquote>
-<strong>predict_log_proba_train: np.ndarray</strong>
-<blockquote>
+</p>
+<p>
+<strong>predict_log_proba_train: np.ndarray</strong><br>
 Predicted log probabilities of the model on the training set (only if classifier).
-</blockquote>
-<strong>predict_log_proba_test: np.ndarray</strong>
-<blockquote>
+</p>
+<p>
+<strong>predict_log_proba_test: np.ndarray</strong><br>
 Predicted log probabilities of the model on the test set (only if classifier).
-</blockquote>
-<strong>score_train: np.float64</strong>
-<blockquote>
+</p>
+<p>
+<strong>score_train: np.float64</strong><br>
 Model's score on the training set.
-</blockquote>
-<strong>score_test: np.float64</strong>
-<blockquote>
+</p>
+<p>
+<strong>score_test: np.float64</strong><br>
 Model's score on the test set.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
-<br><br><br>
 
 
-## Methods
-----------
 
-The majority of the [plots](../../../user_guide/#plots) and [prediction methods](../../../user_guide/#predicting)
-can be called directly from the models, e.g. `atom.xgb.plot_permutation_importance()` or `atom.xgb.predict(X)`.
-The remaining utility methods can be found hereunder:
 <br><br>
+## Methods
 
-<table>
+The majority of the [plots](../../../user_guide/plots) and [prediction methods](../../..user_guide/predicting)
+can be called directly from the models, e.g. `atom.xgb.plot_permutation_importance()` or `atom.xgb.predict(X)`.
+The remaining utility methods can be found hereunder.
+
+<table style="font-size:16px">
 <tr>
-<td width="15%"><a href="#calibrate">calibrate</a></td>
+<td><a href="#calibrate">calibrate</a></td>
 <td>Calibrate the model.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#delete">delete</a></td>
+<td><a href="#delete">delete</a></td>
 <td>Delete the model from the trainer.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#rename">rename</a></td>
+<td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#reset-predictions">reset_predictions</a></td>
+<td><a href="#reset-predictions">reset_predictions</a></td>
 <td>Clear all the prediction attributes.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#scoring">scoring</a></td>
+<td><a href="#scoring">scoring</a></td>
 <td>Get the score for a specific metric.</td>
 </tr>
 
@@ -336,126 +319,138 @@ The remaining utility methods can be found hereunder:
 
 
 <a name="calibrate"></a>
-<pre><em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L529">[source]</a></div></pre>
-Applies probability calibration on the estimator. The calibration is done
-using the [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
-class from sklearn. The calibrator is trained via cross-validation on a
-subset of the training data, using the rest to fit the calibrator. The new
-classifier will replace the `estimator` attribute. After calibrating, all
-prediction attributes will reset. Only if classifier.
-<table>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L529">[source]</a>
+</span>
+</div>
+Applies probability calibration on the estimator. The calibration is
+performed using sklearn's [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
+class. The calibrator is trained via cross-validation on a subset of the
+training data, using the rest to fit the calibrator. The new classifier
+will replace the `estimator` attribute. After calibrating, all prediction
+attributes of the winning model will reset. Only if classifier.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>**kwargs</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**kwargs</strong><br>
 Additional keyword arguments for the CalibratedClassifierCV instance.
-Using cv="prefit" will use the trained model and fit the calibrator on
-the test set. Note that doing this will result in data leakage in the
-test set. Use this only if you have another, independent set for testing.
-</blockquote>
+Using cv="prefit" will use the trained model and fit the calibrator
+on the test set. Note that doing this will result in data leakage in
+the test set. Use this only if you have another, independent set for
+testing.
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="delete"></a>
-<pre><em>method</em> <strong style="color:#008AB8">delete</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L335">[source]</a></div></pre>
-Delete the model from the trainer.
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">delete</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L335">[source]</a>
+</span>
+</div>
+Delete the model from the trainer. If it's the winning model, the next
+best model (through `metric_test` or `mean_bagging`) is selected as
+winner. If it's the last model in the trainer, the metric and training
+approach are reset. Use this method to drop unwanted models from
+the pipeline or to free some memory before saving. The model is not
+removed from any active mlflow experiment.
 <br /><br /><br />
 
 
 <a name="rename"></a>
-<pre><em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L566">[source]</a></div></pre>
-Change the model's tag. Note that the acronym always stays at the
-beginning of the model's name.
-<table>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L556">[source]</a>
+</span>
+</div>
+Change the model's tag. The acronym always stays at the beginning
+of the model's name.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>name: str or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>name: str or None, optional (default=None)</strong><br>
 New tag for the model. If None, the tag is removed.
-</blockquote>
 </table>
 <br />
 
 
 <a name="reset-predictions"></a>
-<pre><em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L200">[source]</a></div></pre>
-Clear all the [prediction attributes](../../../user_guide/#predicting).
-Use this method to free some memory before saving the model.
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L200">[source]</a>
+</span>
+</div>
+Clear the [prediction attributes](../../..user_guide/predicting) from all models.
+Use this method to free some memory before saving the trainer.
 <br /><br /><br />
 
 
 <a name="scoring"></a>
-<pre><em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test", **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L340">[source]</a></div></pre>
-Get the scoring for a specific metric.
-<table>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">scoring</strong>
+(metric=None, dataset="test")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L323">[source]</a>
+</span>
+</div>
+Get the model's scoring for provided metrics.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>metric: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>
- or one of the following custom metrics (only if classifier):
-<ul>
-<li>"cm" for the confusion matrix.</li>
-<li>"tn" for true negatives.</li>
-<li>"fp" for false positives.</li>
-<li>"fn" for false negatives.</li>
-<li>"tp" for true positives.</li>
-<li>"lift" for the lift metric.</li>
-<li>"fpr" for the false positive rate.</li>
-<li>"tpr" for true positive rate.</li>
-<li>"sup" for the support metric.</li>
-</ul>
-If None, returns the final results for this model (ignores the <code>dataset</code> parameter).
-</blockquote>
-<strong>dataset: str, optional (default="test")</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
 Data set on which to calculate the metric. Options are "train" or "test".
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
-Additional keyword arguments for the metric function.
-</blockquote>
+</p>
+</td>
+</tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>score: float or np.ndarray</strong>
-<blockquote>
-Model's score for the selected metric.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>score: pd.Series</strong><br>
+Model's scoring.
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="save-estimator"></a>
-<pre><em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L594">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L594">[source]</a>
+</span>
+</div>
 Save the estimator to a pickle file.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file to save. If None or "auto", the estimator's __name__ is used.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>filename: str, optional (default="auto")</strong><br>
+Name of the file. Use "auto" for automatic naming.
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
-----------
 
 ```python
 from atom import ATOMRegressor

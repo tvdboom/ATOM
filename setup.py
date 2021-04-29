@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Package's setup code.
 
 """
@@ -17,11 +17,11 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="v4.4.0",
+    version="v4.5.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.4.0.tar.gz",
-    url="http://github.com/tvdboom/ATOM",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.5.0.tar.gz",
+    url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
     keywords=["Python package", "Machine Learning", "Modelling", "Data Pipeline"],
@@ -41,6 +41,7 @@ setuptools.setup(
         "numpy >= 1.19.5",
         "scipy >= 1.4.1",
         "pandas >= 1.0.3",
+        "mlflow >= 1.15.0",
         "dill >= 0.3.3",
         "tqdm >= 4.35.0",
         "joblib >= 0.16.0",

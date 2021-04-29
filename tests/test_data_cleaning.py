@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM)
 
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for data_cleaning.py
 
 """
@@ -15,6 +15,7 @@ import pandas as pd
 # Own modules
 from atom.data_cleaning import (
     Scaler,
+    Gauss,
     Cleaner,
     Imputer,
     Encoder,
@@ -51,29 +52,29 @@ def test_fit_transform_no_fit():
 
 # Test Scaler ====================================================== >>
 
-def test_check_is_fitted():
+def test_scaler_check_is_fitted():
     """Assert that an error is raised when not fitted."""
     pytest.raises(NotFittedError, Scaler().transform, X_bin)
 
 
-def test_invalid_strategy():
+def test_scaler_invalid_strategy():
     """Assert that an error is raised when strategy is invalid."""
     scaler = Scaler(strategy="invalid")
     pytest.raises(ValueError, scaler.fit, X_bin)
 
 
 @pytest.mark.parametrize("strategy", SCALING_STRATS)
-def test_all_strategies(strategy):
+def test_scaler_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     scaler = Scaler(strategy=strategy)
     scaler.fit_transform(X_bin)
 
 
-def test_y_is_ignored():
+def test_scaler_y_is_ignored():
     """Assert that the y parameter is ignored if provided."""
-    X = Scaler().fit_transform(X_bin, y_bin)
+    X_1 = Scaler().fit_transform(X_bin, y_bin)
     X_2 = Scaler().fit_transform(X_bin)
-    assert X.equals(X_2)
+    assert X_1.equals(X_2)
 
 
 def test_return_scaled_dataset():
@@ -82,11 +83,46 @@ def test_return_scaled_dataset():
     assert check_scaling(X)
 
 
-def test_ignores_categorical_columns():
-    """Assert that non-numerical columns are ignored."""
+def test_scaler_ignores_categorical_columns():
+    """Assert that categorical columns are ignored."""
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Scaler().fit_transform(X)
+    assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+
+
+# Test Gauss ======================================================= >>
+
+def test_gauss_check_is_fitted():
+    """Assert that an error is raised when not fitted."""
+    pytest.raises(NotFittedError, Gauss().transform, X_bin)
+
+
+def test_invalid_strategy():
+    """Assert that an error is raised when strategy is invalid."""
+    gauss = Gauss(strategy="invalid")
+    pytest.raises(ValueError, gauss.fit, X_bin)
+
+
+@pytest.mark.parametrize("strategy", ["yeo-johnson", "quantile"])
+def test_all_strategies(strategy):
+    """Assert that all strategies work as intended."""
+    gauss = Gauss(strategy=strategy)
+    gauss.fit_transform(X_bin)  # Skip box-cox since it only works with positive data
+
+
+def test_gauss_y_is_ignored():
+    """Assert that the y parameter is ignored if provided."""
+    X_1 = Gauss().fit_transform(X_bin, y_bin)
+    X_2 = Gauss().fit_transform(X_bin)
+    assert X_1.equals(X_2)
+
+
+def test_gauss_ignores_categorical_columns():
+    """Assert that categorical columns are ignored."""
+    X = X_bin.copy()
+    X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
+    X = Gauss().fit_transform(X)
     assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
 
 
@@ -94,16 +130,16 @@ def test_ignores_categorical_columns():
 
 def test_invalid_type_ignored():
     """Assert that prohibited types is ignored when None."""
-    cleaner = Cleaner(prohibited_types=None)
+    cleaner = Cleaner(drop_types=None)
     cleaner.transform(X_bin)
-    assert cleaner.prohibited_types == []
+    assert cleaner.drop_types == []
 
 
 def test_drop_invalid_column_type():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
-    X = Cleaner(prohibited_types="datetime64[ns]").transform(X)
+    X = Cleaner(drop_types="datetime64[ns]").transform(X)
     assert "datetime_col" not in X.columns
 
 
@@ -112,9 +148,8 @@ def test_drop_invalid_column_list_types():
     X = X_bin.copy()
     X["datetime_col"] = pd.to_datetime(X["mean radius"])  # Datetime column
     X["string_col"] = [str(i) for i in range(len(X))]  # String column
-    X = Cleaner(
-        prohibited_types=["datetime64[ns]", "object"], maximum_cardinality=False
-    ).transform(X)
+    cleaner = Cleaner(["datetime64[ns]", "object"], drop_max_cardinality=False)
+    X = cleaner.transform(X)
     assert "datetime_col" not in X.columns
     assert "string_col" not in X.columns
 
@@ -140,19 +175,19 @@ def test_strip_categorical_features():
     """Assert that categorical features are stripped from blank spaces."""
     X = X_bin.copy()
     X["string_col"] = [" " + str(i) + " " for i in range(len(X))]
-    X = Cleaner(maximum_cardinality=False).transform(X)
+    X = Cleaner(drop_max_cardinality=False).transform(X)
     assert X["string_col"].equals(pd.Series([str(i) for i in range(len(X))]))
 
 
 def test_strip_ignores_nan():
     """Assert that the stripping ignores missing values."""
-    X = Cleaner(maximum_cardinality=False).transform(X10_sn)
+    X = Cleaner(drop_max_cardinality=False).transform(X10_sn)
     assert X.isna().sum().sum() == 1
 
 
 def test_drop_duplicate_rows():
     """Assert that that duplicate rows are removed."""
-    X = Cleaner(maximum_cardinality=False, drop_duplicates=True).transform(X10)
+    X = Cleaner(drop_max_cardinality=False, drop_duplicates=True).transform(X10)
     assert len(X) == 7
 
 
@@ -206,7 +241,7 @@ def test_invalid_min_frac_cols():
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_imputer_is_fitted():
+def test_imputer_check_is_fitted():
     """Assert that an error is raised if the instance is not fitted."""
     pytest.raises(NotFittedError, Imputer().transform, X_bin, y_bin)
 
@@ -361,7 +396,7 @@ def test_frac_to_other():
     assert "Feature 3_other" in X.columns
 
 
-def test_encoder_is_fitted():
+def test_encoder_check_is_fitted():
     """Assert that an error is raised if the instance is not fitted."""
     pytest.raises(NotFittedError, Encoder().transform, X_bin, y_bin)
 
@@ -416,15 +451,15 @@ def test_invalid_strategy_parameter():
     pytest.raises(ValueError, pruner.transform, X_bin)
 
 
-def test_invalid_method_parameter():
-    """Assert that an error is raised for an invalid method parameter."""
-    pruner = Pruner(method="invalid")
-    pytest.raises(ValueError, pruner.transform, X_bin)
-
-
 def test_invalid_method_for_non_z_score():
     """Assert that an error is raised for an invalid method and strat combination."""
     pruner = Pruner(strategy="iforest", method="min_max")
+    pytest.raises(ValueError, pruner.transform, X_bin)
+
+
+def test_invalid_method_parameter():
+    """Assert that an error is raised for an invalid method parameter."""
+    pruner = Pruner(method="invalid")
     pytest.raises(ValueError, pruner.transform, X_bin)
 
 
@@ -490,6 +525,29 @@ def test_strategies(strategy):
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
     assert hasattr(pruner, strategy.lower())
+
+
+def test_multiple_strategies():
+    """Assert that selecting multiple strategies work."""
+    pruner = Pruner(strategy=["lof", "ee", "iforest"])
+    X, y = pruner.transform(X_bin, y_bin)
+    assert len(X) < len(X_bin)
+    assert all(hasattr(pruner, attr) for attr in ["lof", "ee", "iforest"])
+
+
+def test_kwargs_one_strategy():
+    """Assert that kwargs can be provided for one strategy."""
+    pruner = Pruner(strategy="iforest", n_estimators=100)
+    pruner.transform(X_bin, y_bin)
+    assert pruner.iforest.get_params()["n_estimators"] == 100
+
+
+def test_kwargs_multiple_strategies():
+    """Assert that kwargs can be provided for multiple strategies."""
+    pruner = Pruner(["svm", "lof"], svm={"kernel": "poly"}, lof={"n_neighbors": 10})
+    pruner.transform(X_bin, y_bin)
+    assert pruner.svm.get_params()["kernel"] == "poly"
+    assert pruner.lof.get_params()["n_neighbors"] == 10
 
 
 # Test Balancer ==================================================== >>

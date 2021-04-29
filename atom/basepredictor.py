@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the BasePredictor class.
 
 """
@@ -17,14 +17,23 @@ from typeguard import typechecked
 from .branch import Branch
 from .ensembles import Voting, Stacking
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, flt, lst,
-    divide, check_is_fitted, get_best_score, delete, method_to_log,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, check_is_fitted,
+    divide, get_scorer, get_best_score, delete, method_to_log,
     composed, crash,
 )
 
 
 class BasePredictor:
     """Properties and shared methods for the trainers."""
+
+    # Tracking parameters for mlflow
+    _tracking_params = dict(
+        log_bo=True,
+        log_model=True,
+        log_plots=True,
+        log_data=False,
+        log_pipeline=False,
+    )
 
     def __getattr__(self, item):
         """Get attributes from the current branch."""
@@ -35,8 +44,8 @@ class BasePredictor:
             return self._branches[item]  # Get branch
         elif item in props:
             return getattr(self.branch, item)  # Get attr from branch
-        elif self.__dict__.get("_models").get(item.lower()):
-            return self._models[item.lower()]   # Get model subclass
+        elif self.__dict__.get("_models").get(item):
+            return self._models[item]   # Get model subclass
         elif item in self.columns:
             return self.dataset[item]  # Get column
         elif item in ["size", "head", "tail", "loc", "iloc", "describe", "iterrows"]:
@@ -64,6 +73,53 @@ class BasePredictor:
                 self.delete(item)
             except ValueError:
                 del self.__dict__[item]
+
+    # Tracking properties ========================================== >>
+
+    @property
+    def log_bo(self):
+        return self._tracking_params["log_bo"]
+
+    @log_bo.setter
+    @typechecked
+    def log_bo(self, value: bool):
+        self._tracking_params["log_bo"] = value
+
+    @property
+    def log_model(self):
+        return self._tracking_params["log_model"]
+
+    @log_model.setter
+    @typechecked
+    def log_model(self, value: bool):
+        self._tracking_params["log_model"] = value
+
+    @property
+    def log_plots(self):
+        return self._tracking_params["log_plots"]
+
+    @log_plots.setter
+    @typechecked
+    def log_plots(self, value: bool):
+        self._tracking_params["log_plots"] = value
+
+    @property
+    def log_data(self):
+        return self._tracking_params["log_data"]
+
+    @log_data.setter
+    @typechecked
+    def log_data(self, value: bool):
+        self._tracking_params["log_data"] = value
+
+    @property
+    def log_pipeline(self):
+        return self._tracking_params["log_pipeline"]
+
+    @log_pipeline.setter
+    @typechecked
+    def log_pipeline(self, value: bool):
+        self._tracking_params["log_pipeline"] = value
 
     # Utility properties =========================================== >>
 
@@ -163,7 +219,13 @@ class BasePredictor:
     # Utility methods ============================================== >>
 
     def _get_columns(self, columns, only_numerical=False):
-        """Get a subset of the columns. Duplicate inputs are ignored."""
+        """Get a subset of the columns.
+
+        Select columns in the dataset by name or index. Duplicate
+        columns are ignored. Exclude columns if their name start
+        with `!`.
+
+        """
         if columns is None:
             if only_numerical:
                 return list(self.dataset.select_dtypes(include=["number"]).columns)
@@ -172,7 +234,7 @@ class BasePredictor:
         elif isinstance(columns, slice):
             return self.columns[columns]
 
-        cols = []
+        cols, exclude = [], []
         for col in lst(columns):
             if isinstance(col, int):
                 try:
@@ -183,6 +245,10 @@ class BasePredictor:
                         f"but length of columns is {self.n_columns}."
                     )
             else:
+                if col.startswith("!") and col not in self.columns:
+                    col = col[1:]
+                    exclude.append(col)
+
                 cols.append(col)
                 if col not in self.columns:
                     raise ValueError(
@@ -190,7 +256,11 @@ class BasePredictor:
                         f"Column {col} not found in the dataset."
                     )
 
-        return list(dict.fromkeys(cols))  # Avoid duplicates
+        # If columns were excluded with `!`, select all but those
+        if exclude:
+            return list(dict.fromkeys([col for col in self.columns if col not in cols]))
+        else:
+            return list(dict.fromkeys(cols))  # Avoid duplicates
 
     def _get_model_name(self, model):
         """Return a model's name.
@@ -201,9 +271,7 @@ class BasePredictor:
         is case-insensitive.
 
         """
-        model = model.lower()
-
-        if model == "winner":
+        if model.lower() == "winner":
             return [self.winner.name]
 
         if model in self._models:
@@ -211,6 +279,7 @@ class BasePredictor:
 
         to_return = []
         for key, value in self._models.items():
+            key, model = key.lower(), model.lower()
             condition_1 = key.startswith(model)
             condition_2 = model.replace(".", "").isdigit() and key.endswith(model)
             if condition_1 or condition_2:
@@ -295,9 +364,9 @@ class BasePredictor:
                 - Ridge for regression tasks.
 
         stack_method: str, optional (default="auto")
-            Methods called for each base estimator. If "auto", it will
-            try to invoke `predict_proba`, `decision_function` or
-            `predict` in that order.
+            Methods called for each base estimator. If "auto", it
+            will try to invoke `predict_proba`, `decision_function`
+            or `predict` in that order.
 
         passthrough: bool, optional (default=False)
             When False, only the predictions of estimators are used
@@ -328,9 +397,8 @@ class BasePredictor:
 
         Statistically, the class weights re-balance the data set so
         that the sampled data set represents the target population
-        as closely as reasonably possible. The returned weights are
-        inversely proportional to class frequencies in the selected
-        data set.
+        as closely as possible. The returned weights are inversely
+        proportional to the class frequencies in the selected data set.
 
         Parameters
         ----------
@@ -344,6 +412,11 @@ class BasePredictor:
             Classes with the corresponding weights.
 
         """
+        if not self.goal.startswith("class"):
+            raise PermissionError(
+                "The balance method is only available for classification tasks!"
+            )
+
         if dataset not in ("train", "test", "dataset"):
             raise ValueError(
                 "Invalid value for the dataset parameter. "
@@ -359,69 +432,54 @@ class BasePredictor:
         check_is_fitted(self, attributes="_models")
         self.winner.calibrate(**kwargs)
 
-    @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Print all the models' scoring for a specific metric.
+    @composed(crash, typechecked)
+    def scoring(
+        self,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+    ):
+        """Get all the models scoring for provided metrics.
 
         Parameters
         ----------
-        metric: str or None, optional (default=None)
-            Name of the metric to calculate. Choose from any of
-            sklearn's SCORERS or one of the CUSTOM_METRICS. If None,
-            returns the pipeline's final results (ignores `dataset`).
+        metric: str, func, scorer, sequence or None, optional (default=None)
+            Metric to calculate. If None, it returns an overview of
+            the most common metrics per task.
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
             "train" or "test".
 
-        **kwargs
-            Additional keyword arguments for the metric function.
+        Returns
+        -------
+        score: pd.DataFrame
+            Scoring of the models.
 
         """
         check_is_fitted(self, attributes="_models")
 
-        # If a metric acronym is used, assign the correct name
-        if metric and metric.lower() in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric.lower()]
-
-        # Get max length of the model names
-        maxlen = max([len(m.fullname) for m in self._models])
-
-        # Get best score of all the models
-        best_score = max([get_best_score(m) for m in self._models])
-
+        scores = pd.DataFrame()
         for m in self._models:
-            if not metric:
-                out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
-            else:
-                score = m.scoring(metric, dataset, **kwargs)
+            scores = scores.append(m.scoring(metric, dataset=dataset))
 
-                if isinstance(score, float):
-                    out_score = round(score, 3)
-                else:  # If confusion matrix...
-                    out_score = list(score.ravel())
-                out = f"{m.fullname:{maxlen}s} --> {metric}: {out_score}"
-
-            if get_best_score(m) == best_score and len(self._models) > 1:
-                out += " !"
-
-            self.log(out, kwargs.get("_vb", -2))  # Always print if called by user
+        return scores
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
         """Delete models from the trainer's pipeline.
 
-        Removes all traces of a model in the pipeline (except for the
-        `errors` attribute). If the winning model is removed. The next
-        best model (through metric_test or mean_bagging if available)
-        is selected as winner. If all models are removed, the metric and
-        approach are reset. Use this method to drop unwanted models from
-        the pipeline or to free up some memory.
+        Removes a model from the trainer. If the winning model is
+        removed, the next best model (through `metric_test` or
+        `mean_bagging`) is selected as winner. If all models are
+        removed, the metric and training approach are reset. Use this
+        method to drop unwanted models from the pipeline or to free
+        some memory before saving. The model is not removed from any
+        active mlflow experiment.
 
         Parameters
         ----------
         models: str, sequence or None, optional (default=None)
-            Models to remove from the pipeline. If None, delete all.
+            Models to delete. If None, delete them all.
 
         """
         models = self._get_models(models)

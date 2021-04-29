@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing utility constants, functions and classes.
 
 """
@@ -12,11 +12,11 @@ import math
 import logging
 import numpy as np
 import pandas as pd
+from typing import Union
 from functools import wraps
 from collections import deque
 from datetime import datetime
 from inspect import signature
-from typing import Union, Sequence
 from collections.abc import MutableMapping
 from sklearn.preprocessing import (
     StandardScaler,
@@ -70,7 +70,12 @@ from imblearn.over_sampling import (
 )
 
 # Sklearn
-from sklearn.metrics import SCORERS, get_scorer, make_scorer
+from sklearn.metrics import (
+    SCORERS,
+    make_scorer,
+    confusion_matrix,
+    matthews_corrcoef,
+)
 from sklearn.utils import _safe_indexing
 from sklearn.inspection._partial_dependence import (
     _grid_from_X,
@@ -91,7 +96,6 @@ SCALAR = Union[int, float]
 SEQUENCE_TYPES = Union[SEQUENCE]
 X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
 Y_TYPES = Union[int, str, SEQUENCE_TYPES]
-TRAIN_TYPES = Union[Sequence[SCALAR], np.ndarray, pd.Series]
 
 # Non-sklearn models
 OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
@@ -116,10 +120,12 @@ DISTRIBUTIONS = [
 ]
 
 # List of custom metrics for the scoring method
-CUSTOM_METRICS = ["cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "sup"]
+CUSTOM_METRICS = [
+    "cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "fnr", "tnr", "sup"
+]
 
-# Acronyms for some common sklearn metrics
-METRIC_ACRONYMS = dict(
+# Acronyms for some of the common scorers
+SCORERS_ACRONYMS = dict(
     ap="average_precision",
     ba="balanced_accuracy",
     auc="roc_auc",
@@ -130,6 +136,7 @@ METRIC_ACRONYMS = dict(
     mse="neg_mean_squared_error",
     rmse="neg_root_mean_squared_error",
     msle="neg_mean_squared_log_error",
+    mape="neg_mean_absolute_percentage_error",
     medae="neg_median_absolute_error",
     poisson="neg_mean_poisson_deviance",
     gamma="neg_mean_gamma_deviance",
@@ -142,7 +149,6 @@ SCALING_STRATS = dict(
     maxabs=MaxAbsScaler,
     robust=RobustScaler,
 )
-
 
 # All available encoding strategies
 ENCODING_STRATS = dict(
@@ -220,7 +226,7 @@ def it(item):
     except ValueError:  # Item may not be numerical
         return item
 
-    return int(item) if is_equal else item
+    return int(item) if is_equal else float(item)
 
 
 def divide(a, b):
@@ -241,16 +247,17 @@ def variable_return(X, y):
         return X, y
 
 
-def check_deep(df):
-    """Check if the trainer contains a deep learning dataset."""
-    return df.columns[0] == "Features" and len(df.columns) <= 2
+def check_multidimensional(df):
+    """Check if the dataframe contains a multidimensional column."""
+    return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
 
 
 def check_method(cls, method):
-    """Raise an error if it's a deep learning dataset."""
-    if check_deep(cls.X):
+    """Raise an error if the dataset has more than two dimensions."""
+    if check_multidimensional(cls.X):
         raise PermissionError(
-            f"The {method} method is not available for deep learning datasets!"
+            f"The {method} method is not available for "
+            f"datasets with more than two dimensions!"
         )
 
 
@@ -283,6 +290,15 @@ def check_predict_proba(models, method):
 def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     return True if X.mean().mean() < 0.05 and 0.95 < X.std().mean() < 1.05 else False
+
+
+def get_corpus(X):
+    """Get text column from dataframe."""
+    corpus = [col for col in X if col.lower() == "corpus"][0]
+    if not corpus:
+        raise ValueError("The provided dataset does not contain a text corpus!")
+
+    return corpus
 
 
 def get_best_score(item, metric=0):
@@ -337,7 +353,7 @@ def to_df(data, index=None, columns=None, pca=False):
 
     Parameters
     ----------
-    data: sequence
+    data: list, tuple, dict, np.ndarray, pd.DataFrame or None
         Dataset to convert to a dataframe.  If None, return
         unchanged.
 
@@ -345,7 +361,7 @@ def to_df(data, index=None, columns=None, pca=False):
         Values for the dataframe's index.
 
     columns: sequence or None, optional (default=None)
-        Name of the columns. If None, the names are autofilled.
+        Name of the columns. Use None for automatic naming.
 
     pca: bool, optional (default=False)
         Whether the columns are Features or Components.
@@ -366,18 +382,18 @@ def to_df(data, index=None, columns=None, pca=False):
     return data
 
 
-def to_series(data, index=None, name="target"):
+def to_series(data, index=None, name="Target"):
     """Convert a column to pd.Series.
 
     Parameters
     ----------
-    data: list, tuple, np.ndarray or None
+    data: sequence or None
         Data to convert. If None, return unchanged.
 
-    index: array or Index, optional (default=None)
-        Values for the series" index.
+    index: sequence or Index, optional (default=None)
+        Values for the indices.
 
-    name: string, optional (default="target")
+    name: string, optional (default="Target")
         Name of the target column.
 
     Returns
@@ -396,8 +412,9 @@ def arr(df):
     """From dataframe to multidimensional array.
 
     When the data consist of more than 2 dimensions, ATOM stores
-    it in a df with a single column, "Features". This function
-    extracts the arrays from every row and returns them stacked.
+    it in a df with a single column, "Multidimensional feature".
+    This function extracts the arrays from every row and returns
+    them stacked.
 
     Parameters
     ----------
@@ -410,7 +427,10 @@ def arr(df):
         Stacked dataframe.
 
      """
-    return np.stack(df["Features"].values) if check_deep(df) else df
+    if check_multidimensional(df):
+        return np.stack(df["Multidimensional feature"].values)
+    else:
+        return df
 
 
 def prepare_logger(logger, class_name):
@@ -420,11 +440,9 @@ def prepare_logger(logger, class_name):
     ----------
     logger: str, class or None
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by
-        the timestamp of the logger's creation.
 
     class_name: str
         Name of the class from which the function is called.
@@ -539,14 +557,14 @@ def get_acronym(model, must_be_equal=True):
     # Not imported on top of file because of module interconnection
     from .models import MODEL_LIST
 
-    for acronym in MODEL_LIST:
-        cond_1 = must_be_equal and model.lower() == acronym.lower()
-        cond_2 = not must_be_equal and model.lower().startswith(acronym.lower())
+    for name in MODEL_LIST.keys():
+        cond_1 = must_be_equal and model.lower() == name.lower()
+        cond_2 = not must_be_equal and model.lower().startswith(name.lower())
         if cond_1 or cond_2:
-            return acronym
+            return name
 
     raise ValueError(
-        f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST)}."
+        f"Unknown model: {model}! Choose from: {', '.join(MODEL_LIST.keys())}."
     )
 
 
@@ -570,7 +588,7 @@ def create_acronym(fullname):
     from .models import MODEL_LIST
 
     acronym = "".join([c for c in fullname if c.isupper()])
-    if len(acronym) < 2 or acronym.lower() in map(str.lower, MODEL_LIST):
+    if len(acronym) < 2 or acronym.lower() in MODEL_LIST:
         return fullname
     else:
         return acronym
@@ -608,18 +626,20 @@ def names_from_estimator(cls, estimator):
     return create_acronym(get_name(estimator)), get_name(estimator)
 
 
-def get_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
-    """Get the right metric depending on the input type.
+def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
+    """Get a scorer from a str, func or scorer.
+
+    Scorers used by ATOM have a name attribute.
 
     Parameters
     ----------
-    metric: str or callable
-        Metric as a string, function or scorer.
+    metric: str, func or scorer
+        Name, metric or scorer to get ATOM's scorer from.
 
     gib: bool, optional (default=True)
         whether the metric is a score function or a loss function,
         i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric is a string or a scorer.
+        better. Is ignored if the metric is a string or a scorer.
 
     needs_proba: bool, optional (default=False)
         Whether the metric function requires probability estimates of
@@ -631,8 +651,8 @@ def get_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
 
     Returns
     -------
-    scorer: callable
-        Scorer object.
+    scoring: scorer
+        Scorer object with name attribute.
 
     """
     def get_scorer_name(scorer):
@@ -642,47 +662,36 @@ def get_metric(metric, gib=True, needs_proba=False, needs_threshold=False):
                 return key
 
     if isinstance(metric, str):
-        if metric.lower() in METRIC_ACRONYMS:
-            metric = METRIC_ACRONYMS[metric.lower()]
-        elif metric not in SCORERS:
+        metric = metric.lower()
+        if metric in SCORERS:
+            scorer = SCORERS[metric]
+            scorer.name = metric
+        elif metric in SCORERS_ACRONYMS:
+            scorer = SCORERS[SCORERS_ACRONYMS[metric]]
+            scorer.name = SCORERS_ACRONYMS[metric]
+        elif metric in CUSTOM_SCORERS:
+            scorer = make_scorer(CUSTOM_SCORERS[metric])
+            scorer.name = scorer._score_func.__name__
+        else:
             raise ValueError(
                 "Unknown value for the metric parameter, got "
-                f"{metric}. Try one of: {', '.join(SCORERS)}."
+                f"{metric}. Choose from: {', '.join(SCORERS)}."
             )
-        metric = get_scorer(metric)
-        metric.name = get_scorer_name(metric)
 
-    elif hasattr(metric, "_score_func"):  # Provided metric is scoring
-        metric.name = get_scorer_name(metric)
+    elif hasattr(metric, "_score_func"):  # Scoring is a scorer
+        scorer = metric
+        scorer.name = get_scorer_name(scorer)
 
-    else:  # Metric is a function with signature metric(y, y_pred)
-        metric = make_scorer(
+    else:  # Scoring is a function with signature metric(y, y_pred)
+        scorer = make_scorer(
             score_func=metric,
             greater_is_better=gib,
             needs_proba=needs_proba,
             needs_threshold=needs_threshold,
         )
-        metric.name = metric._score_func.__name__
+        scorer.name = scorer._score_func.__name__
 
-    return metric
-
-
-def get_default_metric(task):
-    """Return the default metric for each task.
-
-    Parameters
-    ----------
-    task: str
-        One of binary classification, multiclass classification or
-        regression.
-
-    """
-    if task.startswith("bin"):
-        return {"f1": get_metric("f1", True, False, False)}
-    elif task.startswith("multi"):
-        return {"f1_weighted": get_metric("f1_weighted", True, False, False)}
-    else:
-        return {"r2": get_metric("r2", True, False, False)}
+    return scorer
 
 
 def infer_task(y, goal="classification"):
@@ -1083,6 +1092,70 @@ def plot_from_model(f):
     return wrapper
 
 
+# Custom scorers =================================================== >>
+
+def true_negatives(y_true, y_pred):
+    return int(confusion_matrix(y_true, y_pred).ravel()[0])
+
+
+def false_positives(y_true, y_pred):
+    return int(confusion_matrix(y_true, y_pred).ravel()[1])
+
+
+def false_negatives(y_true, y_pred):
+    return int(confusion_matrix(y_true, y_pred).ravel()[2])
+
+
+def true_positives(y_true, y_pred):
+    return int(confusion_matrix(y_true, y_pred).ravel()[3])
+
+
+def false_positive_rate(y_true, y_pred):
+    tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
+    return float(fp / (fp + tn))
+
+
+def true_positive_rate(y_true, y_pred):
+    _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return float(tp / (tp + fn))
+
+
+def true_negative_rate(y_true, y_pred):
+    tn, fp, _, _ = confusion_matrix(y_true, y_pred).ravel()
+    return float(tn / (tn + fp))
+
+
+def false_negative_rate(y_true, y_pred):
+    _, _, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return float(fn / (fn + tp))
+
+
+def lift(y_true, y_pred):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
+
+
+def support(y_true, y_pred):
+    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
+    return float((tp + fp) / (tp + fp + fn + tn))
+
+
+# Scorers not predefined by sklearn
+CUSTOM_SCORERS = dict(
+    tn=true_negatives,
+    fp=false_positives,
+    fn=false_negatives,
+    tp=true_positives,
+    fpr=false_positive_rate,
+    tpr=true_positive_rate,
+    tnr=true_negative_rate,
+    fnr=false_negative_rate,
+    lift=lift,
+    sup=support,
+    mcc=matthews_corrcoef,
+)
+
+
 # Classes ========================================================== >>
 
 class NotFittedError(ValueError, AttributeError):
@@ -1219,7 +1292,7 @@ class CustomDict(MutableMapping):
         - It has ordered entries.
         - It allows getting an item from an index position.
         - It can insert key value pairs at a specific position.
-        - Keys are lower case and requests are case insensitive.
+        - Key requests are case insensitive.
         - If iterated over, it iterates over its values, not the keys!
 
     """
@@ -1227,6 +1300,9 @@ class CustomDict(MutableMapping):
     @staticmethod
     def _conv(key):
         return key.lower() if isinstance(key, str) else key
+
+    def _get_key(self, key):
+        return [k for k in self.__keys if self._conv(k) == self._conv(key)][0]
 
     def __init__(self, iterable_or_mapping=None, **kwargs):
         """Class initializer.
@@ -1246,26 +1322,26 @@ class CustomDict(MutableMapping):
                 iterable = iterable_or_mapping
 
             for key, value in iterable:
-                self.__keys.append(self._conv(key))
+                self.__keys.append(key)
                 self.__data[self._conv(key)] = value
 
         for key, value in kwargs.items():
-            self.__keys.append(self._conv(key))
+            self.__keys.append(key)
             self.__data[self._conv(key)] = value
 
     def __getitem__(self, key):
         if isinstance(key, str):
             return self.__data[key.lower()]
         else:
-            return self.__data[self.__keys[key]]
+            return self.__data[self._conv(self.__keys[key])]
 
     def __setitem__(self, key, value):
-        self.__keys.append(self._conv(key))
+        self.__keys.append(key)
         self.__data[self._conv(key)] = value
 
     def __delitem__(self, key):
         del self.__data[self._conv(key)]
-        self.__keys.remove(self._conv(key))
+        self.__keys.remove(self._get_key(key))
 
     def __iter__(self):
         yield from self.values()
@@ -1274,7 +1350,12 @@ class CustomDict(MutableMapping):
         return len(self.__keys)
 
     def __contains__(self, key):
-        return key in self.__keys
+        try:
+            self._get_key(key)
+        except (AttributeError, IndexError):
+            return False
+        else:
+            return True
 
     def __repr__(self):
         return str(dict(self))
@@ -1284,22 +1365,22 @@ class CustomDict(MutableMapping):
 
     def items(self):
         for key in self.__keys:
-            yield key, self.__data[key]
+            yield key, self.__data[self._conv(key)]
 
     def values(self):
         for key in self.__keys:
-            yield self.__data[key]
+            yield self.__data[self._conv(key)]
 
     def insert(self, pos, new_key, value):
         if isinstance(pos, str):
-            pos = self.__keys.index(self._conv(pos))
-        self.__keys.insert(pos, self._conv(new_key))
+            pos = self.__keys.index(self._get_key(pos))
+        self.__keys.insert(pos, new_key)
         self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
         try:
             return self.__data[self._conv(key)]
-        except KeyError:
+        except (IndexError, KeyError):
             return default
 
     def pop(self, key, default=None):
@@ -1312,7 +1393,7 @@ class CustomDict(MutableMapping):
 
     def popitem(self):
         try:
-            return self.__data.pop(self.__keys.pop())
+            return self.__data.pop(self._conv(self.__keys.pop()))
         except IndexError:
             raise KeyError(f"{self.__class__.__name__} is empty")
 
@@ -1320,18 +1401,32 @@ class CustomDict(MutableMapping):
         self.__keys = []
         self.__data = {}
 
-    def update(self, mapping=None, **kwargs):
-        for key, value in dct(mapping).items():
-            if self._conv(key) not in self.__keys:
-                self.__keys.append(self._conv(key))
+    def update(self, iterable_or_mapping=None, **kwargs):
+        if iterable_or_mapping is not None:
+            try:
+                iterable = iterable_or_mapping.items()
+            except AttributeError:
+                iterable = iterable_or_mapping
+
+            for key, value in iterable:
+                if key not in self:
+                    self.__keys.append(key)
+                self.__data[self._conv(key)] = value
+
+        for key, value in kwargs.items():
+            if key not in self:
+                self.__keys.append(key)
             self.__data[self._conv(key)] = value
 
     def setdefault(self, key, default=None):
         try:
-            return self[self._conv(key)]
+            return self[key]
         except KeyError:
-            self[self._conv(key)] = default
-            return self[self._conv(key)]
+            self[key] = default
+            return self[key]
 
     def index(self, key):
-        return self.__keys.index(self._conv(key))
+        try:
+            return self.__keys.index(self._get_key(key))
+        except IndexError:
+            raise KeyError(key)

@@ -1,23 +1,29 @@
 # Imputer
 ---------
 
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop", strat_cat="drop", min_frac_rows=None,
-                                 min_frac_cols=None, verbose=0, logger=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L431">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>
+(strat_num="drop", strat_cat="drop", min_frac_rows=None,
+min_frac_cols=None, verbose=0, logger=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L431">[source]</a>
+</span>
+</div>
+
 Impute or remove missing values according to the selected strategy.
 Also removes rows and columns with too many missing values. Use
 the `missing` attribute to customize what are considered "missing
 values". This class can be accessed from atom through the
 [impute](../../ATOM/atomclassifier/#impute) method. Read more in the
-[user guide](../../../user_guide/#imputing-missing-values).
-<table>
+[user guide](../../../user_guide/data_cleaning/#imputing-missing-values).
+
+<table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strat_num: str, int or float, optional (default="drop")</strong>
-<blockquote>
+<strong>strat_num: str, int or float, optional (default="drop")</strong><br>
 Imputing strategy for numerical columns. Choose from:
-<ul>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop rows containing missing values.</li>
 <li>"mean": Impute with mean of column.</li>
 <li>"median": Impute with median of column.</li>
@@ -25,51 +31,41 @@ Imputing strategy for numerical columns. Choose from:
 <li>"most_frequent": Impute with most frequent value.</li>
 <li>int or float: Impute with provided numerical value.</li>
 </ul>
-</blockquote>
-<strong>strat_cat: str, optional (default="drop")</strong>
-<blockquote>
+<strong>strat_cat: str, optional (default="drop")</strong><br>
 Imputing strategy for categorical columns. Choose from:
-<ul>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>"drop": Drop rows containing missing values.</li>
 <li>"most_frequent": Impute with most frequent value.</li>
 <li>str: Impute with provided string.</li>
 </ul>
-</blockquote>
-<strong>min_frac_rows: float or None, optional (default=None)</strong>
-<blockquote>
+<p>
+<strong>min_frac_rows: float or None, optional (default=None)</strong><br>
 Minimum fraction of non-missing values in a row (if less, the
 row is removed). If None, ignore this step.
-</blockquote>
-<strong>min_frac_cols: float or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>min_frac_cols: float or None, optional (default=None)</strong><br>
 Minimum fraction of non-missing values in a column (if less,
 the column is removed). If None, ignore this step.
-</blockquote>
-<strong>verbose: int, optional (default=0)</strong>
-<blockquote>
+</p>
+<strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
-<ul>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-</blockquote>
-<strong>logger: str, Logger or None, optional (default=None)</strong>
-<blockquote>
-<ul>
+<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
-<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-The default name consists of the class' name followed by the
-timestamp of the logger's creation.
-</blockquote>
 </td>
 </tr>
 </table>
-<br>
 
-!!!tip
+!!! tip
     Use atom's [nans](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the number of missing values per column.
 
@@ -78,19 +74,16 @@ timestamp of the logger's creation.
 
 
 ## Attributes
--------------
 
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="75%" style="background:white;">
-<strong>missing: list</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="80%" style="background:white;">
+<strong>missing: list</strong><br>
 List of values that are considered "missing". Default values are: "",
  "?", "None", "NA", "nan", "NaN" and "inf". Note that <code>None</code>,
  <code>NaN</code>, <code>+inf</code> and <code>-inf</code> are always
 considered missing since they are incompatible with sklearn estimators.
-</blockquote>
 </td>
 </tr>
 </table>
@@ -99,9 +92,8 @@ considered missing since they are incompatible with sklearn estimators.
 
 
 ## Methods
----------
 
-<table width="100%">
+<table style="font-size:16px">
 <tr>
 <td><a href="#fit">fit</a></td>
 <td>Fit to data.</td>
@@ -118,7 +110,7 @@ considered missing since they are incompatible with sklearn estimators.
 </tr>
 
 <tr>
-<td width="15%"><a href="#log">log</a></td>
+<td><a href="#log">log</a></td>
 <td>Write information to the logger and print to stdout.</td>
 </tr>
 
@@ -142,203 +134,223 @@ considered missing since they are incompatible with sklearn estimators.
 
 
 <a name="fit"></a>
-<pre><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L510">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L510">[source]</a>
+</span>
+</div>
 Fit to data.
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str, sequence or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
-</blockquote>
+</p>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>self: Imputer</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>self: Imputer</strong><br>
 Fitted instance of self.
-</blockquote>
 </tr>
 </table>
 <br />
 
 
 <a name="fit-transform"></a>
-<pre><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+</span>
+</div>
 Fit the Imputer and return the imputed data. Note that leaving y=None
- can lead to inconsistencies in data length between X and y if rows are
- dropped during the transformation.
-<table width="100%">
+can lead to inconsistencies in data length between X and y if rows are
+dropped during the transformation.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str or sequence</strong>
-<blockquote>
-<ul>
+</p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
-</blockquote>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
-</blockquote>
-<strong>y: pd.Series</strong>
-<blockquote>
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
 Transformed target column. Only returned if provided.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
 
+
 <a name="get-params"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
+</span>
+</div>
 Get parameters for this estimator.
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>deep: bool, default=True</strong>
-<blockquote>
-If True, will return the parameters for this estimator and contained subobjects
- that are estimators.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>deep: bool, optional (default=True)</strong><br>
+If True, will return the parameters for this estimator and contained subobjects that are estimators.
+</p>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>params: dict</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
-</blockquote>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="log"></a>
-<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+</span>
+</div>
 Write a message to the logger and print it to stdout.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>msg: str</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
-</blockquote>
-<strong>level: int, optional (default=0)</strong>
-<blockquote>
+</p>
+<p>
+<strong>level: int, optional (default=0)</strong><br>
 Minimum verbosity level to print the message.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="save"></a>
-<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+</span>
+</div>
 Save the instance to a pickle file.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name to save the file with. None or "auto" to save with the __name__ of the class.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>filename: str, optional (default="auto")</strong><br>
+Name of the file. Use "auto" for automatic naming.
+</td>
 </tr>
 </table>
 <br>
 
 
 <a name="set-params"></a>
-<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
+</span>
+</div>
 Set the parameters of this estimator.
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>**params: dict</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**params: dict</strong><br>
 Estimator parameters.
-</blockquote>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>self: imputer</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>self: Imputer</strong><br>
 Estimator instance.
-</blockquote>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="transform"></a>
-<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L588">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L588">[source]</a>
+</span>
+</div>
 Impute the data. Note that leaving y=None can lead to inconsistencies in
- data length between X and y if rows are dropped during the transformation.
-<table width="100%">
+data length between X and y if rows are dropped during the transformation.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str or sequence</strong>
-<blockquote>
-<ul>
+</p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,)</li>
 </ul>
-</blockquote>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
-</blockquote>
-<strong>y: pd.Series</strong>
-<blockquote>
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
 Transformed target column. Only returned if provided.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
----------
 
 ```python
 from atom import ATOMClassifier
@@ -347,7 +359,7 @@ atom = ATOMClassifier(X, y)
 atom.impute(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)
 ```
 or
-```Python
+```python
 from atom.data_cleaning import Imputer
 
 imputer = Imputer(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)

@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the training classes.
 
 """
@@ -19,8 +19,8 @@ from sklearn.base import BaseEstimator
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, TRAIN_TYPES, lst, get_best_score, infer_task,
-    composed, method_to_log, crash, CustomDict,
+    SEQUENCE_TYPES, lst, get_best_score, infer_task, composed,
+    method_to_log, crash, CustomDict,
 )
 
 
@@ -38,12 +38,12 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, bagging, n_jobs,
-        verbose, warnings, logger, random_state
+        verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -95,13 +95,13 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         skip_runs, n_calls, n_initial_points, est_params, bo_params, bagging,
-        n_jobs, verbose, warnings, logger, random_state
+        n_jobs, verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -184,23 +184,25 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
     Parameters
     ----------
-    train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))
+    train_sizes: int or sequence, optional (default=5)
         Sequence of training set sizes used to run the trainings.
-             - If <=1: Fraction of the training set.
-             - If >1: Total number of samples.
+            - If int: Number of equally distributed splits, i.e. for a
+                      value N it's equal to np.linspace(1.0/N, 1.0, N).
+            - If sequence: Fraction of the training set when <=1, else
+                           total number of samples.
 
     """
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         train_sizes, n_calls, n_initial_points, est_params, bo_params, bagging,
-        n_jobs, verbose, warnings, logger, random_state
+        n_jobs, verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -223,6 +225,10 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+
+        # Convert integer train_sizes to sequence
+        if isinstance(self.train_sizes, int):
+            self.train_sizes = np.linspace(1/self.train_sizes, 1.0, self.train_sizes)
 
         models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}
@@ -261,7 +267,7 @@ class DirectClassifier(Direct):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -275,13 +281,14 @@ class DirectClassifier(Direct):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -291,7 +298,7 @@ class DirectRegressor(Direct):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -305,13 +312,14 @@ class DirectRegressor(Direct):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -321,7 +329,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -336,13 +344,14 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            bagging, n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -352,7 +361,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -367,13 +376,14 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            bagging, n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -383,12 +393,12 @@ class TrainSizingClassifier(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
@@ -398,13 +408,14 @@ class TrainSizingClassifier(TrainSizing):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            bagging, n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -414,12 +425,12 @@ class TrainSizingRegressor(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
@@ -429,11 +440,12 @@ class TrainSizingRegressor(TrainSizing):
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            bagging, n_jobs, verbose, warnings, logger, experiment, random_state,
         )

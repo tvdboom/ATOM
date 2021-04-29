@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for plots.py
 
 """
@@ -116,6 +116,17 @@ def test_canvas_too_many_plots():
         pytest.raises(RuntimeError, atom.plot_prc)
 
 
+@patch("mlflow.tracking.MlflowClient.log_figure")
+def test_figure_to_mlflow(mlflow):
+    """Assert that the figure is logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run(["Tree", "LGB"])
+    atom.tree.plot_results(display=False)
+    atom.lgb.plot_roc(display=False)
+    atom.plot_prc(display=False)
+    assert mlflow.call_count == 4
+
+
 @patch("atom.plots.plt.savefig")
 def test_figure_is_saved(func):
     """Assert that the figure is saved if a filename is provided."""
@@ -168,16 +179,15 @@ def test_plot_qq():
     atom.plot_qq(columns=[0, 1], distribution="pearson3", display=False)
 
 
-@pytest.mark.parametrize("show_params", [True, False])
-def test_plot_pipeline(show_params):
+def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.prune()
     atom.feature_selection("univariate", n_features=10)
-    atom.successive_halving(["Tree", "AdaB"])
-    pytest.raises(ValueError, atom.plot_pipeline, branch="invalid")
-    atom.plot_pipeline(show_params=show_params, title="Pipeline plot", display=False)
+    atom.successive_halving(["Tree", "LGB"])
+    atom.plot_pipeline(model=None, show_params=False, display=False)
+    atom.plot_pipeline(model="Tree", title="Pipeline plot", display=False)
 
 
 def test_plot_pca():

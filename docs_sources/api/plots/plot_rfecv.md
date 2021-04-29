@@ -1,31 +1,40 @@
 # plot_rfecv
 ------------
 
-<pre><em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>(title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L606">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
+(title=None, figsize=(10, 6), filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+</span>
+</div>
+
 Plot the RFECV results, i.e. the scores obtained by the estimator
 fitted on every subset of the dataset. Only available if RFECV was
 applied on the data.
-<table width="100%">
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=(10, 6))</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=(10, 6))</strong><br>
 Figure's size, format as (x, y).
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
@@ -33,7 +42,6 @@ Whether to render the plot.
 
 
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

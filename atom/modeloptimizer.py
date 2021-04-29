@@ -2,13 +2,15 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the ModelOptimizer class.
 
 """
 
 # Standard packages
+import os
 import pickle
+import mlflow
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
@@ -17,6 +19,7 @@ from inspect import signature
 from datetime import datetime
 from joblib import Parallel, delayed
 from typeguard import typechecked
+from mlflow.tracking import MlflowClient
 
 # Sklearn
 from sklearn.base import clone
@@ -47,8 +50,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, *args):
+        super().__init__(*args)
 
         # Skip if called from FeatureSelector
         if hasattr(self.T, "_branches"):
@@ -275,6 +278,14 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 "time": t_tot,
             }
 
+            # Save BO calls to experiment as nested runs
+            if self.T.log_bo:
+                with mlflow.start_run(run_name=f"{self.name} - {call}", nested=True):
+                    mlflow.set_tag("time", t)
+                    mlflow.log_params(params)
+                    for i, m in enumerate(self.T._metric.keys()):
+                        mlflow.log_metric(m, scores[i])
+
             # Update the progress bar
             if self._pbar:
                 self._pbar.update(1)
@@ -421,7 +432,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             for metric in self.T._metric
         ])
 
-        # Print stats ============================================== >>
+        # Print and log results ==================================== >>
 
         if self.bo.empty:
             self.T.log(f"\n\nResults for {self.fullname}:{' ':9s}", 1)
@@ -444,6 +455,41 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Get duration and print to log
         self.time_fit = time_to_str(t_init)
         self.T.log(f"Time elapsed: {self.time_fit}", 1)
+
+        # Log parameters, metrics, model and data to mlflow
+        if self._run:
+            mlflow.set_tags(
+                {
+                    "fullname": self.fullname,
+                    "branch": self.branch.name,
+                    "time": self.time_fit,
+                }
+            )
+
+            # Can only save params for children of BaseEstimator
+            if hasattr(self, "get_params"):
+                mlflow.log_params(self.estimator.get_params())
+            mlflow.log_params(self._est_params_fit)
+
+            for i, m in enumerate(self.T._metric.keys()):
+                mlflow.log_metric(m, lst(self.metric_test)[i])
+
+            # Save evals for models with in-training evaluation
+            if hasattr(self, "evals"):
+                zipper = zip(self.evals["train"], self.evals["test"])
+                for step, (train, test) in enumerate(zipper):
+                    mlflow.log_metric(f"{self.evals['metric']}_train", train, step=step)
+                    mlflow.log_metric(f"{self.evals['metric']}_test", test, step=step)
+
+            if self.T.log_model:
+                name = self.estimator.__class__.__name__
+                mlflow.sklearn.log_model(self.estimator, name)
+
+            if self.T.log_data:
+                for set_ in ("train", "test"):
+                    getattr(self, set_).to_csv(f"{set_}.csv")
+                    mlflow.log_artifact(f"{set_}.csv")
+                    os.remove(f"{set_}.csv")
 
     def bootstrap_aggregating(self):
         """Apply a bootstrap aggregating (bagging) algorithm.
@@ -557,7 +603,12 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:
             self.estimator = calibrator.fit(self.X_test, self.y_test)
 
-        self.T.log(f"Model {self.name} successfully calibrated!")
+        # Log the CCV to the model's mlflow run
+        if self._run and self.T.log_model:
+            with mlflow.start_run(self._run.info.run_id):
+                mlflow.sklearn.log_model(self.estimator, "CalibratedClassifierCV")
+
+        self.T.log(f"Model {self.name} successfully calibrated!", 1)
 
         # Reset all prediction attrs since the model's estimator changed
         self._pred_attrs = [None] * 10
@@ -566,8 +617,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def rename(self, name: Optional[str] = None):
         """Change the model's tag.
 
-        Note that the acronym always stays at the beginning of the
-        model's name.
+        The acronym always stays at the beginning of the model's name.
 
         Parameters
         ----------
@@ -575,35 +625,40 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             New tag for the model. If None, the tag is removed.
 
         """
-        name = name.lower()
+        if not name:
+            name = self.acronym  # Back to default acronym
+        else:
+            # Drop the acronym if not provided by the user
+            if name.lower().startswith(self.acronym.lower()):
+                name = name[len(self.acronym):]
 
-        # Drop the acronym if not provided by the user
-        if name.startswith(self.acronym.lower()):
-            name = name[len(self.acronym):]
+            # Add the acronym (with right capitalization)
+            name = self.acronym + name
 
-        # Add the acronym (with right capitalization)
-        name = self.acronym + name
+        # Check if the name is available
+        if name.lower() in [n.name.lower() for n in self.T._models]:
+            raise PermissionError(f"There already exists a model named {name}!")
 
         # Replace the model in the _models attribute
         self.T._models.insert(self.name, name, self)
         self.T._models.pop(self.name)
-        self.T.log(f"Model {self.name} successfully renamed to {name}!")
+        self.T.log(f"Model {self.name} successfully renamed to {name}!", 1)
         self.name = name
 
+        if self._run:  # Change name in mlflow's run
+            MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
+
     @composed(crash, method_to_log, typechecked)
-    def save_estimator(self, filename: Optional[str] = None):
+    def save_estimator(self, filename: str = "auto"):
         """Save the estimator to a pickle file.
 
         Parameters
         ----------
         filename: str, optional (default=None)
-            Name of the file. If None or "auto", the estimator's
-            __name__ is used.
+            Name of the file. Use "auto" for automatic naming.
 
         """
-        if not filename:
-            filename = self.estimator.__class__.__name__
-        elif filename == "auto" or filename.endswith("/auto"):
+        if filename.endswith("auto"):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
 
         pickle.dump(self.estimator, open(filename, "wb"))

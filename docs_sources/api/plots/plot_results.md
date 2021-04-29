@@ -1,41 +1,50 @@
 # plot_results
 --------------
 
-<pre><em>method</em> <strong style="color:#008AB8">plot_results</strong>(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L683">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_results</strong>
+(models=None, metric=0, title=None, figsize=None, filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+</span>
+</div>
+
 Plot of the model results after the evaluation. If all models applied
 bagging, the plot is a boxplot. If not, the plot is a barplot. Models
 are ordered based on their score from the top down. The score is either
 the `mean_bagging` or `metric_test` attribute of the model, selected in
 that order.
-<table width="100%">
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all models in the pipeline are selected.
-</blockquote>
-<strong>metric: int or str, optional (default=0)</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric: int or str, optional (default=0)</strong><br>
 Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, adapts size the to number of models.
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
@@ -43,7 +52,6 @@ Whether to render the plot.
 
 
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

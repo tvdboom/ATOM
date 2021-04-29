@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the Branch class.
 
 """
@@ -18,7 +18,7 @@ from typing import Optional
 from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    check_deep, composed, crash, method_to_log,
+    check_multidimensional, composed, crash, method_to_log,
 )
 
 
@@ -225,8 +225,8 @@ class Branch:
 
     @dataset.setter
     @typechecked
-    def dataset(self, dataset: Optional[X_TYPES]):
-        self.data = self._check_setter("dataset", dataset)
+    def dataset(self, value: Optional[X_TYPES]):
+        self.data = self._check_setter("dataset", value)
 
     @property
     def train(self):
@@ -235,8 +235,8 @@ class Branch:
 
     @train.setter
     @typechecked
-    def train(self, train: X_TYPES):
-        df = self._check_setter("train", train)
+    def train(self, value: X_TYPES):
+        df = self._check_setter("train", value)
         self.data = pd.concat([df, self.test])
         self.idx[0] = len(df)
 
@@ -247,8 +247,8 @@ class Branch:
 
     @test.setter
     @typechecked
-    def test(self, test: X_TYPES):
-        df = self._check_setter("test", test)
+    def test(self, value: X_TYPES):
+        df = self._check_setter("test", value)
         self.data = pd.concat([self.train, df])
         self.idx[1] = len(df)
 
@@ -259,8 +259,8 @@ class Branch:
 
     @X.setter
     @typechecked
-    def X(self, X: X_TYPES):
-        df = self._check_setter("X", X)
+    def X(self, value: X_TYPES):
+        df = self._check_setter("X", value)
         self.data = merge(df, self.y)
 
     @property
@@ -270,8 +270,8 @@ class Branch:
 
     @y.setter
     @typechecked
-    def y(self, y: SEQUENCE_TYPES):
-        series = self._check_setter("y", y)
+    def y(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y", value)
         self.data = merge(self.data.drop(self.target, axis=1), series)
 
     @property
@@ -281,8 +281,8 @@ class Branch:
 
     @X_train.setter
     @typechecked
-    def X_train(self, X_train: X_TYPES):
-        df = self._check_setter("X_train", X_train)
+    def X_train(self, value: X_TYPES):
+        df = self._check_setter("X_train", value)
         self.data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
@@ -292,8 +292,8 @@ class Branch:
 
     @X_test.setter
     @typechecked
-    def X_test(self, X_test: X_TYPES):
-        df = self._check_setter("X_test", X_test)
+    def X_test(self, value: X_TYPES):
+        df = self._check_setter("X_test", value)
         self.data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @property
@@ -303,8 +303,8 @@ class Branch:
 
     @y_train.setter
     @typechecked
-    def y_train(self, y_train: SEQUENCE_TYPES):
-        series = self._check_setter("y_train", y_train)
+    def y_train(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y_train", value)
         self.data = pd.concat([merge(self.X_train, series), self.test])
 
     @property
@@ -314,14 +314,14 @@ class Branch:
 
     @y_test.setter
     @typechecked
-    def y_test(self, y_test: SEQUENCE_TYPES):
-        series = self._check_setter("y_test", y_test)
+    def y_test(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y_test", value)
         self.data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return self.data.shape
         else:
             return len(self.data), self.X.iloc[0, 0].shape, 2

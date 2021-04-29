@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing all available models. All classes must
              have the following structure:
 
@@ -10,27 +10,28 @@ Description: Module containing all available models. All classes must
         ----
         Name of the model's class in camel case format.
 
-        Attributes
-        ----------
-        T: class
-            Trainer from which the model is called.
-
-        name: str
-            Name of the model. Defaults to the same as the acronym.
-            Is assigned in the basemodel.py module.
-
+        Class attributes
+        ----------------
         acronym: str
             Acronym of the model's fullname.
 
         fullname: str
-            Complete name of the model.
+            Complete name of the model. If None, the estimator's
+            __name__ is used.
 
         needs_scaling: bool
-            Whether the model needs scaled features.
+            Whether the model needs scaled features. Can not be True
+            for datasets with more than two dimensions.
 
-        type: str
-            Model's type. Used to select SHAP's explainer for plotting.
-            Options are: "linear", "tree" or "kernel".
+        Instance attributes
+        -------------------
+        T: class
+            Trainer from which the model is called.
+
+        name: str
+            Name of the model. Defaults to the same as the acronym
+            but can be different if the same model is called multiple
+            times. The name is assigned in the basemodel.py module.
 
         evals: dict
             Evaluation metric and scores. Only for models that allow
@@ -169,7 +170,7 @@ from sklearn.neural_network import MLPClassifier, MLPRegressor
 
 # Own modules
 from .modeloptimizer import ModelOptimizer
-from .utils import dct, create_acronym
+from .utils import dct, create_acronym, CustomDict
 
 
 class CustomModel(ModelOptimizer):
@@ -180,26 +181,21 @@ class CustomModel(ModelOptimizer):
 
         # If no fullname is provided, use the class' name
         if hasattr(self.est, "fullname"):
-            fullname = self.est.fullname
+            self.fullname = self.est.fullname
         elif callable(self.est):
-            fullname = self.est.__name__
+            self.fullname = self.est.__name__
         else:
-            fullname = self.est.__class__.__name__
+            self.fullname = self.est.__class__.__name__
 
         # If no acronym is provided, use capital letters in the class' name
         if hasattr(self.est, "acronym"):
-            acronym = self.est.acronym
+            self.acronym = self.est.acronym
         else:
-            acronym = create_acronym(fullname)
+            self.acronym = create_acronym(self.fullname)
 
-        super().__init__(
-            *args,
-            acronym=acronym,
-            fullname=fullname,
-            needs_scaling=getattr(self.est, "needs_scaling", False),
-            type=getattr(self.est, "type", "kernel"),
-            params={},
-        )
+        self.needs_scaling = getattr(self.est, "needs_scaling", False)
+        self.params = {}
+        super().__init__(*args)
 
     def get_estimator(self, params=None):
         """Call the estimator object."""
@@ -231,14 +227,12 @@ class CustomModel(ModelOptimizer):
 class GaussianProcess(ModelOptimizer):
     """Gaussian process."""
 
+    acronym = "GP"
+    fullname = "Gaussian Process"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="GP",
-            fullname="Gaussian Process",
-            needs_scaling=False,
-            type="kernel",
-        )
+        super().__init__(*args)
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -259,14 +253,12 @@ class GaussianProcess(ModelOptimizer):
 class GaussianNaiveBayes(ModelOptimizer):
     """Gaussian Naive Bayes."""
 
+    acronym = "GNB"
+    fullname = "Gaussian Naive Bayes"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="GNB",
-            fullname="Gaussian Naive Bayes",
-            needs_scaling=False,
-            type="kernel",
-        )
+        super().__init__(*args)
 
     @staticmethod
     def get_estimator(params=None):
@@ -277,15 +269,13 @@ class GaussianNaiveBayes(ModelOptimizer):
 class MultinomialNaiveBayes(ModelOptimizer):
     """Multinomial Naive Bayes."""
 
+    acronym = "MNB"
+    fullname = "Multinomial Naive Bayes"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="MNB",
-            fullname="Multinomial Naive Bayes",
-            needs_scaling=False,
-            type="kernel",
-            params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
-        )
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
     @staticmethod
     def get_estimator(params=None):
@@ -304,15 +294,13 @@ class MultinomialNaiveBayes(ModelOptimizer):
 class BernoulliNaiveBayes(ModelOptimizer):
     """Bernoulli Naive Bayes."""
 
+    acronym = "BNB"
+    fullname = "Bernoulli Naive Bayes"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="BNB",
-            fullname="Bernoulli Naive Bayes",
-            needs_scaling=False,
-            type="kernel",
-            params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
-        )
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
     @staticmethod
     def get_estimator(params=None):
@@ -331,15 +319,13 @@ class BernoulliNaiveBayes(ModelOptimizer):
 class CategoricalNaiveBayes(ModelOptimizer):
     """Categorical Naive Bayes."""
 
+    acronym = "CatNB"
+    fullname = "Categorical Naive Bayes"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="CatNB",
-            fullname="Categorical Naive Bayes",
-            needs_scaling=False,
-            type="kernel",
-            params={"alpha": [1.0, 3], "fit_prior": [True, 0]},
-        )
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0]}
 
     @staticmethod
     def get_estimator(params=None):
@@ -358,15 +344,13 @@ class CategoricalNaiveBayes(ModelOptimizer):
 class ComplementNaiveBayes(ModelOptimizer):
     """Complement Naive Bayes."""
 
+    acronym = "CNB"
+    fullname = "Complement Naive Bayes"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="CNB",
-            fullname="Complement Naive Bayes",
-            needs_scaling=False,
-            type="kernel",
-            params={"alpha": [1.0, 3], "fit_prior": [True, 0], "norm": [False, 0]},
-        )
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "fit_prior": [True, 0], "norm": [False, 0]}
 
     @staticmethod
     def get_estimator(params=None):
@@ -386,14 +370,12 @@ class ComplementNaiveBayes(ModelOptimizer):
 class OrdinaryLeastSquares(ModelOptimizer):
     """Linear Regression (without regularization)."""
 
+    acronym = "OLS"
+    fullname = "Ordinary Least Squares"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="OLS",
-            fullname="Ordinary Least Squares",
-            needs_scaling=True,
-            type="linear",
-        )
+        super().__init__(*args)
 
     def get_estimator(self, params=None):
         """Call the estimator object."""
@@ -404,20 +386,17 @@ class OrdinaryLeastSquares(ModelOptimizer):
 class Ridge(ModelOptimizer):
     """Linear Regression/Classification with ridge regularization."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            fullname = "Ridge Classification"
-        else:
-            fullname = "Ridge Regression"
+    acronym = "Ridge"
+    needs_scaling = True
 
-        super().__init__(
-            *args,
-            acronym="Ridge",
-            fullname=fullname,
-            needs_scaling=True,
-            type="linear",
-            params={"alpha": [1.0, 3], "solver": ["auto", 0]},
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "solver": ["auto", 0]}
+
+        if args[0].goal.startswith("class"):
+            self.fullname = "Ridge Classification"
+        else:
+            self.fullname = "Ridge Regression"
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -446,15 +425,13 @@ class Ridge(ModelOptimizer):
 class Lasso(ModelOptimizer):
     """Linear Regression with lasso regularization."""
 
+    acronym = "Lasso"
+    fullname = "Lasso Regression"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="Lasso",
-            fullname="Lasso Regression",
-            needs_scaling=True,
-            type="linear",
-            params={"alpha": [1.0, 3], "selection": ["cyclic", 0]},
-        )
+        super().__init__(*args)
+        self.params = {"alpha": [1.0, 3], "selection": ["cyclic", 0]}
 
     def get_estimator(self, params=None):
         """Call the estimator object."""
@@ -476,19 +453,17 @@ class Lasso(ModelOptimizer):
 class ElasticNet(ModelOptimizer):
     """Linear Regression with elasticnet regularization."""
 
+    acronym = "EN"
+    fullname = "ElasticNet Regression"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="EN",
-            fullname="ElasticNet Regression",
-            needs_scaling=True,
-            type="linear",
-            params={
-                "alpha": [1.0, 3],
-                "l1_ratio": [0.5, 1],
-                "selection": ["cyclic", 0],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "alpha": [1.0, 3],
+            "l1_ratio": [0.5, 1],
+            "selection": ["cyclic", 0],
+        }
 
     def get_estimator(self, params=None):
         """Call the estimator object."""
@@ -511,21 +486,19 @@ class ElasticNet(ModelOptimizer):
 class BayesianRidge(ModelOptimizer):
     """Bayesian ridge regression."""
 
+    acronym = "BR"
+    fullname = "Bayesian Ridge"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="BR",
-            fullname="Bayesian Ridge",
-            needs_scaling=True,
-            type="linear",
-            params={
-                "n_iter": [300, 0],
-                "alpha_1": [1e-6, 8],
-                "alpha_2": [1e-6, 8],
-                "lambda_1": [1e-6, 8],
-                "lambda_2": [1e-6, 8],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "n_iter": [300, 0],
+            "alpha_1": [1e-6, 8],
+            "alpha_2": [1e-6, 8],
+            "lambda_1": [1e-6, 8],
+            "lambda_2": [1e-6, 8],
+         }
 
     @staticmethod
     def get_estimator(params=None):
@@ -547,21 +520,19 @@ class BayesianRidge(ModelOptimizer):
 class AutomaticRelevanceDetermination(ModelOptimizer):
     """Automatic Relevance Determination."""
 
+    acronym = "ARD"
+    fullname = "Automatic Relevant Determination"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="ARD",
-            fullname="Automatic Relevant Determination",
-            needs_scaling=True,
-            type="linear",
-            params={
-                "n_iter": [300, 0],
-                "alpha_1": [1e-6, 8],
-                "alpha_2": [1e-6, 8],
-                "lambda_1": [1e-6, 8],
-                "lambda_2": [1e-6, 8],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "n_iter": [300, 0],
+            "alpha_1": [1e-6, 8],
+            "alpha_2": [1e-6, 8],
+            "lambda_1": [1e-6, 8],
+            "lambda_2": [1e-6, 8],
+        }
 
     @staticmethod
     def get_estimator(params=None):
@@ -583,21 +554,19 @@ class AutomaticRelevanceDetermination(ModelOptimizer):
 class LogisticRegression(ModelOptimizer):
     """Logistic Regression."""
 
+    acronym = "LR"
+    fullname = "Logistic Regression"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="LR",
-            fullname="Logistic Regression",
-            needs_scaling=True,
-            type="linear",
-            params={
-                "penalty": ["l2", 0],
-                "C": [1.0, 3],
-                "solver": ["lbfgs", 0],
-                "max_iter": [100, 0],
-                "l1_ratio": [0.5, 1],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "penalty": ["l2", 0],
+            "C": [1.0, 3],
+            "solver": ["lbfgs", 0],
+            "max_iter": [100, 0],
+            "l1_ratio": [0.5, 1],
+        }
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -644,15 +613,13 @@ class LogisticRegression(ModelOptimizer):
 class LinearDiscriminantAnalysis(ModelOptimizer):
     """Linear Discriminant Analysis."""
 
+    acronym = "LDA"
+    fullname = "Linear Discriminant Analysis"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="LDA",
-            fullname="Linear Discriminant Analysis",
-            needs_scaling=False,
-            type="kernel",
-            params={"solver": ["svd", 0], "shrinkage": [0, 1]},
-        )
+        super().__init__(*args)
+        self.params = {"solver": ["svd", 0], "shrinkage": [0, 1]}
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -680,15 +647,13 @@ class LinearDiscriminantAnalysis(ModelOptimizer):
 class QuadraticDiscriminantAnalysis(ModelOptimizer):
     """Quadratic Discriminant Analysis."""
 
+    acronym = "QDA"
+    fullname = "Quadratic Discriminant Analysis"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="QDA",
-            fullname="Quadratic Discriminant Analysis",
-            needs_scaling=False,
-            type="kernel",
-            params={"reg_param": [0, 1]},
-        )
+        super().__init__(*args)
+        self.params = {"reg_param": [0, 1]}
 
     @staticmethod
     def get_estimator(params=None):
@@ -704,21 +669,19 @@ class QuadraticDiscriminantAnalysis(ModelOptimizer):
 class KNearestNeighbors(ModelOptimizer):
     """K-Nearest Neighbors."""
 
+    acronym = "KNN"
+    fullname = "K-Nearest Neighbors"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="KNN",
-            fullname="K-Nearest Neighbors",
-            needs_scaling=True,
-            type="kernel",
-            params={
-                "n_neighbors": [5, 0],
-                "weights": ["uniform", 0],
-                "algorithm": ["auto", 0],
-                "leaf_size": [30, 0],
-                "p": [2, 0],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "n_neighbors": [5, 0],
+            "weights": ["uniform", 0],
+            "algorithm": ["auto", 0],
+            "leaf_size": [30, 0],
+            "p": [2, 0],
+        }
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -749,22 +712,21 @@ class KNearestNeighbors(ModelOptimizer):
 class RadiusNearestNeighbors(ModelOptimizer):
     """Radius Nearest Neighbors."""
 
+    acronym = "RNN"
+    fullname = "Radius Nearest Neighbors"
+    needs_scaling = True
+    type = "kernel"
+
     def __init__(self, *args):
         self._distances = []
-        super().__init__(
-            *args,
-            acronym="RNN",
-            fullname="Radius Nearest Neighbors",
-            needs_scaling=True,
-            type="kernel",
-            params={
-                "radius": [None, 3],  # We need the scaler to calculate the distances
-                "weights": ["uniform", 0],
-                "algorithm": ["auto", 0],
-                "leaf_size": [30, 0],
-                "p": [2, 0],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "radius": [None, 3],  # The scaler is needed to calculate the distances
+            "weights": ["uniform", 0],
+            "algorithm": ["auto", 0],
+            "leaf_size": [30, 0],
+            "p": [2, 0],
+        }
 
     def get_init_values(self):
         """Custom method to return a valid radius."""
@@ -817,28 +779,21 @@ class RadiusNearestNeighbors(ModelOptimizer):
 class DecisionTree(ModelOptimizer):
     """Single Decision Tree."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            criterion = "gini"
-        else:
-            criterion = "mse"
+    acronym = "Tree"
+    fullname = "Decision Tree"
+    needs_scaling = False
 
-        super().__init__(
-            *args,
-            acronym="Tree",
-            fullname="Decision Tree",
-            needs_scaling=False,
-            type="tree",
-            params={
-                "criterion": [criterion, 0],
-                "splitter": ["best", 0],
-                "max_depth": [None, 0],
-                "min_samples_split": [2, 0],
-                "min_samples_leaf": [1, 0],
-                "max_features": [None, 0],
-                "ccp_alpha": [0, 3],
-            },
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {
+            "criterion": ["gini" if args[0].goal.startswith("class") else "mse", 0],
+            "splitter": ["best", 0],
+            "max_depth": [None, 0],
+            "min_samples_split": [2, 0],
+            "min_samples_leaf": [1, 0],
+            "max_features": [None, 0],
+            "ccp_alpha": [0, 3],
+        }
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -876,26 +831,23 @@ class DecisionTree(ModelOptimizer):
 class Bagging(ModelOptimizer):
     """Bagging model (with decision tree as base estimator)."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            fullname = "Bagging Classifier"
-        else:
-            fullname = "Bagging Regressor"
+    acronym = "Bag"
+    needs_scaling = False
 
-        super().__init__(
-            *args,
-            acronym="Bag",
-            fullname=fullname,
-            needs_scaling=False,
-            type="tree",
-            params={
-                "n_estimators": [10, 0],
-                "max_samples": [1.0, 1],
-                "max_features": [1.0, 1],
-                "bootstrap": [True, 0],
-                "bootstrap_features": [False, 0],
-            },
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {
+            "n_estimators": [10, 0],
+            "max_samples": [1.0, 1],
+            "max_features": [1.0, 1],
+            "bootstrap": [True, 0],
+            "bootstrap_features": [False, 0],
+        }
+
+        if args[0].goal.startswith("class"):
+            self.fullname = "Bagging Classifier"
+        else:
+            self.fullname = "Bagging Regressor"
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -928,21 +880,15 @@ class Bagging(ModelOptimizer):
 class ExtraTrees(ModelOptimizer):
     """Extremely Randomized Trees."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            criterion = "gini"
-        else:
-            criterion = "mse"
+    acronym = "ET"
+    fullname = "Extra-Trees"
+    needs_scaling = False
 
-        super().__init__(
-            *args,
-            acronym="ET",
-            fullname="Extra-Trees",
-            needs_scaling=False,
-            type="tree",
-            params={
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {
                 "n_estimators": [100, 0],
-                "criterion": [criterion, 0],
+                "criterion": ["gini" if args[0].goal.startswith("class") else "mse", 0],
                 "max_depth": [None, 0],
                 "min_samples_split": [2, 0],
                 "min_samples_leaf": [1, 0],
@@ -950,8 +896,7 @@ class ExtraTrees(ModelOptimizer):
                 "bootstrap": [False, 0],
                 "ccp_alpha": [0, 3],
                 "max_samples": [0.9, 1],
-            },
-        )
+            }
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1002,30 +947,23 @@ class ExtraTrees(ModelOptimizer):
 class RandomForest(ModelOptimizer):
     """Random Forest."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            criterion = "gini"
-        else:
-            criterion = "mse"
+    acronym = "RF"
+    fullname = "Random Forest"
+    needs_scaling = False
 
-        super().__init__(
-            *args,
-            acronym="RF",
-            fullname="Random Forest",
-            needs_scaling=False,
-            type="tree",
-            params={
-                "n_estimators": [100, 0],
-                "criterion": [criterion, 0],
-                "max_depth": [None, 0],
-                "min_samples_split": [2, 0],
-                "min_samples_leaf": [1, 0],
-                "max_features": [None, 0],
-                "bootstrap": [False, 0],
-                "ccp_alpha": [0, 3],
-                "max_samples": [0.9, 1],
-            },
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {
+            "n_estimators": [100, 0],
+            "criterion": ["gini" if args[0].goal.startswith("class") else "mse", 0],
+            "max_depth": [None, 0],
+            "min_samples_split": [2, 0],
+            "min_samples_leaf": [1, 0],
+            "max_features": [None, 0],
+            "bootstrap": [False, 0],
+            "ccp_alpha": [0, 3],
+            "max_samples": [0.9, 1],
+        }
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1076,15 +1014,13 @@ class RandomForest(ModelOptimizer):
 class AdaBoost(ModelOptimizer):
     """Adaptive Boosting (with decision tree as base estimator)."""
 
+    acronym = "AdaB"
+    fullname = "AdaBoost"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="AdaB",
-            fullname="AdaBoost",
-            needs_scaling=False,
-            type="tree",
-            params={"n_estimators": [50, 0], "learning_rate": [1.0, 2]},
-        )
+        super().__init__(*args)
+        self.params = {"n_estimators": [50, 0], "learning_rate": [1.0, 2]}
 
         # Add extra parameters depending on the task
         if self.T.goal.startswith("class"):
@@ -1120,25 +1056,23 @@ class AdaBoost(ModelOptimizer):
 class GradientBoostingMachine(ModelOptimizer):
     """Gradient Boosting Machine."""
 
+    acronym = "GBM"
+    fullname = "Gradient Boosting Machine"
+    needs_scaling = False
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="GBM",
-            fullname="Gradient Boosting Machine",
-            needs_scaling=False,
-            type="tree",
-            params={
-                "learning_rate": [0.1, 2],
-                "n_estimators": [100, 0],
-                "subsample": [1.0, 1],
-                "criterion": ["friedman_mse", 0],
-                "min_samples_split": [2, 0],
-                "min_samples_leaf": [1, 0],
-                "max_depth": [3, 0],
-                "max_features": [None, 0],
-                "ccp_alpha": [0, 3],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "learning_rate": [0.1, 2],
+            "n_estimators": [100, 0],
+            "subsample": [1.0, 1],
+            "criterion": ["friedman_mse", 0],
+            "min_samples_split": [2, 0],
+            "min_samples_leaf": [1, 0],
+            "max_depth": [3, 0],
+            "max_features": [None, 0],
+            "ccp_alpha": [0, 3],
+         }
 
         # Add extra parameters depending on the task
         if self.T.task.startswith("bin"):
@@ -1197,26 +1131,24 @@ class GradientBoostingMachine(ModelOptimizer):
 class XGBoost(ModelOptimizer):
     """Extreme Gradient Boosting."""
 
+    acronym = "XGB"
+    fullname = "XGBoost"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="XGB",
-            fullname="XGBoost",
-            needs_scaling=True,
-            type="tree",
-            evals={},
-            params={
-                "n_estimators": [100, 0],
-                "learning_rate": [0.1, 2],
-                "max_depth": [6, 0],
-                "gamma": [0.0, 2],
-                "min_child_weight": [1, 0],
-                "subsample": [1.0, 1],
-                "colsample_bytree": [1.0, 1],
-                "reg_alpha": [0, 0],
-                "reg_lambda": [1, 0],
-            },
-        )
+        super().__init__(*args)
+        self.evals = {}
+        self.params = {
+            "n_estimators": [100, 0],
+            "learning_rate": [0.1, 2],
+            "max_depth": [6, 0],
+            "gamma": [0.0, 2],
+            "min_child_weight": [1, 0],
+            "subsample": [1.0, 1],
+            "colsample_bytree": [1.0, 1],
+            "reg_alpha": [0, 0],
+            "reg_lambda": [1, 0],
+        }
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -1298,27 +1230,25 @@ class XGBoost(ModelOptimizer):
 class LightGBM(ModelOptimizer):
     """Light Gradient Boosting Machine."""
 
+    acronym = "LGB"
+    fullname = "LightGBM"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="LGB",
-            fullname="LightGBM",
-            needs_scaling=True,
-            type="tree",
-            evals={},
-            params={
-                "n_estimators": [100, 0],
-                "learning_rate": [0.1, 2],
-                "max_depth": [-1, 0],
-                "num_leaves": [31, 0],
-                "min_child_weight": [1, 0],
-                "min_child_samples": [20, 0],
-                "subsample": [1.0, 1],
-                "colsample_bytree": [1.0, 1],
-                "reg_alpha": [0, 0],
-                "reg_lambda": [0, 0],
-            },
-        )
+        super().__init__(*args)
+        self.evals = {}
+        self.params = {
+            "n_estimators": [100, 0],
+            "learning_rate": [0.1, 2],
+            "max_depth": [-1, 0],
+            "num_leaves": [31, 0],
+            "min_child_weight": [1, 0],
+            "min_child_samples": [20, 0],
+            "subsample": [1.0, 1],
+            "colsample_bytree": [1.0, 1],
+            "reg_alpha": [0, 0],
+            "reg_lambda": [0, 0],
+        }
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -1393,23 +1323,21 @@ class LightGBM(ModelOptimizer):
 class CatBoost(ModelOptimizer):
     """Categorical Boosting Machine."""
 
+    acronym = "CatB"
+    fullname = "CatBoost"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="CatB",
-            fullname="CatBoost",
-            needs_scaling=True,
-            type="tree",
-            evals={},
-            params={
-                "n_estimators": [100, 0],
-                "learning_rate": [0.1, 2],
-                "max_depth": [None, 0],
-                "subsample": [1.0, 1],
-                "colsample_bylevel": [1.0, 1],
-                "reg_lambda": [0, 0],
-            },
-        )
+        super().__init__(*args)
+        self.evals = {}
+        self.params = {
+            "n_estimators": [100, 0],
+            "learning_rate": [0.1, 2],
+            "max_depth": [None, 0],
+            "subsample": [1.0, 1],
+            "colsample_bylevel": [1.0, 1],
+            "reg_lambda": [0, 0],
+        }
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -1487,15 +1415,13 @@ class CatBoost(ModelOptimizer):
 class LinearSVM(ModelOptimizer):
     """Linear Support Vector Machine."""
 
+    acronym = "lSVM"
+    fullname = "Linear-SVM"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="lSVM",
-            fullname="Linear-SVM",
-            needs_scaling=True,
-            type="kernel",
-            params={"loss": ["epsilon_insensitive", 0], "C": [1.0, 3]},
-        )
+        super().__init__(*args)
+        self.params = {"loss": ["epsilon_insensitive", 0], "C": [1.0, 3]}
 
         # Different params for classification tasks
         if self.T.goal.startswith("class"):
@@ -1551,22 +1477,20 @@ class LinearSVM(ModelOptimizer):
 class KernelSVM(ModelOptimizer):
     """Kernel (non-linear) Support Vector Machine."""
 
+    acronym = "kSVM"
+    fullname = "Kernel-SVM"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="kSVM",
-            fullname="Kernel-SVM",
-            needs_scaling=True,
-            type="kernel",
-            params={
-                "C": [1.0, 3],
-                "kernel": ["rbf", 0],
-                "degree": [3, 0],
-                "gamma": ["scale", 0],
-                "coef0": [0, 2],
-                "shrinking": [True, 0],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "C": [1.0, 3],
+            "kernel": ["rbf", 0],
+            "degree": [3, 0],
+            "gamma": ["scale", 0],
+            "coef0": [0, 2],
+            "shrinking": [True, 0],
+        }
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1609,19 +1533,15 @@ class KernelSVM(ModelOptimizer):
 class PassiveAggressive(ModelOptimizer):
     """Passive Aggressive."""
 
-    def __init__(self, *args):
-        if args[0].goal.startswith("class"):
-            loss = "hinge"
-        else:
-            loss = "epsilon_insensitive"
+    acronym = "PA"
+    fullname = "Passive Aggressive"
+    needs_scaling = True
 
-        super().__init__(
-            *args,
-            acronym="PA",
-            fullname="Passive Aggressive",
-            needs_scaling=True,
-            params={"C": [1.0, 3], "loss": [loss, 0], "average": [False, 0]},
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        loss = "hinge" if args[0].goal.startswith("class") else "epsilon_insensitive"
+        self.params = {"C": [1.0, 3], "loss": [loss, 0], "average": [False, 0]}
 
     def get_estimator(self, params=None):
         """Return the model's estimator with unpacked parameters."""
@@ -1655,30 +1575,23 @@ class PassiveAggressive(ModelOptimizer):
 class StochasticGradientDescent(ModelOptimizer):
     """Stochastic Gradient Descent."""
 
-    def __init__(self, *args):
-        if args[0].task.startswith("reg"):
-            loss = "squared_loss"
-        else:
-            loss = "hinge"
+    acronym = "SGD"
+    fullname = "Stochastic Gradient Descent"
+    needs_scaling = True
 
-        super().__init__(
-            *args,
-            acronym="SGD",
-            fullname="Stochastic Gradient Descent",
-            needs_scaling=True,
-            type="linear",
-            params={
-                "loss": [loss, 0],
-                "penalty": ["l2", 0],
-                "alpha": [1e-4, 4],
-                "l1_ratio": [0.15, 2],
-                "epsilon": [0.1, 4],
-                "learning_rate": ["optimal", 0],
-                "eta0": [0.01, 4],
-                "power_t": [0.5, 1],
-                "average": [False, 0],
-            },
-        )
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.params = {
+            "loss": ["squared_loss" if args[0].task.startswith("reg") else "hinge", 0],
+            "penalty": ["l2", 0],
+            "alpha": [1e-4, 4],
+            "l1_ratio": [0.15, 2],
+            "epsilon": [0.1, 4],
+            "learning_rate": ["optimal", 0],
+            "eta0": [0.01, 4],
+            "power_t": [0.5, 1],
+            "average": [False, 0],
+        }
 
     def get_params(self, x):
         """Return a dictionary of the model´s hyperparameters."""
@@ -1740,25 +1653,23 @@ class StochasticGradientDescent(ModelOptimizer):
 class MultilayerPerceptron(ModelOptimizer):
     """Multi-layer Perceptron."""
 
+    acronym = "MLP"
+    fullname = "Multi-layer Perceptron"
+    needs_scaling = True
+
     def __init__(self, *args):
-        super().__init__(
-            *args,
-            acronym="MLP",
-            fullname="Multi-layer Perceptron",
-            needs_scaling=True,
-            type="kernel",
-            params={
-                "hidden_layer_sizes": [(100, 0, 0), 0],
-                "activation": ["relu", 0],
-                "solver": ["adam", 0],
-                "alpha": [1e-4, 4],
-                "batch_size": [200, 0],
-                "learning_rate": ["constant", 0],
-                "learning_rate_init": [0.001, 3],
-                "power_t": [0.5, 1],
-                "max_iter": [200, 0],
-            },
-        )
+        super().__init__(*args)
+        self.params = {
+            "hidden_layer_sizes": [(100, 0, 0), 0],
+            "activation": ["relu", 0],
+            "solver": ["adam", 0],
+            "alpha": [1e-4, 4],
+            "batch_size": [200, 0],
+            "learning_rate": ["constant", 0],
+            "learning_rate_init": [0.001, 3],
+            "power_t": [0.5, 1],
+            "max_iter": [200, 0],
+        }
 
     def get_init_values(self):
         """Custom method to return the correct hidden_layer_sizes."""
@@ -1836,7 +1747,7 @@ class MultilayerPerceptron(ModelOptimizer):
 
 
 # List of all the available models
-MODEL_LIST = dict(
+MODEL_LIST = CustomDict(
     GP=GaussianProcess,
     GNB=GaussianNaiveBayes,
     MNB=MultinomialNaiveBayes,

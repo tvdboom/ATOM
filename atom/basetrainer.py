@@ -2,12 +2,13 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the parent class for the trainers.
 
 """
 
 # Standard packages
+import mlflow
 import importlib
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -20,8 +21,8 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst, dct,
-    time_to_str, get_acronym, get_metric, get_default_metric,
+    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst,
+    dct, time_to_str, get_acronym, get_scorer, get_best_score,
     check_scaling, delete, PlotCallback, CustomDict,
 )
 
@@ -31,51 +32,54 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     Parameters
     ----------
-    models: string or sequence
-        Models to fit to the data. Use a custom estimator or the
-        model's predefined acronyms.
+    models: str, estimator or sequence, optional (default=None)
+        Models to fit to the data. Allowed inputs are: an acronym from
+        any of ATOM's predefined models, an ATOMModel or a custom
+        estimator as class or instance. If None, all the predefined
+        models are used.
 
-    metric: str, callable or sequence, optional (default=None)
+    metric: str, func, scorer, sequence or None, optional (default=None)
         Metric on which to fit the models. Choose from any of sklearn's
-        SCORERS, a function with signature metric(y, y_pred, **kwargs),
-        a scorer object or a sequence of these. If multiple metrics are
+        SCORERS, a function with signature `metric(y_true, y_pred)`, a
+        scorer object or a sequence of these. If multiple metrics are
         selected, only the first is used to optimize the BO. If None, a
-        default metric is selected:
+        default scorer is selected:
             - "f1" for binary classification
             - "f1_weighted" for multiclass classification
             - "r2" for regression
 
     greater_is_better: bool or sequence, optional (default=True)
         Whether the metric is a score function or a loss function,
-        i.e. if True, a higher score is better and if False, lower is
-        better. Will be ignored if the metric is a string or a scorer.
-        If sequence, the n-th value will apply to the n-th metric.
+        i.e. if True, a higher score is better and if False, lower
+        is better. This parameter is ignored if the metric is a
+        string or a scorer. If sequence, the n-th value applies to
+        the n-th metric.
 
     needs_proba: bool or sequence, optional (default=False)
         Whether the metric function requires probability estimates out
         of a classifier. If True, make sure that every selected model
-        has a `predict_proba` method. Will be ignored if the metric is
-        a string or a scorer. If sequence, the n-th value will apply to
-        the n-th metric.
+        has a `predict_proba` method. This parameter is ignored if the
+        metric is a string or a scorer. If sequence, the n-th value
+        applies to the n-th metric.
 
     needs_threshold: bool or sequence, optional (default=False)
         Whether the metric function takes a continuous decision
         certainty. This only works for estimators that have either a
-        `decision_function` or `predict_proba` method. Will be ignored
-        if the metric is a string or a scorer. If sequence, the n-th
-        value will apply to the n-th metric.
+        `decision_function` or `predict_proba` method. This parameter
+        is ignored if the metric is a string or a scorer. If sequence,
+        the n-th value applies to the n-th metric.
 
     n_calls: int or sequence, optional (default=15)
         Maximum number of iterations of the BO. It includes the random
         points of `n_initial_points`. If 0, skip the BO and fit the
         model on its default Parameters. If sequence, the n-th value
-        will apply to the n-th model.
+        applies to the n-th model.
 
     n_initial_points: int or sequence, optional (default=5)
         Initial number of random tests of the BO before fitting the
         surrogate function. If equal to `n_calls`, the optimizer will
         technically be performing a random search. If sequence, the
-        n-th value will apply to the n-th model.
+        n-th value applies to the n-th model.
 
     est_params: dict or None, optional (default=None)
         Additional parameters for the estimators. See the corresponding
@@ -132,10 +136,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - n_jobs.
-
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -156,13 +157,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by
-        the timestamp of the logger's creation.
-
         Note that warnings will not be saved to the logger.
+
+    experiment: str or None, optional (default=None)
+        Name of the mlflow experiment to use for tracking. If None,
+        no mlflow tracking is performed.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -173,13 +175,14 @@ class BaseTrainer(BaseTransformer, BasePredictor):
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
         n_calls, n_initial_points, est_params, bo_params, bagging, n_jobs,
-        verbose, warnings, logger, random_state
+        verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             n_jobs=n_jobs,
             verbose=verbose,
             warnings=warnings,
             logger=logger,
+            experiment=experiment,
             random_state=random_state,
         )
 
@@ -224,47 +227,60 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Create model subclasses ================================== >>
 
-        models = []
-        for m in self._models:
-            if isinstance(m, str):
-                acronym = get_acronym(m, must_be_equal=False)
+        # If left to default, select all predefined models per task
+        if None in self._models:
+            if self.goal.startswith("class"):
+                models = [m(self) for m in MODEL_LIST if m.acronym not in ONLY_REG]
+            else:
+                models = [m(self) for m in MODEL_LIST if m.acronym not in ONLY_CLASS]
+        else:
+            models = []
+            for m in self._models:
+                if isinstance(m, str):
+                    acronym = get_acronym(m, must_be_equal=False)
 
-                # Check if packages for non-sklearn models are available
-                if acronym in OPTIONAL_PACKAGES:
-                    try:
-                        importlib.import_module(OPTIONAL_PACKAGES[acronym])
-                    except ImportError:
+                    # Check if packages for non-sklearn models are available
+                    if acronym in OPTIONAL_PACKAGES:
+                        try:
+                            importlib.import_module(OPTIONAL_PACKAGES[acronym])
+                        except ImportError:
+                            raise ValueError(
+                                f"Unable to import the {OPTIONAL_PACKAGES[acronym]} "
+                                "package. Make sure it is installed."
+                            )
+
+                    # Check for regression/classification-only models
+                    if self.goal.startswith("class") and acronym in ONLY_REG:
                         raise ValueError(
-                            f"Unable to import the {OPTIONAL_PACKAGES[acronym]} "
-                            "package. Make sure it is installed."
+                            f"The {acronym} model can't perform classification tasks!"
+                        )
+                    elif self.goal.startswith("reg") and acronym in ONLY_CLASS:
+                        raise ValueError(
+                            f"The {acronym} model can't perform regression tasks!"
                         )
 
-                # Check for regression/classification-only models
-                if self.goal.startswith("class") and acronym in ONLY_REG:
-                    raise ValueError(
-                        f"The {acronym} model can't perform classification tasks!"
-                    )
-                elif self.goal.startswith("reg") and acronym in ONLY_CLASS:
-                    raise ValueError(
-                        f"The {acronym} model can't perform regression tasks!"
-                    )
+                    models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
 
-                models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
+                elif not isinstance(m, BaseModel):  # Model is custom estimator
+                    models.append(CustomModel(self, estimator=m))
 
-            elif not isinstance(m, BaseModel):  # Model is custom estimator
-                models.append(CustomModel(self, estimator=m))
-
-            else:  # Model is already a model subclass (can happen with reruns)
-                models.append(m)
+                else:  # Model is already a model subclass (can happen with reruns)
+                    models.append(m)
 
         self._models = CustomDict({m.name: m for m in models})
 
-        # Check validity metric ==================================== >>
+        # Define scorer ============================================ >>
 
+        # Assign default scoring
         if None in self._metric:
-            self._metric = CustomDict(get_default_metric(self.task))
+            if self.task.startswith("bin"):
+                self._metric = CustomDict(f1=get_scorer("f1"))
+            elif self.task.startswith("multi"):
+                self._metric = CustomDict(f1_weighted=get_scorer("f1_weighted"))
+            else:
+                self._metric = CustomDict(r2=get_scorer("r2"))
 
-        # Ignore if it's the same metric as previous call
+        # Ignore if it's the same scoring as previous call
         elif not all([hasattr(m, "name") for m in self._metric]):
             self._metric = self._prepare_metric(
                 metric=self._metric,
@@ -366,7 +382,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     # Dimensions for every specific model
                     for key, value in self.bo_params["dimensions"].items():
                         # Parameters for this model only
-                        if key.lower() == name:
+                        if key.lower() == name.lower():
                             model._dimensions = value
                             break
 
@@ -392,10 +408,10 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 params = {}
                 for key, value in self.est_params.items():
                     # Parameters for this model only
-                    if key.lower() == name:
+                    if key.lower() == name.lower():
                         params.update(value)
                     # Parameters for all models
-                    elif key.lower() not in self._models.keys():
+                    elif key not in self._models:
                         params.update({key: value})
 
                 for key, value in params.items():
@@ -421,7 +437,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         metric_dict = CustomDict()
         for args in zip(metric, *metric_params.values()):
-            metric = get_metric(*args)
+            metric = get_scorer(*args)
             metric_dict[metric.name] = metric
 
         return metric_dict
@@ -435,6 +451,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             model_time = datetime.now()
 
             try:  # If an error occurs, skip the model
+                if self.experiment:  # Start mlflow run
+                    m._run = mlflow.start_run(run_name=m.name)
+
                 # If it has predefined or custom dimensions, run the BO
                 if (m._dimensions or hasattr(m, "get_dimensions")) and m._n_calls > 0:
                     m.bayesian_optimization()
@@ -464,6 +483,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 if self.bo_params.get("plot"):
                     PlotCallback.c += 1  # Next model
                     plt.close()  # Close the crashed plot
+            finally:
+                mlflow.end_run()  # Ends the current run (if any)
 
         delete(self, to_remove)  # Remove faulty models
 
@@ -473,4 +494,16 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         self.log("\n\nFinal results ========================= >>", 1)
         self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 42, 1)
-        self.scoring(_vb=1)
+
+        # Get max length of the model names
+        maxlen = max([len(m.fullname) for m in self._models])
+
+        # Get best score of all the models
+        best_score = max([get_best_score(m) for m in self._models])
+
+        for m in self._models:
+            out = f"{m.fullname:{maxlen}s} --> {m._final_output()}"
+            if get_best_score(m) == best_score and len(self._models) > 1:
+                out += " !"
+
+            self.log(out, 1)

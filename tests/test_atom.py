@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for atom.py
 
 """
@@ -248,7 +248,7 @@ def test_distribution(column):
 @patch("atom.atom.ProfileReport")
 def test_report(cls):
     """Assert that the report method and file are created."""
-    atom = ATOMClassifier(X_reg, y_reg, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.report(n_rows=10, filename="report")
     cls.return_value.to_file.assert_called_once_with("report.html")
 
@@ -370,6 +370,16 @@ def test_apply_new_column():
     assert atom["new column"].sum() == atom.shape[0]
 
 
+def test_apply_args_and_kwargs():
+    """Assert that args and kwargs are passed to the function."""
+    def test_func(df, arg_1, arg_2="mean radius"):
+        return df[arg_2] + arg_1
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.apply(test_func, column="new column", args=(10,), arg_2="mean texture")
+    assert atom["new column"][0] == atom["mean texture"][0] + 10
+
+
 def test_add_pipeline():
     """Assert that adding a pipeline adds every individual step."""
     pipeline = Pipeline(
@@ -425,7 +435,7 @@ def test_transformer_only_y():
     """Assert that atom accepts transformers with only an y parameter."""
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.add(LabelEncoder())
-    assert np.all((atom["target"] == 0) | (atom["target"] == 1))
+    assert np.all((atom["Target"] == 0) | (atom["Target"] == 1))
 
 
 def test_keep_column_names():
@@ -483,6 +493,14 @@ def test_scale():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.scale()
     assert check_scaling(atom.dataset)
+
+
+def test_gauss():
+    """Assert that the gauss method transforms the features."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    X = atom.X.copy()
+    atom.gauss()
+    assert not atom.X.equals(X)
 
 
 def test_clean():
@@ -717,3 +735,12 @@ def test_trainer_becomes_atom():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
     assert atom is atom.tree.T
+
+
+@patch("mlflow.sklearn.log_model")
+def test_pipeline_to_mlflow(mlflow):
+    """Assert that renaming also changes the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_pipeline = True
+    atom.run("GNB")
+    assert mlflow.call_count == 2  # Model + Pipeline

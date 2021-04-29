@@ -2,29 +2,31 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the ATOM class.
 
 """
 
 # Standard packages
+import mlflow
 import numpy as np
 import pandas as pd
 from scipy import stats
 from typeguard import typechecked
 from typing import Union, Optional, Any
 from sklearn.pipeline import Pipeline
-from pandas_profiling import ProfileReport
 
 # Own modules
 from .branch import Branch
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .basetransformer import BaseTransformer
+from .nlp import NLPCleaner, Tokenizer, Normalizer, Vectorizer
 from .data_cleaning import (
     DropTransformer,
     FuncTransformer,
     Cleaner,
+    Gauss,
     Scaler,
     Imputer,
     Encoder,
@@ -43,10 +45,11 @@ from .training import (
 from .models import CustomModel
 from .plots import ATOMPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, TRAIN_TYPES, DISTRIBUTIONS,
-    flt, lst, infer_task, check_method, check_scaling, check_deep,
-    names_from_estimator, variable_return, custom_transform,
-    add_transformer, method_to_log, composed, crash, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
+    lst, divide, infer_task, check_method, check_scaling,
+    check_multidimensional, names_from_estimator, variable_return,
+    custom_transform, add_transformer, method_to_log, composed,
+    crash, CustomDict,
 )
 
 
@@ -64,7 +67,8 @@ class ATOM(BasePredictor, ATOMPlotter):
     """
 
     @composed(crash, method_to_log)
-    def __init__(self, arrays, y, n_rows, test_size):
+    def __init__(self, arrays, y, shuffle, n_rows, test_size):
+        self.shuffle = shuffle
         self.n_rows = n_rows
         self.test_size = test_size
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
@@ -161,20 +165,20 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or "scaler" in est_names
 
     @property
     def duplicates(self):
         """Number of duplicate rows in the dataset."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return self.dataset.duplicated().sum()
 
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
@@ -182,7 +186,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
@@ -190,31 +194,31 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def numerical(self):
         """Names of the numerical features in the dataset."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return list(self.X.select_dtypes(include=["number"]).columns)
 
     @property
     def n_numerical(self):
         """Number of numerical features in the dataset."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return len(self.numerical)
 
     @property
     def categorical(self):
         """Names of the categorical features in the dataset."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return list(self.X.select_dtypes(exclude=["number"]).columns)
 
     @property
     def n_categorical(self):
         """Number of categorical features in the dataset."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return len(self.categorical)
 
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
@@ -223,7 +227,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
@@ -238,7 +242,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "test": self.y_test.value_counts(sort=False, dropna=False),
             },
             index=self.mapping.values(),
-        ).fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
+        ).fillna(0).astype(int)  # If 0 counts, it doesnt return the row (gets a NaN)
 
     @property
     def n_classes(self):
@@ -262,10 +266,10 @@ class ATOM(BasePredictor, ATOMPlotter):
             Internal parameter to always print if called by user.
 
         """
-        self.log("Dataset stats ==================== >>", _vb)
+        self.log("Dataset stats ====================== >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
@@ -276,7 +280,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 p_nans = round(100. * nans / self.dataset.size, 1)
                 self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
             if n_categorical:
-                p_cat = round(100. * n_categorical / self.n_columns, 1)
+                p_cat = round(100. * n_categorical / self.n_features, 1)
                 self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
             if outliers:
                 p_out = round(100. * outliers / self.train.size, 1)
@@ -285,25 +289,19 @@ class ATOM(BasePredictor, ATOMPlotter):
                 p_dup = round(100. * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
-        self.log("-------------------------------------", _vb)
+        self.log("---------------------------------------", _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
 
-        # Print count and balance of classes for classification tasks
+        # Print count and balance of classes
         if self.task != "regression":
-            df = self.classes  # Only calculate classes once
-
-            balance = {}
-            for set_ in ("train", "test"):
-                balance[set_] = ":".join(round(df[set_] / min(df[set_]), 1).astype(str))
-            keys = ":".join([str(k) for k in self.mapping.values()])
-            self.log("-------------------------------------", _vb + 1)
-            if balance["train"] == balance["test"]:
-                self.log(f"Dataset balance: {keys} <==> {balance['train']}", _vb + 1)
-            else:
-                self.log(f"Train set balance: {keys} <==> {balance['train']}", _vb + 1)
-                self.log(f"Test set balance: {keys} <==> {balance['test']}", _vb + 1)
-            self.log("-------------------------------------", _vb + 1)
+            self.log("---------------------------------------", _vb + 1)
+            cls = self.classes  # Calculate class distribution only once
+            func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
+            df = pd.DataFrame(
+                {col: [func(v, col) for v in cls[col]] for col in cls},
+                index=self.mapping.values(),
+            )
             self.log(df.to_markdown(), _vb + 1)
 
     @composed(crash, typechecked)
@@ -348,7 +346,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return df.sort_values(["ks"])
 
-    @composed(crash, method_to_log, typechecked)
+    @composed(crash, typechecked)
     def report(
         self,
         dataset: str = "dataset",
@@ -379,6 +377,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             Created report object.
 
         """
+        from pandas_profiling import ProfileReport
+
         self.log("Creating profile report...", 1)
 
         n_rows = getattr(self, dataset).shape[0] if n_rows is None else int(n_rows)
@@ -400,10 +400,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
         verbose: Optional[int] = None,
     ):
-        """Transform new data through all transformers in a branch.
+        """Transform new data through all transformers in the branch.
 
-        The prune and balance transformations are not included by
-        default since they should only be applied on the training set.
+        By default, transformers that are applied on the training
+        set only are not used during the transformations. Use the
+        `pipeline` parameter to customize this behaviour.
 
         Parameters
         ----------
@@ -454,26 +455,22 @@ class ATOM(BasePredictor, ATOMPlotter):
         return variable_return(X, y)
 
     @composed(crash, method_to_log, typechecked)
-    def save_data(self, filename: str = None, dataset: str = "dataset"):
+    def save_data(self, filename: str = "auto", dataset: str = "dataset"):
         """Save the data in the current branch to a csv file.
 
         Parameters
         ----------
-        filename: str or None, optional (default=None)
-            Name to save the file with. None or "auto" for default name.
+        filename: str, optional (default="auto")
+            Name of the file. Use "auto" for automatic naming.
 
         dataset: str, optional (default="dataset")
             Data set to save.
 
         """
-        default = f"{self.__class__.__name__}_{dataset}"
-        if not filename:
-            filename = default + ".csv"
-        else:
-            if not filename.endswith(".csv"):
-                filename += ".csv"
-            if filename == "auto.csv" or filename.endswith("/auto.csv"):
-                filename = filename.replace("auto", default)
+        if filename.endswith("auto"):
+            filename = filename.replace("auto", f"{self.__class__.__name__}_{dataset}")
+        if not filename.endswith(".csv"):
+            filename += ".csv"
 
         getattr(self, dataset).to_csv(filename, index=False)
         self.log("Data set saved successfully!", 1)
@@ -499,7 +496,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             Pipeline in the current branch as a sklearn object.
 
         """
-        if len(self) == 0:
+        if len(self) == 0 and not model:
             raise RuntimeError("The pipeline seems to be empty!")
 
         steps = [(est.__class__.__name__.lower(), est) for est in self.pipeline]
@@ -512,7 +509,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return Pipeline(steps)
 
-    # Transformer methods ========================================== >>
+    # Base transformers ============================================ >>
 
     def _prepare_kwargs(self, kwargs, params=None):
         """Return kwargs with atom's values if not specified."""
@@ -553,14 +550,20 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
     @composed(crash, method_to_log, typechecked)
-    def apply(self, func: callable, column: Union[int, str], **kwargs):
+    def apply(
+        self,
+        func: callable,
+        column: Union[int, str],
+        args=(),
+        **kwargs
+    ):
         """Apply a function to the dataset.
 
         Transform one column in the dataset using a function (can
         be a lambda). If the provided column is present in the dataset,
         that same column is transformed. If it's not a column in the
-        dataset, a new column with that name is created. The input of
-        function is the complete dataset as pd.DataFrame.
+        dataset, a new column with that name is created. The first
+        parameter of the function is the complete dataset.
 
         This approach is preferred over changing the dataset directly
         through the property's `@setter` since the transformation
@@ -575,6 +578,12 @@ class ATOM(BasePredictor, ATOMPlotter):
             Name or index of the column in the dataset to create
             or transform.
 
+        args: tuple, optional (default=())
+            Positional arguments passed to func after the dataset.
+
+        **kwargs
+            Additional keyword arguments passed to func.
+
         """
         check_method(self, "apply")
         if not callable(func):
@@ -586,7 +595,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             column = self._get_columns(column)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        transformer = FuncTransformer(func, column=column, **kwargs)
+        transformer = FuncTransformer(func, column=column, args=args, **kwargs)
         custom_transform(self, transformer, self.branch)
 
         self.branch.pipeline = self.pipeline.append(
@@ -608,9 +617,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         a sklearn Pipeline, every transformer is merged independently
         with atom.
 
-        If the transformer has the n_jobs and/or random_state
-        parameters and they are left to their default value,
-        they adopt atom's values.
+        If the transformer has a `n_jobs` and/or `random_state` parameter
+        that is left to its default value, it adopts atom's value.
 
         Parameters
         ----------
@@ -623,7 +631,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             If None, transform all columns.
 
         train_only: bool, optional (default=False)
-            Whether to apply the transformer only on the train set or
+            Whether to apply the transformer only on the training set or
             on the complete dataset.
 
         """
@@ -636,14 +644,126 @@ class ATOM(BasePredictor, ATOMPlotter):
         else:
             add_transformer(self, transformer, columns, train_only)
 
+    # NLP transformers ============================================= >>
+
+    @composed(crash, method_to_log, typechecked)
+    def nlpclean(
+        self,
+        lower_case: bool = True,
+        drop_email: bool = True,
+        drop_url: bool = True,
+        drop_html: bool = True,
+        drop_emojis: bool = True,
+        drop_numbers: bool = True,
+        drop_punctuation: bool = True,
+        **kwargs,
+    ):
+        """Applies standard data cleaning steps to the corpus.
+
+        The transformations can include dropping noise from the text
+        (emails, HTML tags, URLs, etc...). The transformations are
+        only applied on the column named `corpus`, in the same order
+        the parameters are presented. If there is no column with that
+        name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "nlpclean")
+        kwargs = self._prepare_kwargs(kwargs, NLPCleaner().get_params())
+        nlpcleaner = NLPCleaner(
+            lower_case=lower_case,
+            drop_email=drop_email,
+            drop_url=drop_url,
+            drop_html=drop_html,
+            drop_emojis=drop_emojis,
+            drop_numbers=drop_numbers,
+            drop_punctuation=drop_punctuation,
+            **kwargs,
+        )
+
+        add_transformer(self, nlpcleaner)
+
+    @composed(crash, method_to_log, typechecked)
+    def tokenize(
+        self,
+        bigram_freq: Optional[SCALAR] = None,
+        trigram_freq: Optional[SCALAR] = None,
+        **kwargs,
+    ):
+        """Tokenize the corpus.
+
+        Convert the document (as string) into a sequence of words.
+        Additionally, create bigrams or trigrams (represented by
+        words united with underscores). The transformation is only
+        applied on the column named `corpus`. If there is no column
+        with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "tokenize")
+        kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
+        tokenizer = Tokenizer(
+            bigram_freq=bigram_freq,
+            trigram_freq=trigram_freq,
+            **kwargs,
+        )
+
+        add_transformer(self, tokenizer)
+
+    @composed(crash, method_to_log, typechecked)
+    def normalize(
+        self,
+        stopwords: Union[str, SEQUENCE_TYPES] = "english",
+        stem: bool = True,
+        lemmatize: bool = True,
+        **kwargs,
+    ):
+        """Normalize the corpus.
+
+        The transformation is only applied on the column named
+        `corpus`, in the same order the parameters are presented.
+        If there is no column with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "normalize")
+        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
+        normalizer = Normalizer(
+            stopwords=stopwords,
+            stem=stem,
+            lemmatize=lemmatize,
+            **kwargs,
+        )
+
+        add_transformer(self, normalizer)
+
+    @composed(crash, method_to_log, typechecked)
+    def vectorize(self, strategy: str = "BOW", **kwargs):
+        """Vectorize the corpus.
+
+        The transformation is only applied on the column named
+        `corpus`, in the same order the parameters are presented.
+        If there is no column with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "normalize")
+        kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
+        add_transformer(self, Vectorizer(strategy=strategy, **kwargs))
+
+    # General transformers ========================================= >>
+
     @composed(crash, method_to_log)
     def scale(self, strategy: str = "standard", **kwargs):
         """Scale the data.
 
-        Applies one of sklearn's scalers. Non-numerical columns are
-        ignored (instead of raising an exception).
+        Apply one of sklearn's scalers. Categorical columns are ignored.
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "scale")
@@ -651,15 +771,33 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
         add_transformer(self, Scaler(strategy=strategy, **kwargs), columns=columns)
 
+    @composed(crash, method_to_log)
+    def gauss(self, strategy: str = "yeo-johnson", **kwargs):
+        """Transform the data to follow a Gaussian distribution.
+
+        This transformation is useful for modeling issues related
+        to heteroscedasticity (non-constant variance), or other
+        situations where normality is desired. Missing values are
+        disregarded in fit and maintained in transform. Categorical
+        columns are ignored.
+
+        See data_cleaning.py for a description of the parameters.
+
+        """
+        check_method(self, "gauss")
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
+        add_transformer(self, Gauss(strategy=strategy, **kwargs), columns=columns)
+
     @composed(crash, method_to_log, typechecked)
     def clean(
         self,
-        prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        maximum_cardinality: bool = True,
-        minimum_cardinality: bool = True,
+        drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
+        drop_max_cardinality: bool = True,
+        drop_min_cardinality: bool = True,
         drop_duplicates: bool = False,
-        missing_target: bool = True,
+        drop_missing_target: bool = True,
         encode_target: bool = True,
         **kwargs,
     ):
@@ -667,27 +805,27 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Use the parameters to choose which transformations to perform.
         The available steps are:
-            - Drop columns with prohibited data types.
+            - Drop columns with specific data types.
+            - Strip categorical features from white spaces.
             - Drop categorical columns with maximal cardinality.
             - Drop columns with minimum cardinality.
-            - Strip categorical features from white spaces.
             - Drop duplicate rows.
             - Drop rows with missing values in the target column.
             - Encode the target column.
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "clean")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Cleaner().get_params())
         cleaner = Cleaner(
+            drop_types=drop_types,
             strip_categorical=strip_categorical,
-            maximum_cardinality=maximum_cardinality,
-            minimum_cardinality=minimum_cardinality,
-            prohibited_types=prohibited_types,
+            drop_max_cardinality=drop_max_cardinality,
+            drop_min_cardinality=drop_min_cardinality,
             drop_duplicates=drop_duplicates,
-            missing_target=missing_target,
+            drop_missing_target=drop_missing_target,
             encode_target=encode_target,
             **kwargs,
         )
@@ -716,7 +854,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         the `missing` attribute to customize what are considered "missing
         values".
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "impute")
@@ -744,18 +882,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Perform encoding of categorical features.
 
-        The encoding type depends on the number of unique values in the column:
-            - If n_unique=2, use Label-encoding.
-            - If 2 < n_unique <= max_onehot, use OneHot-encoding.
-            - If n_unique > max_onehot, use `strategy`-encoding.
+        The encoding type depends on the number of classes in the
+        column:
+            - If n_classes=2, use Ordinal-encoding.
+            - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
+            - If n_classes > `max_onehot`, use `strategy`-encoding.
 
-        Also replaces classes with low occurrences with the value `other`
-        in order to prevent too high cardinality. Categorical features are
-        defined as all columns whose dtype.kind not in `ifu`. Will raise
-        an error if it encounters missing values or unknown classes when
+        Also replaces classes with low occurrences with the value
+        `other` in order to prevent too high cardinality. An error is
+        raised if it encounters missing values or unknown classes when
         transforming.
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "encode")
@@ -773,7 +911,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def prune(
         self,
-        strategy: str = "z-score",
+        strategy: Union[str, SEQUENCE_TYPES] = "z-score",
         method: Union[int, float, str] = "drop",
         max_sigma: Union[int, float] = 3,
         include_target: bool = False,
@@ -784,10 +922,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         Replace or remove outliers. The definition of outlier depends
         on the selected strategy and can greatly differ from one
         another. Only outliers from the training set are pruned in
-        order to maintain the original distribution of samples in the
-        test set. Ignores categorical columns.
+        order to maintain the original distribution of samples in
+        the test set. Ignores categorical columns.
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "prune")
@@ -804,18 +942,19 @@ class ATOM(BasePredictor, ATOMPlotter):
         add_transformer(self, pruner, columns=columns, train_only=True)
 
         # Attach the estimator attribute to atom's branch
-        if strategy.lower() != "z-score":
-            setattr(self.branch, strategy.lower(), getattr(pruner, strategy.lower()))
+        for strat in lst(strategy):
+            if strat.lower() != "z-score":
+                setattr(self.branch, strat.lower(), getattr(pruner, strat.lower()))
 
     @composed(crash, method_to_log, typechecked)
     def balance(self, strategy: str = "ADASYN", **kwargs):
         """Balance the number of rows per class in the target column.
 
         Only the training set is balanced in order to maintain the
-        original distribution of target classes in the test set. Use
-        only for classification tasks.
+        original distribution of target classes in the test set.
+        Use only for classification tasks.
 
-        See the data_cleaning.py module for a description of the parameters.
+        See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "balance")
@@ -853,7 +992,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         relations between the original features. Attributes created by
         the class are attached to atom.
 
-        See the feature_engineering.py module for a description of the parameters.
+        See feature_engineering.py for a description of the parameters.
 
         """
         check_method(self, "feature_generation")
@@ -896,7 +1035,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         of the two. Plotting methods and attributes created by the
         class are attached to atom.
 
-        See the feature_engineering.py module for a description of the parameters.
+        See feature_engineering.py for a description of the parameters.
 
         """
         check_method(self, "feature_selection")
@@ -1073,6 +1212,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         try:
+            trainer._tracking_params = self._tracking_params
             trainer._branches = {self._current: self.branch}
             trainer._current = self._current
             trainer.scaled = self.scaled
@@ -1081,7 +1221,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
                 self.errors[model] = error
-                self._models.pop(model.lower(), None)
+                self._models.pop(model, None)
 
         # Update attributes
         self._models.update(trainer._models)
@@ -1091,10 +1231,16 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.errors.pop(model.name, None)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 
+            # Log pipeline to mlflow run
+            if self.log_pipeline:
+                with mlflow.start_run(model._run.info.run_id):
+                    pl = self.export_pipeline(model=model.name)
+                    mlflow.sklearn.log_model(pl, f"pipeline_{model.name}")
+
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -1184,7 +1330,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,

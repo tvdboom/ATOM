@@ -1,68 +1,61 @@
 # Balancer
 ----------
 
-<a name="atom"></a>
-<pre><em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1121">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>
+(strategy="ADASYN", n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1121">[source]</a>
+</span>
+</div>
+
 Balance the number of samples per class in the target column. Use only for classification tasks.
 This class can be accessed from atom through the
 [balance](../../ATOM/atomclassifier/#balance) method. Read more in
-the [user guide](../../../user_guide/#balancing-the-data).
-<table>
+the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
+
+<table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-<strong>strategy: str, optional (default="ADASYN")</strong>
-<blockquote>
+<p>
+<strong>strategy: str, optional (default="ADASYN")</strong><br>
 Type of algorithm to use for oversampling or undersampling. Choose from one
- of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
- package.
-</blockquote>
-<strong>n_jobs: int, optional (default=1)</strong>
-<blockquote>
+of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
+package.
+</p>
+<strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
-<ul>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If >0: Number of cores to use.</li>
 <li>If -1: Use all available cores.</li>
 <li>If <-1: Use available_cores - 1 + n_jobs.</li>
 </ul>
-Beware that using multiple processes on the same machine may cause
-memory issues for large datasets.
-</blockquote>
-<strong>verbose: int, optional (default=0)</strong>
-<blockquote>
+<strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
-<ul>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>0 to not print anything.</li>
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
-</blockquote>
-<strong>logger: str, Logger or None, optional (default=None)</strong>
-<blockquote>
-<ul>
+<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
-<li>If str: Name of the logging file. Use "auto" for default name.</li>
+<li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
-The default name consists of the class' name followed by the
-timestamp of the logger's creation.
-</blockquote>
-<strong>random_state: int or None, optional (default=None)</strong>
-<blockquote>
+<strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
+<p>
+<strong>**kwargs</strong><br>
 Additional keyword arguments passed to the <code>strategy</code> estimator.
-</blockquote>
+</p>
 </td>
 </tr>
 </table>
-<br>
 
-!!!tip
+!!! tip
     Use atom's [classes](../../ATOM/atomclassifier/#data-attributes) attribute
     for an overview of the target class distribution per data set.
 
@@ -70,21 +63,20 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 
 ## Attributes
--------------
 
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="75%" style="background:white;">
-<strong>&lt;strategy&gt;: imblearn estimator</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>&lt;strategy&gt;: imblearn estimator</strong><br>
 Estimator instance (lowercase strategy) used to oversample or undersample
 the data, e.g. <code>balancer.adasyn</code> for the default strategy.
-</blockquote>
-<strong>mapping: dict</strong>
-<blockquote>
+</p>
+<p>
+<strong>mapping: dict</strong><br>
 Dictionary of the target values mapped to their respective encoded integer.
-</blockquote>
+</p>
 </td>
 </tr>
 </table>
@@ -92,16 +84,20 @@ Dictionary of the target values mapped to their respective encoded integer.
 
 
 ## Methods
----------
 
-<table>
+<table style="font-size:16px">
+<tr>
+<td><a href="#fit-transform">fit_transform</a></td>
+<td>Same as transform.</td>
+</tr>
+
 <tr>
 <td><a href="#get-params">get_params</a></td>
 <td>Get parameters for this estimator.</td>
 </tr>
 
 <tr>
-<td width="15%"><a href="#log">log</a></td>
+<td><a href="#log">log</a></td>
 <td>Write information to the logger and print to stdout.</td>
 </tr>
 
@@ -123,133 +119,188 @@ Dictionary of the target values mapped to their respective encoded integer.
 <br>
 
 
-<a name="get-params"></a>
-<pre><em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True) 
-<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a></div></pre>
-Get parameters for this estimator.
-<table>
+<a name="fit-transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+</span>
+</div>
+Oversample or undersample the data.
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>deep: bool, default=True</strong>
-<blockquote>
-If True, will return the parameters for this estimator and contained subobjects that are estimators.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+Feature set with shape=(n_samples, n_features).
+</p>
+<strong>y: int, str or sequence</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If int: Index of the target column in X.</li>
+<li>If str: Name of the target column in X.</li>
+<li>Else: Target column with shape=(n_samples,).</li>
+</ul>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>params: dict</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: pd.DataFrame</strong><br>
+Balanced feature set.
+</p>
+<p>
+<strong>y: pd.Series</strong><br>
+Balanced target column.
+</p>
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="get-params"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
+</span>
+</div>
+Get parameters for this estimator.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>deep: bool, optional (default=True)</strong><br>
+If True, will return the parameters for this estimator and contained subobjects that are estimators.
+</p>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
-</blockquote>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="log"></a>
-<pre><em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+</span>
+</div>
 Write a message to the logger and print it to stdout.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>msg: str</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
-</blockquote>
-<strong>level: int, optional (default=0)</strong>
-<blockquote>
+</p>
+<p>
+<strong>level: int, optional (default=0)</strong><br>
 Minimum verbosity level to print the message.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="save"></a>
-<pre><em>method</em> <strong style="color:#008AB8">save</strong>(filename=None)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+</span>
+</div>
 Save the instance to a pickle file.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name to save the file with. None or "auto" to save with the __name__ of the class.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>filename: str, optional (default="auto")</strong><br>
+Name of the file. Use "auto" for automatic naming.
+</td>
 </tr>
 </table>
 <br>
 
 
 <a name="set-params"></a>
-<pre><em>method</em> <strong style="color:#008AB8">set_params</strong>(**params) 
-<div align="right"><a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
+</span>
+</div>
 Set the parameters of this estimator.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>**params: dict</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**params: dict</strong><br>
 Estimator parameters.
-</blockquote>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>self: Balancer</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>self: Balancer</strong><br>
 Estimator instance.
-</blockquote>
+</td>
 </tr>
 </table>
 <br />
 
 
 <a name="transform"></a>
-<pre><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y) 
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1196">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+</span>
+</div>
 Oversample or undersample the data.
-<table>
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
-</blockquote>
-<strong>y: int, str or sequence</strong>
-<blockquote>
-<ul>
+</p>
+<strong>y: int, str or sequence</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
-</blockquote>
 </tr>
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="75%" style="background:white;">
-<strong>X: pd.DataFrame</strong>
-<blockquote>
-Transformed feature set.
-</blockquote>
-<strong>X: pd.Series</strong>
-<blockquote>
-Transformed target column.
-</blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: pd.DataFrame</strong><br>
+Balanced feature set.
+</p>
+<p>
+<strong>X: pd.Series</strong><br>
+Balanced target column.
+</p>
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

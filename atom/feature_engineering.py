@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the feature engineering estimators.
 
 """
@@ -40,9 +40,9 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, METRIC_ACRONYMS, lst,
-    to_df, check_scaling, check_is_fitted, get_acronym, composed,
-    crash, method_to_log
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
+    check_scaling, check_is_fitted, get_acronym, composed, crash,
+    method_to_log,
 )
 
 
@@ -81,10 +81,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - n_jobs.
-
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -94,11 +91,8 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -490,10 +484,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - n_jobs.
-
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -503,11 +494,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -594,7 +582,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self: FeatureSelector
 
         """
-
         def check_y():
             """For some strategies, y needs to be provided."""
             if y is None:
@@ -778,11 +765,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             check_y()
 
             # Both RFECV and SFS use the scoring parameter
-            if isinstance(self.kwargs.get("scoring"), str):
-                if self.kwargs.get("scoring", "").lower() in METRIC_ACRONYMS:
-                    self.kwargs["scoring"] = METRIC_ACRONYMS[
-                        self.kwargs["scoring"].lower()
-                    ]
+            if self.kwargs.get("scoring"):
+                self.kwargs["scoring"] = get_scorer(self.kwargs["scoring"])
 
             if self.strategy.lower() == "rfecv":
                 # Invert n_features to select them all (default option)

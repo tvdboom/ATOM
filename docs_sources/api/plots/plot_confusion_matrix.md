@@ -1,67 +1,75 @@
 # plot_confusion_matrix
 -----------------------
 
-<pre><em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None, dataset="test", normalize=False,
-                             title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1697">[source]</a></div></pre>
-Plot a model's confusion matrix. Only for classification tasks.
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>
+(models=None, dataset="test", normalize=False, title=None,
+figsize=None, filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+</span>
+</div>
 
-* For 1 model: plot the confusion matrix in a heatmap.
-* For multiple models: compare TP, FP, FN and TN in a barplot (not implemented for multiclass classification tasks).
+Plot a model's confusion matrix. For one model, the plot shows a
+heatmap. For multiple models, it compares TP, FP, FN and TN in a
+barplot (not implemented for multiclass classification tasks).
+Only for classification tasks.
 
-<table width="100%">
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all models in the pipeline are selected.
-</blockquote>
-<strong>dataset: str, optional (default="test")</strong>
-<blockquote>
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
 Data set on which to calculate the confusion matrix. Options are "train" or "test".
-</blockquote>
-<strong>normalize: bool, optional (default=False)</strong>
-<blockquote>
-Whether to normalize the matrix. Only for the heatmap plot.
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>normalize: bool, optional (default=False)</strong><br>
+Whether to normalize the matrix.
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, adapts size to plot type.
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
-</blockquote>
+</p>
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
 atom.run(["Tree", "Bag"])
-atom.Tree.plot_confusion_matrix(normalize=True)
+atom.Tree.plot_confusion_matrix(normalize=True)  # For one model
 ```
 <div align="center">
     <img src="../../../img/plots/plot_confusion_matrix_1.png" alt="plot_confusion_matrix_1" width="560" height="420"/>
 </div>
 
 ```python
-atom.plot_confusion_matrix()
+atom.plot_confusion_matrix()  # For multiple models
 ```
 <div align="center">
     <img src="../../../img/plots/plot_confusion_matrix_2.png" alt="plot_confusion_matrix_2" width="700" height="420"/>

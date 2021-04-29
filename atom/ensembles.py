@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the Voting and Stacking classes.
 
 """
@@ -11,7 +11,7 @@ Description: Module containing the Voting and Stacking classes.
 import numpy as np
 import pandas as pd
 from copy import copy
-from typing import Optional
+from typing import Optional, Union
 from typeguard import typechecked
 
 # Own modules
@@ -20,8 +20,8 @@ from .basemodel import BaseModel
 from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
-    flt, lst, arr, merge, get_acronym, get_best_score,
-    custom_transform, composed, method_to_log, crash, CustomDict,
+    SEQUENCE_TYPES, flt, lst, arr, merge, get_acronym, get_best_score,
+    custom_transform, composed, crash, CustomDict,
 )
 
 
@@ -82,8 +82,14 @@ class BaseEnsemble:
 class Voting(BaseModel, BaseEnsemble):
     """Class for voting with the models in the pipeline."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, acronym="Vote", fullname="Voting", **kwargs)
+    acronym = "Vote"
+    fullname = "Voting"
+
+    def __init__(self, *args, models, weights):
+        super().__init__(*args)
+
+        self.models = models
+        self.weights = weights
         self._pred_attrs = [None] * 12  # With score_train and score_test
         self._models = CustomDict(
             {k: v for k, v in self.T._models.items() if v.name in self.models}
@@ -131,30 +137,41 @@ class Voting(BaseModel, BaseEnsemble):
         ])
         return out
 
-    @composed(crash, method_to_log, typechecked)
-    def scoring(self, metric: Optional[str] = None, dataset: str = "test", **kwargs):
-        """Get the average scoring of a specific metric.
+    @composed(crash, typechecked)
+    def scoring(
+        self,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+    ):
+        """Get the model's scoring for provided metrics.
 
         Parameters
         ----------
-        metric: str, optional (default=None)
-            Name of the metric to calculate. Choose from any of
-            sklearn's SCORERS or one of the CUSTOM_METRICS. If None,
-            returns the model's final results (ignores `dataset`).
+        metric: str, scorer or None, optional (default=None)
+            Metrics to calculate. If None, a selection of the most
+            common metrics per task are used.
 
         dataset: str, optional (default="test")
             Data set on which to calculate the metric. Options are
             "train" or "test".
 
-        **kwargs
-            Additional keyword arguments for the metric function.
+        Returns
+        -------
+        score: pd.Series
+            Model's scoring.
 
         """
-        if metric is None:
-            return self._final_output()
+        scores = pd.Series(name=self.name)
 
-        pred = [m.scoring(metric, dataset, **kwargs) for m in self._models]
-        return np.average(pred, axis=0, weights=self.weights)
+        # Get the scoring from all models in the ensemble
+        results = [m.scoring(metric, dataset) for m in self._models]
+
+        # Calculate averages per metric
+        for idx in results[0].index:
+            values = [x[idx] for x in results]
+            scores[idx] = np.average(values, axis=0, weights=self.weights)
+
+        return scores
 
     def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
         """Get the mean of the prediction methods on new data.
@@ -323,9 +340,16 @@ class Voting(BaseModel, BaseEnsemble):
 class Stacking(BaseModel, BaseEnsemble):
     """Class for stacking the models in the pipeline."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, acronym="Stack", fullname="Stacking", **kwargs)
-        self.estimator = kwargs["estimator"]
+    acronym = "Stack"
+    fullname = "Stacking"
+
+    def __init__(self, *args, models, estimator, stack_method, passthrough):
+        super().__init__(*args)
+
+        self.models = models
+        self.estimator = estimator
+        self.stack_method = stack_method
+        self.passthrough = passthrough
         self._models = CustomDict(
             {k: v for k, v in self.T._models.items() if v.name in self.models}
         )
@@ -341,9 +365,9 @@ class Stacking(BaseModel, BaseEnsemble):
         dataset = pd.DataFrame()
         for m in self._models:
             attr = self._get_stack_attr(m)
-            pred = np.concatenate((
-                getattr(m, f"{attr}_train"), getattr(m, f"{attr}_test")
-            ))
+            pred = np.concatenate(
+                [getattr(m, f"{attr}_train"), getattr(m, f"{attr}_test")]
+             )
             if attr == "predict_proba" and self.T.task.startswith("bin"):
                 pred = pred[:, 1]
 

@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the API classes.
 
 """
@@ -29,20 +29,20 @@ def ATOMModel(
     fullname: str = None,
     needs_scaling: bool = False,
 ):
-    """Convert an estimator to a model that can be ingested by atom.
+    """Convert an estimator to a model that can be ingested by ATOM.
 
     This function adds the relevant attributes to the estimator so
     that they can be used when initializing the CustomModel class.
 
     Parameters
     ----------
-    estimator: class
+    estimator: estimator class or instance
         Model's estimator. Can be a class or an instance.
 
     acronym: str or None, optional (default=None)
         Model's acronym. Used to call the model from the trainer.
         If None, the capital letters in the estimator's __name__
-        are used (if 2 or more, else it uses the entire name).
+        are used (only if 2 or more, else it uses the entire name).
 
     fullname: str or None, optional (default=None)
         Full model's name. If None, the estimator's __name__ is used.
@@ -50,6 +50,11 @@ def ATOMModel(
     needs_scaling: bool, optional (default=False)
         Whether the model needs scaled features. Can not be True for
         deep learning datasets.
+
+    Returns
+    -------
+    estimator: estimator
+        Provided estimator with custom attributes for ATOM's pipeline.
 
     """
     if acronym:
@@ -71,8 +76,9 @@ def ATOMLoader(
     """Load a class instance from a pickle file.
 
     If the file is a trainer that was saved using `save_data=False`,
-    you can load new data into it. For atom pickles, you can also
-    apply all data transformations in the pipeline to the data.
+    it is possible to load new data into it. For atom pickles, all
+    data transformations in the pipeline can be applied to the loaded
+    data.
 
     Parameters
     ----------
@@ -89,7 +95,7 @@ def ATOMLoader(
             - (X_train, y_train), (X_test, y_test)
 
         X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_features, n_samples). If no
+            Feature set with shape=(n_samples, n_features). If no
             y is provided, the last column is used as target.
 
         y: int, str or sequence
@@ -107,6 +113,11 @@ def ATOMLoader(
         Verbosity level of the transformations applied on the new
         data. If None, use the verbosity from the loaded instance.
         This parameter is ignored if `transform_data=False`.
+
+    Returns
+    -------
+    cls: class instance
+        Un-pickled instance.
 
     """
     cls = dill.load(open(filename, "rb"))
@@ -174,7 +185,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - (X_train, y_train), (X_test, y_test)
 
         X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_features, n_samples).
+            Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
             - If int: Index of the target column in X.
@@ -182,10 +193,17 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - Else: Target column with shape=(n_samples,).
 
     y: int, str or sequence, optional (default=-1)
-        Target column in X. Ignored if provided through `arrays`.
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
         - Else: Target column with shape=(n_samples,).
+
+        This parameter is ignored if the target column is provided
+        through `arrays`.
+
+    shuffle: bool, optional (default=True)
+        Whether to shuffle the dataset before splitting the train and
+        test set. Be aware that not shuffling the dataset can cause
+        an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the dataset to use.
@@ -195,16 +213,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If <=1: Fraction of the dataset to include in the test set.
         - If >1: Number of rows to include in the test set.
 
-        Is ignored if the train and test set are provided.
+        This parameter is ignored if the train and test set are provided
+        through `arrays`.
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - n_jobs.
-
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -217,21 +233,19 @@ class ATOMClassifier(BaseTransformer, ATOM):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of the actions in python's warnings environment.
 
-        Note that changing this parameter will affect the
-        `PYTHONWARNINGS` environment.
-
-        Note that ATOM can't manage warnings that go directly
-        from C/C++ code to the stdout/stderr.
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by
-        the timestamp of the logger's creation.
-
         Note that warnings will not be saved to the logger.
+
+    experiment: str or None, optional (default=None)
+        Name of the mlflow experiment to use for tracking. If None,
+        no mlflow tracking is performed.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -244,12 +258,14 @@ class ATOMClassifier(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
+        shuffle: bool = True,
         n_rows: Union[int, float] = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -257,11 +273,12 @@ class ATOMClassifier(BaseTransformer, ATOM):
             verbose=verbose,
             warnings=warnings,
             logger=logger,
+            experiment=experiment,
             random_state=random_state,
         )
 
         self.goal = "classification"
-        ATOM.__init__(self, arrays, y=y, n_rows=n_rows, test_size=test_size)
+        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
 
 
 class ATOMRegressor(BaseTransformer, ATOM):
@@ -278,7 +295,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - (X_train, y_train), (X_test, y_test)
 
         X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_features, n_samples).
+            Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
             - If int: Index of the target column in X.
@@ -290,6 +307,11 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If int: Index of the target column in X.
         - If str: Name of the target column in X.
         - Else: Target column with shape=(n_samples,).
+
+    shuffle: bool, optional (default=True)
+        Whether to shuffle the dataset before splitting the train and
+        test set. Be aware that not shuffling the dataset can cause
+        an unequal distribution of the target classes over the sets.
 
     n_rows: int or float, optional (default=1)
         - If <=1: Fraction of the dataset to use.
@@ -305,10 +327,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         Number of cores to use for parallel processing.
             - If >0: Number of cores to use.
             - If -1: Use all available cores.
-            - If <-1: Use number of cores - 1 - n_jobs.
-
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
+            - If <-1: Use number of cores - 1 + `n_jobs`.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -321,21 +340,19 @@ class ATOMRegressor(BaseTransformer, ATOM):
         - If False: Suppress all warnings (equal to "ignore").
         - If str: One of the actions in python's warnings environment.
 
-        Note that changing this parameter will affect the
-        `PYTHONWARNINGS` environment.
-
-        Note that ATOM can't manage warnings that go directly
-        from C/C++ code to the stdout/stderr.
+        Changing this parameter affects the `PYTHONWARNINGS` environment.
+        ATOM can't manage warnings that go from C/C++ code to stdout.
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic name.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by
-        the timestamp of the logger's creation.
-
         Note that warnings will not be saved to the logger.
+
+    experiment: str or None, optional (default=None)
+        Name of the mlflow experiment to use for tracking. If None,
+        no mlflow tracking is performed.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -348,12 +365,14 @@ class ATOMRegressor(BaseTransformer, ATOM):
         self,
         *arrays,
         y: Y_TYPES = -1,
+        shuffle: bool = True,
         n_rows: Union[int, float] = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, Logger]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         super().__init__(
@@ -361,8 +380,9 @@ class ATOMRegressor(BaseTransformer, ATOM):
             verbose=verbose,
             warnings=warnings,
             logger=logger,
+            experiment=experiment,
             random_state=random_state,
         )
 
         self.goal = "regression"
-        ATOM.__init__(self, arrays, y=y, n_rows=n_rows, test_size=test_size)
+        ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)

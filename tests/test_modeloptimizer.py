@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for modeloptimizer.py
 
 """
@@ -10,6 +10,7 @@ Description: Unit tests for modeloptimizer.py
 # Standard packages
 import glob
 import pytest
+from unittest.mock import patch
 from sklearn.calibration import CalibratedClassifierCV
 from skopt.learning import GaussianProcessRegressor
 
@@ -34,7 +35,7 @@ def test_repr_method():
     assert str(atom.lda).startswith("Linear Discriminant")
 
 
-# Test bayesian_optimization ======================================= >>
+# Test training ==================================================== >>
 
 def test_n_calls_lower_n_initial_points():
     """Assert than an error is raised when n_calls<n_initial_points."""
@@ -111,6 +112,61 @@ def test_verbose_is_1():
     assert atom.lr._pbar is not None
 
 
+@patch("mlflow.set_tags")
+def test_run_set_tags_to_mlflow(mlflow):
+    """Assert that the mlflow run gets tagged."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    mlflow.assert_called_with(
+        {
+            "fullname": atom.gnb.fullname,
+            "branch": atom.gnb.branch.name,
+            "time": atom.gnb.time_fit,
+        }
+    )
+
+
+@patch("mlflow.log_params")
+def test_run_log_params_to_mlflow(mlflow):
+    """Assert that model parameters are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    assert mlflow.call_count == 2  # __init__ and fit parameters
+
+
+@patch("mlflow.log_metric")
+def test_run_log_metric_to_mlflow(mlflow):
+    """Assert that metrics are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB", metric=["f1", "recall", "accuracy"])
+    assert mlflow.call_count == 3
+
+
+@patch("mlflow.log_metric")
+def test_run_log_evals_to_mlflow(mlflow):
+    """Assert that eval metrics are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("CatB")
+    assert mlflow.call_count > 10
+
+
+@patch("mlflow.sklearn.log_model")
+def test_run_log_models_to_mlflow(mlflow):
+    """Assert that models are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("LGB")
+    mlflow.assert_called_with(atom.lgb.estimator, "LGBMClassifier")
+
+
+@patch("mlflow.log_artifact")
+def test_run_log_data_to_mlflow(mlflow):
+    """Assert that train and test sets are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_data = True
+    atom.run("GNB")
+    assert mlflow.call_count == 2  # Train and test set
+
+
 def test_bagging_attribute_types():
     """Assert that the bagging attributes have python types (not numpy)."""
     # For single-metric
@@ -160,14 +216,33 @@ def test_calibrate_reset_predictions():
     assert atom.mnb._pred_attrs[9] is None
 
 
+@patch("mlflow.sklearn.log_model")
+def test_calibrate_to_mlflow(mlflow):
+    """Assert that the CCV is logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.gnb.calibrate()
+    mlflow.assert_called_with(atom.gnb.estimator, "CalibratedClassifierCV")
+
+
 def test_rename():
     """Assert that the model's tag can be changed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.mnb.rename("_2")
-    assert atom.models == "MNB_2"
-    atom.mnb_2.rename("mnb_3")
-    assert atom.models == "MNB_3"
+    atom.run(["MNB", "MNB_2"])
+    pytest.raises(PermissionError, atom.mnb.rename, name="_2")
+    atom.mnb.rename("_3")
+    assert atom.models == ["MNB_3", "MNB_2"]
+    atom.mnb_2.rename()
+    assert atom.models == ["MNB_3", "MNB"]
+
+
+@patch("mlflow.tracking.MlflowClient.set_tag")
+def test_rename_to_mlflow(mlflow):
+    """Assert that renaming also changes the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.gnb.rename("GNB2")
+    mlflow.assert_called_with(atom.gnb2._run.info.run_id, "mlflow.runName", "GNB2")
 
 
 def test_save_estimator():

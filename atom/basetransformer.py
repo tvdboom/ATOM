@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the BaseTransformer class.
 
 """
@@ -11,6 +11,7 @@ Description: Module containing the BaseTransformer class.
 import os
 import dill
 import random
+import mlflow
 import numpy as np
 import pandas as pd
 from copy import copy
@@ -21,8 +22,8 @@ from typing import Union, Optional
 
 # Own modules
 from .utils import (
-    X_TYPES, Y_TYPES, to_df, to_series, merge,
-    prepare_logger, composed, method_to_log, crash
+    SEQUENCE, X_TYPES, Y_TYPES, to_df, to_series, merge,
+    prepare_logger, composed, crash, method_to_log,
 )
 
 
@@ -39,12 +40,13 @@ class BaseTransformer:
             - n_jobs: Number of cores to use for parallel processing.
             - verbose: Verbosity level of the output.
             - warnings: Whether to show or suppress encountered warnings.
-            - logger: Name of the logging file or Logger object.
+            - logger: Name of the log file or Logger object.
+            - experiment: Name of the mlflow experiment used for tracking.
             - random_state: Seed used by the random number generator.
 
     """
 
-    attrs = ["n_jobs", "verbose", "warnings", "logger", "random_state"]
+    attrs = ["n_jobs", "verbose", "warnings", "logger", "experiment", "random_state"]
 
     def __init__(self, **kwargs):
         """Update the properties with the provided kwargs."""
@@ -59,21 +61,21 @@ class BaseTransformer:
 
     @n_jobs.setter
     @typechecked
-    def n_jobs(self, n_jobs: int):
+    def n_jobs(self, value: int):
         # Check number of cores for multiprocessing
         n_cores = multiprocessing.cpu_count()
-        if n_jobs > n_cores:
-            n_jobs = n_cores
+        if value > n_cores:
+            value = n_cores
         else:
-            n_jobs = n_cores + 1 + n_jobs if n_jobs < 0 else n_jobs
+            value = n_cores + 1 + value if value < 0 else value
 
             # Final check for negative input
-            if n_jobs < 1:
+            if value < 1:
                 raise ValueError(
-                    f"Invalid value for the n_jobs parameter, got {n_jobs}.", 1
+                    f"Invalid value for the n_jobs parameter, got {value}.", 1
                 )
 
-        self._n_jobs = n_jobs
+        self._n_jobs = value
 
     @property
     def verbose(self):
@@ -81,13 +83,13 @@ class BaseTransformer:
 
     @verbose.setter
     @typechecked
-    def verbose(self, verbose: int):
-        if verbose < 0 or verbose > 2:
+    def verbose(self, value: int):
+        if value < 0 or value > 2:
             raise ValueError(
                 "Invalid value for the verbose parameter. Value"
-                f" should be between 0 and 2, got {verbose}."
+                f" should be between 0 and 2, got {value}."
             )
-        self._verbose = verbose
+        self._verbose = value
 
     @property
     def warnings(self):
@@ -95,17 +97,17 @@ class BaseTransformer:
 
     @warnings.setter
     @typechecked
-    def warnings(self, warnings: Union[bool, str]):
-        if isinstance(warnings, bool):
-            self._warnings = "default" if warnings else "ignore"
+    def warnings(self, value: Union[bool, str]):
+        if isinstance(value, bool):
+            self._warnings = "default" if value else "ignore"
         else:
             opts = ["error", "ignore", "always", "default", "module", "once"]
-            if warnings not in opts:
+            if value not in opts:
                 raise ValueError(
                     "Invalid value for the warnings parameter, got "
-                    f"{warnings}. Choose from: {', '.join(opts)}."
+                    f"{value}. Choose from: {', '.join(opts)}."
                 )
-            self._warnings = warnings
+            self._warnings = value
 
         warn.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
@@ -115,8 +117,18 @@ class BaseTransformer:
         return self._logger
 
     @logger.setter
-    def logger(self, logger):
-        self._logger = prepare_logger(logger, class_name=self.__class__.__name__)
+    def logger(self, value):
+        self._logger = prepare_logger(value, class_name=self.__class__.__name__)
+
+    @property
+    def experiment(self):
+        return self._experiment
+
+    @experiment.setter
+    def experiment(self, value):
+        self._experiment = value
+        if value:
+            mlflow.set_experiment(value)
 
     @property
     def random_state(self):
@@ -124,15 +136,15 @@ class BaseTransformer:
 
     @random_state.setter
     @typechecked
-    def random_state(self, random_state: Optional[int]):
-        if random_state and random_state < 0:
+    def random_state(self, value: Optional[int]):
+        if value and value < 0:
             raise ValueError(
                 "Invalid value for the random_state parameter. "
-                f"Value should be >0, got {random_state}."
+                f"Value should be >0, got {value}."
             )
-        random.seed(random_state)  # Set random seed
-        np.random.seed(random_state)
-        self._random_state = random_state
+        random.seed(value)  # Set random seed
+        np.random.seed(value)
+        self._random_state = value
 
     # Methods ====================================================== >>
 
@@ -164,14 +176,18 @@ class BaseTransformer:
             Target column corresponding to X.
 
         """
-        # If multidimensional, create dataframe with one column
+        # If more than 2 dimensions, create dataframe with one column
         if np.array(X).ndim > 2:
-            X = pd.DataFrame({"Features": [row for row in X]})
+            X = pd.DataFrame({"Multidimensional feature": [row for row in X]})
         else:
             X = to_df(copy(X))  # Make copy to not overwrite mutable arguments
 
+            # If text dataset, change the name of the column to Corpus
+            if X.shape[1] == 1 and X[X.columns[0]].dtype == "object":
+                X = X.rename(columns={X.columns[0]: "Corpus"})
+
         # Prepare target column
-        if isinstance(y, (list, tuple, dict, np.ndarray, pd.Series)):
+        if isinstance(y, (dict, *SEQUENCE)):
             if not isinstance(y, pd.Series):
                 # Check that y is one-dimensional
                 ndim = np.array(y).ndim
@@ -213,24 +229,25 @@ class BaseTransformer:
             Target column corresponding to X.
 
         use_n_rows: bool, optional (default=True)
-            Whether to use the n_rows parameter on the dataset.
+            Whether to use the `n_rows` parameter on the dataset.
 
         """
         def _no_train_test(data):
             """Path to follow when no train and test are provided."""
-            # Select subsample while shuffling the dataset
             if use_n_rows:
-                if self.n_rows <= 1:
-                    kwargs = dict(frac=self.n_rows, random_state=self.random_state)
-                elif self.n_rows > len(data):
+                if self.n_rows > len(data):
                     raise ValueError(
                         "Invalid value for the n_rows parameter. The provided"
                         " number is larger than the number of samples, got "
                         f"len(data)={len(data)} and n_rows={int(self.n_rows)}."
                     )
+
+                # Select subset of the data
+                n = self.n_rows if self.n_rows > 1 else len(data) * self.n_rows
+                if self.shuffle:
+                    data = data.sample(n=int(n), random_state=self.random_state)
                 else:
-                    kwargs = dict(n=int(self.n_rows), random_state=self.random_state)
-                data = data.sample(**kwargs)
+                    data = data.iloc[:int(n), :]
 
             data = data.reset_index(drop=True)
 
@@ -255,9 +272,14 @@ class BaseTransformer:
             if hasattr(self, "n_rows") and use_n_rows:
                 # Select same subsample of train and test set
                 if self.n_rows <= 1:
-                    kwargs = dict(frac=self.n_rows, random_state=self.random_state)
-                    train = train.sample(**kwargs)
-                    test = test.sample(**kwargs)
+                    n_train = int(len(train) * self.n_rows)
+                    n_test = int(len(test) * self.n_rows)
+                    if self.shuffle:
+                        train = train.sample(n=n_train, random_state=self.random_state)
+                        test = test.sample(n=n_test, random_state=self.random_state)
+                    else:
+                        train = train.iloc[:n_train, :]
+                        test = test.iloc[:n_test, :]
                 else:
                     raise ValueError(
                         "Invalid value for the n_rows parameter. Value has "
@@ -336,36 +358,33 @@ class BaseTransformer:
                 self.logger.info(str(text))
 
     @composed(crash, method_to_log, typechecked)
-    def save(self, filename: Optional[str] = None, **kwargs):
+    def save(self, filename: str = "auto", save_data: bool = True):
         """Save the instance to a pickle file.
 
         Parameters
         ----------
-        filename: str or None, optional (default=None)
-            Name to save the file with. None or "auto" to save with
-            the __name__ of the class.
+        filename: str, optional (default="auto")
+            Name of the file. Use "auto" for automatic naming.
 
-        **kwargs
-            Additional keyword arguments. Can contain:
-                - "save_data": Whether to save the dataset with the instance.
-                               Can only be used if called from a trainer.
+        save_data: bool, optional (default=True)
+            Whether to save the dataset with the instance. This
+            parameter is ignored if the method is not called from
+            a trainer.
 
         """
-        if kwargs.get("save_data") is False and hasattr(self, "dataset"):
+        if not save_data and hasattr(self, "dataset"):
             data = {}  # Store the data to reattach later
             for key, value in self._branches.items():
                 data[key] = copy(value.data)
                 value.data = None
 
-        if not filename:
-            filename = self.__class__.__name__
-        elif filename == "auto" or filename.endswith("/auto"):
+        if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
         dill.dump(self, open(filename, "wb"))  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes
-        if kwargs.get("save_data") is False and hasattr(self, "dataset"):
+        if not save_data and hasattr(self, "dataset"):
             for key, value in self._branches.items():
                 value.data = data[key]
 

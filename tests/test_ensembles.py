@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for ensembles.py
 
 """
@@ -42,20 +42,12 @@ def test_vote_repr():
 
 
 def test_vote_scoring():
-    """Assert that the scoring method returns the average score."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"], metric=["precision", "recall"])
-    atom.voting()
-    assert atom.vote.scoring() == "precision: 0.9442   recall: 0.9926"
-
-
-def test_vote_scoring_with_weights():
     """Assert that the scoring works with weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"])
     atom.voting(weights=[1, 2])
-    avg = (atom.tree.scoring("r2") + 2 * atom.lgb.scoring("r2"))/3
-    assert atom.vote.scoring("r2") == avg
+    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"])/3
+    assert atom.vote.scoring("r2")["r2"] == avg
 
 
 def test_vote_invalid_method():
@@ -176,15 +168,6 @@ def test_stack_repr():
     atom.run(["LR", "Tree"])
     atom.stacking()
     assert str(atom.stack).startswith("Stacking")
-
-
-def test_stack_scoring():
-    """Assert that the scoring method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, verbose=2, random_state=1)
-    atom.run(["Tree", "RF"])
-    atom.stacking()
-    assert atom.stack.scoring() == "f1: 0.957"
-    assert atom.stack.scoring("recall") == 0.9852941176470589
 
 
 def test_stack_predictions_binary():

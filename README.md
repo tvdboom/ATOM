@@ -14,7 +14,7 @@
 Overview 
 --------
 
-Author: [tvdboom](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
+Author: [Mavs](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
 
 
 #### Repository:
@@ -97,8 +97,8 @@ Example steps taken by ATOM's pipeline:
 <br/><br/>
 
 <p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram.jpg?raw=true" alt="diagram" title="diagram" width="900" height="300" />
-	<figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
+	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram_pipeline.png?raw=true" alt="diagram_pipeline" title="diagram_pipeline" width="900" height="300" />
+	<figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of a possible pipeline created by ATOM.</figcaption>
 </p>
 
 <br><br>
@@ -124,32 +124,40 @@ Usage
 
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:  
 
-    from sklearn.datasets import load_breast_cancer
-    from atom import ATOMClassifier
-    
-    X, y = load_breast_cancer(return_X_y)
-    atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+```python
+from sklearn.datasets import load_breast_cancer
+from atom import ATOMClassifier
+
+X, y = load_breast_cancer(return_X_y=True)
+atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
+```
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-    atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
-    atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
-    atom.feature_selection(strategy="PCA", n_features=12)
+```python
+atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
+atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
+atom.feature_selection(strategy="PCA", n_features=12)
+```
 
 Run the pipeline with the models you want to compare:
 
-    atom.run(
-        models=["LR", "LDA", "XGB", "lSVM"],
-        metric="f1",
-        n_calls=25,
-        n_initial_points=10,
-        bagging=4,
-    )
+```python
+atom.run(
+	models=["LR", "LDA", "XGB", "lSVM"],
+	metric="f1",
+	n_calls=25,
+	n_initial_points=10,
+	bagging=4,
+)
+```
 
 Make plots to analyze the results: 
 
-	atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
-	atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
+```python
+atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
+atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
+```
 
 <br><br>
 

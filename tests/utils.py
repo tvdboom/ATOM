@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Utility variables for the tests.
 
 """
@@ -11,14 +11,18 @@ Description: Utility variables for the tests.
 import os
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer, load_wine, load_digits, load_diabetes
+from sklearn.datasets import (
+    load_breast_cancer,
+    load_wine,
+    load_digits,
+    load_diabetes,
+    fetch_20newsgroups,
+)
 from keras.datasets import mnist
 
 # Own modules
 from atom.utils import merge
 
-
-# Variables ========================================================= >>
 
 # Directory for storing all files created by the tests
 FILE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/files/"
@@ -39,6 +43,21 @@ kwargs = dict(test_size=0.3, random_state=1)
 bin_train, bin_test = train_test_split(merge(X_bin, y_bin), **kwargs)
 class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
 reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
+
+# Image data
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+X_train = X_train.reshape(60000, 28, 28, 1)
+X_test = X_test.reshape(10000, 28, 28, 1)
+mnist = (X_train, y_train), (X_test, y_test)
+
+# Text data (subset of categories for faster downloading)
+X_text, y_text = fetch_20newsgroups(
+    return_X_y=True,
+    categories=['alt.atheism', 'sci.med'],
+    shuffle=True,
+    random_state=1,
+)
+X_text = np.array(X_text).reshape(-1, 1)
 
 # Small dimensional dataset
 X10 = [
@@ -139,12 +158,3 @@ y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
 y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
 y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]
-
-# Download the MNIST dataset
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-# Reshape data to fit model
-X_train = X_train.reshape(60000, 28, 28, 1)
-X_test = X_test.reshape(10000, 28, 28, 1)
-
-mnist = (X_train, y_train), (X_test, y_test)

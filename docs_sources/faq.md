@@ -12,6 +12,7 @@
 * [Is there a way to plot multiple models in the same shap plot?](#q9)
 * [Can I merge a sklearn pipeline with atom?](#q10)
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
+* [Can I train the models using cross-validation?](#q12)
 
 <br>
 
@@ -50,10 +51,9 @@ possible to integrate a TPOT pipeline with atom through the
 Yes. Deep learning models can be added as custom models to the pipeline
 as long as they follow [sklearn's API](https://scikit-learn.org/stable/developers/contributing.html#apis-of-scikit-learn-objects).
 If the dataset is 2-dimensional, everything should work normally. If
-the dataset has more than 2 dimensions (referred in the documentation as
-deep learning datasets, often the case for images or text embeddings),
-only a subset of atom's methods will work. For more information, see
-the [deep learning](../user_guide/#deep-learning) section of the user guide.
+the dataset has more than 2 dimensions, often the case for images, only
+a subset of atom's methods will work. For more information, see the
+[deep learning](../user_guide/#deep-learning) section of the user guide.
 
 <br>
 
@@ -64,7 +64,7 @@ Yes, all [data cleaning](../user_guide/#data-cleaning) and
 [feature engineering](../user_guide/#feature-engineering) methods accept
 a `columns` parameter to only transform the selected features. For example,
 to only impute the numerical columns in the dataset we could type
-`atom.impute(strat_num="mean", columns=atom.numerical)`. The parameter
+`#atom.impute(strat_num="mean", columns=atom.numerical)`. The parameter
 accepts column names, column indices or a slice object.
 
 <br>
@@ -82,20 +82,20 @@ methods to compare all models, independent of the branch it was trained on.
 <a name="q6"></a>
 ### Can I train models through atom using a GPU?
 
-ATOM doesn't fit the models himself. The underlying models' package does. 
+ATOM doesn't fit the models himself. The models' underlying package does.
 Since the majority of predefined models are implemented through sklearn
 and sklearn works on CPU only, they can not be trained on any GPU. If you
-are using a custom model whose package, Keras for example, allows GPU
-implementation and the settings or model parameters are tuned to do so, the
-model will train on the GPU like it would do outside atom.
+are using a custom model whose package allows GPU implementation (e.g. Keras)
+and the settings or model parameters are tuned to do so, the model will
+train on the GPU like it would do without using ATOM.
 
 <br>
 
 <a name="q7"></a>
 ### How are numerical and categorical columns differentiated?
 
-The columns are separated using pandas' [`select_dtypes`](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
-method for dataframes. Numerical columns are selected using `include="number"`
+The columns are separated using a dataframe's [`select_dtypes`](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
+method. Numerical columns are selected using `include="number"`
 whereas categorical columns are selected using `exclude="number"`.
 
 <br>
@@ -142,4 +142,30 @@ atom in two ways:
 * `atom = ATOMClassifier((X_train, y_train), (X_test, y_test))`
 
 Make sure the train and test size have the same number of columns. If
-initialized like this, the `test_size` parameter is ignored.
+initialized in any of these two ways  the `test_size` parameter is ignored.
+
+<br>
+
+<a name="q12"></a>
+### Can I train the models using cross-validation?
+It is not possible to train models using cross-validation, but for a
+good reason. Applying cross-validation would mean transforming every
+step of the pipeline multiple times, with different results. This would
+prevent ATOM from being able to show the transformation results after
+every pre-processing step, which means losing the ability to inspect
+how a transformer changed the dataset. This makes cross-validation an
+inappropriate technique for our exploration purposes.
+
+So why not use cross-validation only to train and evaluate the models,
+instead of applying it to the whole pipeline? Cross-validating only the
+models would make no sense here. If we use the complete dataset for
+that, so both the train and test set, we would be evaluating the models
+on data that was used to fit the transformers. This implies data leakage
+and can severely bias the results towards specific transformers. On the
+other hand, using only the training set beats the point of applying
+cross-validation in the first place, since we can train the model on the
+complete training set and evaluate the results on the independent test
+set. No cross-validation needed. That said, ideally we would cross-validate
+the entire pipeline using the entire dataset. This can be done using a
+trainer's [cross_validate]() method, but for the reason just explained
+above, the method only outputs the final metric results.
