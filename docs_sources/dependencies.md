@@ -32,6 +32,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
 * **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.24)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.7.4)
+* **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[pandas-profiling](https://pandas-profiling.github.io/pandas-profiling/docs/)** (>=2.3.0)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)

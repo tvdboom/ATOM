@@ -97,6 +97,7 @@ nav:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
         - Models:
+            - Dummy: API/models/dummy.md
             - Gaussian Process: API/models/gp.md
             - Gaussian Naive Bayes: API/models/gnb.md
             - Multinomial Naive Bayes: API/models/mnb.md

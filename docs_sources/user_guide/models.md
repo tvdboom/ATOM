@@ -3,7 +3,7 @@
 
 ## Predefined models
 
-ATOM provides 31 estimators for classification and regression tasks
+ATOM provides 32 estimators for classification and regression tasks
 that can be used to fit the data in the pipeline. After fitting, a
 class containing the estimator is attached to the trainer as an
 attribute. We refer to these "subclasses" as models. Apart from the
@@ -13,6 +13,7 @@ be accessed using their acronyms, e.g. `atom.LGB` to access the
 LightGBM's model. The available models and their corresponding
 acronyms are: 
 
+* "Dummy" for [Dummy Classification/Regression](../../API/models/dummy)
 * "GP" for [Gaussian Process](../../API/models/gp)
 * "GNB" for [Gaussian Naive Bayes](../../API/models/gnb)
 * "MNB" for [Multinomial Naive Bayes](../../API/models/mnb)

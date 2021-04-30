@@ -4,8 +4,12 @@
 ### Version 4.5.0
 
 * ATOM now supports NLP pipelines. Read more in the [user guide](../user_guide/nlp).
+* Integration of [mlflow](https://www.mlflow.org/) to track all models in the
+  pipeline. Read more in the [user guide](../user_guide/logging/#tracking).
 * The new [Gauss](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
+* Added the [Dummy](../API/models/dummy) model to compare other models with a
+  simple baseline.
 * The [Pruner](../API/data_cleaning/pruner) class can now able to drop outliers
   based on the selection of multiple strategies.
 * The new `shuffle` parameter in atom's initializer determines whether to

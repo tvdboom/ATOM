@@ -49,6 +49,7 @@ setuptools.setup(
         "tabulate >= 0.8.6",
         "scikit-learn >= 0.24",
         "scikit-optimize >= 0.8.1",
+        "nltk >= 3.6.2",
         "tpot >= 0.11.7",
         "category-encoders >= 2.1.0",
         "imbalanced-learn >= 0.5.0",

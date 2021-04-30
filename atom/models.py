@@ -74,6 +74,7 @@ To add a new model:
 
 
 List of available models:
+    - "Dummy" for Dummy Classifier/Regressor
     - "GNB" for Gaussian Naive Bayes (no hyperparameter tuning)
     - "MNB" for Multinomial Naive Bayes
     - "BNB" for Bernoulli Naive Bayes
@@ -81,7 +82,7 @@ List of available models:
     - "CNB" for Complement Naive Bayes
     - "GP" for Gaussian Process (no hyperparameter tuning)
     - "OLS" for Ordinary Least Squares (no hyperparameter tuning)
-    - "Ridge" for Ridge Linear
+    - "Ridge" for Ridge Linear Classifier/Regressor
     - "Lasso" for Lasso Linear Regression
     - "EN" for ElasticNet Linear Regression
     - "BR" for Bayesian Ridge
@@ -92,10 +93,10 @@ List of available models:
     - "KNN" for K-Nearest Neighbors
     - "RNN" for Radius Nearest Neighbors
     - "Tree" for a single Decision Tree
-    - "Bag" for Bagging (with decision tree as base estimator)
+    - "Bag" for Bagging
     - "ET" for Extra-Trees
     - "RF" for Random Forest
-    - "AdaB" for AdaBoost (with decision tree as base estimator)
+    - "AdaB" for AdaBoost
     - "GBM" for Gradient Boosting Machine
     - "XGB" for XGBoost (if package is available)
     - "LGB" for LightGBM (if package is available)
@@ -116,6 +117,7 @@ from scipy.spatial.distance import minkowski
 from skopt.space.space import Real, Integer, Categorical
 
 # Sklearn estimators
+from sklearn.dummy import DummyClassifier, DummyRegressor
 from sklearn.gaussian_process import (
     GaussianProcessClassifier, GaussianProcessRegressor
 )
@@ -222,6 +224,46 @@ class CustomModel(ModelOptimizer):
                 self.est.set_params(**params)
 
             return self.est
+
+
+class Dummy(ModelOptimizer):
+    """Dummy classifier/regressor."""
+
+    acronym = "Dummy"
+    needs_scaling = False
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+        if args[0].goal.startswith("class"):
+            self.fullname = "Dummy Classification"
+            self.params = {"strategy": ["prior", 0]}
+        else:
+            self.fullname = "Dummy Regression"
+            self.params = {"strategy": ["mean", 0], "quantile": [0.5, 2]}
+
+    def get_estimator(self, params=None):
+        """Return the model's estimator with unpacked parameters."""
+        params = dct(params)
+        if self.T.goal.startswith("class"):
+            return DummyClassifier(
+                random_state=params.pop("random_state", self.T.random_state),
+                **params,
+            )
+        else:
+            return DummyRegressor(**params)
+
+    def get_dimensions(self):
+        """Return a list of the bounds for the hyperparameters."""
+        if self.T.goal.startswith("class"):
+            strategies = ["stratified", "most_frequent", "prior", "uniform"]
+            dimensions = [Categorical(strategies, name="strategy")]
+        else:
+            dimensions = [
+                Categorical(["mean", "median", "quantile"], name="strategy"),
+                Real(0.0, 1.0, name="quantile")
+            ]
+        return [d for d in dimensions if d.name in self.params]
 
 
 class GaussianProcess(ModelOptimizer):
@@ -1748,6 +1790,7 @@ class MultilayerPerceptron(ModelOptimizer):
 
 # List of all the available models
 MODEL_LIST = CustomDict(
+    Dummy=Dummy,
     GP=GaussianProcess,
     GNB=GaussianNaiveBayes,
     MNB=MultinomialNaiveBayes,
