@@ -469,7 +469,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             # Can only save params for children of BaseEstimator
             if hasattr(self, "get_params"):
                 mlflow.log_params(self.estimator.get_params())
-            mlflow.log_params(self._est_params_fit)
 
             for i, m in enumerate(self.T._metric.keys()):
                 mlflow.log_metric(m, lst(self.metric_test)[i])

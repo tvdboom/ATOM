@@ -1232,7 +1232,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             model.T = self  # Change the model's parent class from trainer to atom
 
             # Log pipeline to mlflow run
-            if self.log_pipeline:
+            if self.experiment and self.log_pipeline:
                 with mlflow.start_run(model._run.info.run_id):
                     pl = self.export_pipeline(model=model.name)
                     mlflow.sklearn.log_model(pl, f"pipeline_{model.name}")

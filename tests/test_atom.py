@@ -245,7 +245,7 @@ def test_distribution(column):
     assert len(df) == 11
 
 
-@patch("atom.atom.ProfileReport")
+@patch("pandas_profiling.ProfileReport")
 def test_report(cls):
     """Assert that the report method and file are created."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

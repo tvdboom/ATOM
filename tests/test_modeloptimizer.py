@@ -105,6 +105,14 @@ def test_est_params_for_fit(model):
     assert getattr(atom, model)._stopped
 
 
+@patch("mlflow.set_tag")
+def test_nested_runs_to_mlflow(mlflow):
+    """Assert that the BO is logged to mlflow as nested runs."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("Tree", n_calls=5)
+    assert mlflow.call_count == 5  # Only called at iterations
+
+
 def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
@@ -131,7 +139,7 @@ def test_run_log_params_to_mlflow(mlflow):
     """Assert that model parameters are logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
-    assert mlflow.call_count == 2  # __init__ and fit parameters
+    assert mlflow.call_count == 1
 
 
 @patch("mlflow.log_metric")
@@ -154,6 +162,7 @@ def test_run_log_evals_to_mlflow(mlflow):
 def test_run_log_models_to_mlflow(mlflow):
     """Assert that models are logged to mlflow."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_pipeline = False
     atom.run("LGB")
     mlflow.assert_called_with(atom.lgb.estimator, "LGBMClassifier")
 
