@@ -55,7 +55,7 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.successive_halving(["bag", "adab", "et", "lgb"], metric="ap", bagging=5)
+atom.successive_halving(["bag", "adab", "et", "lgb"], metric="ap", n_bootstrap=5)
 atom.plot_successive_halving(filename="plot_successive_halving")
 ```
 <div align="center">

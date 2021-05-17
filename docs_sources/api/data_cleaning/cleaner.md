@@ -201,6 +201,7 @@ Get parameters for this estimator.
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

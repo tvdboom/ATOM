@@ -37,7 +37,7 @@ method.
 
 <br>
 
-## Making the features Gaussian-like
+## Making Gaussian-like features
 
 Use the [Gauss](../../API/data_cleaning/gauss) class to transform the
 feature set to follow a Gaussian-like (or normal) distribution. In

@@ -3,11 +3,15 @@
 
 ### Version 4.5.0
 
-* ATOM now supports NLP pipelines. Read more in the [user guide](../user_guide/nlp).
+* Support of NLP pipelines. Read more in the [user guide](../user_guide/nlp).
 * Integration of [mlflow](https://www.mlflow.org/) to track all models in the
   pipeline. Read more in the [user guide](../user_guide/logging/#tracking).
 * The new [Gauss](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
+* New [cross_validate](../API/ATOM/atomclassifier/#cross-validate) method to
+  evaluate the robustness of a model using cross_validation.
+* New [reset](../API/ATOM/atomclassifier/#reset) method to go back to atom's
+  initial state.
 * Added the [Dummy](../API/models/dummy) model to compare other models with a
   simple baseline.
 * The [Pruner](../API/data_cleaning/pruner) class can now able to drop outliers
@@ -20,13 +24,15 @@
 * The [apply](../API/ATOM/atomclassifier/#apply) method now accepts args and
   kwargs for the function.
 * Refactor of the [scoring](../API/ATOM/atomclassifier/#scoring) method.
+* Refactor of the [export_pipeline](../API/ATOM/atomclassifier/#export-pipeline) method.
 * The parameters in the [Cleaner](../API/data_cleaning/pruner) class have
   been refactored to better describe their function.
 * The `train_sizes` parameter in [train_sizing](../API/ATOM/atomclassifier/#train-sizing)
   now accepts integer values to automatically create equally distributed
-  splits in the training set. 
+  splits in the training set.
 * Refactor of [plot_pipeline](../API/plots/plot_pipeline) to show models in the
   diagram as well.
+* Refactor of the `bagging` parameter to the (more appropriate) name `n_bootstrap`.
 * New option to exclude columns from a transformer adding `!` before their name.
 * Fixed a bug where the [Pruner](../API/data_cleaning/pruner) class failed if
   there were categorical columns in the dataset.

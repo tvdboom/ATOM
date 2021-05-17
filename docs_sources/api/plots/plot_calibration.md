@@ -18,7 +18,7 @@ classify the samples such that among the samples to which it gave a
 positive class. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/calibration.html).
 
 This figure shows two plots: the calibration curve, where the x-axis
-represents the average predicted probability in each bin and the y-axis
+represents the average predicted probability in each bin, and the y-axis
 is the fraction of positives, i.e. the proportion of samples whose
 class is the positive class (in each bin); and a distribution of all
 predicted probabilities of the classifier.

@@ -341,13 +341,13 @@ def test_sequence_parameters():
         models=["LR", "Tree", "LGB"],
         n_calls=(2, 3, 4),
         n_initial_points=(1, 2, 3),
-        bagging=[2, 5, 7],
+        n_bootstrap=[2, 5, 7],
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
     assert sum(trainer.tree.bo.index.str.startswith("Initial")) == 2
-    assert len(trainer.lgb.metric_bagging) == 7
+    assert len(trainer.lgb.metric_bootstrap) == 7
 
 
 @patch("mlflow.start_run")

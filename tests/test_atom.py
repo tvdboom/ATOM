@@ -27,8 +27,8 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10,
-    X10_nan, X10_str, y10, y10_str, y10_sn, X20_out,
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_text,
+    y_text, X10, X10_nan, X10_str, y10, y10_str, y10_sn, X20_out,
 )
 
 
@@ -134,7 +134,7 @@ def test_branch_setter_new():
     atom = ATOMClassifier(X10_nan, y10, random_state=1)
     atom.clean()
     atom.branch = "branch_2"
-    assert list(atom._branches.keys()) == ["master", "branch_2"]
+    assert list(atom._branches.keys()) == ["og", "master", "branch_2"]
 
 
 def test_branch_setter_from_valid():
@@ -236,6 +236,16 @@ def test_status():
     atom.status()
 
 
+def test_reset():
+    """Assert that the reset method deletes models and branches."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.branch = "2"
+    atom.run("LR")
+    atom.reset()
+    assert not atom.models and len(atom._branches) == 2
+    assert atom.dataset.equals(atom.og.dataset)
+
+
 @pytest.mark.parametrize("column", ["Feature 1", 1])
 def test_distribution(column):
     """Assert that the distribution method and file are created."""
@@ -309,17 +319,39 @@ def test_save_data():
     assert glob.glob(FILE_DIR + "ATOMClassifier_dataset.csv")
 
 
-def test_export_pipeline():
+@pytest.mark.parametrize("pl", [(None, 1), (True, 2), ([0], 1)])
+def test_export_pipeline(pl):
     """Assert that we can export the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(RuntimeError, atom.export_pipeline)
     atom.clean()
+    atom.prune()
+    assert len(atom.export_pipeline(pipeline=pl[0])) == pl[1]
+
+
+def test_export_empty_pipeline():
+    """Assert that an error is raised when the pipeline is empty."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    pytest.raises(RuntimeError, atom.export_pipeline, pipeline=False)
+
+
+def test_export_pipeline_verbose():
+    """Assert that the verbosity is passed to the transformers."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    atom.run("LGB")
+    assert atom.export_pipeline("LGB", verbose=2)[0].verbose == 2
+
+
+def test_export_pipeline_scaler():
+    """Assert that a scaler is included in the pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["GNB", "LGB"])
-    assert len(atom.export_pipeline("GNB")) == 2  # Without scaler
-    assert isinstance(atom.export_pipeline("LGB")[1], Scaler)  # With scaler
+    assert not isinstance(atom.export_pipeline("GNB")[0], Scaler)
+    assert isinstance(atom.export_pipeline("LGB")[0], Scaler)
 
 
-# Test transformer methods ========================================= >>
+# Test base transformers =========================================== >>
 
 def test_params_to_method():
     """Assert that atom's parameters are passed to the method."""
@@ -488,6 +520,41 @@ def test_sets_are_kept_equal():
     assert len(atom.train) < len_train and len(atom.test) < len_test
 
 
+# Test nlp transformers ============================================ >>
+
+def test_textclean():
+    """Assert that the textclean method cleans the corpus."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.textclean()
+    assert atom["Corpus"][0] == "yes sir"
+
+
+def test_tokenize():
+    """Assert that the tokenize method tokenizes the corpus."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.tokenize()
+    assert atom["Corpus"][0] == ["yes", "sir"]
+    assert hasattr(atom, "bigrams")
+
+
+def test_normalize():
+    """Assert that the normalize method normalizes the corpus."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.normalize(stopwords=["yes"])
+    assert atom["Corpus"][0] == ["sir"]
+
+
+def test_vectorize():
+    """Assert that the vectorize method vectorizes the corpus."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.vectorize(strategy="hashing", n_features=5)
+    assert "Corpus" not in atom
+    assert atom.shape == (4, 6)
+    assert hasattr(atom, "hashing")
+
+
+# Test data cleaning transformers =================================== >>
+
 def test_scale():
     """Assert that the scale method normalizes the features."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -560,6 +627,8 @@ def test_balance_attribute():
     atom.balance(strategy="NearMiss")
     assert atom.nearmiss.__class__.__name__ == "NearMiss"
 
+
+# Test feature engineering transformers ============================ >>
 
 def test_feature_generation():
     """Assert that the feature_generation method creates extra features."""
@@ -735,12 +804,3 @@ def test_trainer_becomes_atom():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
     assert atom is atom.tree.T
-
-
-@patch("mlflow.sklearn.log_model")
-def test_pipeline_to_mlflow(mlflow):
-    """Assert that renaming also changes the mlflow run."""
-    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
-    atom.log_pipeline = True
-    atom.run("GNB")
-    assert mlflow.call_count == 2  # Model + Pipeline

@@ -294,15 +294,14 @@ def check_scaling(X):
 
 def get_corpus(X):
     """Get text column from dataframe."""
-    corpus = [col for col in X if col.lower() == "corpus"][0]
-    if not corpus:
+    try:
+        return [col for col in X if col.lower() == "corpus"][0]
+    except IndexError:
         raise ValueError("The provided dataset does not contain a text corpus!")
-
-    return corpus
 
 
 def get_best_score(item, metric=0):
-    """Returns the bagging or test score of a model.
+    """Returns the bootstrap or test score of a model.
 
     Parameters
     ----------
@@ -313,8 +312,8 @@ def get_best_score(item, metric=0):
         Index of the metric to use.
 
     """
-    if getattr(item, "mean_bagging", None):
-        return lst(item.mean_bagging)[metric]
+    if getattr(item, "mean_bootstrap", None):
+        return lst(item.mean_bootstrap)[metric]
     else:
         return lst(item.metric_test)[metric]
 
@@ -372,11 +371,12 @@ def to_df(data, index=None, columns=None, pca=False):
         Transformed dataframe.
 
     """
-    if not isinstance(data, (pd.DataFrame, type(None))):
-        if columns is None and not pca:
-            columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
-        elif columns is None:
-            columns = [f"Component {str(i)}" for i in range(1, len(data[0]) + 1)]
+    if data is not None and not isinstance(data, pd.DataFrame):
+        if not isinstance(data, dict):  # Dict already has column names
+            if columns is None and not pca:
+                columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
+            elif columns is None:
+                columns = [f"Component {str(i)}" for i in range(1, len(data[0]) + 1)]
         data = pd.DataFrame(data, index=index, columns=columns)
 
     return data
@@ -402,7 +402,7 @@ def to_series(data, index=None, name="Target"):
         Transformed series.
 
     """
-    if not isinstance(data, (pd.Series, type(None))):
+    if data is not None and not isinstance(data, pd.Series):
         data = pd.Series(data, index=index, name=name)
 
     return data
@@ -874,8 +874,8 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
                 "Invalid value for the verbose parameter."
                 f"Value should be between 0 and 2, got {verbose}."
             )
-        elif all(hasattr(transformer, attr) for attr in ("get_params", "verbose")):
-            vb = transformer.get_params()["verbose"]  # Save original verbosity
+        elif hasattr(transformer, "verbose"):
+            vb = transformer.verbose  # Save original verbosity
             transformer.verbose = verbose
 
     if transformer.__class__.__name__ in ("DropTransformer", "FuncTransformer"):
@@ -892,13 +892,13 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
         output = transformer.transform(*args)
 
         # Transform can return X, y or both
-        if not isinstance(output, tuple):
+        if isinstance(output, tuple):
+            X, y = output[0], output[1]
+        else:
             if len(output.shape) > 1:
                 X, y = output, y_og  # Only X
             else:
                 X, y = X_og, output  # Only y
-        else:
-            X, y = output[0], output[1]
 
         # Convert to pandas and assign proper column names
         if not isinstance(X, pd.DataFrame):
@@ -920,14 +920,13 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
         branch.dataset = branch.dataset.reset_index(drop=True)
 
     # Back to the original verbosity
-    if verbose is not None:
-        if all(hasattr(transformer, attr) for attr in ("get_params", "verbose")):
-            transformer.verbose = vb
+    if verbose is not None and hasattr(transformer, "verbose"):
+        transformer.verbose = vb
 
     return X, y
 
 
-def add_transformer(self, transformer, columns=None, train_only=False):
+def add_transformer(self, transformer, columns=None, train_only=False, **fit_params):
     """Add a transformer to the current branch.
 
     If the transformer is not fitted, it is fitted on the
@@ -956,7 +955,11 @@ def add_transformer(self, transformer, columns=None, train_only=False):
         Whether to apply the transformer only on the train set or
         on the complete dataset.
 
-        """
+    **fit_params
+        Additional keyword arguments passed to the transformer's fit
+        method.
+
+    """
     if not hasattr(transformer, "transform"):
         raise ValueError("Added transformers should have a transform method!")
 
@@ -980,7 +983,7 @@ def add_transformer(self, transformer, columns=None, train_only=False):
             args.append(self.X_train[transformer.cols])
         if "y" in signature(transformer.fit).parameters:
             args.append(self.y_train)
-        transformer.fit(*args)
+        transformer.fit(*args, **fit_params)
 
     custom_transform(self, transformer, self.branch, verbose=self.verbose)
 
@@ -1074,8 +1077,7 @@ def method_to_log(f):
                 logger.info("")
             logger.info(f"{args[0].__class__.__name__}.{f.__name__}()")
 
-        result = f(*args, **kwargs)
-        return result
+        return f(*args, **kwargs)
 
     return wrapper
 
@@ -1088,6 +1090,24 @@ def plot_from_model(f):
             return f(args[0].T, args[0].name, *args[1:], **kwargs)
         else:
             return f(*args, **kwargs)
+
+    return wrapper
+
+
+def score_decorator(f):
+    """Decorator for sklearn's _score function.
+
+    Special `hack` for sklearn.model_selection._validation._score
+    in order to score pipelines that drop samples during transforming.
+
+    """
+
+    def wrapper(*args, **kwargs):
+        args = list(args)  # Convert to list for item assignment
+        args[1], args[2] = args[0][:-1].transform(args[1], args[2])
+
+        # Return f(final_estimator, X_transformed, y_transformed, ...)
+        return f(args[0][-1], *tuple(args[1:]), **kwargs)
 
     return wrapper
 
@@ -1135,11 +1155,6 @@ def lift(y_true, y_pred):
     return float((tp / (tp + fp)) / ((tp + fn) / (tp + tn + fp + fn)))
 
 
-def support(y_true, y_pred):
-    tn, fp, fn, tp = confusion_matrix(y_true, y_pred).ravel()
-    return float((tp + fp) / (tp + fp + fn + tn))
-
-
 # Scorers not predefined by sklearn
 CUSTOM_SCORERS = dict(
     tn=true_negatives,
@@ -1151,7 +1166,6 @@ CUSTOM_SCORERS = dict(
     tnr=true_negative_rate,
     fnr=false_negative_rate,
     lift=lift,
-    sup=support,
     mcc=matthews_corrcoef,
 )
 

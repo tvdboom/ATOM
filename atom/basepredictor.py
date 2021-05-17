@@ -18,8 +18,7 @@ from .branch import Branch
 from .ensembles import Voting, Stacking
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, check_is_fitted,
-    divide, get_scorer, get_best_score, delete, method_to_log,
-    composed, crash,
+    divide, get_best_score, delete, method_to_log, composed, crash,
 )
 
 
@@ -432,6 +431,12 @@ class BasePredictor:
         check_is_fitted(self, attributes="_models")
         self.winner.calibrate(**kwargs)
 
+    @composed(crash, method_to_log)
+    def cross_validate(self, **kwargs):
+        """Evaluate the winning model using cross-validation."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.cross_validate(**kwargs)
+
     @composed(crash, typechecked)
     def scoring(
         self,
@@ -470,7 +475,7 @@ class BasePredictor:
 
         Removes a model from the trainer. If the winning model is
         removed, the next best model (through `metric_test` or
-        `mean_bagging`) is selected as winner. If all models are
+        `mean_bootstrap`) is selected as winner. If all models are
         removed, the metric and training approach are reset. Use this
         method to drop unwanted models from the pipeline or to free
         some memory before saving. The model is not removed from any

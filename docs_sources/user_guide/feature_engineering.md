@@ -3,7 +3,7 @@
 
 Feature engineering is the process of creating new features from the
 existing ones, in order to capture relationships with the target
-column that the first set of features didn't had on their own. This
+column that the first set of features didn't have on their own. This
 process is very important to improve the performance of machine learning
 algorithms. Although feature engineering works best when the data 
 scientist applies use-case specific transformations, there are ways to
@@ -149,7 +149,7 @@ more in sklearn's [documentation](https://scikit-learn.org/stable/modules/featur
 
 **Recursive feature elimination**<br>
 Select features by recursively considering smaller and smaller sets of
-features. First, the estimator is trained on the initial set of features
+features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a `coef_`
 or through a `feature_importances_` attribute. Then, the least important
 features are pruned from current set of features. That procedure is

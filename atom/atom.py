@@ -8,20 +8,23 @@ Description: Module containing the ATOM class.
 """
 
 # Standard packages
+import os
 import mlflow
+import contextlib
 import numpy as np
 import pandas as pd
 from scipy import stats
+from copy import deepcopy
 from typeguard import typechecked
 from typing import Union, Optional, Any
-from sklearn.pipeline import Pipeline
 
 # Own modules
 from .branch import Branch
 from .basepredictor import BasePredictor
 from .basetrainer import BaseTrainer
 from .basetransformer import BaseTransformer
-from .nlp import NLPCleaner, Tokenizer, Normalizer, Vectorizer
+from .nlp import TextCleaner, Tokenizer, Normalizer, Vectorizer
+from .pipeline import Pipeline
 from .data_cleaning import (
     DropTransformer,
     FuncTransformer,
@@ -48,8 +51,8 @@ from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
     lst, divide, infer_task, check_method, check_scaling,
     check_multidimensional, names_from_estimator, variable_return,
-    custom_transform, add_transformer, method_to_log, composed,
-    crash, CustomDict,
+    delete, custom_transform, add_transformer, method_to_log,
+    composed, crash, CustomDict,
 )
 
 
@@ -74,8 +77,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Branching attributes
-        self._current = "master"  # Current pipeline
-        self._branches = {self._current: Branch(self, self._current)}
+        self._branches = {"og": Branch(self, "og"), "master": Branch(self, "master")}
+        self._current = "master"  # Main branch
 
         # Training attributes
         self._models = CustomDict()
@@ -87,7 +90,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Prepare the provided data
         self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
 
-        # Save the test_size fraction for later use
+        # Attach the data to the original branch
+        self.og.data = self.branch.data.copy(deep=True)
+        self.og.idx = self.branch.idx.copy()
+
+        # Save the test_size fraction for use during training
         self._test_size = self.branch.idx[1] / len(self.dataset)
 
         self.task = infer_task(self.y, goal=self.goal)
@@ -109,10 +116,10 @@ class ATOM(BasePredictor, ATOMPlotter):
     def __repr__(self):
         out = f"{self.__class__.__name__}"
         out += f"\n --> Branches:"
-        if len(self._branches) == 1:
+        if len(self._branches) - 1 == 1:
             out += f" {self._current}"
         else:
-            for branch in self._branches:
+            for branch in [b for b in self._branches if b != "og"]:
                 out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
@@ -142,6 +149,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     def branch(self, branch: str):
         if not branch:
             raise ValueError("Can't create a branch with an empty name!")
+        elif branch.lower() == "og":
+            raise ValueError(
+                "This name is reserved for internal purposes. "
+                "Choose a different name for the branch."
+            )
         elif branch.lower() in self._branches:
             self._current = branch.lower()
             self.log(f"Switched to branch {branch}.", 1)
@@ -255,6 +267,25 @@ class ATOM(BasePredictor, ATOMPlotter):
     def status(self):
         """Get an overview of atom's status."""
         self.log(str(self))
+
+    @composed(crash, method_to_log)
+    def reset(self):
+        """Reset the instance to it's initial state.
+
+        Deletes all branches and models. The dataset is also reset
+        to its form after initialization.
+
+        """
+        # Delete all models and branches
+        delete(self, self._get_models(None))
+        for name in [b for b in self._branches if b != "og"]:
+            self._branches.pop(name)
+
+        # Re-create the master branch from original
+        self._branches["master"] = Branch(self, "master", parent="og")
+        self._current = "master"
+
+        self.log("The instance is successfully reset!", 1)
 
     @composed(crash, method_to_log)
     def stats(self, _vb: int = -2):
@@ -476,38 +507,74 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Data set saved successfully!", 1)
 
     @composed(crash, typechecked)
-    def export_pipeline(self, model: Optional[str] = None):
-        """Export atom's pipeline to a sklearn's Pipeline object.
+    def export_pipeline(
+        self,
+        model: Optional[str] = None,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
+    ):
+        """Export atom's pipeline to a sklearn-like Pipeline object.
 
-        Optionally, you can add a model as final estimator. If the
-        model needs feature scaling and there is no scaler in the
-        pipeline, a Scaler is added. The returned pipeline is
-        already fitted.
+        Optionally, you can add a model as final estimator. The
+        returned pipeline is already fitted on the training set.
 
         Parameters
         ----------
         model: str or None, optional (default=None)
             Name of the model to add as a final estimator to the
-            pipeline. If None, no model is added.
+            pipeline. If the model used feature scaling, the Scaler
+            is added before the model. If None, only the
+            transformers are added.
+
+        pipeline: bool, sequence or None, optional (default=None)
+            Transformers to export.
+                - If None: Only transformers that are applied on the
+                           whole dataset are exported.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
+
+        verbose: int or None, optional (default=None)
+            Verbosity level of the transformers in the pipeline. If
+            None, it leaves them to their original verbosity.
 
         Returns
         -------
         pipeline: Pipeline
-            Pipeline in the current branch as a sklearn object.
+            Current branch as a sklearn-like Pipeline object.
 
         """
-        if len(self) == 0 and not model:
-            raise RuntimeError("The pipeline seems to be empty!")
+        if pipeline is None:
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+        elif pipeline is False:
+            pipeline = []
+        elif pipeline is True:
+            pipeline = list(range(len(self.pipeline)))
 
-        steps = [(est.__class__.__name__.lower(), est) for est in self.pipeline]
+        if len(pipeline) == 0 and not model:
+            raise RuntimeError("The selected pipeline seems to be empty!")
+
+        steps = []
+        for idx, transformer in enumerate(self.pipeline):
+            if idx in pipeline:
+                est = deepcopy(transformer)  # Not clone to keep fitted
+                # Set the new verbosity (if possible)
+                if verbose is not None and hasattr(est, "verbose"):
+                    est.verbose = verbose
+
+                steps.append((est.__class__.__name__.lower(), est))
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
-            if model.needs_scaling and not self.scaled:
-                steps += [("scaler", Scaler().fit(self.X_train, self.y_train))]
-            steps += [(model.name, model.estimator)]
+            if model.scaler:
+                steps.append(("scaler", deepcopy(model.scaler)))
 
-        return Pipeline(steps)
+            # Redirect stdout to avoid annoying prints
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                steps.append((model.name, deepcopy(model.estimator)))
+
+        return Pipeline(steps)  # ATOM's pipeline, not sklearn
 
     # Base transformers ============================================ >>
 
@@ -607,7 +674,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         transformer: Any,
         columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
-        train_only: bool = False
+        train_only: bool = False,
+        **fit_params,
     ):
         """Add a transformer to the current branch.
 
@@ -634,21 +702,26 @@ class ATOM(BasePredictor, ATOMPlotter):
             Whether to apply the transformer only on the training set or
             on the complete dataset.
 
+        **fit_params
+            Additional keyword arguments passed to the transformer's fit
+            method.
+
         """
         check_method(self, "add")
-        if isinstance(transformer, Pipeline):
+        if transformer.__class__.__name__ == "Pipeline":
             # Recursively add all transformers to the pipeline
             for name, est in transformer.named_steps.items():
-                add_transformer(self, est, columns, train_only)
+                add_transformer(self, est, columns, train_only, **fit_params)
 
         else:
-            add_transformer(self, transformer, columns, train_only)
+            add_transformer(self, transformer, columns, train_only, **fit_params)
 
     # NLP transformers ============================================= >>
 
     @composed(crash, method_to_log, typechecked)
-    def nlpclean(
+    def textclean(
         self,
+        decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
         drop_url: bool = True,
@@ -658,20 +731,21 @@ class ATOM(BasePredictor, ATOMPlotter):
         drop_punctuation: bool = True,
         **kwargs,
     ):
-        """Applies standard data cleaning steps to the corpus.
+        """Applies standard text cleaning to the corpus.
 
-        The transformations can include dropping noise from the text
-        (emails, HTML tags, URLs, etc...). The transformations are
-        only applied on the column named `corpus`, in the same order
-        the parameters are presented. If there is no column with that
-        name, an exception is raised.
+        Transformations include normalizing characters and dropping
+        noise from the text (emails, HTML tags, URLs, etc...). The
+        transformations are applied on the column named `Corpus`, in
+        the same order the parameters are presented. If there is no
+        column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
         """
         check_method(self, "nlpclean")
-        kwargs = self._prepare_kwargs(kwargs, NLPCleaner().get_params())
-        nlpcleaner = NLPCleaner(
+        kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
+        textcleaner = TextCleaner(
+            decode=decode,
             lower_case=lower_case,
             drop_email=drop_email,
             drop_url=drop_url,
@@ -682,7 +756,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, nlpcleaner)
+        add_transformer(self, textcleaner)
 
     @composed(crash, method_to_log, typechecked)
     def tokenize(
@@ -693,11 +767,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Tokenize the corpus.
 
-        Convert the document (as string) into a sequence of words.
-        Additionally, create bigrams or trigrams (represented by
-        words united with underscores). The transformation is only
-        applied on the column named `corpus`. If there is no column
-        with that name, an exception is raised.
+        Convert documents into sequences of words. Additionally,
+        create bigrams or trigrams (represented by words united with
+        underscores, e.g. "New_York"). The transformations are applied
+        on the column named `Corpus`. If there is no column with that
+        name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
@@ -712,6 +786,9 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         add_transformer(self, tokenizer)
 
+        self.branch.bigrams = tokenizer.bigrams
+        self.branch.trigrams = tokenizer.trigrams
+
     @composed(crash, method_to_log, typechecked)
     def normalize(
         self,
@@ -722,9 +799,9 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Normalize the corpus.
 
-        The transformation is only applied on the column named
-        `corpus`, in the same order the parameters are presented.
-        If there is no column with that name, an exception is raised.
+        The transformations are applied on the column named `Corpus`,
+        in the same order the parameters are presented. If there is
+        no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
@@ -744,16 +821,21 @@ class ATOM(BasePredictor, ATOMPlotter):
     def vectorize(self, strategy: str = "BOW", **kwargs):
         """Vectorize the corpus.
 
-        The transformation is only applied on the column named
-        `corpus`, in the same order the parameters are presented.
-        If there is no column with that name, an exception is raised.
+        Transform the corpus into meaningful vectors of numbers. The
+        transformation is applied on the column named `Corpus`. If
+        there is no column with that name, an exception is raised.
 
         See nlp.py for a description of the parameters.
 
         """
         check_method(self, "normalize")
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
-        add_transformer(self, Vectorizer(strategy=strategy, **kwargs))
+        vectorizer = Vectorizer(strategy=strategy, **kwargs)
+
+        add_transformer(self, vectorizer)
+
+        # Attach the estimator attribute to atom's branch
+        setattr(self.branch, strategy.lower(), getattr(vectorizer, strategy.lower()))
 
     # General transformers ========================================= >>
 
@@ -1009,10 +1091,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         add_transformer(self, feature_generator, columns=columns)
 
-        # Attach used attributes to atom's branch
+        # Attach the genetic attributes to atom's branch
         if strategy.lower() in ("gfg", "genetic"):
-            for attr in ["symbolic_transformer", "genetic_features"]:
-                setattr(self.branch, attr, getattr(feature_generator, attr))
+            self.branch.symbolic_transformer = feature_generator.symbolic_transformer
+            self.branch.genetic_features = feature_generator.genetic_features
 
     @composed(crash, method_to_log, typechecked)
     def feature_selection(
@@ -1231,12 +1313,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.errors.pop(model.name, None)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 
-            # Log pipeline to mlflow run
-            if self.experiment and self.log_pipeline:
-                with mlflow.start_run(model._run.info.run_id):
-                    pl = self.export_pipeline(model=model.name)
-                    mlflow.sklearn.log_model(pl, f"pipeline_{model.name}")
-
     @composed(crash, method_to_log, typechecked)
     def run(
         self,
@@ -1249,7 +1325,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a direct fashion.
@@ -1265,7 +1341,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap
         )
 
         kwargs = self._prepare_kwargs(kwargs)
@@ -1289,20 +1365,20 @@ class ATOM(BasePredictor, ATOMPlotter):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a successive halving fashion.
 
-        If you want to compare similar models, you can choose to use a
-        successive halving approach to run the pipeline. This technique
-        is a bandit-based algorithm that fits N models to 1/N of the data.
-        The best half are selected to go to the next iteration where the
-        process is repeated. This continues until only one model remains,
-        which is fitted on the complete dataset. Beware that a model's
-        performance can depend greatly on the amount of data on which it
-        is trained. For this reason, we recommend only to use this
-        technique with similar models, e.g. only using tree-based models.
+        The successive halving technique is a bandit-based algorithm
+        that fits N models to 1/N of the data. The best half are
+        selected to go to the next iteration where the process is
+        repeated. This continues until only one model remains, which
+        is fitted on the complete dataset. Beware that a model's
+        performance can depend greatly on the amount of data on which
+        it is trained. For this reason, it is recommended to only use
+        this technique with similar models, e.g. only using tree-based
+        models.
 
         See the basetrainer.py module for a description of the parameters.
 
@@ -1311,7 +1387,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            skip_runs, n_calls, n_initial_points, est_params, bo_params, bagging
+            skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap
         )
 
         kwargs = self._prepare_kwargs(kwargs)
@@ -1335,16 +1411,18 @@ class ATOM(BasePredictor, ATOMPlotter):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         **kwargs,
     ):
         """Fit the models in a train sizing fashion.
 
-        When training models, there is usually a trade-off between model
-        performance and computation time that is regulated by the number
-        of samples in the training set. The TrainSizing class can be used
-        to create insights in this trade-off and help determine the optimal
-        size of the training set.
+        When training models, there is usually a trade-off between
+        model performance and computation time, that is regulated by
+        the number of samples in the training set. This method can be
+        used to create insights in this trade-off, and help determine
+        the optimal size of the training set. The models are fitted
+        multiple times, ever-increasing the number of samples in the
+        training set.
 
         See the basetrainer.py module for a description of the parameters.
 
@@ -1353,7 +1431,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            train_sizes, n_calls, n_initial_points, est_params, bo_params, bagging
+            train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap
         )
 
         kwargs = self._prepare_kwargs(kwargs)

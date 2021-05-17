@@ -50,13 +50,13 @@ atom.run(
     metric="f1",
     n_calls=25,
     n_initial_points=10,
-    bagging=4,
+    n_bootstrap=4,
 )
 ```
 
 Make plots to analyze the results: 
 
 ```python
-atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
+atom.plot_results(figsize=(9, 6), filename="bootstrap_results.png")  
 atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 ```

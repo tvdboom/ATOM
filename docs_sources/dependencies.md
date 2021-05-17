@@ -48,16 +48,3 @@ packages to use machine learning estimators not provided by sklearn.
 * **[xgboost](https://xgboost.readthedocs.io/en/latest/)** (>=0.90)
 * **[lightgbm](https://lightgbm.readthedocs.io/en/latest/)** (>=2.3.0)
 * **[catboost](https://catboost.ai/docs/concepts/about.html)** (>=0.19.1)
-
-
-<br><br>
-
-## Support
-
-ATOM recognizes the support from [JetBrains](http://www.jetbrains.com) by providing
-core project contributors with a set of developer tools free of charge.
-
-<div align="center">
-    <a href="https://www.jetbrains.com"><img src="../img/jetbrains.png" alt="JetBrains" height="200" width="200" style="margin-right:120px"/></a>
-    <a href="https://www.jetbrains.com/pycharm/"><img src="../img/pycharm.png" alt="pyCharm" height="200" width="200"/></a>
-</div>

@@ -70,3 +70,9 @@ def test_custom_dict_manipulations():
     cd.clear()
     pytest.raises(KeyError, cd.popitem)
     pytest.raises(KeyError, cd.index, "f")
+    cd.update({"a": 0, "b": 1})
+    assert str(cd) == "{'a': 0, 'b': 1}"
+    cd.update((("c", 2), ("d", 3)))
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3}"
+    cd.update(e=4)
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4}"

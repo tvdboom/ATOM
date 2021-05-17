@@ -1,7 +1,7 @@
 # Frequently asked questions
 ----------------------------
 
-* [There already is an atom text editor. Does this has anything to do with that?](#q1)
+* [Is this package related to the text editor?](#q1)
 * [How does ATOM relate to AutoML?](#q2)
 * [Is it possible to run deep learning models?](#q3)
 * [Can I run atom's methods on just a subset of the columns?](#q4)
@@ -13,6 +13,7 @@
 * [Can I merge a sklearn pipeline with atom?](#q10)
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
 * [Can I train the models using cross-validation?](#q12)
+* [Why does encoding fail with a ValueError when transforming?](#q13)
 
 <br>
 
@@ -21,12 +22,13 @@
 <br>
 
 <a name="q1"></a>
-### There already is an atom text editor. Does this has anything to do with that?
+### Is this package related to the text editor?
 
-There is, indeed, a text editor with the same name and a similar logo. Is this
-a shameless copy? No. When I started the project, I didn't know about the text
-editor, and it doesn't require much thinking to come up with the idea of replacing
-the letter O of the word atom with the image of an atom.
+There is, indeed, a text editor with the same name and a similar logo as this
+package. Is this a shameless copy? No. When I started the project, I didn't
+know about the text editor, and it doesn't require much thinking to come up
+with the idea of replacing the letter O of the word atom with the image of
+an atom.
 
 <br>
 
@@ -116,7 +118,7 @@ from the dataset.
 No. Unfortunately, there is no way to plot multiple models in the same
 [shap plot](../user_guide/#shap) since the plots are made by the SHAP
 package and passed as matplotlib.axes objects to atom. This means
-that it's not within the reach of this package to implement such an utility.
+that it's not within the reach of this package to implement such a utility.
 
 <br>
 
@@ -167,5 +169,25 @@ cross-validation in the first place, since we can train the model on the
 complete training set and evaluate the results on the independent test
 set. No cross-validation needed. That said, ideally we would cross-validate
 the entire pipeline using the entire dataset. This can be done using a
-trainer's [cross_validate]() method, but for the reason just explained
-above, the method only outputs the final metric results.
+trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
+method, but for the reason just explained above, the method only outputs
+the final metric results.
+
+<br>
+
+<a name="q13"></a>
+### Why does encoding fail with a ValueError when transforming??
+The `ValueError: Columns to be encoded can not contain new values` exception
+can occur when calling the [encode](../API/ATOM/atomclassifier/#encode)
+method or transforming the [Encoder](../API/data_cleaning/encoder)
+class. This exception is not raised by ATOM but by the [category_encoders](https://contrib.scikit-learn.org/category_encoders/)
+package which is used internally to perform the encodings. The error
+is raised when the column to be transformed presents classes that were
+not encountered during fitting. This is intended behavior, since the
+transformer wouldn't know what to do with the new classes. In atom's case,
+it means the test set contains classes that were not present in the
+training set. This usually happens if the training set is very small
+or if the column has many classes with few occurrences. To fix this,
+either increase the number of samples in the training set to make sure
+it contains all the classes in the column, or increase the `frac_to_other`
+parameter.

@@ -11,12 +11,14 @@ Description: Module containing the ModelOptimizer class.
 import os
 import pickle
 import mlflow
+import contextlib
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from typing import Optional
+from copy import deepcopy
 from inspect import signature
 from datetime import datetime
+from typing import Optional, Union
 from joblib import Parallel, delayed
 from typeguard import typechecked
 from mlflow.tracking import MlflowClient
@@ -24,9 +26,9 @@ from mlflow.tracking import MlflowClient
 # Sklearn
 from sklearn.base import clone
 from sklearn.utils import resample
-from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 from sklearn.model_selection import KFold, StratifiedKFold
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import StratifiedShuffleSplit, ShuffleSplit
 
 # Others
 from skopt.utils import use_named_args
@@ -35,16 +37,18 @@ from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_mi
 # Own modules
 from .data_cleaning import Scaler
 from .basemodel import BaseModel
+from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    flt, lst, arr, time_to_str, composed, get_best_score, crash, method_to_log,
+    SEQUENCE_TYPES, flt, lst, arr, time_to_str, composed, get_best_score,
+    get_scorer, crash, method_to_log, score_decorator,
 )
 
 
 class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
     """Class for model optimization.
 
-    Contains the Bayesian Optimization, fitting and bagging of the
+    Contains the Bayesian Optimization, fitting and bootstrap of the
     models as well as some utility attributes not shared with the
     ensemble classes.
 
@@ -73,7 +77,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Parameter attributes
         self._n_calls = 0
         self._n_initial_points = 5
-        self._bagging = 0
+        self._n_bootstrap = 0
         self._dimensions = []
         self._est_params = {}
         self._est_params_fit = {}
@@ -85,10 +89,10 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         self.metric_train = None
         self.metric_test = None
         self.time_fit = None
-        self.metric_bagging = None
-        self.mean_bagging = None
-        self.std_bagging = None
-        self.time_bagging = None
+        self.metric_bootstrap = None
+        self.mean_bootstrap = None
+        self.std_bootstrap = None
+        self.time_bootstrap = None
         self.time = None
 
     def __repr__(self):
@@ -490,17 +494,21 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     mlflow.log_artifact(f"{set_}.csv")
                     os.remove(f"{set_}.csv")
 
-    def bootstrap_aggregating(self):
-        """Apply a bootstrap aggregating (bagging) algorithm.
+            if self.T.log_pipeline:
+                pl = self.export_pipeline()
+                mlflow.sklearn.log_model(pl, f"pipeline_{self.name}")
 
-        Take bootstrap samples from the training set and test them on
-        the test set to get a distribution of the model's results.
+    def bootstrap(self):
+        """Apply a bootstrap algorithm.
+
+        Take bootstrapped samples from the training set and test them
+        on the test set to get a distribution of the model's results.
 
         """
         t_init = datetime.now()
 
-        self.metric_bagging = []
-        for _ in range(self._bagging):
+        self.metric_bootstrap = []
+        for _ in range(self._n_bootstrap):
             # Create samples with replacement
             sample_x, sample_y = resample(self.X_train, self.y_train)
 
@@ -518,7 +526,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             else:
                 estimator.fit(arr(sample_x), sample_y, **self._est_params_fit)
 
-            self.metric_bagging.append(
+            self.metric_bootstrap.append(
                 flt([
                     metric(estimator, arr(self.X_test), self.y_test)
                     for metric in self.T._metric
@@ -527,38 +535,38 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Separate for multi-metric, transform numpy types to python types
         if len(self.T._metric) == 1:
-            self.mean_bagging = np.mean(self.metric_bagging, axis=0).item()
-            self.std_bagging = np.std(self.metric_bagging, axis=0).item()
+            self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=0).item()
+            self.std_bootstrap = np.std(self.metric_bootstrap, axis=0).item()
         else:
-            self.metric_bagging = list(zip(*self.metric_bagging))
-            self.mean_bagging = np.mean(self.metric_bagging, axis=1).tolist()
-            self.std_bagging = np.std(self.metric_bagging, axis=1).tolist()
+            self.metric_bootstrap = list(zip(*self.metric_bootstrap))
+            self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=1).tolist()
+            self.std_bootstrap = np.std(self.metric_bootstrap, axis=1).tolist()
 
-        self.T.log("Bagging -----------------------------------------", 1)
+        self.T.log("Bootstrap ---------------------------------------", 1)
         out = [
-            f"{m.name}: {round(lst(self.mean_bagging)[i], 4)}"
-            f" \u00B1 {round(lst(self.std_bagging)[i], 4)}"
+            f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)}"
+            f" \u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
             for i, m in enumerate(self.T._metric)
         ]
         self.T.log(f"Evaluation --> {'   '.join(out)}", 1)
 
-        self.time_bagging = time_to_str(t_init)
-        self.T.log(f"Time elapsed: {self.time_bagging}", 1)
+        self.time_bootstrap = time_to_str(t_init)
+        self.T.log(f"Time elapsed: {self.time_bootstrap}", 1)
 
     # Utility methods ============================================== >>
 
     def _final_output(self):
         """Returns the model's final output as a string."""
-        # If bagging was used, we use a different format
-        if self.mean_bagging is None:
+        # If bootstrap was used, we use a different format
+        if self.mean_bootstrap is None:
             out = "   ".join([
                 f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
                 for i, m in enumerate(self.T._metric)
             ])
         else:
             out = "   ".join([
-                f"{m.name}: {round(lst(self.mean_bagging)[i], 4)} "
-                f"\u00B1 {round(lst(self.std_bagging)[i], 4)}"
+                f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)} "
+                f"\u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
                 for i, m in enumerate(self.T._metric)
             ])
 
@@ -579,7 +587,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         from sklearn. The estimator is trained via cross-validation
         on a subset of the training data, using the rest to fit the
         calibrator. The new classifier will replace the `estimator`
-        attribute. All prediction attributes will reset.
+        attribute and is logged to any active mlflow experiment. All
+        prediction attributes will reset.
 
         Parameters
         ----------
@@ -612,11 +621,121 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Reset all prediction attrs since the model's estimator changed
         self._pred_attrs = [None] * 10
 
+    @composed(crash, typechecked)
+    def export_pipeline(
+        self,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
+    ):
+        """Export the model's pipeline to a sklearn-like object.
+
+        If the model used feature scaling, the Scaler is added
+        before the model. The returned pipeline is already fitted
+        on the training set.
+
+        Parameters
+        ----------
+        pipeline: bool, sequence or None, optional (default=None)
+            Transformers to export.
+                - If None: Only transformers that are applied on the
+                           whole dataset are exported.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
+
+        verbose: int or None, optional (default=None)
+            Verbosity level of the transformers in the pipeline. If
+            None, it leaves them to their original verbosity.
+
+        Returns
+        -------
+        pipeline: Pipeline
+            Current branch as a sklearn-like Pipeline object.
+
+        """
+        if hasattr(self.T, "export_pipeline"):
+            return self.T.export_pipeline(self.name, pipeline, verbose)
+        else:
+            steps = []
+            if self.scaler:
+                steps.append(("scaler", deepcopy(self.scaler)))
+
+            # Redirect stdout to avoid annoying prints
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                steps.append((self.name, deepcopy(self.estimator)))
+
+            return Pipeline(steps)
+
+    @composed(crash, method_to_log)
+    def cross_validate(self, **kwargs):
+        """Evaluate the model using cross-validation.
+
+        This method cross-validates the whole pipeline on the complete
+        dataset. Use it to assess the robustness of the solution's
+        performance.
+
+        Parameters
+        ----------
+        **kwargs
+            Additional keyword arguments for sklearn's cross_validate
+            function. If the scoring method is not specified, it uses
+            the trainer's metric.
+
+        Returns
+        -------
+        scores: dict
+            Return of sklearn's cross_validate function.
+
+        """
+        from sklearn.model_selection import _validation
+
+        # Adopt params from the trainer if not specified
+        kwargs["n_jobs"] = kwargs.get("n_jobs", self.T.n_jobs)
+        if kwargs.get("scoring"):
+            scoring = get_scorer(kwargs.pop("scoring"))
+            scoring = {scoring.name: scoring}
+
+        else:
+            scoring = dict(self.T._metric)
+
+        # Get the complete pipeline
+        pl = self.export_pipeline(verbose=0)
+
+        # Use the untransformed dataset (in the og branch)
+        og = getattr(self.T, "og", self.T._current)
+
+        self.T.log(f"Applying cross-validation...", 1)
+
+        # Workaround the _score function to allow for pipelines
+        # that drop samples during transformation
+        og_score = deepcopy(_validation._score)
+        _validation._score = score_decorator(og_score)
+
+        cv = _validation.cross_validate(pl, og.X, og.y, scoring=scoring, **kwargs)
+        _validation._score = og_score  # Reset _score to og value
+
+        # Output mean and std of metric
+        mean = [np.mean(cv[f"test_{m}"]) for m in scoring]
+        std = [np.std(cv[f"test_{m}"]) for m in scoring]
+
+        out = "   ".join([
+            f"{name}: {round(mean[i], 4)} "
+            f"\u00B1 {round(std[i], 4)}"
+            for i, name in enumerate(scoring)
+        ])
+
+        self.T.log(f"{self.fullname} --> {out}", 1)
+
+        return cv
+
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: Optional[str] = None):
         """Change the model's tag.
 
         The acronym always stays at the beginning of the model's name.
+        If the model is being tracked by mlflow, the name of the
+        corresponding run is also changed.
 
         Parameters
         ----------

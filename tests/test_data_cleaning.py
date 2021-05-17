@@ -529,7 +529,7 @@ def test_strategies(strategy):
 
 def test_multiple_strategies():
     """Assert that selecting multiple strategies work."""
-    pruner = Pruner(strategy=["lof", "ee", "iforest"])
+    pruner = Pruner(strategy=["z-score", "lof", "ee", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
     assert all(hasattr(pruner, attr) for attr in ["lof", "ee", "iforest"])

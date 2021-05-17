@@ -5,3 +5,21 @@
 .md-typeset table:not([class]) {
     display: table;
 }
+
+.column {
+  float: left;
+  width: 25%;
+  padding: 2px;
+  text-align: center;
+}
+
+.row {
+    margin-top: 30px;
+}
+
+/* Clear floats after image containers */
+.row::after {
+  content: "";
+  clear: both;
+  display: table;
+}

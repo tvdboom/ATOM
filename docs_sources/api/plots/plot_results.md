@@ -10,9 +10,9 @@
 </div>
 
 Plot of the model results after the evaluation. If all models applied
-bagging, the plot is a boxplot. If not, the plot is a barplot. Models
+bootstrap, the plot is a boxplot. If not, the plot is a barplot. Models
 are ordered based on their score from the top down. The score is either
-the `mean_bagging` or `metric_test` attribute of the model, selected in
+the `mean_bootstrap` or `metric_test` attribute of the model, selected in
 that order.
 
 <table style="font-size:16px">
@@ -57,16 +57,16 @@ Whether to render the plot.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", bagging=5)
-atom.plot_results()  # With bagging...
+atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", n_bootstrap=5)
+atom.plot_results()  # With bootstrap...
 ```
 <div align="center">
     <img src="../../../img/plots/plot_results_1.png" alt="plot_results" width="700" height="420"/>
 </div>
 
 ```python
-# And without bagging...
-atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", bagging=0)
+# And without bootstrap...
+atom.run(["QDA", "Tree", "RF", "ET", "LGB"], metric="f1", n_bootstrap=0)
 atom.plot_results()
 ```
 <div align="center">

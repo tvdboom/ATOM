@@ -99,7 +99,7 @@ Additional things to take into account:
 * [Parameter customization](#parameter-customization) (for the initializer)
   is only possible for custom models which provide an estimator that has a
   `set_params()` method, i.e. it's a child class of [BaseEstimator](https://scikit-learn.org/stable/modules/generated/sklearn.base.BaseEstimator.html).
-* [Hyperparameter optimization](#hyperparameter-optimization) for custom
+* [Hyperparameter optimization](#hyperparameter-tuning) for custom
   models is ignored unless appropriate dimensions are provided through
   `bo_params`.
 * If the estimator has a `n_jobs` and/or `random_state` parameter that is

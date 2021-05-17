@@ -16,7 +16,6 @@ from sklearn.datasets import (
     load_wine,
     load_digits,
     load_diabetes,
-    fetch_20newsgroups,
 )
 from keras.datasets import mnist
 
@@ -50,14 +49,9 @@ X_train = X_train.reshape(60000, 28, 28, 1)
 X_test = X_test.reshape(10000, 28, 28, 1)
 mnist = (X_train, y_train), (X_test, y_test)
 
-# Text data (subset of categories for faster downloading)
-X_text, y_text = fetch_20newsgroups(
-    return_X_y=True,
-    categories=['alt.atheism', 'sci.med'],
-    shuffle=True,
-    random_state=1,
-)
-X_text = np.array(X_text).reshape(-1, 1)
+# Text data
+X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir"]]
+y_text = [0, 1, 1, 0]
 
 # Small dimensional dataset
 X10 = [

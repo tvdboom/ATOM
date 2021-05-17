@@ -63,7 +63,7 @@ Example steps taken by ATOM's pipeline:
 3. Train and validate multiple models
 	* Select hyperparameters using a Bayesian Optimization approach
 	* Train and test the models on the provided data
-	* Assess the robustness of the output using a bagging algorithm
+	* Assess the robustness of the output using a bootstrap algorithm
 4. Analyze the results
     * Get the model scores on various metrics
     * Make plots to compare the model performances

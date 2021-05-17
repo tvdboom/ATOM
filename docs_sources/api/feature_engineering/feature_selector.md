@@ -122,7 +122,7 @@ See the corresponding sklearn documentation for the available options.
 </tr>
 </table>
 
-!!!info
+!!! info
     If strategy="PCA", the data is scaled to mean=0 and std=1 before
     fitting the transformer (if it wasn't already).
 
@@ -354,6 +354,7 @@ Get parameters for this estimator.
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -508,6 +509,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

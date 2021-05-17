@@ -5,7 +5,8 @@
 <em>class</em> atom.training.<strong style="color:#008AB8">DirectClassifier</strong>
 (models=None, metric=None, greater_is_better=True, needs_proba=False,
 needs_threshold=False, n_calls=0, n_initial_points=5, est_params=None,
-bo_params=None, bagging=0, n_jobs=1, verbose=0, logger=None, random_state=None)
+bo_params=None, n_bootstrap=0, n_jobs=1, verbose=0, warnings=True,
+logger=None, experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L258">[source]</a>
 </span>
@@ -13,13 +14,15 @@ bo_params=None, bagging=0, n_jobs=1, verbose=0, logger=None, random_state=None)
 
 Fit models to the data and evaluate the results. The following steps are applied:
 
-1. The optimal hyperparameters are selected using a bayesian optimization algorithm.
-2. The model is fitted on the training set using the best combinations of hyperparameters found.
-3. Using a bagging algorithm, various scores on the test set are calculated.
+1. The optimal hyperparameters for the model are selected using a bayesian
+   optimization algorithm (optional).
+2. The model is fitted on the training set using the best combination
+   of hyperparameters found. After that, the model is evaluated on the tes set.
+3. Calculate various scores on the test set using a bootstrap algorithm (optional).
 
-You can [predict](../../..user_guide/predicting), [plot](../../../user_guide/plots)
+You can [predict](../../../user_guide/predicting), [plot](../../../user_guide/plots)
 and call any [model](../../../user_guide/models) from the instance.
-Read more in the [user guide](../../../user_guide/#training).
+Read more in the [user guide](../../../user_guide/training).
 
 <table style="font-size:16px">
 <tr>
@@ -146,9 +149,9 @@ and the second shows the distance between the last consecutive steps.</li>
 <li><b>Additional keyword arguments for skopt's optimizer.</b></li>                
 </ul>
 <p>
-<strong>bagging: int or sequence, optional (default=0)</strong><br>
+<strong>bootstrap: int or sequence, optional (default=0)</strong><br>
 Number of data sets (bootstrapped from the training set) to use in
-the bagging algorithm. If 0, no bagging is performed.
+the bootstrap algorithm. If 0, no bootstrap is performed.
 If sequence, the n-th value will apply to the n-th model.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
@@ -165,15 +168,31 @@ Verbosity level of the class. Possible values are:
 <li>1 to print basic information.</li>
 <li>2 to print detailed information.</li>
 </ul>
+<strong>warnings: bool or str, optional (default=True)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<li>If True: Default warning action (equal to "default").</li>
+<li>If False: Suppress all warnings (equal to "ignore").</li>
+<li>If str: One of the actions in python's warnings environment.</li>
+</ul>
+<p style="margin-top:5px">
+Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
+<br>ATOM can't manage warnings that go directly from C/C++ code to stdout.</p>
 <strong>logger: str, Logger or None, optional (default=None)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
 <li>If None: Doesn't save a logging file.</li>
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
+<p>
+<strong>experiment: str or None, optional (default=None)</strong><br>
+Name of the mlflow experiment to use for tracking. If None,
+no mlflow tracking is performed.
+</p>
+<p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+</p>
 </td>
 </tr>
 </table>
@@ -292,9 +311,9 @@ Dataframe of the training results. Columns can include:
 <li><b>metric_train:</b> Metric score on the training set.</li>
 <li><b>metric_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
-<li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
-<li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
-<li><b>time_bagging:</b> Time spent on the bagging algorithm.</li>
+<li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
+<li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
+<li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
 </td>
@@ -348,6 +367,11 @@ Fontsize for the ticks along the plot's axes.
 <tr>
 <td><a href="#canvas">canvas</a></td>
 <td>Create a figure with multiple plots.</td>
+</tr>
+
+<tr>
+<td><a href="#cross-validate">cross_validate</a></td>
+<td>Evaluate the winning model using cross-validation.</td>
 </tr>
 
 <tr>
@@ -424,8 +448,9 @@ Applies probability calibration on the winning model. The calibration
 is performed using sklearn's [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
 class. The calibrator is trained via cross-validation on a subset of the
 training data, using the rest to fit the calibrator. The new classifier
-will replace the `estimator` attribute. After calibrating, all prediction
-attributes of the winning model will reset.
+will replace the `estimator` attribute and is logged to any active
+mlflow experiment. After calibrating, all prediction attributes of
+the winning model will reset.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -489,6 +514,38 @@ Whether to render the plot.
 <br />
 
 
+<a name="cross-validate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L435">[source]</a>
+</span>
+</div>
+Evaluate the winning model using cross-validation. This method cross-validates
+the whole pipeline on the complete dataset. Use it to assess the robustness of
+the model's performance.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**kwargs</strong><br>
+Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function. If the scoring method is not specified, it uses
+the trainer's metric.
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>scores: dict</strong><br>
+Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="delete"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
@@ -498,7 +555,7 @@ Whether to render the plot.
 </div>
 Delete a model from the trainer. If the winning model is
 removed, the next best model (through `metric_test` or
-`mean_bagging`) is selected as winner. If all models are
+`mean_bootstrap`) is selected as winner. If all models are
 removed, the metric and training approach are reset. Use
 this method to drop unwanted models from the pipeline
 or to free some memory before saving. Deleted models are
@@ -560,6 +617,7 @@ Get parameters for this estimator.
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

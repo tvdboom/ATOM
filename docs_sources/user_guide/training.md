@@ -2,13 +2,16 @@
 ----------
 
 The training phase is where the models are fitted and evaluated. After
-this, the models are attached to the trainer and you can use the
-[plotting](../plots) and [predicting](../predicting) methods.  The pipeline
-applies the following steps iteratively for all models:
+this, the models are attached to the trainer, and you can use the
+[plotting](../plots) and [predicting](../predicting) methods.  The
+pipeline applies the following steps iteratively for all models:
 
-1. The [optimal hyperparameters](#hyperparameter-optimization) are selected.
-2. The model is trained on the training set and evaluated on the test set.
-3. The [bagging](#bagging) algorithm is applied.
+1. The optimal hyperparameters for the model are selected using a [bayesian
+   optimization](#hyperparameter-tuning) algorithm (optional).
+2. The model is fitted on the training set using the best combination
+   of hyperparameters found. After that, the model is evaluated on the tes set.
+3. Calculate various scores on the test set using a [bootstrap](#bootstrapping)
+   algorithm (optional).
 
 There are three approaches to run the training.
 
@@ -35,7 +38,13 @@ the same model multiple times, add a tag after the acronym to
 differentiate them.
 
 ```python
-atom.run(models=["RF1", "RF2"], est_params={"RF1": {"n_estimators": 100}, "RF2": {"n_estimators": 200}}) 
+atom.run(
+    models=["RF1", "RF2"],
+    est_params={
+        "RF1": {"n_estimators": 100},
+        "RF2": {"n_estimators": 200},
+    }
+) 
 ```
 
 For example, this pipeline will fit two Random Forest models, one
@@ -48,16 +57,16 @@ parameters or on different data sets. See the
 
 Additional things to take into account:
 
-* Models that need feature scaling will do so automatically before
-  training if they are not already scaled.
+* Models that benefit from feature scaling will automatically
+  scale the features before training (if they are not already scaled).
 * If an exception is encountered while fitting an estimator, the
-  pipeline will automatically jump to the next model. The errors are
-  stored in the `errors` attribute. Note that in case a model is skipped,
-  there will be no model subclass for that estimator.
+  pipeline will automatically jump to the next model. The exceptions are
+  stored in the `errors` attribute. Note that when a model is skipped,
+  there is no model subclass for that estimator.
 * When showing the final results, a `!` indicates the highest score
   and a `~` indicates that the model is possibly overfitting (training
   set has a score at least 20% higher than the test set).
-* The winning model (the one with the highest `mean_bagging` or
+* The winning model (the one with the highest `mean_bootstrap` or
   `metric_test`) can be accessed through the `winner` attribute.
 
 <br>
@@ -125,7 +134,6 @@ tasks.
 * "TNR" for True Negative Rate (specificity)
 * "FNR" for False Negative Rate (miss rate)
 * "Lift" for Lift
-* "Sup" for support
 * "MCC" for Matthews Correlation Coefficient (also for multiclass classification)
 
 
@@ -134,20 +142,19 @@ Sometimes it is useful to measure the performance of the models in more
 than one way. ATOM lets you run the pipeline with multiple metrics at
 the same time. To do so, provide the `metric` parameter with a list of
 desired metrics, e.g. `atom.run("LDA", metric=["r2", "mse"])`. If you
-provide metric functions, don't forget to also provide lists to the
-`greater_is_better`, `needs_proba` and `needs_threshold` parameters,
-where the n-th value in the list corresponds to the n-th function. If
-you leave them as a single value, that value will apply to every
+provide metric functions, don't forget to also provide a sequence of
+values to the `greater_is_better`, `needs_proba` and `needs_threshold`
+parameters, where the n-th value in corresponds to the n-th function.
+If you leave them as a single value, that value will apply to every
 provided metric.
 
 When fitting multi-metric runs, the resulting scores will return a list
 of metrics. For example, if you provided three metrics to the pipeline,
-`atom.knn.metric_bo` could return [0.8734, 0.6672, 0.9001]. It is also
-important to note that only the first metric of a multi-metric run is
-used to evaluate every step of the bayesian optimization and to select
-the winning model.
+`atom.knn.metric_bo` could return [0.8734, 0.6672, 0.9001]. Only the
+first metric of a multi-metric run is used to evaluate every step of
+the bayesian optimization and to select the winning model.
 
-!!! tip
+!!! info
     Some plots let you choose which of the metrics to show using the
     `metric` parameter.
 
@@ -159,7 +166,7 @@ By default, the parameters every estimator uses are the same default
 parameters they get from their respective packages. To select different
 ones, use `est_params`. There are two ways to add custom parameters to
 the models: adding them directly to the dictionary as key-value pairs
-or through multiple dicts with the model names as keys.
+or through various dictionaries with the model names as keys.
 
 Adding the parameters directly to `est_params` will share them across
 all models in the pipeline. In this example, both the XGBoost and the
@@ -167,7 +174,7 @@ LightGBM model will use n_estimators=200. Make sure all the models do
 have the specified parameters or an exception will be raised!
 
 ```python
-atom.run(["XGB", "LGB"], est_params={"n_estimators": 200})
+atom.run(models=["XGB", "LGB"], est_params={"n_estimators": 200})
 ```
 
 To specify parameters per model, use the model name as key and a dict
@@ -176,7 +183,13 @@ use n_estimators=200 and the Multi-layer Perceptron will use one hidden
 layer with 75 neurons.
 
 ```python
-atom.run(["XGB", "MLP"], est_params={"XGB": {"n_estimators": 200}, "MLP": {"hidden_layer_sizes": (75,)}})
+atom.run(
+    models=["XGB", "MLP"],
+    est_params={
+        "XGB": {"n_estimators": 200},
+        "MLP": {"hidden_layer_sizes": (75,)},
+    }
+)
 ```
 
 Some estimators allow you to pass extra parameters to the fit method
@@ -184,7 +197,7 @@ Some estimators allow you to pass extra parameters to the fit method
 parameter. For example, to change XGBoost's verbosity, we can run:
 
 ```python
-atom.run("XGB", est_params={"verbose_fit": True})
+atom.run(models="XGB", est_params={"verbose_fit": True})
 ```
 
 !!! note
@@ -194,22 +207,23 @@ atom.run("XGB", est_params={"verbose_fit": True})
 
 <br>
 
-## Hyperparameter optimization
+## Hyperparameter tuning
 
-In order to achieve maximum performance, we need to tune an estimator's
-hyperparameters before training it. ATOM provides [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
+In order to achieve maximum performance, it's important to tune an
+estimator's hyperparameters before training it. ATOM provides
+[hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
 using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
 (BO) approach implemented by [skopt](https://scikit-optimize.github.io/stable/).
 The BO is optimized on the first metric provided with the `metric`
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
 iteration into a (sub) training set and a validation set. This process
-can create some data leakage but ensures maximal use of the provided
-data. The test set, however, does not contain any leakage and is
-used to determine the final score of every model. Note that, if the
-dataset is relatively small, the BO's best score can consistently be 
-lower than the final score on the test set (despite the leakage) due
-to the considerable fewer instances on which it is trained.
+can create some minimum data leakage towards specific parameters, but
+it ensures maximal use of the provided data. However, the leakage is
+not present in the independent test set, thus the final score of every
+model is unbiased. Note that, if the dataset is relatively small, the
+BO's best score can consistently be lower than the final score on the
+test set due to the considerable fewer instances on which it is trained.
 
 There are many possibilities to tune the BO to your liking. Use
 `n_calls` and `n_initial_points` to determine the number of iterations
@@ -221,8 +235,8 @@ performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/be
 
 !!! note
     The `n_calls` parameter includes the iterations in `n_initial_points`,
-    i.e. calling `atom.run("LR", n_calls=20, n_intial_points=10)` will run
-    20 iterations of which the first 10 are random.
+    i.e. calling `atom.run(models="LR", n_calls=20, n_intial_points=10)`
+    will run 20 iterations of which the first 10 are random.
 
 !!! note
     If `n_initial_points=1`, the first trial is equal to the
@@ -240,18 +254,27 @@ dimensions for every individual model. Note that the provided search
 space dimensions must be compliant with skopt's API.
 
 ```python
-atom.run("LR", n_calls=10, bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]})
+atom.run(
+    models="LR",
+    n_calls=10,
+    bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]},
+)
 ```
 
 The majority of skopt's callbacks to stop the optimizer early can be
-accessed through `bo_params`. You can include other callbacks using
+accessed through `bo_params`. Other callbacks can be included through
 the `callbacks` key.
 
 ```python
-atom.run("LR", n_calls=10, bo_params={"max_time": 1000, "callbacks": custom_callback()})
+atom.run(
+    models="LR",
+    n_calls=10,
+    bo_params={"max_time": 1000, "callbacks": custom_callback()},
+)
 ```
 
-You can also include other parameters for the optimizer as key-value pairs.
+It's also possible to include additional parameters for the optimizer as
+key-value pairs.
 
 ```python
 atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
@@ -260,18 +283,18 @@ atom.run("LR", n_calls=10, bo_params={"acq_func": "EI"})
 
 <br>
 
-## Bagging
+## Bootstrapping
 
-After fitting the estimator, you can asses the robustness of the model
-using [bootstrap aggregating](https://en.wikipedia.org/wiki/Bootstrap_aggregating)
-(bagging). This technique creates several new data sets selecting random 
+After fitting the estimator, you can assess the robustness of the model
+using the [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics))
+technique. This technique creates several new data sets selecting random 
 samples from the training set (with replacement) and evaluates them on 
 the test set. This way we get a distribution of the performance of the
-model. The number of sets can be chosen through the `bagging` parameter.
+model. The number of sets can be chosen through the `n_bootstrap` parameter.
 
 !!! tip
     Use the [plot_results](../../API/plots/plot_results) method to plot
-    the bagging scores in a boxplot.
+    the boostrap scores in a boxplot.
 
 
 <br>
@@ -295,8 +318,8 @@ There are two ways to apply early stopping on these models:
 * Filling the `early_stopping_rounds` parameter directly in `est_params`.
   Don't forget to add `_fit` to the parameter to call it from the fit method.
 
-After fitting, the model will get the `evals` attribute, a dictionary of
-the train and test performances per round (also if early stopping wasn't
+After fitting, the model gets the `evals` attribute, a dictionary of the
+train and test performances per round (also if early stopping wasn't
 applied). Click [here](../../examples/early_stopping) for an example using
 early stopping.
 
@@ -336,10 +359,10 @@ Click [here](../../examples/successive_halving) for a successive halving example
 ## Train sizing
 
 When training models, there is usually a trade-off between model
-performance and computation time that is regulated by the number of
+performance and computation time, that is regulated by the number of
 samples in the training set. Train sizing can be used to create
-insights in this trade-off and help determine the optimal size of
-the training set, fitting the models multiple times, ever increasing
+insights in this trade-off, and help determine the optimal size of
+the training set. The models are fitted multiple times, ever-increasing
 the number of samples in the training set.
 
 Use train sizing through the [TrainSizingClassifier](../../API/training/trainsizingclassifier)/[TrainSizingRegressor](../../API/training/trainsizingregressor)

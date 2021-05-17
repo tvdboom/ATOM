@@ -51,6 +51,7 @@ Verbosity level of the transformations applied to the new data. If
 None, use the verbosity from the loaded instance. This parameter
 is ignored if <code>transform_data=False</code>.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

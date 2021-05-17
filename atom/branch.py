@@ -121,12 +121,12 @@ class Branch:
             raise ValueError(f"Branch {name} not found in the pipeline!")
 
         dependent = self.T._branches[name]._get_depending_models()
-        if len(self.T._branches) == 1:
+        if len(self.T._branches) <= 2:
             raise PermissionError("Can't delete the last branch in the pipeline!")
         elif len(dependent):
             raise PermissionError(
-                "Can't delete a branch with depending models! Consider deleting "
-                f"the models first. Depending models are: {', '.join(dependent)}."
+                "Can't delete a branch with depending models! Delete the "
+                f"models first. The depending models are: {', '.join(dependent)}."
             )
         else:
             self.T._branches.pop(name)

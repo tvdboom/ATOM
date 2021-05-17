@@ -45,7 +45,7 @@ atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
 ```
 
 When the data is ready for modelling, call the [run](../../API/ATOM/atomclassifier/#run)
-method. Here, we [tune hyperparameters](../training/#hyperparameter-optimization) and
+method. Here, we [tune hyperparameters](../training/#hyperparameter-tuning) and
 fit a [Random Forest](../../API/models/rf) and [AdaBoost](../../API/models/adab)
 model to the data.
 

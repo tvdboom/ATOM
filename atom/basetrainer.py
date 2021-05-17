@@ -127,9 +127,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 the distance between the last consecutive steps.
             - Additional keyword arguments for skopt's optimizer.
 
-    bagging: int or sequence, optional (default=0)
+    n_bootstrap: int or sequence, optional (default=0)
         Number of data sets (bootstrapped from the training set) to
-        use in the bagging algorithm. If 0, no bagging is performed.
+        use in the bootstrap algorithm. If 0, no bootstrap is performed.
         If sequence, the n-th value will apply to the n-th model.
 
     n_jobs: int, optional (default=1)
@@ -174,7 +174,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        n_calls, n_initial_points, est_params, bo_params, bagging, n_jobs,
+        n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
         verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
@@ -199,7 +199,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         self.n_initial_points = n_initial_points
         self.est_params = dct(est_params)
         self.bo_params = dct(bo_params)
-        self.bagging = bagging
+        self.n_bootstrap = n_bootstrap
 
         # Branching attributes
         self._current = "master"  # Current (and only) branch
@@ -291,7 +291,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Check validity sequential parameters ===================== >>
 
-        for param in ["n_calls", "n_initial_points", "bagging"]:
+        for param in ["n_calls", "n_initial_points", "n_bootstrap"]:
             p = lst(getattr(self, param))
             if len(p) != 1 and len(p) != len(self._models):
                 raise ValueError(
@@ -301,7 +301,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 )
 
             for i, model in enumerate(self._models):
-                if param in ("n_calls", "bagging") and p[i % len(p)] < 0:
+                if param in ("n_calls", "bootstrap") and p[i % len(p)] < 0:
                     raise ValueError(
                         f"Invalid value for the {param} parameter. "
                         f"Value should be >=0, got {p[i % len(p)]}."
@@ -460,8 +460,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
                 m.fit()
 
-                if m._bagging:
-                    m.bootstrap_aggregating()
+                if m._n_bootstrap:
+                    m.bootstrap()
 
                 # Get the total time spend on this model
                 setattr(m, "time", time_to_str(model_time))

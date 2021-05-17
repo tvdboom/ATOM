@@ -10,11 +10,18 @@ Description: Module containing estimators for NLP.
 # Standard packages
 import re
 import nltk
+import unicodedata
 import pandas as pd
 from string import punctuation
 from typeguard import typechecked
 from typing import Union, Optional
 from sklearn.base import BaseEstimator
+from sklearn.feature_extraction.text import (
+    CountVectorizer,
+    TfidfVectorizer,
+    HashingVectorizer,
+)
+from nltk.corpus import wordnet
 from nltk.stem import PorterStemmer, WordNetLemmatizer
 from nltk.collocations import BigramCollocationFinder, TrigramCollocationFinder
 
@@ -27,35 +34,39 @@ from .utils import (
 )
 
 
-class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
-    """Applies standard data cleaning steps to the corpus.
+class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Applies standard text cleaning to the corpus.
 
-    The transformations can include dropping noise from the text
-    (emails, HTML tags, URLs, etc...). The transformations are
-    only applied on the column named `corpus`, in the same order
-    the parameters are presented. If there is no column with that
-    name, an exception is raised.
+    Transformations include normalizing characters and dropping
+    noise from the text (emails, HTML tags, URLs, etc...). The
+    transformations are applied on the column named `Corpus`, in
+    the same order the parameters are presented. If there is no
+    column with that name, an exception is raised.
 
     Parameters
     ----------
+    decode: bool, optional (default=True)
+        Whether to decode unicode characters to their ascii
+        representations.
+
     lower_case: bool, optional (default=True)
-        Convert all characters to lower case.
+        Whether to convert all characters to lower case.
 
     drop_email: bool, optional (default=True)
         Whether to drop email addresses from the text.
 
     drop_url: bool, optional (default=True)
-        Whether to drop URLs from the text.
+        Whether to drop URL links from the text.
 
     drop_html: bool, optional (default=True)
-        Whether to drop html tags from the text. This option is
+        Whether to drop HTML tags from the text. This option is
         particularly useful if the data was scraped from a website.
 
     drop_emojis: bool, optional (default=True)
         Whether to drop emojis from the text.
 
     drop_numbers: bool, optional (default=False)
-        Whether to drop all numbers from the text.
+        Whether to drop numbers from the text.
 
     drop_punctuation: bool, optional (default=True)
         Whether to drop punctuations from the text.
@@ -71,11 +82,35 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    Attributes
+    ----------
+    email: str
+        Regex used to search for email addresses. The default
+        value is `r"[\w.-]+@[\w-]+\.[\w.-]+"`.
+
+    url: str
+        Regex used to search for URLs The default value is
+        `r"https?://\S+|www\.\S+"`.
+
+    html: str
+        Regex used to search for html tags. The default value
+        is `r"<.*?>"`.
+
+    emojis: str
+        Regex used to search for emojis. The default value is
+        `r":[a-z_]+:"`.
+
+    numbers: str
+        Regex used to search for numbers. The default value is
+        `r"\b\d+\b"`. Note that numbers annexed to words are not
+        removed.
+
     """
 
     @typechecked
     def __init__(
         self,
+        decode: bool = True,
         lower_case: bool = True,
         drop_email: bool = True,
         drop_url: bool = True,
@@ -87,6 +122,7 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
+        self.decode = decode
         self.lower_case = lower_case
         self.drop_email = drop_email
         self.drop_url = drop_url
@@ -94,6 +130,14 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         self.drop_emojis = drop_emojis
         self.drop_numbers = drop_numbers
         self.drop_punctuation = drop_punctuation
+
+        # Regular expressions to filter
+        self.email = r"[\w.-]+@[\w-]+\.[\w.-]+"
+        self.url = r"https?://\S+|www\.\S+"
+        self.html = r"<.*?>"
+        self.emojis = r":[a-z_]+:"
+        self.numbers = r"\b\d+\b"
+        self.punctuation = punctuation
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
@@ -104,8 +148,8 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents. The documents
-            are expected to be strings.
+            feature containing the text documents. Each document is
+            expected to be a string.
 
         y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
@@ -113,9 +157,19 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataframe.
+            Transformed corpus.
 
         """
+        def to_ascii(row):
+            """Convert unicode string to ascii."""
+            try:
+                row.encode("ASCII", errors="strict")
+            except UnicodeEncodeError:
+                norm = unicodedata.normalize("NFKD", row)
+                return "".join([c for c in norm if not unicodedata.combining(c)])
+            else:
+                return row  # If no unicode chars, return unchanged
+
         def drop_regex(regex):
             """Find and remove a regex expression from the text."""
             counts, docs = 0, 0
@@ -125,41 +179,45 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     docs += 1
                     counts += len(occurrences)
                     for elem in occurrences:
-                        X[corpus][i] = X[corpus][i].replace(elem, "")
+                        X[corpus][i] = X[corpus][i].replace(elem, "", 1)
 
             return counts, docs
 
         X, y = self._prepare_input(X, y)
         corpus = get_corpus(X)
 
-        self.log("Applying text cleaning...", 1)
+        self.log("Filtering the corpus...", 1)
+
+        if self.decode:
+            X[corpus] = X[corpus].apply(lambda row: to_ascii(row))
+            self.log(" --> Decoding unicode characters to ascii.", 2)
 
         if self.lower_case:
             X[corpus] = X[corpus].str.lower()
             self.log(" --> Converting text to lower case.", 2)
 
         if self.drop_email:
-            counts, docs = drop_regex(re.compile(r"[\w.-]+@[\w-]+\.[\w.-]+"))
+            counts, docs = drop_regex(re.compile(self.email))
             self.log(f" --> Dropping {counts} emails from {docs} documents.", 2)
 
         if self.drop_url:
-            counts, docs = drop_regex(re.compile(r"https?://\S+|www\.\S+"))
+            counts, docs = drop_regex(re.compile(self.url))
             self.log(f" --> Dropping {counts} URLs from {docs} documents.", 2)
 
         if self.drop_html:
-            counts, docs = drop_regex(re.compile(r"<.*?>"))
+            counts, docs = drop_regex(re.compile(self.html))
             self.log(f" --> Dropping {counts} HTML tags from {docs} documents.", 2)
 
         if self.drop_emojis:
-            counts, docs = drop_regex(re.compile(r":[a-z_]+:"))
+            counts, docs = drop_regex(re.compile(self.emojis))
             self.log(f" --> Dropping {counts} emojis from {docs} documents.", 2)
 
         if self.drop_numbers:
-            counts, docs = drop_regex(re.compile(r"[0-9]+(,[0-9]{3})*\.?[0-9]*"))
+            counts, docs = drop_regex(re.compile(self.numbers))
             self.log(f" --> Dropping {counts} numbers from {docs} documents.", 2)
 
         if self.drop_punctuation:
-            func = lambda row: row.translate(str.maketrans("", "", punctuation))
+            func = lambda row: row.translate(str.maketrans("", "", self.punctuation))
             X[corpus] = X[corpus].apply(func)
             self.log(f" --> Dropping punctuation from the text.", 2)
 
@@ -169,25 +227,25 @@ class NLPCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Tokenize the corpus.
 
-    Convert the document (as string) into a sequence of words.
-    Additionally, create bigrams or trigrams (represented by
-    words united with underscores). The transformation is only
-    applied on the column named `corpus`. If there is no column
-    with that name, an exception is raised.
+    Convert documents into sequences of words. Additionally, create
+    bigrams or trigrams (represented by words united with underscores,
+    e.g. "New_York"). The transformations are applied on the column
+    named `Corpus`. If there is no column with that name, an exception
+    is raised.
 
     Parameters
     ----------
     bigram_freq: int, float or None, optional (default=None)
         Frequency threshold for bigram creation.
-            - If None: Don;t create any bigram.
-            - If int: Minimum number of occurrences to make the bigram.
-            - If float: Minimum frequency fraction to make the bigram.
+            - If None: Don't create any bigrams.
+            - If int: Minimum number of occurrences to make a bigram.
+            - If float: Minimum frequency fraction to make a bigram.
 
     trigram_freq: int, float or None, optional (default=None)
         Frequency threshold for trigram creation.
-            - If None: Don;t create any trigram.
-            - If int: Minimum number of occurrences to make the trigram.
-            - If float: Minimum frequency fraction to make the trigram.
+            - If None: Don't create any trigrams.
+            - If int: Minimum number of occurrences to make a trigram.
+            - If float: Minimum frequency fraction to make a trigram.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -203,10 +261,10 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
     Attributes
     ----------
     bigrams: pd.DataFrame
-        Dataframe of the created bigrams and their frequencies.
+        Created bigrams and their frequencies.
 
     trigrams: pd.DataFrame
-        Dataframe of the created trigrams and their frequencies.
+        Created trigrams and their frequencies.
 
     """
 
@@ -221,6 +279,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         super().__init__(verbose=verbose, logger=logger)
         self.bigram_freq = bigram_freq
         self.trigram_freq = trigram_freq
+
         self.bigrams = pd.DataFrame(columns=["bigram", "frequency"])
         self.trigrams = pd.DataFrame(columns=["trigram", "frequency"])
 
@@ -232,8 +291,8 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents. The documents
-            are expected to be strings.
+            feature containing the text documents. Each document is
+            expected to be a string.
 
         y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
@@ -241,14 +300,17 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataframe.
+            Transformed corpus.
 
         """
-        def replace_ngrams(document, ngram):
+        def replace_ngrams(row, ngram, sep="<&&>"):
             """Replace a ngram with one word unified by underscores."""
-            document = "<&>".join(document)
-            document = document.replace("<&>".join(ngram), "_".join(ngram))
-            return document.split("<&>")
+            row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
+            row = row.replace(  # Replace ngrams' separator with underscore
+                "&>" + sep.join(ngram) + "<&",
+                "&>" + "_".join(ngram) + "<&",
+            )
+            return row[2:-2].split(sep)
 
         X, y = self._prepare_input(X, y)
         corpus = get_corpus(X)
@@ -256,7 +318,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Tokenizing the corpus...", 1)
 
         try:  # Download tokenizer if not already on machine
-            nltk.data.find('tokenizers/punkt')
+            nltk.data.find("tokenizers/punkt")
         except LookupError:
             nltk.download("punkt")
         X[corpus] = X[corpus].apply(lambda row: nltk.word_tokenize(row))
@@ -305,9 +367,9 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Normalize the corpus.
 
-    The transformation is only applied on the column named `corpus`,
-    in the same order the parameters are presented. If there is no
-    column with that name, an exception is raised.
+    The transformations are applied on the column named `Corpus`,
+    in the same order the parameters are presented. If there is
+    no column with that name, an exception is raised.
 
     Parameters
     ----------
@@ -316,10 +378,10 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         from one of the languages available in the nltk package.
 
     stem: bool, optional (default=True)
-        Whether to apply stemming to the text.
+        Whether to apply stemming.
 
     lemmatize: bool, optional (default=True)
-        Whether to apply lemmatization to the text.
+        Whether to apply lemmatization.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -349,15 +411,16 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.lemmatize = lemmatize
 
     def transform(self, X, y=None):
-        """Tokenize the text.
+        """Normalize the text.
 
         Parameters
         ----------
         X: dict, list, tuple, np.ndarray or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents. The documents
-            are expected to be sequences of words.
+            feature containing the text documents. Each document is
+            expected to be a sequence of words. If they are strings,
+            words are separated by spaces.
 
         y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
@@ -365,40 +428,61 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataframe.
+            Transformed corpus.
 
         """
+        def pos(tag):
+            """Get part of speech from a tag."""
+            if tag in ["JJ", "JJR", "JJS"]:
+                return wordnet.ADJ
+            elif tag in ["RB", "RBR", "RBS"]:
+                return wordnet.ADV
+            elif tag in ["VB", "VBD", "VBG", "VBN", "VBP", "VBZ"]:
+                return wordnet.VERB
+            else:  # "NN", "NNS", "NNP", "NNPS"
+                return wordnet.NOUN
+
         X, y = self._prepare_input(X, y)
         corpus = get_corpus(X)
 
         self.log("Normalizing the corpus...", 1)
 
+        # If the corpus is not tokenized, separate by space
+        if isinstance(X[corpus][0], str):
+            X[corpus] = X[corpus].apply(lambda row: row.split())
+
         if self.stopwords:
             # Get stopwords from the NLTK library
             if isinstance(self.stopwords, str):
                 try:  # Download resource if not already on machine
-                    nltk.data.find('corpora/stopwords')
+                    nltk.data.find("corpora/stopwords")
                 except LookupError:
                     nltk.download("stopwords")
                 self.stopwords = set(nltk.corpus.stopwords.words(self.stopwords))
 
             self.log(f" --> Dropping stopwords from the text.", 2)
-            func = lambda row: [word for word in row if word not in self.stopwords]
-            X[corpus] = X[corpus].apply(func)
+            f = lambda row: [word for word in row if word not in self.stopwords]
+            X[corpus] = X[corpus].apply(f)
 
         if self.stem:
-            self.log(f" --> Applying stemming to the text.", 2)
-            func = lambda row: [PorterStemmer().stem(word) for word in row]
-            X[corpus] = X[corpus].apply(func)
+            self.log(f" --> Applying stemming to the words.", 2)
+            ps = PorterStemmer()
+            X[corpus] = X[corpus].apply(lambda row: [ps.stem(word) for word in row])
 
         if self.lemmatize:
             try:  # Download resource if not already on machine
-                nltk.data.find('corpora/wordnet')
+                nltk.data.find("corpora/wordnet")
             except LookupError:
                 nltk.download("wordnet")
-            self.log(f" --> Applying lemmatization to the text.", 2)
-            func = lambda row: [WordNetLemmatizer().lemmatize(word) for word in row]
-            X[corpus] = X[corpus].apply(func)
+            try:
+                nltk.data.find("taggers")
+            except LookupError:
+                nltk.download("averaged_perceptron_tagger")
+
+            self.log(f" --> Applying lemmatization to the words.", 2)
+            wnl = WordNetLemmatizer()
+            f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
+            X[corpus] = X[corpus].apply(f)
 
         return X
 
@@ -407,8 +491,8 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
     """Vectorize text data.
 
     Transform the corpus into meaningful vectors of numbers. The
-    transformation is only applied on the column named `corpus`.
-    If there is no column with that name, an exception is raised.
+    transformation is applied on the column named `Corpus`. If
+    there is no column with that name, an exception is raised.
 
     Parameters
     ----------
@@ -417,6 +501,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         options are:
             - "BOW": Uses a Bag of Words algorithm.
             - "TF-IDF": Uses a TF-IDF algorithm.
+            - "Hashing": Uses a hashing algorithm.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -429,6 +514,15 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
+    Attributes
+    ----------
+    <strategy>: sklearn estimator
+        Estimator instance (lowercase strategy) used to vectorize the
+        corpus, e.g. `vectorizer.tfidf` for the TF-IDF strategy.
+
     """
 
     @typechecked
@@ -437,9 +531,13 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy: str = "BOW",
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
+        **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
+        self.kwargs = kwargs
+
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -449,10 +547,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Parameters
         ----------
         X: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_samples, n_features). Note that
-            the fit is only applied to the column named Corpus. If X
-            is not a pd.DataFrame, it should be composed of a single
-            feature containing the text documents.
+            Feature set with shape=(n_samples, n_features). If X is
+            not a pd.DataFrame, it should be composed of a single
+            feature containing the text documents. Each document
+            can either be a string or a sequence of words.
 
         y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
@@ -460,11 +558,29 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataframe.
+            Transformed corpus.
 
         """
         X, y = self._prepare_input(X, y)
         corpus = get_corpus(X)
+
+        # Convert sequence of tokens to space separated string
+        if not isinstance(X[corpus][0], str):
+            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+
+        if self.strategy.lower() == "bow":
+            self.bow = self._estimator = CountVectorizer(**self.kwargs)
+        elif self.strategy.lower() in ("tfidf", "tf-idf"):
+            self.tfidf = self._estimator = TfidfVectorizer(**self.kwargs)
+        elif self.strategy.lower() == "hashing":
+            self.hashing = self._estimator = HashingVectorizer(**self.kwargs)
+        else:
+            raise ValueError(
+                "Invalid value for the strategy parameter, got "
+                f"{self.strategy}. Choose from: BOW, TF-IDF, Hashing."
+            )
+
+        self._estimator.fit(X[corpus])
 
         self._is_fitted = True
         return self
@@ -476,10 +592,10 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Parameters
         ----------
         X: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_samples, n_features). Note that
-            the transformations are only applied to the column named
-            Corpus. If X is not a pd.DataFrame, it should be composed
-            of a single feature containing the text documents.
+            Feature set with shape=(n_samples, n_features). If X is
+            not a pd.DataFrame, it should be composed of a single
+            feature containing the text documents. Each document
+            can either be a string or a sequence of words.
 
         y: int, str, sequence or None, optional (default=None)
             Does nothing. Implemented for continuity of the API.
@@ -487,7 +603,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Transformed dataframe.
+            Transformed corpus.
 
         """
         check_is_fitted(self)
@@ -496,4 +612,17 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Vectorizing the corpus...", 1)
 
-        return X
+        # Convert sequence of tokens to space separated string
+        if not isinstance(X[corpus][0], str):
+            X[corpus] = X[corpus].apply(lambda row: " ".join(row))
+
+        matrix = self._estimator.transform(X[corpus]).toarray()
+        if self.strategy.lower() != "hashing":
+            for i, word in enumerate(self._estimator.get_feature_names()):
+                X[word] = matrix[:, i]
+        else:
+            # Hashing has no words to put as column names
+            for i, word in enumerate(range(matrix.shape[1])):
+                X[f"hash_{i}"] = matrix[:, i]
+
+        return X.drop(corpus, axis=1)

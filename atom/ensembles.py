@@ -20,7 +20,7 @@ from .basemodel import BaseModel
 from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
-    SEQUENCE_TYPES, flt, lst, arr, merge, get_acronym, get_best_score,
+    SEQUENCE_TYPES, flt, arr, merge, get_acronym, get_best_score,
     custom_transform, composed, crash, CustomDict,
 )
 
@@ -122,20 +122,6 @@ class Voting(BaseModel, BaseEnsemble):
             for i, m in enumerate(self.T._metric)
         ]
         return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
-
-    def _final_output(self):
-        """Returns the average final output of the models."""
-
-        def get_average_score(index):
-            """Return the average score of the models on a metric."""
-            scores = [get_best_score(m, index) for m in self._models]
-            return np.average(scores, weights=self.weights)
-
-        out = "   ".join([
-            f"{m.name}: {round(get_average_score(i), 4)}"
-            for i, m in enumerate(self.T._metric)
-        ])
-        return out
 
     @composed(crash, typechecked)
     def scoring(
@@ -437,21 +423,6 @@ class Stacking(BaseModel, BaseEnsemble):
                 return "predict"
 
         return self.stack_method
-
-    def _final_output(self):
-        """Returns the output of the final estimator."""
-        out = "   ".join([
-            f"{m.name}: {round(lst(self.metric_test)[i], 3)}"
-            for i, m in enumerate(self.T._metric)
-        ])
-
-        # Annotate if model overfitted when train 20% > test
-        metric_train = lst(self.metric_train)
-        metric_test = lst(self.metric_test)
-        if metric_train[0] - 0.2 * metric_train[0] > metric_test[0]:
-            out += " ~"
-
-        return out
 
     # Prediction methods =========================================== >>
 

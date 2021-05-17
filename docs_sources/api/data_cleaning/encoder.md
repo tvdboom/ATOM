@@ -29,7 +29,7 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#encodin
 <td width="80%" style="background:white;">
 <strong>strategy: str, optional (default="LeaveOneOut")</strong><br>
 Type of encoding to use for high cardinality features. Choose from one of the
-estimators available in the <a href="http://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+estimators available in the <a href="https://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
 package except for:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>OneHotEncoder: Use the <code>max_onehot</code> parameter.</li>
@@ -187,6 +187,7 @@ Get parameters for this estimator.
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -287,6 +288,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

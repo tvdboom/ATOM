@@ -4,7 +4,8 @@ deep_learning.py
 presentation.pptx
 
 # Mlflow
-/mlruns/
+mlruns/
+
 
 # Exclude everything from tests/files except the .gitkeep file
 tests/files/*

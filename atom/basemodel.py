@@ -47,9 +47,9 @@ class BaseModel(BaseModelPlotter):
                 "metric_train": getattr(self, "metric_train", None),
                 "metric_test": getattr(self, "metric_test", None),
                 "time_fit": getattr(self, "time_fit", None),
-                "mean_bagging": getattr(self, "mean_bagging", None),
-                "std_bagging": getattr(self, "std_bagging", None),
-                "time_bagging": getattr(self, "time_bagging", None),
+                "mean_bootstrap": getattr(self, "mean_bootstrap", None),
+                "std_bootstrap": getattr(self, "std_bootstrap", None),
+                "time_bootstrap": getattr(self, "time_bootstrap", None),
                 "time": getattr(self, "time", None),
             },
             name=self.name,
@@ -353,19 +353,19 @@ class BaseModel(BaseModelPlotter):
         # Predefined metrics to show
         if metric is None:
             if self.T.task.startswith("bin"):
-                metric = ["f1", "accuracy", "auc", "ap", "precision", "recall", "mcc"]
+                metric = ["accuracy", "ap", "f1", "mcc", "precision", "recall", "auc"]
             elif self.T.task.startswith("multi"):
                 metric = [
                     "f1_weighted",
                     "jaccard_weighted",
+                    "mcc",
                     "precision_weighted",
                     "recall_weighted",
-                    "mcc",
                 ]
             else:
-                metric = ["r2", "mae", "mse", "rmse", "msle", "mape"]
+                metric = ["mae", "mape", "mse", "msle", "r2", "rmse"]
 
-        scores = pd.Series(name=self.name)
+        scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):
             scorer = get_scorer(met)
             if scorer.__class__.__name__ == "_ThresholdScorer":

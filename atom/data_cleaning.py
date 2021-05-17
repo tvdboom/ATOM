@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from typeguard import typechecked
 from typing import Union, Optional
+from collections import defaultdict
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
 from sklearn.impute import SimpleImputer, KNNImputer
@@ -40,6 +41,34 @@ class TransformerMixin:
 
     """
 
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None, **fit_params):
+        """Does nothing.
+
+         Implemented for continuity of the API of transformers without
+         a fit method.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        **fit_params
+            Additional keyword arguments for the fit method.
+
+        Returns
+        -------
+        self: transformer
+            Fitted instance of self.
+
+        """
+        return self
+
     @composed(crash, method_to_log, typechecked)
     def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None, **fit_params):
         """Fit to data, then transform it.
@@ -67,10 +96,7 @@ class TransformerMixin:
             Target column corresponding to X. Only returned if provided.
 
         """
-        try:
-            return self.fit(X, y, **fit_params).transform(X, y)
-        except AttributeError:
-            return self.transform(X, y)
+        return self.fit(X, y, **fit_params).transform(X, y)
 
 
 class DropTransformer(BaseTransformer):
@@ -890,7 +916,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
-        self._to_other = {}
+        self._to_other = defaultdict(list)
         self._encoders = {}
         self._cat_cols = None
         self._is_fitted = False
@@ -943,39 +969,37 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Fitting Encoder...", 1)
 
-        for col in X:
-            self._to_other[col] = []
-            if col in self._cat_cols:
-                # Group uncommon classes into "other"
-                if self.frac_to_other:
-                    for category, count in X[col].value_counts().items():
-                        if count < self.frac_to_other * len(X[col]):
-                            self._to_other[col].append(category)
-                            X[col] = X[col].replace(category, "other")
+        for col in (c for c in X if c in self._cat_cols):
+            # Group uncommon classes into "other"
+            if self.frac_to_other:
+                for category, count in X[col].value_counts().items():
+                    if count < self.frac_to_other * len(X[col]):
+                        self._to_other[col].append(category)
+                        X[col] = X[col].replace(category, "other")
 
-                # Count number of unique values in the column
-                n_unique = len(X[col].unique())
+            # Count number of unique values in the column
+            n_unique = len(X[col].unique())
 
-                # Perform encoding type dependent on number of unique values
-                if n_unique == 2:
-                    self._encoders[col] = OrdinalEncoder(
-                        dtype=np.int8,
-                        handle_unknown="error",
-                    ).fit(X[col].values.reshape(-1, 1))
+            # Perform encoding type dependent on number of unique values
+            if n_unique == 2:
+                self._encoders[col] = OrdinalEncoder(
+                    dtype=np.int8,
+                    handle_unknown="error",
+                ).fit(X[col].values.reshape(-1, 1))
 
-                elif 2 < n_unique <= self.max_onehot:
-                    self._encoders[col] = OneHotEncoder(
-                        handle_missing="error",
-                        handle_unknown="error",
-                        use_cat_names=True,
-                    ).fit(pd.DataFrame(X[col]))
+            elif 2 < n_unique <= self.max_onehot:
+                self._encoders[col] = OneHotEncoder(
+                    handle_missing="error",
+                    handle_unknown="error",
+                    use_cat_names=True,
+                ).fit(pd.DataFrame(X[col]))
 
-                else:
-                    self._encoders[col] = strategy(
-                        handle_missing="error",
-                        handle_unknown="error",
-                        **self.kwargs,
-                    ).fit(pd.DataFrame(X[col]), y)
+            else:
+                self._encoders[col] = strategy(
+                    handle_missing="error",
+                    handle_unknown="error",
+                    **self.kwargs,
+                ).fit(pd.DataFrame(X[col]), y)
 
         self._is_fitted = True
         return self
@@ -1003,34 +1027,33 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Encoding categorical columns...", 1)
 
-        for idx, col in enumerate(X):
-            if col in self._cat_cols:
-                # Convert classes to "other"
-                X[col] = X[col].replace(self._to_other[col], "other")
+        for idx, col in enumerate(c for c in X if c in self._cat_cols):
+            # Convert classes to "other"
+            X[col] = X[col].replace(self._to_other[col], "other")
 
-                self.log(
-                    f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                    f"feature {col}. Contains {len(X[col].unique())} classes.", 2
-                )
+            self.log(
+                f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
+                f"feature {col}. Contains {len(X[col].unique())} classes.", 2
+            )
 
-                # Perform encoding type dependent on number of classes
-                if self._encoders[col].__module__.startswith("sklearn"):
-                    X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
+            # Perform encoding type dependent on number of classes
+            if self._encoders[col].__module__.startswith("sklearn"):
+                X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
 
-                elif self._encoders[col].__class__.__name__.startswith("OneHot"):
-                    onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                    # Insert the new columns at old location
-                    for i, column in enumerate(onehot_cols):
-                        X.insert(idx + i, column, onehot_cols[column])
-                    # Drop the original and _nan columns
-                    X = X.drop([col, onehot_cols.columns[-1]], axis=1)
+            elif self._encoders[col].__class__.__name__.startswith("OneHot"):
+                onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
+                # Insert the new columns at old location
+                for i, column in enumerate(onehot_cols):
+                    X.insert(idx + i, column, onehot_cols[column])
+                # Drop the original and _nan columns
+                X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
-                else:
-                    rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                    X = X.drop(col, axis=1)  # Drop the original column
-                    # Insert the new columns at old location
-                    for i, column in enumerate(rest_cols):
-                        X.insert(idx + i, column, rest_cols[column])
+            else:
+                rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
+                X = X.drop(col, axis=1)  # Drop the original column
+                # Insert the new columns at old location
+                for i, column in enumerate(rest_cols):
+                    X.insert(idx + i, column, rest_cols[column])
 
         return X
 
@@ -1146,7 +1169,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
                 raise ValueError(
                     "Invalid value for the strategy parameter. Choose from: "
-                    f"z-score, {', '.join(PRUNING_STRATS)}."
+                    f"z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
                 )
             if str(self.method).lower() != "drop" and strat.lower() != "z-score":
                 raise ValueError(

@@ -91,7 +91,7 @@ def test_delattr_branch():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
     del atom.branch
-    assert list(atom._branches.keys()) == ["master"]
+    assert list(atom._branches.keys()) == ["og", "master"]
 
 
 def test_delattr_normal():
@@ -146,7 +146,7 @@ def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert "mean_bagging" not in atom.results
+    assert "mean_bootstrap" not in atom.results
 
 
 def test_results_property_successive_halving():
@@ -416,18 +416,27 @@ def test_get_class_weights(dataset):
 def test_calibrate():
     """Assert that the calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.calibrate)  # When not yet fitted
+    pytest.raises(NotFittedError, atom.calibrate)
     atom.run("LR")
     atom.calibrate()
     assert atom.winner.estimator.__class__.__name__ == "CalibratedClassifierCV"
 
 
-def test_scoring():
+def test_cross_validate():
+    """Assert that the cross_validate method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.cross_validate)
+    atom.run("LR")
+    assert isinstance(atom.cross_validate(), dict)
+
+
+@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
+def test_scoring(metric):
     """Assert that the scoring method works when metric is None."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.scoring)
-    atom.run(["Tree", "RF"])
-    assert isinstance(atom.scoring(), pd.DataFrame)
+    atom.run(["Tree", "PA"])
+    assert isinstance(atom.scoring(metric=metric), pd.DataFrame)
 
 
 def test_delete_default():

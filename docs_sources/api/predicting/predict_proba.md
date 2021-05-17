@@ -34,6 +34,7 @@ Transformers to use on the data before predicting.
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

@@ -1,19 +1,18 @@
 site_name: ATOM
-site_url: https://tvdboom.github.io/ATOM
 site_author: Mavs
-site_description: Documentation for ATOM, a Python package for fast exploration and experimentation of supervised machine learning pipelines.
-
-repo_url: https://github.com/tvdboom/ATOM
+site_url: https://tvdboom.github.io/ATOM
 repo_name: tvdboom/ATOM
+repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
+copyright: © Copyright 2019-2021, by Mavs.
+
 theme:
   name: material
   logo: img/icon_white.png
   favicon: img/favicon.ico
-  icon:
-    repo: fontawesome/brands/github
+  custom_dir: docs_sources/overrides
   features:
     - navigation.instant
     - navigation.tabs
@@ -55,9 +54,8 @@ markdown_extensions:
 extra_css:
     - stylesheets/extra.css
 
-copyright: © Copyright 2019-2021, by tvdboom.
-
 nav:
+    - About: about.md
     - Getting started: getting_started.md
     - User guide:
         - Introduction: user_guide/introduction.md
@@ -66,7 +64,8 @@ nav:
         - Data pipelines: user_guide/data_pipelines.md
         - Logging & Tracking: user_guide/logging.md
         - Data cleaning: user_guide/data_cleaning.md
-        - Fetaure engineering: user_guide/feature_engineering.md
+        - NLP: user_guide/nlp.md
+        - Feature engineering: user_guide/feature_engineering.md
         - Models: user_guide/models.md
         - Training: user_guide/training.md
         - Predicting: user_guide/predicting.md
@@ -86,6 +85,11 @@ nav:
              - Encoder: API/data_cleaning/encoder.md
              - Pruner: API/data_cleaning/pruner.md
              - Balancer: API/data_cleaning/balancer.md
+        - NLP:
+            - TextCleaner: API/nlp/textcleaner.md
+            - Tokenizer: API/nlp/tokenizer.md
+            - Normalizer: API/nlp/normalizer.md
+            - Vectorizer: API/nlp/vectorizer.md
         - Feature engineering:
             - FeatureGenerator: API/feature_engineering/feature_generator.md
             - FeatureSelector: API/feature_engineering/feature_selector.md

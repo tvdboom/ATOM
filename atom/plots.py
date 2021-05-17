@@ -417,7 +417,7 @@ class BasePlotter:
             # Set name with which to save the file
             if kwargs.get("filename"):
                 if kwargs["filename"].endswith("auto"):
-                    name = kwargs.get("plotname")
+                    name = kwargs["filename"].replace("auto", kwargs["plotname"])
                 else:
                     name = kwargs["filename"]
             else:
@@ -557,6 +557,7 @@ class FSPlotter(BasePlotter):
             xlabel="First N principal components",
             ylabel="Cumulative variance ratio",
             figsize=figsize,
+            plotname="plot_pca",
             filename=filename,
             display=display,
         )
@@ -626,6 +627,7 @@ class FSPlotter(BasePlotter):
             legend=("lower right", 1),
             xlabel="Explained variance ratio",
             figsize=figsize if figsize else (10, 4 + show // 2),
+            plotname="plot_components",
             filename=filename,
             display=display,
         )
@@ -670,8 +672,6 @@ class FSPlotter(BasePlotter):
             ylabel = self.rfecv.get_params()["scoring"].name
         except AttributeError:
             ylabel = "score"
-            if self.rfecv.get_params()["scoring"]:
-                ylabel = str(self.rfecv.get_params()["scoring"])
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
@@ -700,6 +700,7 @@ class FSPlotter(BasePlotter):
             xlim=xlim,
             ylim=ylim,
             figsize=figsize,
+            plotname="plot_rfecv",
             filename=filename,
             display=display,
         )
@@ -720,10 +721,10 @@ class BaseModelPlotter(BasePlotter):
     ):
         """Plot of the model results after the evaluation.
 
-        If all models applied bagging, the plot is a boxplot. If
+        If all models applied bootstrap, the plot is a boxplot. If
         not, the plot is a barplot. Models are ordered based on
         their score from the top down. The score is either the
-        `mean_bagging` or `metric_test` attribute of the model,
+        `mean_bootstrap` or `metric_test` attribute of the model,
         selected in that order.
 
         Parameters
@@ -750,18 +751,18 @@ class BaseModelPlotter(BasePlotter):
             Whether to render the plot.
 
         """
-        def get_bagging(m):
-            """Get the bagging's results for a specific metric."""
-            if getattr(m, "metric_bagging", None):
+        def get_bootstrap(m):
+            """Get the bootstrap results for a specific metric."""
+            if getattr(m, "metric_bootstrap", None):
                 if len(self._metric) == 1:
-                    return m.metric_bagging
+                    return m.metric_bootstrap
                 else:
-                    return m.metric_bagging[metric]
+                    return m.metric_bootstrap[metric]
 
         def std(m):
-            """Get the standard deviation of the bagging's results."""
-            if getattr(m, "std_bagging", None):
-                return lst(m.std_bagging)[metric]
+            """Get the standard deviation of the bootstrap results."""
+            if getattr(m, "std_bootstrap", None):
+                return lst(m.std_bootstrap)[metric]
             else:
                 return 0
 
@@ -776,12 +777,12 @@ class BaseModelPlotter(BasePlotter):
         models = sorted(models, key=lambda m: get_best_score(m, metric))
         color = plt.rcParams['axes.prop_cycle'].by_key()['color'][0]  # First color
 
-        all_bagging = all(get_bagging(m) for m in models)
+        all_bootstrap = all(get_bootstrap(m) for m in models)
         for i, m in enumerate(models):
             names.append(m.name)
-            if all_bagging:
+            if all_bootstrap:
                 ax.boxplot(
-                    x=get_bagging(m),
+                    x=get_bootstrap(m),
                     vert=False,
                     positions=[i],
                     widths=0.5,
@@ -806,7 +807,7 @@ class BaseModelPlotter(BasePlotter):
             ax=ax,
             title=title,
             xlabel=self._metric[metric].name,
-            xlim=(min_lim, max_lim) if not all_bagging else None,
+            xlim=(min_lim, max_lim) if not all_bootstrap else None,
             figsize=figsize if figsize else (10, 4 + len(models) // 2),
             plotname="plot_results",
             filename=filename,
@@ -1718,7 +1719,6 @@ class BaseModelPlotter(BasePlotter):
         gs = GridSpecFromSubplotSpec(1, 4, BasePlotter._fig.grid, wspace=0.05)
         ax1 = fig.add_subplot(gs[0, :3])
         ax2 = fig.add_subplot(gs[0, 3:4])
-
         for m in models:
             for set_ in dataset:
                 r2 = f" (R$^2$={round(m.scoring('r2', set_)['r2'], 3)})"
@@ -1830,6 +1830,9 @@ class BaseModelPlotter(BasePlotter):
                 "True positives",
             ]
         )
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             cm = confusion_matrix(
                 getattr(m, f"y_{dataset}"), getattr(m, f"predict_{dataset}")
@@ -1838,8 +1841,6 @@ class BaseModelPlotter(BasePlotter):
                 cm = cm.astype("float") / cm.sum(axis=1)[:, np.newaxis]
 
             if len(models) == 1:  # Create matrix heatmap
-                fig = self._get_figure()
-                ax = fig.add_subplot(BasePlotter._fig.grid)
                 im = ax.imshow(cm, interpolation="nearest", cmap=plt.get_cmap("Blues"))
 
                 # Create an axes on the right side of ax. The under of
@@ -1883,7 +1884,7 @@ class BaseModelPlotter(BasePlotter):
 
         BasePlotter._fig._used_models.extend(models)
         if len(models) > 1:
-            ax = df.plot.barh(width=0.6)
+            df.plot.barh(ax=ax, width=0.6)
             self._plot(
                 ax=ax,
                 title=title,
@@ -3042,8 +3043,8 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         for m in models:
             y[m._group].append(get_best_score(m, metric))
             x[m._group].append(m.branch.idx[0] // m._train_idx)
-            if m.std_bagging:
-                std[m._group].append(lst(m.std_bagging)[metric])
+            if m.std_bootstrap:
+                std[m._group].append(lst(m.std_bootstrap)[metric])
 
         for k in x:
             if not std:
@@ -3123,8 +3124,8 @@ class TrainSizingPlotter(BaseModelPlotter):
         for m in models:
             y[m._group].append(get_best_score(m, metric))
             x[m._group].append(m._train_idx)
-            if m.std_bagging:
-                std[m._group].append(lst(m.std_bagging)[metric])
+            if m.std_bootstrap:
+                std[m._group].append(lst(m.std_bootstrap)[metric])
 
         for k in x:
             if not std:
@@ -3228,6 +3229,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             ax=ax,
             title=title,
             figsize=figsize,
+            plotname="plot_correlation",
             filename=filename,
             display=display,
         )
@@ -3298,6 +3300,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         self._plot(
             title=title,
             figsize=figsize if figsize else (10, 10),
+            plotname="plot_scatter_matrix",
             filename=filename,
             display=display,
         )
@@ -3393,6 +3396,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 xlabel="Counts",
                 legend=("lower right", 1),
                 figsize=figsize if figsize else (10, 4 + show // 2),
+                plotname="plot_distribution",
                 filename=filename,
                 display=display,
             )
@@ -3439,6 +3443,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 ylabel="Counts",
                 legend=("best", len(columns) + len(lst(distribution))),
                 figsize=figsize if figsize else (10, 6),
+                plotname="plot_distribution",
                 filename=filename,
                 display=display,
             )
@@ -3514,6 +3519,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             ylabel="Observed quantiles",
             legend=("best", len(columns) + len(lst(distribution))),
             figsize=figsize if figsize else (10, 6),
+            plotname="plot_qq",
             filename=filename,
             display=display,
         )
@@ -3608,7 +3614,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             if show_params:
                 for j, key in enumerate(params[i]):
-                    try:  # Can fail if the parameter is not an attr fo the class
+                    # The param isn't always an attr of the class
+                    if hasattr(est, key):
                         ax.annotate(
                             text=f"{key}: {getattr(est, key)}",
                             xy=(32, pos_param - 6 if j == 0 else pos_param + 1),
@@ -3618,8 +3625,6 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                             arrowprops=arrow,
                         )
                         pos_param -= 10
-                    except AttributeError:
-                        continue
 
         ax.axes.get_xaxis().set_ticks([])
         ax.axes.get_yaxis().set_ticks([])
@@ -3632,6 +3637,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             xlim=(0, 100),
             ylim=(0, ylim),
             figsize=figsize if figsize else (8, ylim // 30),
+            plotname="plot_pipeline",
             filename=filename,
             display=display,
         )

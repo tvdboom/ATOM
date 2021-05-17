@@ -15,7 +15,7 @@ heteroscedasticity (non-constant variance), or other situations
 where normality is desired. Missing values are disregarded in
 fit and maintained in transform. Categorical columns are ignored.
 This class can be accessed from atom through the [gauss](../../ATOM/atomclassifier/#gauss)
-method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-the-features-gaussian-like).
+method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-gaussian-like-features).
 
 <table style="font-size:16px">
 <tr>
@@ -128,6 +128,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -155,6 +156,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -182,6 +184,7 @@ Get parameters for this estimator.
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -282,6 +285,7 @@ Feature set with shape=(n_samples, n_features).
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

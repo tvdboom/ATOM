@@ -199,17 +199,17 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bagging: list</strong><br>
-Bagging's results with shape=(bagging,) for single-metric runs and
-shape=(metric, bagging) for multi-metric runs.
+<strong>metric_bootstrap: list</strong><br>
+Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
+shape=(metric, n_bootstrap) for multi-metric runs.
 </p>
 <p>
-<strong>mean_bagging: float or list</strong><br>
-Mean of the bagging's results. List of values for multi-metric runs.
+<strong>mean_bootstrap: float or list</strong><br>
+Mean of the bootstrap results. List of values for multi-metric runs.
 </p>
 <p>
-<strong>std_bagging: float or list</strong><br>
-Standard deviation of the bagging's results. List of values for multi-metric runs.
+<strong>std_bootstrap: float or list</strong><br>
+Standard deviation of the bootstrap results. List of values for multi-metric runs.
 </p>
 <strong>results: pd.Series</strong><br>
 Training results. Columns include:
@@ -219,9 +219,9 @@ Training results. Columns include:
 <li><b>metric_train:</b> Metric score on the training set.</li>
 <li><b>metric_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
-<li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
-<li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
-<li><b>time_bagging:</b> Time spent on the bagging algorithm.</li>
+<li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
+<li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
+<li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
 </td>
@@ -292,8 +292,18 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#cross-validate">cross_validate</a></td>
+<td>Evaluate the model using cross-validation.</td>
+</tr>
+
+<tr>
 <td><a href="#delete">delete</a></td>
 <td>Delete the model from the trainer.</td>
+</tr>
+
+<tr>
+<td><a href="#export-pipeline">export_pipeline</a></td>
+<td>Export the model's pipeline to a sklearn-like Pipeline object.</td>
 </tr>
 
 <tr>
@@ -330,8 +340,9 @@ Applies probability calibration on the estimator. The calibration is
 performed using sklearn's [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
 class. The calibrator is trained via cross-validation on a subset of the
 training data, using the rest to fit the calibrator. The new classifier
-will replace the `estimator` attribute. After calibrating, all prediction
-attributes of the winning model will reset. Only if classifier.
+will replace the `estimator` attribute and is logged to any active
+mlflow experiment. After calibrating, all prediction attributes of
+the winning model will reset. Only if classifier.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -348,6 +359,38 @@ testing.
 <br />
 
 
+<a name="cross-validate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L666">[source]</a>
+</span>
+</div>
+Evaluate the model using cross-validation. This method cross-validates the
+whole pipeline on the complete dataset. Use it to assess the robustness of
+the solution's performance.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**kwargs</strong><br>
+Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function. If the scoring method is not specified, it uses
+the trainer's metric.
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>scores: dict</strong><br>
+Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="delete"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
@@ -356,12 +399,63 @@ testing.
 </span>
 </div>
 Delete the model from the trainer. If it's the winning model, the next
-best model (through `metric_test` or `mean_bagging`) is selected as
+best model (through `metric_test` or `mean_bootstrap`) is selected as
 winner. If it's the last model in the trainer, the metric and training
 approach are reset. Use this method to drop unwanted models from
 the pipeline or to free some memory before saving. The model is not
 removed from any active mlflow experiment.
 <br /><br /><br />
+
+
+<a name="export-pipeline"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(pipeline=None, verbose=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L618">[source]</a>
+</span>
+</div>
+Export the model's pipeline to a sklearn-like object. If the model
+used feature scaling, the Scaler is added before the model. The
+returned pipeline is already fitted on the training set.
+
+!!! note
+    ATOM's Pipeline class behaves exactly the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+    and additionally, it's compatible with transformers that drop samples
+    and transformers that change the target column.
+
+!!! warning
+    Due to incompatibilities with sklearn's API, the exported pipeline always
+    fits/transforms on the entire dataset provided. Beware that this can
+    cause errors if the transformers were fitted on a subset of the data.
+
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
+Transformers to use on the data before predicting.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: Only transformers that are applied on the whole dataset are used.</li>
+<li>If False: Don't use any transformers.</li>
+<li>If True: Use all transformers in the pipeline.</li>
+<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
+</ul>
+<p>
+<strong>verbose: int or None, optional (default=None)</strong><br>
+Verbosity level of the transformers in the pipeline.
+If None, it leaves them to their original verbosity.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>pipeline: Pipeline</strong><br>
+Current branch as a sklearn-like Pipeline object.
+</td>
+</tr>
+</table>
+<br />
 
 
 <a name="rename"></a>
@@ -372,7 +466,8 @@ removed from any active mlflow experiment.
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
-of the model's name.
+of the model's name. If the model is being tracked by mlflow, the
+name of the corresponding run is also changed.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

@@ -93,7 +93,7 @@ Since the plots are not made by ATOM, we can't draw multiple models in
 the same figure. Selecting more than one model will raise an exception.
 To avoid this, call the plot directly from a model, e.g. `atom.xgb.force_plot()`.
 
-!!!info
+!!! info
     You can recognize the SHAP plots by the fact that they end (instead
     of start) with the word `plot`.
 
@@ -158,7 +158,7 @@ depend on the task at hand.
 
 <tr>
 <td><a href="../../API/plots/plot_results">plot_results</a></td>
-<td>Plot a boxplot of the bagging's results.</td>
+<td>Plot a boxplot of the bootstrap results.</td>
 </tr>
 
 <tr>

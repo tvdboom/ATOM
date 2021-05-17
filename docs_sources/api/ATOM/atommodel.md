@@ -37,6 +37,7 @@ Whether the model needs scaled features. Can not be True for
 datasets with more than two dimensions. Read more about this
 in the <a href="../../../user_guide/#deep-learning">user guide</a>.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>

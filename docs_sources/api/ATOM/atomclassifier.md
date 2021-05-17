@@ -3,8 +3,8 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.api.<strong style="color:#008AB8">ATOMClassifier</strong>
-(*arrays, y=-1, shuffle=True, n_rows=1, test_size=0.2, logger=None,
-n_jobs=1, warnings=True, verbose=0, random_state=None)
+(*arrays, y=-1, shuffle=True, n_rows=1, test_size=0.2, n_jobs=1,
+verbose=0, warnings=True, logger=None, experiment=None, random_state=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L597">[source]</a>
 </span>
@@ -17,7 +17,7 @@ to sklearn's API, an ATOMClassifier instance already contains the dataset
 on which we want to perform the analysis. Calling a method will automatically
 apply it on the dataset it contains.
 
-You can [predict](../../..user_guide/predicting), [plot](../../../user_guide/plots)
+You can [predict](../../../user_guide/predicting), [plot](../../../user_guide/plots)
 and call any [model](../../../user_guide/models) from atom. Read more in the
 [user guide](../../../user_guide/first_steps).
 
@@ -103,9 +103,16 @@ Changing this parameter affects the <code>PYTHONWARNINGS</code> environment.
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
+<p>
+<strong>experiment: str or None, optional (default=None)</strong><br>
+Name of the mlflow experiment to use for tracking. If None,
+no mlflow tracking is performed.
+</p>
+<p>
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the random number generator. If None, the random number
 generator is the <code>RandomState</code> instance used by <code>numpy.random</code>.
+</p>
 </td>
 </tr>
 </table>
@@ -314,9 +321,9 @@ Dataframe of the training results. Columns can include:
 <li><b>metric_train:</b> Metric score on the training set.</li>
 <li><b>metric_test:</b> Metric score on the test set.</li>
 <li><b>time_fit:</b> Time spent fitting and evaluating.</li>
-<li><b>mean_bagging:</b> Mean score of the bagging's results.</li>
-<li><b>std_bagging:</b> Standard deviation score of the bagging's results.</li>
-<li><b>time_bagging:</b> Time spent on the bagging algorithm.</li>
+<li><b>mean_bootstrap:</b> Mean score of the bootstrap results.</li>
+<li><b>std_bootstrap:</b> Standard deviation score of the bootstrap results.</li>
+<li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
 </td>
@@ -390,6 +397,11 @@ manage the pipeline.
 </tr>
 
 <tr>
+<td><a href="#cross-validate">cross_validate</a></td>
+<td>Evaluate the winning model using cross-validation.</td>
+</tr>
+
+<tr>
 <td><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
@@ -406,7 +418,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
-<td>Export atom's pipeline to a sklearn's Pipeline object.</td>
+<td>Export the pipeline to a sklearn-like Pipeline object.</td>
 </tr>
 
 <tr>
@@ -422,6 +434,11 @@ manage the pipeline.
 <tr>
 <td><a href="#report">report</a></td>
 <td>Get an extensive profile analysis of the data.</td>
+</tr>
+
+<tr>
+<td><a href="#reset">reset</a></td>
+<td>Reset the instance to it's initial state.</td>
 </tr>
 
 <tr>
@@ -475,7 +492,7 @@ manage the pipeline.
 <a name="add"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">add</strong>
-(transformer, columns=None, train_only=False)
+(transformer, columns=None, train_only=False, **fit_params)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L597">[source]</a>
 </span>
@@ -517,6 +534,10 @@ columns except <code>Location</code>.
 <strong>train_only: bool, optional (default=False)</strong><br>
 Whether to apply the transformer only on the training set or
 on the complete dataset.
+</p>
+<p>
+<strong>**fit_params</strong><br>
+Additional keyword arguments passed to the fit method of the transformer.
 </p>
 </td>
 </tr>
@@ -604,8 +625,9 @@ Applies probability calibration on the winning model. The calibration
 is performed using sklearn's [CalibratedClassifierCV](https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html)
 class. The calibrator is trained via cross-validation on a subset of the
 training data, using the rest to fit the calibrator. The new classifier
-will replace the `estimator` attribute. After calibrating, all prediction
-attributes of the winning model will reset.
+will replace the `estimator` attribute and is logged to any active
+mlflow experiment. After calibrating, all prediction attributes of
+the winning model will reset.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -669,6 +691,38 @@ Whether to render the plot.
 <br />
 
 
+<a name="cross-validate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L435">[source]</a>
+</span>
+</div>
+Evaluate the winning model using cross-validation. This method cross-validates
+the whole pipeline on the complete dataset. Use it to assess the robustness of
+the model's performance.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**kwargs</strong><br>
+Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function. If the scoring method is not specified, it uses
+the trainer's metric.
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>scores: dict</strong><br>
+Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
+function.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="delete"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
@@ -678,7 +732,7 @@ Whether to render the plot.
 </div>
 Delete a model from the trainer. If the winning model is
 removed, the next best model (through `metric_test` or
-`mean_bagging`) is selected as winner. If all models are
+`mean_bootstrap`) is selected as winner. If all models are
 removed, the metric and training approach are reset. Use
 this method to drop unwanted models from the pipeline
 or to free some memory before saving. Deleted models are
@@ -756,28 +810,55 @@ Names or indices of the columns to drop.
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None, pipeline=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L482">[source]</a>
 </span>
 </div>
-Export atom's pipeline to a sklearn's Pipeline. Optionally, you can add
-a model as final estimator. If the model needs feature scaling and there
-is no scaler in the pipeline, a [Scaler](../../data_cleaning/scaler)
-is added. The returned pipeline is already fitted.
+Export atom's pipeline to a sklearn-like Pipeline object. Optionally, you
+can add a model as final estimator. The returned pipeline is already fitted
+on the training set.
+
+!!! note
+    ATOM's Pipeline class behaves exactly the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+    and additionally, it's compatible with transformers that drop samples
+    and transformers that change the target column.
+
+!!! warning
+    Due to incompatibilities with sklearn's API, the exported pipeline always
+    fits/transforms on the entire dataset provided. Beware that this can
+    cause errors if the transformers were fitted on a subset of the data.
+
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
+<p>
 <strong>model: str or None, optional (default=None)</strong><br>
-Name of the model to add as a final estimator to the
-pipeline. If None, no model is added.
+Name of the model to add as a final estimator to the pipeline. If the
+model used feature scaling, the <a href="../../data_cleaning/scaler">Scaler</a>
+is added before the model. If None, only the transformers are added.
+</p>
+<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
+Transformers to use on the data before predicting.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: Only transformers that are applied on the whole dataset are used.</li>
+<li>If False: Don't use any transformers.</li>
+<li>If True: Use all transformers in the pipeline.</li>
+<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
+</ul>
+<p>
+<strong>verbose: int or None, optional (default=None)</strong><br>
+Verbosity level of the transformers in the pipeline.
+If None, it leaves them to their original verbosity.
+</p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="80%" style="background:white;">
-<strong>pipeline: <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a></strong><br>
-Pipeline in the current branch as a sklearn object.
+<strong>pipeline: Pipeline</strong><br>
+Current branch as a sklearn-like Pipeline object.
 </td>
 </tr>
 </table>
@@ -866,6 +947,7 @@ Number of (randomly picked) rows to process. None for all rows.
 <strong>filename: str or None, optional (default=None)</strong><br>
 Name to save the file with (as .html). None to not save anything.
 </p>
+</td>
 </tr>
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
@@ -876,6 +958,18 @@ Created profile object.
 </tr>
 </table>
 <br />
+
+
+<a name="reset"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">reset</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L271">[source]</a>
+</span>
+</div>
+Reset the instance to it's initial state, i.e. it deletes all branches
+and models. The dataset is also reset to its form after initialization.
+<br /><br /><br />
 
 
 <a name="reset-aesthetics"></a>
@@ -1218,7 +1312,7 @@ Use the `missing` attribute to customize what are considered "missing
 values". See [Imputer](../data_cleaning/imputer.md) for a description
 of the parameters. Note that since the Imputer can remove rows from
 both the train and test set, the size of the sets may change after
-the tranformation.
+the transformation.
 <br /><br /><br />
 
 
@@ -1391,7 +1485,7 @@ and the [prediction](../../..user_guide/predicting) and
 <em>method</em> <strong style="color:#008AB8">run</strong>
 (models=None, metric=None, greater_is_better=True, needs_proba=False,
 needs_threshold=False, n_calls=10, n_initial_points=5, est_params=None,
-bo_params=None, bagging=0)
+bo_params=None, n_bootstrap=0)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1095">[source]</a>
 </span>
@@ -1405,7 +1499,7 @@ Runs a [DirectClassifier](../training/directclassifier.md) instance.
 <em>method</em> <strong style="color:#008AB8">successive_halving</strong>
 (models=None, metric=None, greater_is_better=True, needs_proba=False,
 needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
-est_params=None, bo_params=None, bagging=0)
+est_params=None, bo_params=None, n_bootstrap=0)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1134">[source]</a>
 </span>
@@ -1419,7 +1513,7 @@ Runs a [SuccessiveHalvingClassifier](../training/successivehalvingclassifier.md)
 <em>method</em> <strong style="color:#008AB8">train_sizing</strong>
 (models=None, metric=None, greater_is_better=True, needs_proba=False,
 needs_threshold=False, train_sizes=5, n_calls=0, n_initial_points=5,
-est_params=None, bo_params=None, bagging=0)
+est_params=None, bo_params=None, n_bootstrap=0)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1180">[source]</a>
 </span>
@@ -1451,7 +1545,7 @@ atom.run(
     n_calls=25,
     n_initial_points=10,
     bo_params={"cv": 3},
-    bagging=4,
+    n_bootstrap=4,
 )
 
 # Analyze the results
@@ -1469,7 +1563,7 @@ atom.run(
     n_calls=25,
     n_initial_points=10,
     bo_params={"cv": 3},
-    bagging=4,
+    n_bootstrap=4,
 )
 
 # Get the predictions for the best model on new data
