@@ -13,10 +13,10 @@ import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
 # Keras
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Conv2D
-from keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, Conv2D
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor

@@ -10,6 +10,7 @@ Description: Utility variables for the tests.
 # Standard packages
 import os
 import numpy as np
+from tensorflow.keras.datasets import mnist
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import (
     load_breast_cancer,
@@ -17,7 +18,6 @@ from sklearn.datasets import (
     load_digits,
     load_diabetes,
 )
-from keras.datasets import mnist
 
 # Own modules
 from atom.utils import merge
