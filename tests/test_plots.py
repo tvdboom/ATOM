@@ -17,7 +17,10 @@ from sklearn.metrics import f1_score, get_scorer
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
-from .utils import FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
+from .utils import (
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
+    X_text, y_text, X10_str, y10,
+)
 
 
 # Test BasePlotter ================================================= >>
@@ -101,9 +104,10 @@ def test_canvas():
     """Assert that the canvas works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, title="Title", display=False):
+    with atom.canvas(1, 2, title="Title", display=False) as fig:
         atom.plot_residuals(title="Residuals plot")
         atom.plot_feature_importance(title="Feature importance plot")
+    assert fig.__class__.__name__ == "Figure"
 
 
 def test_canvas_too_many_plots():
@@ -128,7 +132,7 @@ def test_figure_to_mlflow(mlflow):
     assert mlflow.call_count == 4
 
 
-@patch("atom.plots.plt.savefig")
+@patch("atom.plots.plt.Figure.savefig")
 def test_figure_is_saved(func):
     """Assert that the figure is saved if a filename is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -136,7 +140,7 @@ def test_figure_is_saved(func):
     func.assert_called_with("plot_correlation")
 
 
-@patch("atom.plots.plt.savefig")
+@patch("atom.plots.plt.Figure.savefig")
 def test_figure_is_saved_canvas(func):
     """Assert that the figure is only saved after finishing the canvas."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -147,6 +151,13 @@ def test_figure_is_saved_canvas(func):
         atom.plot_roc()
         func.assert_not_called()
     func.assert_called_with("canvas")   # Only at the end it is saved
+
+
+def test_figure_is_returned():
+    """Assert that the method returns the figure."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    fig = atom.plot_correlation(display=False)
+    assert fig.__class__.__name__ == "Figure"
 
 
 # Test plots ======================================================= >>
@@ -178,6 +189,24 @@ def test_plot_qq():
     """Assert that the plot_qq method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.plot_qq(columns=[0, 1], distribution="pearson3", display=False)
+
+
+def test_plot_wordcloud():
+    """Assert that the plot_wordcloud method work as intended."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.plot_wordcloud(display=False)  # When corpus is str
+    atom.tokenize()
+    atom.plot_wordcloud(display=False)  # When corpus are tokens
+
+
+@pytest.mark.parametrize("ngram", [2, 3, 4])
+def test_plot_ngrams(ngram):
+    """Assert that the plot_ngrams method work as intended."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    pytest.raises(ValueError, atom.plot_ngrams, ngram=6)
+    atom.plot_ngrams(ngram=ngram, display=False)    # When corpus is str
+    atom.tokenize()
+    atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
 
 
 def test_plot_pipeline():
@@ -372,8 +401,7 @@ def test_plot_partial_dependence(features):
     with pytest.raises(ValueError, match=r".*models use the same features.*"):
         atom.plot_partial_dependence(features=(0, 1), display=False)
 
-    atom.delete("Tree2")  # Drop model created for test
-    atom.branch.delete()  # Drop branch created for test
+    atom.branch.delete()
     atom.plot_partial_dependence(display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)

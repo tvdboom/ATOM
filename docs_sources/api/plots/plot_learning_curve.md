@@ -2,16 +2,16 @@
 ---------------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>
-(models=None, metric=0, title=None, figsize=(10, 6), filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_learning_curve</strong>(models=None,
+metric=0, title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3287">[source]</a>
 </span>
 </div>
 
 Plot the model's learning curve: score vs number of training
 samples. Only available if the models were fitted using
-[train sizing](../../../user_guide/#train-sizing).
+[train sizing](../../../user_guide/training/#train-sizing).
 
 <table style="font-size:16px">
 <tr>
@@ -39,9 +39,16 @@ Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
-Whether to render the plot.
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
 </table>
@@ -56,7 +63,12 @@ import numpy as np
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.train_sizing(["GNB", "LDA"], metric="accuracy", train_sizes=9, n_bootstrap=5)
+atom.train_sizing(
+    models=["GNB", "LDA"],
+    metric="accuracy",
+    train_sizes=9,
+    n_bootstrap=5,
+)
 atom.plot_learning_curve()
 ```
 <div align="center">

@@ -2,11 +2,11 @@
 -----------------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>
-(models=None, dataset="test", normalize=False, title=None,
-figsize=None, filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_confusion_matrix</strong>(models=None,
+dataset="test", normalize=False, title=None, figsize=None, filename=None,
+display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1865">[source]</a>
 </span>
 </div>
 
@@ -37,7 +37,8 @@ Plot's title. If None, the title is left empty.
 </p>
 <p>
 <strong>figsize: tuple, optional (default=None)</strong><br>
-Figure's size, format as (x, y). If None, adapts size to plot type.
+Figure's size, format as (x, y). If None, it adapts the size
+to plot's type.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -45,9 +46,16 @@ Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
-Whether to render the plot.
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
 </table>

@@ -58,7 +58,8 @@ setuptools.setup(
         "gplearn >= 0.4.1",
         "matplotlib >= 3.3.0",
         "seaborn >= 0.10.0",
-        "shap >= 0.38.1"
+        "shap >= 0.38.1",
+        "wordcloud >= 1.8.1",
     ],
     extras_require={
         "models": [

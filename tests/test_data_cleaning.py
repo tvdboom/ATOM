@@ -77,6 +77,12 @@ def test_scaler_y_is_ignored():
     assert X_1.equals(X_2)
 
 
+def test_scaler_kwargs():
+    """Assert that kwargs can be passed to the estimator."""
+    X = Scaler(strategy="minmax", feature_range=(1, 2)).fit_transform(X_bin)
+    assert min(X.iloc[:, 0]) >= 1 and max(X.iloc[:, 0]) <= 2
+
+
 def test_return_scaled_dataset():
     """Assert that the returned dataframe is indeed scaled."""
     X = Scaler().fit_transform(X_bin)
@@ -89,6 +95,13 @@ def test_scaler_ignores_categorical_columns():
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Scaler().fit_transform(X)
     assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+
+
+def test_scaler_attach_attribute():
+    """Assert that the estimator is attached as attribute to the class."""
+    scaler = Scaler(strategy="robust")
+    scaler.fit_transform(X_bin)
+    assert hasattr(scaler, "robust")
 
 
 # Test Gauss ======================================================= >>
@@ -118,12 +131,25 @@ def test_gauss_y_is_ignored():
     assert X_1.equals(X_2)
 
 
+def test_gauss_kwargs():
+    """Assert that kwargs can be passed to the estimator."""
+    X = Gauss(strategy="yeo-johnson", standardize=False).fit_transform(X_bin)
+    assert not check_scaling(X)
+
+
 def test_gauss_ignores_categorical_columns():
     """Assert that categorical columns are ignored."""
     X = X_bin.copy()
     X.insert(1, "categorical_col_1", ["a" for _ in range(len(X))])
     X = Gauss().fit_transform(X)
     assert list(X[X.columns.values[1]]) == ["a" for _ in range(len(X))]
+
+
+def test_gauss_attach_attribute():
+    """Assert that the estimator is attached as attribute to the class."""
+    gauss = Gauss(strategy="quantile")
+    gauss.fit_transform(X_bin)
+    assert hasattr(gauss, "quantile")
 
 
 # Test Cleaner ==================================================== >>
@@ -532,7 +558,7 @@ def test_multiple_strategies():
     pruner = Pruner(strategy=["z-score", "lof", "ee", "iforest"])
     X, y = pruner.transform(X_bin, y_bin)
     assert len(X) < len(X_bin)
-    assert all(hasattr(pruner, attr) for attr in ["lof", "ee", "iforest"])
+    assert all(hasattr(pruner, attr) for attr in ("lof", "ee", "iforest"))
 
 
 def test_kwargs_one_strategy():
@@ -550,19 +576,19 @@ def test_kwargs_multiple_strategies():
     assert pruner.lof.get_params()["n_neighbors"] == 10
 
 
+def test_pruner_attach_attribute():
+    """Assert that the estimator is attached as attribute to the class."""
+    pruner = Pruner(strategy="iforest")
+    pruner.transform(X_bin)
+    assert hasattr(pruner, "iforest")
+
+
 # Test Balancer ==================================================== >>
 
 def test_strategy_parameter_balancer():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy="invalid")
     pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
-
-
-def test_kwargs_parameter_balancer():
-    """Assert that the kwargs are passed to the estimator."""
-    balancer = Balancer(strategy="SMOTE", k_neighbors=12)
-    balancer.transform(X_class, y_class)
-    assert balancer.smote.get_params()["k_neighbors"] == 12
 
 
 @pytest.mark.parametrize("strategy", [i for i in BALANCING_STRATS if i != "smotenc"])
@@ -573,18 +599,11 @@ def test_all_balancers(strategy):
     assert len(X) != len(X_bin)
 
 
-@pytest.mark.parametrize("sampling", [1.0, 0.7, "minority", "not majority", "all"])
-def test_sampling_binary(sampling):
-    """Assert that the oversampling method works for binary tasks."""
-    X, y = Balancer(sampling_strategy=sampling).transform(X_bin, y_bin)
-    assert (y == 1).sum() != (y_class == 1).sum()
-
-
-@pytest.mark.parametrize("sampling", ["minority", "not majority", "all"])
-def test_sampling_multiclass(sampling):
-    """Assert that the oversampling method works for multiclass tasks."""
-    X, y = Balancer(sampling_strategy=sampling).transform(X_class, y_class)
-    assert (y == 2).sum() != (y_class == 2).sum()
+def test_balancer_kwargs():
+    """Assert that kwargs can be passed to the estimator."""
+    balancer = Balancer(strategy="SMOTE", k_neighbors=12)
+    balancer.transform(X_class, y_class)
+    assert balancer.smote.get_params()["k_neighbors"] == 12
 
 
 def test_return_pandas():
@@ -599,3 +618,10 @@ def test_return_correct_column_names():
     X, y = Balancer().transform(X_bin, y_bin)
     assert list(X.columns) == list(X_bin.columns)
     assert y.name == y_bin.name
+
+
+def test_balancer_attach_attribute():
+    """Assert that the estimator is attached as attribute to the class."""
+    balancer = Balancer(strategy="smote")
+    balancer.transform(X_bin, y_bin)
+    assert hasattr(balancer, "smote")

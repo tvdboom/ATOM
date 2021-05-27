@@ -22,6 +22,11 @@ from contextlib import contextmanager
 from mlflow.tracking import MlflowClient
 from scipy.stats.mstats import mquantiles
 from typing import Optional, Union, Tuple
+from nltk.collocations import (
+    BigramCollocationFinder,
+    TrigramCollocationFinder,
+    QuadgramCollocationFinder,
+)
 
 # Plotting packages
 import seaborn as sns
@@ -31,6 +36,7 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.patches import ConnectionStyle
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 from matplotlib.gridspec import GridSpec, GridSpecFromSubplotSpec
+from wordcloud import WordCloud
 
 # Sklearn
 from sklearn.utils import _safe_indexing
@@ -42,8 +48,9 @@ from sklearn.metrics import roc_curve, precision_recall_curve, confusion_matrix
 from atom.basetransformer import BaseTransformer
 from .utils import (
     SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_method,
-    check_goal, check_binary_task, check_predict_proba, get_scorer,
-    get_best_score, partial_dependence, composed, crash, plot_from_model,
+    check_goal, check_binary_task, check_predict_proba, get_corpus,
+    get_scorer, get_best_score, partial_dependence, composed, crash,
+    plot_from_model,
 )
 
 # Catch annoying tensorflow warnings when importing shap
@@ -285,20 +292,20 @@ class BasePlotter:
 
         return show
 
-    @staticmethod
-    def _get_index(index, model):
+    def _get_index(self, index, model=None, return_test=True):
         """Check and return the provided parameter index."""
+        branch = model.branch if model else self.branch
         if index is None:
-            rows = model.X_test
+            rows = branch.X_test if return_test else branch.X
         elif isinstance(index, int):
             if index < 0:
-                rows = model.X.iloc[[len(model.X) + index]]
+                rows = branch.X.iloc[[len(model.X) + index]]
             else:
-                rows = model.X.iloc[[index]]
+                rows = branch.X.iloc[[index]]
         elif isinstance(index, slice):
-            rows = model.X.iloc[index]
+            rows = branch.X.iloc[index]
         else:
-            rows = model.X.iloc[slice(*index)]
+            rows = branch.X.iloc[slice(*index)]
 
         if rows.empty:
             raise ValueError(
@@ -366,7 +373,7 @@ class BasePlotter:
 
         return shap_values
 
-    def _plot(self, ax=None, **kwargs):
+    def _plot(self, fig=None, ax=None, **kwargs):
         """Make the plot.
 
         Customize the axes to the default layout and plot the figure
@@ -374,6 +381,9 @@ class BasePlotter:
 
         Parameters
         ----------
+        fig: matplotlib.figure.Figure, optional (default=None)
+            Current plotting figure. If None, ignore the figure.
+
         ax: matplotlib.axes.Axes or None, optional (default=None)
             Current plotting axes. If None, ignore the axes.
 
@@ -391,7 +401,7 @@ class BasePlotter:
                 - tight_layout: Whether to apply it (default=True).
                 - filename: Name of the saved file.
                 - plotname: Name of the plot.
-                - display: Whether to render the plot.
+                - display: Whether to render the plot. If None, return the figure.
 
         """
         if kwargs.get("title"):
@@ -413,7 +423,7 @@ class BasePlotter:
         if ax is not None:
             ax.tick_params(axis='both', labelsize=self.tick_fontsize)
 
-        if not getattr(BasePlotter._fig, "is_canvas", None):
+        if fig and not getattr(BasePlotter._fig, "is_canvas", None):
             # Set name with which to save the file
             if kwargs.get("filename"):
                 if kwargs["filename"].endswith("auto"):
@@ -424,23 +434,24 @@ class BasePlotter:
                 name = kwargs.get("plotname")
 
             if kwargs.get("figsize"):
-                plt.gcf().set_size_inches(*kwargs["figsize"])
+                fig.set_size_inches(*kwargs["figsize"])
             if kwargs.get("tight_layout", True):
-                plt.tight_layout()
+                fig.tight_layout()
+            if kwargs.get("filename"):
+                fig.savefig(name)
 
             # Log plot to mlflow run of every model visualized
             if self.experiment and self.log_plots:
                 for m in set(BasePlotter._fig._used_models):
                     MlflowClient().log_figure(
                         run_id=m._run.info.run_id,
-                        figure=plt.gcf(),
+                        figure=fig,
                         artifact_file=name if name.endswith(".png") else f"{name}.png",
                     )
 
-            if kwargs.get("filename"):
-                plt.savefig(name)
-            if "filename" in kwargs:
-                plt.show() if kwargs.get("display") else plt.close()
+            plt.show() if kwargs.get("display") else plt.close()
+            if kwargs.get("display") is None:
+                return fig
 
     @composed(contextmanager, crash, typechecked)
     def canvas(
@@ -450,7 +461,7 @@ class BasePlotter:
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Create a figure with multiple plots.
 
@@ -469,30 +480,32 @@ class BasePlotter:
             Plot's title. If None, no title is displayed.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the number of plots in the canvas.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of plots in the canvas.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. The None option doesn't do
+            anything. Use the `as` syntax to get the figure object.
 
         """
         BasePlotter._fig = BaseFigure(nrows=nrows, ncols=ncols, is_canvas=True)
         try:
-            yield self
+            yield plt.gcf()
         finally:
             if title:
                 plt.suptitle(title, fontsize=self.title_fontsize + 4)
             BasePlotter._fig.is_canvas = False  # Close the canvas
             self._plot(
+                fig=plt.gcf(),
                 figsize=figsize if figsize else (6 + 4 * ncols, 2 + 4 * nrows),
                 tight_layout=False,
                 plotname="canvas",
                 filename=filename,
-                display=display
+                display=display,
             )
 
 
@@ -505,7 +518,7 @@ class FSPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the explained variance ratio vs number of components.
 
@@ -521,8 +534,14 @@ class FSPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         if not hasattr(self, "pca"):
@@ -550,7 +569,8 @@ class FSPlotter(BasePlotter):
         ax.axhline(var.sum(), ls="--", color="k")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", 1),
@@ -569,7 +589,7 @@ class FSPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the explained variance ratio per component.
 
@@ -582,15 +602,21 @@ class FSPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the number of components shown.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of components shown.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         if not hasattr(self, "pca"):
@@ -621,7 +647,8 @@ class FSPlotter(BasePlotter):
         for i, v in enumerate(scr):
             ax.text(v + 0.005, i - 0.08, f"{v:.3f}", fontsize=self.tick_fontsize)
 
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", 1),
@@ -638,13 +665,12 @@ class FSPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the RFECV results.
 
         Plot the scores obtained by the estimator fitted on every
-        subset of the dataset. Only if RFECV was applied on the
-        dataset through the feature_engineering method.
+        subset of the dataset.
 
         Parameters
         ----------
@@ -658,8 +684,14 @@ class FSPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         if not hasattr(self.branch, "rfecv") or not self.rfecv:
@@ -691,7 +723,8 @@ class FSPlotter(BasePlotter):
         ax.hlines(y, xmin=-1, xmax=x, color="k", ls="--", alpha=0.7, label=label)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
 
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", 1),
@@ -717,7 +750,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot of the model results after the evaluation.
 
@@ -740,15 +773,21 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the number of models.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of models shown.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         def get_bootstrap(m):
@@ -803,7 +842,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_yticklabels(names)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             xlabel=self._metric[metric].name,
@@ -822,7 +862,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 8),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the bayesian optimization scoring.
 
@@ -851,8 +891,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -894,7 +940,8 @@ class BaseModelPlotter(BasePlotter):
             legend=("lower right", len(models)),
             ylabel=self._metric[metric].name,
         )
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax2,
             xlabel="Call",
             ylabel="d",
@@ -912,7 +959,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot evaluation curves for the train and test set.
 
@@ -944,8 +991,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_evals")
@@ -966,7 +1019,8 @@ class BaseModelPlotter(BasePlotter):
             ax.plot(range(len(m.evals[set_])), m.evals[set_], lw=2, label=set_)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("best", len(dataset)),
@@ -986,7 +1040,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the Receiver Operating Characteristics curve.
 
@@ -1013,8 +1067,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1039,7 +1099,8 @@ class BaseModelPlotter(BasePlotter):
         ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", len(models)),
@@ -1059,7 +1120,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the precision-recall curve.
 
@@ -1086,8 +1147,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1110,7 +1177,8 @@ class BaseModelPlotter(BasePlotter):
                 plt.plot(recall, precision, lw=2, label=label)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("best", len(models)),
@@ -1131,7 +1199,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the feature permutation importance of models.
 
@@ -1167,8 +1235,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_permutation_importance")
@@ -1242,7 +1316,8 @@ class BaseModelPlotter(BasePlotter):
             ax.legend().set_visible(False)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
@@ -1261,7 +1336,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a tree-based model's feature importance.
 
@@ -1292,8 +1367,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_feature_importance")
@@ -1345,7 +1426,8 @@ class BaseModelPlotter(BasePlotter):
                 ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", len(models)) if len(models) > 1 else None,
@@ -1366,7 +1448,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the partial dependence of features.
 
@@ -1404,8 +1486,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         def convert_feature(feature):
@@ -1564,7 +1652,8 @@ class BaseModelPlotter(BasePlotter):
                 plt.suptitle(title, fontsize=self.title_fontsize)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             figsize=figsize,
             plotname="plot_partial_dependence",
             filename=filename,
@@ -1579,7 +1668,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a model's prediction errors.
 
@@ -1609,8 +1698,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1651,7 +1746,8 @@ class BaseModelPlotter(BasePlotter):
         ax.plot(xlim, ylim, "k--", lw=2, alpha=0.7, zorder=-2)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("best", len(models)),
@@ -1673,7 +1769,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a model's residuals.
 
@@ -1706,8 +1802,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1745,7 +1847,8 @@ class BaseModelPlotter(BasePlotter):
                 ax1.set_title(title, fontsize=self.title_fontsize, pad=20)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax1,
             legend=("lower right", len(models)),
             ylabel="Residuals",
@@ -1767,7 +1870,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a model's confusion matrix.
 
@@ -1793,15 +1896,21 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the plot's type.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the plot's type.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1879,28 +1988,35 @@ class BaseModelPlotter(BasePlotter):
                 cbar.ax.tick_params(labelsize=self.tick_fontsize)
                 ax.grid(False)
 
-            else:  # Create barplot
+            else:
                 df[m.name] = cm.ravel()
 
         BasePlotter._fig._used_models.extend(models)
         if len(models) > 1:
             df.plot.barh(ax=ax, width=0.6)
+            figsize = figsize if figsize else (10, 6)
             self._plot(
                 ax=ax,
                 title=title,
                 legend=("best", len(models)),
                 xlabel="Count",
-                figsize=figsize if figsize else (10, 6),
             )
         else:
+            figsize = figsize if figsize else (8, 6)
             self._plot(
                 ax=ax,
                 title=title,
                 xlabel="Predicted label",
                 ylabel="True label",
-                figsize=figsize if figsize else (8, 6),
             )
-        self._plot(plotname="plot_confusion_matrix", filename=filename, display=display)
+
+        return self._plot(
+            fig=fig,
+            figsize=figsize,
+            plotname="plot_confusion_matrix",
+            filename=filename,
+            display=display
+        )
 
     @composed(crash, plot_from_model, typechecked)
     def plot_threshold(
@@ -1912,7 +2028,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot metric performances against threshold values.
 
@@ -1947,8 +2063,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -1983,7 +2105,8 @@ class BaseModelPlotter(BasePlotter):
                     ax.plot(steps, results, label=label, lw=2)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("best", len(models)),
@@ -2004,7 +2127,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the probability distribution of the target classes.
 
@@ -2034,8 +2157,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -2065,7 +2194,8 @@ class BaseModelPlotter(BasePlotter):
                     )
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("best", len(models)),
@@ -2086,7 +2216,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the calibration curve for a binary classifier.
 
@@ -2125,8 +2255,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -2167,7 +2303,8 @@ class BaseModelPlotter(BasePlotter):
             ylabel="Fraction of positives",
             ylim=(-0.05, 1.05),
         )
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax2,
             xlabel="Predicted value",
             ylabel="Count",
@@ -2185,7 +2322,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the cumulative gains curve.
 
@@ -2212,8 +2349,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -2244,7 +2387,8 @@ class BaseModelPlotter(BasePlotter):
                 ax.plot(x, gains, lw=2, label=label)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", len(models)),
@@ -2266,7 +2410,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the lift curve.
 
@@ -2293,8 +2437,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -2326,7 +2476,8 @@ class BaseModelPlotter(BasePlotter):
                 ax.plot(x, gains / x, lw=2, label=label)
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower left", len(models)),
@@ -2351,7 +2502,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot SHAP's bar plot.
@@ -2394,11 +2545,17 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's bar plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "bar_plot")
@@ -2416,7 +2573,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -2435,7 +2593,7 @@ class BaseModelPlotter(BasePlotter):
             title: Optional[str] = None,
             figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
             filename: Optional[str] = None,
-            display: bool = True,
+            display: Optional[bool] = True,
             **kwargs,
     ):
         """Plot SHAP's beeswarm plot.
@@ -2476,11 +2634,17 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's beeswarm plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "beeswarm_plot")
@@ -2498,7 +2662,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -2517,7 +2682,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot SHAP's decision plot.
@@ -2555,18 +2720,24 @@ class BaseModelPlotter(BasePlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size
-            to the number of features.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's decision plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "decision_plot")
@@ -2607,7 +2778,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -2625,7 +2797,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (14, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot SHAP's force plot.
@@ -2663,11 +2835,17 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. If matplotlib=False, the figure will
             be saved as an html file. If None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's force plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only if `display=None` and `matplotlib=True`.
 
         """
         if getattr(BasePlotter._fig, "is_canvas", None):
@@ -2711,7 +2889,8 @@ class BaseModelPlotter(BasePlotter):
         sns.set_style(self.style)
         if kwargs.get("matplotlib"):
             BasePlotter._fig._used_models.append(m)
-            self._plot(
+            return self._plot(
+                fig=plt.gcf(),
                 title=title,
                 plotname="force_plot",
                 filename=filename,
@@ -2740,7 +2919,7 @@ class BaseModelPlotter(BasePlotter):
             title: Optional[str] = None,
             figsize: Tuple[SCALAR, SCALAR] = (8, 6),
             filename: Optional[str] = None,
-            display: bool = True,
+            display: Optional[bool] = True,
             **kwargs,
     ):
         """Plot SHAP's heatmap plot.
@@ -2783,11 +2962,17 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's heatmap plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "heatmap_plot")
@@ -2805,7 +2990,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize,
@@ -2824,7 +3010,7 @@ class BaseModelPlotter(BasePlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot SHAP's scatter plot.
@@ -2867,11 +3053,17 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for SHAP's scatter plot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "scatter_plot")
@@ -2895,7 +3087,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_ylabel(ax.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             plotname="scatter_plot",
@@ -2914,7 +3107,7 @@ class BaseModelPlotter(BasePlotter):
             title: Optional[str] = None,
             figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
             filename: Optional[str] = None,
-            display: bool = True,
+            display: Optional[bool] = True,
     ):
         """Plot SHAP's waterfall plot.
 
@@ -2963,8 +3156,14 @@ class BaseModelPlotter(BasePlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "waterfall_plot")
@@ -2982,7 +3181,8 @@ class BaseModelPlotter(BasePlotter):
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
         BasePlotter._fig._used_models.append(m)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize if figsize else (10, 4 + show // 2),
@@ -3003,7 +3203,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot scores per iteration of the successive halving.
 
@@ -3028,8 +3228,14 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -3060,7 +3266,8 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
         ax.set_xticks(range(1, max(n_models) + 1))
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", len(x)),
@@ -3084,7 +3291,7 @@ class TrainSizingPlotter(BaseModelPlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot the learning curve: score vs number of training samples.
 
@@ -3109,8 +3316,14 @@ class TrainSizingPlotter(BaseModelPlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_is_fitted(self, attributes="_models")
@@ -3139,7 +3352,8 @@ class TrainSizingPlotter(BaseModelPlotter):
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
 
         BasePlotter._fig._used_models.extend(models)
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             legend=("lower right", len(x)),
@@ -3163,7 +3377,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (8, 7),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a correlation matrix.
 
@@ -3188,8 +3402,14 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_correlation")
@@ -3197,7 +3417,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
                 f"Invalid value for the method parameter, got {method}. "
-                "Available options are: pearson, kendall or spearman."
+                "Choose from: pearson, kendall or spearman."
             )
 
         # Compute the correlation matrix
@@ -3225,7 +3445,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             cbar_kws={"shrink": 0.8},
         )
         sns.set_style(self.style)  # Set back to original style
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             figsize=figsize,
@@ -3241,7 +3462,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 10),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot a matrix of scatter plots.
@@ -3266,17 +3487,23 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for seaborn's pairplot.
 
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
         """
         if getattr(BasePlotter._fig, "is_canvas", None):
             raise PermissionError(
-                "The plot_scatter_matrix method can not be called from a "
-                "canvas because of incompatibility of the APIs."
+                "The plot_scatter_matrix method can not be called from "
+                "a canvas because of incompatibility of the APIs."
             )
 
         check_method(self, "plot_scatter_matrix")
@@ -3297,7 +3524,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
             axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
 
-        self._plot(
+        return self._plot(
+            fig=plt.gcf(),
             title=title,
             figsize=figsize if figsize else (10, 10),
             plotname="plot_scatter_matrix",
@@ -3314,7 +3542,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
         **kwargs,
     ):
         """Plot column distributions.
@@ -3345,18 +3573,24 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the plot's type.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the plot's type.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
 
         **kwargs
             Additional keyword arguments for seaborn's histplot.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_distribution")
@@ -3369,27 +3603,29 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         cat_columns = list(self.dataset.select_dtypes(exclude="number").columns)
         if len(columns) == 1 and columns[0] in cat_columns:
-            data = self.dataset[columns].value_counts(ascending=True)
+            series = self.dataset[columns].value_counts(ascending=True)
 
-            if show is None or show > len(data):
-                show = len(data)
+            if show is None or show > len(series):
+                show = len(series)
             elif show < 1:
                 raise ValueError(
                     "Invalid value for the show parameter."
                     f"Value should be >0, got {show}."
                 )
 
-            data[-show:].plot.barh(
+            data = series[-show:]  # Subset of series to plot
+            data.plot.barh(
                 ax=ax,
                 width=0.6,
-                label=f"{columns[0]}: {len(data)} classes",
+                label=f"{columns[0]}: {len(series)} classes",
             )
 
             # Add the counts at the end of the bar
-            for i, v in enumerate(data[-show:]):
+            for i, v in enumerate(data):
                 ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
 
-            self._plot(
+            return self._plot(
+                fig=fig,
                 ax=ax,
                 xlim=(min(data) - 0.1*min(data), max(data) + 0.1 * max(data)),
                 title=title,
@@ -3436,7 +3672,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                         label = dist if i == 0 else None  # Label for the first iter
                         plt.plot(x, pdf * scale, lw=2, c=palette_2[j], label=label)
 
-            self._plot(
+            return self._plot(
+                fig=fig,
                 ax=ax,
                 title=title,
                 xlabel="Values",
@@ -3456,7 +3693,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a quantile-quantile plot.
 
@@ -3480,8 +3717,14 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         check_method(self, "plot_qq")
@@ -3510,7 +3753,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         xlim, ylim = ax.get_xlim(), ax.get_ylim()
         plt.plot((-9e9, 9e9), (-9e9, 9e9), "k--", lw=2, alpha=0.7, zorder=-2)
 
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             xlim=xlim,
@@ -3525,6 +3769,202 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         )
 
     @composed(crash, typechecked)
+    def plot_wordcloud(
+        self,
+        index: Optional[Union[int, tuple, slice]] = None,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+        **kwargs,
+    ):
+        """Plot a wordcloud from the corpus.
+
+        The text for the plot is extracted from the column
+        named `Corpus`. If there is no column with that name,
+        an exception is raised.
+
+        Parameters
+        ----------
+        index: int, tuple, slice or None, optional (default=None)
+            Indices of the documents in the corpus to include in
+            the wordcloud. If shape (n, m), it selects rows n until
+            m. If None, it selects all documents in the dataset.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        **kwargs
+            Additional keyword arguments for the WordCloud class.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        def get_text(column):
+            """Get the complete corpus as one long string."""
+            if isinstance(column.iloc[0], str):
+                return " ".join(column)
+            else:
+                return " ".join([" ".join(row) for row in column])
+
+        check_method(self, "plot_wordcloud")
+        corpus = get_corpus(self.X)
+        rows = self._get_index(index, return_test=False)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+
+        background_color = kwargs.pop("background_color", "white")
+        random_state = kwargs.pop("random_state", self.random_state)
+        wordcloud = WordCloud(
+            width=figsize[0] * 100 if figsize else 1000,
+            height=figsize[1] * 100 if figsize else 600,
+            background_color=background_color,
+            random_state=random_state,
+            **kwargs,
+        )
+
+        plt.imshow(wordcloud.generate(get_text(rows[corpus])))
+        plt.axis("off")
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            figsize=figsize if figsize else (10, 6),
+            plotname="plot_wordcloud",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
+    def plot_ngrams(
+        self,
+        ngram: Union[int, str] = "words",
+        index: Optional[Union[int, tuple, slice]] = None,
+        show: int = 10,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot n-gram frequencies.
+
+        The text for the plot is extracted from the column
+        named `Corpus`. If there is no column with that name,
+        an exception is raised. If the documents are not
+        tokenized, the words are separated by spaces.
+
+        Parameters
+        ----------
+        ngram: str or int, optional (default="bigram")
+            Number of contiguous words to search for (size of
+            n-gram). Choose from: words (1), bigrams (2),
+            trigrams (3), quadgrams (4).
+
+        index: int, tuple, slice or None, optional (default=None)
+            Indices of the documents in the corpus to include in
+            the search. If shape (n, m), it selects rows n until m.
+            If None, it selects all documents in the dataset.
+
+        show: int, optional (default=10)
+            Number of n-grams (ordered by number of occurrences) to
+            show in the plot.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of n-grams shown.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        def get_text(column):
+            """Get the complete corpus as sequence of tokens."""
+            if isinstance(column.iloc[0], str):
+                return column.apply(lambda row: row.split())
+            else:
+                return column
+
+        check_method(self, "plot_ngrams")
+        corpus = get_corpus(self.X)
+        rows = self._get_index(index, return_test=False)
+
+        if str(ngram).lower() in ("1", "word", "words"):
+            ngram = "words"
+            series = pd.Series(
+                [word for row in get_text(rows[corpus]) for word in row]
+            ).value_counts(ascending=True)
+        else:
+            if str(ngram).lower() in ("2", "bigram", "bigrams"):
+                ngram, finder = "bigrams", BigramCollocationFinder
+            elif str(ngram).lower() in ("3", "trigram", "trigrams"):
+                ngram, finder = "trigrams", TrigramCollocationFinder
+            elif str(ngram).lower() in ("4", "quadgram", "quadgrams"):
+                ngram, finder = "quadgrams", QuadgramCollocationFinder
+            else:
+                raise ValueError(
+                    f"Invalid value for the ngram parameter, got {ngram}. "
+                    "Choose from: words, bigram, trigram, quadgram."
+                )
+
+            ngram_fd = finder.from_documents(get_text(rows[corpus])).ngram_fd
+            series = pd.Series(
+                data=[x[1] for x in ngram_fd.items()],
+                index=[" ".join(x[0]) for x in ngram_fd.items()],
+            ).sort_values(ascending=True)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+
+        data = series[-show:]  # Subset of series to plot
+        data[-show:].plot.barh(ax=ax, width=0.6, label=f"Total {ngram}: {len(series)}")
+
+        # Add the counts at the end of the bar
+        for i, v in enumerate(data[-show:]):
+            ax.text(v + 0.01 * max(data), i - 0.08, v, fontsize=self.tick_fontsize)
+
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
+            title=title,
+            xlabel="Counts",
+            legend=("lower right", 1),
+            figsize=figsize if figsize else (10, 4 + show // 2),
+            plotname="plot_ngrams",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, typechecked)
     def plot_pipeline(
         self,
         model: Optional[str] = None,
@@ -3532,7 +3972,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         title: Optional[str] = None,
         figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
         filename: Optional[str] = None,
-        display: bool = True,
+        display: Optional[bool] = True,
     ):
         """Plot a diagram of a model's pipeline.
 
@@ -3549,15 +3989,21 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Plot's title. If None, the title is left empty.
 
         figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, adapts size to
-            the length of the pipeline.
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the length of the pipeline.
 
         filename: str or None, optional (default=None)
             Name of the file. Use "auto" for automatic naming. If
             None, the figure is not saved.
 
-        display: bool, optional (default=True)
-            Whether to render the plot.
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
 
         """
         # Define pipeline to plot
@@ -3631,7 +4077,8 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         plt.axis("off")
 
         sns.set_style(self.style)  # Set back to original style
-        self._plot(
+        return self._plot(
+            fig=fig,
             ax=ax,
             title=title,
             xlim=(0, 100),

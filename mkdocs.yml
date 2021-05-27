@@ -36,6 +36,18 @@ theme:
         icon: material/toggle-switch
         name: Switch to light mode
 
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tvdboom/ATOM
+      name: GitHub
+    - icon: fontawesome/brands/medium
+      link: https://tvdboom.medium.com/
+      name: Medium
+    - icon: fontawesome/solid/envelope
+      link: mailto:m.524687@gmail.com
+      name: Email
+
 plugins:
     - mkdocs-jupyter
     - search
@@ -145,6 +157,8 @@ nav:
             - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
             - plot_distribution: API/plots/plot_distribution.md
             - plot_qq: API/plots/plot_qq.md
+            - plot_wordcloud: API/plots/plot_wordcloud.md
+            - plot_ngrams: API/plots/plot_ngrams.md
             - plot_pipeline: API/plots/plot_pipeline.md
             - plot_pca: API/plots/plot_pca.md
             - plot_components: API/plots/plot_components.md
@@ -185,6 +199,7 @@ nav:
         - Imbalanced datasets: examples/imbalanced_datasets.ipynb
         - Multiclass classification: examples/multiclass_classification.ipynb
         - Multi-metric runs: examples/multi_metric.ipynb
+        - Natural Language Processing: examples/nlp.ipynb
         - Regression: examples/regression.ipynb
         - Successive halving: examples/successive_halving.ipynb
         - Train sizing: examples/train_sizing.ipynb

@@ -2,8 +2,8 @@
 -----------
 
 <div style="font-size:20px">
-<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>
-(estimator, acronym=None, fullname=None, needs_scaling=False)
+<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(estimator,
+acronym=None, fullname=None, needs_scaling=False)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L26">[source]</a>
 </span>

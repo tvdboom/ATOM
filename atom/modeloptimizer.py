@@ -583,20 +583,19 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Calibrate the model.
 
         Applies probability calibration on the winning model. The
-        calibration is done with the CalibratedClassifierCV class
-        from sklearn. The estimator is trained via cross-validation
-        on a subset of the training data, using the rest to fit the
-        calibrator. The new classifier will replace the `estimator`
-        attribute and is logged to any active mlflow experiment. All
-        prediction attributes will reset.
+        estimator is trained via cross-validation on a subset of the
+        training data, using the rest to fit the calibrator. The new
+        classifier will replace the `estimator` attribute and is
+        logged to any active mlflow experiment. Since the estimator
+        changed, all the model's prediction attributes are reset.
 
         Parameters
         ----------
         **kwargs
-            Additional keyword arguments for the CalibratedClassifierCV
-            instance. Using cv="prefit" will use the trained model and
-            fit the calibrator on the test set. Note that doing this
-            will result in data leakage in the test set. Use this only
+            Additional keyword arguments for sklearn's CCV. Using
+            cv="prefit" will use the trained model and fit the
+            calibrator on the test set. Note that doing this will
+            result in data leakage in the test set. Use this only
             if you have another, independent set for testing.
 
         """

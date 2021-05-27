@@ -240,9 +240,11 @@ def merge(X, y):
 
 
 def variable_return(X, y):
-    """Return one or two arguments depending on if y is None."""
+    """Return one or two arguments depending on which is None."""
     if y is None:
         return X
+    elif X is None:
+        return y
     else:
         return X, y
 
@@ -289,7 +291,7 @@ def check_predict_proba(models, method):
 
 def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
-    return True if X.mean().mean() < 0.05 and 0.95 < X.std().mean() < 1.05 else False
+    return True if X.mean().mean() < 0.05 and 0.93 < X.std().mean() < 1.07 else False
 
 
 def get_corpus(X):
@@ -964,9 +966,9 @@ def add_transformer(self, transformer, columns=None, train_only=False, **fit_par
         raise ValueError("Added transformers should have a transform method!")
 
     # Add BaseTransformer params to the estimator if left to default
-    if all(hasattr(transformer, attr) for attr in ["get_params", "set_params"]):
+    if all(hasattr(transformer, attr) for attr in ("get_params", "set_params")):
         sign = signature(transformer.__init__).parameters
-        for p in ["n_jobs", "random_state"]:
+        for p in ("n_jobs", "random_state"):
             if p in sign and transformer.get_params()[p] == sign[p]._default:
                 transformer.set_params(**{p: getattr(self, p)})
 

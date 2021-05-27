@@ -14,6 +14,9 @@
   initial state.
 * Added the [Dummy](../API/models/dummy) model to compare other models with a
   simple baseline.
+* New [plot_wordcloud](../API/plots/plot_wordcloud) and [plot_ngrams](../API/plots/plot_ngrams)
+  methods for text visualization.
+* Plots now can return the figure object when `display=None`.
 * The [Pruner](../API/data_cleaning/pruner) class can now able to drop outliers
   based on the selection of multiple strategies.
 * The new `shuffle` parameter in atom's initializer determines whether to

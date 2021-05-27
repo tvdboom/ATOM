@@ -2,10 +2,10 @@
 -------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>
-(strategy="yeo-johnson", verbose=0, logger=None)
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeo-johnson",
+verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L118">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L267">[source]</a>
 </span>
 </div>
 
@@ -22,11 +22,11 @@ method. Read more in the [user guide](../../../user_guide/data_cleaning/#making-
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
 <strong>strategy: str, optional (default="yeo-johnson")</strong><br>
-The transforming strategy. Options are:
+The transforming strategy. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>yeo-johnson</li>
-<li>box-cox (only works with strictly positive values)</li>
-<li>quantile (non-linear transformation)</li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">yeo-johnson</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PowerTransformer.html">box-cox</a> (only works with strictly positive values)</li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.QuantileTransformer.html">quantile</a> (non-linear transformation)</li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -43,9 +43,22 @@ Verbosity level of the class. Possible values are:
 <strong>random_state: int or None, optional (default=None)</strong><br>
 Seed used by the quantile strategy. If None, the random number generator
 is the <code>RandomState</code> used by <code>numpy.random</code>.
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments passed to the <code>strategy</code> estimator.
+</p>
 </td>
 </tr>
 </table>
+
+!!! info
+    The yeo-johnson and box-cox strategies apply zero-mean, unit-variance
+    normalization after transforming. Use the `kwargs` parameter to change
+    this behaviour.
+
+!!! tip
+    Use atom's [plot_distribution](../../plots/plot_distribution) method to
+    visualize the transformation.
 
 !!! warning
     Note that the quantile strategy performs a non-linear transformation.
@@ -62,7 +75,7 @@ is the <code>RandomState</code> used by <code>numpy.random</code>.
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="80%" style="background:white;">
-<strong>estimator: sklearn transformer</strong><br>
+<strong>estimator: sklearn estimator</strong><br>
 Estimator's instance with which the data is transformed.
 </td>
 </tr>
@@ -114,7 +127,7 @@ Estimator's instance with which the data is transformed.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L291">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L332">[source]</a></span></div>
 Fit to data.
 <table style="font-size:16px">
 <tr>
@@ -142,7 +155,7 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a></span></div>
 Fit to data, then transform it.
 <table style="font-size:16px">
 <tr>
@@ -201,7 +214,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -227,7 +240,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -271,7 +284,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L379">[source]</a></span></div>
 Apply the transformations to the data.
 <table style="font-size:16px">
 <tr>

@@ -1,18 +1,22 @@
 # Plots
 -------
 
-After fitting the models to the data, it's time to analyze the results.
-ATOM provides many plotting methods to compare the model performances.
-Descriptions and examples can be found in the API section. ATOM uses
-the packages [matplotlib](https://matplotlib.org/), [seaborn](https://seaborn.pydata.org/)
-and [shap](https://github.com/slundberg/shap) for plotting.
+ATOM provides many plotting methods to analyze the data or compare the
+model performances. Descriptions and examples can be found in the API
+section. ATOM uses the packages [matplotlib](https://matplotlib.org/),
+[seaborn](https://seaborn.pydata.org/), [shap](https://github.com/slundberg/shap)
+and [wordcloud](http://amueller.github.io/word_cloud/) for plotting.
 
-The plot methods can be called from a trainer directly, e.g.
-`atom.plot_roc()`, or from one of the models, e.g. `atom.LGB.plot_roc()`.
-If called from a trainer, it will make the plot for all models in
-its pipeline. Use this to compare the results of multiple models. If
-called from a specific model, it will make the plot for only that
-model.
+Plots that compare model performances (methods with the `models`
+parameter) can be called directly from a trainer, e.g. `atom.plot_roc()`,
+or from one of the models, e.g. `atom.LGB.plot_roc()`. If called from
+a trainer, it makes the plot for all models in its pipeline. If called
+from a specific model, it makes the plot only for that model.
+
+Plots that analyze the dataset (methods without the `models` parameter)
+can only be called from atom. The rest of the trainers are supposed
+to be used only when the goal is just modelling, not data manipulation.
+
 
 <br>
 
@@ -24,7 +28,7 @@ parameters in common:
 * The `title` parameter allows you to add a title to the plot.
 * The `figsize` parameter adjust the plot's size.
 * The `filename` parameter is used to save the plot.
-* The `display` parameter determines whether to show the plot.
+* The `display` parameter determines whether to show or return the plot.
 
 <br>
 
@@ -53,12 +57,14 @@ to be able to compare them easier. Use the [canvas](../../API/ATOM/atomclassifie
 method for this. The canvas method is a `@contextmanager`, i.e. it's
 used through the `with` command. Plots in a canvas will ignore the
 figsize, filename and display parameters. Instead, call these parameters
-from the canvas for the final figure.
+from the canvas for the final figure. If a variable is assigned to the
+canvas (e.g. `with atom.canvas() as fig`), it contains the resulting
+matplotlib figure.
 
 For example, we can use a canvas to compare the results of a [XGBoost](../../API/models/xgb)
-and [LightGBM](../../API/models/lgb) model on the train and test set. We
-could also draw the lines for both models in the same axes, but then
-the plot would become too cluttered.
+and [LightGBM](../../API/models/lgb) model on the train and test set.
+We could also draw the lines for both models in the same axes, but
+then the plot would become too cluttered.
 
 ```python
 atom = ATOMClassifier(X, y)
@@ -124,6 +130,16 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
 <td>Plot column distributions.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_wordcloud">plot_wordcloud</a></td>
+<td>Plot a wordcloud from the corpus.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_ngrams">plot_ngrams</a></td>
+<td>Plot n-gram frequencies.</td>
 </tr>
 
 <tr>

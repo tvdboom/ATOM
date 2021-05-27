@@ -59,10 +59,11 @@ method) can be stored as an artifact using the trainer's `log_pipeline`
 attribute, e.g. `atom.log_pipeline = True`.
 
 **Plots**<br>
-Plots are tracked as .png artifacts in all runs from the models that are
-showed in the plot. If the `filename` parameter is specified, they are
-stored under that name, else the plot's name is used. This option can be
+Plots are stored as .png artifacts in all runs corresponding to the models
+that are showed in the plot. If the `filename` parameter is specified, they
+are stored under that name, else the plot's name is used. This option can be
 switched off using the trainer's `log_plots` attribute, e.g. `atom.log_plots = False`.
+
 
 ### Configuring a tracking server
 

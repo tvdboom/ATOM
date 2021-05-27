@@ -10,19 +10,21 @@ library for the majority of its NLP processes.
 The text documents are expected to be provided in a column of the
 dataframe named `Corpus` (the name is case-insensitive). Only the
 corpus is changed by the transformers, leaving the rest of the columns
-as is. This allows datasets to combine regular features with the
+as is. This approach allows datasets to combine other features with the
 documents. If an array is provided as input, it should consist of only
 one feature containing the text (one document per row). ATOM will then
 automatically convert the array to a dataframe with the desired column
-name. Documents are expected to be strings, or sequences of words. See
-every class' API for the expected input format. Click [here](../../../examples/nlp)
-for an example using text data.
+name. Documents are expected to be strings or sequences of words. Click
+[here](../../../examples/nlp) for an example using text data.
 
 !!! note
     All of atom's NLP methods automatically adopt the relevant transformer
     attributes (`verbose`, `logger`) from atom. A different choice can be
     added as parameter to the method call, e.g. `atom.tokenize(verbose=0)`.
 
+!!! info
+    ATOM doesn't do topic modelling! The module's goal is to help process
+    text documents into features that can be used for supervised learning.
 
 <br>
 
@@ -59,11 +61,11 @@ Sometimes, words have a different meaning on their own than when combined
 with adjacent words. For example, the word `new` has a completely different
 meaning when the word `york` is directly after it than when it's not. These
 combinations of two words are called bigrams. When there are three words,
-they are called trigrams.
+they are called trigrams, and with four words quadgrams.
 
 The [Tokenizer](../../API/nlp/tokenizer) class converts a document into a
-sequence of words, and can create the most frequent bigrams and trigrams.
-It can be accessed from atom through the [tokenize](../../API/ATOM/atomclassifier/#tokenize)
+sequence of words, and can create the most frequent bigrams, trigrams and
+quadgrams. It can be accessed from atom through the [tokenize](../../API/ATOM/atomclassifier/#tokenize)
 method.
 
 
@@ -72,7 +74,7 @@ method.
 ## Normalization
 
 Normalization is a process that converts a list of words to a more
-predefined “standard”. This is useful to reduce the amount of different
+uniform standard. This is useful to reduce the amount of different
 information that the computer has to deal with, and therefore improves
 efficiency. The goal of normalization techniques like stemming and
 lemmatization is to reduce inflectional forms and derivationally

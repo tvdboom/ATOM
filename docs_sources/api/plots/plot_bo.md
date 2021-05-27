@@ -2,10 +2,10 @@
 ---------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_bo</strong>
-(models=None, metric=0, title=None, figsize=(10, 8), filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None,
+metric=0, title=None, figsize=(10, 8), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L784">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L858">[source]</a>
 </span>
 </div>
 
@@ -42,9 +42,16 @@ Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
-Whether to render the plot.
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
 </table>

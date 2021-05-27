@@ -2,11 +2,11 @@
 ------------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">force_plot</strong>
-(models=None, index=None, show=None, target=1, title=None,
-figsize=(14, 6), filename=None, display=True, **kwargs)
+<em>method</em> <strong style="color:#008AB8">force_plot</strong>(models=None,
+index=None, show=None, target=1, title=None, figsize=(14, 6),
+filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2533">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2792">[source]</a>
 </span>
 </div>
 
@@ -51,13 +51,20 @@ Name of the file. If matplotlib=False, the figure is saved as an html
  file. If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
-Whether to render the plot.
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
 <p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/latest/generated/shap.plots.force.html">force plot</a>.
 </p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code> and <code>matplotlib=True</code>.
 </td>
 </tr>
 </table>

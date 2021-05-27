@@ -2,10 +2,9 @@
 ---------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">predict</strong>
-(X, pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">predict</strong>(X, pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L128">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L183">[source]</a>
 </span>
 </div>
 

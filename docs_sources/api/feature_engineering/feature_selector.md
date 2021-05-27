@@ -2,12 +2,11 @@
 -----------------
 
 <div style="font-size:20px">
-<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>
-(strategy=None, solver=None, n_features=None, max_frac_repeated=1.,
-max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
+<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureSelector</strong>(strategy=None,
+solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L411">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L405">[source]</a>
 </span>
 </div>
 
@@ -61,7 +60,7 @@ and PCA).
 <li>for "SFM", "RFE", "RFECV" and "SFS":<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
-attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/#predefined-models">predefined models</a>.
+attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
 Add <code>_class</code> or <code>_reg</code> after the model's name to
 specify a classification or regression task, e.g. <code>solver="LGB_reg"</code>
 (not necessary if called from an atom instance). No default option.</p></li>
@@ -82,13 +81,13 @@ features. If strategy="RFECV", it's the minimum number of features to select.
 Remove features with the same value in at least this fraction of
 the total rows. The default is to keep all features with non-zero
 variance, i.e. remove the features that have the same value in all
-samples. None to skip this step.
+samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
 Minimum value of the Pearson correlation coefficient to identify
 correlated features. A value of 1 will remove one of 2 equal columns.
 A dataframe of the removed features and their correlation values can
-be accessed through the collinear attribute. None to skip this step.
+be accessed through the collinear attribute. If None, skip this step.
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -157,8 +156,8 @@ Dataframe of the removed collinear features. Columns include:
 </ul>
 <p>
 <strong>feature_importance: list</strong><br>
-Remaining features ordered by importance. Only if strategy in ["univariate", "SFM,
-"RFE", "RFECV"]. For RFE and RFECV, the importance is extracted from the external
+Remaining features ordered by importance. Only if strategy in ("univariate", "SFM,
+"RFE", "RFECV"). For RFE and RFECV, the importance is extracted from the external
 estimator fitted on the reduced set. 
 </p>
 <p>
@@ -271,7 +270,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L578">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L562">[source]</a>
 </span>
 </div>
 Fit to data. Note that the univariate, SFM (when model is not fitted), RFE and
@@ -306,7 +305,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 Fit to data, then transform it. Note that the univariate, SFM (when
@@ -371,7 +370,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -398,7 +397,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L325">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L521">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio vs the number of components.
@@ -411,7 +410,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L538">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L590">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio per components. See
@@ -424,7 +423,7 @@ Plot the explained variance ratio per components. See
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L606">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L666">[source]</a>
 </span>
 </div>
 Plot the scores obtained by the estimator fitted on every subset of the
@@ -436,7 +435,7 @@ data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the paramete
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L200">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
@@ -447,7 +446,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -493,7 +492,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L811">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L795">[source]</a>
 </span>
 </div>
 Transform the data.

@@ -2,10 +2,10 @@
 ------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>
-(strategy="BOW", verbose=0, logger=None)
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
+verbose=0, logger=None, *kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L489">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L573">[source]</a>
 </span>
 </div>
 
@@ -19,7 +19,8 @@ method. Read more in the [user guide](../../../user_guide/nlp/#vectorization).
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
-Strategy with which to vectorize the text. Available options are:
+<strong>strategy: str, optional (default="BOW")</strong><br>
+Strategy with which to vectorize the text. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"BOW": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html">Bag of Words</a> algorithm.</li>
 <li>"TF-IDF": Uses a <a href="https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html">TF-IDF</a> algorithm.</li>
@@ -59,7 +60,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <tr>
 <td><a href="#fit-transform">fit_transform</a></td>
-<td>Same as transform.</td>
+<td>Fit to text, then vectorize it.</td>
 </tr>
 
 <tr>
@@ -92,7 +93,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L543">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L627">[source]</a></span></div>
 Fit to text.
 <table style="font-size:16px">
 <tr>
@@ -102,8 +103,7 @@ Fit to text.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-can either be a string or a sequence of words.
+feature containing the text documents.
 </p>
 <p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -125,7 +125,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 Fit to text, then vectorize it.
@@ -137,8 +137,7 @@ Fit to text, then vectorize it.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-can either be a string or a sequence of words.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
@@ -189,7 +188,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -215,7 +214,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -261,7 +260,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L670">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -273,9 +272,7 @@ Normalize the text.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a sequence of words. If they are strings,
-words are separated by spaces.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.

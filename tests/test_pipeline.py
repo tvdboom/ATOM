@@ -10,10 +10,11 @@ Description: Unit tests for pipeline.py
 # Standard packages
 import pytest
 import numpy as np
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 # Own modules
 from atom import ATOMClassifier
+from atom.pipeline import Pipeline
 from .utils import X_bin, y_bin
 
 
@@ -37,16 +38,23 @@ def test_fit(pipeline):
     """Assert that the pipeline can be fitted normally."""
     pl = pipeline(model=True)
     assert pl.fit(X_bin, y_bin)
-    pl.steps.insert(1, ("passthrough", StandardScaler()))
+    pl.steps.insert(1, ("passthrough", None))
     assert pl.fit(X_bin, y_bin)
+
+
+def test_transform_only_y(pipeline):
+    """Assert that the pipeline can transform the target column only."""
+    pl = Pipeline(steps=[("label_encoder", LabelEncoder())])
+    assert isinstance(pl.fit_transform(y=y_bin), np.ndarray)
 
 
 def test_fit_transform(pipeline):
     """Assert that the pipeline can be fit-transformed normally."""
     pl = pipeline(model=False)
-    assert isinstance(pl.fit_transform(X_bin, y_bin), np.ndarray)
-    pl.steps[-1] = ("passthrough", StandardScaler())
-    assert isinstance(pl.fit_transform(X_bin, y_bin), np.ndarray)
+    pl.steps[0] = ("test", "passthrough")
+    assert isinstance(pl.fit_transform(X_bin), np.ndarray)  # Returns X
+    pl.steps[-1] = ("test_final", "passthrough")
+    assert isinstance(pl.fit_transform(X_bin, y_bin), tuple)  # Returns X, y
 
 
 def test_predict(pipeline):

@@ -12,11 +12,11 @@ import os
 import dill
 import random
 import mlflow
+import warnings
 import numpy as np
 import pandas as pd
-from copy import copy
 import multiprocessing
-import warnings as warn
+from copy import deepcopy
 from typeguard import typechecked
 from typing import Union, Optional
 
@@ -109,7 +109,7 @@ class BaseTransformer:
                 )
             self._warnings = value
 
-        warn.simplefilter(self._warnings)  # Change the filter in this process
+        warnings.simplefilter(self._warnings)  # Change the filter in this process
         os.environ["PYTHONWARNINGS"] = self._warnings  # Affects subprocesses
 
     @property
@@ -176,11 +176,13 @@ class BaseTransformer:
             Target column corresponding to X.
 
         """
-        # If more than 2 dimensions, create dataframe with one column
-        if np.array(X).ndim > 2:
+        # If data has more than 2 dimensions and is not a text corpus,
+        # create a dataframe with one multidimensional column
+        array = np.array(X)
+        if array.ndim > 2 and not isinstance(array[0, 0, 0], str):
             X = pd.DataFrame({"Multidimensional feature": [row for row in X]})
         else:
-            X = to_df(copy(X))  # Make copy to not overwrite mutable arguments
+            X = to_df(deepcopy(X))  # Make copy to not overwrite mutable arguments
 
             # If text dataset, change the name of the column to Corpus
             if X.shape[1] == 1 and X[X.columns[0]].dtype == "object":
@@ -250,6 +252,12 @@ class BaseTransformer:
                     data = data.iloc[:int(n), :]
 
             data = data.reset_index(drop=True)
+
+            if len(data) < 2:
+                raise ValueError(
+                    "Invalid value for the n_rows parameter, got "
+                    f"{self.n_rows}. Length of dataset can not be <2."
+                )
 
             if self.test_size <= 0 or self.test_size >= len(data):
                 raise ValueError(
@@ -375,7 +383,7 @@ class BaseTransformer:
         if not save_data and hasattr(self, "dataset"):
             data = {}  # Store the data to reattach later
             for key, value in self._branches.items():
-                data[key] = copy(value.data)
+                data[key] = deepcopy(value.data)
                 value.data = None
 
         if filename.endswith("auto"):

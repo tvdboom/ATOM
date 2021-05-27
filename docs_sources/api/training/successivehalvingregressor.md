@@ -2,13 +2,13 @@
 ----------------------------
 
 <div style="font-size:20px">
-<em>class</em> atom.training.<strong style="color:#008AB8">SuccessiveHalvingRegressor</strong>
-(models=None, metric=None, greater_is_better=True, needs_proba=False,
-needs_threshold=False, skip_runs=0, n_calls=0, n_initial_points=5,
-est_params=None, bo_params=None, n_bootstrap=0, n_jobs=1, verbose=0,
-warnings=True, logger=None, experiment=None, random_state=None)
+<em>class</em> atom.training.<strong style="color:#008AB8">SuccessiveHalvingRegressor</strong>(models=None,
+metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
+skip_runs=0, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
+n_bootstrap=0, n_jobs=1, verbose=0, warnings=True, logger=None, experiment=None,
+random_state=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L359">[source]</a>
 </span>
 </div>
 
@@ -431,10 +431,10 @@ Fontsize for the ticks along the plot's axes.
 
 <a name="canvas"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">canvas</strong>
-(nrows=1, ncols=2, title=None, figsize=None, filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
+ncols=2, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L442">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L458">[source]</a>
 </span>
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
@@ -458,8 +458,8 @@ Plot's title. If None, no title is displayed.
 </p>
 <p>
 <strong>figsize: tuple or None, optional (default=None)</strong><br>
-Figure's size, format as (x, y). If None, adapts size to the number
-of plots in the canvas.
+Figure's size, format as (x, y). If None, it adapts the size to the
+number of plots in the canvas.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -512,7 +512,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L411">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L473">[source]</a>
 </span>
 </div>
 Delete a model from the trainer. If the winning model is
@@ -528,6 +528,35 @@ not removed from any active mlflow experiment.
 <td width="80%" style="background:white;">
 <strong>models: str or sequence, optional (default=None)</strong><br>
 Models to delete. If None, delete them all.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="get-class-weight"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L394">[source]</a>
+</span>
+</div>
+Return class weights for a balanced data set. Statistically, the class
+weights re-balance the data set so that the sampled data set represents
+the target population as closely as possible. The returned weights are
+inversely proportional to the class frequencies in the selected data set. 
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>dataset: str, optional (default="train")</strong><br>
+Data set from which to get the weights. Choose between "train", "test" or "dataset".
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>class_weights: dict</strong><br>
+Classes with the corresponding weights.
 </td>
 </tr>
 </table>
@@ -567,7 +596,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -592,7 +621,7 @@ Minimum verbosity level to print the message.
 <a name="reset-aesthetics"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L200">[source]</a>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
@@ -603,7 +632,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L122">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L177">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../..user_guide/predicting) from all models.
@@ -615,10 +644,10 @@ Use this method to free some memory before saving the trainer.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">run</strong>(*arrays)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L50">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/training.py#L107">[source]</a>
 </span>
 </div>
-Fit and evaluate the models in a successive halving fashion.
+Fit and evaluate the models.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -638,10 +667,9 @@ Training set and test set. Allowed input formats are:
 
 <a name="save"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">save</strong>
-(filename="auto", save_data=True)
+<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto", save_data=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file. Remember that the class contains
@@ -669,10 +697,9 @@ when loading the file.
 
 <a name="scoring"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scoring</strong>
-(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L363">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L441">[source]</a>
 </span>
 </div>
 Get all the models scoring for provided metrics.
@@ -730,10 +757,10 @@ Estimator instance.
 
 <a name="stacking"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">stacking</strong>
-(models=None, estimator=None, stack_method="auto", passthrough=False)
+<em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
+estimator=None, stack_method="auto", passthrough=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L275">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L343">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/#stacking) instance to the models in the pipeline.
@@ -749,7 +776,7 @@ depending on the current branch.
 <p>
 <strong>estimator: str, callable or None, optional (default=None)</strong><br>
 The final estimator, which is used to combine the base
-estimators. If str, choose from ATOM's <a href="../../../user_guide/#predefined-models">predefined models</a>.
+estimators. If str, choose from ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
 If None, <a href="https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html">Ridge</a> is selected.
 </p>
 <p>
@@ -775,10 +802,9 @@ not already.
 
 <a name="voting"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">voting</strong>
-(models=None, weights=None)
+<em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L242">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L310">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/#voting) instance to the models in the pipeline.

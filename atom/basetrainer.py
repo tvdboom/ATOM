@@ -291,7 +291,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Check validity sequential parameters ===================== >>
 
-        for param in ["n_calls", "n_initial_points", "n_bootstrap"]:
+        for param in ("n_calls", "n_initial_points", "n_bootstrap"):
             p = lst(getattr(self, param))
             if len(p) != 1 and len(p) != len(self._models):
                 raise ValueError(

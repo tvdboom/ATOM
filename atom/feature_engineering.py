@@ -471,13 +471,13 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         Remove features with the same value in at least this fraction
         of the total rows. The default is to keep all features with
         non-zero variance, i.e. remove the features that have the same
-        value in all samples. None to skip this step.
+        value in all samples. If None, skip this step.
 
     max_correlation: float or None, optional (default=1.)
         Minimum Pearson correlation coefficient to identify correlated
         features. A value of 1 will remove one of 2 equal columns. A
         dataframe of the removed features and their correlation values
-        can be accessed through the collinear attribute. None to skip
+        can be accessed through the collinear attribute. If None, skip
         this step.
 
     n_jobs: int, optional (default=1)

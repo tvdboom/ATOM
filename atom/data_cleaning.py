@@ -157,11 +157,11 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     Parameters
     ----------
     strategy: str, optional (default="standard")
-        Strategy with which to scale the data. Options are:
-            - standard: Scale with StandardScaler.
-            - minmax: Scale with MinMaxScaler.
-            - maxabs: Scale with MaxAbsScaler.
-            - robust: Scale with RobustScaler.
+        Strategy with which to scale the data. Choose from:
+            - standard
+            - minmax
+            - maxabs
+            - robust
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -173,23 +173,29 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
     Attributes
     ----------
-    estimator: sklearn transformer
+    <strategy>: sklearn estimator
         Estimator's instance with which the data is scaled.
 
     """
 
     @typechecked
     def __init__(
-            self,
-            strategy: str = "standard",
-            verbose: int = 0,
-            logger: Optional[Union[str, callable]] = None,
+        self,
+        strategy: str = "standard",
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+        **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
-        self.estimator = None
+        self.kwargs = kwargs
+
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -212,14 +218,17 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         if self.strategy.lower() in SCALING_STRATS:
-            self.estimator = SCALING_STRATS[self.strategy.lower()]()
+            self._estimator = SCALING_STRATS[self.strategy.lower()](**self.kwargs)
+
+            # Add the estimator as attribute to the instance
+            setattr(self, self.strategy.lower(), self._estimator)
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Available options are: standard, minmax, maxabs, robust."
+                "Choose from: standard, minmax, maxabs, robust."
             )
 
-        self.estimator.fit(X.select_dtypes(include="number"))
+        self._estimator.fit(X.select_dtypes(include="number"))
         self._is_fitted = True
         return self
 
@@ -246,7 +255,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Scaling features...", 1)
         X_numerical = X.select_dtypes(include=["number"])
-        X_transformed = self.estimator.transform(X_numerical)
+        X_transformed = self._estimator.transform(X_numerical)
 
         # Replace the numerical columns with the transformed values
         for i, col in enumerate(X_numerical):
@@ -263,6 +272,9 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     where normality is desired. Missing values are disregarded in
     fit and maintained in transform. Categorical columns are ignored.
 
+    Note that the yeo-johnson and box-cox strategies standardize the
+    data after transforming. Use the kwargs to change this behaviour.
+
     Note that the quantile strategy performs a non-linear transformation.
     This may distort linear correlations between variables measured at
     the same scale but renders variables measured at different scales
@@ -271,7 +283,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
     Parameters
     ----------
     strategy: str, optional (default="yeo-johnson")
-        The transforming strategy. Options are:
+        The transforming strategy. Choose from:
             - yeo-johnson
             - box-cox (only works with strictly positive values)
             - quantile (non-linear transformation)
@@ -290,24 +302,30 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         Seed used by the quantile strategy. If None, the random
         number generator is the `RandomState` used by `numpy.random`.
 
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
     Attributes
     ----------
-    estimator: sklearn transformer
+    <strategy>: sklearn estimator
         Estimator's instance with which the data is transformed.
 
     """
 
     @typechecked
     def __init__(
-            self,
-            strategy: str = "yeo-johnson",
-            verbose: int = 0,
-            logger: Optional[Union[str, callable]] = None,
-            random_state: Optional[int] = None,
+        self,
+        strategy: str = "yeo-johnson",
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+        **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger, random_state=random_state)
         self.strategy = strategy
-        self.estimator = None
+        self.kwargs = kwargs
+
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -329,20 +347,31 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        if self.strategy.lower() in ["yeo-johnson", "box-cox"]:
-            self.estimator = PowerTransformer(self.strategy.lower(), standardize=False)
+        if self.strategy.lower() in ("yeo-johnson", "yeojohnson"):
+            self.yeojohnson = self._estimator = PowerTransformer(
+                method="yeo-johnson",
+                **self.kwargs,
+            )
+        elif self.strategy.lower() in ("box-cox", "boxcox"):
+            self.boxcox = self._estimator = PowerTransformer(
+                method="box-cox",
+                **self.kwargs,
+            )
         elif self.strategy.lower() == "quantile":
-            self.estimator = QuantileTransformer(
-                output_distribution="normal",
-                random_state=self.random_state,
+            random_state = self.kwargs.pop("random_state", self.random_state)
+            output_distribution = self.kwargs.pop("output_distribution", "normal")
+            self.quantile = self._estimator = QuantileTransformer(
+                output_distribution=output_distribution,
+                random_state=random_state,
+                **self.kwargs,
             )
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Available options are: yeo-johnson, box-cox, quantile."
+                "Choose from: yeo-johnson, box-cox, quantile."
             )
 
-        self.estimator.fit(X.select_dtypes(include="number"))
+        self._estimator.fit(X.select_dtypes(include="number"))
         self._is_fitted = True
         return self
 
@@ -370,7 +399,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log(f"Making features Gaussian-like...", 1)
 
         X_numerical = X.select_dtypes(include=["number"])
-        X_transformed = self.estimator.transform(X_numerical)
+        X_transformed = self._estimator.transform(X_numerical)
 
         # Replace the numerical columns with the transformed values
         for i, col in enumerate(X_numerical):
@@ -826,7 +855,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Column is categorical and contains missing values
             elif nans > 0:
-                if self.strat_cat.lower() not in ["drop", "most_frequent"]:
+                if self.strat_cat.lower() not in ("drop", "most_frequent"):
                     self.log(
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_cat} in feature {col}.", 2
@@ -1178,7 +1207,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
         if isinstance(self.method, str):
-            if self.method.lower() not in ["drop", "min_max"]:
+            if self.method.lower() not in ("drop", "min_max"):
                 raise ValueError(
                     "Invalid value for the method parameter."
                     f"Choose from: 'drop', 'min_max'."
@@ -1406,7 +1435,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
 
         # Add n_jobs or random_state if its one of the estimator's parameters
-        for param in ["n_jobs", "random_state"]:
+        for param in ("n_jobs", "random_state"):
             if param in estimator.get_params():
                 estimator.set_params(**{param: getattr(self, param)})
 

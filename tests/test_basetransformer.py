@@ -251,6 +251,11 @@ def test_no_shuffle_X_y():
     assert atom.X.equals(X_bin.iloc[:30, :])
 
 
+def test_length_dataset():
+    """Assert that the dataset is always len>=2."""
+    pytest.raises(ValueError, ATOMClassifier, X10, y10, n_rows=0.01, random_state=1)
+
+
 @pytest.mark.parametrize("ts", [-2, 0, 1000])
 def test_test_size_parameter(ts):
     """Assert that the test_size parameter is in correct range."""

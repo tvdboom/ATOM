@@ -207,7 +207,7 @@ class CustomModel(ModelOptimizer):
         # The provided estimator can be a class or an instance
         if callable(self.est):
             # Add n_jobs and random_state to the estimator (if available)
-            for p in ["n_jobs", "random_state"]:
+            for p in ("n_jobs", "random_state"):
                 if p in sign:
                     params[p] = params.pop(p, getattr(self.T, p))
 
@@ -215,8 +215,8 @@ class CustomModel(ModelOptimizer):
 
         else:
             # Update the parameters (only if it's a BaseEstimator)
-            if all(hasattr(self.est, attr) for attr in ["get_params", "set_params"]):
-                for p in ["n_jobs", "random_state"]:
+            if all(hasattr(self.est, attr) for attr in ("get_params", "set_params")):
+                for p in ("n_jobs", "random_state"):
                     # If the class has the parameter and it's the default value
                     if p in sign and self.est.get_params()[p] == sign[p]._default:
                         params[p] = params.pop(p, getattr(self.T, p))
@@ -617,7 +617,7 @@ class LogisticRegression(ModelOptimizer):
         # Limitations on penalty + solver combinations
         penalty, solver = params.get("penalty"), params.get("solver")
         cond_1 = penalty == "none" and solver == "liblinear"
-        cond_2 = penalty == "l1" and solver not in ["liblinear", "saga"]
+        cond_2 = penalty == "l1" and solver not in ("liblinear", "saga")
         cond_3 = penalty == "elasticnet" and solver != "saga"
 
         if cond_1 or cond_2 or cond_3:
@@ -1128,7 +1128,7 @@ class GradientBoostingMachine(ModelOptimizer):
         params = super().get_params(x)
 
         if self.T.task.startswith("reg"):
-            if params.get("loss") not in ["huber", "quantile"]:
+            if params.get("loss") not in ("huber", "quantile"):
                 params.pop("alpha")
 
         return params

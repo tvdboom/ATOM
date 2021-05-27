@@ -26,7 +26,19 @@ from .utils import variable_return
 
 # Functions ======================================================== >>
 
-def _transform_one(transformer, X, y=None):
+def _fit_one(transformer, X=None, y=None, message=None, **fit_params):
+    """Fit the data using one transformer."""
+    with _print_elapsed_time("Pipeline", message):
+        if hasattr(transformer, "fit"):
+            args = []
+            if "X" in signature(transformer.fit).parameters:
+                args.append(X)
+            if "y" in signature(transformer.fit).parameters:
+                args.append(y)
+            transformer.fit(*args, **fit_params)
+
+
+def _transform_one(transformer, X=None, y=None):
     """Transform the data using one transformer."""
     args = []
     if "X" in signature(transformer.transform).parameters:
@@ -46,17 +58,9 @@ def _transform_one(transformer, X, y=None):
     return X, y
 
 
-def _fit_transform_one(transformer, X, y=None, message=None, **fit_params):
+def _fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
     """Fit and transform the data using one transformer."""
-    with _print_elapsed_time("Pipeline", message):
-        if hasattr(transformer, "fit"):
-            args = []
-            if "X" in signature(transformer.fit).parameters:
-                args.append(X)
-            if "y" in signature(transformer.fit).parameters:
-                args.append(y)
-            transformer.fit(*args, **fit_params)
-
+    _fit_one(transformer, X, y, message, **fit_params)
     X, y = _transform_one(transformer, X, y)
 
     return X, y, transformer
@@ -67,7 +71,7 @@ def _fit_transform_one(transformer, X, y=None, message=None, **fit_params):
 class Pipeline(pipeline.Pipeline):
     """Custom Pipeline class."""
 
-    def _fit(self, X, y=None, **fit_params_steps):
+    def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
         self._validate_steps()
 
@@ -79,15 +83,15 @@ class Pipeline(pipeline.Pipeline):
                 with _print_elapsed_time("Pipeline", self._log_message(step_idx)):
                     continue
 
-            if getattr(memory, "location", "") is None:
-                # Don't clone when caching is disabled to
-                # preserve backward compatibility
-                cloned = transformer
-            else:
-                cloned = clone(transformer)
+            if hasattr(transformer, "transform"):
+                if getattr(memory, "location", "") is None:
+                    # Don't clone when caching is disabled to
+                    # preserve backward compatibility
+                    cloned = transformer
+                else:
+                    cloned = clone(transformer)
 
-            # Fit or load from cache the current transformer
-            if hasattr(cloned, "transform") or hasattr(cloned, "fit_transform"):
+                # Fit or load the current transformer from cache
                 X, y, fitted_transformer = memory(
                     transformer=cloned,
                     X=X,
@@ -102,13 +106,14 @@ class Pipeline(pipeline.Pipeline):
 
         return X, y
 
-    def fit(self, X, y=None, **fit_params):
+    def fit(self, X=None, y=None, **fit_params):
         """Fit the pipeline.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.ndarray, pd.DataFrame, optional (default=None)
+            Feature set with shape=(n_samples, n_features). None
+            if the estimator only uses y.
 
         y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored.
@@ -130,17 +135,18 @@ class Pipeline(pipeline.Pipeline):
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator != "passthrough":
                 fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-                self._final_estimator.fit(X, y, **fit_params_last_step)
+                _fit_one(self._final_estimator, X, y, **fit_params_last_step)
 
         return self
 
-    def fit_transform(self, X, y=None, **fit_params):
+    def fit_transform(self, X=None, y=None, **fit_params):
         """Fit the pipeline and transform the data.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
-            Feature set with shape=(n_samples, n_features).
+        X: dict, list, tuple, np.ndarray, pd.DataFrame, optional (default=None)
+            Feature set with shape=(n_samples, n_features). None
+            if the estimator only uses y.
 
         y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored.
@@ -163,10 +169,12 @@ class Pipeline(pipeline.Pipeline):
         last_step = self._final_estimator
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if last_step == "passthrough":
-                return X
+                return variable_return(X, y)
 
             fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-            return last_step.fit(X, y, **fit_params_last_step).transform(X)
+            X, y, _ = _fit_transform_one(last_step, X, y, **fit_params_last_step)
+
+        return variable_return(X, y)
 
     @if_delegate_has_method(delegate="_final_estimator")
     def predict(self, X, **predict_params):
@@ -291,11 +299,12 @@ class Pipeline(pipeline.Pipeline):
         transformations are applied.
 
         """
-        # _final_estimator is None or has transform, otherwise attribute error
-        # Handling the None case means we can't use if_delegate_has_method
+        # _final_estimator is None or has transform, otherwise
+        # attribute error handling the None case means we can't
+        # use if_delegate_has_method
         return self._custom_transform
 
-    def _custom_transform(self, X, y=None):
+    def _custom_transform(self, X=None, y=None):
         for _, _, transformer in self._iter():
             X, y = _transform_one(transformer, X, y)
 

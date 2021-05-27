@@ -2,7 +2,7 @@
 ----------------
 
 During the exploration phase, you might want to compare how a model
-performs on a dataset processed using different techniques. For
+performs on a dataset processed using different transformers. For
 example, on one dataset balanced with an undersampling strategy and
 the other with an oversampling strategy. For this, atom has the
 branching system.
@@ -11,16 +11,16 @@ branching system.
 
 ## Branches
 
-The branching system manages separate paths the dataset can take. Every
-path is called a branch and can be accessed through the `branch`
-attribute. A branch contains a dataset, and all transformers and models
-that are fitted on that specific dataset. Accessing data attributes such
-as `atom.dataset` will return the data in the current branch. Use the
-branch's \__repr__ to get an overview of the transformers in the branch.
-All data cleaning, feature engineering and models use the dataset in the
-current branch. Don't change the data in a branch after fitting a model,
-this can cause unexpected model behaviour. Instead, create a new branch
-for every unique pipeline.
+The branching system helps manage multiple pipelines within the same
+atom instance. Every pipeline is stored in a branch, which can be
+accessed through the `branch` attribute. A branch contains a copy of
+the dataset, and all transformers and models that are fitted on that
+specific dataset. Transformers and models called from atom use the
+dataset in the current branch, as well as data attributes such as
+`atom.dataset`. Also  Use the branch's \__repr__ to get an overview
+of the transformers in the branch. Don't change the data in a branch
+after fitting a model, this can cause unexpected model behaviour.
+Instead, create a new branch for every unique pipeline.
 
 By default, atom starts with one branch called "master". To start a new
 branch, set a new name to the property, e.g. `atom.branch = "undersample"`.
@@ -41,8 +41,8 @@ dataset! Creating many branches can cause memory issues for large datasets.
 </div>
 
 You can delete a branch either deleting the attribute, e.g. `del atom.branch`,
-or using the delete method, e.g. `atom.branch.delete()`. A branch can only be
-deleted if no models were trained on its dataset. Use `atom.branch.status()`
+or using the delete method, e.g. `atom.branch.delete()`. Be aware that deleting
+a branch also deletes all models that were trained on it! Use `atom.branch.status()`
 for an overview of the transformers and models in the branch.
 
 See the [Imbalanced datasets](../../examples/imbalanced_datasets) or

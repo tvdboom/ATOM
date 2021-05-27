@@ -42,6 +42,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.9.0)
 * **[shap](https://github.com/slundberg/shap/)** (>=0.38.1)
+* **[wordcloud](http://amueller.github.io/word_cloud/)** (>=1.8.1)
 
 ### Optional
 

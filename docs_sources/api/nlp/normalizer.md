@@ -2,36 +2,45 @@
 ------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Normalizer</strong>
-(stopwords="english", stem=True, lemmatize=True, verbose=0, logger=None)
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Normalizer</strong>(stopwords=True,
+custom_stopwords=None, stem=False, lemmatize=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L366">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L429">[source]</a>
 </span>
 </div>
 
-Normalize the corpus. The transformations are applied on the column
-named `Corpus`, in the same order the parameters are presented. If
-there is no column with that name, an exception is raised. This class
-can be accessed from atom through the [normalize](../../ATOM/atomclassifier/#normalize)
+Convert words to a more uniform standard. The transformations are
+applied on the column named `Corpus`, in the same order the parameters
+are presented. If there is no column with that name, an exception is
+raised. If the provided documents are strings, words are separated by
+spaces. This class can be accessed from atom through the [normalize](../../ATOM/atomclassifier/#normalize)
 method. Read more in the [user guide](../../../user_guide/nlp/#normalization).
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
+<strong>stopwords: bool or str, optional (default=True)</strong><br>
+Whether to remove a predefined dictionary of stopwords.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Don't remove any predefined stopwords.</li>
+<li>If True: Drop predefined english stopwords from the text.</li>
+<li>If str: Language from <code>nltk.corpus.stopwords.words</code>.</li>
+</ul>
 <p>
-<strong>stopwords: str or sequence, optional (default="english")</strong><br>
-Sequence of words to remove from the text. If str, choose from one of
-the languages available in the <a href="https://www.nltk.org/index.html">nltk</a>
-package.
+<strong>custom_stopwords: sequence or None, optional (default=None)</strong><br>
+Custom stopwords to remove from the text.
 </p>
-<p>
-<strong>stem: bool, optional (default=True)</strong><br>
-Whether to apply stemming.
-</p>
+<strong>stem: bool or str, optional (default=False)</strong><br>
+Whether to apply stemming using <a href="https://www.nltk.org/_modules/nltk/stem/snowball.html">SnowballStemmer</a>.
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If False: Don't apply stemming.</li>
+<li>If True: Apply stemmer based on the english language.</li>
+<li>If str: Language from <code>SnowballStemmer.languages</code>.</li>
+</ul>
 <p>
 <strong>lemmatize: bool, optional (default=True)</strong><br>
-Whether to apply lemmatization.
+Whether to apply lemmatization using <a href="https://www.nltk.org/_modules/nltk/stem/wordnet.html">WordNetLemmatizer</a>.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -97,7 +106,7 @@ Verbosity level of the class. Possible values are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -109,9 +118,7 @@ Normalize the text.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a sequence of words. If they are strings,
-words are separated by spaces.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
@@ -162,7 +169,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -188,7 +195,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -234,7 +241,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L487">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -246,9 +253,7 @@ Normalize the text.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a sequence of words. If they are strings,
-words are separated by spaces.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.

@@ -2,10 +2,10 @@
 ------------
 
 <div style="font-size:20px">
-<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>
-(filename, data=None, transform_data=True, verbose=None)
+<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(filename,
+data=None, transform_data=True, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L65">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L70">[source]</a>
 </span>
 </div>
 
@@ -70,11 +70,9 @@ Un-pickled instance.
 ```python
 from atom import ATOMClassifier, ATOMLoader
 
-# Save an atom instance to a pickle file
 atom = ATOMClassifier(X, y)
-atom.encode(strategy="Helmert", max_onehot=12)
 atom.run("LR", metric="AP", n_calls=25, n_initial_points=10)
-atom.save("atom", save_data=False)
+atom.save("atom", save_data=False)  # Save atom to a pickle file
 
 # Load the class and add the data to the new instance
 atom_2 = ATOMLoader("atom", data=(X, y), verbose=0)

@@ -2,10 +2,10 @@
 --------
 
 <div style="font-size:20px">
-<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>
-(strategy="standard", verbose=0, logger=None)
+<em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
+verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L118">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L152">[source]</a>
 </span>
 </div>
 
@@ -19,12 +19,12 @@ This class can be accessed from atom through the
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
 <td width="80%" style="background:white;">
 <strong>strategy: str, optional (default="standard")</strong><br>
-Strategy with which to scale the data. Options are:
+Strategy with which to scale the data. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>standard: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">StandardScaler</a>.</li>
-<li>minmax: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">MinMaxScaler</a>.</li>
-<li>maxabs: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">MaxAbsScaler</a>.</li>
-<li>robust: Scale with <a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">RobustScaler</a>.</li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html">standard</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MinMaxScaler.html">minmax</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.MaxAbsScaler.html">maxabs</a></li>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.RobustScaler.html">robust</a></li>
 </ul>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -38,6 +38,10 @@ Verbosity level of the class. Possible values are:
 <li>If str: Name of the log file. Use "auto" for automatic naming.</li>
 <li>Else: Python <code>logging.Logger</code> instance.</li>
 </ul>
+<p>
+<strong>**kwargs</strong><br>
+Additional keyword arguments passed to the <code>strategy</code> estimator.
+</p>
 </td>
 </tr>
 </table>
@@ -54,7 +58,7 @@ Verbosity level of the class. Possible values are:
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="80%" style="background:white;">
-<strong>estimator: sklearn transformer</strong><br>
+<strong>estimator: sklearn estimator</strong><br>
 Estimator's instance with which the data is scaled.
 </td>
 </tr>
@@ -108,7 +112,7 @@ Estimator's instance with which the data is scaled.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L167">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L202">[source]</a>
 </span>
 </div>
 Compute the mean and std to be used for scaling.
@@ -140,7 +144,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 Fit to data, then transform it.
@@ -201,7 +205,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -227,7 +231,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -273,7 +277,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L236">[source]</a>
 </span>
 </div>
 Perform standardization by centering and scaling.

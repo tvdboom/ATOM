@@ -62,11 +62,11 @@ class Branch:
         self.T, self.name = args[0], args[1]
         if not parent:
             self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
-            for attr in ["data", "idx", "mapping", "feature_importance"]:
+            for attr in ("data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, None)
         else:
             # Copy the branch attrs and point to the rest
-            for attr in ["pipeline", "data", "idx", "mapping", "feature_importance"]:
+            for attr in ("pipeline", "data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, copy(getattr(self.T._branches[parent], attr)))
             for attr in vars(self.T._branches[parent]):
                 if not hasattr(self, attr):  # If not already assigned...
@@ -93,7 +93,7 @@ class Branch:
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T._models if m.branch.name == self.name]
+        return [m.name for m in self.T._models if m.branch is self]
 
     @composed(crash, method_to_log)
     def status(self):
@@ -120,19 +120,17 @@ class Branch:
         elif name not in self.T._branches:
             raise ValueError(f"Branch {name} not found in the pipeline!")
 
-        dependent = self.T._branches[name]._get_depending_models()
         if len(self.T._branches) <= 2:
             raise PermissionError("Can't delete the last branch in the pipeline!")
-        elif len(dependent):
-            raise PermissionError(
-                "Can't delete a branch with depending models! Delete the "
-                f"models first. The depending models are: {', '.join(dependent)}."
-            )
         else:
+            # Delete all depending models
+            for model in self.T._branches[name]._get_depending_models():
+                self.T.delete(model)
+
             self.T._branches.pop(name)
             if name == self.T._current:  # Reset the current branch
-                self.T._current = list(self.T._branches.keys())[0]
-            self.T.log(f"Branch {name} successfully deleted!")
+                self.T._current = list(self.T._branches.keys())[1]  # 0 is og
+            self.T.log(f"Branch {name} successfully deleted!", 1)
 
     # Data properties ============================================== >>
 

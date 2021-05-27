@@ -3,11 +3,12 @@
 
 ## What is it?
 
-ATOM is an open source Python package designed to help data scientists
-fasten up the exploration phase of their machine learning projects.
-ATOM is a low-code, easy-to-use library, that is able to run
-experiments quickly and efficiently, enabling the user to go from
-raw data to generating insights in just a few lines of code. Click
+Automated Tool for Optimized Modelling (ATOM) is an open-source
+Python package designed to help data scientists fasten up the
+exploration phase of their machine learning projects. ATOM is a
+low-code, easy-to-use library, capable of running experiments
+quickly and efficiently, enabling the user to go from raw data
+to generating insights in just a few lines of code. Click
 [here](../getting_started) to get started.
 
 <br>
@@ -21,25 +22,25 @@ the icons to read more about its main functionalities.
 <div class="row">
   <div class="column">
     <a href="../user_guide/data_cleaning">
-      <img src="../../img/icons/icon_1.svg" alt="Snow" width="100px" height="100px">
+      <img src="../../img/icons/icon_1.svg" alt="Snow" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Data cleaning</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/feature_engineering">
-        <img src="../../img/icons/icon_2.svg" alt="Forest" width="100px" height="100px">
+        <img src="../../img/icons/icon_2.svg" alt="Forest" width="100px" height="100px" draggable="false">
         <figcaption style="margin-top: -8px"><strong>Feature engineering</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/models">
-      <img src="../../img/icons/icon_3.svg" alt="Forest" width="100px" height="100px">
+      <img src="../../img/icons/icon_3.svg" alt="Forest" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Model selection</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/training/#hyperparameter-tuning">
-      <img src="../../img/icons/icon_4.svg" alt="Snow" width="100px" height="100px">
+      <img src="../../img/icons/icon_4.svg" alt="Snow" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Hyperparameter<br>tuning</strong></figcaption>
     </a>
   </div>
@@ -47,25 +48,25 @@ the icons to read more about its main functionalities.
 <div class="row">
   <div class="column">
     <a href="../user_guide/training">
-      <img src="../../img/icons/icon_5.svg" alt="Forest" width="100px" height="100px">
+      <img src="../../img/icons/icon_5.svg" alt="Forest" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Model training</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/predicting">
-      <img src="../../img/icons/icon_6.svg" alt="Forest" width="100px" height="100px">
+      <img src="../../img/icons/icon_6.svg" alt="Forest" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Model predictions</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/logging">
-      <img src="../../img/icons/icon_7.svg" alt="Forest" width="100px" height="100px">
+      <img src="../../img/icons/icon_7.svg" alt="Forest" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Experiment logging</strong></figcaption>
     </a>
   </div>
   <div class="column">
     <a href="../user_guide/plots">
-      <img src="../../img/icons/icon_8.svg" alt="Forest" width="100px" height="100px">
+      <img src="../../img/icons/icon_8.svg" alt="Forest" width="100px" height="100px" draggable="false">
       <figcaption style="margin-top: -8px"><strong>Analysis &<br>Interpretability</strong></figcaption>
     </a>
   </div>
@@ -84,7 +85,7 @@ the icons to read more about its main functionalities.
   try out model-based solutions.
 * Anyone who wants to rapidly build a Proof of Concept, for example during a hackathon.
 * Anyone who is new to the field of machine learning and wants a low-code,
-  easy to learn package to get started building predictive pipelines.
+  easy to learn package, to get started building predictive pipelines.
 
 
 <br>

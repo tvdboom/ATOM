@@ -2,11 +2,13 @@
 -------------
 
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">TextCleaner</strong>
-(decode=True, lower_case=True, drop_email=True, drop_url=True, drop_html=True,
-drop_emojis, drop_numbers=True, drop_punctuation=True, verbose=0, logger=None)
+<em>class</em> atom.nlp.<strong style="color:#008AB8">TextCleaner</strong>(decode=True,
+lower_case=True, drop_email=True, regex_email=None, drop_url=True,
+regex_url=None, drop_html=True, regex_html=None, drop_emoji,
+regex_emoji=None, drop_number=True, regex_number=None,
+drop_punctuation=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L37">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L41">[source]</a>
 </span>
 </div>
 
@@ -35,8 +37,18 @@ Whether to convert all characters to lower case.
 Whether to drop email addresses from the text.
 </p>
 <p>
+<strong>regex_email: str, optional (default=None)</strong><br>
+Regex used to search for email addresses. If None, it uses
+<code>r"[\w.-]+@[\w-]+\.[\w.-]+"</code>.
+</p>
+<p>
 <strong>drop_url: bool, optional (default=True)</strong><br>
 Whether to drop URL links from the text.
+</p>
+<p>
+<strong>regex_url: str, optional (default=None)</strong><br>
+Regex used to search for URLs. If None, it uses
+<code>r"https?://\S+|www\.\S+"</code>.
 </p>
 <p>
 <strong>drop_html: bool, optional (default=True)</strong><br>
@@ -44,16 +56,32 @@ Whether to drop HTML tags from the text. This option is
 particularly useful if the data was scraped from a website.
 </p>
 <p>
-<strong>drop_emojis: bool, optional (default=True)</strong><br>
+<strong>regex_html: str, optional (default=None)</strong><br>
+Regex used to search for html tags. If None, it uses
+<code>r"<.*?>"</code>.
+</p>
+<p>
+<strong>drop_emoji: bool, optional (default=True)</strong><br>
 Whether to drop emojis from the text.
 </p>
 <p>
-<strong>drop_numbers: bool, optional (default=False)</strong><br>
+<strong>regex_emoji: str, optional (default=None)</strong><br>
+Regex used to search for emojis. If None, it uses
+<code>r":[a-z_]+:"</code>.
+</p>
+<p>
+<strong>drop_number: bool, optional (default=False)</strong><br>
 Whether to drop numbers from the text.
 </p>
 <p>
+<strong>regex_number: str, optional (default=None)</strong><br>
+Regex used to search for numbers. If None, it uses <code>r"\b\d+\b"</code>.
+Note that numbers adjacent to letters are not removed.
+</p>
+<p>
 <strong>drop_punctuation: bool, optional (default=True)</strong><br>
-Whether to drop punctuations from the text.
+Whether to drop punctuations from the text. Characters considered
+punctuation are <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~</code>.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -81,37 +109,9 @@ Verbosity level of the class. Possible values are:
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
 <td width="80%" style="background:white;">
-<p>
-<strong>email: str</strong><br>
-Regex used to search for email addresses. The default value
-is <code>r"[\w.-]+@[\w-]+\.[\w.-]+"</code>.
-</p>
-<p>
-<strong>url: str</strong><br>
-Regex used to search for URLs. The default value is
-<code>r"https?://\S+|www\.\S+"</code>.
-</p>
-<p>
-<strong>html: str</strong><br>
-Regex used to search for html tags. The default value
-is <code>r"<.*?>"</code>.
-</p>
-<p>
-<strong>emojis: str</strong><br>
-Regex used to search for emojis. The default value is
-<code>r":[a-z_]+:"</code>.
-</p>
-<p>
-<strong>numbers: str</strong><br>
-Regex used to search for numbers. The default value
-is <code>r"\b\d+\b"</code>. Note that numbers annexed
-to words are not removed.
-</p>
-<p>
-<strong>punctuation: str</strong><br>
-Characters marked as punctuation (to be removed). The default values
-are <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~</code>.
-</p>
+<strong>drops: pd.DataFrame</strong><br>
+Encountered regex matches. The row indices correspond to
+the document index from which the occurrence was dropped.
 </td>
 </tr>
 </table>
@@ -158,7 +158,7 @@ are <code>!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~</code>.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 Apply text cleaning.
@@ -170,8 +170,7 @@ Apply text cleaning.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a string.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
@@ -222,7 +221,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 Write a message to the logger and print it to stdout.
@@ -248,7 +247,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 Save the instance to a pickle file.
@@ -294,7 +293,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L157">[source]</a>
 </span>
 </div>
 Apply text cleaning.
@@ -306,8 +305,7 @@ Apply text cleaning.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a string.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.

@@ -122,6 +122,7 @@ RFE, RFECV and SFS.
 
 <br>
 
+<a name="univariate"></a>
 **Univariate**<br>
 Univariate feature selection works by selecting the best features based
 on univariate statistical F-test. The test is provided via the `solver`
@@ -129,6 +130,7 @@ parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection).
 
 
+<a name="pca"></a>
 **Principal Components Analysis**<br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
 the variance of each dimension. The new features are called Component
@@ -136,6 +138,7 @@ the variance of each dimension. The new features are called Component
 fitting the transformer (if it wasn't already). Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/decomposition.html#pca).
 
 
+<a name="sfm"></a>
 **Selection from model**<br>
 SFM uses an estimator with `feature_importances_` or `coef_` attributes
 to select the best features in a dataset based on importance weights.
@@ -147,6 +150,7 @@ after the name, e.g. `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 
 
+<a name="rfe"></a>
 **Recursive feature elimination**<br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
@@ -166,6 +170,7 @@ that this is not always equal to the amount specified by `n_features`.
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination).
 
 
+<a name="sfs"></a>
 **Sequential Feature Selection**<br>
 Sequential feature selection adds (forward selection) or removes (backward
 selection) features to form a feature subset in a greedy fashion. At each

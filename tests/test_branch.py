@@ -95,11 +95,12 @@ def test_branch_delete_not_current():
 
 
 def test_branch_delete_depending_models():
-    """Assert that an error is raised when the branch has depending models."""
+    """Assert that depending models are deleted with the branch."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
     atom.run("LR")
-    pytest.raises(PermissionError, atom.branch.delete)
+    atom.delete()
+    assert "LR" not in atom.models
 
 
 def test_branch_delete_last_branch():

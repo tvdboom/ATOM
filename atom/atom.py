@@ -9,7 +9,6 @@ Description: Module containing the ATOM class.
 
 # Standard packages
 import os
-import mlflow
 import contextlib
 import numpy as np
 import pandas as pd
@@ -65,7 +64,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     and model management from here.
 
     Warning: This class should not be called directly. Use descendant
-    classes instead.
+    classes ATOMClassifier or ATOMRegressor instead.
 
     """
 
@@ -485,6 +484,79 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return variable_return(X, y)
 
+    def automl(self, **kwargs):
+        """Use AutoML to search for an optimized pipeline.
+
+        Uses the TPOT package to perform an automated search of
+        transformers and a final estimator that maximizes a metric
+        on the dataset. The resulting transformations and estimator
+        are merged with atom's pipeline. The tpot instance can be
+        accessed through the `tpot` attribute.
+
+        Parameters
+        ----------
+        **kwargs
+            Keyword arguments for tpot's classifier/regressor.
+
+        """
+        from tpot import TPOTClassifier, TPOTRegressor
+
+        check_method(self, "automl")
+        # Define the scoring parameter
+        if self._metric and not kwargs.get("scoring"):
+            kwargs["scoring"] = self._metric[0]
+        elif kwargs.get("scoring"):
+            metric_ = BaseTrainer._prepare_metric([kwargs["scoring"]])
+            if not self._metric:
+                self._metric = metric_  # Update the pipeline's metric
+            elif metric_[0].name != self.metric[0]:
+                raise ValueError(
+                    "Invalid value for the scoring parameter! The scoring "
+                    "should be equal to the primary metric in the pipeline. "
+                    f"Expected {self.metric[0]}, got {metric_[0].name}."
+                )
+
+        kwargs = dict(
+            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
+            verbosity=kwargs.pop("verbosity", self.verbose),
+            random_state=kwargs.pop("random_state", self.random_state),
+            **kwargs,
+        )
+        if self.goal.startswith("class"):
+            self.branch.tpot = TPOTClassifier(**kwargs)
+        else:
+            self.branch.tpot = TPOTRegressor(**kwargs)
+
+        self.log("Fitting automl algorithm...", 1)
+
+        self.tpot.fit(self.X_train, self.y_train)
+
+        self.log("\nMerging automl results with atom...", 1)
+
+        # A pipeline could consist of just a single estimator
+        if len(self.tpot.fitted_pipeline_) > 1:
+            for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
+                add_transformer(self, est)
+
+        # Add the final estimator as a model to atom
+        est = self.tpot.fitted_pipeline_[-1]
+        est.acronym, est.fullname = names_from_estimator(self, est)
+        model = CustomModel(self, estimator=est)
+        model.estimator = model.est
+
+        # Save metric scores on complete training and test set
+        model.metric_train = flt([
+            metric(model.estimator, self.X_train, self.y_train)
+            for metric in self._metric
+        ])
+        model.metric_test = flt([
+            metric(model.estimator, self.X_test, self.y_test)
+            for metric in self._metric
+        ])
+
+        self._models.update({model.name: model})
+        self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
+
     @composed(crash, method_to_log, typechecked)
     def save_data(self, filename: str = "auto", dataset: str = "dataset"):
         """Save the data in the current branch to a csv file.
@@ -716,134 +788,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         else:
             add_transformer(self, transformer, columns, train_only, **fit_params)
 
-    # NLP transformers ============================================= >>
-
-    @composed(crash, method_to_log, typechecked)
-    def textclean(
-        self,
-        decode: bool = True,
-        lower_case: bool = True,
-        drop_email: bool = True,
-        drop_url: bool = True,
-        drop_html: bool = True,
-        drop_emojis: bool = True,
-        drop_numbers: bool = True,
-        drop_punctuation: bool = True,
-        **kwargs,
-    ):
-        """Applies standard text cleaning to the corpus.
-
-        Transformations include normalizing characters and dropping
-        noise from the text (emails, HTML tags, URLs, etc...). The
-        transformations are applied on the column named `Corpus`, in
-        the same order the parameters are presented. If there is no
-        column with that name, an exception is raised.
-
-        See nlp.py for a description of the parameters.
-
-        """
-        check_method(self, "nlpclean")
-        kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
-        textcleaner = TextCleaner(
-            decode=decode,
-            lower_case=lower_case,
-            drop_email=drop_email,
-            drop_url=drop_url,
-            drop_html=drop_html,
-            drop_emojis=drop_emojis,
-            drop_numbers=drop_numbers,
-            drop_punctuation=drop_punctuation,
-            **kwargs,
-        )
-
-        add_transformer(self, textcleaner)
-
-    @composed(crash, method_to_log, typechecked)
-    def tokenize(
-        self,
-        bigram_freq: Optional[SCALAR] = None,
-        trigram_freq: Optional[SCALAR] = None,
-        **kwargs,
-    ):
-        """Tokenize the corpus.
-
-        Convert documents into sequences of words. Additionally,
-        create bigrams or trigrams (represented by words united with
-        underscores, e.g. "New_York"). The transformations are applied
-        on the column named `Corpus`. If there is no column with that
-        name, an exception is raised.
-
-        See nlp.py for a description of the parameters.
-
-        """
-        check_method(self, "tokenize")
-        kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
-        tokenizer = Tokenizer(
-            bigram_freq=bigram_freq,
-            trigram_freq=trigram_freq,
-            **kwargs,
-        )
-
-        add_transformer(self, tokenizer)
-
-        self.branch.bigrams = tokenizer.bigrams
-        self.branch.trigrams = tokenizer.trigrams
-
-    @composed(crash, method_to_log, typechecked)
-    def normalize(
-        self,
-        stopwords: Union[str, SEQUENCE_TYPES] = "english",
-        stem: bool = True,
-        lemmatize: bool = True,
-        **kwargs,
-    ):
-        """Normalize the corpus.
-
-        The transformations are applied on the column named `Corpus`,
-        in the same order the parameters are presented. If there is
-        no column with that name, an exception is raised.
-
-        See nlp.py for a description of the parameters.
-
-        """
-        check_method(self, "normalize")
-        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
-        normalizer = Normalizer(
-            stopwords=stopwords,
-            stem=stem,
-            lemmatize=lemmatize,
-            **kwargs,
-        )
-
-        add_transformer(self, normalizer)
-
-    @composed(crash, method_to_log, typechecked)
-    def vectorize(self, strategy: str = "BOW", **kwargs):
-        """Vectorize the corpus.
-
-        Transform the corpus into meaningful vectors of numbers. The
-        transformation is applied on the column named `Corpus`. If
-        there is no column with that name, an exception is raised.
-
-        See nlp.py for a description of the parameters.
-
-        """
-        check_method(self, "normalize")
-        kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
-        vectorizer = Vectorizer(strategy=strategy, **kwargs)
-
-        add_transformer(self, vectorizer)
-
-        # Attach the estimator attribute to atom's branch
-        setattr(self.branch, strategy.lower(), getattr(vectorizer, strategy.lower()))
-
-    # General transformers ========================================= >>
+    # Data cleaning transformers =================================== >>
 
     @composed(crash, method_to_log)
     def scale(self, strategy: str = "standard", **kwargs):
         """Scale the data.
 
         Apply one of sklearn's scalers. Categorical columns are ignored.
+        The estimator created by the class is attached to atom.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -851,7 +803,12 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_method(self, "scale")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
-        add_transformer(self, Scaler(strategy=strategy, **kwargs), columns=columns)
+        scaler = Scaler(strategy=strategy, **kwargs)
+
+        add_transformer(self, scaler, columns=columns)
+
+        # Attach the estimator attribute to atom's branch
+        setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
 
     @composed(crash, method_to_log)
     def gauss(self, strategy: str = "yeo-johnson", **kwargs):
@@ -861,7 +818,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         to heteroscedasticity (non-constant variance), or other
         situations where normality is desired. Missing values are
         disregarded in fit and maintained in transform. Categorical
-        columns are ignored.
+        columns are ignored. The estimator created by the class is
+        attached to atom.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -869,7 +827,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_method(self, "gauss")
         columns = kwargs.pop("columns", None)
         kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
-        add_transformer(self, Gauss(strategy=strategy, **kwargs), columns=columns)
+        gauss = Gauss(strategy=strategy, **kwargs)
+
+        add_transformer(self, gauss, columns=columns)
+
+        # Attach the estimator attribute to atom's branch
+        for attr in ("yeojohnson", "boxcox", "quantile"):
+            if hasattr(gauss, attr):
+                setattr(self.branch, attr, getattr(gauss, attr))
 
     @composed(crash, method_to_log, typechecked)
     def clean(
@@ -1005,7 +970,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         on the selected strategy and can greatly differ from one
         another. Only outliers from the training set are pruned in
         order to maintain the original distribution of samples in
-        the test set. Ignores categorical columns.
+        the test set. Ignores categorical columns. The estimators
+        created by the class are attached to atom.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -1034,7 +1000,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Only the training set is balanced in order to maintain the
         original distribution of target classes in the test set.
-        Use only for classification tasks.
+        Use only for classification tasks. The estimator created by
+        the class is attached to atom.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -1056,6 +1023,149 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
+
+    # NLP transformers ============================================= >>
+
+    @composed(crash, method_to_log, typechecked)
+    def textclean(
+        self,
+        decode: bool = True,
+        lower_case: bool = True,
+        drop_email: bool = True,
+        regex_email: Optional[str] = None,
+        drop_url: bool = True,
+        regex_url: Optional[str] = None,
+        drop_html: bool = True,
+        regex_html: Optional[str] = None,
+        drop_emoji: bool = True,
+        regex_emoji: Optional[str] = None,
+        drop_number: bool = True,
+        regex_number: Optional[str] = None,
+        drop_punctuation: bool = True,
+        **kwargs,
+    ):
+        """Applies standard text cleaning to the corpus.
+
+        Transformations include normalizing characters and dropping
+        noise from the text (emails, HTML tags, URLs, etc...). The
+        transformations are applied on the column named `Corpus`, in
+        the same order the parameters are presented. If there is no
+        column with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "nlpclean")
+        kwargs = self._prepare_kwargs(kwargs, TextCleaner().get_params())
+        textcleaner = TextCleaner(
+            decode=decode,
+            lower_case=lower_case,
+            drop_email=drop_email,
+            regex_email=regex_email,
+            drop_url=drop_url,
+            regex_url=regex_url,
+            drop_html=drop_html,
+            regex_html=regex_html,
+            drop_emoji=drop_emoji,
+            regex_emoji=regex_emoji,
+            drop_number=drop_number,
+            regex_number=regex_number,
+            drop_punctuation=drop_punctuation,
+            **kwargs,
+        )
+
+        add_transformer(self, textcleaner)
+
+        setattr(self.branch, "drops", getattr(textcleaner, "drops"))
+
+    @composed(crash, method_to_log, typechecked)
+    def tokenize(
+        self,
+        bigram_freq: Optional[SCALAR] = None,
+        trigram_freq: Optional[SCALAR] = None,
+        quadgram_freq: Optional[SCALAR] = None,
+        **kwargs,
+    ):
+        """Tokenize the corpus.
+
+        Convert documents into sequences of words. Additionally,
+        create n-grams (represented by words united with underscores,
+        e.g. "New_York") based on their frequency in the corpus. The
+        transformations are applied on the column named `Corpus`. If
+        there is no column with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "tokenize")
+        kwargs = self._prepare_kwargs(kwargs, Tokenizer().get_params())
+        tokenizer = Tokenizer(
+            bigram_freq=bigram_freq,
+            trigram_freq=trigram_freq,
+            quadgram_freq=quadgram_freq,
+            **kwargs,
+        )
+
+        add_transformer(self, tokenizer)
+
+        self.branch.bigrams = tokenizer.bigrams
+        self.branch.trigrams = tokenizer.trigrams
+        self.branch.quadgrams = tokenizer.quadgrams
+
+    @composed(crash, method_to_log, typechecked)
+    def normalize(
+        self,
+        stopwords: Union[bool, str] = True,
+        custom_stopwords: Optional[SEQUENCE_TYPES] = None,
+        stem: Union[bool, str] = False,
+        lemmatize: bool = True,
+        **kwargs,
+    ):
+        """Normalize the corpus.
+
+        Convert words to a more uniform standard. The transformations
+        are applied on the column named `Corpus`, in the same order the
+        parameters are presented. If there is no column with that name,
+        an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "normalize")
+        kwargs = self._prepare_kwargs(kwargs, Normalizer().get_params())
+        normalizer = Normalizer(
+            stopwords=stopwords,
+            custom_stopwords=custom_stopwords,
+            stem=stem,
+            lemmatize=lemmatize,
+            **kwargs,
+        )
+
+        add_transformer(self, normalizer)
+
+    @composed(crash, method_to_log, typechecked)
+    def vectorize(self, strategy: str = "BOW", **kwargs):
+        """Vectorize the corpus.
+
+        Transform the corpus into meaningful vectors of numbers. The
+        transformation is applied on the column named `Corpus`. If
+        there is no column with that name, an exception is raised.
+
+        See nlp.py for a description of the parameters.
+
+        """
+        check_method(self, "normalize")
+        kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
+        vectorizer = Vectorizer(strategy=strategy, **kwargs)
+
+        add_transformer(self, vectorizer)
+
+        # Attach the estimator attribute to atom's branch
+        for attr in ("bow", "tfidf", "hashing"):
+            if hasattr(vectorizer, attr):
+                setattr(self.branch, attr, getattr(vectorizer, attr))
+
+    # Feature engineering transformers ============================= >>
 
     @composed(crash, method_to_log, typechecked)
     def feature_generation(
@@ -1127,7 +1237,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                     solver = "f_regression"
                 else:
                     solver = "f_classif"
-            elif strategy.lower() in ["sfm", "rfe", "rfecv", "sfs"]:
+            elif strategy.lower() in ("sfm", "rfe", "rfecv", "sfs"):
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
@@ -1154,82 +1264,9 @@ class ATOM(BasePredictor, ATOMPlotter):
         add_transformer(self, feature_selector, columns=columns)
 
         # Attach used attributes to atom's branch
-        for attr in ["collinear", "feature_importance", str(strategy).lower()]:
+        for attr in ("collinear", "feature_importance", str(strategy).lower()):
             if getattr(feature_selector, attr, None) is not None:
                 setattr(self.branch, attr, getattr(feature_selector, attr))
-
-    def automl(self, **kwargs):
-        """Use AutoML to search for an optimized pipeline.
-
-        Uses the TPOT package to perform an automated search of
-        transformers and a final estimator that maximizes a metric
-        on the dataset. The resulting transformations and estimator
-        are merged with atom's pipeline. The tpot instance can be
-        accessed through the `tpot` attribute.
-
-        Parameters
-        ----------
-        **kwargs
-            Keyword arguments for tpot's classifier/regressor.
-
-        """
-        from tpot import TPOTClassifier, TPOTRegressor
-
-        check_method(self, "automl")
-        # Define the scoring parameter
-        if self._metric and not kwargs.get("scoring"):
-            kwargs["scoring"] = self._metric[0]
-        elif kwargs.get("scoring"):
-            metric_ = BaseTrainer._prepare_metric([kwargs["scoring"]])
-            if not self._metric:
-                self._metric = metric_  # Update the pipeline's metric
-            elif metric_[0].name != self.metric[0]:
-                raise ValueError(
-                    "Invalid value for the scoring parameter! The scoring "
-                    "should be equal to the primary metric in the pipeline. "
-                    f"Expected {self.metric[0]}, got {metric_[0].name}."
-                )
-
-        kwargs = dict(
-            n_jobs=kwargs.pop("n_jobs", self.n_jobs),
-            verbosity=kwargs.pop("verbosity", self.verbose),
-            random_state=kwargs.pop("random_state", self.random_state),
-            **kwargs,
-        )
-        if self.goal.startswith("class"):
-            self.branch.tpot = TPOTClassifier(**kwargs)
-        else:
-            self.branch.tpot = TPOTRegressor(**kwargs)
-
-        self.log("Fitting automl algorithm...", 1)
-
-        self.tpot.fit(self.X_train, self.y_train)
-
-        self.log("\nMerging automl results with atom...", 1)
-
-        # A pipeline could consist of just a single estimator
-        if len(self.tpot.fitted_pipeline_) > 1:
-            for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
-                add_transformer(self, est)
-
-        # Add the final estimator as a model to atom
-        est = self.tpot.fitted_pipeline_[-1]
-        est.acronym, est.fullname = names_from_estimator(self, est)
-        model = CustomModel(self, estimator=est)
-        model.estimator = model.est
-
-        # Save metric scores on complete training and test set
-        model.metric_train = flt([
-            metric(model.estimator, self.X_train, self.y_train)
-            for metric in self._metric
-        ])
-        model.metric_test = flt([
-            metric(model.estimator, self.X_test, self.y_test)
-            for metric in self._metric
-        ])
-
-        self._models.update({model.name: model})
-        self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
 
     # Training methods ============================================= >>
 
