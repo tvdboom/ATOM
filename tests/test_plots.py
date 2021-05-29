@@ -154,9 +154,9 @@ def test_figure_is_saved_canvas(func):
 
 
 def test_figure_is_returned():
-    """Assert that the method returns the figure."""
+    """Assert that the method returns the figure for display=None."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    fig = atom.plot_correlation(display=False)
+    fig = atom.plot_correlation(display=None)
     assert fig.__class__.__name__ == "Figure"
 
 

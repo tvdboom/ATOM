@@ -30,7 +30,7 @@ from which to split, e.g. `atom.branch = "oversample_from_master"` will
 create branch "oversample" from branch "master", even if the current branch
 is "undersample". To switch between existing branches, just type the name
 of the desired branch, e.g. `atom.branch = "master"` brings you back to the
-main branch. Note that every branch contains a unique copy of the whole
+master branch. Note that every branch contains a unique copy of the whole
 dataset! Creating many branches can cause memory issues for large datasets.
 
 <br>

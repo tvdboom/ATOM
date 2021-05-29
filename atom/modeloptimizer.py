@@ -35,7 +35,6 @@ from skopt.utils import use_named_args
 from skopt.optimizer import base_minimize, gp_minimize, forest_minimize, gbrt_minimize
 
 # Own modules
-from .data_cleaning import Scaler
 from .basemodel import BaseModel
 from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
@@ -56,13 +55,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
     def __init__(self, *args):
         super().__init__(*args)
-
-        # Skip if called from FeatureSelector
-        if hasattr(self.T, "_branches"):
-            self.branch = self.T._branches[self.T._current]
-            self._train_idx = self.branch.idx[0]  # Can change for sh and ts
-            if self.needs_scaling and not self.T.scaled:
-                self.scaler = Scaler().fit(self.X_train)
 
         # BO attributes
         self._iter = 0

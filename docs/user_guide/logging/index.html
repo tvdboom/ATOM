@@ -1661,6 +1661,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2165,7 +2177,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2383,9 +2395,9 @@ The model's pipeline (returned from the <a href="../../API/ATOM/atomclassifier/#
 method) can be stored as an artifact using the trainer's <code>log_pipeline</code>
 attribute, e.g. <code>atom.log_pipeline = True</code>.</p>
 <p><strong>Plots</strong><br>
-Plots are tracked as .png artifacts in all runs from the models that are
-showed in the plot. If the <code>filename</code> parameter is specified, they are
-stored under that name, else the plot's name is used. This option can be
+Plots are stored as .png artifacts in all runs corresponding to the models
+that are showed in the plot. If the <code>filename</code> parameter is specified, they
+are stored under that name, else the plot's name is used. This option can be
 switched off using the trainer's <code>log_plots</code> attribute, e.g. <code>atom.log_plots = False</code>.</p>
 <h3 id="configuring-a-tracking-server">Configuring a tracking server</h3>
 <p>When no backend is configured, the data is stored locally at <code>./mlruns</code>.

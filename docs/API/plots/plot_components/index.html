@@ -1605,6 +1605,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2147,7 +2159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2300,15 +2312,16 @@
                 <h1 id="plot_components">plot_components</h1>
 <hr />
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_components</strong>
-(show=None, title=None, figsize=None, filename=None, display=True)
+<em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None,
+title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2021">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L586">[source]</a>
 </span>
 </div>
 
-<p>Plot the explained variance ratio per components. Only available if PCA
-was applied on the data.</p>
+<p>Plot the explained variance ratio per component. Only available if
+<a href="../../../user_guide/feature_engineering/#pca">PCA</a> was applied on
+the data.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -2324,7 +2337,7 @@ Plot's title. If None, the title is left empty.
 <p>
 <strong>figsize: tuple or None, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
-number of features shown.
+number of components shown.
 </p>
 <p>
 <strong>filename: str or None, optional (default=None)</strong><br>
@@ -2332,9 +2345,16 @@ Name of the file. Use "auto" for automatic naming.
 If None, the figure is not saved.
 </p>
 <p>
-<strong>display: bool, optional (default=True)</strong><br>
-Whether to render the plot.
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
 </p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
 </td>
 </tr>
 </table>

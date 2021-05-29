@@ -9,8 +9,6 @@ Description: Unit tests for atom.py
 
 # Standard packages
 import glob
-
-import pandas as pd
 import pytest
 import numpy as np
 from unittest.mock import patch
@@ -111,6 +109,8 @@ def test_getitem():
     atom.impute()
     assert atom[1].__class__.__name__ == "Imputer"
     assert atom["mean radius"].equals(atom.dataset["mean radius"])
+    with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
+        print(atom[2.3])
 
 
 # Test utility properties =========================================== >>

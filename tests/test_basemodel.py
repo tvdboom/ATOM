@@ -19,6 +19,36 @@ from atom.utils import check_scaling
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
 
 
+# Test magic methods =============================================== >>
+
+def test_getattr():
+    """Assert that branch attributes can be called from a model."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.balance(strategy="smote")
+    atom.run("Tree")
+    assert isinstance(atom.tree.shape, tuple)
+    assert isinstance(atom.tree.alcohol, pd.Series)
+    assert isinstance(atom.tree.head(), pd.DataFrame)
+    with pytest.raises(AttributeError, match=r".*has no attribute.*"):
+        print(atom.tree.data)
+
+
+def test_contains():
+    """Assert that we can test if model contains a column."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("Tree")
+    assert "alcohol" in atom.tree
+
+
+def test_getitem():
+    """Assert that the models are subscriptable."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("Tree")
+    assert atom.tree["alcohol"].equals(atom.dataset["alcohol"])
+    with pytest.raises(TypeError, match=r".*subscriptable with type str.*"):
+        print(atom.tree[2])
+
+
 # Test utility properties ========================================== >>
 
 def test_results_property():
@@ -230,17 +260,17 @@ def test_scoring_metric_None():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
     scores = atom.mnb.scoring()
-    assert len(scores) == 7
+    assert len(scores) == 9
 
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("MNB")
     scores = atom.mnb.scoring()
-    assert len(scores) == 5
+    assert len(scores) == 6
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
     scores = atom.ols.scoring()
-    assert len(scores) == 6
+    assert len(scores) == 7
 
 
 @patch("mlflow.tracking.MlflowClient.log_metric")
@@ -249,4 +279,4 @@ def test_rename_to_mlflow(mlflow):
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
     atom.scoring()
-    assert mlflow.call_count == 8  # 7 from scoring + 1 from training
+    assert mlflow.call_count == 10  # 9 from scoring + 1 from training

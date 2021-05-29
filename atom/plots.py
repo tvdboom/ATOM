@@ -917,29 +917,31 @@ class BaseModelPlotter(BasePlotter):
         ax1 = fig.add_subplot(gs[0:3, 0])
         ax2 = plt.subplot(gs[3:4, 0], sharex=ax1)
         for m in models:
-            y = m.bo["score"].apply(lambda value: lst(value)[metric])
-            if len(models) == 1:
-                label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
-            else:
-                label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
+            if m.metric_bo:  # Only models that did run the BO
+                y = m.bo["score"].apply(lambda value: lst(value)[metric])
+                if len(models) == 1:
+                    label = f"Score={round(lst(m.metric_bo)[metric], 3)}"
+                else:
+                    label = f"{m.name} (Score={round(lst(m.metric_bo)[metric], 3)})"
 
-            # Draw bullets on all markers except the maximum
-            markers = [i for i in range(len(m.bo))]
-            markers.remove(int(np.argmax(y)))
-            ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
-            ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
-            ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
+                # Draw bullets on all markers except the maximum
+                markers = [i for i in range(len(m.bo))]
+                markers.remove(int(np.argmax(y)))
+                ax1.plot(range(1, len(y) + 1), y, "-o", markevery=markers, label=label)
+                ax2.plot(range(2, len(y) + 1), np.abs(np.diff(y)), "-o")
+                ax1.scatter(np.argmax(y) + 1, max(y), zorder=10, s=100, marker="*")
 
         plt.setp(ax1.get_xticklabels(), visible=False)
         ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-        BasePlotter._fig._used_models.extend(models)
         self._plot(
             ax=ax1,
             title=title,
             legend=("lower right", len(models)),
             ylabel=self._metric[metric].name,
         )
+
+        BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
             ax=ax2,
@@ -2391,7 +2393,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right", len(models)),
+            legend=("best", len(models)),
             xlabel="Fraction of sample",
             ylabel="Gain",
             xlim=(0, 1),
@@ -2480,7 +2482,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower left", len(models)),
+            legend=("best", len(models)),
             xlabel="Fraction of sample",
             ylabel="Lift",
             xlim=(0, 1),

@@ -1643,6 +1643,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2147,7 +2159,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2300,10 +2312,10 @@
                 <h1 id="atomloader">ATOMLoader</h1>
 <hr />
 <div style="font-size:20px">
-<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>
-(filename, data=None, transform_data=True, verbose=None)
+<em>function</em> atom.api.<strong style="color:#008AB8">ATOMLoader</strong>(filename,
+data=None, transform_data=True, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L65">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/api.py#L70">[source]</a>
 </span>
 </div>
 
@@ -2363,11 +2375,9 @@ Un-pickled instance.
 <h2 id="example">Example</h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span><span class="p">,</span> <span class="n">ATOMLoader</span>
 
-<span class="c1"># Save an atom instance to a pickle file</span>
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;Helmert&quot;</span><span class="p">,</span> <span class="n">max_onehot</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;AP&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">n_initial_points</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;atom&quot;</span><span class="p">,</span> <span class="n">save_data</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;atom&quot;</span><span class="p">,</span> <span class="n">save_data</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># Save atom to a pickle file</span>
 
 <span class="c1"># Load the class and add the data to the new instance</span>
 <span class="n">atom_2</span> <span class="o">=</span> <span class="n">ATOMLoader</span><span class="p">(</span><span class="s2">&quot;atom&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">),</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>

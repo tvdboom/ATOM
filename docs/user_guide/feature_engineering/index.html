@@ -1648,6 +1648,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2152,7 +2164,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2427,17 +2439,20 @@ attribute, use <a href="../../API/plots/plot_permutation_importance">plot_permut
 of the APIs.</p>
 </div>
 <p><br></p>
-<p><strong>Univariate</strong><br>
+<p><a name="univariate"></a>
+<strong>Univariate</strong><br>
 Univariate feature selection works by selecting the best features based
 on univariate statistical F-test. The test is provided via the <code>solver</code>
 parameter. It takes any function taking two arrays (X, y), and returning
 arrays (scores, p-values). Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#univariate-feature-selection">documentation</a>.</p>
-<p><strong>Principal Components Analysis</strong><br>
+<p><a name="pca"></a>
+<strong>Principal Components Analysis</strong><br>
 Applying PCA will reduce the dimensionality of the dataset by maximizing
 the variance of each dimension. The new features are called Component
 1, Component 2, etc... The data is scaled to mean=0 and std=1 before
 fitting the transformer (if it wasn't already). Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/decomposition.html#pca">documentation</a>.</p>
-<p><strong>Selection from model</strong><br>
+<p><a name="sfm"></a>
+<strong>Selection from model</strong><br>
 SFM uses an estimator with <code>feature_importances_</code> or <code>coef_</code> attributes
 to select the best features in a dataset based on importance weights.
 The estimator is provided through the <code>solver</code> parameter and can be
@@ -2446,7 +2461,8 @@ e.g. <code>solver="RF"</code>. If you didn't call the FeatureSelector through at
 don't forget to indicate the estimator's task adding <code>_class</code> or <code>_reg</code>
 after the name, e.g. <code>RF_class</code> to use a random forest classifier. Read
 more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
-<p><strong>Recursive feature elimination</strong><br>
+<p><a name="rfe"></a>
+<strong>Recursive feature elimination</strong><br>
 Select features by recursively considering smaller and smaller sets of
 features. First, the estimator is trained on the initial set of features,
 and the importance of each feature is obtained either through a <code>coef_</code>
@@ -2462,7 +2478,8 @@ of features selected by <code>n_features</code>, RFECV returns the number of
 features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by <code>n_features</code>.
 Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
-<p><strong>Sequential Feature Selection</strong><br>
+<p><a name="sfs"></a>
+<strong>Sequential Feature Selection</strong><br>
 Sequential feature selection adds (forward selection) or removes (backward
 selection) features to form a feature subset in a greedy fashion. At each
 stage, this estimator chooses the best feature to add or remove based on

@@ -1688,6 +1688,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2192,7 +2204,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2396,7 +2408,6 @@
 <h3 id="version-450">Version 4.5.0</h3>
 <ul>
 <li>Support of NLP pipelines. Read more in the <a href="../user_guide/nlp">user guide</a>.</li>
-<li>New plots for text visualization.</li>
 <li>Integration of <a href="https://www.mlflow.org/">mlflow</a> to track all models in the
   pipeline. Read more in the <a href="../user_guide/logging/#tracking">user guide</a>.</li>
 <li>The new <a href="../API/data_cleaning/gauss">Gauss</a> class transforms features to
@@ -2407,6 +2418,9 @@
   initial state.</li>
 <li>Added the <a href="../API/models/dummy">Dummy</a> model to compare other models with a
   simple baseline.</li>
+<li>New <a href="../API/plots/plot_wordcloud">plot_wordcloud</a> and <a href="../API/plots/plot_ngrams">plot_ngrams</a>
+  methods for text visualization.</li>
+<li>Plots now can return the figure object when <code>display=None</code>.</li>
 <li>The <a href="../API/data_cleaning/pruner">Pruner</a> class can now able to drop outliers
   based on the selection of multiple strategies.</li>
 <li>The new <code>shuffle</code> parameter in atom's initializer determines whether to

@@ -1601,6 +1601,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2159,7 +2171,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../nlp.ipynb" class="md-nav__link">
+      <a href="../nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -16806,21 +16818,18 @@ h1:hover .anchor-link, h2:hover .anchor-link, h3:hover .anchor-link {
 Algorithm task: binary classification.
 Parallel processing with 6 cores.
 
-Dataset stats ==================== &gt;&gt;
+Dataset stats ====================== &gt;&gt;
 Shape: (569, 31)
 Scaled: False
 Outlier values: 174 (1.2%)
--------------------------------------
+---------------------------------------
 Train set size: 456
 Test set size: 113
--------------------------------------
-Train set balance: 0:1 &lt;==&gt; 1.0:1.7
-Test set balance: 0:1 &lt;==&gt; 1.0:1.5
--------------------------------------
-|    |   dataset |   train |   test |
-|---:|----------:|--------:|-------:|
-|  0 |       212 |     167 |     45 |
-|  1 |       357 |     289 |     68 |
+---------------------------------------
+|    | dataset   | train     | test     |
+|---:|:----------|:----------|:---------|
+|  0 | 212 (1.0) | 167 (1.0) | 45 (1.0) |
+|  1 | 357 (1.7) | 289 (1.7) | 68 (1.5) |
 
 </pre>
 </div>
@@ -16838,7 +16847,7 @@ Test set balance: 0:1 &lt;==&gt; 1.0:1.5
         
         
         <div class="CodeMirror cm-s-jupyter">
-    <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># It is possible to add custom estimator&#39;s to the pipeline</span>
+    <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># It&#39;s possible to add custom estimator&#39;s to the pipeline</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">StandardScaler</span><span class="p">())</span>
 </pre></div>
 
@@ -16919,7 +16928,11 @@ Applying StandardScaler to the dataset...
         
         <div class="CodeMirror cm-s-jupyter">
     <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Find an optimized pipeline using AutoML</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">automl</span><span class="p">(</span><span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;accuracy&quot;</span><span class="p">,</span> <span class="n">max_time_mins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">template</span><span class="o">=</span><span class="s2">&quot;Transformer-Transformer-Classifier&quot;</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">automl</span><span class="p">(</span>
+    <span class="n">scoring</span><span class="o">=</span><span class="s2">&quot;accuracy&quot;</span><span class="p">,</span>
+    <span class="n">max_time_mins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">template</span><span class="o">=</span><span class="s2">&quot;Transformer-Transformer-Classifier&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 </pre></div>
 
         </div>
@@ -16956,12 +16969,12 @@ Applying StandardScaler to the dataset...
 
 
 
-<div id="dfdd5aa4-11e9-4127-a9a0-cfec1e032a3b" class="jupyter-widgets jp-OutputArea-output ">
+<div id="e0afc024-b0b4-43a1-aeac-0e7379d420bc" class="jupyter-widgets jp-OutputArea-output ">
 <script type="text/javascript">
-var element = document.getElementById('dfdd5aa4-11e9-4127-a9a0-cfec1e032a3b');
+var element = document.getElementById('e0afc024-b0b4-43a1-aeac-0e7379d420bc');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "457323ada0df495bb3956c93f1b4b413", "version_major": 2, "version_minor": 0}
+{"model_id": "306349e56eca43baaeb07a6a06e6ebc0", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -17001,9 +17014,9 @@ Generation 12 - Current best internal CV score: 0.9846631629240324
 
 Generation 13 - Current best internal CV score: 0.9846631629240324
 
-Generation 14 - Current best internal CV score: 0.9846631629240324
+Generation 14 - Current best internal CV score: 0.9868848542761587
 
-Generation 15 - Current best internal CV score: 0.9846631629240324
+Generation 15 - Current best internal CV score: 0.9868848542761587
 
 Generation 16 - Current best internal CV score: 0.9868848542761587
 
@@ -17017,7 +17030,13 @@ Generation 20 - Current best internal CV score: 0.9868848542761587
 
 Generation 21 - Current best internal CV score: 0.9868848542761587
 
-10.05 minutes have elapsed. TPOT will close down.
+Generation 22 - Current best internal CV score: 0.9868848542761587
+
+Generation 23 - Current best internal CV score: 0.9868848542761587
+
+Generation 24 - Current best internal CV score: 0.9868848542761587
+
+10.11 minutes have elapsed. TPOT will close down.
 TPOT closed during evaluation in one generation.
 WARNING: TPOT may not provide a good pipeline if TPOT is stopped/interrupted in a early generation.
 
@@ -17229,7 +17248,7 @@ Adding model Multi-layer Perceptron (MLP) to the pipeline...
         
         
         <div class="CodeMirror cm-s-jupyter">
-    <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># The pipeline can be exported to a sklearn pipeline</span>
+    <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># The pipeline can be exported to a sklearn-like pipeline</span>
 <span class="n">pl</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">export_pipeline</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">pl</span><span class="p">)</span>
 </pre></div>

@@ -140,6 +140,11 @@ class ATOM(BasePredictor, ATOMPlotter):
             return self.pipeline.iloc[item]   # Transformer from pipeline
         elif isinstance(item, str):
             return self.dataset[item]  # Column from dataset
+        else:
+            raise TypeError(
+                f"'{self.__class__.__name__}' object is only"
+                " subscriptable with types int or str."
+            )
 
     # Utility properties =========================================== >>
 

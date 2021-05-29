@@ -108,11 +108,6 @@ class Voting(BaseModel, BaseEnsemble):
                 f"{len(self.models)} and len(weights)={len(self.weights)}."
             )
 
-        # Voting uses the data from the current branch for plots
-        # Using models from another branch can cause unexpected errors
-        self.branch = self.T.branch
-        self._train_idx = self.branch.idx[0]
-
     def __repr__(self):
         out_1 = f"{self.fullname}"
         out_1 += f"\n --> Models: {self.models}"

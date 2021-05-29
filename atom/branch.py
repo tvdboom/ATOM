@@ -27,9 +27,8 @@ class Branch:
 
     Parameters
     ----------
-    *args: arguments
-        Parent class from which the branch is called and name of
-        the branch.
+    *args
+        Parent class (from which the branch is called) and name.
 
     parent: str or None, optional (default=None)
         Name of the branch from which to split.
@@ -53,9 +52,6 @@ class Branch:
         Features ordered by most to least important.
 
     """
-
-    # Private attributes/properties (not accessible from atom)
-    private = ("T", "name", "data", "idx")
 
     def __init__(self, *args, parent=None):
         # Make copies of the params to not overwrite mutable variables
@@ -90,6 +86,12 @@ class Branch:
         return out
 
     # Utility methods ============================================== >>
+
+    def _get_attrs(self):
+        """Get properties and attributes to call from parent."""
+        props = [p for p in dir(self) if isinstance(getattr(Branch, p, None), property)]
+        attrs = [a for a in vars(self) if a not in ("T", "name", "data", "idx")]
+        return props + attrs
 
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
@@ -194,7 +196,7 @@ class Branch:
                     f"indices, got {value.index} != {side.index}."
                 )
 
-        if under_name:  # Check they have the same columns
+        if under_name:  # Check for equal number of columns
             if "y" in name:
                 if value.name != under.name:
                     raise ValueError(

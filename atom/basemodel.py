@@ -15,6 +15,7 @@ from typing import Optional, Union
 from mlflow.tracking import MlflowClient
 
 # Own modules
+from .data_cleaning import Scaler
 from .plots import BaseModelPlotter
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, it, merge, arr, get_scorer,
@@ -34,6 +35,37 @@ class BaseModel(BaseModelPlotter):
         self._run = None  # mlflow run (if experiment is active)
         self._group = self.name  # sh and ts models belong to the same group
         self._pred_attrs = [None] * 10
+
+        # Skip if called from FeatureSelector
+        if hasattr(self.T, "_branches"):
+            self.branch = self.T._branches[self.T._current]
+            self._train_idx = self.branch.idx[0]  # Can change for sh and ts
+            if getattr(self, "needs_scaling", None) and not self.T.scaled:
+                self.scaler = Scaler().fit(self.X_train)
+
+    def __getattr__(self, item):
+        if item in self.__dict__.get("branch")._get_attrs():
+            return getattr(self.branch, item)  # Get attr from branch
+        elif item in self.__dict__.get("branch").columns:
+            return self.dataset[item]  # Get column
+        elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
+            return getattr(self.dataset, item)  # Get attr from dataset
+        else:
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{item}'."
+            )
+
+    def __contains__(self, item):
+        return item in self.dataset
+
+    def __getitem__(self, item):
+        if isinstance(item, str):
+            return self.dataset[item]  # Get a column from the dataset
+        else:
+            raise TypeError(
+                f"'{self.__class__.__name__}' object is "
+                "only subscriptable with type str."
+            )
 
     # Utility properties =========================================== >>
 
@@ -353,9 +385,20 @@ class BaseModel(BaseModelPlotter):
         # Predefined metrics to show
         if metric is None:
             if self.T.task.startswith("bin"):
-                metric = ["accuracy", "ap", "f1", "mcc", "precision", "recall", "auc"]
+                metric = [
+                    "accuracy",
+                    "ap",
+                    "ba",
+                    "f1",
+                    "jaccard",
+                    "mcc",
+                    "precision",
+                    "recall",
+                    "auc"
+                ]
             elif self.T.task.startswith("multi"):
                 metric = [
+                    "ba",
                     "f1_weighted",
                     "jaccard_weighted",
                     "mcc",
@@ -363,7 +406,7 @@ class BaseModel(BaseModelPlotter):
                     "recall_weighted",
                 ]
             else:
-                metric = ["mae", "mape", "mse", "msle", "r2", "rmse"]
+                metric = ["mae", "mape", "me", "mse", "msle", "r2", "rmse"]
 
         scores = pd.Series(name=self.name, dtype=float)
         for met in lst(metric):

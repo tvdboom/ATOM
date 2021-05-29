@@ -1650,6 +1650,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2154,7 +2166,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2314,10 +2326,10 @@
                 <h1 id="vectorizer">Vectorizer</h1>
 <hr />
 <div style="font-size:20px">
-<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>
-(strategy="BOW", verbose=0, logger=None, *kwargs)
+<em>class</em> atom.nlp.<strong style="color:#008AB8">Vectorizer</strong>(strategy="BOW",
+verbose=0, logger=None, *kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L489">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L573">[source]</a>
 </span>
 </div>
 
@@ -2399,7 +2411,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <p><br></p>
 <p><a name="fit"></a></p>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L543">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L627">[source]</a></span></div>
 <p>Fit to text.</p>
 <table style="font-size:16px">
 <tr>
@@ -2409,8 +2421,7 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-can either be a string or a sequence of words.
+feature containing the text documents.
 </p>
 <p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -2430,7 +2441,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L39">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
 </span>
 </div>
 <p>Fit to text, then vectorize it.</p>
@@ -2442,8 +2453,7 @@ Fitted instance of self.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-can either be a string or a sequence of words.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.
@@ -2490,7 +2500,7 @@ Dictionary of the parameter names mapped to their values.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L318">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
 </span>
 </div>
 <p>Write a message to the logger and print it to stdout.</p>
@@ -2514,7 +2524,7 @@ Minimum verbosity level to print the message.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
 </span>
 </div>
 <p>Save the instance to a pickle file.</p>
@@ -2556,7 +2566,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L198">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L670">[source]</a>
 </span>
 </div>
 <p>Normalize the text.</p>
@@ -2568,9 +2578,7 @@ Estimator instance.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
-feature containing the text documents. Each document
-is expected to be a sequence of words. If they are strings,
-words are separated by spaces.
+feature containing the text documents.
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 Does nothing. Implemented for continuity of the API.

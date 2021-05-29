@@ -1669,6 +1669,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/plots/plot_pipeline/" class="md-nav__link">
         plot_pipeline
       </a>
@@ -2173,7 +2185,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../examples/nlp.ipynb" class="md-nav__link">
+      <a href="../../examples/nlp/" class="md-nav__link">
         Natural Language Processing
       </a>
     </li>
@@ -2353,18 +2365,19 @@
                 
                 <h1 id="plots">Plots</h1>
 <hr />
-<p>After fitting the models to the data, it's time to analyze the results.
-ATOM provides many plotting methods to compare the model performances.
-Descriptions and examples can be found in the API section. ATOM uses
-the packages <a href="https://matplotlib.org/">matplotlib</a>, <a href="https://seaborn.pydata.org/">seaborn</a>,
-<a href="https://github.com/slundberg/shap">shap</a> and <a href="http://amueller.github.io/word_cloud/">wordcloud</a>
-for plotting.</p>
-<p>The plot methods can be called from a trainer directly, e.g.
-<code>atom.plot_roc()</code>, or from one of the models, e.g. <code>atom.LGB.plot_roc()</code>.
-If called from a trainer, it will make the plot for all models in
-its pipeline. Use this to compare the results of multiple models. If
-called from a specific model, it will make the plot for only that
-model.</p>
+<p>ATOM provides many plotting methods to analyze the data or compare the
+model performances. Descriptions and examples can be found in the API
+section. ATOM uses the packages <a href="https://matplotlib.org/">matplotlib</a>,
+<a href="https://seaborn.pydata.org/">seaborn</a>, <a href="https://github.com/slundberg/shap">shap</a>
+and <a href="http://amueller.github.io/word_cloud/">wordcloud</a> for plotting.</p>
+<p>Plots that compare model performances (methods with the <code>models</code>
+parameter) can be called directly from a trainer, e.g. <code>atom.plot_roc()</code>,
+or from one of the models, e.g. <code>atom.LGB.plot_roc()</code>. If called from
+a trainer, it makes the plot for all models in its pipeline. If called
+from a specific model, it makes the plot only for that model.</p>
+<p>Plots that analyze the dataset (methods without the <code>models</code> parameter)
+can only be called from atom. The rest of the trainers are supposed
+to be used only when the goal is just modelling, not data manipulation.</p>
 <p><br></p>
 <h2 id="parameters">Parameters</h2>
 <p>Apart from the plot-specific parameters, all plots have four
@@ -2373,7 +2386,7 @@ parameters in common:</p>
 <li>The <code>title</code> parameter allows you to add a title to the plot.</li>
 <li>The <code>figsize</code> parameter adjust the plot's size.</li>
 <li>The <code>filename</code> parameter is used to save the plot.</li>
-<li>The <code>display</code> parameter determines whether to show the plot.</li>
+<li>The <code>display</code> parameter determines whether to show or return the plot.</li>
 </ul>
 <p><br></p>
 <h2 id="aesthetics">Aesthetics</h2>
@@ -2398,11 +2411,13 @@ to be able to compare them easier. Use the <a href="../../API/ATOM/atomclassifie
 method for this. The canvas method is a <code>@contextmanager</code>, i.e. it's
 used through the <code>with</code> command. Plots in a canvas will ignore the
 figsize, filename and display parameters. Instead, call these parameters
-from the canvas for the final figure.</p>
+from the canvas for the final figure. If a variable is assigned to the
+canvas (e.g. <code>with atom.canvas() as fig</code>), it contains the resulting
+matplotlib figure.</p>
 <p>For example, we can use a canvas to compare the results of a <a href="../../API/models/xgb">XGBoost</a>
-and <a href="../../API/models/lgb">LightGBM</a> model on the train and test set. We
-could also draw the lines for both models in the same axes, but then
-the plot would become too cluttered.</p>
+and <a href="../../API/models/lgb">LightGBM</a> model on the train and test set.
+We could also draw the lines for both models in the same axes, but
+then the plot would become too cluttered.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
 <span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="s2">&quot;xgb&quot;</span><span class="p">,</span> <span class="s2">&quot;lgb&quot;</span><span class="p">],</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
@@ -2460,6 +2475,16 @@ depend on the task at hand.</p>
 <tr>
 <td><a href="../../API/plots/plot_distribution">plot_distribution</a></td>
 <td>Plot column distributions.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_wordcloud">plot_wordcloud</a></td>
+<td>Plot a wordcloud from the corpus.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_ngrams">plot_ngrams</a></td>
+<td>Plot n-gram frequencies.</td>
 </tr>
 
 <tr>

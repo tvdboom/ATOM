@@ -36,15 +36,12 @@ class BasePredictor:
 
     def __getattr__(self, item):
         """Get attributes from the current branch."""
-        props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
-        if self.__dict__.get("_branches"):  # Add public attrs from branch
-            props.extend([k for k in self.branch.__dict__ if k not in Branch.private])
         if self.__dict__.get("_branches").get(item):
             return self._branches[item]  # Get branch
-        elif item in props:
+        elif item in self.branch._get_attrs():
             return getattr(self.branch, item)  # Get attr from branch
-        elif self.__dict__.get("_models").get(item):
-            return self._models[item]   # Get model subclass
+        elif self.__dict__.get("_models").get(item.lower()):
+            return self._models[item.lower()]  # Get model subclass
         elif item in self.columns:
             return self.dataset[item]  # Get column
         elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
@@ -56,8 +53,7 @@ class BasePredictor:
 
     def __setattr__(self, item, value):
         """Set some properties to the current branch."""
-        props = [i for i in dir(Branch) if isinstance(getattr(Branch, i), property)]
-        if item in props:
+        if isinstance(getattr(Branch, item, None), property):
             setattr(self.branch, item, value)
         else:
             super().__setattr__(item, value)
