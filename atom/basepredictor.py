@@ -42,10 +42,10 @@ class BasePredictor:
             return getattr(self.branch, item)  # Get attr from branch
         elif self.__dict__.get("_models").get(item.lower()):
             return self._models[item.lower()]  # Get model subclass
-        elif item in self.columns:
-            return self.dataset[item]  # Get column
+        elif item in self.branch.columns:
+            return self.branch.dataset[item]  # Get column
         elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
-            return getattr(self.dataset, item)  # Get attr from dataset
+            return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."

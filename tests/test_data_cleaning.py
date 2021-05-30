@@ -117,11 +117,11 @@ def test_invalid_strategy():
     pytest.raises(ValueError, gauss.fit, X_bin)
 
 
-@pytest.mark.parametrize("strategy", ["yeo-johnson", "quantile"])
+@pytest.mark.parametrize("strategy", ["yeo-johnson", "box-cox", "quantile"])
 def test_all_strategies(strategy):
     """Assert that all strategies work as intended."""
     gauss = Gauss(strategy=strategy)
-    gauss.fit_transform(X_bin)  # Skip box-cox since it only works with positive data
+    gauss.fit_transform(X10)
 
 
 def test_gauss_y_is_ignored():

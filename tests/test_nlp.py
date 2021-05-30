@@ -76,7 +76,8 @@ def test_drop_punctuation():
 def test_cleaner_tokenized():
     """Assert that the cleaner works for a tokenized corpus."""
     X = Tokenizer().transform(X_text)
-    assert isinstance(TextCleaner().transform(X)["Corpus"][0], list)
+    X = TextCleaner().transform(X)
+    assert isinstance(X["Corpus"][0], list)
 
 
 def test_drop_empty_tokens():
@@ -162,7 +163,7 @@ def test_invalid_strategy():
 def test_strategies(strategy):
     """Assert that the BOW and TF-IDF strategies works as intended."""
     X = Vectorizer(strategy=strategy).fit_transform(X_text)
-    assert X.shape == (4, 10)
+    assert X.shape == (4, 11)
     assert "york" in X
 
 

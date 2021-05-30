@@ -47,9 +47,9 @@ class BaseModel(BaseModelPlotter):
         if item in self.__dict__.get("branch")._get_attrs():
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.__dict__.get("branch").columns:
-            return self.dataset[item]  # Get column
+            return self.branch.dataset[item]  # Get column
         elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
-            return getattr(self.dataset, item)  # Get attr from dataset
+            return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{item}'."
@@ -315,34 +315,6 @@ class BaseModel(BaseModelPlotter):
     @property
     def y_train(self):
         return self.branch.y_train[:self._train_idx]
-
-    @property
-    def y_test(self):
-        return self.branch.y_test
-
-    @property
-    def shape(self):
-        return self.branch.shape
-
-    @property
-    def columns(self):
-        return self.branch.columns
-
-    @property
-    def n_columns(self):
-        return self.branch.n_columns
-
-    @property
-    def features(self):
-        return self.branch.features
-
-    @property
-    def n_features(self):
-        return self.branch.n_features
-
-    @property
-    def target(self):
-        return self.branch.target
 
     # Utility methods ============================================== >>
 

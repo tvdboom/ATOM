@@ -199,7 +199,7 @@ def test_plot_wordcloud():
     atom.plot_wordcloud(display=False)  # When corpus are tokens
 
 
-@pytest.mark.parametrize("ngram", [2, 3, 4])
+@pytest.mark.parametrize("ngram", [1, 2, 3, 4])
 def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method work as intended."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)

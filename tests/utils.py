@@ -50,7 +50,7 @@ X_test = X_test.reshape(10000, 28, 28, 1)
 mnist = (X_train, y_train), (X_test, y_test)
 
 # Text data
-X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir"]]
+X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
 y_text = [0, 1, 1, 0]
 
 # Small dimensional dataset
@@ -60,11 +60,11 @@ X10 = [
     [0.2, 2, 2],
     [0.24, 2, 1],
     [0.23, 2, 2],
-    [0.19, 0, 1],
+    [0.19, 0.01, 1],
     [0.21, 3, 2],
     [0.2, 2, 1],
     [0.2, 2, 1],
-    [0.2, 2, 0],
+    [0.2, 2, 0.01],
 ]
 
 # Dataset with missing value

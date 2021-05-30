@@ -650,7 +650,7 @@ def test_textclean():
     """Assert that the textclean method cleans the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.textclean()
-    assert atom["Corpus"][0] == "yes sir"
+    assert atom["Corpus"][0] == "yes sir "
     assert hasattr(atom, "drops")
 
 
@@ -658,14 +658,14 @@ def test_tokenize():
     """Assert that the tokenize method tokenizes the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.tokenize()
-    assert atom["Corpus"][0] == ["yes", "sir"]
+    assert atom["Corpus"][0] == ["yes", "sir", "12"]
 
 
 def test_normalize():
     """Assert that the normalize method normalizes the corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     atom.normalize(stopwords=False, custom_stopwords=["yes"])
-    assert atom["Corpus"][0] == ["sir"]
+    assert atom["Corpus"][0] == ["sir", "12"]
 
 
 def test_vectorize():
