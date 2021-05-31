@@ -2,13 +2,14 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for basetrainer.py
 
 """
 
 # Standard packages
 import pytest
+from unittest.mock import patch
 from sklearn.metrics import get_scorer, f1_score
 from sklearn.ensemble import RandomForestClassifier
 from skopt.space.space import Integer, Categorical
@@ -16,11 +17,25 @@ from skopt.callbacks import TimerCallback
 
 # Own modules
 from atom.training import DirectClassifier, DirectRegressor
-from atom.utils import PlotCallback
+from atom.utils import CUSTOM_SCORERS, PlotCallback
 from .utils import bin_train, bin_test, class_train, class_test, reg_train, reg_test
 
 
 # Test _check_parameters =========================================== >>
+
+def test_all_classification_models():
+    """Assert that the default value selects all models."""
+    trainer = DirectClassifier(models=None, random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert len(trainer.models) + len(trainer.errors) == 27
+
+
+def test_all_regression_models():
+    """Assert that the default value selects all models."""
+    trainer = DirectRegressor(models=None, random_state=1)
+    trainer.run(reg_train, reg_test)
+    assert len(trainer.models) + len(trainer.errors) == 24
+
 
 def test_model_is_predefined():
     """Assert that predefined models are accepted."""
@@ -276,27 +291,42 @@ def test_invalid_sequence_parameter():
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-def test_metric_acronym():
+def test_metric_is_sklearn_scorer():
+    """"Assert that using a sklearn SCORER works."""
+    trainer = DirectClassifier("LR", metric="balanced_accuracy", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == "balanced_accuracy"
+
+
+def test_metric_is_acronym():
     """"Assert that using the metric acronyms work."""
     trainer = DirectClassifier("LR", metric="auc", random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == "roc_auc"
 
 
-def test_invalid_scorer_name():
+@pytest.mark.parametrize("metric", CUSTOM_SCORERS)
+def test_metric_is_custom(metric):
+    """"Assert that using the metric acronyms work."""
+    trainer = DirectClassifier("LR", metric=metric, random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert trainer.metric == CUSTOM_SCORERS[metric].__name__
+
+
+def test_metric_is_invalid_scorer_name():
     """Assert that an error is raised when scorer name is invalid."""
     trainer = DirectClassifier("LR", metric="test", random_state=1)
     pytest.raises(ValueError, trainer.run, bin_train, bin_test)
 
 
-def test_function_metric_parameter():
+def test_metric_is_function():
     """Assert that a function metric works."""
     trainer = DirectClassifier("LR", metric=f1_score, random_state=1)
     trainer.run(bin_train, bin_test)
     assert trainer.metric == "f1_score"
 
 
-def test_scorer_metric_parameter():
+def test_metric_is_scorer():
     """Assert that a scorer metric works."""
     trainer = DirectClassifier("LR", metric=get_scorer("f1"), random_state=1)
     trainer.run(bin_train, bin_test)
@@ -311,13 +341,21 @@ def test_sequence_parameters():
         models=["LR", "Tree", "LGB"],
         n_calls=(2, 3, 4),
         n_initial_points=(1, 2, 3),
-        bagging=[2, 5, 7],
+        n_bootstrap=[2, 5, 7],
         random_state=1,
     )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
     assert sum(trainer.tree.bo.index.str.startswith("Initial")) == 2
-    assert len(trainer.lgb.metric_bagging) == 7
+    assert len(trainer.lgb.metric_bootstrap) == 7
+
+
+@patch("mlflow.start_run")
+def test_run_is_started(mlflow):
+    """Assert that the mlflow run is started."""
+    trainer = DirectRegressor(models=["OLS", "BR"], experiment="test", random_state=1)
+    trainer.run(reg_train, reg_test)
+    assert mlflow.call_count == 2
 
 
 def test_custom_dimensions_for_bo():

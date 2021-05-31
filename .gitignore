@@ -3,6 +3,10 @@ run_automl.py
 deep_learning.py
 presentation.pptx
 
+# Mlflow
+mlruns/
+
+
 # Exclude everything from tests/files except the .gitkeep file
 tests/files/*
 !tests/files/.gitkeep

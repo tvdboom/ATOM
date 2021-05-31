@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for utils.py
 
 """
@@ -49,10 +49,9 @@ def test_custom_dict_initialization():
     assert str(CustomDict(a=0, b=1)) == "{'a': 0, 'b': 1}"
 
 
-def test_custom_dict_keys():
-    """Assert the custom dictionary only has lower case keys."""
+def test_custom_dict_key_request():
+    """Assert the custom dictionary has case insensitive key request."""
     cd = CustomDict({"A": 0, "B": 1})
-    assert str(cd) == "{'a': 0, 'b': 1}"
     assert cd["a"] == cd["A"] == cd[0] == 0
 
 
@@ -70,3 +69,10 @@ def test_custom_dict_manipulations():
     assert cd["e"] == 5
     cd.clear()
     pytest.raises(KeyError, cd.popitem)
+    pytest.raises(KeyError, cd.index, "f")
+    cd.update({"a": 0, "b": 1})
+    assert str(cd) == "{'a': 0, 'b': 1}"
+    cd.update((("c", 2), ("d", 3)))
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3}"
+    cd.update(e=4)
+    assert str(cd) == "{'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4}"

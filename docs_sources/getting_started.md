@@ -9,13 +9,13 @@ or via `conda`:
 
     $ conda install -c conda-forge atom-ml
 
-Note that using these commands also install/update all [required dependencies](../dependencies/#required).
-To install the [optional dependencies](../dependencies/#optional), add [models]
+Note that these commands will also install all [required dependencies](../dependencies/#required).
+To install the [optional dependencies](../dependencies/#optional) as well, add [models]
 after the package's name.
 
     $ pip install -U atom-ml[models]
 
-!!! note
+!!! info
     Since atom was already taken, download the package under the name `atom-ml`!
 
 
@@ -26,7 +26,7 @@ after the package's name.
 
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:
 
-```Python
+```python
 from sklearn.datasets import load_breast_cancer
 from atom import ATOMClassifier
 
@@ -36,7 +36,7 @@ atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
 
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
-```Python
+```python
 atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy="PCA", n_features=12)
@@ -44,19 +44,19 @@ atom.feature_selection(strategy="PCA", n_features=12)
 
 Train and evaluate the models you want to compare:
 
-```Python
+```python
 atom.run(
     models=["LR", "LDA", "XGB", "lSVM"],
     metric="f1",
     n_calls=25,
     n_initial_points=10,
-    bagging=4,
+    n_bootstrap=4,
 )
 ```
 
 Make plots to analyze the results: 
 
-```Python
-atom.plot_results(figsize=(9, 6), filename="bagging_results.png")  
+```python
+atom.plot_results(figsize=(9, 6), filename="bootstrap_results.png")  
 atom.lda.plot_confusion_matrix(normalize=True, filename="cm.png")
 ```

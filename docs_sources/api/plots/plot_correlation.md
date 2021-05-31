@@ -1,47 +1,62 @@
 # plot_correlation
 ------------------
 
-<a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None, method="pearson", title=None, figsize=(8, 7), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3030">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None,
+method="pearson", title=None, figsize=(8, 7), filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3375">[source]</a>
+</span>
+</div>
+
 Plot the data's correlation matrix.
-<table width="100%">
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>columns: slice, sequence or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>columns: slice, sequence or None, optional (default=None)</strong><br>
 Slice, names or indices of the columns to plot. If None,
 plot all columns in the dataset. Selected categorical
 columns are ignored.
-</blockquote>
-<strong>method: str, optional (default="pearson")</strong>
-<blockquote>
+</p>
+<p>
+<strong>method: str, optional (default="pearson")</strong><br>
 Method of correlation. Choose from "pearson", "kendall" or "spearman".
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=(8, 7))</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=(8, 7))</strong><br>
 Figure's size, format as (x, y).
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
-Whether to render the plot.
-</blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

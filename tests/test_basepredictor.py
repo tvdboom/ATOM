@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for basepredictor.py
 
 """
@@ -91,7 +91,7 @@ def test_delattr_branch():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.branch = "branch_2"
     del atom.branch
-    assert list(atom._branches.keys()) == ["master"]
+    assert list(atom._branches.keys()) == ["og", "master"]
 
 
 def test_delattr_normal():
@@ -146,7 +146,7 @@ def test_results_property_dropna():
     """Assert that the results property doesn't return columns with NaNs."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
-    assert "mean_bagging" not in atom.results
+    assert "mean_bootstrap" not in atom.results
 
 
 def test_results_property_successive_halving():
@@ -260,6 +260,13 @@ def test_get_columns_by_name():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(ValueError, atom._get_columns, "invalid")
     assert atom._get_columns("mean radius") == ["mean radius"]
+
+
+def test_get_columns_exclude():
+    """Assert that columns can be excluded using `!`."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom._get_columns("!Feature 2") == ["Feature 1", "Feature 3", "Target"]
+    assert atom._get_columns(["!Feature 1", "!Feature 2"]) == ["Feature 3", "Target"]
 
 
 def test_get_columns_remove_duplicates():
@@ -392,6 +399,12 @@ def test_class_weights_invalid_dataset():
     pytest.raises(ValueError, atom.get_class_weight, "invalid")
 
 
+def test_get_class_weights_regression():
+    """Assert that an error is raised when called from regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(PermissionError, atom.get_class_weight)
+
+
 @pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
 def test_get_class_weights(dataset):
     """Assert that the get_class_weight method returns a dict of the classes."""
@@ -403,28 +416,27 @@ def test_get_class_weights(dataset):
 def test_calibrate():
     """Assert that the calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.calibrate)  # When not yet fitted
+    pytest.raises(NotFittedError, atom.calibrate)
     atom.run("LR")
     atom.calibrate()
     assert atom.winner.estimator.__class__.__name__ == "CalibratedClassifierCV"
 
 
-def test_scoring_metric_is_none():
-    """Assert that the scoring method works when metric is None."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(NotFittedError, atom.scoring)
-    atom.run(["Tree", "RF"])
-    atom.run("LGB", bagging=5)  # Test with and without bagging
-    atom.scoring()
-
-
-def test_scoring_metric_is_given():
-    """Assert that the scoring method works for a specified metric_."""
+def test_cross_validate():
+    """Assert that the cross_validate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["GNB", "PA"])
-    atom.scoring("logloss")  # For _ProbaScorer
-    atom.scoring("ap")  # For _ThresholdScorer
-    atom.scoring("cm")  # For special case
+    pytest.raises(NotFittedError, atom.cross_validate)
+    atom.run("LR")
+    assert isinstance(atom.cross_validate(), dict)
+
+
+@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
+def test_scoring(metric):
+    """Assert that the scoring method works when metric is None."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.scoring)
+    atom.run(["Tree", "PA"])
+    assert isinstance(atom.scoring(metric=metric), pd.DataFrame)
 
 
 def test_delete_default():

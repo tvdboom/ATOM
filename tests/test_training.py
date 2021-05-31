@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for training.py
 
 """
@@ -57,6 +57,14 @@ def test_models_are_restored():
     sh.run(reg_train, reg_test)
     assert "Tree" not in sh._models  # Original model is deleted
     assert all(m in sh.models for m in ("Tree4", "RF2", "AdaB1"))
+
+
+def test_ts_int_train_sizes():
+    """Assert that train sizing accepts different types as sizes."""
+    sh = TrainSizingClassifier("Tree", train_sizes=5, random_state=1)
+    sh.run(reg_train, reg_test)
+    assert len(sh.tree02.train) == 61
+    assert len(sh.tree06.train) == 185
 
 
 def test_ts_different_train_sizes_types():

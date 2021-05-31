@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for models.py
 
 """
@@ -13,10 +13,10 @@ import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 
 # Keras
-from keras.datasets import mnist
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Conv2D
-from keras.wrappers.scikit_learn import KerasClassifier
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Flatten, Conv2D
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -27,9 +27,9 @@ from .utils import X_bin, y_bin, X_class2, y_class2, X_reg, y_reg, mnist
 
 # Variables ======================================================== >>
 
-binary = [m for m in MODEL_LIST if m not in ["CatNB"] + ONLY_REG]
-multiclass = [m for m in MODEL_LIST if m not in ["CatNB", "CatB"] + ONLY_REG]
-regression = [m for m in MODEL_LIST if m not in ONLY_CLASS]
+binary = [m for m in MODEL_LIST.keys() if m not in ["CatNB"] + ONLY_REG]
+multiclass = [m for m in MODEL_LIST.keys() if m not in ["CatNB", "CatB"] + ONLY_REG]
+regression = [m for m in MODEL_LIST.keys() if m not in ONLY_CLASS]
 
 
 # Functions ======================================================= >>
@@ -78,7 +78,7 @@ def test_models_binary(model):
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors  # Assert that the model ran without errors
-    assert hasattr(atom, model) and hasattr(atom, model.lower())
+    assert hasattr(atom, model)  # Assert that the model is an attr of the trainer
 
 
 @pytest.mark.parametrize("model", multiclass)
@@ -93,7 +93,7 @@ def test_models_multiclass(model):
         bo_params={"base_estimator": "rf", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model) and hasattr(atom, model.lower())
+    assert hasattr(atom, model)
 
 
 @pytest.mark.parametrize("model", regression)
@@ -108,7 +108,7 @@ def test_models_regression(model):
         bo_params={"base_estimator": "gbrt", "cv": 1},
     )
     assert not atom.errors
-    assert hasattr(atom, model) and hasattr(atom, model.lower())
+    assert hasattr(atom, model)
 
 
 def test_CatNB():
@@ -119,4 +119,4 @@ def test_CatNB():
     atom = ATOMClassifier(X, y, random_state=1)
     atom.run(models="CatNB", n_calls=2, n_initial_points=1)
     assert not atom.errors
-    assert hasattr(atom, "CatNB") and hasattr(atom, "catnb")
+    assert hasattr(atom, "CatNB")

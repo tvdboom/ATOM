@@ -1,1001 +1,2543 @@
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <meta name="description" content="Documentation for ATOM, a Python package for fast exploration and experimentation of supervised machine learning pipelines.">
-        <meta name="author" content="tvdboom">
-        <link rel="canonical" href="http://tvdboom.github.io/ATOM/">
-        <link rel="shortcut icon" href="img/favicon.ico">
-        <title>ATOM</title>
-        <link href="css/bootstrap.min.css" rel="stylesheet">
-        <link href="css/font-awesome.min.css" rel="stylesheet">
-        <link href="css/base.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/color-brewer.min.css">
 
-        <script src="js/jquery-1.10.2.min.js" defer></script>
-        <script src="js/bootstrap.min.js" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
-        <script>hljs.initHighlightingOnLoad();</script> 
-    </head>
-
-    <body class="homepage">
-        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
-            <div class="container">
-                <a class="navbar-brand" href=".">ATOM</a>
-                <!-- Expander button -->
-                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-
-                <!-- Expanded navigation -->
-                <div id="navbar-collapse" class="navbar-collapse collapse">
-                        <!-- Main navigation -->
-                        <ul class="nav navbar-nav">
-                            <li class="navitem">
-                                <a href="getting_started/" class="nav-link">Getting started</a>
-                            </li>
-                            <li class="navitem">
-                                <a href="user_guide/" class="nav-link">User guide</a>
-                            </li>
-                            <li class="dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">API <b class="caret"></b></a>
-                                <ul class="dropdown-menu">
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">ATOM</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/ATOM/atomclassifier/" class="dropdown-item">ATOMClassifier</a>
-</li>
-            
-<li>
-    <a href="API/ATOM/atomregressor/" class="dropdown-item">ATOMRegressor</a>
-</li>
-            
-<li>
-    <a href="API/ATOM/atomloader/" class="dropdown-item">ATOMLoader</a>
-</li>
-            
-<li>
-    <a href="API/ATOM/atommodel/" class="dropdown-item">ATOMModel</a>
-</li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Data cleaning</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/data_cleaning/scaler/" class="dropdown-item">Scaler</a>
-</li>
-            
-<li>
-    <a href="API/data_cleaning/cleaner/" class="dropdown-item">Cleaner</a>
-</li>
-            
-<li>
-    <a href="API/data_cleaning/imputer/" class="dropdown-item">Imputer</a>
-</li>
-            
-<li>
-    <a href="API/data_cleaning/encoder/" class="dropdown-item">Encoder</a>
-</li>
-            
-<li>
-    <a href="API/data_cleaning/pruner/" class="dropdown-item">Pruner</a>
-</li>
-            
-<li>
-    <a href="API/data_cleaning/balancer/" class="dropdown-item">Balancer</a>
-</li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Feature engineering</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/feature_engineering/feature_generator/" class="dropdown-item">FeatureGenerator</a>
-</li>
-            
-<li>
-    <a href="API/feature_engineering/feature_selector/" class="dropdown-item">FeatureSelector</a>
-</li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Training</a>
-    <ul class="dropdown-menu">
-            
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Direct</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/training/directclassifier/" class="dropdown-item">DirectClassifier</a>
-</li>
-            
-<li>
-    <a href="API/training/directregressor/" class="dropdown-item">DirectRegressor</a>
-</li>
-    </ul>
-  </li>
-            
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">SuccessiveHalving</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/training/successivehalvingclassifier/" class="dropdown-item">SuccessiveHalvingClassifier</a>
-</li>
-            
-<li>
-    <a href="API/training/successivehalvingregressor/" class="dropdown-item">SuccessiveHalvingRegressor</a>
-</li>
-    </ul>
-  </li>
-            
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">TrainSizing</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/training/trainsizingclassifier/" class="dropdown-item">TrainSizingClassifier</a>
-</li>
-            
-<li>
-    <a href="API/training/trainsizingregressor/" class="dropdown-item">TrainSizingRegressor</a>
-</li>
-    </ul>
-  </li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Models</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/models/gp/" class="dropdown-item">Gaussian Process</a>
-</li>
-            
-<li>
-    <a href="API/models/gnb/" class="dropdown-item">Gaussian Naive Bayes</a>
-</li>
-            
-<li>
-    <a href="API/models/mnb/" class="dropdown-item">Multinomial Naive Bayes</a>
-</li>
-            
-<li>
-    <a href="API/models/bnb/" class="dropdown-item">Bernoulli Naive Bayes</a>
-</li>
-            
-<li>
-    <a href="API/models/catnb/" class="dropdown-item">Categorical Naive Bayes</a>
-</li>
-            
-<li>
-    <a href="API/models/cnb/" class="dropdown-item">Complement Naive Bayes</a>
-</li>
-            
-<li>
-    <a href="API/models/ols/" class="dropdown-item">Ordinary Least Squares</a>
-</li>
-            
-<li>
-    <a href="API/models/ridge/" class="dropdown-item">Ridge</a>
-</li>
-            
-<li>
-    <a href="API/models/lasso/" class="dropdown-item">Lasso</a>
-</li>
-            
-<li>
-    <a href="API/models/en/" class="dropdown-item">Elastic Net</a>
-</li>
-            
-<li>
-    <a href="API/models/br/" class="dropdown-item">Bayesian Ridge</a>
-</li>
-            
-<li>
-    <a href="API/models/ard/" class="dropdown-item">Automated Relevance Determination</a>
-</li>
-            
-<li>
-    <a href="API/models/lr/" class="dropdown-item">Logistic Regression</a>
-</li>
-            
-<li>
-    <a href="API/models/lda/" class="dropdown-item">Linear Discriminant Analysis</a>
-</li>
-            
-<li>
-    <a href="API/models/qda/" class="dropdown-item">Quadratic Discriminant Analysis</a>
-</li>
-            
-<li>
-    <a href="API/models/knn/" class="dropdown-item">K-Nearest Neighbors</a>
-</li>
-            
-<li>
-    <a href="API/models/rnn/" class="dropdown-item">Radius Nearest Neighbors</a>
-</li>
-            
-<li>
-    <a href="API/models/tree/" class="dropdown-item">Decision Tree</a>
-</li>
-            
-<li>
-    <a href="API/models/bag/" class="dropdown-item">Bagging</a>
-</li>
-            
-<li>
-    <a href="API/models/et/" class="dropdown-item">Extra-Trees</a>
-</li>
-            
-<li>
-    <a href="API/models/rf/" class="dropdown-item">Random Forest</a>
-</li>
-            
-<li>
-    <a href="API/models/adab/" class="dropdown-item">AdaBoost</a>
-</li>
-            
-<li>
-    <a href="API/models/gbm/" class="dropdown-item">Gradient Boosting Machine</a>
-</li>
-            
-<li>
-    <a href="API/models/xgb/" class="dropdown-item">XGBoost</a>
-</li>
-            
-<li>
-    <a href="API/models/lgb/" class="dropdown-item">LightGBM</a>
-</li>
-            
-<li>
-    <a href="API/models/catb/" class="dropdown-item">CatBoost</a>
-</li>
-            
-<li>
-    <a href="API/models/lsvm/" class="dropdown-item">Linear-SVM</a>
-</li>
-            
-<li>
-    <a href="API/models/ksvm/" class="dropdown-item">Kernel-SVM</a>
-</li>
-            
-<li>
-    <a href="API/models/pa/" class="dropdown-item">Passive Aggressive</a>
-</li>
-            
-<li>
-    <a href="API/models/sgd/" class="dropdown-item">Stochastic Gradient Descent</a>
-</li>
-            
-<li>
-    <a href="API/models/mlp/" class="dropdown-item">Multi-layer Perceptron</a>
-</li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Predicting</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/predicting/transform/" class="dropdown-item">transform</a>
-</li>
-            
-<li>
-    <a href="API/predicting/predict/" class="dropdown-item">predict</a>
-</li>
-            
-<li>
-    <a href="API/predicting/predict_proba/" class="dropdown-item">predict_proba</a>
-</li>
-            
-<li>
-    <a href="API/predicting/predict_log_proba/" class="dropdown-item">predict_log_proba</a>
-</li>
-            
-<li>
-    <a href="API/predicting/decision_function/" class="dropdown-item">decision_function</a>
-</li>
-            
-<li>
-    <a href="API/predicting/score/" class="dropdown-item">score</a>
-</li>
-    </ul>
-  </li>
-                                    
-  <li class="dropdown-submenu">
-    <a href="#" class="dropdown-item">Plots</a>
-    <ul class="dropdown-menu">
-            
-<li>
-    <a href="API/plots/plot_correlation/" class="dropdown-item">plot_correlation</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_scatter_matrix/" class="dropdown-item">plot_scatter_matrix</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_distribution/" class="dropdown-item">plot_distribution</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_qq/" class="dropdown-item">plot_qq</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_pipeline/" class="dropdown-item">plot_pipeline</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_pca/" class="dropdown-item">plot_pca</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_components/" class="dropdown-item">plot_components</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_rfecv/" class="dropdown-item">plot_rfecv</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_successive_halving/" class="dropdown-item">plot_successive_halving</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_learning_curve/" class="dropdown-item">plot_learning_curve</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_results/" class="dropdown-item">plot_results</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_bo/" class="dropdown-item">plot_bo</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_evals/" class="dropdown-item">plot_evals</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_roc/" class="dropdown-item">plot_roc</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_prc/" class="dropdown-item">plot_prc</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_permutation_importance/" class="dropdown-item">plot_permutation_importance</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_feature_importance/" class="dropdown-item">plot_feature_importance</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_partial_dependence/" class="dropdown-item">plot_partial_dependence</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_errors/" class="dropdown-item">plot_errors</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_residuals/" class="dropdown-item">plot_residuals</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_confusion_matrix/" class="dropdown-item">plot_confusion_matrix</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_threshold/" class="dropdown-item">plot_threshold</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_probabilities/" class="dropdown-item">plot_probabilities</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_calibration/" class="dropdown-item">plot_calibration</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_gains/" class="dropdown-item">plot_gains</a>
-</li>
-            
-<li>
-    <a href="API/plots/plot_lift/" class="dropdown-item">plot_lift</a>
-</li>
-            
-<li>
-    <a href="API/plots/bar_plot/" class="dropdown-item">bar_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/beeswarm_plot/" class="dropdown-item">beeswarm_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/decision_plot/" class="dropdown-item">decision_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/force_plot/" class="dropdown-item">force_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/heatmap_plot/" class="dropdown-item">heatmap_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/scatter_plot/" class="dropdown-item">scatter_plot</a>
-</li>
-            
-<li>
-    <a href="API/plots/waterfall_plot/" class="dropdown-item">waterfall_plot</a>
-</li>
-    </ul>
-  </li>
-                                </ul>
-                            </li>
-                            <li class="dropdown">
-                                <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Examples <b class="caret"></b></a>
-                                <ul class="dropdown-menu">
-                                    
-<li>
-    <a href="examples/automl.html" target="_blank" class="dropdown-item">AutoML</a>
-</li>
-                                    
-<li>
-    <a href="examples/binary_classification.html" target="_blank" class="dropdown-item">Binary classification</a>
-</li>
-                                    
-<li>
-    <a href="examples/calibration.html" target="_blank" class="dropdown-item">Calibration</a>
-</li>
-                                    
-<li>
-    <a href="examples/deep_learning.html" target="_blank" class="dropdown-item">Deep learning</a>
-</li>
-                                    
-<li>
-    <a href="examples/early_stopping.html" target="_blank" class="dropdown-item">Early stopping</a>
-</li>
-                                    
-<li>
-    <a href="examples/ensembles.html" target="_blank" class="dropdown-item">Ensembles</a>
-</li>
-                                    
-<li>
-    <a href="examples/feature_engineering.html" target="_blank" class="dropdown-item">Feature engineering</a>
-</li>
-                                    
-<li>
-    <a href="examples/imbalanced_datasets.html" target="_blank" class="dropdown-item">Imbalanced datasets</a>
-</li>
-                                    
-<li>
-    <a href="examples/multiclass_classification.html" target="_blank" class="dropdown-item">Multiclass classification</a>
-</li>
-                                    
-<li>
-    <a href="examples/multi_metric.html" target="_blank" class="dropdown-item">Multi-metric runs</a>
-</li>
-                                    
-<li>
-    <a href="examples/regression.html" target="_blank" class="dropdown-item">Regression</a>
-</li>
-                                    
-<li>
-    <a href="examples/successive_halving.html" target="_blank" class="dropdown-item">Successive halving</a>
-</li>
-                                    
-<li>
-    <a href="examples/train_sizing.html" target="_blank" class="dropdown-item">Train sizing</a>
-</li>
-                                    
-<li>
-    <a href="examples/utilities.html" target="_blank" class="dropdown-item">Utilities</a>
-</li>
-                                </ul>
-                            </li>
-                            <li class="navitem">
-                                <a href="faq/" class="nav-link">FAQ</a>
-                            </li>
-                            <li class="navitem">
-                                <a href="dependencies/" class="nav-link">Dependencies</a>
-                            </li>
-                            <li class="navitem">
-                                <a href="license/" class="nav-link">License</a>
-                            </li>
-                        </ul>
-
-                    <ul class="nav navbar-nav ml-auto">
-                        <li class="nav-item">
-                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
-                                <i class="fa fa-search"></i> Search
-                            </a>
-                        </li>
-                            <li class="nav-item">
-                                <a href="https://github.com/tvdboom/ATOM" class="nav-link"><i class="fa fa-github"></i> GitHub</a>
-                            </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-
-        <div class="container">
-            <div class="row">
-                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
-    <div class="navbar-header">
-        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
-            <span class="fa fa-angle-down"></span>
-        </button>
-    </div>
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <meta name="author" content="Mavs">
+      
+      
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/">
+      
+      <link rel="icon" href="img/favicon.ico">
+      <meta name="generator" content="mkdocs-1.1.2, mkdocs-material-7.1.1">
+    
+    
+  <title>ATOM</title>
 
     
-    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
-        <ul class="nav flex-column">
+      <link rel="stylesheet" href="assets/stylesheets/main.9299cb39.min.css">
+      
+        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ef6f36e2.min.css">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
+      
+    
+    
+    
+      <link rel="stylesheet" href="stylesheets/extra.css">
+    
+    
+      
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal">
+  
+    
+    <script>function __prefix(e){return new URL(".",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
+    
+      <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="." title="ATOM" class="md-header__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="img/icon_white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ATOM
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
             
-            <li class="nav-item" data-level="1"><a href="#automated-tool-for-optimized-modelling" class="nav-link">Automated Tool for Optimized Modelling</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
+              ATOM
             
-            <li class="nav-item" data-level="1"><a href="#release-history" class="nav-link">Release history</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
-            
-            <li class="nav-item" data-level="1"><a href="#content" class="nav-link">Content</a>
-              <ul class="nav flex-column">
-              </ul>
-            </li>
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      <form class="md-header__option" data-md-component="palette">
+        
+          
+          
+          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="teal" data-md-color-accent="teal" type="radio" name="__palette" id="__palette_1">
+          <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2m10-3a5 5 0 0 1 5 5 5 5 0 0 1-5 5H7a5 5 0 0 1-5-5 5 5 0 0 1 5-5h10M7 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3h10a3 3 0 0 0 3-3 3 3 0 0 0-3-3H7z"/></svg>
+          </label>
+        
+          
+          
+          <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="teal" data-md-color-accent="teal" type="radio" name="__palette" id="__palette_2">
+          <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
+          </label>
+        
+      </form>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" data-md-state="active" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        
+<a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+      </div>
+    
+  </nav>
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+
+        
+          
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-tabs__inner md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="about/" class="md-tabs__link">
+      About
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="getting_started/" class="md-tabs__link">
+      Getting started
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="user_guide/introduction/" class="md-tabs__link">
+        User guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="release_history/" class="md-tabs__link">
+      Release history
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="API/ATOM/atomclassifier/" class="md-tabs__link">
+        API
+      </a>
+    </li>
+  
+
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="examples/automl/" class="md-tabs__link">
+        Examples
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="faq/" class="md-tabs__link">
+      FAQ
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="dependencies/" class="md-tabs__link">
+      Dependencies
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="license/" class="md-tabs__link">
+      License
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+        
+      
+
+<style>
+
+    .md-content{display:none}  /*Drop title from index.html */
+
+    section {
+        padding-bottom: 5em;
+    }
+
+    h1 {
+        padding: 1em;
+        background-color: rgba(255, 255, 255, 0.0);
+        text-align: center;
+        font-weight: 600;
+        font-size: 3em;
+        color: #2a978d;
+        margin-top: 15px;
+        margin-bottom: 45px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo {
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+      margin-top: 3rem;
+      width: 700px;
+      height: 180px;
+    }
+
+    .description {
+        position: relative;
+        left: 50%;
+        margin-left: -350px;
+        padding-bottom: 2rem;
+        width: 700px;
+        font-size: 2em;
+        text-align: left;
+    }
+
+    .button {
+        color: #FFF;
+        background: #2a978d;
+        padding: 12px 18px;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border: 2px solid #2a978d;
+        font-weight: 700;
+        font-size: 1em;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+        -webkit-transition: all 0.25s ease;
+        -o-transition: all 0.25s ease;
+        transition: all 0.25s ease;
+    }
+
+    .button:hover {
+        background: white;
+        color: #2a978d;
+        border: 2px solid #2a978d;
+    }
+
+    [data-md-color-scheme="slate"] .button:hover {
+        background: var(--md-default-bg-color);
+    }
+
+    .button-secondary {
+        color: #2a978d;
+        background: white;
+        border: 2px solid #2a978d;
+    }
+
+    [data-md-color-scheme="slate"] .button-secondary {
+        background: var(--md-default-bg-color);
+    }
+
+    .button-secondary:hover {
+        background: #2a978d;
+        color: white;
+    }
+
+    [data-md-color-scheme="slate"] .button-secondary:hover {
+        background: #2a978d;
+        color: white;
+    }
+
+    .story-wrapper {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+   .story {
+        margin: 15px;
+        text-align: center;
+        width: 500px;
+        float: left;
+        background-color: white;
+        color: black;
+        -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+        -webkit-transition: all 0.25s ease;
+        -o-transition: all 0.25s ease;
+        transition: all 0.25s ease;
+    }
+
+   .story:hover {
+        -webkit-transform: scale(1.06);
+        -ms-transform: scale(1.06);
+        -o-transform: scale(1.06);
+        transform: scale(1.06);
+    }
+
+   .story-title {
+        padding: 20px 20px 0 20px;
+        background-color: white;
+        text-align: center;
+        font-weight: 400;
+        font-size: 2em;
+        color: #2a978d;
+        margin-top: 15px;
+        margin-bottom: 45px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+    }
+
+   .story-text {
+        padding: 0 30px 0 30px;
+        color: #4c4c54;
+        text-align: left;
+        font-size: 1.5em;
+    }
+
+    .story-read {
+        background: #FFF;
+        padding: 15px;
+        text-align: left;
+        overflow: hidden;
+    }
+
+    .story-read .read-more {
+        float: right;
+        color: #FFF;
+        background: #355876;
+        padding: 12px 18px;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border: 2px solid #355876;
+        font-weight: 700;
+        font-size: 1.6em;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+        -webkit-transition: all 0.25s ease;
+        -o-transition: all 0.25s ease;
+        transition: all 0.25s ease;
+    }
+
+    .story-read .read-more:hover {
+        background: white;
+        color: #355876;
+    }
+
+    @media only screen and (max-width: 720px) {
+        section {padding-bottom: 2em}
+        h1 {font-size: 2em}
+        .logo {width: 300px; height: 80px}
+        .description {font-size: 1.5em; width: 90%; margin-left: -45%}
+    }
+
+</style>
+
+
+<section>
+    <div style="overflow: hidden;">
+      <svg
+        preserveAspectRatio="none"
+        viewBox="0 0 1200 120"
+        xmlns="http://www.w3.org/2000/svg"
+        style="fill: rgba(0,147,135,255); width: 100%; height: 97px;"
+      >
+        <path
+        d="M0 0v46.29c47.79 22.2 103.59 32.17 158 28 70.36-5.37 136.33-33.31 206.8-37.5 73.84-4.36 147.54 16.88 218.2 35.26 69.27 18 138.3 24.88 209.4 13.08 36.15-6 69.85-17.84 104.45-29.34C989.49 25 1113-14.29 1200 52.47V0z"
+        opacity=".25"
+      />
+        <path
+          d="M0 0v15.81c13 21.11 27.64 41.05 47.69 56.24C99.41 111.27 165 111 224.58 91.58c31.15-10.15 60.09-26.07 89.67-39.8 40.92-19 84.73-46 130.83-49.67 36.26-2.85 70.9 9.42 98.6 31.56 31.77 25.39 62.32 62 103.63 73 40.44 10.79 81.35-6.69 119.13-24.28s75.16-39 116.92-43.05c59.73-5.85 113.28 22.88 168.9 38.84 30.2 8.66 59 6.17 87.09-7.5 22.43-10.89 48-26.93 60.65-49.24V0z"
+          opacity=".5"
+        />
+        <path d="M0 0v5.63C149.93 59 314.09 71.32 475.83 42.57c43-7.64 84.23-20.12 127.61-26.46 59-8.63 112.48 12.24 165.56 35.4C827.93 77.22 886 95.24 951.2 90c86.53-7 172.46-45.71 248.8-84.81V0z" />
+      </svg>
+    </div>
+
+    <img src="img/logo.png" alt="" class="logo" draggable="false">
+    <h1>A Python package for fast exploration of machine learning pipelines</h1>
+    <div class="description">
+        <p style="margin-bottom: 2em">
+            ATOM is an open-source, easy-to-use machine learning package for Python,
+            capable of running experiments quickly and efficiently, enabling the user
+            to go from raw data to generating insights in just a few lines of code.
+        </p>
+        <a href="about" class="button">Read more</a>
+        <a href="getting_started" class="button button-secondary">Get started</a>
+    </div>
+</section>
+
+<section>
+    <h1 style="margin-bottom: -10px">Why you should use ATOM</h1>
+    <div class="description" style="display: flex; justify-content: center;">
+        <ul>
+            <li>Avoid endless imports and documentation lookups</li>
+            <li>Predefined data cleaning and feature engineering steps</li>
+            <li>30+ classification and regression models to choose from</li>
+            <li>Possibility to run multiple models with one line of code</li>
+            <li>Fast implementation of hyperparameter tuning</li>
+            <li>Easy way to compare the results from different models</li>
+            <li>35 plots to analyze the data and model performance</li>
+            <li>Avoid refactoring to test new pipelines</li>
         </ul>
     </div>
-</div></div>
-                    <div class="col-md-9" role="main">
+</section>
 
-<div align="center">
-    <img src="img/logo.png" alt="ATOM" height="170" width="600"/>
-</div>
-<p><br><br></p>
-<h1 id="automated-tool-for-optimized-modelling">Automated Tool for Optimized Modelling</h1>
-<hr />
-<h4 id="a-python-package-for-fast-exploration-of-machine-learning-pipelines">A Python package for fast exploration of machine learning pipelines</h4>
-<p><br><br></p>
-<p>During the exploration phase of a machine learning project, a data
-scientist tries to find the optimal pipeline for his specific use case.
-This usually involves applying standard data cleaning steps, creating
-or selecting useful features, trying out different models, etc. Testing
-multiple pipelines requires many lines of code, and writing it all in
-the same notebook often makes it long and cluttered. On the other hand,
-using multiple notebooks makes it harder to compare the results and to
-keep an overview. On top of that, refactoring the code for every test
-can be quite time-consuming. How many times have you conducted the same action
-to pre-process a raw dataset? How many times have you copy-and-pasted
-code from an old repository to re-use it in a new use case?</p>
-<p>ATOM is here to help solve these common issues. The package acts as
-a wrapper of the whole machine learning pipeline, helping the data
-scientist to rapidly find a good model for his problem. Avoid
-endless imports and documentation lookups. Avoid rewriting the same
-code over and over again. With just a few lines of code, it's now
-possible to perform basic data cleaning steps, select relevant
-features and compare the performance of multiple models on a given
-dataset, providing quick insights on which pipeline performs best
-for the task at hand.</p>
-<p>Example steps taken by ATOM's pipeline:</p>
-<ol>
-<li>Data Cleaning<ul>
-<li>Handle missing values</li>
-<li>Encode categorical features</li>
-<li>Detect and remove outliers</li>
-<li>Balance the training set</li>
-</ul>
-</li>
-<li>Feature engineering<ul>
-<li>Create new non-linear features</li>
-<li>Remove multi-collinear features</li>
-<li>Remove features with too low variance</li>
-<li>Select the most promising features</li>
-</ul>
-</li>
-<li>Train and validate multiple models<ul>
-<li>Select hyperparameters using a Bayesian Optimization approach</li>
-<li>Train and test the models on the provided data</li>
-<li>Assess the robustness of the output using a bagging algorithm</li>
-</ul>
-</li>
-<li>Analyze the results<ul>
-<li>Get the model scores on various metrics</li>
-<li>Make plots to compare the model performances</li>
-</ul>
-</li>
-</ol>
-<p><br/><br/></p>
-<div align="center">
-    <img src="img/diagram.jpg" alt="diagram" height="300" width="1000"/>
-    <figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of the possible steps taken by ATOM.</figcaption>
-</div>
+<section>
+    <h1 style="margin-bottom: -10px">Read our stories</h1>
+    <div class="story-wrapper">
+        <div class="story">
+            <img src="img/stories/tds.jpeg" height="90px" width="100%">
+            <img src="./img/stories/story_1.jpg" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <p class="story-title">ATOM: A Python package for fast exploration of machine learning pipelines</p>
+            <p class="story-text">
+                During the exploration phase of a project, a data scientist tries
+                to find the optimal pipeline for his specific use case. This usually
+                involves applying standard data cleaning steps, creating or selecting
+                useful features, trying out different models, etc. Testing multiple
+                pipelines requires many lines of code, and writing it all in the same
+                notebook...
+            </p>
 
-<p><br><br><br><br></p>
-<h1 id="release-history">Release history</h1>
-<hr />
-<h3 id="version-440">Version 4.4.0</h3>
-<ul>
-<li>The <a href="./API/ATOM/atomclassifier/#drop">drop</a> method now allows the user
-  to drop columns as part of the pipeline.</li>
-<li>It is now possible to add data transformations as function to the pipeline
-  through the <a href="./API/ATOM/atomclassifier/#apply">apply</a> method.</li>
-<li>Added the <a href="./API/ATOM/atomclassifier/#status">status</a> method to save an
-  overview of atom's branches and models to the logger.</li>
-<li>Improved the output messages for the <a href="./API/data_cleaning/imputer">Imputer</a> class.</li>
-<li>The dataset's columns can now be called directly from atom.</li>
-<li>The <a href="./API/ATOM/atomclassifier/#distribution">distribution</a> and
-  <a href="./API/plots/plot_distribution">plot_distribution</a> methods now ignore missing
-  values instead of raising an exception.</li>
-<li>Fixed a bug where transformations failed when columns were added after
-  initializing the pipeline.</li>
-<li>Fixed a bug where the <a href="./API/data_cleaning/cleaner">Cleaner</a> class didn't drop
-  columns with only missing values for <code>minimum_cardinality=True</code>.</li>
-<li>Fixed a bug where the winning model wasn't displayed correctly.</li>
-<li>Refactored the way transformers are added or removed from predicting methods.</li>
-<li>Improved documentation.</li>
-</ul>
-<h3 id="version-430">Version 4.3.0</h3>
-<ul>
-<li>Possibility to <a href="./API/ATOM/atomclassifier/#add">add</a> custom transformers to the pipeline.</li>
-<li>The <a href="./API/ATOM/atomclassifier/#export-pipeline">export_pipeline</a> utility method exports atom's current pipeline to a sklearn object.</li>
-<li>Use <a href="./user_guide/#automl">AutoML</a> to automate the search for an optimized pipeline.</li>
-<li>New magic methods makes atom behave similarly to sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>.</li>
-<li>All <a href="./user_guide/#training">training approaches</a> can now be combined in the same atom instance.</li>
-<li>New <a href="./API/plots/plot_scatter_matrix">plot_scatter_matrix</a>, <a href="./API/plots/plot_distribution">plot_distribution</a> and <a href="./API/plots/plot_qq">plot_qq</a> for data inspection.</li>
-<li>Complete rework of all the <a href="./user_guide#shap">shap plots</a> to be consistent with their new API.</li>
-<li>Improvements for the <a href="./API/data_cleaning/scaler">Scaler</a> and <a href="./API/data_cleaning/pruner">Pruner</a> classes.</li>
-<li>The acronym for custom models now defaults to the capital letters in the class' __name__.</li>
-<li>Possibility to apply transformations on only a subset of the columns.</li>
-<li>Plots and methods now accept <code>winner</code> as model name.</li>
-<li>Fixed a bug where custom metrics didn't show the correct name.</li>
-<li>Fixed a bug where timers were not displayed correctly.</li>
-<li>Further compatibility with deep learning datasets.</li>
-<li>Large refactoring for performance optimization.</li>
-<li>Cleaner output of messages to the logger.</li>
-<li>Plots no longer show a default title.</li>
-<li>Added the <a href="https://tvdboom.github.io/ATOM/examples/automl.html" target="_blank">AutoML</a> example notebook.</li>
-<li>Minor bug fixes.</li>
-</ul>
-<h3 id="version-421">Version 4.2.1</h3>
-<ul>
-<li>Bug fix where there was memory leakage in <a href="./user_guide/#successive-halving">successive halving</a>
-  and <a href="./user_guide/#train-sizing">train sizing</a> pipelines.</li>
-<li>The <a href="https://xgboost.readthedocs.io/en/latest/python/python_api.html">XGBoost</a>,
-  <a href="https://lightgbm.readthedocs.io/en/latest/">LightGBM</a> and
-  <a href="https://catboost.ai/">CatBoost</a> packages can now be installed through the installer's
-  extras_require under the name <code>models</code>, e.g. <code>pip install -U atom-ml[models]</code>.</li>
-<li>Improved documentation.</li>
-</ul>
-<h3 id="version-420">Version 4.2.0</h3>
-<ul>
-<li>Possibility to add custom models to the pipeline using <a href="./API/ATOM/atommodel">ATOMModel</a>.</li>
-<li>Compatibility with <a href="./user_guide/#deep-learning">deep learning</a> models.</li>
-<li>New branch system for different data pipelines. Read more in the <a href="./user_guide/#branches">user guide</a>.</li>
-<li>Use the <a href="./API/ATOM/atomclassifier/#canvas">canvas</a> contextmanager to draw multiple plots in one figure.</li>
-<li>New <a href="./user_guide/#voting">voting</a> and <a href="./user_guide/#stacking">stacking</a> ensemble techniques.</li>
-<li>New <a href="./API/ATOM/atomclassifier/#get-class-weight">get_class_weight</a> utility method.</li>
-<li>New Sequential Feature Selection strategy for the <a href="./API/feature_engineering/feature_selector">FeatureSelector</a>.</li>
-<li>Added the <code>sample_weight</code> parameter to the <a href="./API/predicting/score">score</a> method.</li>
-<li>New ways to initialize the data in the <code>training</code> instances.</li>
-<li>The <code>n_rows</code> parameter in <a href="./API/ATOM/atomloader">ATOMLoader</a> is deprecated in
-  favour of the new data input formats.</li>
-<li>The <code>test_size</code> parameter now also allows integer values.</li>
-<li>Renamed categories to classes to be consistent with sklearn's API.</li>
-<li>The class property now returns a pd.DataFrame of the number of rows per target class
-  in the train, test and complete dataset.</li>
-<li>Possibility to add custom parameters to an estimator's fit method through <code>est_params</code>.</li>
-<li><a href="./user_guide/#successive-halving">Successive halving</a> and <a href="./user_guide/#train-sizing">train sizing</a>
-  now both allow subsequent runs from atom without losing previous information.</li>
-<li>Bug fix where ATOMLoader wouldn't encode the target column during transformation.</li>
-<li>Added the <a href="./examples/deep_learning.html" target="_blank">Deep learning</a>, 
-  <a href="./examples/ensembles.html" target="_blank">Ensembles</a> and
-  <a href="./examples/utilities.html" target="_blank">Utilities</a> example notebooks.</li>
-<li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
-</ul>
-<h3 id="version-410">Version 4.1.0</h3>
-<ul>
-<li>Added the <code>est_params</code> parameter to customize the parameters passed to every model's
-  estimator.</li>
-<li>Following skopt's API, the <code>n_random_starts</code> parameter is deprecated in favour of
- <code>n_initial_points</code>.</li>
-<li>The <a href="./API/data_cleaning/balancer">Balancer</a> class now allows you to use any of the
-  strategies from <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imblearn</a>.</li>
-<li>New utility attributes to inspect the dataset.</li>
-<li>Four new models: <a href="./API/models/catnb">CatNB</a>, <a href="./API/models/cnb">CNB</a>,
-  <a href="./API/models/ard">ARD</a> and <a href="./API/models/rnn">RNN</a>.</li>
-<li>Added the models section to the documentation.</li>
-<li>Small changes in log outputs.</li>
-<li>Bug fixes and performance improvements.</li>
-</ul>
-<h3 id="version-401">Version 4.0.1</h3>
-<ul>
-<li>Bug fix where the DFS strategy in <a href="./API/feature_engineering/feature_generator">FeatureGenerator</a>
-  was not deterministic for a fixed random state.</li>
-<li>Bug fix where subsequent runs with the same metric failed.</li>
-<li>Added the <a href="./license">license</a> file to the package's installer.</li>
-<li>Typo fixes in documentation.</li>
-</ul>
-<h3 id="version-400">Version 4.0.0</h3>
-<ul>
-<li>Bayesian optimization package changed from <a href="http://sheffieldml.github.io/GPyOpt/">GpyOpt</a>
-  to <a href="https://scikit-optimize.github.io/stable/">skopt</a>.</li>
-<li>Complete revision of the model's hyperparameters.</li>
-<li>Four <a href="./user_guide/#shap">SHAP plots</a> can now be called directly from an ATOM pipeline.</li>
-<li>Two new plots for regression tasks.</li>
-<li>New <a href="./API/plots/plot_pipeline">plot_pipeline</a> and <code>pipeline</code> attribute to access all transformers. </li>
-<li>Possibility to determine transformer parameters per method.</li>
-<li>New <a href="./API/ATOM/atomclassifier/#calibrate">calibration</a> method and <a href="./API/plots/plot_calibration">plot</a>.</li>
-<li>Metrics can now be added as scorers or functions with signature metric(y, y_pred, **kwargs).</li>
-<li>Implementation of <a href="./user_guide/#metric">multi-metric</a> runs.</li>
-<li>Possibility to choose which metric to plot.</li>
-<li>Early stopping for models that allow in-training evaluation.</li>
-<li>Added the <a href="./API/ATOM/atomloader">ATOMLoader</a> function to load saved atom instances
-  and directly apply all data transformations.</li>
-<li>The "remove" strategy in the data cleaning parameters is deprecated in favour of "drop".</li>
-<li>Implemented the DFS strategy in <a href="./API/feature_engineering/feature_generator">FeatureGenerator</a>.</li>
-<li>All training classes now inherit from BaseEstimator.</li>
-<li>Added multiple new example notebooks.</li>
-<li>Tests coverage up to 100%.</li>
-<li>Completely new documentation page.</li>
-<li>Bug fixes and performance improvements.</li>
-</ul>
-<p><br><br><br></p>
-<h1 id="content">Content</h1>
-<hr />
-<ul>
-<li><a href="./getting_started">Getting started</a></li>
-<li><a href="./user_guide">User guide</a></li>
-<li>API<ul>
-<li>ATOM<ul>
-<li><a href="./API/ATOM/atomclassifier">ATOMClassifier</a></li>
-<li><a href="./API/ATOM/atomregressor">ATOMRegressor</a></li>
-<li><a href="./API/ATOM/atomloader">ATOMLoader</a></li>
-<li><a href="./API/ATOM/atommodel">ATOMModel</a></li>
-</ul>
-</li>
-<li>Data cleaning<ul>
-<li><a href="./API/data_cleaning/scaler">Scaler</a></li>
-<li><a href="./API/data_cleaning/cleaner">Cleaner</a></li>
-<li><a href="./API/data_cleaning/imputer">Imputer</a></li>
-<li><a href="./API/data_cleaning/encoder">Encoder</a></li>
-<li><a href="./API/data_cleaning/pruner">Pruner</a></li>
-<li><a href="./API/data_cleaning/balancer">Balancer</a></li>
-</ul>
-</li>
-<li>Feature engineering<ul>
-<li><a href="./API/feature_engineering/feature_generator">FeatureGenerator</a></li>
-<li><a href="./API/feature_engineering/feature_selector">FeatureSelector</a></li>
-</ul>
-</li>
-<li>Training<ul>
-<li>Direct<ul>
-<li><a href="./API/training/directclassifier">DirectClassifier</a></li>
-<li><a href="./API/training/directregressor">DirectRegressor</a></li>
-</ul>
-</li>
-<li>SuccessiveHalving<ul>
-<li><a href="./API/training/successivehalvingclassifier">SuccessiveHalvingClassifier</a></li>
-<li><a href="./API/training/successivehalvingregressor">SuccessiveHalvingClassifier</a></li>
-</ul>
-</li>
-<li>TrainSizing<ul>
-<li><a href="./API/training/trainsizingclassifier">TrainSizingClassifier</a></li>
-<li><a href="./API/training/trainsizingregressor">TrainSizingRegressor</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Models<ul>
-<li><a href="./API/models/gp">Gaussian Process</a></li>
-<li><a href="./API/models/gnb">Gaussian Naive Bayes</a></li>
-<li><a href="./API/models/mnb">Multinomial Naive Bayes</a></li>
-<li><a href="./API/models/bnb">Bernoulli Naive Bayes</a></li>
-<li><a href="./API/models/catnb">Categorical Naive Bayes</a></li>
-<li><a href="./API/models/cnb">Complement Naive Bayes</a></li>
-<li><a href="./API/models/ols">Ordinary Least Squares</a></li>
-<li><a href="./API/models/ridge">Ridge</a></li>
-<li><a href="./API/models/lasso">Lasso</a></li>
-<li><a href="./API/models/en">Elastic Net</a></li>
-<li><a href="./API/models/br">Bayesian Ridge</a></li>
-<li><a href="./API/models/ard">Automated Relevance Determination</a></li>
-<li><a href="./API/models/lr">Logistic Regression</a></li>
-<li><a href="./API/models/lda">Linear Discriminant Analysis</a></li>
-<li><a href="./API/models/qda">Quadratic Discriminant Analysis</a></li>
-<li><a href="./API/models/knn">K-Nearest Neighbors</a></li>
-<li><a href="./API/models/rnn">Radius Nearest Neighbors</a></li>
-<li><a href="./API/models/tree">Decision Tree</a></li>
-<li><a href="./API/models/bag">Bagging</a></li>
-<li><a href="./API/models/et">Extra-Trees</a></li>
-<li><a href="./API/models/rf">Random Forest</a></li>
-<li><a href="./API/models/adab">AdaBoost</a></li>
-<li><a href="./API/models/gbm">Gradient Boosting Machine</a></li>
-<li><a href="./API/models/xgb">XGBoost</a></li>
-<li><a href="./API/models/lgb">LightGBM</a></li>
-<li><a href="./API/models/catb">CatBoost</a></li>
-<li><a href="./API/models/lsvm">Linear-SVM</a></li>
-<li><a href="./API/models/ksvm">Kernel-SVM</a></li>
-<li><a href="./API/models/pa">Passive Aggressive</a></li>
-<li><a href="./API/models/sgd">Stochastic Gradient Descent</a></li>
-<li><a href="./API/models/mlp">Multi-layer Perceptron</a></li>
-</ul>
-</li>
-<li>Predicting<ul>
-<li><a href="./API/predicting/transform">transform</a></li>
-<li><a href="./API/predicting/predict">predict</a></li>
-<li><a href="./API/predicting/predict_proba">predict_proba</a></li>
-<li><a href="./API/predicting/predict_log_proba">predict_log_proba</a></li>
-<li><a href="./API/predicting/decision_function">decision_function</a></li>
-<li><a href="./API/predicting/score">score</a></li>
-</ul>
-</li>
-<li>Plots<ul>
-<li><a href="./API/plots/plot_correlation">plot_correlation</a></li>
-<li><a href="./API/plots/plot_scatter_matrix">plot_scatter_matrix</a></li>
-<li><a href="./API/plots/plot_distribution">plot_distribution</a></li>
-<li><a href="./API/plots/plot_qq">plot_qq</a></li>
-<li><a href="./API/plots/plot_pipeline">plot_pipeline</a></li>
-<li><a href="./API/plots/plot_pca">plot_pca</a></li>
-<li><a href="./API/plots/plot_components">plot_components</a></li>
-<li><a href="./API/plots/plot_rfecv">plot_rfecv</a></li>
-<li><a href="./API/plots/plot_successive_halving">plot_successive_halving</a></li>
-<li><a href="./API/plots/plot_learning_curve">plot_learning_curve</a></li>
-<li><a href="./API/plots/plot_results">plot_results</a></li>
-<li><a href="./API/plots/plot_bo">plot_bo</a></li>
-<li><a href="./API/plots/plot_evals">plot_evals</a></li>
-<li><a href="./API/plots/plot_roc">plot_roc</a></li>
-<li><a href="./API/plots/plot_prc">plot_prc</a></li>
-<li><a href="./API/plots/plot_permutation_importance">plot_permutation_importance</a></li>
-<li><a href="./API/plots/plot_feature_importance">plot_feature_importance</a></li>
-<li><a href="./API/plots/plot_partial_dependence">plot_partial_dependence</a></li>
-<li><a href="./API/plots/plot_errors">plot_errors</a></li>
-<li><a href="./API/plots/plot_residuals">plot_residuals</a></li>
-<li><a href="./API/plots/plot_confusion_matrix">plot_confusion_matrix</a></li>
-<li><a href="./API/plots/plot_threshold">plot_threshold</a></li>
-<li><a href="./API/plots/plot_probabilities">plot_probabilities</a></li>
-<li><a href="./API/plots/plot_calibration">plot_calibration</a></li>
-<li><a href="./API/plots/plot_gains">plot_gains</a></li>
-<li><a href="./API/plots/plot_lift">plot_lift</a></li>
-<li><a href="./API/plots/bar_plot">bar_plot</a></li>
-<li><a href="./API/plots/beeswarm_plot">beeswarm_plot</a></li>
-<li><a href="./API/plots/decision_plot">decision_plot</a></li>
-<li><a href="./API/plots/force_plot">force_plot</a></li>
-<li><a href="./API/plots/heatmap_plot">heatmap_plot</a></li>
-<li><a href="./API/plots/scatter_plot">scatter_plot</a></li>
-<li><a href="./API/plots/waterfall_plot">waterfall_plot</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li>Examples<ul>
-<li><a href="./examples/automl.html" target="_blank">AutoML</a></li>
-<li><a href="./examples/binary_classification.html" target="_blank">Binary classification</a></li>
-<li><a href="./examples/calibration.html" target="_blank">Calibration</a></li>
-<li><a href="./examples/deep_learning.html" target="_blank">Deep learning</a></li>
-<li><a href="./examples/early_stopping.html" target="_blank">Early stopping</a></li>
-<li><a href="./examples/ensembles.html" target="_blank">Ensembles</a></li>
-<li><a href="./examples/feature_engineering.html" target="_blank">Feature engineering</a></li>
-<li><a href="./examples/imbalanced_datasets.html" target="_blank">Imbalanced datasets</a></li>
-<li><a href="./examples/multiclass_classification.html" target="_blank">Multiclass classification</a></li>
-<li><a href="./examples/multi_metric.html" target="_blank">Multi-metric runs</a></li>
-<li><a href="./examples/regression.html" target="_blank">Regression</a></li>
-<li><a href="./examples/successive_halving.html" target="_blank">Successive halving</a></li>
-<li><a href="./examples/train_sizing.html" target="_blank">Train sizing</a></li>
-<li><a href="./examples/utilities.html" target="_blank">Utilities</a></li>
-</ul>
-</li>
-<li><a href="./faq">FAQ</a></li>
-<li><a href="./dependencies">Dependencies</a></li>
-<li><a href="./license">License</a></li>
-</ul></div>
+            <div class="story-read">
+                <a href="https://towardsdatascience.com/atom-a-python-package-for-fast-exploration-of-machine-learning-pipelines-653956a16e7b"
+                   class="read-more">Read more</a>
             </div>
         </div>
 
-        <footer class="col-md-12">
-            <hr>
-                <p>© Copyright 2020, by tvdboom.</p>
-            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
-        </footer>
-        <script>
-            var base_url = ".",
-                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
-        </script>
-        <script src="js/base.js" defer></script>
-        <script src="search/main.js" defer></script>
+        <div class="story">
+            <img src="img/stories/tds.jpeg" height="90px" width="100%">
+            <img src="./img/stories/story_2.jpg" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <p class="story-title">How to test multiple machine learning pipelines with just a few lines of Python</p>
+            <p class="story-text">
+                Since it's nearly impossible to know beforehand which transformations
+                will benefit the model's outcome the most, this process usually involves
+                trying out different approaches. For example, if we are dealing with
+                an imbalanced dataset, should we oversample the minority class or
+                undersample the majority...
+            </p>
 
-        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="searchModalLabel">Search</h4>
-                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            <div class="story-read">
+                <a href="https://towardsdatascience.com/atom-a-python-package-for-fast-exploration-of-machine-learning-pipelines-653956a16e7b"
+                   class="read-more">Read more</a>
             </div>
-            <div class="modal-body">
-                <p>
-                    From here you can search these documents. Enter
-                    your search terms below.
-                </p>
-                <form>
-                    <div class="form-group">
-                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
-                    </div>
-                </form>
-                <div id="mkdocs-search-results"></div>
-            </div>
-            <div class="modal-footer">
+        </div>
+        <div class="story">
+            <img src="img/stories/tds.jpeg" height="90px" width="100%">
+            <img src="./img/stories/story_3.jpg" height="300px" width="100%" draggable="false" style="margin-top: -5px">
+            <p class="story-title">From raw data to web app deployment with ATOM and Streamlit</p>
+            <p class="story-text">
+
+            </p>
+
+            <div class="story-read">
+                <a href=""
+                   class="read-more">Coming soon...</a>
             </div>
         </div>
     </div>
-</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
-                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
-            </div>
-            <div class="modal-body">
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th style="width: 20%;">Keys</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td class="help shortcut"><kbd>?</kbd></td>
-                    <td>Open this help</td>
-                  </tr>
-                  <tr>
-                    <td class="next shortcut"><kbd>n</kbd></td>
-                    <td>Next page</td>
-                  </tr>
-                  <tr>
-                    <td class="prev shortcut"><kbd>p</kbd></td>
-                    <td>Previous page</td>
-                  </tr>
-                  <tr>
-                    <td class="search shortcut"><kbd>s</kbd></td>
-                    <td>Search</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div class="modal-footer">
-            </div>
-        </div>
-    </div>
-</div>
+</section>
 
-    </body>
+
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="." title="ATOM" class="md-nav__button md-logo" aria-label="ATOM" data-md-component="logo">
+      
+  <img src="img/icon_white.png" alt="logo">
+
+    </a>
+    ATOM
+  </label>
+  
+    <div class="md-nav__source">
+      
+<a href="https://github.com/tvdboom/ATOM" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    tvdboom/ATOM
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="about/" class="md-nav__link">
+        About
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="getting_started/" class="md-nav__link">
+        Getting started
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
+      
+      <label class="md-nav__link" for="__nav_3">
+        User guide
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="User guide" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          User guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/introduction/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/nomenclature/" class="md-nav__link">
+        Nomenclature
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/first_steps/" class="md-nav__link">
+        First steps
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/data_pipelines/" class="md-nav__link">
+        Data pipelines
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/logging/" class="md-nav__link">
+        Logging & Tracking
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/data_cleaning/" class="md-nav__link">
+        Data cleaning
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/nlp/" class="md-nav__link">
+        NLP
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/feature_engineering/" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/models/" class="md-nav__link">
+        Models
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/training/" class="md-nav__link">
+        Training
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/predicting/" class="md-nav__link">
+        Predicting
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="user_guide/plots/" class="md-nav__link">
+        Plots
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="release_history/" class="md-nav__link">
+        Release history
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
+      
+      <label class="md-nav__link" for="__nav_5">
+        API
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="API" data-md-level="1">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_1" type="checkbox" id="__nav_5_1" >
+      
+      <label class="md-nav__link" for="__nav_5_1">
+        ATOM
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="ATOM" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_1">
+          <span class="md-nav__icon md-icon"></span>
+          ATOM
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/ATOM/atomclassifier/" class="md-nav__link">
+        ATOMClassifier
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/ATOM/atomregressor/" class="md-nav__link">
+        ATOMRegressor
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/ATOM/atomloader/" class="md-nav__link">
+        ATOMLoader
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/ATOM/atommodel/" class="md-nav__link">
+        ATOMModel
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_2" type="checkbox" id="__nav_5_2" >
+      
+      <label class="md-nav__link" for="__nav_5_2">
+        Data cleaning
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Data cleaning" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_2">
+          <span class="md-nav__icon md-icon"></span>
+          Data cleaning
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/scaler/" class="md-nav__link">
+        Scaler
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/gauss/" class="md-nav__link">
+        Gauss
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/cleaner/" class="md-nav__link">
+        Cleaner
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/imputer/" class="md-nav__link">
+        Imputer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/encoder/" class="md-nav__link">
+        Encoder
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/pruner/" class="md-nav__link">
+        Pruner
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/data_cleaning/balancer/" class="md-nav__link">
+        Balancer
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_3" type="checkbox" id="__nav_5_3" >
+      
+      <label class="md-nav__link" for="__nav_5_3">
+        NLP
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="NLP" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_3">
+          <span class="md-nav__icon md-icon"></span>
+          NLP
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/nlp/textcleaner/" class="md-nav__link">
+        TextCleaner
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/nlp/tokenizer/" class="md-nav__link">
+        Tokenizer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/nlp/normalizer/" class="md-nav__link">
+        Normalizer
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/nlp/vectorizer/" class="md-nav__link">
+        Vectorizer
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_4" type="checkbox" id="__nav_5_4" >
+      
+      <label class="md-nav__link" for="__nav_5_4">
+        Feature engineering
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Feature engineering" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_4">
+          <span class="md-nav__icon md-icon"></span>
+          Feature engineering
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/feature_engineering/feature_generator/" class="md-nav__link">
+        FeatureGenerator
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/feature_engineering/feature_selector/" class="md-nav__link">
+        FeatureSelector
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_5" type="checkbox" id="__nav_5_5" >
+      
+      <label class="md-nav__link" for="__nav_5_5">
+        Training
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Training" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_5">
+          <span class="md-nav__icon md-icon"></span>
+          Training
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/directclassifier/" class="md-nav__link">
+        DirectClassifier
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/directregressor/" class="md-nav__link">
+        DirectRegressor
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/successivehalvingclassifier/" class="md-nav__link">
+        SuccessiveHalvingClassifier
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/successivehalvingregressor/" class="md-nav__link">
+        SuccessiveHalvingRegressor
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/trainsizingclassifier/" class="md-nav__link">
+        TrainSizingClassifier
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/training/trainsizingregressor/" class="md-nav__link">
+        TrainSizingRegressor
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_6" type="checkbox" id="__nav_5_6" >
+      
+      <label class="md-nav__link" for="__nav_5_6">
+        Models
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Models" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_6">
+          <span class="md-nav__icon md-icon"></span>
+          Models
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/dummy/" class="md-nav__link">
+        Dummy
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/gp/" class="md-nav__link">
+        Gaussian Process
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/gnb/" class="md-nav__link">
+        Gaussian Naive Bayes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/mnb/" class="md-nav__link">
+        Multinomial Naive Bayes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/bnb/" class="md-nav__link">
+        Bernoulli Naive Bayes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/catnb/" class="md-nav__link">
+        Categorical Naive Bayes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/cnb/" class="md-nav__link">
+        Complement Naive Bayes
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/ols/" class="md-nav__link">
+        Ordinary Least Squares
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/ridge/" class="md-nav__link">
+        Ridge
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/lasso/" class="md-nav__link">
+        Lasso
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/en/" class="md-nav__link">
+        Elastic Net
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/br/" class="md-nav__link">
+        Bayesian Ridge
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/ard/" class="md-nav__link">
+        Automated Relevance Determination
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/lr/" class="md-nav__link">
+        Logistic Regression
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/lda/" class="md-nav__link">
+        Linear Discriminant Analysis
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/qda/" class="md-nav__link">
+        Quadratic Discriminant Analysis
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/knn/" class="md-nav__link">
+        K-Nearest Neighbors
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/rnn/" class="md-nav__link">
+        Radius Nearest Neighbors
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/tree/" class="md-nav__link">
+        Decision Tree
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/bag/" class="md-nav__link">
+        Bagging
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/et/" class="md-nav__link">
+        Extra-Trees
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/rf/" class="md-nav__link">
+        Random Forest
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/adab/" class="md-nav__link">
+        AdaBoost
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/gbm/" class="md-nav__link">
+        Gradient Boosting Machine
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/xgb/" class="md-nav__link">
+        XGBoost
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/lgb/" class="md-nav__link">
+        LightGBM
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/catb/" class="md-nav__link">
+        CatBoost
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/lsvm/" class="md-nav__link">
+        Linear-SVM
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/ksvm/" class="md-nav__link">
+        Kernel-SVM
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/pa/" class="md-nav__link">
+        Passive Aggressive
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/sgd/" class="md-nav__link">
+        Stochastic Gradient Descent
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/models/mlp/" class="md-nav__link">
+        Multi-layer Perceptron
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_7" type="checkbox" id="__nav_5_7" >
+      
+      <label class="md-nav__link" for="__nav_5_7">
+        Predicting
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Predicting" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_7">
+          <span class="md-nav__icon md-icon"></span>
+          Predicting
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/transform/" class="md-nav__link">
+        transform
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/predict/" class="md-nav__link">
+        predict
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/predict_proba/" class="md-nav__link">
+        predict_proba
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/predict_log_proba/" class="md-nav__link">
+        predict_log_proba
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/decision_function/" class="md-nav__link">
+        decision_function
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/predicting/score/" class="md-nav__link">
+        score
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5_8" type="checkbox" id="__nav_5_8" >
+      
+      <label class="md-nav__link" for="__nav_5_8">
+        Plots
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Plots" data-md-level="2">
+        <label class="md-nav__title" for="__nav_5_8">
+          <span class="md-nav__icon md-icon"></span>
+          Plots
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_correlation/" class="md-nav__link">
+        plot_correlation
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_scatter_matrix/" class="md-nav__link">
+        plot_scatter_matrix
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_distribution/" class="md-nav__link">
+        plot_distribution
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_qq/" class="md-nav__link">
+        plot_qq
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_wordcloud/" class="md-nav__link">
+        plot_wordcloud
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_ngrams/" class="md-nav__link">
+        plot_ngrams
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_pipeline/" class="md-nav__link">
+        plot_pipeline
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_pca/" class="md-nav__link">
+        plot_pca
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_components/" class="md-nav__link">
+        plot_components
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_rfecv/" class="md-nav__link">
+        plot_rfecv
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_successive_halving/" class="md-nav__link">
+        plot_successive_halving
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_learning_curve/" class="md-nav__link">
+        plot_learning_curve
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_results/" class="md-nav__link">
+        plot_results
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_bo/" class="md-nav__link">
+        plot_bo
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_evals/" class="md-nav__link">
+        plot_evals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_roc/" class="md-nav__link">
+        plot_roc
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_prc/" class="md-nav__link">
+        plot_prc
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_errors/" class="md-nav__link">
+        plot_errors
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_residuals/" class="md-nav__link">
+        plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_confusion_matrix/" class="md-nav__link">
+        plot_confusion_matrix
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_threshold/" class="md-nav__link">
+        plot_threshold
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_probabilities/" class="md-nav__link">
+        plot_probabilities
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_calibration/" class="md-nav__link">
+        plot_calibration
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/bar_plot/" class="md-nav__link">
+        bar_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/beeswarm_plot/" class="md-nav__link">
+        beeswarm_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/decision_plot/" class="md-nav__link">
+        decision_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/force_plot/" class="md-nav__link">
+        force_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/heatmap_plot/" class="md-nav__link">
+        heatmap_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/scatter_plot/" class="md-nav__link">
+        scatter_plot
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="API/plots/waterfall_plot/" class="md-nav__link">
+        waterfall_plot
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+      
+      <label class="md-nav__link" for="__nav_6">
+        Examples
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Examples" data-md-level="1">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          Examples
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/automl/" class="md-nav__link">
+        AutoML
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/binary_classification/" class="md-nav__link">
+        Binary classification
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/calibration/" class="md-nav__link">
+        Calibration
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/deep_learning/" class="md-nav__link">
+        Deep learning
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/early_stopping/" class="md-nav__link">
+        Early stopping
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/ensembles/" class="md-nav__link">
+        Ensembles
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/feature_engineering/" class="md-nav__link">
+        Feature engineering
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/imbalanced_datasets/" class="md-nav__link">
+        Imbalanced datasets
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/multiclass_classification/" class="md-nav__link">
+        Multiclass classification
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/multi_metric/" class="md-nav__link">
+        Multi-metric runs
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/nlp/" class="md-nav__link">
+        Natural Language Processing
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/regression/" class="md-nav__link">
+        Regression
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/successive_halving/" class="md-nav__link">
+        Successive halving
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/train_sizing/" class="md-nav__link">
+        Train sizing
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="examples/utilities/" class="md-nav__link">
+        Utilities
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="dependencies/" class="md-nav__link">
+        Dependencies
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="license/" class="md-nav__link">
+        License
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                
+                  <h1>ATOM</h1>
+                
+                
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+        
+          <a href="#" class="md-top md-icon" data-md-component="top" data-md-state="hidden">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"/></svg>
+          </a>
+        
+      </main>
+      
+
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": ".", "features": ["navigation.instant", "navigation.tabs", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing"}, "search": "assets/javascripts/workers/search.fe42c31b.min.js", "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.7353b375.min.js"></script>
+      
+    
+  </body>
 </html>
-
-<!--
-MkDocs version : 1.1.2
-Build Date UTC : 2021-04-05 10:08:14.138744+00:00
--->

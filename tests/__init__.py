@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Run before starting the unit tests. Removes all
              existing testing files (in "files" directory).
 

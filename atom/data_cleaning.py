@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the data cleaning estimators.
 
 """
@@ -12,17 +12,23 @@ import numpy as np
 import pandas as pd
 from typeguard import typechecked
 from typing import Union, Optional
+from collections import defaultdict
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
 from sklearn.impute import SimpleImputer, KNNImputer
-from sklearn.preprocessing import LabelEncoder, OrdinalEncoder
+from sklearn.preprocessing import (
+    PowerTransformer,
+    QuantileTransformer,
+    LabelEncoder,
+    OrdinalEncoder,
+)
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS, ENCODING_STRATS,
-    PRUNING_STRATS, BALANCING_STRATS, it, variable_return, to_df,
+    PRUNING_STRATS, BALANCING_STRATS, lst, it, variable_return, to_df,
     to_series, merge, check_is_fitted, composed, crash, method_to_log,
 )
 
@@ -34,6 +40,34 @@ class TransformerMixin:
     of y and a possible absence of the fit method.
 
     """
+
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None, **fit_params):
+        """Does nothing.
+
+         Implemented for continuity of the API of transformers without
+         a fit method.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        **fit_params
+            Additional keyword arguments for the fit method.
+
+        Returns
+        -------
+        self: transformer
+            Fitted instance of self.
+
+        """
+        return self
 
     @composed(crash, method_to_log, typechecked)
     def fit_transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None, **fit_params):
@@ -62,10 +96,7 @@ class TransformerMixin:
             Target column corresponding to X. Only returned if provided.
 
         """
-        try:
-            return self.fit(X, y, **fit_params).transform(X, y)
-        except AttributeError:
-            return self.transform(X, y)
+        return self.fit(X, y, **fit_params).transform(X, y)
 
 
 class DropTransformer(BaseTransformer):
@@ -92,10 +123,12 @@ class DropTransformer(BaseTransformer):
 class FuncTransformer(BaseTransformer):
     """Custom transformer for functions."""
 
-    def __init__(self, func, column, verbose, logger):
+    def __init__(self, func, column, args, verbose, logger, **kwargs):
         super().__init__(verbose=verbose, logger=logger)
         self.func = func
         self.column = column
+        self.args = args
+        self.kwargs = kwargs
         self.train_only = False
 
     def __repr__(self):
@@ -110,7 +143,8 @@ class FuncTransformer(BaseTransformer):
 
         """
         self.log(f"Applying function {self.func.__name__} to the dataset...", 1)
-        X[self.column] = self.func(X if y is None else merge(X, y))
+        dataset = X if y is None else merge(X, y)
+        X[self.column] = self.func(dataset, *self.args, **self.kwargs)
 
         return X, y
 
@@ -118,18 +152,16 @@ class FuncTransformer(BaseTransformer):
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
     """Scale the data.
 
-    This class applies one of sklearn's scalers. Additionally, it
-    returns a dataframe when provided and it ignores non-numerical
-    columns (instead of raising an exception).
+    Apply one of sklearn's scalers. Categorical columns are ignored.
 
     Parameters
     ----------
     strategy: str, optional (default="standard")
-        Scaler object with which to scale the data. Options are:
-            - standard: Scale with StandardScaler.
-            - minmax: Scale with MinMaxScaler.
-            - maxabs: Scale with MaxAbsScaler.
-            - robust: Scale with RobustScaler.
+        Strategy with which to scale the data. Choose from:
+            - standard
+            - minmax
+            - maxabs
+            - robust
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -138,29 +170,32 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
 
     Attributes
     ----------
-    scaler: class
-        Instance with which the data is scaled.
+    <strategy>: sklearn estimator
+        Estimator's instance with which the data is scaled.
 
     """
 
     @typechecked
     def __init__(
-            self,
-            strategy: str = "standard",
-            verbose: int = 0,
-            logger: Optional[Union[str, callable]] = None
+        self,
+        strategy: str = "standard",
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+        **kwargs,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
-        self.scaler = None
+        self.kwargs = kwargs
+
+        self._estimator = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -183,14 +218,17 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         if self.strategy.lower() in SCALING_STRATS:
-            self.scaler = SCALING_STRATS[self.strategy.lower()]()
+            self._estimator = SCALING_STRATS[self.strategy.lower()](**self.kwargs)
+
+            # Add the estimator as attribute to the instance
+            setattr(self, self.strategy.lower(), self._estimator)
         else:
             raise ValueError(
                 f"Invalid value for the strategy parameter, got {self.strategy}. "
-                "Available options are: standard, minmax, maxabs, robust."
+                "Choose from: standard, minmax, maxabs, robust."
             )
 
-        self.scaler.fit(X.select_dtypes(include="number"))
+        self._estimator.fit(X.select_dtypes(include="number"))
         self._is_fitted = True
         return self
 
@@ -217,7 +255,151 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Scaling features...", 1)
         X_numerical = X.select_dtypes(include=["number"])
-        X_transformed = self.scaler.transform(X_numerical)
+        X_transformed = self._estimator.transform(X_numerical)
+
+        # Replace the numerical columns with the transformed values
+        for i, col in enumerate(X_numerical):
+            X[col] = X_transformed[:, i]
+
+        return X
+
+
+class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Transform the data to follow a Gaussian distribution.
+
+    This transformation is useful for modeling issues related to
+    heteroscedasticity (non-constant variance), or other situations
+    where normality is desired. Missing values are disregarded in
+    fit and maintained in transform. Categorical columns are ignored.
+
+    Note that the yeo-johnson and box-cox strategies standardize the
+    data after transforming. Use the kwargs to change this behaviour.
+
+    Note that the quantile strategy performs a non-linear transformation.
+    This may distort linear correlations between variables measured at
+    the same scale but renders variables measured at different scales
+    more directly comparable.
+
+    Parameters
+    ----------
+    strategy: str, optional (default="yeo-johnson")
+        The transforming strategy. Choose from:
+            - yeo-johnson
+            - box-cox (only works with strictly positive values)
+            - quantile (non-linear transformation)
+
+    verbose: int, optional (default=0)
+        Verbosity level of the class. Possible values are:
+            - 0 to not print anything.
+            - 1 to print basic information.
+
+    logger: str, Logger or None, optional (default=None)
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    random_state: int or None, optional (default=None)
+        Seed used by the quantile strategy. If None, the random
+        number generator is the `RandomState` used by `numpy.random`.
+
+    **kwargs
+        Additional keyword arguments for the `strategy` estimator.
+
+    Attributes
+    ----------
+    <strategy>: sklearn estimator
+        Estimator's instance with which the data is transformed.
+
+    """
+
+    @typechecked
+    def __init__(
+        self,
+        strategy: str = "yeo-johnson",
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+        random_state: Optional[int] = None,
+        **kwargs,
+    ):
+        super().__init__(verbose=verbose, logger=logger, random_state=random_state)
+        self.strategy = strategy
+        self.kwargs = kwargs
+
+        self._estimator = None
+        self._is_fitted = False
+
+    @composed(crash, method_to_log, typechecked)
+    def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Fit to data.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        self: Scaler
+
+        """
+        X, y = self._prepare_input(X, y)
+
+        if self.strategy.lower() in ("yeo-johnson", "yeojohnson"):
+            self.yeojohnson = self._estimator = PowerTransformer(
+                method="yeo-johnson",
+                **self.kwargs,
+            )
+        elif self.strategy.lower() in ("box-cox", "boxcox"):
+            self.boxcox = self._estimator = PowerTransformer(
+                method="box-cox",
+                **self.kwargs,
+            )
+        elif self.strategy.lower() == "quantile":
+            random_state = self.kwargs.pop("random_state", self.random_state)
+            output_distribution = self.kwargs.pop("output_distribution", "normal")
+            self.quantile = self._estimator = QuantileTransformer(
+                output_distribution=output_distribution,
+                random_state=random_state,
+                **self.kwargs,
+            )
+        else:
+            raise ValueError(
+                f"Invalid value for the strategy parameter, got {self.strategy}. "
+                "Choose from: yeo-johnson, box-cox, quantile."
+            )
+
+        self._estimator.fit(X.select_dtypes(include="number"))
+        self._is_fitted = True
+        return self
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Apply the transformations to the data.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            Scaled dataframe.
+
+        """
+        check_is_fitted(self)
+        X, y = self._prepare_input(X, y)
+
+        self.log(f"Making features Gaussian-like...", 1)
+
+        X_numerical = X.select_dtypes(include=["number"])
+        X_transformed = self._estimator.transform(X_numerical)
 
         # Replace the numerical columns with the transformed values
         for i, col in enumerate(X_numerical):
@@ -231,42 +413,42 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Use the parameters to choose which transformations to perform.
     The available steps are:
-        - Drop columns with prohibited data types.
+        - Drop columns with specific data types.
+        - Strip categorical features from white spaces.
         - Drop categorical columns with maximal cardinality.
         - Drop columns with minimum cardinality.
-        - Strip categorical features from white spaces.
         - Drop duplicate rows.
         - Drop rows with missing values in the target column.
         - Encode the target column.
 
     Parameters
     ----------
-    prohibited_types: str, sequence or None, optional (default=None)
-        Columns with these types are dropped from the dataset.
+    drop_types: str, sequence or None, optional (default=None)
+        Columns with these data types are dropped from the dataset.
 
-    maximum_cardinality: bool, optional (default=True)
+    strip_categorical: bool, optional (default=True)
+        Whether to strip spaces from the categorical columns.
+
+    drop_max_cardinality: bool, optional (default=True)
         Whether to drop categorical columns with maximum cardinality,
         i.e. the number of unique values is equal to the number of
         samples. Usually the case for names, IDs, etc...
 
-    minimum_cardinality: bool, optional (default=True)
+    drop_min_cardinality: bool, optional (default=True)
         Whether to drop columns with minimum cardinality, i.e. all
         values in the column are the same.
-
-    strip_categorical: bool, optional (default=True)
-        Whether to strip spaces from the categorical columns.
 
     drop_duplicates: bool, optional (default=False)
         Whether to drop duplicate rows. Only the first occurrence of
         every duplicated row is kept.
 
-    missing_target: bool, optional (default=True)
+    drop_missing_target: bool, optional (default=True)
         Whether to drop rows with missing values in the target column.
-        Is ignored if y is not provided.
+        This parameter is ignored if `y` is not provided.
 
     encode_target: bool, optional (default=True)
-        Whether to Label-encode the target column. Is ignored if y is
-        not provided.
+        Whether to Label-encode the target column. This parameter is
+        ignored if `y` is not provided.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -276,11 +458,8 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -299,23 +478,23 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        prohibited_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        maximum_cardinality: bool = True,
-        minimum_cardinality: bool = True,
+        drop_types: Optional[Union[str, SEQUENCE_TYPES]] = None,
         strip_categorical: bool = True,
+        drop_max_cardinality: bool = True,
+        drop_min_cardinality: bool = True,
         drop_duplicates: bool = False,
-        missing_target: bool = True,
+        drop_missing_target: bool = True,
         encode_target: bool = True,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
-        self.prohibited_types = prohibited_types
-        self.maximum_cardinality = maximum_cardinality
-        self.minimum_cardinality = minimum_cardinality
+        self.drop_types = drop_types
         self.strip_categorical = strip_categorical
+        self.drop_max_cardinality = drop_max_cardinality
+        self.drop_min_cardinality = drop_min_cardinality
         self.drop_duplicates = drop_duplicates
-        self.missing_target = missing_target
+        self.drop_missing_target = drop_missing_target
         self.encode_target = encode_target
 
         self.mapping = {}
@@ -348,10 +527,10 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = self._prepare_input(X, y)
 
         # Prepare the type of prohibited_types
-        if not self.prohibited_types:
-            self.prohibited_types = []
-        elif isinstance(self.prohibited_types, str):
-            self.prohibited_types = [self.prohibited_types]
+        if not self.drop_types:
+            self.drop_types = []
+        elif isinstance(self.drop_types, str):
+            self.drop_types = [self.drop_types]
 
         self.log("Applying data cleaning...", 1)
 
@@ -364,7 +543,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Drop features with invalid data type
             dtype = str(X[col].dtype)
-            if dtype in self.prohibited_types:
+            if dtype in self.drop_types:
                 self.log(
                     f" --> Dropping feature {col} for having a "
                     f"prohibited type: {dtype}.", 2
@@ -380,7 +559,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
 
                 # Drop features where all values are different
-                if self.maximum_cardinality and n_unique == len(X):
+                if self.drop_max_cardinality and n_unique == len(X):
                     self.log(
                         f" --> Dropping feature {col} due to maximum cardinality.", 2
                     )
@@ -388,7 +567,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
                     continue
 
             # Drop features with minimum cardinality (all values are the same)
-            if self.minimum_cardinality:
+            if self.drop_min_cardinality:
                 all_nan = X[col].isna().sum() == len(X)
                 if n_unique == 1 or all_nan:
                     self.log(
@@ -404,7 +583,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if y is not None:
             # Delete samples with NaN in target
-            if self.missing_target:
+            if self.drop_missing_target:
                 length = len(y)  # Save original length to count deleted rows later
                 y = y.replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
                 X = X[X.index.isin(y.index)]  # Select only indices that remain
@@ -469,11 +648,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     Attributes
     ----------
@@ -679,7 +855,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
 
             # Column is categorical and contains missing values
             elif nans > 0:
-                if self.strat_cat.lower() not in ["drop", "most_frequent"]:
+                if self.strat_cat.lower() not in ("drop", "most_frequent"):
                     self.log(
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_cat} in feature {col}.", 2
@@ -745,11 +921,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     **kwargs
         Additional keyword arguments passed to the `strategy` estimator.
@@ -772,7 +945,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
-        self._to_other = {}
+        self._to_other = defaultdict(list)
         self._encoders = {}
         self._cat_cols = None
         self._is_fitted = False
@@ -825,46 +998,44 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Fitting Encoder...", 1)
 
-        for col in X:
-            self._to_other[col] = []
-            if col in self._cat_cols:
-                # Group uncommon classes into "other"
-                if self.frac_to_other:
-                    for category, count in X[col].value_counts().items():
-                        if count < self.frac_to_other * len(X[col]):
-                            self._to_other[col].append(category)
-                            X[col] = X[col].replace(category, "other")
+        for col in (c for c in X if c in self._cat_cols):
+            # Group uncommon classes into "other"
+            if self.frac_to_other:
+                for category, count in X[col].value_counts().items():
+                    if count < self.frac_to_other * len(X[col]):
+                        self._to_other[col].append(category)
+                        X[col] = X[col].replace(category, "other")
 
-                # Count number of unique values in the column
-                n_unique = len(X[col].unique())
+            # Count number of unique values in the column
+            n_unique = len(X[col].unique())
 
-                # Perform encoding type dependent on number of unique values
-                if n_unique == 2:
-                    self._encoders[col] = OrdinalEncoder(
-                        dtype=np.int8,
-                        handle_unknown="error",
-                    ).fit(X[col].values.reshape(-1, 1))
+            # Perform encoding type dependent on number of unique values
+            if n_unique == 2:
+                self._encoders[col] = OrdinalEncoder(
+                    dtype=np.int8,
+                    handle_unknown="error",
+                ).fit(X[col].values.reshape(-1, 1))
 
-                elif 2 < n_unique <= self.max_onehot:
-                    self._encoders[col] = OneHotEncoder(
-                        handle_missing="error",
-                        handle_unknown="error",
-                        use_cat_names=True,
-                    ).fit(pd.DataFrame(X[col]))
+            elif 2 < n_unique <= self.max_onehot:
+                self._encoders[col] = OneHotEncoder(
+                    handle_missing="error",
+                    handle_unknown="error",
+                    use_cat_names=True,
+                ).fit(pd.DataFrame(X[col]))
 
-                else:
-                    self._encoders[col] = strategy(
-                        handle_missing="error",
-                        handle_unknown="error",
-                        **self.kwargs,
-                    ).fit(pd.DataFrame(X[col]), y)
+            else:
+                self._encoders[col] = strategy(
+                    handle_missing="error",
+                    handle_unknown="error",
+                    **self.kwargs,
+                ).fit(pd.DataFrame(X[col]), y)
 
         self._is_fitted = True
         return self
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Apply the transformations on the data.
+        """Apply the transformations to the data.
 
         Parameters
         ----------
@@ -885,34 +1056,33 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Encoding categorical columns...", 1)
 
-        for idx, col in enumerate(X):
-            if col in self._cat_cols:
-                # Convert classes to "other"
-                X[col] = X[col].replace(self._to_other[col], "other")
+        for idx, col in enumerate(c for c in X if c in self._cat_cols):
+            # Convert classes to "other"
+            X[col] = X[col].replace(self._to_other[col], "other")
 
-                self.log(
-                    f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                    f"feature {col}. Contains {len(X[col].unique())} classes.", 2
-                )
+            self.log(
+                f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
+                f"feature {col}. Contains {len(X[col].unique())} classes.", 2
+            )
 
-                # Perform encoding type dependent on number of classes
-                if self._encoders[col].__module__.startswith("sklearn"):
-                    X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
+            # Perform encoding type dependent on number of classes
+            if self._encoders[col].__module__.startswith("sklearn"):
+                X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
 
-                elif self._encoders[col].__class__.__name__.startswith("OneHot"):
-                    onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                    # Insert the new columns at old location
-                    for i, column in enumerate(onehot_cols):
-                        X.insert(idx + i, column, onehot_cols[column])
-                    # Drop the original and _nan columns
-                    X = X.drop([col, onehot_cols.columns[-1]], axis=1)
+            elif self._encoders[col].__class__.__name__.startswith("OneHot"):
+                onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
+                # Insert the new columns at old location
+                for i, column in enumerate(onehot_cols):
+                    X.insert(idx + i, column, onehot_cols[column])
+                # Drop the original and _nan columns
+                X = X.drop([col, onehot_cols.columns[-1]], axis=1)
 
-                else:
-                    rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                    X = X.drop(col, axis=1)  # Drop the original column
-                    # Insert the new columns at old location
-                    for i, column in enumerate(rest_cols):
-                        X.insert(idx + i, column, rest_cols[column])
+            else:
+                rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
+                X = X.drop(col, axis=1)  # Drop the original column
+                # Insert the new columns at old location
+                for i, column in enumerate(rest_cols):
+                    X.insert(idx + i, column, rest_cols[column])
 
         return X
 
@@ -926,8 +1096,10 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="z-score")
-        Strategy with which to select the outliers. Choose from:
+    strategy: str or sequence, optional (default="z-score")
+        Strategy with which to select the outliers. If sequence of
+        strategies, only samples marked as outliers by all chosen
+        strategies are dropped. Choose from:
             - "z-score": Uses the z-score of each data value.
             - "iForest": Uses an Isolation Forest.
             - "EE": Uses an Elliptic Envelope.
@@ -949,8 +1121,9 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy="z-score".
 
     include_target: bool, optional (default=False)
-        Whether to include the target column in the transformation.
-        This can be useful for regression tasks.
+        Whether to include the target column in the search for
+        outliers. This can be useful for regression tasks. Only
+        if strategy="z-score".
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -960,14 +1133,13 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
 
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
-
     **kwargs
-        Additional keyword arguments for the `strategy` estimator.
+        Additional keyword arguments for the `strategy` estimator. If
+        sequence of strategies, the params should be provided in a dict
+        with the strategy's name as key.
 
     Attributes
     ----------
@@ -980,7 +1152,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "z-score",
+        strategy: Union[str, SEQUENCE_TYPES] = "z-score",
         method: Union[int, float, str] = "drop",
         max_sigma: Union[int, float] = 3,
         include_target: bool = False,
@@ -1016,33 +1188,48 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed dataframe.
 
         y: pd.Series
-            Target column corresponding to X.
+            Target column corresponding to X. Only returned if provided.
 
         """
         X, y = self._prepare_input(X, y)
 
         # Check Parameters
-        if self.strategy.lower() not in ["z-score"] + list(PRUNING_STRATS):
-            raise ValueError(
-                "Invalid value for the strategy parameter. Choose from: "
-                f"z-score, {', '.join(PRUNING_STRATS)}."
-            )
+        for strat in lst(self.strategy):
+            if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
+                raise ValueError(
+                    "Invalid value for the strategy parameter. Choose from: "
+                    f"z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
+                )
+            if str(self.method).lower() != "drop" and strat.lower() != "z-score":
+                raise ValueError(
+                    "Invalid value for the method parameter. Only the z-score "
+                    f"strategy accepts another method than 'drop', got {self.method}."
+                )
+
         if isinstance(self.method, str):
-            if self.method.lower() not in ["drop", "min_max"]:
+            if self.method.lower() not in ("drop", "min_max"):
                 raise ValueError(
                     "Invalid value for the method parameter."
                     f"Choose from: 'drop', 'min_max'."
                 )
-        if self.strategy.lower() != "z-score" and str(self.method).lower() != "drop":
-            raise ValueError(
-                "Invalid value for the method parameter. Only the z-score "
-                f"strategy accepts another method than 'drop', got {self.method}."
-            )
+
         if self.max_sigma <= 0:
             raise ValueError(
                 "Invalid value for the max_sigma parameter."
                 f"Value should be > 0, got {self.max_sigma}."
             )
+
+        # Allocate kwargs to every estimator
+        kwargs = {}
+        for strat in lst(self.strategy):
+            kwargs[strat.lower()] = {}
+            for key, value in self.kwargs.items():
+                # Parameters for this estimator only
+                if key.lower() == strat.lower():
+                    kwargs[strat.lower()].update(value)
+                # Parameters for all estimators
+                elif key.lower() not in map(str.lower, lst(self.strategy)):
+                    kwargs[strat.lower()].update({key: value})
 
         self.log("Pruning outliers...", 1)
 
@@ -1050,64 +1237,76 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         objective = merge(X, y) if self.include_target and y is not None else X
         objective = objective.select_dtypes(include=["number"])
 
-        if self.strategy.lower() == "z-score":
-            z_scores = zscore(objective, nan_policy="propagate")
+        outliers = []
+        for strat in lst(self.strategy):
+            if strat.lower() == "z-score":
+                z_scores = zscore(objective, nan_policy="propagate")
 
-            if not isinstance(self.method, str):
-                cond = np.abs(z_scores) > self.max_sigma
-                objective = objective.mask(cond, self.method)
-                self.log(
-                    f" --> Replacing {cond.sum()} outlier values with {self.method}.", 2
-                )
+                if not isinstance(self.method, str):
+                    cond = np.abs(z_scores) > self.max_sigma
+                    objective = objective.mask(cond, self.method)
+                    self.log(
+                        f" --> Replacing {cond.sum()} outlier "
+                        f"values with {self.method}.", 2
+                    )
 
-            elif self.method.lower() == "min_max":
-                counts = 0
-                for i, col in enumerate(objective):
-                    # Replace outliers with NaN and after that with max,
-                    # so that the max is not calculated with the outliers in it
-                    cond1 = z_scores[:, i] > self.max_sigma
-                    mask = objective[col].mask(cond1, np.NaN)
-                    objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
+                elif self.method.lower() == "min_max":
+                    counts = 0
+                    for i, col in enumerate(objective):
+                        # Replace outliers with NaN and after that with max,
+                        # so that the max is not calculated with the outliers in it
+                        cond1 = z_scores[:, i] > self.max_sigma
+                        mask = objective[col].mask(cond1, np.NaN)
+                        objective[col] = mask.replace(np.NaN, mask.max(skipna=True))
 
-                    # Replace outliers with minimum
-                    cond2 = z_scores[:, i] < -self.max_sigma
-                    mask = objective[col].mask(cond2, np.NaN)
-                    objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
+                        # Replace outliers with minimum
+                        cond2 = z_scores[:, i] < -self.max_sigma
+                        mask = objective[col].mask(cond2, np.NaN)
+                        objective[col] = mask.replace(np.NaN, mask.min(skipna=True))
 
-                    # Sum number of replacements
-                    counts += cond1.sum() + cond2.sum()
+                        # Sum number of replacements
+                        counts += cond1.sum() + cond2.sum()
 
-                self.log(
-                    f" --> Replacing {counts} outlier values "
-                    "with the min or max of the column.", 2
-                )
+                    self.log(
+                        f" --> Replacing {counts} outlier values "
+                        "with the min or max of the column.", 2
+                    )
 
-            elif self.method.lower() == "drop":
-                ix = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
-                delete = len(ix) - ix.sum()  # Number of False values in index
-                self.log(f" --> Dropping {delete} samples due to outlier values.", 2)
+                elif self.method.lower() == "drop":
+                    mask = (np.abs(zscore(z_scores)) <= self.max_sigma).all(axis=1)
+                    outliers.append(mask)
+                    if len(lst(self.strategy)) > 1:
+                        self.log(
+                            f" --> The z-score strategy detected "
+                            f"{len(mask) - sum(mask)} outliers.", 2
+                        )
 
-                # Drop rows based on index
-                X, objective = X[ix], objective[ix]
-                if y is not None:
-                    y = y[ix]
+            else:
+                estimator = PRUNING_STRATS[strat.lower()](**kwargs[strat.lower()])
+                mask = estimator.fit_predict(objective) != -1
+                outliers.append(mask)
+                if len(lst(self.strategy)) > 1:
+                    self.log(
+                        f" --> The {estimator.__class__.__name__} "
+                        f"detected {len(mask) - sum(mask)} outliers.", 2)
 
-        else:
-            estimator = PRUNING_STRATS[self.strategy.lower()](**self.kwargs)
-            mask = estimator.fit_predict(X) != -1
-            self.log(f" --> Dropping {len(mask) - mask.sum()} outliers.", 2)
+                # Add the estimator as attribute to the instance
+                setattr(self, strat.lower(), estimator)
 
-            # Add the estimator as attribute to Balancer
-            setattr(self, self.strategy.lower(), estimator)
+        if outliers:
+            # Select outliers from intersection of strategies
+            mask = [any([i for i in strats]) for strats in zip(*outliers)]
+            self.log(f" --> Dropping {len(mask) - sum(mask)} outliers.", 2)
 
-            X, objective = X.loc[mask, :], objective.loc[mask, :]
+            # Keep only the non-outliers from the data
+            X, objective = X[mask], objective[mask]
             if y is not None:
                 y = y[mask]
 
-        # Replace the numerical columns in X with the new values from objective
-        for col in objective:
-            if y is None or col != y.name:
-                X[col] = objective[col]
+        else:  # Replace the columns in X with the new values from objective
+            for col in objective:
+                if y is None or col != y.name:
+                    X[col] = objective[col]
 
         if y is not None:
             if self.include_target:
@@ -1136,9 +1335,6 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             - If -1: Use all available cores.
             - If <-1: Use number of cores - 1 - value.
 
-        Beware that using multiple processes on the same machine may
-        cause memory issues for large datasets.
-
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
             - 0 to not print anything.
@@ -1147,11 +1343,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     logger: str, Logger or None, optional (default=None)
         - If None: Doesn't save a logging file.
-        - If str: Name of the logging file. Use "auto" for default name.
+        - If str: Name of the log file. Use "auto" for automatic naming.
         - Else: Python `logging.Logger` instance.
-
-        The default name consists of the class' name followed by the
-        timestamp of the logger's creation.
 
     random_state: int or None, optional (default=None)
         Seed used by the random number generator. If None, the random
@@ -1241,14 +1434,14 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         else:
             self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
 
-        # Add n_jobs or random_state if its one of the balancer's parameters
-        for param in ["n_jobs", "random_state"]:
+        # Add n_jobs or random_state if its one of the estimator's parameters
+        for param in ("n_jobs", "random_state"):
             if param in estimator.get_params():
                 estimator.set_params(**{param: getattr(self, param)})
 
         X, y = estimator.fit_resample(X, y)
 
-        # Add the estimator as attribute to Balancer
+        # Add the estimator as attribute to the instance
         setattr(self, self.strategy.lower(), estimator)
 
         # Print changes

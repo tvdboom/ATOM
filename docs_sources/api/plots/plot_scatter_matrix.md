@@ -1,48 +1,63 @@
 # plot_scatter_matrix
 ---------------------
 
-<a name="atom"></a>
-<pre><em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None, title=None, figsize=(10, 10), filename=None, display=True, **kwargs)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3107">[source]</a></div></pre>
-Plot a matrix of scatter plots. A subset of max 250 random samples are
-selected from every column to not clutter the plot.
-<table width="100%">
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_scatter_matrix</strong>(columns=None,
+ title=None, figsize=(10, 10), filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3461">[source]</a>
+</span>
+</div>
+
+Plot a matrix of scatter plots. A subset of max 250 random samples
+are selected from every column to not clutter the plot.
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>columns: slice, sequence or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>columns: slice, sequence or None, optional (default=None)</strong><br>
 Slice, names or indices of the columns to plot. If None,
 plot all columns in the dataset. Selected categorical
 columns are ignored.
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=(10, 10))</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=(10, 10))</strong><br>
 Figure's size, format as (x, y).
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
-Whether to render the plot.
-</blockquote>
-<strong>**kwargs</strong>
-<blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
+</p>
+<p>
+<strong>**kwargs</strong><br>
 Additional keyword arguments for seaborn's <a href="https://seaborn.pydata.org/generated/seaborn.pairplot.html">pairplot</a>.
-</blockquote>
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
+</td>
 </tr>
 </table>
 <br />
 
 
+
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for basemodel.py
 
 """
@@ -11,11 +11,42 @@ Description: Unit tests for basemodel.py
 import pytest
 import numpy as np
 import pandas as pd
+from unittest.mock import patch
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
 from atom.utils import check_scaling
-from .utils import X_bin, y_bin, X_reg, y_reg, X10_str, y10
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
+
+
+# Test magic methods =============================================== >>
+
+def test_getattr():
+    """Assert that branch attributes can be called from a model."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.balance(strategy="smote")
+    atom.run("Tree")
+    assert isinstance(atom.tree.shape, tuple)
+    assert isinstance(atom.tree.alcohol, pd.Series)
+    assert isinstance(atom.tree.head(), pd.DataFrame)
+    with pytest.raises(AttributeError, match=r".*has no attribute.*"):
+        print(atom.tree.data)
+
+
+def test_contains():
+    """Assert that we can test if model contains a column."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("Tree")
+    assert "alcohol" in atom.tree
+
+
+def test_getitem():
+    """Assert that the models are subscriptable."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    atom.run("Tree")
+    assert atom.tree["alcohol"].equals(atom.dataset["alcohol"])
+    with pytest.raises(TypeError, match=r".*subscriptable with type str.*"):
+        print(atom.tree[2])
 
 
 # Test utility properties ========================================== >>
@@ -217,51 +248,35 @@ def test_delete():
     assert not atom.metric
 
 
+def test_scoring_invalid_dataset():
+    """Assert that an error is raised when the dataset is invalid."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("MNB")
+    pytest.raises(ValueError, atom.mnb.scoring, dataset="invalid")
+
+
 def test_scoring_metric_None():
     """Assert that the scoring methods works when metric is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    assert isinstance(atom.mnb.scoring(), str)
+    scores = atom.mnb.scoring()
+    assert len(scores) == 9
 
-
-def test_unknown_metric():
-    """Assert that an error is raised when metric is unknown."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
-    pytest.raises(ValueError, atom.rf.scoring, "unknown")
-
-
-def test_unknown_dataset():
-    """Assert that an error is raised when metric is unknown."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run("RF")
-    pytest.raises(ValueError, atom.rf.scoring, metric="r2", dataset="unknown")
-
-
-def test_scoring_metric_acronym():
-    """Assert that the scoring methods works for metric acronyms."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("MNB")
-    assert isinstance(atom.mnb.scoring("ap"), float)
-    assert isinstance(atom.mnb.scoring("auc"), float)
+    scores = atom.mnb.scoring()
+    assert len(scores) == 6
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("OLS")
+    scores = atom.ols.scoring()
+    assert len(scores) == 7
 
 
-@pytest.mark.parametrize("on_set", ["train", "test"])
-def test_scoring_custom_metrics(on_set):
-    """Assert that the scoring methods works for custom metrics."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    assert isinstance(atom.mnb.scoring("cm", on_set), np.ndarray)
-    for metric in ["tn", "fp", "fn", "tp"]:
-        assert isinstance(atom.mnb.scoring(metric, on_set), int)
-    for metric in ["lift", "fpr", "tpr", "sup"]:
-        assert isinstance(atom.mnb.scoring(metric, on_set), float)
-
-
-def test_scoring_kwargs():
-    """Assert that the scoring functions uses the kwargs."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    score_1 = atom.lr.scoring("accuracy")
-    score_2 = atom.lr.scoring("accuracy", normalize=False)
-    assert score_1 != score_2
+@patch("mlflow.tracking.MlflowClient.log_metric")
+def test_rename_to_mlflow(mlflow):
+    """Assert that renaming also changes the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.scoring()
+    assert mlflow.call_count == 10  # 9 from scoring + 1 from training

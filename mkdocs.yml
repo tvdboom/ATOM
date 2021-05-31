@@ -1,138 +1,209 @@
 site_name: ATOM
-site_url: http://tvdboom.github.io/ATOM
-site_author: tvdboom
-site_description: Documentation for ATOM, a Python package for fast exploration and experimentation of supervised machine learning pipelines.
-
+site_author: Mavs
+site_url: https://tvdboom.github.io/ATOM
+repo_name: tvdboom/ATOM
 repo_url: https://github.com/tvdboom/ATOM
 edit_uri: ""
 docs_dir: docs_sources/
 site_dir: docs/
-theme: lumen
+copyright: © Copyright 2019-2021, by Mavs.
+
+theme:
+  name: material
+  logo: img/icon_white.png
+  favicon: img/favicon.ico
+  custom_dir: docs_sources/overrides
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.top
+  palette:
+    # Light mode
+    - amber: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/tvdboom/ATOM
+      name: GitHub
+    - icon: fontawesome/brands/medium
+      link: https://tvdboom.medium.com/
+      name: Medium
+    - icon: fontawesome/solid/envelope
+      link: mailto:m.524687@gmail.com
+      name: Email
+
+plugins:
+    - mkdocs-jupyter
+    - search
 
 markdown_extensions:
-- tables
-- fenced_code
-- admonition
+    - tables
+    - fenced_code
+    - admonition
+    - pymdownx.highlight
+    - pymdownx.superfences
+    - pymdownx.inlinehilite
+    - pymdownx.keys
+    - pymdownx.superfences
+    - pymdownx.snippets
 
-copyright: © Copyright 2020, by tvdboom.
+extra_css:
+    - stylesheets/extra.css
 
 nav:
-- Getting started: getting_started.md
-- User guide: user_guide.md
-- API:
-    - ATOM:
-        - ATOMClassifier: API/ATOM/atomclassifier.md
-        - ATOMRegressor: API/ATOM/atomregressor.md
-        - ATOMLoader: API/ATOM/atomloader.md
-        - ATOMModel: API/ATOM/atommodel.md
-    - Data cleaning:
-         - Scaler: API/data_cleaning/scaler.md
-         - Cleaner: API/data_cleaning/cleaner.md
-         - Imputer: API/data_cleaning/imputer.md
-         - Encoder: API/data_cleaning/encoder.md
-         - Pruner: API/data_cleaning/pruner.md
-         - Balancer: API/data_cleaning/balancer.md
-    - Feature engineering:
-        - FeatureGenerator: API/feature_engineering/feature_generator.md
-        - FeatureSelector: API/feature_engineering/feature_selector.md
-    - Training:
-        - Direct:
-           - DirectClassifier: API/training/directclassifier.md
-           - DirectRegressor: API/training/directregressor.md
-        - SuccessiveHalving:
+    - About: about.md
+    - Getting started: getting_started.md
+    - User guide:
+        - Introduction: user_guide/introduction.md
+        - Nomenclature: user_guide/nomenclature.md
+        - First steps: user_guide/first_steps.md
+        - Data pipelines: user_guide/data_pipelines.md
+        - Logging & Tracking: user_guide/logging.md
+        - Data cleaning: user_guide/data_cleaning.md
+        - NLP: user_guide/nlp.md
+        - Feature engineering: user_guide/feature_engineering.md
+        - Models: user_guide/models.md
+        - Training: user_guide/training.md
+        - Predicting: user_guide/predicting.md
+        - Plots: user_guide/plots.md
+    - Release history: release_history.md
+    - API:
+        - ATOM:
+            - ATOMClassifier: API/ATOM/atomclassifier.md
+            - ATOMRegressor: API/ATOM/atomregressor.md
+            - ATOMLoader: API/ATOM/atomloader.md
+            - ATOMModel: API/ATOM/atommodel.md
+        - Data cleaning:
+             - Scaler: API/data_cleaning/scaler.md
+             - Gauss: API/data_cleaning/gauss.md
+             - Cleaner: API/data_cleaning/cleaner.md
+             - Imputer: API/data_cleaning/imputer.md
+             - Encoder: API/data_cleaning/encoder.md
+             - Pruner: API/data_cleaning/pruner.md
+             - Balancer: API/data_cleaning/balancer.md
+        - NLP:
+            - TextCleaner: API/nlp/textcleaner.md
+            - Tokenizer: API/nlp/tokenizer.md
+            - Normalizer: API/nlp/normalizer.md
+            - Vectorizer: API/nlp/vectorizer.md
+        - Feature engineering:
+            - FeatureGenerator: API/feature_engineering/feature_generator.md
+            - FeatureSelector: API/feature_engineering/feature_selector.md
+        - Training:
+            - DirectClassifier: API/training/directclassifier.md
+            - DirectRegressor: API/training/directregressor.md
             - SuccessiveHalvingClassifier: API/training/successivehalvingclassifier.md
             - SuccessiveHalvingRegressor: API/training/successivehalvingregressor.md
-        - TrainSizing:
             - TrainSizingClassifier: API/training/trainsizingclassifier.md
             - TrainSizingRegressor: API/training/trainsizingregressor.md
-    - Models:
-        - Gaussian Process: API/models/gp.md
-        - Gaussian Naive Bayes: API/models/gnb.md
-        - Multinomial Naive Bayes: API/models/mnb.md
-        - Bernoulli Naive Bayes: API/models/bnb.md
-        - Categorical Naive Bayes: API/models/catnb.md
-        - Complement Naive Bayes: API/models/cnb.md
-        - Ordinary Least Squares: API/models/ols.md
-        - Ridge: API/models/ridge.md
-        - Lasso: API/models/lasso.md
-        - Elastic Net: API/models/en.md
-        - Bayesian Ridge: API/models/br.md
-        - Automated Relevance Determination: API/models/ard.md
-        - Logistic Regression: API/models/lr.md
-        - Linear Discriminant Analysis: API/models/lda.md
-        - Quadratic Discriminant Analysis: API/models/qda.md
-        - K-Nearest Neighbors: API/models/knn.md
-        - Radius Nearest Neighbors: API/models/rnn.md
-        - Decision Tree: API/models/tree.md
-        - Bagging: API/models/bag.md
-        - Extra-Trees: API/models/et.md
-        - Random Forest: API/models/rf.md
-        - AdaBoost: API/models/adab.md
-        - Gradient Boosting Machine: API/models/gbm.md
-        - XGBoost: API/models/xgb.md
-        - LightGBM: API/models/lgb.md
-        - CatBoost: API/models/catb.md
-        - Linear-SVM: API/models/lsvm.md
-        - Kernel-SVM: API/models/ksvm.md
-        - Passive Aggressive: API/models/pa.md
-        - Stochastic Gradient Descent: API/models/sgd.md
-        - Multi-layer Perceptron: API/models/mlp.md
-    - Predicting:
-          - transform: API/predicting/transform.md
-          - predict: API/predicting/predict.md
-          - predict_proba: API/predicting/predict_proba.md
-          - predict_log_proba: API/predicting/predict_log_proba.md
-          - decision_function: API/predicting/decision_function.md
-          - score: API/predicting/score.md
-    - Plots:
-        - plot_correlation: API/plots/plot_correlation.md
-        - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
-        - plot_distribution: API/plots/plot_distribution.md
-        - plot_qq: API/plots/plot_qq.md
-        - plot_pipeline: API/plots/plot_pipeline.md
-        - plot_pca: API/plots/plot_pca.md
-        - plot_components: API/plots/plot_components.md
-        - plot_rfecv: API/plots/plot_rfecv.md
-        - plot_successive_halving: API/plots/plot_successive_halving.md
-        - plot_learning_curve: API/plots/plot_learning_curve.md
-        - plot_results: API/plots/plot_results.md
-        - plot_bo: API/plots/plot_bo.md
-        - plot_evals: API/plots/plot_evals.md
-        - plot_roc: API/plots/plot_roc.md
-        - plot_prc: API/plots/plot_prc.md
-        - plot_permutation_importance: API/plots/plot_permutation_importance.md
-        - plot_feature_importance: API/plots/plot_feature_importance.md
-        - plot_partial_dependence: API/plots/plot_partial_dependence.md
-        - plot_errors: API/plots/plot_errors.md
-        - plot_residuals: API/plots/plot_residuals.md
-        - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
-        - plot_threshold: API/plots/plot_threshold.md
-        - plot_probabilities: API/plots/plot_probabilities.md
-        - plot_calibration: API/plots/plot_calibration.md
-        - plot_gains: API/plots/plot_gains.md
-        - plot_lift: API/plots/plot_lift.md
-        - bar_plot: API/plots/bar_plot.md
-        - beeswarm_plot: API/plots/beeswarm_plot.md
-        - decision_plot: API/plots/decision_plot.md
-        - force_plot: API/plots/force_plot.md
-        - heatmap_plot: API/plots/heatmap_plot.md
-        - scatter_plot: API/plots/scatter_plot.md
-        - waterfall_plot: API/plots/waterfall_plot.md
-- Examples:
-    - AutoML: examples/automl.html" target="_blank
-    - Binary classification: examples/binary_classification.html" target="_blank
-    - Calibration: examples/calibration.html" target="_blank
-    - Deep learning: examples/deep_learning.html" target="_blank
-    - Early stopping: examples/early_stopping.html" target="_blank
-    - Ensembles: examples/ensembles.html" target="_blank
-    - Feature engineering: examples/feature_engineering.html" target="_blank
-    - Imbalanced datasets: examples/imbalanced_datasets.html" target="_blank
-    - Multiclass classification: examples/multiclass_classification.html" target="_blank
-    - Multi-metric runs: examples/multi_metric.html" target="_blank
-    - Regression: examples/regression.html" target="_blank
-    - Successive halving: examples/successive_halving.html" target="_blank
-    - Train sizing: examples/train_sizing.html" target="_blank
-    - Utilities: examples/utilities.html" target="_blank
-- FAQ: faq.md
-- Dependencies: dependencies.md
-- License: license.md
+        - Models:
+            - Dummy: API/models/dummy.md
+            - Gaussian Process: API/models/gp.md
+            - Gaussian Naive Bayes: API/models/gnb.md
+            - Multinomial Naive Bayes: API/models/mnb.md
+            - Bernoulli Naive Bayes: API/models/bnb.md
+            - Categorical Naive Bayes: API/models/catnb.md
+            - Complement Naive Bayes: API/models/cnb.md
+            - Ordinary Least Squares: API/models/ols.md
+            - Ridge: API/models/ridge.md
+            - Lasso: API/models/lasso.md
+            - Elastic Net: API/models/en.md
+            - Bayesian Ridge: API/models/br.md
+            - Automated Relevance Determination: API/models/ard.md
+            - Logistic Regression: API/models/lr.md
+            - Linear Discriminant Analysis: API/models/lda.md
+            - Quadratic Discriminant Analysis: API/models/qda.md
+            - K-Nearest Neighbors: API/models/knn.md
+            - Radius Nearest Neighbors: API/models/rnn.md
+            - Decision Tree: API/models/tree.md
+            - Bagging: API/models/bag.md
+            - Extra-Trees: API/models/et.md
+            - Random Forest: API/models/rf.md
+            - AdaBoost: API/models/adab.md
+            - Gradient Boosting Machine: API/models/gbm.md
+            - XGBoost: API/models/xgb.md
+            - LightGBM: API/models/lgb.md
+            - CatBoost: API/models/catb.md
+            - Linear-SVM: API/models/lsvm.md
+            - Kernel-SVM: API/models/ksvm.md
+            - Passive Aggressive: API/models/pa.md
+            - Stochastic Gradient Descent: API/models/sgd.md
+            - Multi-layer Perceptron: API/models/mlp.md
+        - Predicting:
+              - transform: API/predicting/transform.md
+              - predict: API/predicting/predict.md
+              - predict_proba: API/predicting/predict_proba.md
+              - predict_log_proba: API/predicting/predict_log_proba.md
+              - decision_function: API/predicting/decision_function.md
+              - score: API/predicting/score.md
+        - Plots:
+            - plot_correlation: API/plots/plot_correlation.md
+            - plot_scatter_matrix: API/plots/plot_scatter_matrix.md
+            - plot_distribution: API/plots/plot_distribution.md
+            - plot_qq: API/plots/plot_qq.md
+            - plot_wordcloud: API/plots/plot_wordcloud.md
+            - plot_ngrams: API/plots/plot_ngrams.md
+            - plot_pipeline: API/plots/plot_pipeline.md
+            - plot_pca: API/plots/plot_pca.md
+            - plot_components: API/plots/plot_components.md
+            - plot_rfecv: API/plots/plot_rfecv.md
+            - plot_successive_halving: API/plots/plot_successive_halving.md
+            - plot_learning_curve: API/plots/plot_learning_curve.md
+            - plot_results: API/plots/plot_results.md
+            - plot_bo: API/plots/plot_bo.md
+            - plot_evals: API/plots/plot_evals.md
+            - plot_roc: API/plots/plot_roc.md
+            - plot_prc: API/plots/plot_prc.md
+            - plot_permutation_importance: API/plots/plot_permutation_importance.md
+            - plot_feature_importance: API/plots/plot_feature_importance.md
+            - plot_partial_dependence: API/plots/plot_partial_dependence.md
+            - plot_errors: API/plots/plot_errors.md
+            - plot_residuals: API/plots/plot_residuals.md
+            - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
+            - plot_threshold: API/plots/plot_threshold.md
+            - plot_probabilities: API/plots/plot_probabilities.md
+            - plot_calibration: API/plots/plot_calibration.md
+            - plot_gains: API/plots/plot_gains.md
+            - plot_lift: API/plots/plot_lift.md
+            - bar_plot: API/plots/bar_plot.md
+            - beeswarm_plot: API/plots/beeswarm_plot.md
+            - decision_plot: API/plots/decision_plot.md
+            - force_plot: API/plots/force_plot.md
+            - heatmap_plot: API/plots/heatmap_plot.md
+            - scatter_plot: API/plots/scatter_plot.md
+            - waterfall_plot: API/plots/waterfall_plot.md
+    - Examples:
+        - AutoML: examples/automl.ipynb
+        - Binary classification: examples/binary_classification.ipynb
+        - Calibration: examples/calibration.ipynb
+        - Deep learning: examples/deep_learning.ipynb
+        - Early stopping: examples/early_stopping.ipynb
+        - Ensembles: examples/ensembles.ipynb
+        - Feature engineering: examples/feature_engineering.ipynb
+        - Imbalanced datasets: examples/imbalanced_datasets.ipynb
+        - Multiclass classification: examples/multiclass_classification.ipynb
+        - Multi-metric runs: examples/multi_metric.ipynb
+        - Natural Language Processing: examples/nlp.ipynb
+        - Regression: examples/regression.ipynb
+        - Successive halving: examples/successive_halving.ipynb
+        - Train sizing: examples/train_sizing.ipynb
+        - Utilities: examples/utilities.ipynb
+    - FAQ: faq.md
+    - Dependencies: dependencies.md
+    - License: license.md

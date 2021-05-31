@@ -1,35 +1,52 @@
 # plot_components
 -----------------
 
-<pre><em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None, title=None, figsize=None, filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L538">[source]</a></div></pre>
-Plot the explained variance ratio per components. Only available if PCA
-was applied on the data.
-<table width="100%">
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_components</strong>(show=None,
+title=None, figsize=None, filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L586">[source]</a>
+</span>
+</div>
+
+Plot the explained variance ratio per component. Only available if
+[PCA](../../../user_guide/feature_engineering/#pca) was applied on
+the data.
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>show: int or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>show: int or None, optional (default=None)</strong><br>
 Number of components to show. None to show all.
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple or None, optional (default=None)</strong><br>
 Figure's size, format as (x, y). If None, it adapts the size to the
-number of features shown.
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
-Whether to render the plot.
-</blockquote>
+number of components shown.
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
+</td>
 </tr>
 </table>
 <br />
@@ -37,7 +54,6 @@ Whether to render the plot.
 
 
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

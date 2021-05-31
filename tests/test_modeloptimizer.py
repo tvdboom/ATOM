@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for modeloptimizer.py
 
 """
@@ -10,12 +10,14 @@ Description: Unit tests for modeloptimizer.py
 # Standard packages
 import glob
 import pytest
+from unittest.mock import patch
 from sklearn.calibration import CalibratedClassifierCV
 from skopt.learning import GaussianProcessRegressor
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
-from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg
+from atom.training import DirectClassifier
+from .utils import FILE_DIR, X_bin, y_bin, X_reg, y_reg, bin_train, bin_test
 
 
 # Test utilities =================================================== >>
@@ -34,7 +36,7 @@ def test_repr_method():
     assert str(atom.lda).startswith("Linear Discriminant")
 
 
-# Test bayesian_optimization ======================================= >>
+# Test training ==================================================== >>
 
 def test_n_calls_lower_n_initial_points():
     """Assert than an error is raised when n_calls<n_initial_points."""
@@ -104,6 +106,15 @@ def test_est_params_for_fit(model):
     assert getattr(atom, model)._stopped
 
 
+@patch("mlflow.set_tag")
+def test_nested_runs_to_mlflow(mlflow):
+    """Assert that the BO is logged to mlflow as nested runs."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_bo = True
+    atom.run("Tree", n_calls=5)
+    assert mlflow.call_count == 5  # Only called at iterations
+
+
 def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
@@ -111,19 +122,84 @@ def test_verbose_is_1():
     assert atom.lr._pbar is not None
 
 
-def test_bagging_attribute_types():
-    """Assert that the bagging attributes have python types (not numpy)."""
+@patch("mlflow.set_tags")
+def test_run_set_tags_to_mlflow(mlflow):
+    """Assert that the mlflow run gets tagged."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    mlflow.assert_called_with(
+        {
+            "fullname": atom.gnb.fullname,
+            "branch": atom.gnb.branch.name,
+            "time": atom.gnb.time_fit,
+        }
+    )
+
+
+@patch("mlflow.log_params")
+def test_run_log_params_to_mlflow(mlflow):
+    """Assert that model parameters are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    assert mlflow.call_count == 1
+
+
+@patch("mlflow.log_metric")
+def test_run_log_metric_to_mlflow(mlflow):
+    """Assert that metrics are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB", metric=["f1", "recall", "accuracy"])
+    assert mlflow.call_count == 3
+
+
+@patch("mlflow.log_metric")
+def test_run_log_evals_to_mlflow(mlflow):
+    """Assert that eval metrics are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("CatB")
+    assert mlflow.call_count > 10
+
+
+@patch("mlflow.sklearn.log_model")
+def test_run_log_models_to_mlflow(mlflow):
+    """Assert that models are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_model = True
+    atom.run("LGB")
+    mlflow.assert_called_with(atom.lgb.estimator, "LGBMClassifier")
+
+
+@patch("mlflow.log_artifact")
+def test_run_log_data_to_mlflow(mlflow):
+    """Assert that train and test sets are logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_data = True
+    atom.run("GNB")
+    assert mlflow.call_count == 2  # Train and test set
+
+
+@patch("mlflow.sklearn.log_model")
+def test_run_log_pipeline_to_mlflow(mlflow):
+    """Assert that renaming also changes the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.log_pipeline = True
+    atom.run("GNB")
+    assert mlflow.call_count == 2  # Model + Pipeline
+
+
+def test_bootstrap_attribute_types():
+    """Assert that the bootstrap attributes have python types (not numpy)."""
     # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", n_calls=5, bagging=5)
-    assert isinstance(atom.lgb.metric_bagging, list)
-    assert isinstance(atom.lgb.mean_bagging, float)
+    atom.run("LGB", n_calls=5, n_bootstrap=5)
+    assert isinstance(atom.lgb.metric_bootstrap, list)
+    assert isinstance(atom.lgb.mean_bootstrap, float)
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LGB", metric=("f1", "auc", "recall"), bagging=5)
-    assert isinstance(atom.lgb.metric_bagging[0], tuple)
-    assert isinstance(atom.lgb.mean_bagging, list)
+    atom.run("LGB", metric=("f1", "auc", "recall"), n_bootstrap=5)
+    assert isinstance(atom.lgb.metric_bootstrap[0], tuple)
+    assert isinstance(atom.lgb.mean_bootstrap, list)
 
 
 # Test utility methods ============================================= >>
@@ -160,14 +236,54 @@ def test_calibrate_reset_predictions():
     assert atom.mnb._pred_attrs[9] is None
 
 
+@patch("mlflow.sklearn.log_model")
+def test_calibrate_to_mlflow(mlflow):
+    """Assert that the CCV is logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.gnb.calibrate()
+    mlflow.assert_called_with(atom.gnb.estimator, "CalibratedClassifierCV")
+
+
+def test_export_pipeline_atom():
+    """Assert that the pipeline can be retrieved from the model."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert len(atom.lr.export_pipeline()) == 2
+
+
+def test_export_pipeline_trainer():
+    """Assert that the pipeline can be retrieved from the model."""
+    trainer = DirectClassifier("LR", random_state=1)
+    trainer.run(bin_train, bin_test)
+    assert len(trainer.lr.export_pipeline()) == 2
+
+
+def test_cross_validate():
+    """Assert that the cross_validate method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
+
+
 def test_rename():
     """Assert that the model's tag can be changed."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("MNB")
-    atom.mnb.rename("_2")
-    assert atom.models == "MNB_2"
-    atom.mnb_2.rename("mnb_3")
-    assert atom.models == "MNB_3"
+    atom.run(["MNB", "MNB_2"])
+    pytest.raises(PermissionError, atom.mnb.rename, name="_2")
+    atom.mnb.rename("_3")
+    assert atom.models == ["MNB_3", "MNB_2"]
+    atom.mnb_2.rename()
+    assert atom.models == ["MNB_3", "MNB"]
+
+
+@patch("mlflow.tracking.MlflowClient.set_tag")
+def test_rename_to_mlflow(mlflow):
+    """Assert that renaming also changes the mlflow run."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run("GNB")
+    atom.gnb.rename("GNB2")
+    mlflow.assert_called_with(atom.gnb2._run.info.run_id, "mlflow.runName", "GNB2")
 
 
 def test_save_estimator():

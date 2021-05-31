@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the Branch class.
 
 """
@@ -18,7 +18,7 @@ from typing import Optional
 from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    check_deep, composed, crash, method_to_log,
+    check_multidimensional, composed, crash, method_to_log,
 )
 
 
@@ -27,9 +27,8 @@ class Branch:
 
     Parameters
     ----------
-    *args: arguments
-        Parent class from which the branch is called and name of
-        the branch.
+    *args
+        Parent class (from which the branch is called) and name.
 
     parent: str or None, optional (default=None)
         Name of the branch from which to split.
@@ -54,19 +53,16 @@ class Branch:
 
     """
 
-    # Private attributes/properties (not accessible from atom)
-    private = ("T", "name", "data", "idx")
-
     def __init__(self, *args, parent=None):
         # Make copies of the params to not overwrite mutable variables
         self.T, self.name = args[0], args[1]
         if not parent:
             self.pipeline = pd.Series(data=[], name=self.name, dtype="object")
-            for attr in ["data", "idx", "mapping", "feature_importance"]:
+            for attr in ("data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, None)
         else:
             # Copy the branch attrs and point to the rest
-            for attr in ["pipeline", "data", "idx", "mapping", "feature_importance"]:
+            for attr in ("pipeline", "data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, copy(getattr(self.T._branches[parent], attr)))
             for attr in vars(self.T._branches[parent]):
                 if not hasattr(self, attr):  # If not already assigned...
@@ -91,9 +87,15 @@ class Branch:
 
     # Utility methods ============================================== >>
 
+    def _get_attrs(self):
+        """Get properties and attributes to call from parent."""
+        props = [p for p in dir(self) if isinstance(getattr(Branch, p, None), property)]
+        attrs = [a for a in vars(self) if a not in ("T", "name", "data", "idx")]
+        return props + attrs
+
     def _get_depending_models(self):
         """Return the models that are dependent on this branch."""
-        return [m.name for m in self.T._models if m.branch.name == self.name]
+        return [m.name for m in self.T._models if m.branch is self]
 
     @composed(crash, method_to_log)
     def status(self):
@@ -120,19 +122,17 @@ class Branch:
         elif name not in self.T._branches:
             raise ValueError(f"Branch {name} not found in the pipeline!")
 
-        dependent = self.T._branches[name]._get_depending_models()
-        if len(self.T._branches) == 1:
+        if len(self.T._branches) <= 2:
             raise PermissionError("Can't delete the last branch in the pipeline!")
-        elif len(dependent):
-            raise PermissionError(
-                "Can't delete a branch with depending models! Consider deleting "
-                f"the models first. Depending models are: {', '.join(dependent)}."
-            )
         else:
+            # Delete all depending models
+            for model in self.T._branches[name]._get_depending_models():
+                self.T.delete(model)
+
             self.T._branches.pop(name)
             if name == self.T._current:  # Reset the current branch
-                self.T._current = list(self.T._branches.keys())[0]
-            self.T.log(f"Branch {name} successfully deleted!")
+                self.T._current = list(self.T._branches.keys())[1]  # 0 is og
+            self.T.log(f"Branch {name} successfully deleted!", 1)
 
     # Data properties ============================================== >>
 
@@ -196,7 +196,7 @@ class Branch:
                     f"indices, got {value.index} != {side.index}."
                 )
 
-        if under_name:  # Check they have the same columns
+        if under_name:  # Check for equal number of columns
             if "y" in name:
                 if value.name != under.name:
                     raise ValueError(
@@ -225,8 +225,8 @@ class Branch:
 
     @dataset.setter
     @typechecked
-    def dataset(self, dataset: Optional[X_TYPES]):
-        self.data = self._check_setter("dataset", dataset)
+    def dataset(self, value: Optional[X_TYPES]):
+        self.data = self._check_setter("dataset", value)
 
     @property
     def train(self):
@@ -235,8 +235,8 @@ class Branch:
 
     @train.setter
     @typechecked
-    def train(self, train: X_TYPES):
-        df = self._check_setter("train", train)
+    def train(self, value: X_TYPES):
+        df = self._check_setter("train", value)
         self.data = pd.concat([df, self.test])
         self.idx[0] = len(df)
 
@@ -247,8 +247,8 @@ class Branch:
 
     @test.setter
     @typechecked
-    def test(self, test: X_TYPES):
-        df = self._check_setter("test", test)
+    def test(self, value: X_TYPES):
+        df = self._check_setter("test", value)
         self.data = pd.concat([self.train, df])
         self.idx[1] = len(df)
 
@@ -259,8 +259,8 @@ class Branch:
 
     @X.setter
     @typechecked
-    def X(self, X: X_TYPES):
-        df = self._check_setter("X", X)
+    def X(self, value: X_TYPES):
+        df = self._check_setter("X", value)
         self.data = merge(df, self.y)
 
     @property
@@ -270,8 +270,8 @@ class Branch:
 
     @y.setter
     @typechecked
-    def y(self, y: SEQUENCE_TYPES):
-        series = self._check_setter("y", y)
+    def y(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y", value)
         self.data = merge(self.data.drop(self.target, axis=1), series)
 
     @property
@@ -281,8 +281,8 @@ class Branch:
 
     @X_train.setter
     @typechecked
-    def X_train(self, X_train: X_TYPES):
-        df = self._check_setter("X_train", X_train)
+    def X_train(self, value: X_TYPES):
+        df = self._check_setter("X_train", value)
         self.data = pd.concat([merge(df, self.train[self.target]), self.test])
 
     @property
@@ -292,8 +292,8 @@ class Branch:
 
     @X_test.setter
     @typechecked
-    def X_test(self, X_test: X_TYPES):
-        df = self._check_setter("X_test", X_test)
+    def X_test(self, value: X_TYPES):
+        df = self._check_setter("X_test", value)
         self.data = pd.concat([self.train, merge(df, self.test[self.target])])
 
     @property
@@ -303,8 +303,8 @@ class Branch:
 
     @y_train.setter
     @typechecked
-    def y_train(self, y_train: SEQUENCE_TYPES):
-        series = self._check_setter("y_train", y_train)
+    def y_train(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y_train", value)
         self.data = pd.concat([merge(self.X_train, series), self.test])
 
     @property
@@ -314,14 +314,14 @@ class Branch:
 
     @y_test.setter
     @typechecked
-    def y_test(self, y_test: SEQUENCE_TYPES):
-        series = self._check_setter("y_test", y_test)
+    def y_test(self, value: SEQUENCE_TYPES):
+        series = self._check_setter("y_test", value)
         self.data = pd.concat([self.train, merge(self.X_test, series)])
 
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not check_deep(self.X):
+        if not check_multidimensional(self.X):
             return self.data.shape
         else:
             return len(self.data), self.X.iloc[0, 0].shape, 2

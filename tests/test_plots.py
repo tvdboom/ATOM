@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for plots.py
 
 """
@@ -17,7 +17,10 @@ from sklearn.metrics import f1_score, get_scorer
 from atom import ATOMClassifier, ATOMRegressor
 from atom.plots import BasePlotter
 from atom.utils import NotFittedError
-from .utils import FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, y10
+from .utils import (
+    FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg,
+    X_text, y_text, X10_str, y10,
+)
 
 
 # Test BasePlotter ================================================= >>
@@ -101,9 +104,10 @@ def test_canvas():
     """Assert that the canvas works."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("Tree")
-    with atom.canvas(1, 2, title="Title", display=False):
+    with atom.canvas(1, 2, title="Title", display=False) as fig:
         atom.plot_residuals(title="Residuals plot")
         atom.plot_feature_importance(title="Feature importance plot")
+    assert fig.__class__.__name__ == "Figure"
 
 
 def test_canvas_too_many_plots():
@@ -116,15 +120,27 @@ def test_canvas_too_many_plots():
         pytest.raises(RuntimeError, atom.plot_prc)
 
 
-@patch("atom.plots.plt.savefig")
+@patch("mlflow.tracking.MlflowClient.log_figure")
+def test_figure_to_mlflow(mlflow):
+    """Assert that the figure is logged to mlflow."""
+    atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
+    atom.run(["Tree", "LGB"])
+    atom.log_plots = True
+    atom.tree.plot_results(display=False)
+    atom.lgb.plot_roc(display=False)
+    atom.plot_prc(display=False)
+    assert mlflow.call_count == 4
+
+
+@patch("atom.plots.plt.Figure.savefig")
 def test_figure_is_saved(func):
     """Assert that the figure is saved if a filename is provided."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.plot_correlation(filename="correlation", display=False)
-    func.assert_called_with("correlation")
+    atom.plot_correlation(filename="auto", display=False)
+    func.assert_called_with("plot_correlation")
 
 
-@patch("atom.plots.plt.savefig")
+@patch("atom.plots.plt.Figure.savefig")
 def test_figure_is_saved_canvas(func):
     """Assert that the figure is only saved after finishing the canvas."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -135,6 +151,13 @@ def test_figure_is_saved_canvas(func):
         atom.plot_roc()
         func.assert_not_called()
     func.assert_called_with("canvas")   # Only at the end it is saved
+
+
+def test_figure_is_returned():
+    """Assert that the method returns the figure for display=None."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    fig = atom.plot_correlation(display=None)
+    assert fig.__class__.__name__ == "Figure"
 
 
 # Test plots ======================================================= >>
@@ -168,22 +191,39 @@ def test_plot_qq():
     atom.plot_qq(columns=[0, 1], distribution="pearson3", display=False)
 
 
-@pytest.mark.parametrize("show_params", [True, False])
-def test_plot_pipeline(show_params):
+def test_plot_wordcloud():
+    """Assert that the plot_wordcloud method work as intended."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    atom.plot_wordcloud(display=False)  # When corpus is str
+    atom.tokenize()
+    atom.plot_wordcloud(display=False)  # When corpus are tokens
+
+
+@pytest.mark.parametrize("ngram", [1, 2, 3, 4])
+def test_plot_ngrams(ngram):
+    """Assert that the plot_ngrams method work as intended."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    pytest.raises(ValueError, atom.plot_ngrams, ngram=6)
+    atom.plot_ngrams(ngram=ngram, display=False)    # When corpus is str
+    atom.tokenize()
+    atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
+
+
+def test_plot_pipeline():
     """Assert that the plot_pipeline method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.prune()
     atom.feature_selection("univariate", n_features=10)
-    atom.successive_halving(["Tree", "AdaB"])
-    pytest.raises(ValueError, atom.plot_pipeline, branch="invalid")
-    atom.plot_pipeline(show_params=show_params, title="Pipeline plot", display=False)
+    atom.successive_halving(["Tree", "LGB"])
+    atom.plot_pipeline(model=None, show_params=False, display=False)
+    atom.plot_pipeline(model="Tree", title="Pipeline plot", display=False)
 
 
 def test_plot_pca():
     """Assert that the plot_pca method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.plot_pca)  # No PCA in pipeline
+    pytest.raises(PermissionError, atom.plot_pca)
     atom.feature_selection(strategy="PCA", n_features=10)
     atom.plot_pca(display=False)
 
@@ -192,9 +232,9 @@ def test_plot_pca():
 def test_plot_components(show):
     """Assert that the plot_components method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.plot_components)  # No PCA in pipeline
+    pytest.raises(PermissionError, atom.plot_components)
     atom.feature_selection(strategy="PCA", n_features=10)
-    pytest.raises(ValueError, atom.plot_components, show=0)  # Show is invalid
+    pytest.raises(ValueError, atom.plot_components, show=0)
     atom.plot_components(show=show, display=False)
 
 
@@ -202,7 +242,7 @@ def test_plot_components(show):
 def test_plot_rfecv(scoring):
     """Assert that the plot_rfecv method work as intended """
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(PermissionError, atom.plot_rfecv)  # No RFECV in pipeline
+    pytest.raises(PermissionError, atom.plot_rfecv)
     atom.run("lr", metric="precision")
     atom.feature_selection(strategy="RFECV", n_features=10, scoring=scoring)
     atom.plot_rfecv(display=False)
@@ -214,7 +254,7 @@ def test_plot_successive_halving():
     pytest.raises(NotFittedError, atom.plot_successive_halving)
     atom.run("LGB")
     atom.delete()  # Clear the pipeline to allow sh
-    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"], bagging=4)
+    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"], n_bootstrap=4)
     pytest.raises(ValueError, atom.plot_successive_halving, models="unknown")
     pytest.raises(ValueError, atom.plot_successive_halving, models="BR")
     pytest.raises(ValueError, atom.plot_successive_halving, metric="unknown")
@@ -232,7 +272,7 @@ def test_plot_learning_curve():
     pytest.raises(NotFittedError, atom.plot_learning_curve)
     atom.run("LGB")
     atom.delete()  # Clear the pipeline to allow ts
-    atom.train_sizing(["Tree", "LGB"], metric="max_error", bagging=4)
+    atom.train_sizing(["Tree", "LGB"], metric="max_error", n_bootstrap=4)
     atom.plot_learning_curve(display=False)
     atom.train_sizing(["Tree", "LGB"], metric="max_error")
     atom.plot_learning_curve(display=False)
@@ -244,14 +284,14 @@ def test_plot_results(metric):
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_results)
 
-    # Without bagging
-    atom.run(["Tree", "LGB"], metric=metric, bagging=0)
+    # Without bootstrap
+    atom.run(["Tree", "LGB"], metric=metric, n_bootstrap=0)
     atom.voting()
     atom.plot_results(metric="me", display=False)
     atom.tree.plot_results(display=False)
 
-    # With bagging
-    atom.run("Tree", metric=metric, bagging=3)
+    # With bootstrap
+    atom.run("Tree", metric=metric, n_bootstrap=3)
     atom.plot_results(metric="me", display=False)
     atom.tree.plot_results(display=False)
 
@@ -361,8 +401,7 @@ def test_plot_partial_dependence(features):
     with pytest.raises(ValueError, match=r".*models use the same features.*"):
         atom.plot_partial_dependence(features=(0, 1), display=False)
 
-    atom.delete("Tree2")  # Drop model created for test
-    atom.branch.delete()  # Drop branch created for test
+    atom.branch.delete()
     atom.plot_partial_dependence(display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)
@@ -418,6 +457,7 @@ def test_plot_confusion_matrix():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_confusion_matrix)
     atom.run(["RF", "LGB"])
+    pytest.raises(ValueError, atom.plot_confusion_matrix, dataset="invalid")
     atom.plot_confusion_matrix(display=False)
     atom.lgb.plot_confusion_matrix(normalize=True, display=False)
 

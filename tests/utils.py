@@ -2,7 +2,7 @@
 
 """
 Automated Tool for Optimized Modelling (ATOM)
-Author: tvdboom
+Author: Mavs
 Description: Utility variables for the tests.
 
 """
@@ -10,15 +10,18 @@ Description: Utility variables for the tests.
 # Standard packages
 import os
 import numpy as np
+from tensorflow.keras.datasets import mnist
 from sklearn.model_selection import train_test_split
-from sklearn.datasets import load_breast_cancer, load_wine, load_digits, load_diabetes
-from keras.datasets import mnist
+from sklearn.datasets import (
+    load_breast_cancer,
+    load_wine,
+    load_digits,
+    load_diabetes,
+)
 
 # Own modules
 from atom.utils import merge
 
-
-# Variables ========================================================= >>
 
 # Directory for storing all files created by the tests
 FILE_DIR = os.path.dirname(os.path.abspath(__file__)) + "/files/"
@@ -40,6 +43,16 @@ bin_train, bin_test = train_test_split(merge(X_bin, y_bin), **kwargs)
 class_train, class_test = train_test_split(merge(X_class, y_class), **kwargs)
 reg_train, reg_test = train_test_split(merge(X_reg, y_reg), **kwargs)
 
+# Image data
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+X_train = X_train.reshape(60000, 28, 28, 1)
+X_test = X_test.reshape(10000, 28, 28, 1)
+mnist = (X_train, y_train), (X_test, y_test)
+
+# Text data
+X_text = [["I àm in ne'w york"], ["New york is nice"], ["hi new york"], ["yes sir 12"]]
+y_text = [0, 1, 1, 0]
+
 # Small dimensional dataset
 X10 = [
     [0.2, 2, 1],
@@ -47,11 +60,11 @@ X10 = [
     [0.2, 2, 2],
     [0.24, 2, 1],
     [0.23, 2, 2],
-    [0.19, 0, 1],
+    [0.19, 0.01, 1],
     [0.21, 3, 2],
     [0.2, 2, 1],
     [0.2, 2, 1],
-    [0.2, 2, 0],
+    [0.2, 2, 0.01],
 ]
 
 # Dataset with missing value
@@ -139,12 +152,3 @@ y10 = [0, 1, 0, 1, 1, 0, 1, 0, 1, 1]
 y10_nan = [0, 1, 0, np.NaN, 1, 0, 1, 0, 1, 1]
 y10_str = ["y", "n", "y", "y", "n", "y", "n", "y", "n", "n"]
 y10_sn = ["y", "n", np.NaN, "y", "n", "y", "n", "y", "n", "n"]
-
-# Download the MNIST dataset
-(X_train, y_train), (X_test, y_test) = mnist.load_data()
-
-# Reshape data to fit model
-X_train = X_train.reshape(60000, 28, 28, 1)
-X_test = X_test.reshape(10000, 28, 28, 1)
-
-mnist = (X_train, y_train), (X_test, y_test)

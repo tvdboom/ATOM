@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM).
 
-Author: tvdboom
+Author: Mavs
 Description: Module containing the training classes.
 
 """
@@ -19,8 +19,8 @@ from sklearn.base import BaseEstimator
 from .basetrainer import BaseTrainer
 from .plots import BaseModelPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, TRAIN_TYPES, lst, get_best_score, infer_task,
-    composed, method_to_log, crash, CustomDict,
+    SEQUENCE_TYPES, lst, get_best_score, infer_task, composed,
+    method_to_log, crash, CustomDict,
 )
 
 
@@ -37,13 +37,13 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        n_calls, n_initial_points, est_params, bo_params, bagging, n_jobs,
-        verbose, warnings, logger, random_state
+        n_calls, n_initial_points, est_params, bo_params, n_bootstrap, n_jobs,
+        verbose, warnings, logger, experiment, random_state,
     ):
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -73,15 +73,14 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
 class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
     """Successive halving training approach.
 
-    If you want to compare similar models, you can choose to use a
-    successive halving approach to run the pipeline. This technique
-    is a bandit-based algorithm that fits N models to 1/N of the data.
-    The best half are selected to go to the next iteration where the
-    process is repeated. This continues until only one model remains,
-    which is fitted on the complete dataset. Beware that a model's
-    performance can depend greatly on the amount of data on which it
-    is trained. For this reason, we recommend only to use this
-    technique with similar models, e.g. only using tree-based models.
+    The successive halving technique is a bandit-based algorithm that
+    fits N models to 1/N of the data. The best half are selected to
+    go to the next iteration where the process is repeated. This
+    continues until only one model remains, which is fitted on the
+    complete dataset. Beware that a model's performance can depend
+    greatly on the amount of data on which it is trained. For this
+    reason, it is recommended to only use this technique with similar
+    models, e.g. only using tree-based models.
 
     See basetrainer.py for a description of the remaining parameters.
 
@@ -94,14 +93,14 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        skip_runs, n_calls, n_initial_points, est_params, bo_params, bagging,
-        n_jobs, verbose, warnings, logger, random_state
+        skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+        n_jobs, verbose, warnings, logger, experiment, random_state,
     ):
         self.skip_runs = skip_runs
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -175,32 +174,35 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
     """Train Sizing training approach.
 
     When training models, there is usually a trade-off between model
-    performance and computation time that is regulated by the number
-    of samples in the training set. The TrainSizing class can be used
-    to create insights in this trade-off and help determine the optimal
-    size of the training set.
+    performance and computation time, that is regulated by the number
+    of samples in the training set. This class can be used to create
+    insights in this trade-off, and help determine the optimal size of
+    the training set. The models are fitted multiple times,
+    ever-increasing the number of samples in the training set.
 
     See basetrainer.py for a description of the remaining parameters.
 
     Parameters
     ----------
-    train_sizes: sequence, optional (default=np.linspace(0.2, 1.0, 5))
+    train_sizes: int or sequence, optional (default=5)
         Sequence of training set sizes used to run the trainings.
-             - If <=1: Fraction of the training set.
-             - If >1: Total number of samples.
+            - If int: Number of equally distributed splits, i.e. for a
+                      value N it's equal to np.linspace(1.0/N, 1.0, N).
+            - If sequence: Fraction of the training set when <=1, else
+                           total number of samples.
 
     """
 
     def __init__(
         self, models, metric, greater_is_better, needs_proba, needs_threshold,
-        train_sizes, n_calls, n_initial_points, est_params, bo_params, bagging,
-        n_jobs, verbose, warnings, logger, random_state
+        train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+        n_jobs, verbose, warnings, logger, experiment, random_state
     ):
         self.train_sizes = train_sizes
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
     @composed(crash, method_to_log)
@@ -223,6 +225,10 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.log("\nTraining ===================================== >>", 1)
         self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
+
+        # Convert integer train_sizes to sequence
+        if isinstance(self.train_sizes, int):
+            self.train_sizes = np.linspace(1/self.train_sizes, 1.0, self.train_sizes)
 
         models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}
@@ -261,7 +267,7 @@ class DirectClassifier(Direct):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -270,18 +276,19 @@ class DirectClassifier(Direct):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -291,7 +298,7 @@ class DirectRegressor(Direct):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -300,18 +307,19 @@ class DirectRegressor(Direct):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, bagging,
-            n_jobs, verbose, warnings, logger, random_state
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
+            n_jobs, verbose, warnings, logger, experiment, random_state,
         )
 
 
@@ -321,7 +329,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -331,18 +339,20 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            random_state,
         )
 
 
@@ -352,7 +362,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
@@ -362,18 +372,20 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            random_state,
         )
 
 
@@ -383,28 +395,30 @@ class TrainSizingClassifier(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "classification"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            random_state,
         )
 
 
@@ -414,26 +428,28 @@ class TrainSizingRegressor(TrainSizing):
     @typechecked
     def __init__(
         self,
-        models: Union[str, callable, SEQUENCE_TYPES],
+        models: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         greater_is_better: Union[bool, SEQUENCE_TYPES] = True,
         needs_proba: Union[bool, SEQUENCE_TYPES] = False,
         needs_threshold: Union[bool, SEQUENCE_TYPES] = False,
-        train_sizes: TRAIN_TYPES = np.linspace(0.2, 1.0, 5),
+        train_sizes: Union[int, SEQUENCE_TYPES] = 5,
         n_calls: Union[int, SEQUENCE_TYPES] = 0,
         n_initial_points: Union[int, SEQUENCE_TYPES] = 5,
         est_params: Optional[dict] = None,
         bo_params: Optional[dict] = None,
-        bagging: Union[int, SEQUENCE_TYPES] = 0,
+        n_bootstrap: Union[int, SEQUENCE_TYPES] = 0,
         n_jobs: int = 1,
         verbose: int = 0,
         warnings: Union[bool, str] = True,
         logger: Optional[Union[str, callable]] = None,
+        experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
         self.goal = "regression"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
-            bagging, n_jobs, verbose, warnings, logger, random_state
+            n_bootstrap, n_jobs, verbose, warnings, logger, experiment,
+            random_state,
         )

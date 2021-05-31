@@ -1,38 +1,54 @@
 # plot_prc
 -----------
 
-<pre><em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None, dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
-<div align="right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1012">[source]</a></div></pre>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None,
+dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1118">[source]</a>
+</span>
+</div>
+
 Plot the precision-recall curve. The legend shows the average
 precision (AP) score. Only for binary classification tasks.
-<table width="100%">
+
+<table style="font-size:16px">
 <tr>
-<td width="15%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="75%" style="background:white;">
-<strong>models: str, sequence or None, optional (default=None)</strong>
-<blockquote>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all models in the pipeline are selected.
-</blockquote>
-<strong>dataset: str, optional (default="test")</strong>
-<blockquote>
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
 Data set on which to calculate the metric. Options are "train", "test" or "both".
-</blockquote>
-<strong>title: str or None, optional (default=None)</strong>
-<blockquote>
+</p>
+<p>
+<strong>title: str or None, optional (default=None)</strong><br>
 Plot's title. If None, the title is left empty.
-</blockquote>
-<strong>figsize: tuple, optional (default=(10, 6))</strong>
-<blockquote>
+</p>
+<p>
+<strong>figsize: tuple, optional (default=(10, 6))</strong><br>
 Figure's size, format as (x, y).
-</blockquote>
-<strong>filename: str or None, optional (default=None)</strong>
-<blockquote>
-Name of the file. If None, the figure is not saved.
-</blockquote>
-<strong>display: bool, optional (default=True)</strong>
-<blockquote>
-Whether to render the plot.
-</blockquote>
+</p>
+<p>
+<strong>filename: str or None, optional (default=None)</strong><br>
+Name of the file. Use "auto" for automatic naming.
+If None, the figure is not saved.
+</p>
+<p>
+<strong>display: bool or None, optional (default=True)</strong><br>
+Whether to render the plot. If None, it returns the matplotlib figure.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>fig: matplotlib.figure.Figure</strong><br>
+Plot object. Only returned if <code>display=None</code>.
+</td>
 </tr>
 </table>
 <br />
@@ -40,7 +56,6 @@ Whether to render the plot.
 
 
 ## Example
-----------
 
 ```python
 from atom import ATOMClassifier

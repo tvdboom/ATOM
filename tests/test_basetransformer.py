@@ -2,7 +2,7 @@
 
 """Automated Tool for Optimized Modelling (ATOM)
 
-Author: tvdboom
+Author: Mavs
 Description: Unit tests for basetransformer.py
 
 """
@@ -13,7 +13,6 @@ import pytest
 import pandas as pd
 import multiprocessing
 from unittest.mock import patch
-from tensorflow.keras.datasets import mnist
 
 # Own modules
 from atom import ATOMClassifier
@@ -21,7 +20,8 @@ from atom.training import DirectClassifier
 from atom.basetransformer import BaseTransformer
 from atom.utils import merge
 from .utils import (
-    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, X10, y10, bin_train, bin_test
+    FILE_DIR, X_bin, y_bin, X_bin_array, y_bin_array, mnist,
+    X_text, y_text, X10, y10, bin_train, bin_test,
 )
 
 
@@ -96,6 +96,14 @@ def test_crash_with_logger(cls):
     cls.return_value.exception.assert_called()
 
 
+@patch("mlflow.set_experiment")
+def test_experiment_creation(mlflow):
+    """Assert that the mlflow experiment is created."""
+    base = BaseTransformer(experiment="test")
+    assert base.experiment == "test"
+    mlflow.assert_called_once()
+
+
 def test_random_state_setter():
     """Assert that an error is raised for a negative random_state."""
     pytest.raises(ValueError, BaseTransformer, random_state=-1)
@@ -121,10 +129,15 @@ def test_input_data_in_training():
 
 def test_multidimensional_X():
     """Assert that more than two dimensional datasets are handled correctly."""
-    train, test = mnist.load_data()
-    atom = ATOMClassifier(train, test, random_state=1)
-    assert atom.X.columns == ['Features']
-    assert atom.X.iloc[0, 0].shape == (28, 28)
+    atom = ATOMClassifier(*mnist, random_state=1)
+    assert atom.X.columns == ["Multidimensional feature"]
+    assert atom.X.iloc[0, 0].shape == (28, 28, 1)
+
+
+def test_text_to_corpus():
+    """Assert that for text data the column is named Corpus."""
+    atom = ATOMClassifier(X_text, y_text, random_state=1)
+    assert atom.X.columns == ["Corpus"]
 
 
 def test_to_pandas():
@@ -232,6 +245,17 @@ def test_n_rows_too_large():
     pytest.raises(ValueError, ATOMClassifier, X_bin, y_bin, n_rows=1e6, random_state=1)
 
 
+def test_no_shuffle_X_y():
+    """Assert that the order is kept when shuffle=False."""
+    atom = ATOMClassifier(X_bin, y_bin, shuffle=False, n_rows=30)
+    assert atom.X.equals(X_bin.iloc[:30, :])
+
+
+def test_length_dataset():
+    """Assert that the dataset is always len>=2."""
+    pytest.raises(ValueError, ATOMClassifier, X10, y10, n_rows=0.01, random_state=1)
+
+
 @pytest.mark.parametrize("ts", [-2, 0, 1000])
 def test_test_size_parameter(ts):
     """Assert that the test_size parameter is in correct range."""
@@ -302,8 +326,14 @@ def test_invalid_input():
 def test_n_rows_train_test_frac():
     """Assert that n_rows<=1 work for input with train and test."""
     atom = ATOMClassifier(bin_train, bin_test, n_rows=0.8, random_state=1)
-    assert len(atom.train) == round(len(bin_train) * 0.8)
-    assert len(atom.test) == round(len(bin_test) * 0.8)
+    assert len(atom.train) == 318
+    assert len(atom.test) == 136
+
+
+def test_no_shuffle_train_test():
+    """Assert that the order is kept when shuffle=False."""
+    atom = ATOMClassifier(bin_train, bin_test, shuffle=False)
+    assert atom.train.equals(bin_train.reset_index(drop=True))
 
 
 def test_n_rows_train_test_int():
