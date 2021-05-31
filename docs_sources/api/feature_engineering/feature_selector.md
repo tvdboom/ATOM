@@ -397,7 +397,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L521">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L516">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio vs the number of components.
@@ -410,7 +410,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L590">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L586">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio per components. See
@@ -423,7 +423,7 @@ Plot the explained variance ratio per components. See
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L666">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L663">[source]</a>
 </span>
 </div>
 Plot the scores obtained by the estimator fitted on every subset of the

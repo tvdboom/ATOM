@@ -447,7 +447,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L429">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L425">[source]</a>
 </span>
 </div>
 Applies probability calibration on the winning model. The
@@ -482,7 +482,7 @@ testing.
 <em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
 ncols=2, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L458">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L457">[source]</a>
 </span>
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
@@ -528,7 +528,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L435">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L431">[source]</a>
 </span>
 </div>
 Evaluate the winning model using cross-validation. This method cross-validates
@@ -560,7 +560,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L473">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L469">[source]</a>
 </span>
 </div>
 Delete a model from the trainer. If the winning model is
@@ -586,7 +586,7 @@ Models to delete. If None, delete them all.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L394">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L390">[source]</a>
 </span>
 </div>
 Return class weights for a balanced data set. Statistically, the class
@@ -680,7 +680,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L177">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L173">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../..user_guide/predicting) from all models.
@@ -747,7 +747,7 @@ when loading the file.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L441">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L437">[source]</a>
 </span>
 </div>
 Get all the models scoring for provided metrics.
@@ -808,7 +808,7 @@ Estimator instance.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
 estimator=None, stack_method="auto", passthrough=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L343">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/#stacking) instance to the models in the pipeline.
@@ -852,7 +852,7 @@ not already.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L310">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L306">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/#voting) instance to the models in the pipeline.
