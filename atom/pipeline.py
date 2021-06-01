@@ -12,7 +12,6 @@ Description: Custom Pipeline class. Largely adapted from scikit-learn.
 """
 
 # Standard packages
-import numpy as np
 from inspect import signature
 from sklearn import pipeline
 from sklearn.base import clone

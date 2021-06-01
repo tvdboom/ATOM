@@ -356,7 +356,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L322">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L321">[source]</a>
 </span>
 </div>
 Delete the model from the trainer. If it's the winning model, the next
@@ -443,7 +443,7 @@ New tag for the model. If None, the tag is removed.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L215">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L214">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../../user_guide/predicting) from all models.
@@ -455,7 +455,7 @@ Use this method to free some memory before saving the trainer.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L327">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L326">[source]</a>
 </span>
 </div>
 Get the model's scoring for provided metrics.
