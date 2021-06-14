@@ -2327,7 +2327,7 @@
 <hr />
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
-max_onehot=10, frac_to_other=None, verbose=0, logger=None, **kwargs)
+max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L885">[source]</a>
 </span>
@@ -2336,14 +2336,15 @@ max_onehot=10, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <p>Perform encoding of categorical features. The encoding type depends on
 the number of classes in the column:</p>
 <ul>
-<li>If n_classes=2, use Ordinal-encoding.</li>
+<li>If n_classes=2 or ordinal feature, use Ordinal-encoding.</li>
 <li>If 2 &lt; n_classes &lt;= <code>max_onehot</code>, use OneHot-encoding.</li>
 <li>If n_classes &gt; <code>max_onehot</code>, use <code>strategy</code>-encoding.</li>
 </ul>
-<p>Also replaces classes with low occurrences with the value <code>other</code>
-in order to prevent too high cardinality. An error is raised if
-it encounters missing values or unknown classes when transforming.
-This class can be accessed from atom through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
+<p>Missing values are propagated to the output column. Unknown classes
+encountered during transforming are converted to <code>np.NaN</code>. The class
+is also capable of replacing classes with low occurrences with the
+value <code>other</code> in order to prevent too high cardinality. It can be
+accessed from atom through the <a href="../../ATOM/atomclassifier/#encode">encode</a>
 method. Read more in the <a href="../../../user_guide/data_cleaning/#encoding-categorical-features">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
@@ -2363,7 +2364,13 @@ Maximum number of unique values in a feature to perform one-hot-encoding.
 If None, it will always use <code>strategy</code> when n_unique > 2.
 </p>
 <p>
-<strong>frac_to_other: float, optional (default=None)</strong><br>
+<strong>ordinal: dict or None, optional (default=None)</strong><br>
+Order of ordinal features, where the dict key is the feature's
+name or index and the value is the class order, e.g. {"salary":
+["low", "medium", "high"]}.
+</p>
+<p>
+<strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
 Classes with less occurrences than n_rows * <code>frac_to_other</code> are replaced
 with the string <code>other</code>. If None, skip this step.
 </p>
@@ -2390,6 +2397,11 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 <p class="admonition-title">Tip</p>
 <p>Use atom's <a href="../../ATOM/atomclassifier/#data-attributes">categorical</a> attribute
 for a list of the categorical columns in the dataset.</p>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Unknown classes during transform are converted to <code>np.NaN</code>. Make sure to
+impute them after!</p>
 </div>
 <p><br></p>
 <h2 id="methods">Methods</h2>

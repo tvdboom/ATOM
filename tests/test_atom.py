@@ -122,8 +122,15 @@ def test_branch_setter_empty():
         atom.branch = ""
 
 
-def test_branch_og_name():
-    """Assert that an error is raised when the name is og."""
+def test_branch_model_acronym():
+    """Assert that an error is raised when the name is a models' acronym."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*acronym of model.*"):
+        atom.branch = "Lda"
+
+
+def test_branch_restricted_name():
+    """Assert that an error is raised when the name is restricted."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     with pytest.raises(ValueError, match=r".*This name is reserved.*"):
         atom.branch = "og"
@@ -561,6 +568,13 @@ def test_subset_columns():
     # Column slice
     atom.scale(columns=slice(10, 12))
     assert check_scaling(atom.dataset.iloc[:, [10, 11]])
+
+
+def test_derivative_columns_keep_position():
+    """Assert that derivative columns go after the original."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.encode()
+    assert atom.columns[2].startswith("Feature 3")
 
 
 def test_duplicate_columns_are_ignored():

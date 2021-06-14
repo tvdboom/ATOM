@@ -17,10 +17,10 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="v4.5.0",
+    version="v4.6.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.5.0.tar.gz",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.6.0.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",

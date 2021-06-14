@@ -40,7 +40,7 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
     check_scaling, check_is_fitted, get_acronym, composed, crash,
     method_to_log,
 )
@@ -531,8 +531,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self,
         strategy: Optional[str] = None,
         solver: Optional[Union[str, callable]] = None,
-        n_features: Optional[Union[int, float]] = None,
-        max_frac_repeated: Optional[Union[int, float]] = 1.0,
+        n_features: Optional[SCALAR] = None,
+        max_frac_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[float] = 1.0,
         n_jobs: int = 1,
         verbose: int = 0,

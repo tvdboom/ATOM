@@ -15,7 +15,7 @@ import pandas as pd
 from scipy import stats
 from copy import deepcopy
 from typeguard import typechecked
-from typing import Union, Optional, Any
+from typing import Union, Optional, Any, Dict
 
 # Own modules
 from .branch import Branch
@@ -44,14 +44,14 @@ from .training import (
     TrainSizingClassifier,
     TrainSizingRegressor,
 )
-from .models import CustomModel
+from .models import CustomModel, MODEL_LIST
 from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
     lst, divide, infer_task, check_method, check_scaling,
-    check_multidimensional, names_from_estimator, variable_return,
-    delete, custom_transform, add_transformer, method_to_log,
-    composed, crash, CustomDict,
+    check_multidimensional, get_pl_name, names_from_estimator,
+    variable_return, delete, custom_transform, add_transformer,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -150,23 +150,28 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     @BasePredictor.branch.setter
     @typechecked
-    def branch(self, branch: str):
-        if not branch:
+    def branch(self, name: str):
+        if not name:
             raise ValueError("Can't create a branch with an empty name!")
-        elif branch.lower() == "og":
+        elif name.lower() in map(str.lower, MODEL_LIST.keys()):
+            raise ValueError(
+                f"{name} is the acronym of model {MODEL_LIST[name].fullname}. "
+                "Please, choose a different name for the branch."
+            )
+        elif name.lower() in ("og", "vote", "stack"):
             raise ValueError(
                 "This name is reserved for internal purposes. "
-                "Choose a different name for the branch."
+                "Please, choose a different name for the branch."
             )
-        elif branch.lower() in self._branches:
-            self._current = branch.lower()
-            self.log(f"Switched to branch {branch}.", 1)
+        elif name.lower() in self._branches:
+            self._current = name.lower()
+            self.log(f"Switched to branch {name}.", 1)
         else:
             # Branch can be created from current or another
-            if "_from_" in branch:
-                new_branch, from_branch = branch.lower().split("_from_")
+            if "_from_" in name:
+                new_branch, from_branch = name.lower().split("_from_")
             else:
-                new_branch, from_branch = branch.lower(), self._current
+                new_branch, from_branch = name.lower(), self._current
 
             if from_branch not in self._branches:
                 raise ValueError(
@@ -385,7 +390,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def report(
         self,
         dataset: str = "dataset",
-        n_rows: Optional[Union[int, float]] = None,  # float for 1e3...
+        n_rows: Optional[SCALAR] = None,  # float for 1e3...
         filename: Optional[str] = None,
     ):
         """Create an extensive profile analysis report of the data.
@@ -640,7 +645,7 @@ class ATOM(BasePredictor, ATOMPlotter):
                 if verbose is not None and hasattr(est, "verbose"):
                     est.verbose = verbose
 
-                steps.append((est.__class__.__name__.lower(), est))
+                steps.append((get_pl_name(est.__class__.__name__, steps), est))
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
@@ -863,7 +868,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             - Drop columns with minimum cardinality.
             - Drop duplicate rows.
             - Drop rows with missing values in the target column.
-            - Encode the target column.
+            - Encode the target column (only for classification tasks).
 
         See data_cleaning.py for a description of the parameters.
 
@@ -878,7 +883,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             drop_min_cardinality=drop_min_cardinality,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
-            encode_target=encode_target,
+            encode_target=encode_target if self.goal.startswith("class") else False,
             **kwargs,
         )
         # Pass atom's missing values to the cleaner before transforming
@@ -895,8 +900,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strat_num: Union[int, float, str] = "drop",
         strat_cat: str = "drop",
-        min_frac_rows: Optional[float] = None,
-        min_frac_cols: Optional[float] = None,
+        max_nan_rows: Optional[SCALAR] = None,
+        max_nan_cols: Optional[SCALAR] = None,
         **kwargs,
     ):
         """Handle missing values in the dataset.
@@ -915,8 +920,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         imputer = Imputer(
             strat_num=strat_num,
             strat_cat=strat_cat,
-            min_frac_rows=min_frac_rows,
-            min_frac_cols=min_frac_cols,
+            max_nan_rows=max_nan_rows,
+            max_nan_cols=max_nan_cols,
             **kwargs,
         )
         # Pass atom's missing values to the imputer before transforming
@@ -929,21 +934,23 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strategy: str = "LeaveOneOut",
         max_onehot: Optional[int] = 10,
-        frac_to_other: Optional[float] = None,
+        ordinal: Optional[Dict[Union[int, str], SEQUENCE_TYPES]] = None,
+        frac_to_other: Optional[SCALAR] = None,
         **kwargs,
     ):
         """Perform encoding of categorical features.
 
         The encoding type depends on the number of classes in the
         column:
-            - If n_classes=2, use Ordinal-encoding.
+            - If n_classes=2 or ordinal feature, use Ordinal-encoding.
             - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
             - If n_classes > `max_onehot`, use `strategy`-encoding.
 
-        Also replaces classes with low occurrences with the value
-        `other` in order to prevent too high cardinality. An error is
-        raised if it encounters missing values or unknown classes when
-        transforming.
+        Missing values are propagated to the output column. Unknown
+        classes encountered during transforming are converted to
+        `np.NaN`. The class is also capable of replacing classes with
+        low occurrences with the value `other` in order to prevent
+        too high cardinality.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -954,6 +961,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         encoder = Encoder(
             strategy=strategy,
             max_onehot=max_onehot,
+            ordinal=ordinal,
             frac_to_other=frac_to_other,
             **kwargs,
         )
@@ -965,7 +973,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strategy: Union[str, SEQUENCE_TYPES] = "z-score",
         method: Union[int, float, str] = "drop",
-        max_sigma: Union[int, float] = 3,
+        max_sigma: SCALAR = 3,
         include_target: bool = False,
         **kwargs,
     ):
@@ -1216,8 +1224,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         self,
         strategy: Optional[str] = None,
         solver: Optional[Union[str, callable]] = None,
-        n_features: Optional[Union[int, float]] = None,
-        max_frac_repeated: Optional[Union[int, float]] = 1.0,
+        n_features: Optional[SCALAR] = None,
+        max_frac_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[float] = 1.0,
         **kwargs,
     ):

@@ -315,6 +315,17 @@ Dataframe of the training results. Columns can include:
 </ul>
 </td>
 </tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Additional:</strong></td>
+<td width="80%" style="background:white;">
+<strong>Attributes and methods for dataset</strong><br>
+Some attributes and methods can be called from atom but will return
+the call from the dataset in the current branch, e.g. <code>atom.dtypes</code>
+shows the types of every column in the dataset. These attributes and
+methods are: "size", "head", "tail", "loc", "iloc", "describe", "iterrows",
+"dtypes", "at", "iat".
+</td>
+</tr>
 </table>
 <br>
 
@@ -578,7 +589,7 @@ Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
 merged with atom's pipeline. The tpot instance can be accessed through the
-`tpot` attribute. Read more in the [user guide](../../../user_guide/#automl).
+`tpot` attribute. Read more in the [user guide](../../../user_guide/data_pipelines/#automl).
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -601,7 +612,7 @@ ncols=2, title=None, figsize=None, filename=None, display=True)
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
 The default option is to add two plots side by side. See the
-[user guide](../../../user_guide/#canvas) for an example.
+[user guide](../../../user_guide/plots/#canvas) for an example.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -897,7 +908,7 @@ and models. The dataset is also reset to its form after initialization.
 <span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
-Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
+Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
 <br /><br /><br />
 
 
@@ -1011,7 +1022,7 @@ estimator=None, stack_method="auto", passthrough=False)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
 </span>
 </div>
-Add a [Stacking](../../../user_guide/#stacking) instance to the models in the pipeline.
+Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1079,7 +1090,7 @@ save it to the logger.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L306">[source]</a>
 </span>
 </div>
-Add a [Voting](../../../user_guide/#voting) instance to the models in the pipeline.
+Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1197,7 +1208,7 @@ to choose which transformations to perform. The available steps are:
 * Drop columns with minimum cardinality.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
-* Encode the target column.
+* Encode the target column (only for classification tasks).
 
 See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the parameters.
 <br /><br /><br />
@@ -1206,7 +1217,7 @@ See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the pa
 <a name="impute"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
-strat_cat="drop", min_frac_rows=None, min_frac_cols=None, missing=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L894">[source]</a>
 </span>
@@ -1225,7 +1236,7 @@ the transformation.
 <a name="encode"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, frac_to_other=None)
+max_onehot=10, ordinal=None, frac_to_other=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L928">[source]</a>
 </span>
@@ -1233,15 +1244,14 @@ max_onehot=10, frac_to_other=None)
 Perform encoding of categorical features. The encoding type depends
 on the number of unique values in the column:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2, use Label-encoding.</li>
+<li>If n_unique=2 or odinal feature, use Label-encoding.</li>
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>
-Also replaces classes with low occurrences with the value `other` in
-order to prevent too high cardinality. Categorical features are defined
-as all columns whose dtype.kind not in `ifu`. Will raise an error if it
-encounters missing values or unknown classes when transforming. The
-encoder is fitted only on the training set to avoid data leakage. See
+Missing values are propagated to the output column. Unknown classes
+encountered during transforming are converted to `np.NaN`. The class
+is also capable of replacing classes with low occurrences with the
+value `other` in order to prevent too high cardinality. See
 [Encoder](../data_cleaning/encoder.md) for a description of the parameters.
 
 !!! note

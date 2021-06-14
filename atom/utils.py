@@ -101,11 +101,16 @@ Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
 
 # List of models that only work for regression/classification tasks
-ONLY_CLASS = ["GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA"]
-ONLY_REG = ["OLS", "Lasso", "EN", "BR", "ARD"]
+ONLY_CLASS = ("GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA")
+ONLY_REG = ("OLS", "Lasso", "EN", "BR", "ARD")
+
+# Attributes shared betwen atom and a pd.DataFrame
+DF_ATTRS = (
+    "size", "head", "tail", "loc", "iloc", "describe", "iterrows", "dtypes", "at", "iat"
+)
 
 # List of available distributions
-DISTRIBUTIONS = [
+DISTRIBUTIONS = (
     "beta",
     "expon",
     "gamma",
@@ -117,12 +122,12 @@ DISTRIBUTIONS = [
     "uniform",
     "weibull_min",
     "weibull_max",
-]
+)
 
 # List of custom metrics for the scoring method
-CUSTOM_METRICS = [
+CUSTOM_METRICS = (
     "cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "fnr", "tnr", "sup"
-]
+)
 
 # Acronyms for some of the common scorers
 SCORERS_ACRONYMS = dict(
@@ -300,6 +305,16 @@ def get_corpus(X):
         return [col for col in X if col.lower() == "corpus"][0]
     except IndexError:
         raise ValueError("The provided dataset does not contain a text corpus!")
+
+
+def get_pl_name(name, steps, counter=1):
+    """Add a counter to a pipeline name if already in steps."""
+    og_name = name
+    while name.lower() in [elem[0] for elem in steps]:
+        counter += 1
+        name = og_name + str(counter)
+
+    return name.lower()
 
 
 def get_best_score(item, metric=0):
@@ -851,12 +866,17 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
             Original dataframe (states the order).
 
         """
-        temp_df = pd.DataFrame([])
+        temp_df = pd.DataFrame()
         for col in list(dict.fromkeys(list(original_df.columns) + list(df.columns))):
             if col in df.columns:
                 temp_df[col] = df[col]
             elif col not in transformer.cols:
                 temp_df[col] = original_df[col]
+
+            # Derivative cols are added after original
+            for col_derivative in df.columns:
+                if col_derivative.startswith(col):
+                    temp_df[col_derivative] = df[col_derivative]
 
         return temp_df
 
@@ -1346,10 +1366,13 @@ class CustomDict(MutableMapping):
             self.__data[self._conv(key)] = value
 
     def __getitem__(self, key):
-        if isinstance(key, str):
-            return self.__data[key.lower()]
-        else:
-            return self.__data[self._conv(self.__keys[key])]
+        try:
+            return self.__data[self._conv(key)]  # From key
+        except KeyError as e:
+            try:
+                return self.__data[self._conv(self.__keys[key])]  # From index
+            except (TypeError, IndexError):
+                raise e
 
     def __setitem__(self, key, value):
         self.__keys.append(key)
@@ -1368,10 +1391,9 @@ class CustomDict(MutableMapping):
     def __contains__(self, key):
         try:
             self._get_key(key)
+            return True
         except (AttributeError, IndexError):
             return False
-        else:
-            return True
 
     def __repr__(self):
         return str(dict(self))
@@ -1388,15 +1410,17 @@ class CustomDict(MutableMapping):
             yield self.__data[self._conv(key)]
 
     def insert(self, pos, new_key, value):
-        if isinstance(pos, str):
-            pos = self.__keys.index(self._get_key(pos))
-        self.__keys.insert(pos, new_key)
-        self.__data[self._conv(new_key)] = value
+        try:
+            self.__keys.insert(self.__keys.index(self._get_key(pos)), new_key)
+        except (IndexError, KeyError):
+            self.__keys.insert(pos, new_key)
+        finally:
+            self.__data[self._conv(new_key)] = value
 
     def get(self, key, default=None):
         try:
-            return self.__data[self._conv(key)]
-        except (IndexError, KeyError):
+            return self[key]
+        except KeyError:
             return default
 
     def pop(self, key, default=None):

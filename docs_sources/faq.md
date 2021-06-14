@@ -55,18 +55,18 @@ as long as they follow [sklearn's API](https://scikit-learn.org/stable/developer
 If the dataset is 2-dimensional, everything should work normally. If
 the dataset has more than 2 dimensions, often the case for images, only
 a subset of atom's methods will work. For more information, see the
-[deep learning](../user_guide/#deep-learning) section of the user guide.
+[deep learning](../user_guide/models/#deep-learning) section of the user guide.
 
 <br>
 
 <a name="q4"></a>
 ### Can I run atom's methods on just a subset of the columns?
 
-Yes, all [data cleaning](../user_guide/#data-cleaning) and
-[feature engineering](../user_guide/#feature-engineering) methods accept
+Yes, all [data cleaning](../user_guide/data_cleaning) and
+[feature engineering](../user_guide/feature_engineering) methods accept
 a `columns` parameter to only transform the selected features. For example,
 to only impute the numerical columns in the dataset we could type
-`#atom.impute(strat_num="mean", columns=atom.numerical)`. The parameter
+`atom.impute(strat_num="mean", columns=atom.numerical)`. The parameter
 accepts column names, column indices or a slice object.
 
 <br>
@@ -75,7 +75,7 @@ accepts column names, column indices or a slice object.
 ### How can I compare the same model on different datasets?
 
 In many occasions you might want to test how a model performs on datasets
-processed with different pipelines. For this, atom has the [branch system](../user_guide/#branches).
+processed with different pipelines. For this, atom has the [branch system](../user_guide/data_pipelines/#branches).
 Create a new branch for every new pipeline you want to test and use the plot
 methods to compare all models, independent of the branch it was trained on.
 
@@ -116,7 +116,7 @@ from the dataset.
 ### Is there a way to plot multiple models in the same shap plot?
 
 No. Unfortunately, there is no way to plot multiple models in the same
-[shap plot](../user_guide/#shap) since the plots are made by the SHAP
+[shap plot](../user_guide/plots/#shap) since the plots are made by the SHAP
 package and passed as matplotlib.axes objects to atom. This means
 that it's not within the reach of this package to implement such a utility.
 

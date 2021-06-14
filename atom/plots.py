@@ -1178,6 +1178,9 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(recall, precision, lw=2, label=label)
 
+        dum = len(m.y_test[m.y_test == m.mapping[list(m.mapping)[1]]]) / len(m.y_test)
+        ax.plot([0, 1], [dum, dum], "k--", lw=2, alpha=0.7, zorder=-2)
+
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=fig,

@@ -17,8 +17,9 @@ from typeguard import typechecked
 from .branch import Branch
 from .ensembles import Voting, Stacking
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, check_is_fitted,
-    divide, get_best_score, delete, method_to_log, composed, crash,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
+    check_is_fitted, divide, get_best_score, delete, method_to_log,
+    composed, crash,
 )
 
 
@@ -44,7 +45,7 @@ class BasePredictor:
             return self._models[item.lower()]  # Get model subclass
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column
-        elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
+        elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(

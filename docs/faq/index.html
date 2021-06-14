@@ -2520,21 +2520,21 @@ as long as they follow <a href="https://scikit-learn.org/stable/developers/contr
 If the dataset is 2-dimensional, everything should work normally. If
 the dataset has more than 2 dimensions, often the case for images, only
 a subset of atom's methods will work. For more information, see the
-<a href="../user_guide/#deep-learning">deep learning</a> section of the user guide.</p>
+<a href="../user_guide/models/#deep-learning">deep learning</a> section of the user guide.</p>
 <p><br></p>
 <p><a name="q4"></a></p>
 <h3 id="can-i-run-atoms-methods-on-just-a-subset-of-the-columns">Can I run atom's methods on just a subset of the columns?</h3>
-<p>Yes, all <a href="../user_guide/#data-cleaning">data cleaning</a> and
-<a href="../user_guide/#feature-engineering">feature engineering</a> methods accept
+<p>Yes, all <a href="../user_guide/data_cleaning">data cleaning</a> and
+<a href="../user_guide/feature_engineering">feature engineering</a> methods accept
 a <code>columns</code> parameter to only transform the selected features. For example,
 to only impute the numerical columns in the dataset we could type
-<code>#atom.impute(strat_num="mean", columns=atom.numerical)</code>. The parameter
+<code>atom.impute(strat_num="mean", columns=atom.numerical)</code>. The parameter
 accepts column names, column indices or a slice object.</p>
 <p><br></p>
 <p><a name="q5"></a></p>
 <h3 id="how-can-i-compare-the-same-model-on-different-datasets">How can I compare the same model on different datasets?</h3>
 <p>In many occasions you might want to test how a model performs on datasets
-processed with different pipelines. For this, atom has the <a href="../user_guide/#branches">branch system</a>.
+processed with different pipelines. For this, atom has the <a href="../user_guide/data_pipelines/#branches">branch system</a>.
 Create a new branch for every new pipeline you want to test and use the plot
 methods to compare all models, independent of the branch it was trained on.</p>
 <p><br></p>
@@ -2563,7 +2563,7 @@ from the dataset.</p>
 <p><a name="q9"></a></p>
 <h3 id="is-there-a-way-to-plot-multiple-models-in-the-same-shap-plot">Is there a way to plot multiple models in the same shap plot?</h3>
 <p>No. Unfortunately, there is no way to plot multiple models in the same
-<a href="../user_guide/#shap">shap plot</a> since the plots are made by the SHAP
+<a href="../user_guide/plots/#shap">shap plot</a> since the plots are made by the SHAP
 package and passed as matplotlib.axes objects to atom. This means
 that it's not within the reach of this package to implement such a utility.</p>
 <p><br></p>

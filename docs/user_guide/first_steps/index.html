@@ -2299,7 +2299,7 @@ the indices are reset by atom.</p>
 <p>Apply data cleaning steps through atom's methods. For example, calling
 <a href="../../API/ATOM/atomclassifier/#impute">impute</a> will handle all missing
 values in the dataset.</p>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">,</span> <span class="n">min_frac_rows</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;median&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;most_frequent&quot;</span><span class="p">,</span> <span class="n">max_nan_rows</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
 </code></pre></div>
 <p>When the data is ready for modelling, call the <a href="../../API/ATOM/atomclassifier/#run">run</a>
 method. Here, we <a href="../training/#hyperparameter-tuning">tune hyperparameters</a> and

@@ -2777,6 +2777,17 @@ Dataframe of the training results. Columns can include:
 </ul>
 </td>
 </tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Additional:</strong></td>
+<td width="80%" style="background:white;">
+<strong>Attributes and methods for dataset</strong><br>
+Some attributes and methods can be called from atom but will return
+the call from the dataset in the current branch, e.g. <code>atom.dtypes</code>
+shows the types of every column in the dataset. These attributes and
+methods are: "size", "head", "tail", "loc", "iloc", "describe", "iterrows",
+"dtypes", "at", "iat".
+</td>
+</tr>
 </table>
 <p><br></p>
 <h3 id="plot-attributes">Plot attributes</h3>
@@ -3037,7 +3048,7 @@ Additional keyword arguments passed to func.
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
 merged with atom's pipeline. The tpot instance can be accessed through the
-<code>tpot</code> attribute. Read more in the <a href="../../../user_guide/#automl">user guide</a>.</p>
+<code>tpot</code> attribute. Read more in the <a href="../../../user_guide/data_pipelines/#automl">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -3090,7 +3101,7 @@ ncols=2, title=None, figsize=None, filename=None, display=True)
 </div>
 <p>This <code>@contextmanager</code> allows you to draw many plots in one figure.
 The default option is to add two plots side by side. See the
-<a href="../../../user_guide/#canvas">user guide</a> for an example.</p>
+<a href="../../../user_guide/plots/#canvas">user guide</a> for an example.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -3396,7 +3407,7 @@ and models. The dataset is also reset to its form after initialization.
 <span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
-<p>Reset the <a href="../../../user_guide/#aesthetics">plot aesthetics</a> to their default values.
+<p>Reset the <a href="../../../user_guide/plots/#aesthetics">plot aesthetics</a> to their default values.
 <br /><br /><br /></p>
 <p><a name="reset-predictions"></a></p>
 <div style="font-size:20px">
@@ -3500,7 +3511,7 @@ estimator=None, stack_method="auto", passthrough=False)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
 </span>
 </div>
-<p>Add a <a href="../../../user_guide/#stacking">Stacking</a> instance to the models in the pipeline.</p>
+<p>Add a <a href="../../../user_guide/training/#stacking">Stacking</a> instance to the models in the pipeline.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -3566,7 +3577,7 @@ save it to the logger.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L306">[source]</a>
 </span>
 </div>
-<p>Add a <a href="../../../user_guide/#voting">Voting</a> instance to the models in the pipeline.</p>
+<p>Add a <a href="../../../user_guide/training/#voting">Voting</a> instance to the models in the pipeline.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -3678,14 +3689,14 @@ to choose which transformations to perform. The available steps are:</p>
 <li>Drop columns with minimum cardinality.</li>
 <li>Drop duplicate rows.</li>
 <li>Drop rows with missing values in the target column.</li>
-<li>Encode the target column.</li>
+<li>Encode the target column (only for classification tasks).</li>
 </ul>
 <p>See the <a href="../../data_cleaning/cleaner/">Cleaner</a> class for a description of the parameters.
 <br /><br /><br /></p>
 <p><a name="impute"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
-strat_cat="drop", min_frac_rows=None, min_frac_cols=None, missing=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L894">[source]</a>
 </span>
@@ -3702,7 +3713,7 @@ the transformation.
 <p><a name="encode"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, frac_to_other=None)
+max_onehot=10, ordinal=None, frac_to_other=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L928">[source]</a>
 </span>
@@ -3710,15 +3721,14 @@ max_onehot=10, frac_to_other=None)
 <p>Perform encoding of categorical features. The encoding type depends
 on the number of unique values in the column:</p>
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2, use Label-encoding.</li>
+<li>If n_unique=2 or odinal feature, use Label-encoding.</li>
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>
-<p>Also replaces classes with low occurrences with the value <code>other</code> in
-order to prevent too high cardinality. Categorical features are defined
-as all columns whose dtype.kind not in <code>ifu</code>. Will raise an error if it
-encounters missing values or unknown classes when transforming. The
-encoder is fitted only on the training set to avoid data leakage. See
+<p>Missing values are propagated to the output column. Unknown classes
+encountered during transforming are converted to <code>np.NaN</code>. The class
+is also capable of replacing classes with low occurrences with the
+value <code>other</code> in order to prevent too high cardinality. See
 <a href="../../data_cleaning/encoder/">Encoder</a> for a description of the parameters.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>

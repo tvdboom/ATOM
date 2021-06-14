@@ -2341,7 +2341,7 @@
 <hr />
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop",
-strat_cat="drop", min_frac_rows=None, min_frac_cols=None, verbose=0, logger=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L610">[source]</a>
 </span>
@@ -2375,14 +2375,14 @@ Imputing strategy for categorical columns. Choose from:
 <li>str: Impute with provided string.</li>
 </ul>
 <p>
-<strong>min_frac_rows: float or None, optional (default=None)</strong><br>
-Minimum fraction of non-missing values in a row (if less, the
-row is removed). If None, ignore this step.
+<strong>max_nan_rows: int, float or None, optional (default=None)</strong><br>
+Maximum number or fraction of missing values in a row
+(if more, the row is removed). If None, ignore this step.
 </p>
 <p>
-<strong>min_frac_cols: float or None, optional (default=None)</strong><br>
-Minimum fraction of non-missing values in a column (if less,
-the column is removed). If None, ignore this step.
+<strong>max_nan_cols: int, float, optional (default=None)</strong><br>
+Maximum number or fraction of missing values in a column
+(if more, the column is removed). If None, ignore this step.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -2668,12 +2668,12 @@ Transformed target column. Only returned if provided.
 <p><div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
 
 <span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">min_frac_cols</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">impute</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">max_nan_cols</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 </code></pre></div>
 or
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom.data_cleaning</span> <span class="kn">import</span> <span class="n">Imputer</span>
 
-<span class="n">imputer</span> <span class="o">=</span> <span class="n">Imputer</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">min_frac_cols</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+<span class="n">imputer</span> <span class="o">=</span> <span class="n">Imputer</span><span class="p">(</span><span class="n">strat_num</span><span class="o">=</span><span class="s2">&quot;knn&quot;</span><span class="p">,</span> <span class="n">strat_cat</span><span class="o">=</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="n">max_nan_cols</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 <span class="n">imputer</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
 <span class="n">X</span> <span class="o">=</span> <span class="n">imputer</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </code></pre></div></p>
