@@ -178,20 +178,20 @@ class BaseModel(BaseModelPlotter):
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(
-            self,
-            X: X_TYPES,
-            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-            verbose: Optional[int] = None,
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Get log probability predictions on new data."""
         return self._prediction(X, pl=pipeline, vb=verbose, method="predict_log_proba")
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(
-            self,
-            X: X_TYPES,
-            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-            verbose: Optional[int] = None,
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Get the decision function on new data."""
         return self._prediction(X, pl=pipeline, vb=verbose, method="decision_function")
@@ -365,7 +365,7 @@ class BaseModel(BaseModelPlotter):
                     "mcc",
                     "precision",
                     "recall",
-                    "auc"
+                    "auc",
                 ]
             elif self.T.task.startswith("multi"):
                 metric = [

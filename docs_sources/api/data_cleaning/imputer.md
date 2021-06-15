@@ -3,7 +3,7 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Imputer</strong>(strat_num="drop",
-strat_cat="drop", min_frac_rows=None, min_frac_cols=None, verbose=0, logger=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, verbose=0, logger=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L610">[source]</a>
 </span>
@@ -38,14 +38,14 @@ Imputing strategy for categorical columns. Choose from:
 <li>str: Impute with provided string.</li>
 </ul>
 <p>
-<strong>min_frac_rows: float or None, optional (default=None)</strong><br>
-Minimum fraction of non-missing values in a row (if less, the
-row is removed). If None, ignore this step.
+<strong>max_nan_rows: int, float or None, optional (default=None)</strong><br>
+Maximum number or fraction of missing values in a row
+(if more, the row is removed). If None, ignore this step.
 </p>
 <p>
-<strong>min_frac_cols: float or None, optional (default=None)</strong><br>
-Minimum fraction of non-missing values in a column (if less,
-the column is removed). If None, ignore this step.
+<strong>max_nan_cols: int, float, optional (default=None)</strong><br>
+Maximum number or fraction of missing values in a column
+(if more, the column is removed). If None, ignore this step.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -357,13 +357,13 @@ Transformed target column. Only returned if provided.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)
+atom.impute(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
 ```
 or
 ```python
 from atom.data_cleaning import Imputer
 
-imputer = Imputer(strat_num="knn", strat_cat="drop", min_frac_cols=0.8)
+imputer = Imputer(strat_num="knn", strat_cat="drop", max_nan_cols=0.8)
 imputer.fit(X_train, y_train)
 X = imputer.transform(X)
 ```

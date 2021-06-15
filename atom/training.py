@@ -228,7 +228,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
 
         # Convert integer train_sizes to sequence
         if isinstance(self.train_sizes, int):
-            self.train_sizes = np.linspace(1/self.train_sizes, 1.0, self.train_sizes)
+            self.train_sizes = np.linspace(1 / self.train_sizes, 1.0, self.train_sizes)
 
         models = CustomDict()
         og_models = {k: copy(v) for k, v in self._models.items()}

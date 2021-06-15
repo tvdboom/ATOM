@@ -438,7 +438,7 @@ data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the paramete
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
-Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
+Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
 <br /><br /><br />
 
 

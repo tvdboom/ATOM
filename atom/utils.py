@@ -101,12 +101,21 @@ Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
 
 # List of models that only work for regression/classification tasks
-ONLY_CLASS = ("GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA")
-ONLY_REG = ("OLS", "Lasso", "EN", "BR", "ARD")
+ONLY_CLASS = ["GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA"]
+ONLY_REG = ["OLS", "Lasso", "EN", "BR", "ARD"]
 
 # Attributes shared betwen atom and a pd.DataFrame
 DF_ATTRS = (
-    "size", "head", "tail", "loc", "iloc", "describe", "iterrows", "dtypes", "at", "iat"
+    "size",
+    "head",
+    "tail",
+    "loc",
+    "iloc",
+    "describe",
+    "iterrows",
+    "dtypes",
+    "at",
+    "iat",
 )
 
 # List of available distributions
@@ -126,7 +135,17 @@ DISTRIBUTIONS = (
 
 # List of custom metrics for the scoring method
 CUSTOM_METRICS = (
-    "cm", "tn", "fp", "fn", "tp", "lift", "fpr", "tpr", "fnr", "tnr", "sup"
+    "cm",
+    "tn",
+    "fp",
+    "fn",
+    "tp",
+    "lift",
+    "fpr",
+    "tpr",
+    "fnr",
+    "tnr",
+    "sup",
 )
 
 # Acronyms for some of the common scorers
@@ -443,7 +462,7 @@ def arr(df):
     df: pd.DataFrame
         Stacked dataframe.
 
-     """
+    """
     if check_multidimensional(df):
         return np.stack(df["Multidimensional feature"].values)
     else:
@@ -521,6 +540,7 @@ def check_is_fitted(estimator, exception=True, attributes=None):
         and does not start with double underscore.
 
     """
+
     def check_attr(attr):
         """Return empty pandas or None/empty sequence."""
         if attr and isinstance(getattr(estimator, attr), (pd.DataFrame, pd.Series)):
@@ -672,6 +692,7 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
         Scorer object with name attribute.
 
     """
+
     def get_scorer_name(scorer):
         """Return the name of the provided scorer."""
         for key, value in SCORERS.items():
@@ -818,6 +839,7 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
         transformer's verbosity is used.
 
     """
+
     def name_cols(array, df):
         """Get the column names after a transformation.
 
@@ -1050,6 +1072,7 @@ def composed(*decs):
         Decorators to run.
 
     """
+
     def decorator(f):
         for dec in reversed(decs):
             f = dec(f)
@@ -1066,6 +1089,7 @@ def crash(f, cache={"last_exception": None}):
     catch or multiple calls to crash), its not re-written in the logger.
 
     """
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         logger = args[0].logger if hasattr(args[0], "logger") else args[0].T.logger
@@ -1089,6 +1113,7 @@ def crash(f, cache={"last_exception": None}):
 
 def method_to_log(f):
     """Save called functions to log file."""
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         # Get logger (for model subclasses called from BasePredictor)
@@ -1106,6 +1131,7 @@ def method_to_log(f):
 
 def plot_from_model(f):
     """If a plot is called from a model, adapt the models parameter."""
+
     @wraps(f)
     def wrapper(*args, **kwargs):
         if hasattr(args[0], "T"):

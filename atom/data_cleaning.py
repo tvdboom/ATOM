@@ -603,7 +603,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Only print if the target column wasn't already encoded
                 if any([key != str(value) for key, value in self.mapping.items()]):
-                    self.log(f" --> Label-encoding the target column.", 2)
+                    self.log(" --> Label-encoding the target column.", 2)
 
         return variable_return(X, y)
 
@@ -665,7 +665,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strat_num: Union[int, float, str] = "drop",
+        strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
         max_nan_rows: Optional[SCALAR] = None,
         max_nan_cols: Optional[Union[float]] = None,
@@ -923,8 +923,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
     ordinal: dict or None, optional (default=None)
         Order of ordinal features, where the dict key is the feature's
-        name or index and the value is the class order, e.g. {"salary":
-        ["low", "medium", "high"]}.
+        name and the value is the class order, e.g. {"salary": ["low",
+        "medium", "high"]}.
 
     frac_to_other: int, float or None, optional (default=None)
         Classes with less occurrences than `fraction_to_other` (as
@@ -952,7 +952,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "LeaveOneOut",
         max_onehot: Optional[int] = 10,
-        ordinal: Optional[Dict[Union[int, str], SEQUENCE_TYPES]] = None,
+        ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
@@ -1194,7 +1194,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, SEQUENCE_TYPES] = "z-score",
-        method: Union[int, float, str] = "drop",
+        method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         verbose: int = 0,
@@ -1239,7 +1239,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
                 raise ValueError(
                     "Invalid value for the strategy parameter. Choose from: "
-                    f"z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
+                    "z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
                 )
             if str(self.method).lower() != "drop" and strat.lower() != "z-score":
                 raise ValueError(
@@ -1251,7 +1251,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.method.lower() not in ("drop", "min_max"):
                 raise ValueError(
                     "Invalid value for the method parameter."
-                    f"Choose from: 'drop', 'min_max'."
+                    "Choose from: 'drop', 'min_max'."
                 )
 
         if self.max_sigma <= 0:
@@ -1329,7 +1329,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 if len(lst(self.strategy)) > 1:
                     self.log(
                         f" --> The {estimator.__class__.__name__} "
-                        f"detected {len(mask) - sum(mask)} outliers.", 2)
+                        f"detected {len(mask) - sum(mask)} outliers.", 2
+                    )
 
                 # Add the estimator as attribute to the instance
                 setattr(self, strat.lower(), estimator)

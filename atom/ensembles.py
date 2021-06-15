@@ -199,28 +199,34 @@ class Voting(BaseModel, BaseEnsemble):
         data = self._process_branches(X, y, pl, vb, method)
 
         if method == "predict":
-            pred = np.array([
-                m.predict(data[m.branch.name][0], pipeline=False)
-                for m in self._models
-            ])
+            pred = np.array(
+                [
+                    model.predict(data[model.branch.name][0], pipeline=False)
+                    for model in self._models
+                ]
+            )
             return np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
-                arr=pred.astype("int")
+                arr=pred.astype("int"),
             )
 
         elif method in ("predict_proba", "predict_log_proba", "decision_function"):
-            pred = np.array([
-                getattr(m, method)(data[m.branch.name][0], pipeline=False)
-                for m in self._models
-            ])
+            pred = np.array(
+                [
+                    getattr(model, method)(data[model.branch.name][0], pipeline=False)
+                    for model in self._models
+                ]
+            )
             return np.average(pred, axis=0, weights=self.weights)
 
         elif method == "score":
-            pred = np.array([
-                m.score(*data[m.branch.name], sw, pipeline=False)
-                for m in self._models
-            ])
+            pred = np.array(
+                [
+                    model.score(*data[model.branch.name], sw, pipeline=False)
+                    for model in self._models
+                ]
+            )
             return np.average(pred, axis=0, weights=self.weights)
 
     # Prediction properties ======================================== >>
@@ -348,7 +354,7 @@ class Stacking(BaseModel, BaseEnsemble):
             attr = self._get_stack_attr(m)
             pred = np.concatenate(
                 [getattr(m, f"{attr}_train"), getattr(m, f"{attr}_test")]
-             )
+            )
             if attr == "predict_proba" and self.T.task.startswith("bin"):
                 pred = pred[:, 1]
 
@@ -386,14 +392,18 @@ class Stacking(BaseModel, BaseEnsemble):
         self.estimator.fit(self.X_train, self.y_train)
 
         # Save metric scores on complete training and test set
-        self.metric_train = flt([
-            metric(self.estimator, arr(self.X_train), self.y_train)
-            for metric in self.T._metric
-        ])
-        self.metric_test = flt([
-            metric(self.estimator, arr(self.X_test), self.y_test)
-            for metric in self.T._metric
-        ])
+        self.metric_train = flt(
+            [
+                metric(self.estimator, arr(self.X_train), self.y_train)
+                for metric in self.T._metric
+            ]
+        )
+        self.metric_test = flt(
+            [
+                metric(self.estimator, arr(self.X_test), self.y_test)
+                for metric in self.T._metric
+            ]
+        )
 
     def __repr__(self):
         out_1 = f"{self.fullname}"
@@ -409,7 +419,7 @@ class Stacking(BaseModel, BaseEnsemble):
 
     def _get_stack_attr(self, model):
         """Get the stack attribute for a specific model."""
-        if self.stack_method == 'auto':
+        if self.stack_method == "auto":
             if hasattr(model.estimator, "predict_proba"):
                 return "predict_proba"
             elif hasattr(model.estimator, "decision_function"):

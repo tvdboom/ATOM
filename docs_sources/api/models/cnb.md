@@ -17,7 +17,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 ## Hyperparameters
 
 * By default, the estimator adopts the default parameters provided by
-  its package. See the [user guide](../../../user_guide/#parameter-customization)
+  its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
 
 <table style="font-size:16px">
@@ -273,6 +273,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#full-train">full_train</a></td>
+<td>Get the estimator trained on the complete dataset.</td>
+</tr>
+
+<tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
@@ -315,9 +320,8 @@ changed, all the model's prediction attributes are reset.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>

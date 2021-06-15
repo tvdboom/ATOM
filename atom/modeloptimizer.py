@@ -67,6 +67,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         )
 
         # Parameter attributes
+        self._early_stopping = None
         self._n_calls = 0
         self._n_initial_points = 5
         self._n_bootstrap = 0
@@ -148,6 +149,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         split for train and validation set every iteration.
 
         """
+
         def optimize(**params):
             """Optimization function for the BO.
 
@@ -162,6 +164,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 Score achieved by the model.
 
             """
+
             def fit_model(train_idx, val_idx):
                 """Fit the model. Function for parallelization.
 
@@ -201,7 +204,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                         est=est,
                         train=(X_subtrain, y_subtrain),
                         validation=(X_val, y_val),
-                        params=est_copy
+                        params=est_copy,
                     )
 
                     # Alert if early stopping was applied (only for cv=1)
@@ -324,6 +327,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Get custom dimensions (if provided)
         if self._dimensions:
+
             @use_named_args(self._dimensions)
             def custom_hyperparameters(**x):
                 return optimize(**x)
@@ -372,6 +376,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         if func is pre_defined_hyperparameters:
             self.best_params = self.get_params(optimizer.x)
         else:
+
             @use_named_args(dimensions)
             def get_custom_params(**x):
                 return x
@@ -413,20 +418,24 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 est=self.estimator,
                 train=(self.X_train, self.y_train),
                 validation=(self.X_test, self.y_test),
-                params=self._est_params_fit
+                params=self._est_params_fit,
             )
         else:
             self.estimator.fit(arr(self.X_train), self.y_train, **self._est_params_fit)
 
         # Save metric scores on complete training and test set
-        self.metric_train = flt([
-            metric(self.estimator, arr(self.X_train), self.y_train)
-            for metric in self.T._metric
-        ])
-        self.metric_test = flt([
-            metric(self.estimator, arr(self.X_test), self.y_test)
-            for metric in self.T._metric
-        ])
+        self.metric_train = flt(
+            [
+                metric(self.estimator, arr(self.X_train), self.y_train)
+                for metric in self.T._metric
+            ]
+        )
+        self.metric_test = flt(
+            [
+                metric(self.estimator, arr(self.X_test), self.y_test)
+                for metric in self.T._metric
+            ]
+        )
 
         # Print and log results ==================================== >>
 
@@ -513,16 +522,18 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     est=estimator,
                     train=(sample_x, sample_y),
                     validation=None,
-                    params=self._est_params_fit
+                    params=self._est_params_fit,
                 )
             else:
                 estimator.fit(arr(sample_x), sample_y, **self._est_params_fit)
 
             self.metric_bootstrap.append(
-                flt([
-                    metric(estimator, arr(self.X_test), self.y_test)
-                    for metric in self.T._metric
-                ])
+                flt(
+                    [
+                        metric(estimator, arr(self.X_test), self.y_test)
+                        for metric in self.T._metric
+                    ]
+                )
             )
 
         # Separate for multi-metric, transform numpy types to python types
@@ -551,16 +562,20 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         """Returns the model's final output as a string."""
         # If bootstrap was used, we use a different format
         if self.mean_bootstrap is None:
-            out = "   ".join([
-                f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
-                for i, m in enumerate(self.T._metric)
-            ])
+            out = "   ".join(
+                [
+                    f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
+                    for i, m in enumerate(self.T._metric)
+                ]
+            )
         else:
-            out = "   ".join([
-                f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)} "
-                f"\u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
-                for i, m in enumerate(self.T._metric)
-            ])
+            out = "   ".join(
+                [
+                    f"{m.name}: {round(lst(self.mean_bootstrap)[i], 4)} "
+                    f"\u00B1 {round(lst(self.std_bootstrap)[i], 4)}"
+                    for i, m in enumerate(self.T._metric)
+                ]
+            )
 
         # Annotate if model overfitted when train 20% > test
         metric_train = lst(self.metric_train)
@@ -586,9 +601,8 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         **kwargs
             Additional keyword arguments for sklearn's CCV. Using
             cv="prefit" will use the trained model and fit the
-            calibrator on the test set. Note that doing this will
-            result in data leakage in the test set. Use this only
-            if you have another, independent set for testing.
+            calibrator on the test set. Use this only if you have
+            another, independent set for testing.
 
         """
         if self.T.goal.startswith("reg"):
@@ -696,7 +710,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Use the untransformed dataset (in the og branch)
         og = getattr(self.T, "og", self.T._current)
 
-        self.T.log(f"Applying cross-validation...", 1)
+        self.T.log("Applying cross-validation...", 1)
 
         # Workaround the _score function to allow for pipelines
         # that drop samples during transformation
@@ -710,11 +724,12 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         mean = [np.mean(cv[f"test_{m}"]) for m in scoring]
         std = [np.std(cv[f"test_{m}"]) for m in scoring]
 
-        out = "   ".join([
-            f"{name}: {round(mean[i], 4)} "
-            f"\u00B1 {round(std[i], 4)}"
-            for i, name in enumerate(scoring)
-        ])
+        out = "   ".join(
+            [
+                f"{name}: {round(mean[i], 4)} " f"\u00B1 {round(std[i], 4)}"
+                for i, name in enumerate(scoring)
+            ]
+        )
 
         self.T.log(f"{self.fullname} --> {out}", 1)
 
@@ -756,6 +771,34 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
+
+    @crash
+    def full_train(self):
+        """Get the estimator trained on the complete dataset.
+
+        In some cases it might be desirable to use all the available
+        data to train a final model after the right hyperparameters
+        are found. Note that this means that the model can not be
+        evaluated.
+
+        Returns
+        -------
+        est: estimator
+            Model estimator trained on the full dataset.
+
+        """
+        estimator = clone(self.estimator)  # Clone to not overwrite when fitting
+
+        if hasattr(self, "custom_fit"):
+            self.custom_fit(
+                est=estimator,
+                train=(self.X, self.y),
+                params=self._est_params_fit,
+            )
+        else:
+            estimator.fit(arr(self.X), self.y, **self._est_params_fit)
+
+        return estimator
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: str = "auto"):

@@ -212,7 +212,6 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # BO attributes
         self._base_estimator = None
-        self._early_stopping = None
         self._cv = 5
         self._callbacks = []
         self._bo_kwargs = {}
@@ -370,7 +369,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     "Invalid value for the early_stopping parameter. "
                     f"Value should be >=0, got {self.bo_params['early_stopping']}."
                 )
-            self._early_stopping = self.bo_params["early_stopping"]
+            for model in self._models:
+                model._early_stopping = self.bo_params["early_stopping"]
 
         # Add custom dimensions to every model subclass
         if self.bo_params.get("dimensions"):

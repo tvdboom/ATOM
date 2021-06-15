@@ -468,9 +468,8 @@ changed, all the model's prediction attributes are reset.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -487,7 +486,7 @@ ncols=2, title=None, figsize=None, filename=None, display=True)
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
 The default option is to add two plots side by side. See the
-[user guide](../../../user_guide/#canvas) for an example.
+[user guide](../../../user_guide/plots/#canvas) for an example.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -672,7 +671,7 @@ Minimum verbosity level to print the message.
 <span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
-Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
+Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
 <br /><br /><br />
 
 
@@ -811,7 +810,7 @@ estimator=None, stack_method="auto", passthrough=False)
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
 </span>
 </div>
-Add a [Stacking](../../../user_guide/#stacking) instance to the models in the pipeline.
+Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -855,7 +854,7 @@ not already.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L306">[source]</a>
 </span>
 </div>
-Add a [Voting](../../../user_guide/#voting) instance to the models in the pipeline.
+Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

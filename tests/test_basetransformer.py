@@ -27,6 +27,7 @@ from .utils import (
 
 # Test properties ================================================== >>
 
+
 def test_n_jobs_maximum_cores():
     """Assert that value equals n_cores if maximum is exceeded."""
     base = BaseTransformer(n_jobs=1000)

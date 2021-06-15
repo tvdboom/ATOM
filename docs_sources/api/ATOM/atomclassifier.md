@@ -650,9 +650,8 @@ changed, all the model's prediction attributes are reset.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -1339,7 +1338,7 @@ max_onehot=10, ordinal=None, frac_to_other=None)
 Perform encoding of categorical features. The encoding type depends
 on the number of unique values in the column:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2 or odinal feature, use Label-encoding.</li>
+<li>If n_unique=2 or ordinal feature, use Label-encoding.</li>
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>

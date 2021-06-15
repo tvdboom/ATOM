@@ -11,6 +11,7 @@ Description: Unit tests for modeloptimizer.py
 import glob
 import pytest
 from unittest.mock import patch
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from skopt.learning import GaussianProcessRegressor
 
@@ -284,6 +285,14 @@ def test_rename_to_mlflow(mlflow):
     atom.run("GNB")
     atom.gnb.rename("GNB2")
     mlflow.assert_called_with(atom.gnb2._run.info.run_id, "mlflow.runName", "GNB2")
+
+
+def test_full_train():
+    """Assert that the full_train method returns a fitted estimator."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["Tree", "LGB"])
+    assert isinstance(atom.tree.full_train(), DecisionTreeClassifier)
+    assert atom.lgb.full_train() is not atom.lgb.estimator
 
 
 def test_save_estimator():

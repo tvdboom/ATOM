@@ -333,9 +333,9 @@ def test_automl_classification(cls):
     """Assert that the automl method works for classification tasks."""
     pl = Pipeline(
         steps=[
-            ('standardscaler', StandardScaler()),
-            ('robustscaler', RobustScaler()),
-            ('mlpclassifier', MLPClassifier(alpha=0.001, random_state=1))
+            ("standardscaler", StandardScaler()),
+            ("robustscaler", RobustScaler()),
+            ("mlpclassifier", MLPClassifier(alpha=0.001, random_state=1)),
         ]
     )
     cls.return_value.fitted_pipeline_ = pl.fit(X_bin, y_bin)
@@ -347,7 +347,7 @@ def test_automl_classification(cls):
         n_jobs=1,
         random_state=1,
         scoring=atom._metric[0],  # Called using atom's metric
-        verbosity=0
+        verbosity=0,
     )
     assert len(atom) == 2
     assert atom.models == ["Tree", "MLP"]
@@ -358,8 +358,8 @@ def test_automl_regression(cls):
     """Assert that the automl method works for regression tasks."""
     pl = Pipeline(
         steps=[
-            ('rbfsampler', RBFSampler(gamma=0.95, random_state=2)),
-            ('lassolarscv', LassoLarsCV(normalize=False))
+            ("rbfsampler", RBFSampler(gamma=0.95, random_state=2)),
+            ("lassolarscv", LassoLarsCV(normalize=False)),
         ]
     )
     cls.return_value.fitted_pipeline_ = pl.fit(X_reg, y_reg)
@@ -469,6 +469,7 @@ def test_apply_new_column():
 
 def test_apply_args_and_kwargs():
     """Assert that args and kwargs are passed to the function."""
+
     def test_func(df, arg_1, arg_2="mean radius"):
         return df[arg_2] + arg_1
 

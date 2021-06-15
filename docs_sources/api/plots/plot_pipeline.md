@@ -62,7 +62,7 @@ Plot object. Only returned if <code>display=None</code>.
 from atom import ATOMClassifier
 
 atom = ATOMClassifier(X, y)
-atom.impute(strat_num="median", strat_cat="drop", min_frac_rows=0.8)
+atom.impute(strat_num="median", strat_cat="drop", max_nan_rows=0.8)
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.02)
 atom.balance(strategy="adasyn", sampling_strategy=1.0)
 atom.run("LR", metric="auc", n_calls=10)

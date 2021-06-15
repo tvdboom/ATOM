@@ -108,9 +108,9 @@ class ATOM(BasePredictor, ATOMPlotter):
             classes = self.y.unique()
         self.branch.mapping = {str(value): value for value in classes}
 
-        self.log('', 1)  # Add empty rows around stats for cleaner look
+        self.log("", 1)  # Add empty rows around stats for cleaner look
         self.stats(1)
-        self.log('', 1)
+        self.log("", 1)
 
     def __repr__(self):
         out = f"{self.__class__.__name__}"
@@ -137,7 +137,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            return self.pipeline.iloc[item]   # Transformer from pipeline
+            return self.pipeline.iloc[item]  # Transformer from pipeline
         elif isinstance(item, str):
             return self.dataset[item]  # Column from dataset
         else:
@@ -256,14 +256,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def classes(self):
         """Distribution of target classes per data set."""
-        return pd.DataFrame(
-            {
-                "dataset": self.y.value_counts(sort=False, dropna=False),
-                "train": self.y_train.value_counts(sort=False, dropna=False),
-                "test": self.y_test.value_counts(sort=False, dropna=False),
-            },
-            index=self.mapping.values(),
-        ).fillna(0).astype(int)  # If 0 counts, it doesnt return the row (gets a NaN)
+        return (
+            pd.DataFrame(
+                {
+                    "dataset": self.y.value_counts(sort=False, dropna=False),
+                    "train": self.y_train.value_counts(sort=False, dropna=False),
+                    "test": self.y_test.value_counts(sort=False, dropna=False),
+                },
+                index=self.mapping.values(),
+            )
+            .fillna(0)  # If 0 counts, it doesnt return the row (gets a NaN)
+            .astype(int)
+        )
 
     @property
     def n_classes(self):
@@ -317,16 +321,16 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             self.log(f"Scaled: {self.scaled}", _vb)
             if self.nans.sum():
-                p_nans = round(100. * nans / self.dataset.size, 1)
+                p_nans = round(100 * nans / self.dataset.size, 1)
                 self.log(f"Missing values: {nans} ({p_nans}%)", _vb)
             if n_categorical:
-                p_cat = round(100. * n_categorical / self.n_features, 1)
+                p_cat = round(100 * n_categorical / self.n_features, 1)
                 self.log(f"Categorical features: {n_categorical} ({p_cat}%)", _vb)
             if outliers:
-                p_out = round(100. * outliers / self.train.size, 1)
+                p_out = round(100 * outliers / self.train.size, 1)
                 self.log(f"Outlier values: {outliers} ({p_out}%)", _vb)
             if duplicates:
-                p_dup = round(100. * duplicates / len(self.dataset), 1)
+                p_dup = round(100 * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
         self.log("---------------------------------------", _vb)
@@ -555,14 +559,18 @@ class ATOM(BasePredictor, ATOMPlotter):
         model.estimator = model.est
 
         # Save metric scores on complete training and test set
-        model.metric_train = flt([
-            metric(model.estimator, self.X_train, self.y_train)
-            for metric in self._metric
-        ])
-        model.metric_test = flt([
-            metric(model.estimator, self.X_test, self.y_test)
-            for metric in self._metric
-        ])
+        model.metric_train = flt(
+            [
+                metric(model.estimator, self.X_train, self.y_train)
+                for metric in self._metric
+            ]
+        )
+        model.metric_test = flt(
+            [
+                metric(model.estimator, self.X_test, self.y_test)
+                for metric in self._metric
+            ]
+        )
 
         self._models.update({model.name: model})
         self.log(f"Adding model {model.fullname} ({model.name}) to the pipeline...", 1)
@@ -686,8 +694,8 @@ class ATOM(BasePredictor, ATOMPlotter):
         columns = self._get_columns(columns)
         if self.target in columns:
             raise ValueError(
-               "Invalid value for the columns parameter. "
-               "The target column can not be dropped."
+                "Invalid value for the columns parameter. "
+                "The target column can not be dropped."
             )
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
@@ -699,13 +707,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
     @composed(crash, method_to_log, typechecked)
-    def apply(
-        self,
-        func: callable,
-        column: Union[int, str],
-        args=(),
-        **kwargs
-    ):
+    def apply(self, func: callable, column: Union[int, str], args=(), **kwargs):
         """Apply a function to the dataset.
 
         Transform one column in the dataset using a function (can
@@ -898,7 +900,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @composed(crash, method_to_log, typechecked)
     def impute(
         self,
-        strat_num: Union[int, float, str] = "drop",
+        strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
         max_nan_rows: Optional[SCALAR] = None,
         max_nan_cols: Optional[SCALAR] = None,
@@ -972,7 +974,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def prune(
         self,
         strategy: Union[str, SEQUENCE_TYPES] = "z-score",
-        method: Union[int, float, str] = "drop",
+        method: Union[SCALAR, str] = "drop",
         max_sigma: SCALAR = 3,
         include_target: bool = False,
         **kwargs,

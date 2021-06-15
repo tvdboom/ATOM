@@ -151,6 +151,7 @@ class Branch:
             Property to be checked.
 
         """
+
         def counter(name, dim):
             """Return the counter dimension of the provided data set."""
             if dim == "side":
@@ -175,13 +176,13 @@ class Branch:
             value = to_series(
                 value,
                 index=side.index if side_name else None,
-                name=under.name if under_name else "target"
+                name=under.name if under_name else "target",
             )
         else:
             value = to_df(
                 value,
                 index=side.index if side_name else None,
-                columns=under.columns if under_name else None
+                columns=under.columns if under_name else None,
             )
 
         if side_name:  # Check for equal number of rows

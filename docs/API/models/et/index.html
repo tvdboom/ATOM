@@ -290,6 +290,18 @@
 
 
   <li class="md-tabs__item">
+    <a href="../../../contributing/" class="md-tabs__link">
+      Contributing
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
     <a href="../../../dependencies/" class="md-tabs__link">
       Dependencies
     </a>
@@ -2291,6 +2303,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../../dependencies/" class="md-nav__link">
         Dependencies
       </a>
@@ -2693,6 +2720,11 @@ or <code>atom.et.predict(X)</code>. The remaining utility methods can be found h
 </tr>
 
 <tr>
+<td><a href="#full-train">full_train</a></td>
+<td>Get the estimator trained on the complete dataset.</td>
+</tr>
+
+<tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
@@ -2734,9 +2766,8 @@ Only if classifier.</p>
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -2831,6 +2862,27 @@ If None, it leaves them to their original verbosity.
 <td width="80%" style="background:white;">
 <strong>pipeline: Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
+</td>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="full-train"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">full_train</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L776">[source]</a>
+</span>
+</div>
+<p>Get the estimator trained on the complete dataset. In some cases it
+might be desirable to use all the available data to train a final
+model after the right hyperparameters are found. Note that this
+means that the model can not be evaluated.</p>
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>est: estimator</strong><br>
+Model estimator trained on the full dataset.
 </td>
 </tr>
 </table>

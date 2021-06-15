@@ -1244,7 +1244,7 @@ max_onehot=10, ordinal=None, frac_to_other=None)
 Perform encoding of categorical features. The encoding type depends
 on the number of unique values in the column:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2 or odinal feature, use Label-encoding.</li>
+<li>If n_unique=2 or ordinal feature, use Label-encoding.</li>
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>

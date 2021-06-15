@@ -137,6 +137,7 @@ class BasePredictor:
     @property
     def results(self):
         """Return the results as a pd.DataFrame."""
+
         def frac(m):
             """Return the fraction of the train set used for the model."""
             n_models = m.branch.idx[0] / m._train_idx
@@ -332,7 +333,7 @@ class BasePredictor:
         self._models["vote"] = Voting(
             self,
             models=self._get_models(models),
-            weights=weights
+            weights=weights,
         )
         self.log(f"{self.vote.fullname} added to the models!", 1)
 

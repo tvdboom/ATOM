@@ -46,7 +46,7 @@ def test_vote_scoring():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"])
     atom.voting(weights=[1, 2])
-    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"])/3
+    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"]) / 3
     assert atom.vote.scoring("r2")["r2"] == avg
 
 

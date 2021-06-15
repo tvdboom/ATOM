@@ -234,6 +234,7 @@ class BaseTransformer:
             Whether to use the `n_rows` parameter on the dataset.
 
         """
+
         def _no_train_test(data):
             """Path to follow when no train and test are provided."""
             if use_n_rows:

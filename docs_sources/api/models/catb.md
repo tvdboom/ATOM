@@ -17,7 +17,7 @@ Corresponding estimators are:
 Read more in CatBoost's [documentation](https://catboost.ai/).
 
 !!! info
-    CatBoost allows [early stopping](../../../user_guide/#early-stopping)
+    CatBoost allows [early stopping](../../../user_guide/training/#early-stopping)
     to stop the training of unpromising models prematurely!
 
 
@@ -25,7 +25,7 @@ Read more in CatBoost's [documentation](https://catboost.ai/).
 ## Hyperparameters
 
 * By default, the estimator adopts the default parameters provided by
-  its package. See the [user guide](../../../user_guide/#parameter-customization)
+  its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
 * The `bootstrap_type` parameter is set to "Bernoulli" to allow for the `subsample` parameter.
 * The `num_leaves` and `min_child_samples` parameters are not available for the
@@ -298,6 +298,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#full-train">full_train</a></td>
+<td>Get the estimator trained on the complete dataset.</td>
+</tr>
+
+<tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
@@ -341,9 +346,8 @@ Only if classifier.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -443,6 +447,29 @@ If None, it leaves them to their original verbosity.
 <td width="80%" style="background:white;">
 <strong>pipeline: Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="full-train"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">full_train</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L776">[source]</a>
+</span>
+</div>
+Get the estimator trained on the complete dataset. In some cases it
+might be desirable to use all the available data to train a final
+model after the right hyperparameters are found. Note that this
+means that the model can not be evaluated.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>est: estimator</strong><br>
+Model estimator trained on the full dataset.
 </td>
 </tr>
 </table>

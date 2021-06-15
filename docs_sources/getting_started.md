@@ -1,5 +1,7 @@
-# Installation
---------------
+# Getting started
+-----------------
+
+## Installation
 
 Install ATOM's newest release easily via `pip`:
 
@@ -21,8 +23,7 @@ after the package's name.
 
 <br><br>
 
-# Usage
--------
+## Usage
 
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:
 

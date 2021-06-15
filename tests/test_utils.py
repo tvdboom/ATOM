@@ -45,7 +45,7 @@ def test_create_acronym():
 def test_custom_dict_initialization():
     """Assert that the custom dictionary can be initialized like any dict."""
     assert str(CustomDict({"a": 0, "b": 1})) == "{'a': 0, 'b': 1}"
-    assert str(CustomDict((("a",  0), ("b", 1)))) == "{'a': 0, 'b': 1}"
+    assert str(CustomDict((("a", 0), ("b", 1)))) == "{'a': 0, 'b': 1}"
     assert str(CustomDict(a=0, b=1)) == "{'a': 0, 'b': 1}"
 
 
