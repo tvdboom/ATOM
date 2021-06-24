@@ -186,7 +186,7 @@ def test_stack_predictions_multiclass():
     atom.run(["Tree", "PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
     assert isinstance(atom.stack.predict(X_class), np.ndarray)
-    assert isinstance(atom.stack.score(X_class, y_class), np.float64)
+    assert isinstance(atom.stack.score(X_class, y_class, "f1_weighted"), np.float64)
 
 
 def test_stack_predictions_regression():

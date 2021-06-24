@@ -1289,7 +1289,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         outliers = []
         for strat in lst(self.strategy):
             if strat.lower() == "z-score":
-                z_scores = zscore(objective, nan_policy="propagate")
+                z_scores = np.array(zscore(objective, nan_policy="propagate"))
 
                 if not isinstance(self.method, str):
                     cond = np.abs(z_scores) > self.max_sigma

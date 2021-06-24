@@ -11,6 +11,7 @@ Description: Module containing the Voting and Stacking classes.
 import numpy as np
 import pandas as pd
 from copy import copy
+from inspect import signature
 from typing import Optional, Union
 from typeguard import typechecked
 
@@ -21,7 +22,7 @@ from .data_cleaning import Scaler
 from .models import MODEL_LIST
 from .utils import (
     SEQUENCE_TYPES, flt, arr, merge, get_acronym, get_best_score,
-    custom_transform, composed, crash, CustomDict,
+    get_scorer, custom_transform, composed, crash, CustomDict,
 )
 
 
@@ -154,7 +155,16 @@ class Voting(BaseModel, BaseEnsemble):
 
         return scores
 
-    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
+    def _prediction(
+        self,
+        X,
+        y=None,
+        metric=None,
+        sample_weight=None,
+        pipeline=None,
+        verbose=None,
+        method="predict"
+    ):
         """Get the mean of the prediction methods on new data.
 
         First transform the new data and apply the attribute on all
@@ -171,10 +181,16 @@ class Voting(BaseModel, BaseEnsemble):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sw: sequence or None, optional (default=None)
+        metric: str, func, scorer or None, optional (default=None)
+            Metric to calculate. Choose from any of sklearn's SCORERS,
+            a function with signature metric(y_true, y_pred) or a scorer
+            object. If None, it returns mean accuracy for classification
+            tasks and r2 for regression tasks. Only for method="score".
+
+        sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        pl: bool, sequence or None, optional (default=None)
+        pipeline: bool, sequence or None, optional (default=None)
             Transformers to use on the data before predicting.
                 - If None: Only transformers that are applied on the
                            whole dataset are used.
@@ -183,7 +199,7 @@ class Voting(BaseModel, BaseEnsemble):
                 - If sequence: Transformers to use, selected by their
                                index in the pipeline.
 
-        vb: int or None, optional (default=None)
+        verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             transformer's own verbosity.
 
@@ -192,41 +208,44 @@ class Voting(BaseModel, BaseEnsemble):
 
         Returns
         -------
-        np.ndarray
+        pred: np.ndarray
             Return of the attribute.
 
         """
-        data = self._process_branches(X, y, pl, vb, method)
+        data = self._process_branches(X, y, pipeline, verbose, method)
 
         if method == "predict":
-            pred = np.array(
-                [
-                    model.predict(data[model.branch.name][0], pipeline=False)
-                    for model in self._models
-                ]
-            )
+            pred = []
+            for model in self._models:
+                pred.append(model.predict(data[model.branch.name][0], pipeline=False))
+
             return np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
                 axis=0,
-                arr=pred.astype("int"),
+                arr=np.array(pred).astype("int"),
             )
 
         elif method in ("predict_proba", "predict_log_proba", "decision_function"):
-            pred = np.array(
-                [
+            pred = []
+            for model in self._models:
+                pred.append(
                     getattr(model, method)(data[model.branch.name][0], pipeline=False)
-                    for model in self._models
-                ]
-            )
+                )
+
             return np.average(pred, axis=0, weights=self.weights)
 
         elif method == "score":
-            pred = np.array(
-                [
-                    model.score(*data[model.branch.name], sw, pipeline=False)
-                    for model in self._models
-                ]
-            )
+            pred = []
+            for model in self._models:
+                pred.append(
+                    model.score(
+                        *data[model.branch.name],
+                        metric=metric,
+                        sample_weight=sample_weight,
+                        pipeline=False,
+                    )
+                )
+
             return np.average(pred, axis=0, weights=self.weights)
 
     # Prediction properties ======================================== >>
@@ -431,8 +450,17 @@ class Stacking(BaseModel, BaseEnsemble):
 
     # Prediction methods =========================================== >>
 
-    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
-        """Get the prediction methods on new data.
+    def _prediction(
+        self,
+        X,
+        y=None,
+        metric=None,
+        sample_weight=None,
+        pipeline=None,
+        verbose=None,
+        method="predict"
+    ):
+        """Get the mean of the prediction methods on new data.
 
         First transform the new data and apply the attribute on all
         the models. All models need to have the provided attribute.
@@ -448,10 +476,16 @@ class Stacking(BaseModel, BaseEnsemble):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sw: sequence or None, optional (default=None)
+        metric: str, func, scorer or None, optional (default=None)
+            Metric to calculate. Choose from any of sklearn's SCORERS,
+            a function with signature metric(y_true, y_pred) or a scorer
+            object. If None, it returns mean accuracy for classification
+            tasks and r2 for regression tasks. Only for method="score".
+
+        sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        pl: bool, sequence or None, optional (default=None)
+        pipeline: bool, sequence or None, optional (default=None)
             Transformers to use on the data before predicting.
                 - If None: Only transformers that are applied on the
                            whole dataset are used.
@@ -460,7 +494,7 @@ class Stacking(BaseModel, BaseEnsemble):
                 - If sequence: Transformers to use, selected by their
                                index in the pipeline.
 
-        vb: int or None, optional (default=None)
+        verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             transformer's own verbosity.
 
@@ -469,11 +503,11 @@ class Stacking(BaseModel, BaseEnsemble):
 
         Returns
         -------
-        np.ndarray
+        pred: np.ndarray
             Return of the attribute.
 
         """
-        data = self._process_branches(X, y, pl, vb, method)
+        data = self._process_branches(X, y, pipeline, verbose, method)
 
         # Create the feature set from which to make predictions
         fxs_set = pd.DataFrame()
@@ -501,4 +535,20 @@ class Stacking(BaseModel, BaseEnsemble):
         if y is None:
             return getattr(self.estimator, method)(fxs_set)
         else:
-            return getattr(self.estimator, method)(fxs_set, self.T.y, sw)
+            if metric is None:
+                if self.T.goal.startswith("class"):
+                    metric = get_scorer("accuracy")
+                else:
+                    metric = get_scorer("r2")
+            else:
+                metric = get_scorer(metric)
+
+            if "sample_weight" in signature(metric).parameters:
+                return metric(
+                    self.estimator,
+                    fxs_set,
+                    self.T.y,
+                    sample_weight=sample_weight,
+                )
+            else:
+                return metric(self.estimator, fxs_set, self.T.y)
