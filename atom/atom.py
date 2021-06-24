@@ -1393,7 +1393,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            n_calls, n_initial_points, est_params, bo_params, n_bootstrap
+            n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
         )
 
         kwargs = self._prepare_kwargs(kwargs)
@@ -1439,7 +1439,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap
+            skip_runs, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
         )
 
         kwargs = self._prepare_kwargs(kwargs)
@@ -1483,7 +1483,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         params = (
             models, metric, greater_is_better, needs_proba, needs_threshold,
-            train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap
+            train_sizes, n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
         )
 
         kwargs = self._prepare_kwargs(kwargs)

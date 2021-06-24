@@ -47,7 +47,7 @@ methods for estimators in sklearn's API:
 
 <tr>
 <td><a href="../../API/predicting/score">score</a></td>
-<td>Transform new data through all transformers in a branch and return the model's score.</td>
+<td>Transform new data through all transformers in a branch and return a metric score.</td>
 </tr>
 </table>
 

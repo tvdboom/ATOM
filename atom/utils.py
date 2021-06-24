@@ -1152,7 +1152,8 @@ def score_decorator(f):
 
     def wrapper(*args, **kwargs):
         args = list(args)  # Convert to list for item assignment
-        args[1], args[2] = args[0][:-1].transform(args[1], args[2])
+        if len(args[0]) > 1:  # Has transformers
+            args[1], args[2] = args[0][:-1].transform(args[1], args[2])
 
         # Return f(final_estimator, X_transformed, y_transformed, ...)
         return f(args[0][-1], *tuple(args[1:]), **kwargs)

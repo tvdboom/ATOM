@@ -5,6 +5,8 @@
 
 * Added the [full_train](../API/models/gnb/#full-train) method to retrieve
   an estimator trained on the complete dataset.
+* The [score](../API/predicting/score) method is now also able to calculate
+  custom metrics on new data.
 * Refactor of the [Imputer](../API/data_cleaning/imputer) class. 
 * Refactor of the [Encoder](../API/data_cleaning/encoder) class to avoid errors
   for unknown classes and allow the input of missing values.

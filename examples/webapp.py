@@ -3,9 +3,9 @@ import streamlit as st
 from atom import ATOMClassifier
 
 
+# Expand the web app across the whole screen
 st.set_page_config(layout="wide")
 
-# Sidebar ============================= >>
 st.sidebar.title("Pipeline")
 
 # Data cleaning options
@@ -26,7 +26,6 @@ models = {
 }
 
 
-# Data ingestion ====================== >>
 st.header("Data")
 data = st.file_uploader("Upload data:", type="csv")
 
@@ -38,8 +37,6 @@ if data is not None:
 
 st.header("Results")
 
-
-# Model training ====================== >>
 if st.sidebar.button("Run"):
     placeholder = st.empty()  # Empty to overwrite prints
     placeholder.write("Initializing atom...")
@@ -76,4 +73,4 @@ if st.sidebar.button("Run"):
     col2.write(atom.plot_prc(title="Precision-Recall curve", display=None))
 
 else:
-    st.write("No results yet. Click the run button on the sidebar to fit the pipeline.")
+    st.write("No results yet. Click the run button!")

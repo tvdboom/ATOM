@@ -408,6 +408,16 @@ def test_export_pipeline_verbose():
     assert atom.export_pipeline("LGB", verbose=2)[0].verbose == 2
 
 
+def test_export_same_transformer():
+    """Assert that two same transformers get different names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    atom.clean()
+    atom.clean()
+    pl = atom.export_pipeline()
+    assert list(pl.named_steps.keys()) == ["cleaner", "cleaner2", "cleaner3"]
+
+
 def test_export_pipeline_scaler():
     """Assert that a scaler is included in the pipeline."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

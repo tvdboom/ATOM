@@ -206,12 +206,13 @@ class BasePredictor:
         self,
         X: X_TYPES,
         y: Y_TYPES,
+        metric: Optional[Union[str, callable]] = None,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
         **kwargs,
     ):
         """Get the winning model's score on new data."""
         check_is_fitted(self, attributes="_models")
-        return self.winner.score(X, y, sample_weight, **kwargs)
+        return self.winner.score(X, y, metric, sample_weight, **kwargs)
 
     # Utility methods ============================================== >>
 

@@ -13,7 +13,7 @@
 * [Can I merge a sklearn pipeline with atom?](#q10)
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
 * [Can I train the models using cross-validation?](#q12)
-* [Why does encoding fail with a ValueError when transforming?](#q13)
+* [Why are there missing values in the dataset after encoding?](#q13)
 
 <br>
 
@@ -156,7 +156,7 @@ step of the pipeline multiple times, with different results. This would
 prevent ATOM from being able to show the transformation results after
 every pre-processing step, which means losing the ability to inspect
 how a transformer changed the dataset. This makes cross-validation an
-inappropriate technique for our exploration purposes.
+inappropriate technique for the purpose of exploration.
 
 So why not use cross-validation only to train and evaluate the models,
 instead of applying it to the whole pipeline? Cross-validating only the
@@ -167,27 +167,25 @@ and can severely bias the results towards specific transformers. On the
 other hand, using only the training set beats the point of applying
 cross-validation in the first place, since we can train the model on the
 complete training set and evaluate the results on the independent test
-set. No cross-validation needed. That said, ideally we would cross-validate
-the entire pipeline using the entire dataset. This can be done using a
-trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
+set. The only point of doing cross-validation would be to get an idea
+of the robustness of the model. This can also be achieves using
+[bootstrapping](../user_guide/training/#boostrapping). That said, ideally
+we would cross-validate the entire pipeline using the entire dataset.
+This can be done using a trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
 method, but for the reason just explained above, the method only outputs
 the final metric results.
 
 <br>
 
 <a name="q13"></a>
-### Why does encoding fail with a ValueError when transforming??
-The `ValueError: Columns to be encoded can not contain new values` exception
-can occur when calling the [encode](../API/ATOM/atomclassifier/#encode)
-method or transforming the [Encoder](../API/data_cleaning/encoder)
-class. This exception is not raised by ATOM but by the [category_encoders](https://contrib.scikit-learn.org/category_encoders/)
-package which is used internally to perform the encodings. The error
-is raised when the column to be transformed presents classes that were
-not encountered during fitting. This is intended behavior, since the
-transformer wouldn't know what to do with the new classes. In atom's case,
-it means the test set contains classes that were not present in the
-training set. This usually happens if the training set is very small
-or if the column has many classes with few occurrences. To fix this,
-either increase the number of samples in the training set to make sure
-it contains all the classes in the column, or increase the `frac_to_other`
-parameter.
+### Why are there missing values in the dataset after encoding?
+The [Encoder](../API/data_cleaning/encoder) class can create new `np.NaN`
+values during transformation if it encounters classes that were not there
+during fitting. This is intended behavior, since the transformer wouldn't
+know what to do with the new classes. In atom's case, it means the test
+set contains classes that were not present in the training set. This
+usually happens if the training set is very small or if the column has
+many classes with few occurrences. To fix this, impute the dataset
+after encoding, increase the number of samples in the training set to
+make sure it contains all the classes in the column, or increase the
+`frac_to_other` parameter.

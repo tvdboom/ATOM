@@ -697,6 +697,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Adopt params from the trainer if not specified
         kwargs["n_jobs"] = kwargs.get("n_jobs", self.T.n_jobs)
+        kwargs["verbose"] = kwargs.get("verbose", self.T.verbose)
         if kwargs.get("scoring"):
             scoring = get_scorer(kwargs.pop("scoring"))
             scoring = {scoring.name: scoring}

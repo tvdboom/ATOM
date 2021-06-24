@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L431">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L440">[source]</a>
 </span>
 </div>
 

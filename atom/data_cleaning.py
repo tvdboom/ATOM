@@ -777,6 +777,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Impute the missing values.
 
+        Note that leaving y=None can lead to inconsistencies in
+        data length between X and y if rows are dropped during
+        the transformation.
+
         Parameters
         ----------
         X: dict, list, tuple, np.ndarray or pd.DataFrame
@@ -972,8 +976,11 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES):
+    def fit(self, X: X_TYPES, y: Y_TYPES = None):
         """Fit to data.
+
+        Note that leaving y=None can lead to errors if the `strategy`
+        encoder requires target values.
 
         Parameters
         ----------
@@ -981,6 +988,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
