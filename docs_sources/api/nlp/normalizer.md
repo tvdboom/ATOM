@@ -5,7 +5,7 @@
 <em>class</em> atom.nlp.<strong style="color:#008AB8">Normalizer</strong>(stopwords=True,
 custom_stopwords=None, stem=False, lemmatize=True, verbose=0, logger=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L429">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L431">[source]</a>
 </span>
 </div>
 
@@ -106,7 +106,7 @@ Verbosity level of the class. Possible values are:
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
 Normalize the text.
@@ -241,7 +241,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L487">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L489">[source]</a>
 </span>
 </div>
 Normalize the text.

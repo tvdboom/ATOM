@@ -205,5 +205,6 @@ nav:
         - Train sizing: examples/train_sizing.ipynb
         - Utilities: examples/utilities.ipynb
     - FAQ: faq.md
+    - Contributing: contributing.md
     - Dependencies: dependencies.md
     - License: license.md

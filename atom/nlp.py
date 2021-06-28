@@ -173,6 +173,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed corpus.
 
         """
+
         def to_ascii(row):
             """Convert unicode string to ascii."""
             try:
@@ -370,6 +371,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed corpus.
 
         """
+
         def replace_ngrams(row, ngram, sep="<&&>"):
             """Replace a ngram with one word unified by underscores."""
             row = "&>" + sep.join(row) + "<&"  # Indicate words with separator
@@ -503,6 +505,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             Transformed corpus.
 
         """
+
         def pos(tag):
             """Get part of speech from a tag."""
             if tag in ("JJ", "JJR", "JJS"):
@@ -540,7 +543,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             stopwords = set(stopwords + list(self.custom_stopwords))
 
         if stopwords:
-            self.log(f" --> Dropping stopwords.", 2)
+            self.log(" --> Dropping stopwords.", 2)
             f = lambda row: [word for word in row if word not in stopwords]
             X[corpus] = X[corpus].apply(f)
 
@@ -548,7 +551,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.stem is True:
                 self.stem = "english"
 
-            self.log(f" --> Applying stemming.", 2)
+            self.log(" --> Applying stemming.", 2)
             ss = SnowballStemmer(language=self.stem.lower())
             X[corpus] = X[corpus].apply(lambda row: [ss.stem(word) for word in row])
 
@@ -562,7 +565,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
             except LookupError:
                 nltk.download("averaged_perceptron_tagger")
 
-            self.log(f" --> Applying lemmatization.", 2)
+            self.log(" --> Applying lemmatization.", 2)
             wnl = WordNetLemmatizer()
             f = lambda row: [wnl.lemmatize(w, pos(tag)) for w, tag in nltk.pos_tag(row)]
             X[corpus] = X[corpus].apply(f)

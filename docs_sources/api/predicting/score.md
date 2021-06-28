@@ -3,16 +3,16 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
-y, sample_weights=None, pipeline=None, verbose=None)
+y, metric=None, sample_weights=None, pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L203">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L205">[source]</a>
 </span>
 </div>
 
 Transform new data through all transformers in the current branch and
-return model's score. If called from a trainer, the best model in
+return a metric score. If called from a trainer, the best model in
 the pipeline (under the `winner` attribute) is used. If called from a
-model, that model is used. The estimator must have a `score` method.
+model, that model is used.
 
 <table style="font-size:16px">
 <tr>
@@ -28,6 +28,13 @@ Feature set with shape=(n_samples, n_features).
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
 </ul>
+<p>
+<strong>metric: str, func, scorer or None, optional (default=None)</strong><br>
+Metric to calculate. Choose from any of sklearn's <a href="https://scikit-learn.org/stable/modules/model_evaluation.html#the-scoring-parameter-defining-model-evaluation-rules">SCORERS</a>,
+a function with signature <code>metric(y_true, y_pred)</code> or
+a scorer object. If None, it returns mean accuracy for classification
+tasks and r2 for regression tasks.
+</p>
 <p>
 <strong>sample_weights: sequence or None, optional (default=None)</strong><br>
 Sample weights corresponding to y.
@@ -50,10 +57,20 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="80%" style="background:white;">
 <strong>score: np.float64</strong><br>
-Mean accuracy or r2 (depending on the task) of predict(X) with respect to y.
+Metric score of X with respect to y.
 </td>
 </tr>
 </table>
+
+!!! note
+    If the `metric` parameter is left to its default value, the method
+    outputs the same value as sklearn's score method for an estimator. 
+
+!!! info
+    This method is intended to calculate metric scores on new data.
+    To get the metric results on the train or test set, use the
+    [scoring](../../ATOM/atomclassifier/#scoring) method.
+
 <br />
 
 

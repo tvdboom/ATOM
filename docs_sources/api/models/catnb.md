@@ -16,7 +16,7 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/n
 ## Hyperparameters
 
 * By default, the estimator adopts the default parameters provided by
-  its package. See the [user guide](../../../user_guide/#parameter-customization)
+  its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
 
 <table style="font-size:16px">
@@ -268,6 +268,11 @@ The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
+<td><a href="#full-train">full_train</a></td>
+<td>Get the estimator trained on the complete dataset.</td>
+</tr>
+
+<tr>
 <td><a href="#rename">rename</a></td>
 <td>Change the model's tag.</td>
 </tr>
@@ -294,7 +299,7 @@ The remaining utility methods can be found hereunder.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L574">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L589">[source]</a>
 </span>
 </div>
 Applies probability calibration on the estimator. The
@@ -310,9 +315,8 @@ changed, all the model's prediction attributes are reset.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -323,7 +327,7 @@ testing.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L662">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L676">[source]</a>
 </span>
 </div>
 Evaluate the model using cross-validation. This method cross-validates the
@@ -355,7 +359,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L321">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L377">[source]</a>
 </span>
 </div>
 Delete the model from the trainer. If it's the winning model, the next
@@ -371,7 +375,7 @@ removed from any active mlflow experiment.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L616">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L630">[source]</a>
 </span>
 </div>
 Export the model's pipeline to a sklearn-like object. If the model
@@ -418,11 +422,34 @@ Current branch as a sklearn-like Pipeline object.
 <br />
 
 
+<a name="full-train"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">full_train</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L777">[source]</a>
+</span>
+</div>
+Get the estimator trained on the complete dataset. In some cases it
+might be desirable to use all the available data to train a final
+model after the right hyperparameters are found. Note that this
+means that the model can not be evaluated.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>est: estimator</strong><br>
+Model estimator trained on the full dataset.
+</td>
+</tr>
+</table>
+<br />
+
+
 <a name="rename"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L724">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L740">[source]</a>
 </span>
 </div>
 Change the model's tag. The acronym always stays at the beginning
@@ -442,7 +469,7 @@ New tag for the model. If None, the tag is removed.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L214">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L270">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../../user_guide/predicting) from all models.
@@ -455,7 +482,7 @@ Use this method to free some memory before saving the trainer.
 <em>method</em> <strong style="color:#008AB8">scoring</strong>
 (metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L340">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L382">[source]</a>
 </span>
 </div>
 Get the scoring for a specific metric.
@@ -502,7 +529,7 @@ Model's score for the selected metric.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_estimator</strong>(filename="auto")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L761">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L805">[source]</a>
 </span>
 </div>
 Save the estimator to a pickle file.

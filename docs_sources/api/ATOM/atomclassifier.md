@@ -328,6 +328,17 @@ Dataframe of the training results. Columns can include:
 </ul>
 </td>
 </tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Additional:</strong></td>
+<td width="80%" style="background:white;">
+<strong>Attributes and methods for dataset</strong><br>
+Some attributes and methods can be called from atom but will return
+the call from the dataset in the current branch, e.g. <code>atom.dtypes</code>
+shows the types of every column in the dataset. These attributes and
+methods are: "size", "head", "tail", "loc", "iloc", "describe", "iterrows",
+"dtypes", "at", "iat".
+</td>
+</tr>
 </table>
 <br>
 
@@ -494,7 +505,7 @@ manage the pipeline.
 <em>method</em> <strong style="color:#008AB8">add</strong>(transformer,
 columns=None, train_only=False, **fit_params)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L750">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L757">[source]</a>
 </span>
 </div>
 Add a transformer to the current branch. If the transformer is
@@ -550,7 +561,7 @@ Additional keyword arguments passed to the fit method of the transformer.
 <em>method</em> <strong style="color:#008AB8">apply</strong>(func,
 column, args=(), **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L697">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L710">[source]</a>
 </span>
 </div>
 Transform one column in the dataset using a function (can
@@ -594,14 +605,14 @@ Additional keyword arguments passed to func.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">automl</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L492">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L501">[source]</a>
 </span>
 </div>
 Uses the [TPOT](http://epistasislab.github.io/tpot/) package to perform
 an automated search of transformers and a final estimator that maximizes
 a metric on the dataset. The resulting transformations and estimator are
 merged with atom's pipeline. The tpot instance can be accessed through the
-`tpot` attribute. Read more in the [user guide](../../../user_guide/#automl).
+`tpot` attribute. Read more in the [user guide](../../../user_guide/data_pipelines/#automl).
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -618,7 +629,7 @@ Keyword arguments for tpot's classifier.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L425">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L428">[source]</a>
 </span>
 </div>
 Applies probability calibration on the winning model. The
@@ -639,9 +650,8 @@ changed, all the model's prediction attributes are reset.
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Note that doing this will result in data leakage in
-the test set. Use this only if you have another, independent set for
-testing.
+on the test set. Use this only if you have another, independent set
+for testing.
 </td>
 </tr>
 </table>
@@ -658,7 +668,7 @@ ncols=2, title=None, figsize=None, filename=None, display=True)
 </div>
 This `@contextmanager` allows you to draw many plots in one figure.
 The default option is to add two plots side by side. See the
-[user guide](../../../user_guide/#canvas) for an example.
+[user guide](../../../user_guide/plots/#canvas) for an example.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -699,7 +709,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L431">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L434">[source]</a>
 </span>
 </div>
 Evaluate the winning model using cross-validation. This method cross-validates
@@ -731,7 +741,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L469">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L472">[source]</a>
 </span>
 </div>
 Delete a model from the trainer. If the winning model is
@@ -757,7 +767,7 @@ Models to delete. If None, delete them all.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">distribution</strong>(column=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L343">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L352">[source]</a>
 </span>
 </div>
 Compute the [KS-statistic](https://en.wikipedia.org/wiki/Kolmogorov%E2%80%93Smirnov_test)
@@ -790,7 +800,7 @@ Dataframe with the statistic results.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">drop</strong>(columns)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L667">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L680">[source]</a>
 </span>
 </div>
 Drop columns from the dataset.
@@ -817,7 +827,7 @@ Names or indices of the columns to drop.
 <em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None,
 pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L587">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L600">[source]</a>
 </span>
 </div>
 Export atom's pipeline to a sklearn-like Pipeline object. Optionally, you
@@ -874,7 +884,7 @@ Current branch as a sklearn-like Pipeline object.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L390">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L393">[source]</a>
 </span>
 </div>
 Return class weights for a balanced data set. Statistically, the class
@@ -930,7 +940,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">report</strong>](dataset="dataset",
 n_rows=None, filename=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L385">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L394">[source]</a>
 </span>
 </div>
 Create an extensive profile analysis report of the data. The report
@@ -969,7 +979,7 @@ Created profile object.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L276">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L285">[source]</a>
 </span>
 </div>
 Reset the instance to it's initial state, i.e. it deletes all branches
@@ -983,7 +993,7 @@ and models. The dataset is also reset to its form after initialization.
 <span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L211">[source]</a>
 </span>
 </div>
-Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default values.
+Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
 <br /><br /><br />
 
 
@@ -991,7 +1001,7 @@ Reset the [plot aesthetics](../../../user_guide/#aesthetics) to their default va
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L173">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L175">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../..user_guide/predicting) from all models.
@@ -1033,7 +1043,7 @@ when loading the file.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">save_data</strong>(filename="auto", dataset="dataset")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L566">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L579">[source]</a>
 </span>
 </div>
 Save the data in the current branch to a csv file.
@@ -1059,7 +1069,7 @@ Data set to save.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L437">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L440">[source]</a>
 </span>
 </div>
 Get all the models scoring for provided metrics.
@@ -1094,10 +1104,10 @@ Scoring of the models.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
 estimator=None, stack_method="auto", passthrough=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L339">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L342">[source]</a>
 </span>
 </div>
-Add a [Stacking](../../../user_guide/#stacking) instance to the models in the pipeline.
+Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1138,7 +1148,7 @@ not already.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">stats</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L295">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L304">[source]</a>
 </span>
 </div>
 Print basic information about the dataset. The count and balance of
@@ -1153,7 +1163,7 @@ information can be used to quickly assess if the data set is unbalanced.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">status</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L271">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L280">[source]</a>
 </span>
 </div>
 Get an overview of the branches, models and errors in the current instance.
@@ -1166,10 +1176,10 @@ save it to the logger.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L306">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L309">[source]</a>
 </span>
 </div>
-Add a [Voting](../../../user_guide/#voting) instance to the models in the pipeline.
+Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1248,7 +1258,7 @@ method on the dataset in the pipeline.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">scale</strong>(strategy="standard", **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L799">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L806">[source]</a>
 </span>
 </div>
 Applies one of sklearn's scalers. Non-numerical columns are ignored. The
@@ -1261,7 +1271,7 @@ estimator created by the class is attached to atom. See the
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">gauss</strong>(strategy="yeo-johnson", **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L819">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L826">[source]</a>
 </span>
 </div>
 Transform the data to follow a Gaussian distribution. This transformation
@@ -1280,7 +1290,7 @@ the parameters.
 strip_categorical=True, drop_max_cardinality=True, drop_min_cardinality=True,
 drop_duplicates=False, drop_missing_target=True, encode_target=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L845">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L852">[source]</a>
 </span>
 </div>
 Applies standard data cleaning steps on the dataset. Use the parameters
@@ -1292,7 +1302,7 @@ to choose which transformations to perform. The available steps are:
 * Drop columns with minimum cardinality.
 * Drop duplicate rows.
 * Drop rows with missing values in the target column.
-* Encode the target column.
+* Encode the target column (only for classification tasks).
 
 See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the parameters.
 <br /><br /><br />
@@ -1301,9 +1311,9 @@ See the [Cleaner](../data_cleaning/cleaner.md) class for a description of the pa
 <a name="impute"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">impute</strong>(strat_num="drop",
-strat_cat="drop", min_frac_rows=None, min_frac_cols=None, missing=None)
+strat_cat="drop", max_nan_rows=None, max_nan_cols=None, missing=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L894">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L901">[source]</a>
 </span>
 </div>
 Impute or remove missing values according to the selected strategy.
@@ -1320,23 +1330,22 @@ the transformation.
 <a name="encode"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">encode</strong>(strategy="LeaveOneOut",
-max_onehot=10, frac_to_other=None)
+max_onehot=10, ordinal=None, frac_to_other=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L928">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L935">[source]</a>
 </span>
 </div>
 Perform encoding of categorical features. The encoding type depends
 on the number of unique values in the column:
 <ul style="line-height:1.2em;margin-top:5px">
-<li>If n_unique=2, use Label-encoding.</li>
+<li>If n_unique=2 or ordinal feature, use Label-encoding.</li>
 <li>If 2 < n_unique <= max_onehot, use OneHot-encoding.</li>
 <li>If n_unique > max_onehot, use `strategy`-encoding.</li>
 </ul>
-Also replaces classes with low occurrences with the value `other` in
-order to prevent too high cardinality. Categorical features are defined
-as all columns whose dtype.kind not in `ifu`. Will raise an error if it
-encounters missing values or unknown classes when transforming. The
-encoder is fitted only on the training set to avoid data leakage. See
+Missing values are propagated to the output column. Unknown classes
+encountered during transforming are converted to `np.NaN`. The class
+is also capable of replacing classes with low occurrences with the
+value `other` in order to prevent too high cardinality. See
 [Encoder](../data_cleaning/encoder.md) for a description of the parameters.
 
 !!! note
@@ -1351,7 +1360,7 @@ encoder is fitted only on the training set to avoid data leakage. See
 <em>method</em> <strong style="color:#008AB8">prune</strong>(strategy="z-score",
 method="drop", max_sigma=3, include_target=False, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L964">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L974">[source]</a>
 </span>
 </div>
 Prune outliers from the training set. The definition of outlier depends
@@ -1368,7 +1377,7 @@ description of the parameters.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">balance</strong>(strategy="ADASYN", **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1003">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1013">[source]</a>
 </span>
 </div>
 Balance the number of samples per target class in the target column.
@@ -1416,7 +1425,7 @@ lower_case=True, drop_emails=True, regex_emails=None, drop_url=True,
 regex_url=None, drop_html=True, regex_html=None, drop_emojis, regex_emojis=None,
 drop_numbers=True, regex_numbers=None, drop_punctuation=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1035">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1045">[source]</a>
 </span>
 </div>
 Applies standard text cleaning to the corpus. Transformations include
@@ -1434,7 +1443,7 @@ parameters.
 <em>method</em> <strong style="color:#008AB8">tokenize</strong>(bigram_freq=None,
 trigram_freq=None, quadgram_freq=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1087">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1097">[source]</a>
 </span>
 </div>
 Convert documents into sequences of words. Additionally, create
@@ -1450,7 +1459,7 @@ there is no column with that name, an exception is raised.
 <em>method</em> <strong style="color:#008AB8">normalize</strong>(stopwords=True,
 custom_stopwords=None, stem=False, lemmatize=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1121">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1131">[source]</a>
 </span>
 </div>
 Convert words to a more uniform standard. The transformations are
@@ -1465,7 +1474,7 @@ description of the parameters.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">vectorize</strong>(strategy="BOW", **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1152">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/nlp.py#L1162">[source]</a>
 </span>
 </div>
 Transform the corpus into meaningful vectors of numbers. The
@@ -1502,7 +1511,7 @@ remove features using one of the provided strategies.
 <em>method</em> <strong style="color:#008AB8">feature_generation</strong>(strategy="DFS",
 n_features=None, generations=20, population=500, operators=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1176">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1186">[source]</a>
 </span>
 </div>
 Use Deep feature Synthesis or a genetic algorithm to create new
@@ -1518,7 +1527,7 @@ are attached to atom.
 <em>method</em> <strong style="color:#008AB8">feature_selection</strong>(strategy=None,
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1215">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1225">[source]</a>
 </span>
 </div>
 Remove features according to the selected strategy. Ties between
@@ -1583,7 +1592,7 @@ and the [prediction](../../..user_guide/predicting) and
 metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
 n_calls=10, n_initial_points=5, est_params=None, bo_params=None, n_bootstrap=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1359">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1369">[source]</a>
 </span>
 </div>
 Fit and evaluate the models. The following steps are applied to every model:
@@ -1608,7 +1617,7 @@ metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
 skip_runs=0, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
 n_bootstrap=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1398">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1408">[source]</a>
 </span>
 </div>
 Fit and evaluate the models in a [successive halving](../../../user_guide/training/#successive-halving)
@@ -1634,7 +1643,7 @@ metric=None, greater_is_better=True, needs_proba=False, needs_threshold=False,
 train_sizes=5, n_calls=0, n_initial_points=5, est_params=None, bo_params=None,
 n_bootstrap=0)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1444">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1454">[source]</a>
 </span>
 </div>
 Fit and evaluate the models in a [train sizing](../../../user_guide/training/#train-sizing)

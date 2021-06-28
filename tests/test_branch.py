@@ -49,7 +49,7 @@ def test_status_method():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.impute()
     atom.branch.status()
-    assert str(atom.branch).endswith("min_frac_cols: None\n --> Models: None")
+    assert str(atom.branch).endswith("max_nan_cols: None\n --> Models: None")
 
 
 # Test rename ====================================================== >>

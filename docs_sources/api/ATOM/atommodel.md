@@ -11,7 +11,7 @@ acronym=None, fullname=None, needs_scaling=False)
 
 Convert an estimator to a model that can be ingested by ATOM. Note that
 only estimators that follow [sklearn's API](https://scikit-learn.org/stable/developers/develop.html)
-are compatible. Read more about using custom estimators in the [user guide](../../../user_guide/#custom-models).
+are compatible. Read more about using custom estimators in the [user guide](../../../user_guide/models/#custom-models).
 
 <table style="font-size:16px">
 <tr>
@@ -35,7 +35,7 @@ Full model's name. If None, the estimator's __name__ is used.
 <strong>needs_scaling: bool, optional (default=False)</strong><br>
 Whether the model needs scaled features. Can not be True for
 datasets with more than two dimensions. Read more about this
-in the <a href="../../../user_guide/#deep-learning">user guide</a>.
+in the <a href="../../../user_guide/models/#deep-learning">user guide</a>.
 </p>
 </td>
 </tr>

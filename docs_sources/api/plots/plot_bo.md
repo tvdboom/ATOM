@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None,
 metric=0, title=None, figsize=(10, 8), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L858">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L859">[source]</a>
 </span>
 </div>
 
@@ -26,7 +26,7 @@ optimization are selected.
 </p>
 <p>
 <strong>metric: int or str, optional (default=0)</strong><br>
-Index or name of the metric to plot. Only for <a href="../../../user_guide/#metric">multi-metric</a> runs.
+Index or name of the metric to plot. Only for <a href="../../../user_guide/training/#metric">multi-metric</a> runs.
 </p>
 <p>
 <strong>title: str or None, optional (default=None)</strong><br>

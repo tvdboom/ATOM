@@ -17,8 +17,9 @@ from typeguard import typechecked
 from .branch import Branch
 from .ensembles import Voting, Stacking
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, flt, lst, check_is_fitted,
-    divide, get_best_score, delete, method_to_log, composed, crash,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
+    check_is_fitted, divide, get_best_score, delete, method_to_log,
+    composed, crash,
 )
 
 
@@ -44,7 +45,7 @@ class BasePredictor:
             return self._models[item.lower()]  # Get model subclass
         elif item in self.branch.columns:
             return self.branch.dataset[item]  # Get column
-        elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
+        elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
@@ -136,6 +137,7 @@ class BasePredictor:
     @property
     def results(self):
         """Return the results as a pd.DataFrame."""
+
         def frac(m):
             """Return the fraction of the train set used for the model."""
             n_models = m.branch.idx[0] / m._train_idx
@@ -204,12 +206,13 @@ class BasePredictor:
         self,
         X: X_TYPES,
         y: Y_TYPES,
+        metric: Optional[Union[str, callable]] = None,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
         **kwargs,
     ):
         """Get the winning model's score on new data."""
         check_is_fitted(self, attributes="_models")
-        return self.winner.score(X, y, sample_weight, **kwargs)
+        return self.winner.score(X, y, metric, sample_weight, **kwargs)
 
     # Utility methods ============================================== >>
 
@@ -331,7 +334,7 @@ class BasePredictor:
         self._models["vote"] = Voting(
             self,
             models=self._get_models(models),
-            weights=weights
+            weights=weights,
         )
         self.log(f"{self.vote.fullname} added to the models!", 1)
 

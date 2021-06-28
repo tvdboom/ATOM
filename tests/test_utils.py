@@ -27,7 +27,7 @@ def test_time_to_string():
 
 
 def test_check_is_fitted_with_pandas():
-    """Assert the function works for empty pandas objects."""
+    """Assert that the function works for empty pandas objects."""
     estimator = BaseEstimator()
     estimator.attr = pd.DataFrame([])
     pytest.raises(NotFittedError, check_is_fitted, estimator, attributes="attr")
@@ -37,26 +37,28 @@ def test_check_is_fitted_with_pandas():
 
 
 def test_create_acronym():
-    """Assert the function works as intended."""
+    """Assert that the function works as intended."""
     assert create_acronym("CustomClass") == "CC"
     assert create_acronym("Customclass") == "Customclass"
 
 
 def test_custom_dict_initialization():
-    """Assert the custom dictionary can be initialized like any dict."""
+    """Assert that the custom dictionary can be initialized like any dict."""
     assert str(CustomDict({"a": 0, "b": 1})) == "{'a': 0, 'b': 1}"
-    assert str(CustomDict((("a",  0), ("b", 1)))) == "{'a': 0, 'b': 1}"
+    assert str(CustomDict((("a", 0), ("b", 1)))) == "{'a': 0, 'b': 1}"
     assert str(CustomDict(a=0, b=1)) == "{'a': 0, 'b': 1}"
 
 
 def test_custom_dict_key_request():
-    """Assert the custom dictionary has case insensitive key request."""
+    """Assert that the custom dictionary key request works."""
     cd = CustomDict({"A": 0, "B": 1})
     assert cd["a"] == cd["A"] == cd[0] == 0
+    with pytest.raises(KeyError):
+        print(cd[10])
 
 
 def test_custom_dict_manipulations():
-    """Assert the custom dictionary accepts inserts and pops."""
+    """Assert that the custom dictionary accepts inserts and pops."""
     cd = CustomDict({"a": 0, "b": 1})
     cd.insert(1, "c", 2)
     assert str(cd) == "{'a': 0, 'c': 2, 'b': 1}"

@@ -11,7 +11,7 @@ Description: Module containing the data cleaning estimators.
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional
+from typing import Union, Optional, Dict
 from collections import defaultdict
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
@@ -20,16 +20,17 @@ from sklearn.preprocessing import (
     PowerTransformer,
     QuantileTransformer,
     LabelEncoder,
-    OrdinalEncoder,
 )
+from category_encoders.ordinal import OrdinalEncoder
 from category_encoders.one_hot import OneHotEncoder
 
 # Own modules
 from .basetransformer import BaseTransformer
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS, ENCODING_STRATS,
-    PRUNING_STRATS, BALANCING_STRATS, lst, it, variable_return, to_df,
-    to_series, merge, check_is_fitted, composed, crash, method_to_log,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
+    ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
+    variable_return, to_df, to_series, merge, check_is_fitted,
+    composed, crash, method_to_log,
 )
 
 
@@ -602,7 +603,7 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Only print if the target column wasn't already encoded
                 if any([key != str(value) for key, value in self.mapping.items()]):
-                    self.log(f" --> Label-encoding the target column.", 2)
+                    self.log(" --> Label-encoding the target column.", 2)
 
         return variable_return(X, y)
 
@@ -632,13 +633,13 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             - "most_frequent": Impute with most frequent value.
             - str: Impute with provided string.
 
-    min_frac_rows: float or None, optional (default=None)
-        Minimum fraction of non-missing values in a row (if less,
-        the row is removed). If None, ignore this step.
+    max_nan_rows: int, float or None, optional (default=None)
+        Maximum number or fraction of missing values in a row
+        (if more, the row is removed). If None, ignore this step.
 
-    min_frac_cols: float, optional (default=None)
-        Minimum fraction of non-missing values in a column (if
-        less, the column is removed). If None, ignore this step.
+    max_nan_cols: int, float, optional (default=None)
+        Maximum number or fraction of missing values in a column
+        (if more, the column is removed). If None, ignore this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -664,22 +665,23 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strat_num: Union[int, float, str] = "drop",
+        strat_num: Union[SCALAR, str] = "drop",
         strat_cat: str = "drop",
-        min_frac_rows: Optional[float] = None,
-        min_frac_cols: Optional[float] = None,
+        max_nan_rows: Optional[SCALAR] = None,
+        max_nan_cols: Optional[Union[float]] = None,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
     ):
         super().__init__(verbose=verbose, logger=logger)
         self.strat_num = strat_num
         self.strat_cat = strat_cat
-        self.min_frac_rows = min_frac_rows
-        self.min_frac_cols = min_frac_cols
+        self.max_nan_rows = max_nan_rows
+        self.max_nan_cols = max_nan_cols
 
         self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
         self._imputers = {}
-        self._num_cols = None
+        self._num_cols = []
+        self._drop_cols = []
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
@@ -709,16 +711,22 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Unknown strategy for the strat_num parameter, got "
                 f"{self.strat_num}. Choose from: {', '.join(strats)}."
             )
-        if self.min_frac_rows and (self.min_frac_rows <= 0 or self.min_frac_rows >= 1):
-            raise ValueError(
-                "Invalid value for the min_frac_rows parameter. Value "
-                f"should be between 0 and 1, got {self.min_frac_rows}."
-            )
-        if self.min_frac_cols and (self.min_frac_cols <= 0 or self.min_frac_cols >= 1):
-            raise ValueError(
-                "Invalid value for the min_frac_cols parameter. Value "
-                f"should be between 0 and 1, got {self.min_frac_cols}."
-            )
+        if self.max_nan_rows:
+            if self.max_nan_rows < 0:
+                raise ValueError(
+                    "Invalid value for the max_nan_rows parameter. "
+                    f"Value should be >0, got {self.max_nan_rows}."
+                )
+            elif self.max_nan_rows <= 1:
+                self.max_nan_rows = int(len(X.columns) * self.max_nan_rows)
+        if self.max_nan_cols:
+            if self.max_nan_cols < 0:
+                raise ValueError(
+                    "Invalid value for the max_nan_cols parameter. "
+                    f"Value should be >0, got {self.max_nan_cols}."
+                )
+            elif self.max_nan_cols <= 1:
+                self.max_nan_cols = int(len(X) * self.max_nan_cols)
 
         self.log("Fitting Imputer...", 1)
 
@@ -726,11 +734,16 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        if self.min_frac_rows:
-            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+        if self.max_nan_rows:
+            X = X.dropna(axis=0, thresh=self.max_nan_rows)
 
         for col in X:
             values = X[col].values.reshape(-1, 1)
+
+            # Remember columns with too many missing values
+            if self.max_nan_cols and X[col].isna().sum() > self.max_nan_cols:
+                self._drop_cols.append(col)
+                continue  # Skip to side column
 
             # Column is numerical
             if col in self._num_cols:
@@ -764,6 +777,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Impute the missing values.
 
+        Note that leaving y=None can lead to inconsistencies in
+        data length between X and y if rows are dropped during
+        the transformation.
+
         Parameters
         ----------
         X: dict, list, tuple, np.ndarray or pd.DataFrame
@@ -793,32 +810,30 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many missing values
-        if self.min_frac_rows:
+        if self.max_nan_rows:
             length = len(X)
-            X = X.dropna(axis=0, thresh=int(self.min_frac_rows * X.shape[1]))
+            X = X.dropna(axis=0, thresh=self.max_nan_rows)
             if y is not None:
                 y = y[y.index.isin(X.index)]  # Select only indices that remain
             diff = length - len(X)
             if diff > 0:
                 self.log(
-                    f" --> Dropping {diff} samples for containing less than "
-                    f"{int(self.min_frac_rows*100)}% non-missing values.", 2
+                    f" --> Dropping {diff} samples for containing more than "
+                    f"{100 * self.max_nan_rows // length}% missing values.", 2
                 )
 
         for col in X:
             values = X[col].values.reshape(-1, 1)
-            nans = X[col].isna().sum()  # Number of missing values in column
+            nans = X[col].isna().sum()
 
             # Drop columns with too many missing values
-            if self.min_frac_cols:
-                p_nans = nans * 100 // len(X)  # Percentage of NaNs
-                if (len(X) - nans) / len(X) < self.min_frac_cols:
-                    self.log(
-                        f" --> Dropping feature {col} for containing "
-                        f"{nans} ({p_nans}%) missing values.", 2
-                    )
-                    X = X.drop(col, axis=1)
-                    continue  # Skip to side column
+            if col in self._drop_cols:
+                self.log(
+                    f" --> Dropping feature {col}. Contains {nans} "
+                    f"({nans * 100 // len(X)}%) missing values.", 2
+                )
+                X = X.drop(col, axis=1)
+                continue
 
             # Apply only if column is numerical and contains missing values
             if col in self._num_cols and nans > 0:
@@ -886,13 +901,15 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     """Perform encoding of categorical features.
 
     The encoding type depends on the number of classes in the column:
-        - If n_classes=2, use Ordinal-encoding.
+        - If n_classes=2 or ordinal feature, use Ordinal-encoding.
         - If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
         - If n_classes > `max_onehot`, use `strategy`-encoding.
 
-    Also replaces classes with low occurrences with the value `other`
-    in order to prevent too high cardinality. An error is raised if
-    it encounters missing values or unknown classes when transforming.
+    Missing values are propagated to the output column. Unknown
+    classes encountered during transforming are converted to
+    `np.NaN`. The class is also capable of replacing classes with
+    low occurrences with the value `other` in order to prevent
+    too high cardinality.
 
     Parameters
     ----------
@@ -908,10 +925,15 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         one-hot-encoding. If None, it will always use `strategy`
         when n_unique > 2.
 
-    frac_to_other: float, optional (default=None)
-        Classes with less occurrences than n_rows * fraction_to_other
-        are replaced with the string `other`. If None, this skip this
-        step.
+    ordinal: dict or None, optional (default=None)
+        Order of ordinal features, where the dict key is the feature's
+        name and the value is the class order, e.g. {"salary": ["low",
+        "medium", "high"]}.
+
+    frac_to_other: int, float or None, optional (default=None)
+        Classes with less occurrences than `fraction_to_other` (as
+        total number or fraction of rows) are replaced with the string
+        `other`. If None, this skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -934,7 +956,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self,
         strategy: str = "LeaveOneOut",
         max_onehot: Optional[int] = 10,
-        frac_to_other: Optional[float] = None,
+        ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
+        frac_to_other: Optional[SCALAR] = None,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
         **kwargs,
@@ -942,17 +965,22 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         super().__init__(verbose=verbose, logger=logger)
         self.strategy = strategy
         self.max_onehot = max_onehot
+        self.ordinal = ordinal
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
         self._to_other = defaultdict(list)
         self._encoders = {}
+        self._categories = {}
         self._cat_cols = None
         self._is_fitted = False
 
     @composed(crash, method_to_log, typechecked)
-    def fit(self, X: X_TYPES, y: Y_TYPES):
+    def fit(self, X: X_TYPES, y: Y_TYPES = None):
         """Fit to data.
+
+        Note that leaving y=None can lead to errors if the `strategy`
+        encoder requires target values.
 
         Parameters
         ----------
@@ -960,6 +988,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
+            - If None: y is ignored.
             - If int: Index of the target column in X.
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
@@ -989,12 +1018,16 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 "Invalid value for the max_onehot parameter."
                 f"Value should be >= 0, got {self.max_onehot}."
             )
+        if self.ordinal is None:
+            self.ordinal = {}
         if self.frac_to_other:
-            if self.frac_to_other <= 0 or self.frac_to_other >= 1:
+            if self.frac_to_other < 0:
                 raise ValueError(
                     "Invalid value for the frac_to_other parameter. Value "
-                    f"should be between 0 and 1, got {self.frac_to_other}."
+                    f"should be between >0, got {self.frac_to_other}."
                 )
+            elif self.frac_to_other < 1:
+                self.frac_to_other = int(self.frac_to_other * len(X))
 
         self.log("Fitting Encoder...", 1)
 
@@ -1002,31 +1035,34 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Group uncommon classes into "other"
             if self.frac_to_other:
                 for category, count in X[col].value_counts().items():
-                    if count < self.frac_to_other * len(X[col]):
+                    if count <= self.frac_to_other:
                         self._to_other[col].append(category)
                         X[col] = X[col].replace(category, "other")
 
-            # Count number of unique values in the column
-            n_unique = len(X[col].unique())
+            # Get the unique categories before fitting
+            self._categories[col] = X[col].unique().tolist()
 
             # Perform encoding type dependent on number of unique values
-            if n_unique == 2:
+            if col in self.ordinal or len(self._categories[col]) == 2:
+                unique = X[col].unique()
+                mapping = {v: i for i, v in enumerate(self.ordinal.get(col, unique))}
                 self._encoders[col] = OrdinalEncoder(
-                    dtype=np.int8,
-                    handle_unknown="error",
-                ).fit(X[col].values.reshape(-1, 1))
+                    mapping=[{"col": col, "mapping": mapping}],
+                    handle_missing="return_nan",
+                    handle_unknown="return_nan",
+                ).fit(pd.DataFrame(X[col]))
 
-            elif 2 < n_unique <= self.max_onehot:
+            elif 2 < len(self._categories[col]) <= self.max_onehot:
                 self._encoders[col] = OneHotEncoder(
-                    handle_missing="error",
-                    handle_unknown="error",
                     use_cat_names=True,
+                    handle_missing="return_nan",
+                    handle_unknown="return_nan",
                 ).fit(pd.DataFrame(X[col]))
 
             else:
                 self._encoders[col] = strategy(
-                    handle_missing="error",
-                    handle_unknown="error",
+                    handle_missing="return_nan",
+                    handle_unknown="return_nan",
                     **self.kwargs,
                 ).fit(pd.DataFrame(X[col]), y)
 
@@ -1056,33 +1092,46 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
 
         self.log("Encoding categorical columns...", 1)
 
-        for idx, col in enumerate(c for c in X if c in self._cat_cols):
+        for col in (c for c in X if c in self._cat_cols):
             # Convert classes to "other"
             X[col] = X[col].replace(self._to_other[col], "other")
 
+            n_classes = len(X[col].unique())
             self.log(
                 f" --> {self._encoders[col].__class__.__name__[:-7]}-encoding "
-                f"feature {col}. Contains {len(X[col].unique())} classes.", 2
+                f"feature {col}. Contains {n_classes} classes.", 2
             )
 
-            # Perform encoding type dependent on number of classes
-            if self._encoders[col].__module__.startswith("sklearn"):
-                X[col] = self._encoders[col].transform(X[col].values.reshape(-1, 1))
+            # Missing values are propagated
+            n_nans = X[col].isna().sum()
+            if n_nans:
+                self.log(f"   >>> Propagating {n_nans} missing values.", 2)
 
-            elif self._encoders[col].__class__.__name__.startswith("OneHot"):
-                onehot_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                # Insert the new columns at old location
-                for i, column in enumerate(onehot_cols):
-                    X.insert(idx + i, column, onehot_cols[column])
-                # Drop the original and _nan columns
-                X = X.drop([col, onehot_cols.columns[-1]], axis=1)
+            # Get the new encoded columns
+            new_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
 
-            else:
-                rest_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
-                X = X.drop(col, axis=1)  # Drop the original column
-                # Insert the new columns at old location
-                for i, column in enumerate(rest_cols):
-                    X.insert(idx + i, column, rest_cols[column])
+            # Drop _nan columns (missing values are propagated)
+            new_cols = new_cols[[col for col in new_cols if not col.endswith("_nan")]]
+
+            # Check for unknown classes
+            uk = len([i for i in X[col].unique() if i not in self._categories[col]])
+            if uk:
+                self.log(
+                    f"   >>> Creating {new_cols.isna().sum().sum() - n_nans} "
+                    f"missing values from {uk} unknown classes.", 2
+                )
+
+            # Insert the new columns at old location
+            for i, new_col in enumerate(new_cols):
+                if new_col in X:
+                    X[col] = new_cols[col]  # Replace existing column
+                else:
+                    # Drop the original column
+                    if col in X:
+                        idx = X.columns.get_loc(col)
+                        X = X.drop(col, axis=1)
+
+                    X.insert(idx + i, new_col, new_cols[new_col])
 
         return X
 
@@ -1153,8 +1202,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
     def __init__(
         self,
         strategy: Union[str, SEQUENCE_TYPES] = "z-score",
-        method: Union[int, float, str] = "drop",
-        max_sigma: Union[int, float] = 3,
+        method: Union[SCALAR, str] = "drop",
+        max_sigma: SCALAR = 3,
         include_target: bool = False,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
@@ -1198,7 +1247,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if strat.lower() not in ["z-score"] + list(PRUNING_STRATS):
                 raise ValueError(
                     "Invalid value for the strategy parameter. Choose from: "
-                    f"z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
+                    "z-score, iForest, EE, LOF, SVM, DBSCAN, OPTICS."
                 )
             if str(self.method).lower() != "drop" and strat.lower() != "z-score":
                 raise ValueError(
@@ -1210,7 +1259,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
             if self.method.lower() not in ("drop", "min_max"):
                 raise ValueError(
                     "Invalid value for the method parameter."
-                    f"Choose from: 'drop', 'min_max'."
+                    "Choose from: 'drop', 'min_max'."
                 )
 
         if self.max_sigma <= 0:
@@ -1240,7 +1289,7 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
         outliers = []
         for strat in lst(self.strategy):
             if strat.lower() == "z-score":
-                z_scores = zscore(objective, nan_policy="propagate")
+                z_scores = np.array(zscore(objective, nan_policy="propagate"))
 
                 if not isinstance(self.method, str):
                     cond = np.abs(z_scores) > self.max_sigma
@@ -1288,7 +1337,8 @@ class Pruner(BaseEstimator, TransformerMixin, BaseTransformer):
                 if len(lst(self.strategy)) > 1:
                     self.log(
                         f" --> The {estimator.__class__.__name__} "
-                        f"detected {len(mask) - sum(mask)} outliers.", 2)
+                        f"detected {len(mask) - sum(mask)} outliers.", 2
+                    )
 
                 # Add the estimator as attribute to the instance
                 setattr(self, strat.lower(), estimator)

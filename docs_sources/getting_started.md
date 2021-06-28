@@ -1,5 +1,7 @@
-# Installation
---------------
+# Getting started
+-----------------
+
+## Installation
 
 Install ATOM's newest release easily via `pip`:
 
@@ -21,8 +23,7 @@ after the package's name.
 
 <br><br>
 
-# Usage
--------
+## Usage
 
 Call the `ATOMClassifier` or `ATOMRegressor` class and provide the data you want to use:
 
@@ -37,7 +38,7 @@ atom = ATOMClassifier(X, y, logger="auto", n_jobs=2, verbose=2)
 ATOM has multiple data cleaning methods to help you prepare the data for modelling:
 
 ```python
-atom.impute(strat_num="knn", strat_cat="most_frequent", min_frac_rows=0.1)  
+atom.impute(strat_num="knn", strat_cat="most_frequent", max_nan_rows=0.1)  
 atom.encode(strategy="LeaveOneOut", max_onehot=8, frac_to_other=0.05)  
 atom.feature_selection(strategy="PCA", n_features=12)
 ```

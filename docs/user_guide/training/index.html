@@ -290,6 +290,18 @@
 
 
   <li class="md-tabs__item">
+    <a href="../../contributing/" class="md-tabs__link">
+      Contributing
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
     <a href="../../dependencies/" class="md-tabs__link">
       Dependencies
     </a>
@@ -2297,6 +2309,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../dependencies/" class="md-nav__link">
         Dependencies
       </a>
@@ -2651,7 +2678,7 @@ dimensions for every individual model. Note that the provided search
 space dimensions must be compliant with skopt's API.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
-    <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
     <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">Integer</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;max_iter&quot;</span><span class="p">)]},</span>
 <span class="p">)</span>
 </code></pre></div>
@@ -2660,8 +2687,8 @@ accessed through <code>bo_params</code>. Other callbacks can be included through
 the <code>callbacks</code> key.</p>
 <div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
     <span class="n">models</span><span class="o">=</span><span class="s2">&quot;LR&quot;</span><span class="p">,</span>
-    <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
-    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;max_time&quot;</span><span class="p">:</span> <span class="mi">1000</span><span class="p">,</span> <span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">()},</span>
+    <span class="n">n_calls</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span>
+    <span class="n">bo_params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;callbacks&quot;</span><span class="p">:</span> <span class="n">custom_callback</span><span class="p">()},</span>
 <span class="p">)</span>
 </code></pre></div>
 <p>It's also possible to include additional parameters for the optimizer as

@@ -150,7 +150,7 @@ def test_figure_is_saved_canvas(func):
         func.assert_not_called()
         atom.plot_roc()
         func.assert_not_called()
-    func.assert_called_with("canvas")   # Only at the end it is saved
+    func.assert_called_with("canvas")  # Only at the end it is saved
 
 
 def test_figure_is_returned():
@@ -204,7 +204,7 @@ def test_plot_ngrams(ngram):
     """Assert that the plot_ngrams method work as intended."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     pytest.raises(ValueError, atom.plot_ngrams, ngram=6)
-    atom.plot_ngrams(ngram=ngram, display=False)    # When corpus is str
+    atom.plot_ngrams(ngram=ngram, display=False)  # When corpus is str
     atom.tokenize()
     atom.plot_ngrams(ngram=ngram, display=False)  # When corpus are tokens
 

@@ -255,15 +255,15 @@ def test_strat_num_parameter():
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_invalid_min_frac_rows():
-    """Assert that an error is raised for invalid min_frac_rows."""
-    imputer = Imputer(min_frac_rows=1.0)
+def test_invalid_max_nan_rows():
+    """Assert that an error is raised for invalid max_nan_rows."""
+    imputer = Imputer(max_nan_rows=-2)
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
-def test_invalid_min_frac_cols():
-    """Assert that an error is raised for invalid min_frac_cols."""
-    imputer = Imputer(min_frac_cols=5.2)
+def test_invalid_max_nan_cols():
+    """Assert that an error is raised for invalid max_nan_cols."""
+    imputer = Imputer(max_nan_cols=-5)
     pytest.raises(ValueError, imputer.fit, X_bin, y_bin)
 
 
@@ -299,7 +299,7 @@ def test_rows_too_many_nans():
     for i in range(5):  # Add 5 rows with all NaN values
         X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
     y = [np.random.randint(2) for _ in range(len(X))]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", min_frac_rows=0.5)
+    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.5)
     X, y = impute.fit_transform(X, y)
     assert len(X) == 569  # Original size
     assert X.isna().sum().sum() == 0
@@ -310,7 +310,7 @@ def test_cols_too_many_nans():
     X = X_bin.copy()
     for i in range(5):  # Add 5 cols with all NaN values
         X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", min_frac_cols=0.5)
+    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_cols=0.5)
     X, y = impute.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
@@ -411,7 +411,7 @@ def test_max_onehot_parameter():
 
 def test_frac_to_other_parameter():
     """Assert that the frac_to_other parameter is set correctly."""
-    encoder = Encoder(frac_to_other=2.2)
+    encoder = Encoder(frac_to_other=-2)
     pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
 
 
@@ -427,17 +427,17 @@ def test_encoder_check_is_fitted():
     pytest.raises(NotFittedError, Encoder().transform, X_bin, y_bin)
 
 
-def test_raise_missing_fit():
-    """Assert that an error is raised when there are missing values during fit."""
+def test_missing_values_are_propagated():
+    """Assert that an missing are propagated."""
     encoder = Encoder(max_onehot=None)
-    pytest.raises(ValueError, encoder.fit_transform, X10_sn, y10)
+    assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
 
 
-def test_raise_missing_transform():
-    """Assert that an error is raised when there are missing values during trans."""
-    encoder = Encoder(max_onehot=None)
-    encoder.fit(X10_str, y10)
-    pytest.raises(ValueError, encoder.transform, X10_sn, y10)
+def test_unknown_classes():
+    """Assert that unknown classes are converted to NaN."""
+    encoder = Encoder()
+    encoder.fit(["a", "b", "b", "a"])
+    assert encoder.transform(["c"]).isna().sum().sum() == 1
 
 
 def test_ordinal_encoder():
@@ -445,6 +445,13 @@ def test_ordinal_encoder():
     encoder = Encoder(max_onehot=None)
     X = encoder.fit_transform(X10_str2, y10)
     assert np.all((X["Feature 3"] == 0) | (X["Feature 3"] == 1))
+
+
+def test_ordinal_features():
+    """Assert that ordinal features are encoded."""
+    encoder = Encoder(max_onehot=None, ordinal={"Feature 3": ["b", "a"]})
+    X = encoder.fit_transform(X10_str2, y10)
+    assert X.iloc[0, 2] == 1 and X.iloc[2, 2] == 0
 
 
 def test_one_hot_encoder():

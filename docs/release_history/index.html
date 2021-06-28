@@ -290,6 +290,18 @@
 
 
   <li class="md-tabs__item">
+    <a href="../contributing/" class="md-tabs__link">
+      Contributing
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
     <a href="../dependencies/" class="md-tabs__link">
       Dependencies
     </a>
@@ -592,6 +604,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-460" class="md-nav__link">
+    Version 4.6.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#version-450" class="md-nav__link">
@@ -2288,6 +2307,21 @@
   
   
     <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../dependencies/" class="md-nav__link">
         Dependencies
       </a>
@@ -2333,6 +2367,13 @@
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#version-460" class="md-nav__link">
+    Version 4.6.0
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#version-450" class="md-nav__link">
@@ -2405,6 +2446,21 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
+<h3 id="version-460">Version 4.6.0</h3>
+<ul>
+<li>Added the <a href="../API/models/gnb/#full-train">full_train</a> method to retrieve
+  an estimator trained on the complete dataset.</li>
+<li>The <a href="../API/predicting/score">score</a> method is now also able to calculate
+  custom metrics on new data.</li>
+<li>Refactor of the <a href="../API/data_cleaning/imputer">Imputer</a> class. </li>
+<li>Refactor of the <a href="../API/data_cleaning/encoder">Encoder</a> class to avoid errors
+  for unknown classes and allow the input of missing values.</li>
+<li>The <a href="../API/ATOM/atomclassifier/#clean">clean</a> method no longer automatically
+  encodes the target column for regression tasks.</li>
+<li>Creating a branch using a models' acronym now raises an exception.</li>
+<li>Fixed a bug where <a href="../API/models/catb">CatBoost</a> failed when <code>early_stopping</code> &lt; 1.</li>
+<li>Fixed a bug where created pipelines had duplicated names.</li>
+</ul>
 <h3 id="version-450">Version 4.5.0</h3>
 <ul>
 <li>Support of NLP pipelines. Read more in the <a href="../user_guide/nlp">user guide</a>.</li>

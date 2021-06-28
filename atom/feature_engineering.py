@@ -40,7 +40,7 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
     check_scaling, check_is_fitted, get_acronym, composed, crash,
     method_to_log,
 )
@@ -384,11 +384,14 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             # Create the genetic_features attribute
             features_df = pd.DataFrame(columns=["name", "description", "fitness"])
             for i, idx in enumerate(index):
-                features_df = features_df.append({
-                    "name": "Feature " + str(1 + i + len(X.columns)),
-                    "description": descript[idx],
-                    "fitness": fitness[idx],
-                }, ignore_index=True)
+                features_df = features_df.append(
+                    {
+                        "name": "Feature " + str(1 + i + len(X.columns)),
+                        "description": descript[idx],
+                        "fitness": fitness[idx],
+                    },
+                    ignore_index=True,
+                )
             self.genetic_features = features_df
 
             self.log(
@@ -531,8 +534,8 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self,
         strategy: Optional[str] = None,
         solver: Optional[Union[str, callable]] = None,
-        n_features: Optional[Union[int, float]] = None,
-        max_frac_repeated: Optional[Union[int, float]] = 1.0,
+        n_features: Optional[SCALAR] = None,
+        max_frac_repeated: Optional[SCALAR] = 1.0,
         max_correlation: Optional[float] = 1.0,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -582,6 +585,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         self: FeatureSelector
 
         """
+
         def check_y():
             """For some strategies, y needs to be provided."""
             if y is None:
@@ -686,11 +690,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
 
                 # Update dataframe
-                self.collinear = self.collinear.append({
-                    "drop_feature": col,
-                    "correlated_feature": ", ".join(corr_features),
-                    "correlation_value": ", ".join(map(str, corr_values)),
-                }, ignore_index=True)
+                self.collinear = self.collinear.append(
+                    {
+                        "drop_feature": col,
+                        "correlated_feature": ", ".join(corr_features),
+                        "correlation_value": ", ".join(map(str, corr_values)),
+                    },
+                    ignore_index=True,
+                )
 
             X = X.drop(to_drop, axis=1)
 
@@ -882,7 +889,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
         elif self.strategy.lower() == "pca":
-            self.log(f" --> Applying Principal Component Analysis...", 2)
+            self.log(" --> Applying Principal Component Analysis...", 2)
 
             if self.scaler:
                 self.log("   >>> Scaling features...", 2)

@@ -410,7 +410,7 @@ class BasePlotter:
             ax.legend(
                 loc=kwargs["legend"][0],
                 ncol=max(1, kwargs["legend"][1] // 3),
-                fontsize=self.label_fontsize
+                fontsize=self.label_fontsize,
             )
         if kwargs.get("xlabel"):
             ax.set_xlabel(kwargs["xlabel"], fontsize=self.label_fontsize, labelpad=12)
@@ -421,7 +421,7 @@ class BasePlotter:
         if kwargs.get("ylim"):
             ax.set_ylim(kwargs["ylim"])
         if ax is not None:
-            ax.tick_params(axis='both', labelsize=self.tick_fontsize)
+            ax.tick_params(axis="both", labelsize=self.tick_fontsize)
 
         if fig and not getattr(BasePlotter._fig, "is_canvas", None):
             # Set name with which to save the file
@@ -790,6 +790,7 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
+
         def get_bootstrap(m):
             """Get the bootstrap results for a specific metric."""
             if getattr(m, "metric_bootstrap", None):
@@ -814,7 +815,7 @@ class BaseModelPlotter(BasePlotter):
 
         names = []
         models = sorted(models, key=lambda m: get_best_score(m, metric))
-        color = plt.rcParams['axes.prop_cycle'].by_key()['color'][0]  # First color
+        color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
 
         all_bootstrap = all(get_bootstrap(m) for m in models)
         for i, m in enumerate(models):
@@ -825,7 +826,7 @@ class BaseModelPlotter(BasePlotter):
                     vert=False,
                     positions=[i],
                     widths=0.5,
-                    boxprops=dict(color=color)
+                    boxprops=dict(color=color),
                 )
             else:
                 ax.barh(
@@ -833,7 +834,7 @@ class BaseModelPlotter(BasePlotter):
                     width=get_best_score(m, metric),
                     height=0.5,
                     xerr=std(m),
-                    color=color
+                    color=color,
                 )
 
         min_lim = 0.95 * (get_best_score(models[0], metric) - std(models[0]))
@@ -950,7 +951,7 @@ class BaseModelPlotter(BasePlotter):
             figsize=figsize,
             plotname="plot_bo",
             filename=filename,
-            display=display
+            display=display,
         )
 
     @composed(crash, plot_from_model, typechecked)
@@ -1178,6 +1179,9 @@ class BaseModelPlotter(BasePlotter):
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(recall, precision, lw=2, label=label)
 
+        dum = len(m.y_test[m.y_test == m.mapping[list(m.mapping)[1]]]) / len(m.y_test)
+        ax.plot([0, 1], [dum, dum], "k--", lw=2, alpha=0.7, zorder=-2)
+
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
@@ -1262,7 +1266,7 @@ class BaseModelPlotter(BasePlotter):
         for m in models:
             # If permutations are already calculated and n_repeats is
             # same, use known permutations (for efficient re-plotting)
-            if(
+            if (
                 not hasattr(m, "permutations")
                 or m.permutations.importances.shape[1] == n_repeats
             ):
@@ -1281,11 +1285,8 @@ class BaseModelPlotter(BasePlotter):
             for i, feature in enumerate(m.features):
                 for score in m.permutations.importances[i, :]:
                     df = df.append(
-                        {
-                            "features": feature,
-                            "score": score,
-                            "model": m.name
-                        }, ignore_index=True,
+                        {"features": feature, "score": score, "model": m.name},
+                        ignore_index=True,
                     )
 
         # Get the column names sorted by sum of scores
@@ -1421,7 +1422,7 @@ class BaseModelPlotter(BasePlotter):
         df.plot.barh(
             ax=ax,
             width=0.75 if len(models) > 1 else 0.6,
-            legend=True if len(models) > 1 else False
+            legend=True if len(models) > 1 else False,
         )
         if len(models) == 1:
             for i, v in enumerate(df[df.columns[0]]):
@@ -1498,6 +1499,7 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
+
         def convert_feature(feature):
             if isinstance(feature, str):
                 try:
@@ -1616,7 +1618,9 @@ class BaseModelPlotter(BasePlotter):
                     CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
                     axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
                     axi.contourf(
-                        XX, YY, Z,
+                        XX,
+                        YY,
+                        Z,
                         levels=levels,
                         vmax=levels[-1],
                         vmin=levels[0],
@@ -2017,7 +2021,7 @@ class BaseModelPlotter(BasePlotter):
             figsize=figsize,
             plotname="plot_confusion_matrix",
             filename=filename,
-            display=display
+            display=display,
         )
 
     @composed(crash, plot_from_model, typechecked)
@@ -2313,7 +2317,7 @@ class BaseModelPlotter(BasePlotter):
             figsize=figsize,
             plotname="plot_calibration",
             filename=filename,
-            display=display
+            display=display,
         )
 
     @composed(crash, plot_from_model, typechecked)
@@ -2587,16 +2591,16 @@ class BaseModelPlotter(BasePlotter):
 
     @composed(crash, plot_from_model, typechecked)
     def beeswarm_plot(
-            self,
-            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[Union[tuple, slice]] = None,
-            show: Optional[int] = None,
-            target: Union[int, str] = 1,
-            title: Optional[str] = None,
-            figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
-            **kwargs,
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[tuple, slice]] = None,
+        show: Optional[int] = None,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+        **kwargs,
     ):
         """Plot SHAP's beeswarm plot.
 
@@ -2913,16 +2917,16 @@ class BaseModelPlotter(BasePlotter):
 
     @composed(crash, plot_from_model, typechecked)
     def heatmap_plot(
-            self,
-            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[Union[tuple, slice]] = None,
-            show: Optional[int] = None,
-            target: Union[int, str] = 1,
-            title: Optional[str] = None,
-            figsize: Tuple[SCALAR, SCALAR] = (8, 6),
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
-            **kwargs,
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        index: Optional[Union[tuple, slice]] = None,
+        show: Optional[int] = None,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (8, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+        **kwargs,
     ):
         """Plot SHAP's heatmap plot.
 
@@ -3078,11 +3082,7 @@ class BaseModelPlotter(BasePlotter):
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         shap.plots.scatter(
-            shap_values[:, feature],
-            color=shap_values,
-            ax=ax,
-            show=False,
-            **kwargs
+            shap_values[:, feature], color=shap_values, ax=ax, show=False, **kwargs
         )
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
@@ -3101,15 +3101,15 @@ class BaseModelPlotter(BasePlotter):
 
     @composed(crash, plot_from_model, typechecked)
     def waterfall_plot(
-            self,
-            models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-            index: Optional[int] = None,
-            show: Optional[int] = None,
-            target: Union[int, str] = 1,
-            title: Optional[str] = None,
-            figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-            filename: Optional[str] = None,
-            display: Optional[bool] = True,
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        index: Optional[int] = None,
+        show: Optional[int] = None,
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
     ):
         """Plot SHAP's waterfall plot.
 
@@ -3513,16 +3513,15 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Use max 250 samples to not clutter the plot
         samples = self.dataset[columns].sample(
-            n=min(len(self.dataset), 250),
-            random_state=self.random_state
+            n=min(len(self.dataset), 250), random_state=self.random_state
         )
 
         diag_kind = kwargs.get("diag_kind", "kde")
-        grid = sns.pairplot(samples,  diag_kind=diag_kind, **kwargs)
+        grid = sns.pairplot(samples, diag_kind=diag_kind, **kwargs)
 
         # Set right fontsize for all axes in grid
         for axi in grid.axes.flatten():
-            axi.tick_params(axis='both', labelsize=self.tick_fontsize)
+            axi.tick_params(axis="both", labelsize=self.tick_fontsize)
             axi.set_xlabel(axi.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
             axi.set_ylabel(axi.get_ylabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3629,7 +3628,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             return self._plot(
                 fig=fig,
                 ax=ax,
-                xlim=(min(data) - 0.1*min(data), max(data) + 0.1 * max(data)),
+                xlim=(min(data) - 0.1 * min(data), max(data) + 0.1 * max(data)),
                 title=title,
                 xlabel="Counts",
                 legend=("lower right", 1),
@@ -3816,6 +3815,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Plot object. Only returned if `display=None`.
 
         """
+
         def get_text(column):
             """Get the complete corpus as one long string."""
             if isinstance(column.iloc[0], str):
@@ -3908,6 +3908,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             Plot object. Only returned if `display=None`.
 
         """
+
         def get_text(column):
             """Get the complete corpus as sequence of tokens."""
             if isinstance(column.iloc[0], str):
@@ -4021,10 +4022,12 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         for est in pipeline:
             ylim += 15
             if show_params:
-                params.append([
-                    p for p in signature(est.__init__).parameters
-                    if p not in ["self"] + BaseTransformer.attrs
-                ])
+                params.append(
+                    [
+                        param for param in signature(est.__init__).parameters
+                        if param not in ["self"] + BaseTransformer.attrs
+                    ]
+                )
                 ylim += len(params[-1]) * 10
 
         sns.set_style("white")  # Only for this plot

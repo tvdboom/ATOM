@@ -17,8 +17,8 @@ from mlflow.tracking import MlflowClient
 from .data_cleaning import Scaler
 from .plots import BaseModelPlotter
 from .utils import (
-    SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, it, merge, arr, get_scorer,
-    custom_transform, composed, crash, method_to_log,
+    SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, lst, it, merge, arr,
+    get_scorer, custom_transform, composed, crash, method_to_log,
 )
 
 
@@ -47,7 +47,7 @@ class BaseModel(BaseModelPlotter):
             return getattr(self.branch, item)  # Get attr from branch
         elif item in self.__dict__.get("branch").columns:
             return self.branch.dataset[item]  # Get column
-        elif item in ("size", "head", "tail", "loc", "iloc", "describe", "iterrows"):
+        elif item in DF_ATTRS:
             return getattr(self.branch.dataset, item)  # Get attr from dataset
         else:
             raise AttributeError(
@@ -88,7 +88,16 @@ class BaseModel(BaseModelPlotter):
 
     # Prediction methods =========================================== >>
 
-    def _prediction(self, X, y=None, sw=None, pl=None, vb=None, method="predict"):
+    def _prediction(
+        self,
+        X,
+        y=None,
+        metric=None,
+        sample_weight=None,
+        pipeline=None,
+        verbose=None,
+        method="predict"
+    ):
         """Apply prediction methods on new data.
 
         First transform the new data and then apply the attribute on
@@ -105,10 +114,16 @@ class BaseModel(BaseModelPlotter):
             - If str: Name of the target column in X.
             - Else: Target column with shape=(n_samples,).
 
-        sw: sequence or None, optional (default=None)
+        metric: str, func, scorer or None, optional (default=None)
+            Metric to calculate. Choose from any of sklearn's SCORERS,
+            a function with signature metric(y_true, y_pred) or a scorer
+            object. If None, it returns mean accuracy for classification
+            tasks and r2 for regression tasks. Only for method="score".
+
+        sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        pl: bool, sequence or None, optional (default=None)
+        pipeline: bool, sequence or None, optional (default=None)
             Transformers to use on the data before predicting.
                 - If None: Only transformers that are applied on the
                            whole dataset are used.
@@ -117,7 +132,7 @@ class BaseModel(BaseModelPlotter):
                 - If sequence: Transformers to use, selected by their
                                index in the pipeline.
 
-        vb: int or None, optional (default=None)
+        verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             transformer's own verbosity.
 
@@ -126,7 +141,7 @@ class BaseModel(BaseModelPlotter):
 
         Returns
         -------
-        np.ndarray
+        pred: np.ndarray
             Return of the attribute.
 
         """
@@ -135,17 +150,17 @@ class BaseModel(BaseModelPlotter):
                 f"{self.estimator.__class__.__name__} doesn't have a {method} method!"
             )
 
-        if pl is None:
-            pl = [i for i, est in enumerate(self.branch.pipeline) if not est.train_only]
-        elif pl is False:
-            pl = []
-        elif pl is True:
-            pl = list(range(len(self.branch.pipeline)))
+        if pipeline is None:
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+        elif pipeline is False:
+            pipeline = []
+        elif pipeline is True:
+            pipeline = list(range(len(self.pipeline)))
 
         # When there is a pipeline, apply transformations first
-        for idx, est in self.branch.pipeline.iteritems():
-            if idx in pl:
-                X, y = custom_transform(self.T, est, self.branch, (X, y), vb)
+        for idx, est in self.pipeline.iteritems():
+            if idx in pipeline:
+                X, y = custom_transform(self.T, est, self.branch, (X, y), verbose)
 
         # Scale the data if needed
         if self.scaler:
@@ -154,7 +169,19 @@ class BaseModel(BaseModelPlotter):
         if y is None:
             return getattr(self.estimator, method)(X)
         else:
-            return getattr(self.estimator, method)(X, y, sw)
+            if metric is None:
+                if self.T.goal.startswith("class"):
+                    metric = get_scorer("accuracy")
+                else:
+                    metric = get_scorer("r2")
+            else:
+                metric = get_scorer(metric)
+
+            kwargs = {}
+            if sample_weight is not None:
+                kwargs["sample_weight"] = sample_weight
+
+            return metric(self.estimator, X, y, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict(
@@ -164,7 +191,12 @@ class BaseModel(BaseModelPlotter):
         verbose: Optional[int] = None,
     ):
         """Get predictions on new data."""
-        return self._prediction(X, pl=pipeline, vb=verbose, method="predict")
+        return self._prediction(
+            X=X,
+            pipeline=pipeline,
+            verbose=verbose,
+            method="predict",
+        )
 
     @composed(crash, method_to_log, typechecked)
     def predict_proba(
@@ -174,39 +206,63 @@ class BaseModel(BaseModelPlotter):
         verbose: Optional[int] = None,
     ):
         """Get probability predictions on new data."""
-        return self._prediction(X, pl=pipeline, vb=verbose, method="predict_proba")
+        return self._prediction(
+            X=X,
+            pipeline=pipeline,
+            verbose=verbose,
+            method="predict_proba",
+        )
 
     @composed(crash, method_to_log, typechecked)
     def predict_log_proba(
-            self,
-            X: X_TYPES,
-            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-            verbose: Optional[int] = None,
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Get log probability predictions on new data."""
-        return self._prediction(X, pl=pipeline, vb=verbose, method="predict_log_proba")
+        return self._prediction(
+            X=X,
+            pipeline=pipeline,
+            verbose=verbose,
+            method="predict_log_proba",
+        )
 
     @composed(crash, method_to_log, typechecked)
     def decision_function(
-            self,
-            X: X_TYPES,
-            pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-            verbose: Optional[int] = None,
+        self,
+        X: X_TYPES,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
     ):
         """Get the decision function on new data."""
-        return self._prediction(X, pl=pipeline, vb=verbose, method="decision_function")
+        return self._prediction(
+            X=X,
+            pipeline=pipeline,
+            verbose=verbose,
+            method="decision_function",
+        )
 
     @composed(crash, method_to_log, typechecked)
     def score(
         self,
         X: X_TYPES,
         y: Y_TYPES,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         sample_weight: Optional[SEQUENCE_TYPES] = None,
         pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
         verbose: Optional[int] = None,
     ):
         """Get the score function on new data."""
-        return self._prediction(X, y, sample_weight, pipeline, verbose, method="score")
+        return self._prediction(
+            X=X,
+            y=y,
+            metric=metric,
+            sample_weight=sample_weight,
+            pipeline=pipeline,
+            verbose=verbose,
+            method="score",
+        )
 
     # Prediction properties ======================================== >>
 
@@ -332,7 +388,7 @@ class BaseModel(BaseModelPlotter):
 
         Parameters
         ----------
-        metric: str, scorer or None, optional (default=None)
+        metric: str, func, scorer, sequence or None, optional (default=None)
             Metrics to calculate. If None, a selection of the most
             common metrics per task are used.
 
@@ -365,7 +421,7 @@ class BaseModel(BaseModelPlotter):
                     "mcc",
                     "precision",
                     "recall",
-                    "auc"
+                    "auc",
                 ]
             elif self.T.task.startswith("multi"):
                 metric = [

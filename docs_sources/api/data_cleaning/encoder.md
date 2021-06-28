@@ -3,23 +3,24 @@
 
 <div style="font-size:20px">
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
-max_onehot=10, frac_to_other=None, verbose=0, logger=None, **kwargs)
+max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L885">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L900">[source]</a>
 </span>
 </div>
 
 Perform encoding of categorical features. The encoding type depends on
 the number of classes in the column:
 
-* If n_classes=2, use Ordinal-encoding.
+* If n_classes=2 or ordinal feature, use Ordinal-encoding.
 * If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
 * If n_classes > `max_onehot`, use `strategy`-encoding.
 
-Also replaces classes with low occurrences with the value `other`
-in order to prevent too high cardinality. An error is raised if
-it encounters missing values or unknown classes when transforming.
-This class can be accessed from atom through the [encode](../../ATOM/atomclassifier/#encode)
+Missing values are propagated to the output column. Unknown classes
+encountered during transforming are converted to `np.NaN`. The class
+is also capable of replacing classes with low occurrences with the
+value `other` in order to prevent too high cardinality. It can be
+accessed from atom through the [encode](../../ATOM/atomclassifier/#encode)
 method. Read more in the [user guide](../../../user_guide/data_cleaning/#encoding-categorical-features).
 
 <table style="font-size:16px">
@@ -40,7 +41,13 @@ Maximum number of unique values in a feature to perform one-hot-encoding.
 If None, it will always use <code>strategy</code> when n_unique > 2.
 </p>
 <p>
-<strong>frac_to_other: float, optional (default=None)</strong><br>
+<strong>ordinal: dict or None, optional (default=None)</strong><br>
+Order of ordinal features, where the dict key is the feature's
+name and the value is the class order, e.g. {"salary": ["low",
+"medium", "high"]}.
+</p>
+<p>
+<strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
 Classes with less occurrences than n_rows * <code>frac_to_other</code> are replaced
 with the string <code>other</code>. If None, skip this step.
 </p>
@@ -66,6 +73,10 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 !!! tip
     Use atom's [categorical](../../ATOM/atomclassifier/#data-attributes) attribute
     for a list of the categorical columns in the dataset.
+
+!!!warning
+    Unknown classes during transform are converted to `np.NaN`. Make sure to
+    impute them after!
 
 <br>
 
@@ -113,9 +124,10 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 
 <a name="fit"></a>
-<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L954">[source]</a></span></div>
-Fit to data.
+<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L979">[source]</a></span></div>
+Fit to data. Note that leaving y=None can lead to errors if the
+`strategy` encoder requires target values.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -124,8 +136,9 @@ Fit to data.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str or sequence</strong><br>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -142,9 +155,10 @@ Fitted instance of self.
 
 
 <a name="fit-transform"></a>
-<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L73">[source]</a></span></div>
-Fit to data, then transform it.
+<div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a></span></div>
+Fit to data, then transform it. Note that leaving y=None can lead
+to errors if the `strategy` encoder requires target values.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -153,8 +167,9 @@ Fit to data, then transform it.
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
-<strong>y: int, str or sequence</strong><br>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
 <ul style="line-height:1.2em;margin-top:5px">
+<li>If None: y is ignored.</li>
 <li>If int: Index of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
@@ -273,7 +288,7 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1037">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1073">[source]</a></span></div>
 Encode the data.
 <table style="font-size:16px">
 <tr>

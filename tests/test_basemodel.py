@@ -12,6 +12,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from unittest.mock import patch
+from sklearn.metrics import accuracy_score, r2_score, recall_score
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -86,6 +87,30 @@ def test_data_is_scaled():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("SGD")
     assert sum(atom.sgd.predict(X_bin)) > 0  # Always 0 if not scaled
+
+
+def test_score_metric_is_None():
+    """Assert that the score returns accuracy for classification tasks."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    accuracy = accuracy_score(y_bin, atom.predict(X_bin))
+    assert atom.tree.score(X_bin, y_bin) == accuracy
+
+
+def test_score_regression():
+    """Assert that the score returns r2 for regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("Tree")
+    r2 = r2_score(y_reg, atom.predict(X_reg))
+    assert atom.tree.score(X_reg, y_reg) == r2
+
+
+def test_score_custom_metric():
+    """Assert that the score method works when sample weights are provided."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("Tree")
+    recall = recall_score(y_bin, atom.predict(X_bin))
+    assert atom.tree.score(X_bin, y_bin, metric="recall") == recall
 
 
 def test_score_with_sample_weights():
@@ -185,56 +210,6 @@ def test_y_train_property():
     atom.run(["MNB", "LR"])
     assert atom.y_train.equals(atom.mnb.y_train)
     assert atom.y_train.equals(atom.lr.y_train)
-
-
-def test_y_test_property():
-    """Assert that the y_test property is returned unchanged."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["MNB", "LR"])
-    assert atom.y_test.equals(atom.mnb.y_test)
-    assert atom.y_test.equals(atom.lr.y_test)
-
-
-def test_shape_property():
-    """Assert that the shape property returns the shape of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.shape == atom.shape
-
-
-def test_columns_property():
-    """Assert that the columns property returns the columns of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert [i == j for i, j in zip(atom.lr.columns, atom.columns)]
-
-
-def test_n_columns_property():
-    """Assert that the n_columns property returns the number of columns."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.n_columns == atom.n_columns
-
-
-def test_features_property():
-    """Assert that the features property returns the features of the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert [i == j for i, j in zip(atom.lr.features, atom.features)]
-
-
-def test_n_features_property():
-    """Assert that the n_features property returns the number of features."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.n_features == atom.n_features
-
-
-def test_target_property():
-    """Assert that the target property returns the last column in the dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert atom.lr.target == atom.target
 
 
 # Test utility methods ============================================= >>

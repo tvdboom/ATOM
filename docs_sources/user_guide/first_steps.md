@@ -41,7 +41,7 @@ Apply data cleaning steps through atom's methods. For example, calling
 values in the dataset.
 
 ```python
-atom.impute(strat_num="median", strat_cat="most_frequent", min_frac_rows=0.1)
+atom.impute(strat_num="median", strat_cat="most_frequent", max_nan_rows=0.1)
 ```
 
 When the data is ready for modelling, call the [run](../../API/ATOM/atomclassifier/#run)

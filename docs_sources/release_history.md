@@ -1,6 +1,22 @@
 # Release history
 -----------------
 
+### Version 4.6.0
+
+* Added the [full_train](../API/models/gnb/#full-train) method to retrieve
+  an estimator trained on the complete dataset.
+* The [score](../API/predicting/score) method is now also able to calculate
+  custom metrics on new data.
+* Refactor of the [Imputer](../API/data_cleaning/imputer) class. 
+* Refactor of the [Encoder](../API/data_cleaning/encoder) class to avoid errors
+  for unknown classes and allow the input of missing values.
+* The [clean](../API/ATOM/atomclassifier/#clean) method no longer automatically
+  encodes the target column for regression tasks.
+* Creating a branch using a models' acronym now raises an exception.
+* Fixed a bug where [CatBoost](../API/models/catb) failed when `early_stopping` < 1.
+* Fixed a bug where created pipelines had duplicated names.
+
+
 ### Version 4.5.0
 
 * Support of NLP pipelines. Read more in the [user guide](../user_guide/nlp).

@@ -17,7 +17,7 @@ from typing import Optional, Union
 # Own modules
 from .atom import ATOM
 from .basetransformer import BaseTransformer
-from .utils import Y_TYPES, custom_transform
+from .utils import SCALAR, Y_TYPES, custom_transform
 
 
 # Functions ======================================================== >>
@@ -259,7 +259,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
         *arrays,
         y: Y_TYPES = -1,
         shuffle: bool = True,
-        n_rows: Union[int, float] = 1,
+        n_rows: SCALAR = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,
@@ -366,7 +366,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
         *arrays,
         y: Y_TYPES = -1,
         shuffle: bool = True,
-        n_rows: Union[int, float] = 1,
+        n_rows: SCALAR = 1,
         test_size: float = 0.2,
         n_jobs: int = 1,
         verbose: int = 0,

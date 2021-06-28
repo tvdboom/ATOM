@@ -122,8 +122,15 @@ def test_branch_setter_empty():
         atom.branch = ""
 
 
-def test_branch_og_name():
-    """Assert that an error is raised when the name is og."""
+def test_branch_model_acronym():
+    """Assert that an error is raised when the name is a models' acronym."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*acronym of model.*"):
+        atom.branch = "Lda"
+
+
+def test_branch_restricted_name():
+    """Assert that an error is raised when the name is restricted."""
     atom = ATOMClassifier(X10, y10, random_state=1)
     with pytest.raises(ValueError, match=r".*This name is reserved.*"):
         atom.branch = "og"
@@ -326,9 +333,9 @@ def test_automl_classification(cls):
     """Assert that the automl method works for classification tasks."""
     pl = Pipeline(
         steps=[
-            ('standardscaler', StandardScaler()),
-            ('robustscaler', RobustScaler()),
-            ('mlpclassifier', MLPClassifier(alpha=0.001, random_state=1))
+            ("standardscaler", StandardScaler()),
+            ("robustscaler", RobustScaler()),
+            ("mlpclassifier", MLPClassifier(alpha=0.001, random_state=1)),
         ]
     )
     cls.return_value.fitted_pipeline_ = pl.fit(X_bin, y_bin)
@@ -340,7 +347,7 @@ def test_automl_classification(cls):
         n_jobs=1,
         random_state=1,
         scoring=atom._metric[0],  # Called using atom's metric
-        verbosity=0
+        verbosity=0,
     )
     assert len(atom) == 2
     assert atom.models == ["Tree", "MLP"]
@@ -351,8 +358,8 @@ def test_automl_regression(cls):
     """Assert that the automl method works for regression tasks."""
     pl = Pipeline(
         steps=[
-            ('rbfsampler', RBFSampler(gamma=0.95, random_state=2)),
-            ('lassolarscv', LassoLarsCV(normalize=False))
+            ("rbfsampler", RBFSampler(gamma=0.95, random_state=2)),
+            ("lassolarscv", LassoLarsCV(normalize=False)),
         ]
     )
     cls.return_value.fitted_pipeline_ = pl.fit(X_reg, y_reg)
@@ -399,6 +406,16 @@ def test_export_pipeline_verbose():
     atom.clean()
     atom.run("LGB")
     assert atom.export_pipeline("LGB", verbose=2)[0].verbose == 2
+
+
+def test_export_same_transformer():
+    """Assert that two same transformers get different names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.clean()
+    atom.clean()
+    atom.clean()
+    pl = atom.export_pipeline()
+    assert list(pl.named_steps.keys()) == ["cleaner", "cleaner2", "cleaner3"]
 
 
 def test_export_pipeline_scaler():
@@ -462,6 +479,7 @@ def test_apply_new_column():
 
 def test_apply_args_and_kwargs():
     """Assert that args and kwargs are passed to the function."""
+
     def test_func(df, arg_1, arg_2="mean radius"):
         return df[arg_2] + arg_1
 
@@ -561,6 +579,13 @@ def test_subset_columns():
     # Column slice
     atom.scale(columns=slice(10, 12))
     assert check_scaling(atom.dataset.iloc[:, [10, 11]])
+
+
+def test_derivative_columns_keep_position():
+    """Assert that derivative columns go after the original."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.encode()
+    assert atom.columns[2].startswith("Feature 3")
 
 
 def test_duplicate_columns_are_ignored():

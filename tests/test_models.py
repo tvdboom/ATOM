@@ -41,7 +41,7 @@ def neural_network():
     model.add(Conv2D(64, kernel_size=3, activation="relu"))
     model.add(Flatten())
     model.add(Dense(10, activation="softmax"))
-    model.compile(optimizer='adam', loss='categorical_crossentropy')
+    model.compile(optimizer="adam", loss="categorical_crossentropy")
 
     return model
 

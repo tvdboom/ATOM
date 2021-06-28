@@ -256,7 +256,7 @@ space dimensions must be compliant with skopt's API.
 ```python
 atom.run(
     models="LR",
-    n_calls=10,
+    n_calls=30,
     bo_params={"dimensions": [Integer(100, 1000, name="max_iter")]},
 )
 ```
@@ -268,8 +268,8 @@ the `callbacks` key.
 ```python
 atom.run(
     models="LR",
-    n_calls=10,
-    bo_params={"max_time": 1000, "callbacks": custom_callback()},
+    n_calls=30,
+    bo_params={"callbacks": custom_callback()},
 )
 ```
 

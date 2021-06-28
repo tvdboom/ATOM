@@ -46,7 +46,7 @@ def test_vote_scoring():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"])
     atom.voting(weights=[1, 2])
-    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"])/3
+    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"]) / 3
     assert atom.vote.scoring("r2")["r2"] == avg
 
 
@@ -186,7 +186,7 @@ def test_stack_predictions_multiclass():
     atom.run(["Tree", "PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
     assert isinstance(atom.stack.predict(X_class), np.ndarray)
-    assert isinstance(atom.stack.score(X_class, y_class), np.float64)
+    assert isinstance(atom.stack.score(X_class, y_class, "f1_weighted"), np.float64)
 
 
 def test_stack_predictions_regression():
@@ -199,4 +199,5 @@ def test_stack_predictions_regression():
     atom.run(["PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
     assert isinstance(atom.stack.predict(X_reg), np.ndarray)
-    assert isinstance(atom.stack.score(X_reg, y_reg), np.float64)
+    score = atom.stack.score(X_reg, y_reg, sample_weight=list(range(len(y_reg))))
+    assert isinstance(score, np.float64)
