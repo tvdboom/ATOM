@@ -17,7 +17,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="v4.6.0",
+    version="4.6.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
     download_url="https://github.com/tvdboom/ATOM/archive/v4.6.0.tar.gz",
@@ -68,7 +68,7 @@ setuptools.setup(
             "catboost >= 0.19.1"
         ]
     },
-    test_require=[
+    tests_require=[
         "pytest >= 6.1.2",
         "tensorflow >= 2.3.1",
         "keras >= 2.4.3"
