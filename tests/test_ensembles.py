@@ -199,4 +199,5 @@ def test_stack_predictions_regression():
     atom.run(["PA"])
     atom.stacking(models=["Tree", "PA"], passthrough=True)
     assert isinstance(atom.stack.predict(X_reg), np.ndarray)
-    assert isinstance(atom.stack.score(X_reg, y_reg), np.float64)
+    score = atom.stack.score(X_reg, y_reg, sample_weight=list(range(len(y_reg))))
+    assert isinstance(score, np.float64)

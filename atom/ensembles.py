@@ -11,7 +11,6 @@ Description: Module containing the Voting and Stacking classes.
 import numpy as np
 import pandas as pd
 from copy import copy
-from inspect import signature
 from typing import Optional, Union
 from typeguard import typechecked
 
@@ -543,12 +542,13 @@ class Stacking(BaseModel, BaseEnsemble):
             else:
                 metric = get_scorer(metric)
 
-            if "sample_weight" in signature(metric).parameters:
-                return metric(
-                    self.estimator,
-                    fxs_set,
-                    self.T.y,
-                    sample_weight=sample_weight,
-                )
-            else:
-                return metric(self.estimator, fxs_set, self.T.y)
+            kwargs = {}
+            if sample_weight is not None:
+                kwargs["sample_weight"] = sample_weight
+
+            return metric(
+                self.estimator,
+                fxs_set,
+                self.T.y,
+                **kwargs,
+            )

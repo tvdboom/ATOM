@@ -10,9 +10,9 @@ st.sidebar.title("Pipeline")
 
 # Data cleaning options
 st.sidebar.subheader("Data cleaning")
-scale = st.sidebar.checkbox("Scale", True, "scale")
-impute = st.sidebar.checkbox("Impute", False, "impute")
+scale = st.sidebar.checkbox("Scale", False, "scale")
 encode = st.sidebar.checkbox("Encode", False, "encode")
+impute = st.sidebar.checkbox("Impute", False, "impute")
 
 # Model options
 st.sidebar.subheader("Models")
@@ -22,13 +22,13 @@ models = {
     "et": st.sidebar.checkbox("Extra-Trees", False, "et"),
     "xgb": st.sidebar.checkbox("XGBoost", False, "xgb"),
     "lgb": st.sidebar.checkbox("LightGBM", False, "lgb"),
-    "mlp": st.sidebar.checkbox("Multi-layer Perceptron", False, "mlp"),
 }
 
 
 st.header("Data")
 data = st.file_uploader("Upload data:", type="csv")
 
+# If a dataset is uploaded, show a preview
 if data is not None:
     data = pd.read_csv(data)
     st.text("Data preview:")
@@ -38,39 +38,33 @@ if data is not None:
 st.header("Results")
 
 if st.sidebar.button("Run"):
-    placeholder = st.empty()  # Empty to overwrite prints
+    placeholder = st.empty()  # Empty to overwrite write statements
     placeholder.write("Initializing atom...")
 
-    atom = ATOMClassifier(data,
-                          shuffle=False,
-                          n_rows=1,
-                          test_size=0.3,
-                          n_jobs=1,
-                          warnings=False,
-                          verbose=2,
-                          # logger="auto",
-                          # experiment="test",
-                          random_state=1)
+    # Initialize atom
+    atom = ATOMClassifier(data, verbose=2, random_state=1)
 
     if scale:
         placeholder.write("Scaling the data...")
-        atom.clean()
-    if impute:
-        placeholder.write("Imputing the missing values...")
-        atom.impute(strat_num="drop", strat_cat="most_frequent", max_nan_rows=None)
+        atom.scale()
     if encode:
         placeholder.write("Encoding the categorical features...")
-        atom.encode(strategy="LeaveOneOut", max_onehot=10, frac_to_other=0.04)
+        atom.encode(strategy="LeaveOneOut", max_onehot=10)
+    if impute:
+        placeholder.write("Imputing the missing values...")
+        atom.impute(strat_num="drop", strat_cat="most_frequent")
 
     placeholder.write("Fitting the models...")
-    atom.run(models=[key for key, value in models.items() if value], metric='f1')
+    to_run = [key for key, value in models.items() if value]
+    atom.run(models=to_run, metric="f1")
 
+    # Display metric results
     placeholder.write(atom.scoring())
 
     # Draw plots
     col1, col2 = st.beta_columns(2)
     col1.write(atom.plot_roc(title="ROC curve", display=None))
-    col2.write(atom.plot_prc(title="Precision-Recall curve", display=None))
+    col2.write(atom.plot_prc(title="PR curve", display=None))
 
 else:
     st.write("No results yet. Click the run button!")

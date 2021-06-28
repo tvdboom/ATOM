@@ -9,7 +9,6 @@ Description: Module containing the BaseModel class.
 
 # Standard packages
 import pandas as pd
-from inspect import signature
 from typeguard import typechecked
 from typing import Optional, Union
 from mlflow.tracking import MlflowClient
@@ -178,10 +177,11 @@ class BaseModel(BaseModelPlotter):
             else:
                 metric = get_scorer(metric)
 
-            if "sample_weight" in signature(metric).parameters:
-                return metric(self.estimator, X, y, sample_weight=sample_weight)
-            else:
-                return metric(self.estimator, X, y)
+            kwargs = {}
+            if sample_weight is not None:
+                kwargs["sample_weight"] = sample_weight
+
+            return metric(self.estimator, X, y, **kwargs)
 
     @composed(crash, method_to_log, typechecked)
     def predict(
