@@ -12,15 +12,24 @@ import setuptools
 
 
 this_directory = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
+with open(os.path.join(this_directory, "README.md")) as f:
     long_description = f.read()
+
+with open(os.path.join(this_directory, "requirements.txt")) as f:
+    requirements = f.read().splitlines()
+
+with open(os.path.join(this_directory, "requirements-optional.txt")) as f:
+    optional_requirements = f.read().splitlines()
+
+with open(os.path.join(this_directory, "requirements-test.txt")) as f:
+    test_requirements = f.read().splitlines()
 
 setuptools.setup(
     name="atom-ml",
-    version="4.6.0",
+    version="4.7.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.6.0.tar.gz",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.7.0.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
@@ -37,41 +46,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    install_requires=[
-        "numpy >= 1.19.5",
-        "scipy >= 1.4.1",
-        "pandas >= 1.0.3",
-        "mlflow >= 1.15.0",
-        "dill >= 0.3.3",
-        "tqdm >= 4.35.0",
-        "joblib >= 0.16.0",
-        "typeguard >= 2.7.1",
-        "tabulate >= 0.8.6",
-        "scikit-learn >= 0.24",
-        "scikit-optimize >= 0.8.1",
-        "nltk >= 3.6.2",
-        "tpot >= 0.11.7",
-        "category-encoders >= 2.1.0",
-        "imbalanced-learn >= 0.5.0",
-        "pandas-profiling >= 2.3.0",
-        "featuretools >= 0.17.0",
-        "gplearn >= 0.4.1",
-        "matplotlib >= 3.3.0",
-        "seaborn >= 0.10.0",
-        "shap >= 0.38.1",
-        "wordcloud >= 1.8.1",
-    ],
-    extras_require={
-        "models": [
-            "xgboost >= 0.90",
-            "lightgbm >= 2.3.0",
-            "catboost >= 0.19.1"
-        ]
-    },
-    tests_require=[
-        "pytest >= 6.1.2",
-        "tensorflow >= 2.3.1",
-        "keras >= 2.4.3"
-    ],
+    install_requires=requirements,
+    extras_require={"models": optional_requirements},
+    tests_require=test_requirements,
     python_requires=">=3.6"
 )

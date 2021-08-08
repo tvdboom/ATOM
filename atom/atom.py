@@ -50,8 +50,8 @@ from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
     lst, divide, infer_task, check_method, check_scaling,
     check_multidimensional, get_pl_name, names_from_estimator,
-    variable_return, delete, custom_transform, add_transformer,
-    method_to_log, composed, crash, CustomDict,
+    df_shrink_dtypes, variable_return, delete, custom_transform,
+    add_transformer, method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -88,6 +88,9 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         # Prepare the provided data
         self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
+
+        if not check_multidimensional(self.branch.data):
+            self.branch.data = df_shrink_dtypes(self.branch.data)
 
         # Attach the data to the original branch
         self.og.data = self.branch.data.copy(deep=True)

@@ -10,6 +10,7 @@ Description: Module containing the parent class for the trainers.
 # Standard packages
 import mlflow
 import importlib
+import traceback
 from datetime import datetime
 import matplotlib.pyplot as plt
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
@@ -469,9 +470,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             except Exception as ex:
                 self.log(
-                    f"\nException encountered while running the {m.name} model."
-                    f" Removing model from pipeline. \n{type(ex).__name__}: {ex}", 1
+                    "\nException encountered while running the "
+                    f"{m.name} model. Removing model from pipeline. ", 1
                 )
+                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 5)
+                self.log(f"{type(ex).__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
                 self.errors[m.name] = ex

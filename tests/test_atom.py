@@ -34,6 +34,12 @@ from .utils import (
 
 # Test __init__ ==================================================== >>
 
+def test_dtypes_shrinkage():
+    """Assert that tgh dtypes are optimized to save memory."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.dtypes.equals(X_bin.dtypes)
+
+
 def test_test_size_attribute():
     """Assert that the _test_size attribute is created."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, n_jobs=2, random_state=1)

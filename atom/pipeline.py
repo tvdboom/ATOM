@@ -68,7 +68,11 @@ def _fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
 # Classes ========================================================== >>
 
 class Pipeline(pipeline.Pipeline):
-    """Custom Pipeline class."""
+    """Custom Pipeline class.
+
+    Partially copied from imblearn's pipeline.
+
+    """
 
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)

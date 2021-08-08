@@ -810,6 +810,41 @@ def partial_dependence(estimator, X, features):
     return averaged_predictions, values
 
 
+def df_shrink_dtypes(df):
+    """Reduce a dataframe's memory by optimizing dtypes.
+
+    Return any possible smaller data types for dataframe's columns.
+    From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
+
+    """
+    # Build column filter and typemap
+    types_1 = (np.int8, np.int16, np.int32, np.int64)
+    types_2 = (np.float32, np.float64, np.longdouble)
+    excl_types = {"category", "datetime64[ns]", "bool"}
+
+    type_map = {
+        "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
+        "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_2],
+        "object": "category",
+    }
+
+    new_dtypes = {}
+    for c, old_t in filter(lambda dt: dt[1].name not in excl_types, df.dtypes.items()):
+        t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
+
+        if isinstance(t, list):  # Find the smallest type that fits
+            nt = next((r[0] for r in t if r[1] <= df[c].min() and r[2] >= df[c].max()))
+            if nt and nt == old_t:
+                nt = None
+        else:
+            nt = t if isinstance(t, str) else None
+
+        if nt:
+            new_dtypes[c] = nt
+
+    return df.astype(new_dtypes)
+
+
 # Functions shared by classes ======================================= >>
 
 def custom_transform(self, transformer, branch, data=None, verbose=None):
@@ -1102,7 +1137,7 @@ def crash(f, cache={"last_exception": None}):
                 # If exception is not same as last, write to log
                 if exception is not cache["last_exception"]:
                     cache["last_exception"] = exception
-                    logger.exception("Exception encountered:")
+                    logger.exception("\nException encountered:")
 
                 raise exception  # Always raise it
         else:

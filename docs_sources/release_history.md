@@ -1,6 +1,14 @@
 # Release history
 -----------------
 
+### Version 4.7.0
+
+* The traceback of exceptions encountered during training are now stored 
+  in the logger.
+* The dtypes of the provided dataframe are converted to the minimal allowed
+  type for memory efficiency.
+
+
 ### Version 4.6.0
 
 * Added the [full_train](../API/models/gnb/#full-train) method to retrieve
