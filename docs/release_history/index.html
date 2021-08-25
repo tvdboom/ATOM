@@ -2460,13 +2460,20 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
+<p><a name="v470"></a></p>
 <h3 id="version-470">Version 4.7.0</h3>
 <ul>
-<li>The traceback of exceptions encountered during training are now stored 
-  in the logger.</li>
+<li>The new <a href="../API/feature_engineering/feature_extractor">FeatureExtractor</a> class
+  helps to extract useful features from datetime columns.</li>
+<li>The full traceback of exceptions encountered during training are now
+  saved to the logger.</li>
 <li>The dtypes of the provided dataframe are converted to the minimal allowed
   type for memory efficiency.</li>
+<li>The scoring method is renamed to <a href="../API/ATOM/atomclassifier/#evaluate">evaluate</a>
+  to clarify the purpose.</li>
+<li>The <code>column</code> parameter in the <a href="../API/ATOM/atomclassifier/#apply">apply</a> method is renamed to <code>columns</code> for continuity of the API.</li>
 </ul>
+<p><a name="v460"></a></p>
 <h3 id="version-460">Version 4.6.0</h3>
 <ul>
 <li>Added the <a href="../API/models/gnb/#full-train">full_train</a> method to retrieve
@@ -2482,6 +2489,7 @@
 <li>Fixed a bug where <a href="../API/models/catb">CatBoost</a> failed when <code>early_stopping</code> &lt; 1.</li>
 <li>Fixed a bug where created pipelines had duplicated names.</li>
 </ul>
+<p><a name="v450"></a></p>
 <h3 id="version-450">Version 4.5.0</h3>
 <ul>
 <li>Support of NLP pipelines. Read more in the <a href="../user_guide/nlp">user guide</a>.</li>
@@ -2522,6 +2530,7 @@
   there were categorical columns in the dataset.</li>
 <li>Completely reworked documentation website.</li>
 </ul>
+<p><a name="v440"></a></p>
 <h3 id="version-440">Version 4.4.0</h3>
 <ul>
 <li>The <a href="../API/ATOM/atomclassifier/#drop">drop</a> method now allows the user
@@ -2542,6 +2551,7 @@
 <li>Refactored the way transformers are added or removed from predicting methods.</li>
 <li>Improved documentation.</li>
 </ul>
+<p><a name="v430"></a></p>
 <h3 id="version-430">Version 4.3.0</h3>
 <ul>
 <li>Possibility to <a href="../API/ATOM/atomclassifier/#add">add</a> custom transformers to the pipeline.</li>
@@ -2564,6 +2574,7 @@
 <li>Added the <a href="../examples/automl">AutoML</a> example notebook.</li>
 <li>Minor bug fixes.</li>
 </ul>
+<p><a name="v421"></a></p>
 <h3 id="version-421">Version 4.2.1</h3>
 <ul>
 <li>Bug fix where there was memory leakage in <a href="../user_guide/training/#successive-halving">successive halving</a>
@@ -2574,6 +2585,7 @@
   extras_require under the name <code>models</code>, e.g. <code>pip install -U atom-ml[models]</code>.</li>
 <li>Improved documentation.</li>
 </ul>
+<p><a name="v420"></a></p>
 <h3 id="version-420">Version 4.2.0</h3>
 <ul>
 <li>Possibility to add custom models to the pipeline using <a href="../API/ATOM/atommodel">ATOMModel</a>.</li>
@@ -2601,6 +2613,7 @@
   <a href="../examples/utilities">Utilities</a> example notebooks.</li>
 <li>Compatibility with <a href="https://www.python.org/downloads/release/python-390/">python 3.9</a>.</li>
 </ul>
+<p><a name="v410"></a></p>
 <h3 id="version-410">Version 4.1.0</h3>
 <ul>
 <li>New <code>est_params</code> parameter to customize the parameters in every model's estimator.</li>
@@ -2615,6 +2628,7 @@
 <li>Small changes in log outputs.</li>
 <li>Bug fixes and performance improvements.</li>
 </ul>
+<p><a name="v401"></a></p>
 <h3 id="version-401">Version 4.0.1</h3>
 <ul>
 <li>Bug fix where the <a href="../API/feature_engineering/feature_generator">FeatureGenerator</a>
@@ -2623,6 +2637,7 @@
 <li>Added the <a href="../license">license</a> file to the package's installer.</li>
 <li>Typo fixes in documentation.</li>
 </ul>
+<p><a name="v400"></a></p>
 <h3 id="version-400">Version 4.0.0</h3>
 <ul>
 <li>Bayesian optimization package changed from <a href="http://sheffieldml.github.io/GPyOpt/">GpyOpt</a>

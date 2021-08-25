@@ -133,7 +133,7 @@ DISTRIBUTIONS = (
     "weibull_max",
 )
 
-# List of custom metrics for the scoring method
+# List of custom metrics for the evaluate method
 CUSTOM_METRICS = (
     "cm",
     "tn",
@@ -273,14 +273,14 @@ def variable_return(X, y):
         return X, y
 
 
-def check_multidimensional(df):
+def check_multidim(df):
     """Check if the dataframe contains a multidimensional column."""
     return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
 
 
 def check_method(cls, method):
     """Raise an error if the dataset has more than two dimensions."""
-    if check_multidimensional(cls.X):
+    if check_multidim(cls.X):
         raise PermissionError(
             f"The {method} method is not available for "
             f"datasets with more than two dimensions!"
@@ -463,7 +463,7 @@ def arr(df):
         Stacked dataframe.
 
     """
-    if check_multidimensional(df):
+    if check_multidim(df):
         return np.stack(df["Multidimensional feature"].values)
     else:
         return df
@@ -688,7 +688,7 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
 
     Returns
     -------
-    scoring: scorer
+    scorer: scorer
         Scorer object with name attribute.
 
     """
@@ -816,6 +816,16 @@ def df_shrink_dtypes(df):
     Return any possible smaller data types for dataframe's columns.
     From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
 
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataset from which to reduce the dtypes.
+
+    Returns
+    -------
+    df: pd.dataFrame
+        Dataset with reduced dtypes.
+
     """
     # Build column filter and typemap
     types_1 = (np.int8, np.int16, np.int32, np.int64)
@@ -837,12 +847,87 @@ def df_shrink_dtypes(df):
             if nt and nt == old_t:
                 nt = None
         else:
-            nt = t if isinstance(t, str) else None
+            # Convert to category if number of categories less than 30% of column
+            nt = t if df[c].nunique() <= int(len(df[c]) * 0.3) else "object"
 
         if nt:
             new_dtypes[c] = nt
 
     return df.astype(new_dtypes)
+
+
+def get_columns(df, columns, only_numerical=False):
+    """Get a subset of the columns.
+
+    Select columns in the dataset by name, index or dtype. Duplicate
+    columns are ignored. Exclude columns if their name start with `!`.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataset from which to get the columns.
+
+    columns: int, str, slice, sequence or None
+        Names, indices or dtypes of the columns to get. If None,
+        it returns all columns in the dataframe.
+
+    only_numerical: bool, optional (default=False)
+        Whether to return only numerical columns.
+
+    Returns
+    -------
+    columns: list
+        Names of the selected columns in the dataframe.
+
+    """
+    if columns is None:
+        if only_numerical:
+            return list(df.select_dtypes(include=["number"]).columns)
+        else:
+            return df.columns
+    elif isinstance(columns, slice):
+        return df.columns[columns]
+
+    cols, exclude = [], []
+    for col in lst(columns):
+        if isinstance(col, int):
+            try:
+                cols.append(df.columns[col])
+            except IndexError:
+                raise ValueError(
+                    f"Invalid value for the columns parameter, got {col} "
+                    f"but length of columns is {len(df.columns)}."
+                )
+        else:
+            if col not in df.columns:
+                if col.startswith("!"):
+                    col = col[1:]
+                    if col in df.columns:
+                        exclude.append(col)
+                    else:
+                        try:
+                            exclude.extend(list(df.select_dtypes(include=col).columns))
+                        except TypeError:
+                            raise ValueError(
+                                "Invalid value for the columns parameter. "
+                                f"Column {col} not found in the dataset."
+                            )
+                else:
+                    try:
+                        cols.extend(list(df.select_dtypes(include=col).columns))
+                    except TypeError:
+                        raise ValueError(
+                            "Invalid value for the columns parameter. "
+                            f"Column {col} not found in the dataset."
+                        )
+            else:
+                cols.append(col)
+
+    # If columns were excluded with `!`, select all but those
+    if exclude:
+        return list(dict.fromkeys([col for col in df.columns if col not in exclude]))
+    else:
+        return list(dict.fromkeys(cols))  # Avoid duplicates
 
 
 # Functions shared by classes ======================================= >>
@@ -1051,7 +1136,9 @@ def add_transformer(self, transformer, columns=None, train_only=False, **fit_par
 
     # Transformers remember the train_only and columns parameters
     transformer.train_only = train_only
-    transformer.cols = [col for col in self._get_columns(columns) if col != self.target]
+    transformer.cols = [
+        col for col in get_columns(self.dataset, columns) if col != self.target
+    ]
 
     if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
         if not transformer.__module__.startswith("atom"):

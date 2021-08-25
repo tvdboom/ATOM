@@ -223,28 +223,28 @@ def test_delete():
     assert not atom.metric
 
 
-def test_scoring_invalid_dataset():
+def test_evaluate_invalid_dataset():
     """Assert that an error is raised when the dataset is invalid."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    pytest.raises(ValueError, atom.mnb.scoring, dataset="invalid")
+    pytest.raises(ValueError, atom.mnb.evaluate, dataset="invalid")
 
 
-def test_scoring_metric_None():
-    """Assert that the scoring methods works when metric is empty."""
+def test_evaluate_metric_None():
+    """Assert that the evaluate method works when metric is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.scoring()
+    scores = atom.mnb.evaluate()
     assert len(scores) == 9
 
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("MNB")
-    scores = atom.mnb.scoring()
+    scores = atom.mnb.evaluate()
     assert len(scores) == 6
 
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    scores = atom.ols.scoring()
+    scores = atom.ols.evaluate()
     assert len(scores) == 7
 
 
@@ -253,5 +253,5 @@ def test_rename_to_mlflow(mlflow):
     """Assert that renaming also changes the mlflow run."""
     atom = ATOMClassifier(X_bin, y_bin, experiment="test", random_state=1)
     atom.run("GNB")
-    atom.scoring()
-    assert mlflow.call_count == 10  # 9 from scoring + 1 from training
+    atom.evaluate()
+    assert mlflow.call_count == 10  # 9 from evaluate + 1 from training

@@ -29,6 +29,18 @@ example.
 
 <br>
 
+## Extracting features from datetime columns
+
+Note that decision trees based algorithms build their split rules
+according to one feature at a time. This means that they will fail
+to process these two features simultaneously whereas the cos/sin
+values are expected to be considered as one single coordinates system.
+
+Click [here](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
+for an overview of the available formats.
+
+<br>
+
 ## Generating new features
 
 The [FeatureGenerator](../../API/feature_engineering/feature_generator)

@@ -28,16 +28,25 @@ from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_text,
-    y_text, X10, X10_nan, X10_str, y10, y10_str, y10_sn, X20_out,
+    y_text, X10, X10_nan, X10_str, X10_str2, y10, y10_str, y10_sn, X20_out,
 )
 
 
 # Test __init__ ==================================================== >>
 
 def test_dtypes_shrinkage():
-    """Assert that tgh dtypes are optimized to save memory."""
+    """Assert that the dtypes are optimized to save memory."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert not atom.dtypes.equals(X_bin.dtypes)
+
+
+def test_dtypes_cat_or_object():
+    """Assert that categorical columns change dtype if necessary."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    assert atom.dtypes[2] != "category"
+
+    atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    assert atom.dtypes[2] == "category"
 
 
 def test_test_size_attribute():
@@ -403,7 +412,7 @@ def test_export_empty_pipeline():
     """Assert that an error is raised when the pipeline is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.clean()
-    pytest.raises(RuntimeError, atom.export_pipeline, pipeline=False)
+    pytest.raises(ValueError, atom.export_pipeline, pipeline=False)
 
 
 def test_export_pipeline_verbose():
@@ -465,13 +474,13 @@ def test_drop():
 def test_apply_not_callable():
     """Assert that an error is raised when func is not callable."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(TypeError, atom.apply, func=RandomForestClassifier(), column=0)
+    pytest.raises(TypeError, atom.apply, func=RandomForestClassifier(), columns=0)
 
 
 def test_apply_same_column():
     """Assert that apply can transform an existing column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: 1, column=0)
+    atom.apply(lambda x: 1, columns=0)
     assert atom["mean radius"].sum() == atom.shape[0]
     assert str(atom.pipeline[0]).startswith("FuncTransformer(func=<lambda>")
 
@@ -479,7 +488,7 @@ def test_apply_same_column():
 def test_apply_new_column():
     """Assert that apply can create a new column."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: 1, column="new column")
+    atom.apply(lambda x: 1, columns="new column")
     assert atom["new column"].sum() == atom.shape[0]
 
 
@@ -490,7 +499,7 @@ def test_apply_args_and_kwargs():
         return df[arg_2] + arg_1
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(test_func, column="new column", args=(10,), arg_2="mean texture")
+    atom.apply(test_func, columns="new column", args=(10,), arg_2="mean texture")
     assert atom["new column"][0] == atom["mean texture"][0] + 10
 
 

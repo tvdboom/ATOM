@@ -14,6 +14,7 @@
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
 * [Can I train the models using cross-validation?](#q12)
 * [Why are there missing values in the dataset after encoding?](#q13)
+* [Is there a way to process datetime features?](#q14)
 
 <br>
 
@@ -189,3 +190,12 @@ many classes with few occurrences. To fix this, impute the dataset
 after encoding, increase the number of samples in the training set to
 make sure it contains all the classes in the column, or increase the
 `frac_to_other` parameter.
+
+<br>
+
+<a name="q13"></a>
+### Is there a way to process datetime features?
+Yes, the [FeatureExtractor](./API/feature_engineering/feature_extractor) class
+(released in [v4.7.0](./release_history/v470)) can automatically extract useful
+features (day, month, year, etc...) from datetime columns. The extracted features
+are always encoded to numerical values, so they can be fed directly to a model.

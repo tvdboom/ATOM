@@ -49,8 +49,8 @@ from atom.basetransformer import BaseTransformer
 from .utils import (
     SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_method,
     check_goal, check_binary_task, check_predict_proba, get_corpus,
-    get_scorer, get_best_score, partial_dependence, composed, crash,
-    plot_from_model,
+    get_scorer, get_best_score, partial_dependence, get_columns,
+    composed, crash, plot_from_model,
 )
 
 # Catch annoying tensorflow warnings when importing shap
@@ -93,7 +93,7 @@ class BaseFigure:
 
         # Check if there are too many plots in the contextmanager
         if self._idx >= self.nrows * self.ncols:
-            raise RuntimeError(
+            raise ValueError(
                 "Invalid number of plots in the canvas! Increase "
                 "the number of rows and cols to add more plots."
             )
@@ -865,7 +865,7 @@ class BaseModelPlotter(BasePlotter):
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the bayesian optimization scoring.
+        """Plot the bayesian optimization scores.
 
         Only for models that ran hyperparameter tuning. This is the
         same plot as produced by `bo_params={"plot": True}` while
@@ -1095,7 +1095,7 @@ class BaseModelPlotter(BasePlotter):
                     getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
                 )
 
-                roc = f" (AUC={round(m.scoring('auc', set_)['roc_auc'], 3)})"
+                roc = f" (AUC={round(m.evaluate('auc', set_)['roc_auc'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
                 ax.plot(fpr, tpr, lw=2, label=label)
 
@@ -1175,7 +1175,7 @@ class BaseModelPlotter(BasePlotter):
                     getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
                 )
 
-                ap = f" (AP={round(m.scoring('ap', set_)['average_precision'], 3)})"
+                ap = f" (AP={round(m.evaluate('ap', set_)['average_precision'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
                 plt.plot(recall, precision, lw=2, label=label)
 
@@ -1723,7 +1723,7 @@ class BaseModelPlotter(BasePlotter):
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
             for set_ in dataset:
-                r2 = f" (R$^2$={round(m.scoring('r2', set_)['r2'], 3)})"
+                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
                 ax.scatter(
                     x=getattr(self, f"y_{set_}"),
@@ -1829,7 +1829,7 @@ class BaseModelPlotter(BasePlotter):
         ax2 = fig.add_subplot(gs[0, 3:4])
         for m in models:
             for set_ in dataset:
-                r2 = f" (R$^2$={round(m.scoring('r2', set_)['r2'], 3)})"
+                r2 = f" (R$^2$={round(m.evaluate('r2', set_)['r2'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + r2
                 res = np.subtract(
                     getattr(m, f"predict_{set_}"),
@@ -2477,7 +2477,7 @@ class BaseModelPlotter(BasePlotter):
                 gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
 
                 x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                lift = f" (Lift={round(m.scoring('lift', set_)['lift'], 3)})"
+                lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
                 ax.plot(x, gains / x, lw=2, label=label)
 
@@ -3415,7 +3415,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         check_method(self, "plot_correlation")
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = get_columns(self.dataset, columns, only_numerical=True)
         if method.lower() not in ("pearson", "kendall", "spearman"):
             raise ValueError(
                 f"Invalid value for the method parameter, got {method}. "
@@ -3509,7 +3509,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             )
 
         check_method(self, "plot_scatter_matrix")
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = get_columns(self.dataset, columns, only_numerical=True)
 
         # Use max 250 samples to not clutter the plot
         samples = self.dataset[columns].sample(
@@ -3595,7 +3595,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         check_method(self, "plot_distribution")
-        columns = self._get_columns(columns)
+        columns = get_columns(self.dataset, columns)
         palette_1 = cycle(sns.color_palette())
         palette_2 = sns.color_palette("Blues_r", 3)
 
@@ -3729,7 +3729,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         check_method(self, "plot_qq")
-        columns = self._get_columns(columns, only_numerical=True)
+        columns = get_columns(self.dataset, columns)
         palette = cycle(sns.color_palette())
 
         fig = self._get_figure()

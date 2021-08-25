@@ -35,7 +35,11 @@ from .data_cleaning import (
     Pruner,
     Balancer,
 )
-from .feature_engineering import FeatureGenerator, FeatureSelector
+from .feature_engineering import (
+    FeatureExtractor,
+    FeatureGenerator,
+    FeatureSelector,
+)
 from .training import (
     DirectClassifier,
     DirectRegressor,
@@ -47,11 +51,11 @@ from .training import (
 from .models import CustomModel, MODEL_LIST
 from .plots import ATOMPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt,
-    lst, divide, infer_task, check_method, check_scaling,
-    check_multidimensional, get_pl_name, names_from_estimator,
-    df_shrink_dtypes, variable_return, delete, custom_transform,
-    add_transformer, method_to_log, composed, crash, CustomDict,
+    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
+    divide, infer_task, check_method, check_scaling, check_multidim,
+    get_pl_name, names_from_estimator, df_shrink_dtypes, get_columns,
+    variable_return, delete, custom_transform, add_transformer,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -89,7 +93,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Prepare the provided data
         self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
 
-        if not check_multidimensional(self.branch.data):
+        if not check_multidim(self.branch.data):
             self.branch.data = df_shrink_dtypes(self.branch.data)
 
         # Attach the data to the original branch
@@ -189,20 +193,20 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def scaled(self):
         """Whether the feature set is scaled."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
             return check_scaling(self.X) or "scaler" in est_names
 
     @property
     def duplicates(self):
         """Number of duplicate rows in the dataset."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return self.dataset.duplicated().sum()
 
     @property
     def nans(self):
         """Columns with the number of missing values in them."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum()
             return nans[nans > 0]
@@ -210,7 +214,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_nans(self):
         """Number of samples containing missing values."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             nans = self.dataset.replace(self.missing + [np.inf, -np.inf], np.NaN)
             nans = nans.isna().sum(axis=1)
             return len(nans[nans > 0])
@@ -218,31 +222,31 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def numerical(self):
         """Names of the numerical features in the dataset."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return list(self.X.select_dtypes(include=["number"]).columns)
 
     @property
     def n_numerical(self):
         """Number of numerical features in the dataset."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return len(self.numerical)
 
     @property
     def categorical(self):
         """Names of the categorical features in the dataset."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return list(self.X.select_dtypes(exclude=["number"]).columns)
 
     @property
     def n_categorical(self):
         """Number of categorical features in the dataset."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return len(self.categorical)
 
     @property
     def outliers(self):
         """Columns in training set with amount of outlier values."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             srs = pd.Series((np.abs(z_scores) > 3).sum(axis=0), index=num_and_target)
@@ -251,7 +255,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     @property
     def n_outliers(self):
         """Number of samples in the training set containing outliers."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             num_and_target = self.dataset.select_dtypes(include=["number"]).columns
             z_scores = stats.zscore(self.train[num_and_target], nan_policy="propagate")
             return len(np.where((np.abs(z_scores) > 3).any(axis=1))[0])
@@ -316,7 +320,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log("Dataset stats ====================== >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             nans = self.nans.sum()
             n_categorical = self.n_categorical
             outliers = self.outliers.sum()
@@ -646,7 +650,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             pipeline = list(range(len(self.pipeline)))
 
         if len(pipeline) == 0 and not model:
-            raise RuntimeError("The selected pipeline seems to be empty!")
+            raise ValueError("The selected pipeline seems to be empty!")
 
         steps = []
         for idx, transformer in enumerate(self.pipeline):
@@ -694,7 +698,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_method(self, "drop")
-        columns = self._get_columns(columns)
+        columns = get_columns(self.dataset, columns)
         if self.target in columns:
             raise ValueError(
                 "Invalid value for the columns parameter. "
@@ -710,7 +714,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
     @composed(crash, method_to_log, typechecked)
-    def apply(self, func: callable, column: Union[int, str], args=(), **kwargs):
+    def apply(self, func: callable, columns: Union[int, str], args=(), **kwargs):
         """Apply a function to the dataset.
 
         Transform one column in the dataset using a function (can
@@ -728,7 +732,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         func: function
             Function to apply to the dataset.
 
-        column: int or str
+        columns: int or str
             Name or index of the column in the dataset to create
             or transform.
 
@@ -745,11 +749,11 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "Invalid value for the func parameter. Argument is not callable!"
             )
 
-        if isinstance(column, int):
-            column = self._get_columns(column)[0]
+        if isinstance(columns, int):
+            columns = get_columns(self.dataset, columns)[0]
 
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        transformer = FuncTransformer(func, column=column, args=args, **kwargs)
+        transformer = FuncTransformer(func, columns=columns, args=args, **kwargs)
         custom_transform(self, transformer, self.branch)
 
         self.branch.pipeline = self.pipeline.append(
@@ -1184,6 +1188,42 @@ class ATOM(BasePredictor, ATOMPlotter):
                 setattr(self.branch, attr, getattr(vectorizer, attr))
 
     # Feature engineering transformers ============================= >>
+
+    @composed(crash, method_to_log, typechecked)
+    def feature_extraction(
+        self,
+        fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
+        encoding_type: str = "ordinal",
+        drop_columns: bool = True,
+        **kwargs,
+    ):
+        """Extract features from datetime columns.
+
+        Extract datetime related features (hour, day, month, year, etc..)
+        from datetime columns in the provided dataset, and drop them after.
+        Columns of type `datetime64` are used as is. Categorical columns
+        that can be successfully converted to a datetime format (less than
+        30% NaT values after conversion) are also used. If the `fmt`
+        parameter is not specified, the format for the conversion of
+        categorical columns is inferred automatically from the first non
+        NaN value. Values that can not be converted are returned as NaT.
+
+        See feature_engineering.py for a description of the parameters.
+
+        """
+        check_method(self, "feature_extraction")
+        columns = kwargs.pop("columns", None)
+        kwargs = self._prepare_kwargs(kwargs, FeatureExtractor().get_params())
+        feature_extractor = FeatureExtractor(
+            features=features,
+            fmt=fmt,
+            encoding_type=encoding_type,
+            drop_columns=drop_columns,
+            **kwargs,
+        )
+
+        add_transformer(self, feature_extractor, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def feature_generation(

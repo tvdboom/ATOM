@@ -271,7 +271,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Define scorer ============================================ >>
 
-        # Assign default scoring
+        # Assign default scorer
         if None in self._metric:
             if self.task.startswith("bin"):
                 self._metric = CustomDict(f1=get_scorer("f1"))
@@ -280,7 +280,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             else:
                 self._metric = CustomDict(r2=get_scorer("r2"))
 
-        # Ignore if it's the same scoring as previous call
+        # Ignore if it's the same scorer as previous call
         elif not all([hasattr(m, "name") for m in self._metric]):
             self._metric = self._prepare_metric(
                 metric=self._metric,

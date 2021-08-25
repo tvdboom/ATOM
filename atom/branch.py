@@ -18,7 +18,7 @@ from typing import Optional
 from .basetransformer import BaseTransformer
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
-    check_multidimensional, composed, crash, method_to_log,
+    check_multidim, composed, crash, method_to_log,
 )
 
 
@@ -322,7 +322,7 @@ class Branch:
     @property
     def shape(self):
         """Shape of the dataset (n_rows, n_cols) or (n_rows, shape_row, n_cols)."""
-        if not check_multidimensional(self.X):
+        if not check_multidim(self.X):
             return self.data.shape
         else:
             return len(self.data), self.X.iloc[0, 0].shape, 2

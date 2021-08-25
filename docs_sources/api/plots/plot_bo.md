@@ -9,7 +9,7 @@ metric=0, title=None, figsize=(10, 8), filename=None, display=True)
 </span>
 </div>
 
-Plot the bayesian optimization scoring. Only for models that ran
+Plot the bayesian optimization scores. Only for models that ran
 hyperparameter tuning. This is the same plot as the one produced
 by `bo_params={"plot": True}` while running the BO. Creates a
 canvas with two plots: the first plot shows the score of every trial

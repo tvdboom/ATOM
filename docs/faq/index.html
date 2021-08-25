@@ -2319,6 +2319,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#is-there-a-way-to-process-datetime-features" class="md-nav__link">
+    Is there a way to process datetime features?
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2487,6 +2494,13 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#is-there-a-way-to-process-datetime-features" class="md-nav__link">
+    Is there a way to process datetime features?
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2516,6 +2530,7 @@
 <li><a href="#q11">Is it possible to initialize atom with an existing train and test set?</a></li>
 <li><a href="#q12">Can I train the models using cross-validation?</a></li>
 <li><a href="#q13">Why are there missing values in the dataset after encoding?</a></li>
+<li><a href="#q14">Is there a way to process datetime features?</a></li>
 </ul>
 <p><br></p>
 <hr />
@@ -2652,6 +2667,13 @@ many classes with few occurrences. To fix this, impute the dataset
 after encoding, increase the number of samples in the training set to
 make sure it contains all the classes in the column, or increase the
 <code>frac_to_other</code> parameter.</p>
+<p><br></p>
+<p><a name="q13"></a></p>
+<h3 id="is-there-a-way-to-process-datetime-features">Is there a way to process datetime features?</h3>
+<p>Yes, the <a href="./API/feature_engineering/feature_extractor">FeatureExtractor</a> class
+(released in <a href="./release_history/v470">v4.7.0</a>) can automatically extract useful
+features (day, month, year, etc...) from datetime columns. The extracted features
+are always encoded to numerical values, so they can be fed directly to a model.</p>
                 
               
               

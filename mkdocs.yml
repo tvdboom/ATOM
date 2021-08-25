@@ -38,6 +38,9 @@ theme:
 
 extra:
   social:
+    - icon: fontawesome/brands/slack
+      link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
+      name: Slack
     - icon: fontawesome/brands/github
       link: https://github.com/tvdboom/ATOM
       name: GitHub

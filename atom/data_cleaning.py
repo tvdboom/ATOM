@@ -124,16 +124,16 @@ class DropTransformer(BaseTransformer):
 class FuncTransformer(BaseTransformer):
     """Custom transformer for functions."""
 
-    def __init__(self, func, column, args, verbose, logger, **kwargs):
+    def __init__(self, func, columns, args, verbose, logger, **kwargs):
         super().__init__(verbose=verbose, logger=logger)
         self.func = func
-        self.column = column
+        self.columns = columns
         self.args = args
         self.kwargs = kwargs
         self.train_only = False
 
     def __repr__(self):
-        return f"FuncTransformer(func={self.func.__name__}, column={self.column})"
+        return f"FuncTransformer(func={self.func.__name__}, columns={self.columns})"
 
     def transform(self, X, y):
         """Apply function to the dataset.
@@ -145,7 +145,7 @@ class FuncTransformer(BaseTransformer):
         """
         self.log(f"Applying function {self.func.__name__} to the dataset...", 1)
         dataset = X if y is None else merge(X, y)
-        X[self.column] = self.func(dataset, *self.args, **self.kwargs)
+        X[self.columns] = self.func(dataset, *self.args, **self.kwargs)
 
         return X, y
 

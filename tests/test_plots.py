@@ -117,7 +117,7 @@ def test_canvas_too_many_plots():
     with atom.canvas(1, 2, display=False):
         atom.plot_prc()
         atom.plot_roc()
-        pytest.raises(RuntimeError, atom.plot_prc)
+        pytest.raises(ValueError, atom.plot_prc)
 
 
 @patch("mlflow.tracking.MlflowClient.log_figure")

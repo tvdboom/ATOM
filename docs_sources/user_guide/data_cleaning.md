@@ -159,7 +159,7 @@ are far from the other examples in the feature space. This can work well
 for feature spaces with low dimensionality (few features) but becomes
 less reliable as the number of features is increased. The local outlier
 factor is a technique that attempts to harness the idea of nearest neighbors
-for outlier detection. Each example is assigned a scoring of how isolated
+for outlier detection. Each example is assigned a score of how isolated
 or how likely it is to be outliers based on the size of its local
 neighborhood. Those examples with the largest score are more likely to
 be outliers. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/outlier_detection.html#local-outlier-factor).

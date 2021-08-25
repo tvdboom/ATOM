@@ -1,4 +1,4 @@
-{% extends "main.html" %}
+<link rel="stylesheet" href="../stylesheets/extra.css">{% extends "main.html" %}
 
 <!-- Override footer -->
 {% block footer %}
@@ -89,6 +89,48 @@
     [data-md-color-scheme="slate"] .button-secondary:hover {
         background: #2a978d;
         color: white;
+    }
+
+    .slack-button {
+        position: relative;
+        left: 50%;
+        margin-left: -225px;
+        width: 450px;
+        height: 120px;
+        background-color: rgba(255, 255, 255, 0.0);
+        text-align: center;
+        font-weight: 600;
+        font-size: 3em;
+        color: #2a978d;
+        margin-top: 15px;
+        margin-bottom: 45px;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+        border: 3px solid #2a978d;
+        background-color: #fff;
+        border-radius: 25px;
+        box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.1);
+        cursor: pointer;display: flex;
+        padding-left: 45px;
+    }
+
+    .slack-container {
+        position: relative;
+        display: flex;
+        height: 100%;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .slack-img {
+        position: relative;
+        width: 80px;
+        height: 80px;
+    }
+
+    .slack-text {
+        position: relative;
+        margin-left: 15px;
     }
 
     .story-wrapper {
@@ -201,12 +243,24 @@
     <h1>A Python package for fast exploration of machine learning pipelines</h1>
     <div class="description">
         <p style="margin-bottom: 2em">
-            ATOM is an open-source, easy-to-use machine learning package for Python,
-            capable of running experiments quickly and efficiently, enabling the user
-            to go from raw data to generating insights in just a few lines of code.
+            ATOM is an open-source, easy-to-use machine learning package for Python.
+            ATOM is capable of running experiments quickly and efficiently, enabling
+            the user to go from raw data to generating insights in just a few lines
+            of code.
         </p>
         <a href="about" class="button">Read more</a>
         <a href="getting_started" class="button button-secondary">Get started</a>
+    </div>
+</section>
+
+<section>
+    <div class="slack-button button-secondary">
+        <a href="https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3" target="_blank" draggable="false">
+            <div class="slack-container">
+                <img src="img/slack.png" alt="slack" class="slack-img" draggable="false">
+                <div class="slack-text">Join us on slack!</div>
+            </div>
+        </a>
     </div>
 </section>
 

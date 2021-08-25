@@ -450,8 +450,8 @@ manage the pipeline.
 </tr>
 
 <tr>
-<td><a href="#scoring">scoring</a></td>
-<td>Get all the models scoring for provided metrics.</td>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get all the models evaluation for provided metrics.</td>
 </tr>
 
 <tr>
@@ -513,10 +513,10 @@ Transformer to add to the pipeline. Should implement a <code>transform</code> me
 </p>
 <p>
 <strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
-Names or indices of the columns in the dataset to transform. If None, transform
-all columns. Add <code>!</code> in front of a name to exclude that column, e.g.
-<code>atom.add(Transformer(), columns="!Location")</code> will transform all
-columns except <code>Location</code>.
+Names, indices or dtypes of the columns in the dataset to transform.
+If None, transform all columns. Add <code>!</code> in front of a name
+or dtype to exclude that column, e.g. <code>atom.add(Transformer(), columns="!Location")</code>
+transforms all columns except <code>Location</code>.
 </p>
 <p>
 <strong>train_only: bool, optional (default=False)</strong><br>
@@ -536,7 +536,7 @@ Additional keyword arguments passed to the fit method of the transformer.
 <a name="apply"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">apply</strong>(func,
-column, args=(), **kwargs)
+columns, args=(), **kwargs)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L713">[source]</a>
 </span>
@@ -561,7 +561,7 @@ parameter of the function is the complete dataset.
 Function to apply to the dataset.
 </p>
 <p>
-<strong>column: int or str</strong><br>
+<strong>columns: int or str</strong><br>
 Name or index of the column in the dataset to create or transform.
 </p>
 <p>
@@ -653,7 +653,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L434">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L390">[source]</a>
 </span>
 </div>
 Evaluate the winning model using cross-validation. This method cross-validates
@@ -685,7 +685,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L472">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L428">[source]</a>
 </span>
 </div>
 Delete a model from the trainer. If the winning model is
@@ -980,14 +980,14 @@ Data set to save.
 <br>
 
 
-<a name="scoring"></a>
+<a name="evaluate"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L440">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L396">[source]</a>
 </span>
 </div>
-Get all the models scoring for provided metrics.
+Get all the models evaluation for provided metrics.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -1006,8 +1006,8 @@ Data set on which to calculate the metric. Options are "train" or "test".
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="80%" style="background:white;">
-<strong>score: pd.DataFrame</strong><br>
-Scoring of the models.
+<strong>scores: pd.DataFrame</strong><br>
+Scores of the models.
 </td>
 </tr>
 </table>
@@ -1019,7 +1019,7 @@ Scoring of the models.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
 estimator=None, stack_method="auto", passthrough=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L342">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L298">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
@@ -1087,7 +1087,7 @@ save it to the logger.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L309">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L265">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
