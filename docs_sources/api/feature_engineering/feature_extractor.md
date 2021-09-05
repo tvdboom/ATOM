@@ -1,0 +1,294 @@
+# FeatureExtractor
+------------------
+
+<div style="font-size:20px">
+<em>class</em> atom.feature_engineering.<strong style="color:#008AB8">FeatureExtractor</strong>(features=["day", "month", "year"],
+fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L49">[source]</a>
+</span>
+</div>
+
+Extract datetime related features (hour, day, month, year, etc..)
+from datetime columns in the provided dataset, and drop them after.
+Columns of dtype `datetime64` are used as is. Categorical columns
+that can be successfully converted to a datetime format (less than
+30% NaT values after conversion) are also used. This class can be
+accessed from atom through the [feature_extraction](../../ATOM/atomclassifier/#feature-extraction)
+method. Read more in the [user guide](../../../user_guide/feature_engineering/#extracting-datetime-features).
+
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>features: str or sequence, optional (default=["day", "month", "year"])</strong><br>
+Features to create from the datetime columns. Note that
+created features with zero variance (e.g. the feature hour
+in a column that only contains dates) are ignored. Allowed
+values are datetime attributes from `pandas.Series.dt`.
+</p>
+<p>
+<strong>fmt: str, sequence or None, optional (default=None)</strong><br>
+Format (<code>strptime</code>) of the categorical columns that
+need to be converted to datetime. If sequence, the n-th format
+corresponds to the n-th categorical column that can be successfully
+converted. If None, the format is inferred automatically from the
+first non NaN value. Values that can not be converted are returned
+as NaT.
+</p>
+<strong>encoding_type: str, optional (default="ordinal")</strong><br>
+Type of encoding to use. Choose from:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>"ordinal": Encode features in increasing order.</li>
+<li>"cyclic": Encode features using sine and cosine to
+capture the cyclic nature of the features.
+Note that this creates two columns for every
+feature. Non-cyclic features are encoded in
+increasing order.</li>
+</ul>
+<p>
+<strong>drop_columns: bool, optional (default=True)</strong><br>
+Whether to drop the original columns after extracting the
+features from it.
+</p>
+<strong>verbose: int, optional (default=0)</strong><br>
+Verbosity level of the class. Possible values are:
+<ul style="line-height:1.2em;margin-top:5px">
+<li>0 to not print anything.</li>
+<li>1 to print basic information.</li>
+<li>2 to print detailed information.</li>
+</ul>
+<strong>logger: str, Logger or None, optional (default=None)</strong><br>
+<ul style="line-height:1.2em;margin-top:5px">
+<li>If None: Doesn't save a logging file.</li>
+<li>If str: Name of the log file. Use "auto" for automatic naming.</li>
+<li>Else: Python <code>logging.Logger</code> instance.</li>
+</ul>
+</td>
+</tr>
+</table>
+
+!!! warning
+    Decision trees based algorithms build their split rules according
+    to one feature at a time. This means that they will fail to correctly
+    process cyclic features since the cos/sin features should be
+    considered one single coordinate system.
+
+<br>
+
+## Methods
+
+<table style="font-size:16px">
+<tr>
+<td><a href="#fit-transform">fit_transform</a></td>
+<td>Same as transform.</td>
+</tr>
+
+<tr>
+<td><a href="#get-params">get_params</a></td>
+<td>Get parameters for this estimator.</td>
+</tr>
+
+<tr>
+<td><a href="#log">log</a></td>
+<td>Write information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#save">save</a></td>
+<td>Save the instance to a pickle file.</td>
+</tr>
+
+<tr>
+<td><a href="#set-params">set_params</a></td>
+<td>Set the parameters of this estimator.</td>
+</tr>
+
+<tr>
+<td><a href="#transform">transform</a></td>
+<td>Transform the data.</td>
+</tr>
+</table>
+<br>
+
+
+<a name="fit-transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
+</span>
+</div>
+Extract the datetime features.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+Feature set with shape=(n_samples, n_features).
+</p>
+<p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+Does nothing. Implemented for continuity of the API.
+</p>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>X: pd.DataFrame</strong><br>
+Dataframe containing the new features.
+</tr>
+</table>
+<br />
+
+
+<a name="get-params"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">get_params</strong>(deep=True)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L189">[source]</a>
+</span>
+</div>
+Get parameters for this estimator.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>deep: bool, optional (default=True)</strong><br>
+If True, will return the parameters for this estimator and contained subobjects that are estimators.
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>params: dict</strong><br>
+Dictionary of the parameter names mapped to their values.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="log"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">log</strong>(msg, level=0)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L348">[source]</a>
+</span>
+</div>
+Write a message to the logger and print it to stdout.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>msg: str</strong><br>
+Message to write to the logger and print to stdout.
+</p>
+<p>
+<strong>level: int, optional (default=0)</strong><br>
+Minimum verbosity level to print the message.
+</p>
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="save"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">save</strong>(filename="auto")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basetransformer.py#L369">[source]</a>
+</span>
+</div>
+Save the instance to a pickle file.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>filename: str, optional (default="auto")</strong><br>
+Name of the file. Use "auto" for automatic naming.
+</td>
+</tr>
+</table>
+<br>
+
+
+<a name="set-params"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">set_params</strong>(**params)
+<span style="float:right">
+<a href="https://github.com/scikit-learn/scikit-learn/blob/0fb307bf3/sklearn/base.py#L221">[source]</a>
+</span>
+</div>
+Set the parameters of this estimator.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<strong>**params: dict</strong><br>
+Estimator parameters.
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>self: FeatureExtractor</strong><br>
+Estimator instance.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="transform"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L802">[source]</a>
+</span>
+</div>
+Extract the datetime features.
+<table style="font-size:16px">
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
+<td width="80%" style="background:white;">
+<p>
+<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+Feature set with shape=(n_samples, n_features).
+</p>
+<p>
+<strong>y: int, str, sequence or None, optional (default=None)</strong><br>
+Does nothing. Implemented for continuity of the API.
+</p>
+</tr>
+<tr>
+<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
+<td width="80%" style="background:white;">
+<strong>X: pd.DataFrame</strong><br>
+Dataframe containing the new features.
+</tr>
+</table>
+<br />
+
+
+
+## Example
+
+```python
+from atom import ATOMClassifier
+
+atom = ATOMClassifier(X, y)
+atom.feature_extraction(features=["day", "month"], fmt="%d/%m/%Y")
+```
+or
+```python
+from atom.feature_engineering import FeatureExtractor
+
+feature_extractor = FeatureExtractor(features=["day", "month"], fmt="%d/%m/%Y")
+X = feature_extractor.transform(X)
+```

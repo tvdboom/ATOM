@@ -14,7 +14,8 @@
 Overview 
 --------
 
-Author: [Mavs](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com &nbsp;&nbsp;&nbsp;&nbsp; Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)
+Author: [Mavs](https://github.com/tvdboom) &nbsp;&nbsp;&nbsp;&nbsp; Email: m.524687@gmail.com
+Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/) &nbsp;&nbsp;&nbsp;&nbsp; Slack: [https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3](https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3)
 
 
 #### Repository:

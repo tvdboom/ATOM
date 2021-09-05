@@ -51,12 +51,9 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Extract datetime related features (hour, day, month, year, etc..)
     from datetime columns in the provided dataset, and drop them after.
-    Columns of type `datetime64` are used as is. Categorical columns
+    Columns of dtype `datetime64` are used as is. Categorical columns
     that can be successfully converted to a datetime format (less than
-    30% NaT values after conversion) are also used. If the `fmt`
-    parameter is not specified, the format for the conversion of
-    categorical columns is inferred automatically from the first non
-    NaN value. Values that can not be converted are returned as NaT.
+    30% NaT values after conversion) are also used.
 
     Parameters
     ----------
@@ -71,7 +68,8 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         to be converted to datetime. If sequence, the n-th format
         corresponds to the n-th categorical column that can be
         successfully converted. If None, the format is inferred
-        automatically.
+        automatically from the first non NaN value. Values that can
+        not be converted are returned as NaT.
 
     encoding_type: str, optional (default="ordinal")
         Type of encoding to use. Choose from:
@@ -129,18 +127,18 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         X: pd.DataFrame
-            Dataframe containing the new datetime features.
+            Dataframe containing the new features.
 
         """
 
-        def encode_variable(idx, name, values, min_val=0, max_val=0):
+        def encode_variable(idx, name, values, min_val=0, max_val=None):
             """Encode a feature in an ordinal or cyclic fashion."""
-            if self.encoding_type.lower() == "ordinal" or max_val == 0:
-                self.log(f" --> Creating feature {name}...", 2)
+            if self.encoding_type.lower() == "ordinal" or max_val is None:
+                self.log(f"   >>> Creating feature {name}.", 2)
                 X.insert(idx, name, values)
             elif self.encoding_type.lower() == "cyclic":
-                self.log(f" --> Creating cyclic feature {name}...", 2)
-                pos = 2 * np.pi * (values - min_val) / max_val
+                self.log(f"   >>> Creating cyclic feature {name}.", 2)
+                pos = 2 * np.pi * (values - min_val) / np.array(max_val)
                 X.insert(idx, f"{name}_sin", np.sin(pos))
                 X.insert(idx, f"{name}_cos", np.cos(pos))
 
@@ -159,6 +157,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         for col in X:
             if X[col].dtype == "datetime64":
                 col_dt = X[col]
+                self.log(f" --> Extracting features from datetime column {col}.", 1)
             elif col in X.select_dtypes(exclude="number").columns:
                 col_dt = pd.to_datetime(
                     arg=X[col],
@@ -167,11 +166,15 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     infer_datetime_format=True,
                 )
 
-                # If >50% values are NaT, the conversion was unsuccessful
-                if col_dt.isna().sum() >= int(0.3 * len(X)):
+                # If >30% values are NaT, the conversion was unsuccessful
+                nans = 100. * col_dt.isna().sum() / len(X)
+                if nans >= 30:
                     continue  # Skip this column
                 else:
                     i += 1
+                    self.log(
+                        f" --> Extracting features from categorical column {col}.", 1
+                    )
             else:
                 continue  # If column is numerical, skip it
 
@@ -188,23 +191,21 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                 # Skip if the information is not present in the format
                 if not isinstance(values, pd.Series):
                     self.log(
-                        f" --> Skipping extraction of feature {fx} from "
-                        f"column {col}. Result is not a pd.Series.", 2
+                        f"   >>> Extracting feature {fx} failed. "
+                        "Result is not a pd.Series.dt.", 2
                     )
                     continue
 
                 if values.nunique() == 1:
                     self.log(
-                        f" --> Skipping extraction of feature {fx} from column "
-                        f"{col}. Result contains only one value: {values[0]}.", 2
+                        f"   >>> Extracting feature {fx} failed. "
+                        f"Result contains only one value: {values[0]}.", 2
                     )
                     continue
 
-                min_val, max_val = 0, 0  # max_val=0 -> feature is not cyclic
+                min_val, max_val = 0, None  # max_val=None -> feature is not cyclic
                 if self.encoding_type.lower() == "cyclic":
-                    if fx == "nanosecond":
-                        min_val, max_val = 0, 1e9 - 1
-                    elif fx == "microsecond":
+                    if fx == "microsecond":
                         min_val, max_val = 0, 1e6 - 1
                     elif fx in ("second", "minute"):
                         min_val, max_val = 0, 59

@@ -65,9 +65,16 @@ markdown_extensions:
     - pymdownx.keys
     - pymdownx.superfences
     - pymdownx.snippets
+    - pymdownx.arithmatex:
+        generic: true
 
 extra_css:
     - stylesheets/extra.css
+
+extra_javascript:
+  - stylesheets/extra.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
     - About: about.md
@@ -106,6 +113,7 @@ nav:
             - Normalizer: API/nlp/normalizer.md
             - Vectorizer: API/nlp/vectorizer.md
         - Feature engineering:
+            - FeatureExtractor: API/feature_engineering/feature_extractor.md
             - FeatureGenerator: API/feature_engineering/feature_generator.md
             - FeatureSelector: API/feature_engineering/feature_selector.md
         - Training:

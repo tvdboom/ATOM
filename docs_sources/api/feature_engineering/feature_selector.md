@@ -261,7 +261,6 @@ Fontsize for the ticks along the plot's axes.
 <td><a href="#transform">transform</a></td>
 <td>Transform the data.</td>
 </tr>
-
 </table>
 <br>
 

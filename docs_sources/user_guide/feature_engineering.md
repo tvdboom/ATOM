@@ -29,13 +29,46 @@ example.
 
 <br>
 
-## Extracting features from datetime columns
+## Extracting datetime features
 
-Note that decision trees based algorithms build their split rules
-according to one feature at a time. This means that they will fail
-to process these two features simultaneously whereas the cos/sin
-values are expected to be considered as one single coordinates system.
+Features that contain dates or timestamps can not be directly ingested
+by models since they are not strictly numerical. Encoding them as
+categorical features is also undesirable since the encoding does not
+capture the relationship between the different moments in time. The
+[FeatureExtractor](../../API/feature_engineering/feature_extractor)
+class creates new datetime features (e.g. day, month, year, hour...).
+It can be accessed from atom through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
+method. The extracted features are named equally to the column they
+from which they are transformed, followed by an underscore and the
+datetime attribute they create, e.g. `Feature 1_day` for the day
+element of `Feature 1`.
 
+Note that many time features have a cyclic pattern, e.g. after Sunday
+comes Monday. This means that if we would encode the days of the week
+from 0 to 6, we would lose that relation. A common method used to encode
+cyclical features is to transform the data into two dimensions using a
+sine and cosine transformation:
+
+$$
+x_{sin} = sin\left(\frac{2\pi * x}{max(x)}\right)
+$$
+
+$$
+x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
+$$
+
+The resulting features have their names followed by sin or cos, e.g.
+`Feature 1_day_sin` and `Feature 1_day_cos`. The datetime attributes
+that can be encoded in a cyclic fashion are: microsecond, second,
+minute, hour, weekday, day, day_of_year, week, month, quarter. Note
+that decision trees based algorithms build their split rules according
+to one feature at a time. This means that they will fail to correctly
+process cyclic features since the sin/cos values are expected to be
+considered as one single coordinate system.
+
+Use the `fmt` parameter to specify your feature's format in case the
+column is categorical. The FeatureExtractor class will convert the
+column to the datetime dtype before extracting the specified features.
 Click [here](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
 for an overview of the available formats.
 

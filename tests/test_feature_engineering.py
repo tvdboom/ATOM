@@ -18,7 +18,7 @@ from atom.feature_engineering import (
     FeatureGenerator,
     FeatureSelector,
 )
-from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_dt
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, X10_dt
 
 
 # Test FeatureExtractor ============================================ >>
@@ -30,16 +30,23 @@ def test_invalid_encoding_type():
 
 
 def test_invalid_features():
-    """Assert that an error is raised when features is invalid."""
+    """Assert that an error is raised when features are invalid."""
     with pytest.raises(ValueError, match=r".*an attribute of pd.Series.dt.*"):
         FeatureExtractor(features="invalid").transform(X10_dt)
+
+
+def test_wrongly_converted_columns_are_ignored():
+    """Assert that columns converted unsuccessfully are skipped."""
+    extractor = FeatureExtractor()
+    X = extractor.transform(X10_str)
+    assert "Feature 3" in X.columns
 
 
 def test_wrongly_converted_features_are_ignored():
     """Assert that wrongly converted features are ignored."""
     extractor = FeatureExtractor(features=["tz", "is_leap_year", "day"])
     X = extractor.transform(X10_dt)
-    assert "Feature 2_tz" not in X.columns  # Not pd.Series
+    assert "Feature 2_tz" not in X.columns  # Not pd.Series.dt
     assert "Feature 2_day" not in X.columns  # Same value
 
 
@@ -52,23 +59,22 @@ def test_ordinal_features():
 
 
 @pytest.mark.parametrize("fxs", [
-    "nanosecond",
-    "microsecond",
-    "second",
-    "hour",
-    "weekday",
-    "day",
-    "dayofyear",
-    "week",
-    "month",
-    "quarter",
+    ("microsecond", "%f"),
+    ("second", "%S"),
+    ("hour", "%H"),
+    ("weekday", "%d/%m/%Y"),
+    ("day", "%d/%m/%Y"),
+    ("dayofyear", "%d/%m/%Y"),
+    ("week", "%d/%m/%Y"),
+    ("month", "%d/%m/%Y"),
+    ("quarter", "%d/%m/%Y"),
 ])
 def test_all_cyclic_features(fxs):
     """Assert that all cyclic columns create two features."""
-    extractor = FeatureExtractor(features=fxs, encoding_type="cyclic")
+    extractor = FeatureExtractor(features=fxs[0], fmt=fxs[1], encoding_type="cyclic")
     X = extractor.transform(X10_dt)
-    assert f"Feature 2_{fxs}_cos" in X.columns
-    assert X.shape[1] == X10_dt.shape[1] + 1  # 2 new and og is dropped
+    assert any(X.columns.str.contains(f"{fxs[0]}_cos"))
+    assert X.shape[1] == 4 + 1  # 2 new and og is dropped
 
 
 def test_features_are_not_dropped():
@@ -76,20 +82,6 @@ def test_features_are_not_dropped():
     extractor = FeatureExtractor(drop_columns=False)
     X = extractor.transform(X10_dt)
     assert "Feature 3" in X.columns
-
-
-def test_features_are_created():
-    """Assert that the datetime features are created."""
-    extractor = FeatureExtractor(
-        # fmt=["%hh:%mm", "%d/%m/%Y"],
-        features=["nanosecond"],
-        encoding_type="ordinal",
-    )
-    a = extractor.transform(X10_dt)
-    print(a)
-    print(a.columns)
-    print(a.dtypes)
-    assert 1==2
 
 
 # Test FeatureGenerator ============================================ >>

@@ -1488,11 +1488,17 @@ the parameters.
 
 ## Feature engineering
 
-To further pre-process the data, it's possible to create new non-linear
-features transforming the existing ones or, if the dataset is too large,
-remove features using one of the provided strategies.
+To further pre-process the data, it's possible to extract features
+from datetime columns, create new non-linear features transforming
+the existing ones or, if the dataset is too large, remove features
+using one of the provided strategies.
 
 <table style="font-size:16px;margin-top:5px">
+<tr>
+<td><a href="#feature-extraction">feature_extraction</a></td>
+<td>Extract features from datetime columns.</td>
+</tr>
+
 <tr>
 <td><a href="#feature-generation">feature_generation</a></td>
 <td>Create new features from combinations of existing ones.</td>
@@ -1504,6 +1510,21 @@ remove features using one of the provided strategies.
 </tr>
 </table>
 <br>
+
+
+<a name="feature-extraction"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">feature_extraction</strong>(features=["day", "month", "year"],
+fmt=None, encoding_type="ordinal", drop_columns=True)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L1193">[source]</a>
+</span>
+</div>
+Extract features (hour, day, month, year, etc..) from datetime columns.
+Columns of dtype `datetime64` are used as is. Categorical columns that
+can be successfully converted to a datetime format (less than 30% NaT
+values after conversion) are also used.
+<br /><br /><br />
 
 
 <a name="feature-generation"></a>

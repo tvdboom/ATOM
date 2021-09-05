@@ -1202,7 +1202,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Extract datetime related features (hour, day, month, year, etc..)
         from datetime columns in the provided dataset, and drop them after.
-        Columns of type `datetime64` are used as is. Categorical columns
+        Columns of dtype `datetime64` are used as is. Categorical columns
         that can be successfully converted to a datetime format (less than
         30% NaT values after conversion) are also used. If the `fmt`
         parameter is not specified, the format for the conversion of
