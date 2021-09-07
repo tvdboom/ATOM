@@ -1447,6 +1447,7 @@ class BaseModelPlotter(BasePlotter):
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
         features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        kind: str = "average",
         target: Union[int, str] = 1,
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
@@ -1456,12 +1457,12 @@ class BaseModelPlotter(BasePlotter):
         """Plot the partial dependence of features.
 
         The partial dependence of a feature (or a set of features)
-        corresponds to the average response of the model for each
-        possible value of the feature. Two-way partial dependence
-        plots are plotted as contour plots (only allowed for single
-        model plots). The deciles of the feature values are shown
-        with tick marks on the x-axes for one-way plots, and on both
-        axes for two-way plots.
+        corresponds to the response of the model for each possible
+        value of the feature. Two-way partial dependence plots are
+        plotted as contour plots (only allowed for single model plots).
+        The deciles of the feature values are shown with tick marks
+        on the x-axes for one-way plots, and on both axes for two-way
+        plots.
 
         Parameters
         ----------
@@ -1474,6 +1475,16 @@ class BaseModelPlotter(BasePlotter):
             dependence from. Maximum of 3 allowed. If None, it uses the
             best 3 features if the `feature_importance` attribute is
             defined, else it uses the first 3 features in the dataset.
+
+        kind: str, optional (default="average")
+            - "average": Plot the partial dependence averaged across
+                         all the samples in the dataset.
+            - "individual": Plot the partial dependence per sample
+                            (Individual Conditional Expectation).
+            - "both": Plot both the average (as a thick line) and the
+                      individual (thin lines) partial dependence.
+
+            This parameter is ignored when plotting feature pairs.
 
         target: int or str, optional (default=1)
             Index or name of the class in the target column to look at.
@@ -1549,13 +1560,19 @@ class BaseModelPlotter(BasePlotter):
                         "Invalid value for the features parameter. Feature pairs "
                         f"are invalid when plotting multiple models, got {fxs}."
                     )
-
             return cols
 
         check_method(self, "plot_partial_dependence")
         check_is_fitted(self, attributes="_models")
         models = self._get_subclass(models)
         target = self._get_target(target) if self.task.startswith("multi") else 0
+        palette = cycle(sns.color_palette())
+
+        if kind.lower() not in ("average", "individual", "both"):
+            raise ValueError(
+                f"Invalid value for the kind parameter, got {kind}. "
+                "Choose from: average, individual, both."
+            )
 
         axes = []
         fig = self._get_figure()
@@ -1587,8 +1604,11 @@ class BaseModelPlotter(BasePlotter):
 
             # Get global min and max average predictions of PD grouped by plot type
             pdp_lim = {}
-            for pred, values in pd_results:
-                min_pd, max_pd = pred[target].min(), pred[target].max()
+            for avg_pred, pred, values in pd_results:
+                if kind.lower() == "average":
+                    min_pd, max_pd = avg_pred[target].min(), avg_pred[target].max()
+                else:
+                    min_pd, max_pd = pred[target].min(), pred[target].max()
                 old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
                 pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
 
@@ -1598,7 +1618,7 @@ class BaseModelPlotter(BasePlotter):
                     X_col = _safe_indexing(m.X_test, fx, axis=1)
                     deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
 
-            for axi, fx, (pred, values) in zip(axes, cols, pd_results):
+            for axi, fx, (avg_pred, pred, values) in zip(axes, cols, pd_results):
                 # For both types: draw ticks on the horizontal axis
                 trans = blended_transform_factory(axi.transData, axi.transAxes)
                 axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
@@ -1606,15 +1626,36 @@ class BaseModelPlotter(BasePlotter):
                 self._plot(ax=axi, xlabel=m.columns[fx[0]])
 
                 # Draw line or contour plot
+                color = next(palette)
                 if len(values) == 1:
-                    axi.plot(values[0], pred[target].ravel(), lw=2, label=m.name)
+                    # Draw the mean of the individual lines
+                    if kind.lower() in ("average", "both"):
+                        axi.plot(
+                            values[0],
+                            avg_pred[target].ravel(),
+                            lw=2,
+                            color=color,
+                            label=m.name,
+                        )
+
+                    # Draw all individual (per sample) lines (ICE)
+                    if kind.lower() in ("individual", "both"):
+                        # Select up to 100 random samples to plot
+                        idx = np.random.choice(
+                            list(range(len(pred[target]))),
+                            size=min(len(pred[target]), 100),
+                            replace=False,
+                        )
+                        for sample in pred[target, idx, :]:
+                            axi.plot(values[0], sample, lw=0.5, alpha=0.5, color=color)
+
                 else:
                     # Create contour levels for two-way plots
                     levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
 
                     # Draw contour plot
                     XX, YY = np.meshgrid(values[0], values[1])
-                    Z = pred[target].T
+                    Z = avg_pred[target].T
                     CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
                     axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
                     axi.contourf(

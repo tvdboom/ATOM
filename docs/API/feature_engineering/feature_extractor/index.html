@@ -2385,12 +2385,12 @@ fmt=None, encoding_type="ordinal", drop_columns=True, verbose=0, logger=None)
 </span>
 </div>
 
-<p>Extract datetime related features (hour, day, month, year, etc..)
-from datetime columns in the provided dataset, and drop them after.
-Columns of dtype <code>datetime64</code> are used as is. Categorical columns
-that can be successfully converted to a datetime format (less than
-30% NaT values after conversion) are also used. This class can be
-accessed from atom through the <a href="../../ATOM/atomclassifier/#feature-extraction">feature_extraction</a>
+<p>Create new features extracting datetime elements (day, month, year,
+etc...) from the provided columns. Columns of dtype <code>datetime64</code> are
+used as is. Categorical columns that can be successfully converted
+to a datetime format (less than 30% NaT values after conversion)
+are also used. This class can be accessed from atom through the
+<a href="../../ATOM/atomclassifier/#feature-extraction">feature_extraction</a>
 method. Read more in the <a href="../../../user_guide/feature_engineering/#extracting-datetime-features">user guide</a>.</p>
 <table style="font-size:16px">
 <tr>
@@ -2416,11 +2416,9 @@ as NaT.
 Type of encoding to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>"ordinal": Encode features in increasing order.</li>
-<li>"cyclic": Encode features using sine and cosine to
-capture the cyclic nature of the features.
-Note that this creates two columns for every
-feature. Non-cyclic features are encoded in
-increasing order.</li>
+<li>"cyclic": Encode features using sine and cosine to capture
+their cyclic nature. Note that this creates two columns for
+every feature. Non-cyclic features still use ordinal encoding.</li>
 </ul>
 <p>
 <strong>drop_columns: bool, optional (default=True)</strong><br>
@@ -2492,7 +2490,7 @@ considered one single coordinate system.</p>
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
-<p>Extract the datetime features.</p>
+<p>Extract the new features.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -2614,7 +2612,7 @@ Estimator instance.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L802">[source]</a>
 </span>
 </div>
-<p>Extract the datetime features.</p>
+<p>Extract the new features.</p>
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>

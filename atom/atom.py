@@ -1200,14 +1200,11 @@ class ATOM(BasePredictor, ATOMPlotter):
     ):
         """Extract features from datetime columns.
 
-        Extract datetime related features (hour, day, month, year, etc..)
-        from datetime columns in the provided dataset, and drop them after.
-        Columns of dtype `datetime64` are used as is. Categorical columns
-        that can be successfully converted to a datetime format (less than
-        30% NaT values after conversion) are also used. If the `fmt`
-        parameter is not specified, the format for the conversion of
-        categorical columns is inferred automatically from the first non
-        NaN value. Values that can not be converted are returned as NaT.
+        Create new features extracting datetime elements (day, month,
+        year, etc...) from the provided columns. Columns of dtype
+        `datetime64` are used as is. Categorical columns that can be
+        successfully converted to a datetime format (less than 30% NaT
+        values after conversion) are also used.
 
         See feature_engineering.py for a description of the parameters.
 

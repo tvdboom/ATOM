@@ -789,8 +789,11 @@ def partial_dependence(estimator, X, features):
 
     Returns
     -------
-    averaged_predictions: np.ndarray
+    avg_pred: np.ndarray
         Average of the predictions.
+
+    pred: np.ndarray
+        All predictions.
 
     values: list
         Values used for the predictions.
@@ -798,16 +801,15 @@ def partial_dependence(estimator, X, features):
     """
     grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
 
-    averaged_predictions, _ = _partial_dependence_brute(
-        estimator, grid, features, X, "auto"
-    )
+    avg_pred, pred = _partial_dependence_brute(estimator, grid, features, X, "auto")
 
-    # Reshape averaged_predictions to (n_outputs, n_values_feature_0, ...)
-    averaged_predictions = averaged_predictions.reshape(
-        -1, *[val.shape[0] for val in values]
-    )
+    # Reshape to (n_targets, n_values_feature,)
+    avg_pred = avg_pred.reshape(-1, *[val.shape[0] for val in values])
 
-    return averaged_predictions, values
+    # Reshape to (n_targets, n_rows, n_values_feature)
+    pred = pred.reshape(-1, X.shape[0], *[val.shape[0] for val in values])
+
+    return avg_pred, pred, values
 
 
 def df_shrink_dtypes(df):

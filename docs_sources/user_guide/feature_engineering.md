@@ -33,15 +33,15 @@ example.
 
 Features that contain dates or timestamps can not be directly ingested
 by models since they are not strictly numerical. Encoding them as
-categorical features is also undesirable since the encoding does not
+categorical features is not an option since the encoding does not
 capture the relationship between the different moments in time. The
 [FeatureExtractor](../../API/feature_engineering/feature_extractor)
-class creates new datetime features (e.g. day, month, year, hour...).
-It can be accessed from atom through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
-method. The extracted features are named equally to the column they
-from which they are transformed, followed by an underscore and the
-datetime attribute they create, e.g. `Feature 1_day` for the day
-element of `Feature 1`.
+class creates new features extracting datetime elements (e.g. day,
+month, year, hour...) from the columns. It can be accessed from atom
+through the [feature_extraction](../../API/ATOM/atomclassifier/#feature-extraction)
+method. The new features are named equally to the column from which
+they are extracted, followed by an underscore and the datetime element
+they create, e.g. `Feature 1_day` for the day element of `Feature 1`.
 
 Note that many time features have a cyclic pattern, e.g. after Sunday
 comes Monday. This means that if we would encode the days of the week
@@ -58,9 +58,9 @@ x_{cos} = cos\left(\frac{2\pi * x}{max(x)}\right)
 $$
 
 The resulting features have their names followed by sin or cos, e.g.
-`Feature 1_day_sin` and `Feature 1_day_cos`. The datetime attributes
+`Feature 1_day_sin` and `Feature 1_day_cos`. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
-minute, hour, weekday, day, day_of_year, week, month, quarter. Note
+minute, hour, weekday, day, day_of_year, week, month and quarter. Note
 that decision trees based algorithms build their split rules according
 to one feature at a time. This means that they will fail to correctly
 process cyclic features since the sin/cos values are expected to be

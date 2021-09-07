@@ -3,19 +3,20 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">plot_partial_dependence</strong>(models=None,
-features=None, target=None, title=None, figsize=(10, 6), filename=None, display=True)
+features=None, kind="average", target=None, title=None, figsize=(10, 6),
+filename=None, display=True)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1446">[source]</a>
 </span>
 </div>
 
 Plot the partial dependence of features. The partial dependence of a
-feature (or a set of features) corresponds to the average response of
+feature (or a set of features) corresponds to the response of
 the model for each possible value of the feature. Two-way partial
 dependence plots are plotted as contour plots (only allowed for single
 model plots). The deciles of the feature values will be shown with tick
 marks on the x-axes for one-way plots, and on both axes for two-way
-plots.
+plots. Read more about partial dependence plots on sklearn's [documentation](https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots).
 
 <table style="font-size:16px">
 <tr>
@@ -31,6 +32,18 @@ Features or feature pairs (name or index) to get the partial dependence
 from. Maximum of 3 allowed. If None, it uses the top 3 features if the
 <code>feature_importance</code> attribute is defined, else it uses the
 first 3 features in the dataset.
+</p>
+<strong>kind: str, optional (default="average")</strong><br>
+<ul style="line-height:1.2em;margin-top:5px;margin-bottom:0">
+<li>"average": Plot the partial dependence averaged across
+ all the samples in the dataset.</li>
+<li>"individual": Plot the partial dependence per sample
+(Individual Conditional Expectation).</li>
+<li>"both": Plot both the average (as a thick line) and
+the individual (thin lines) partial dependence.</li>
+</ul>
+<p style="margin-top:5px">
+This parameter is ignored when plotting feature pairs.
 </p>
 <p>
 <strong>target: int or str, optional (default=1)</strong><br>

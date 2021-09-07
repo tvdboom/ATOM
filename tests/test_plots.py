@@ -374,6 +374,10 @@ def test_plot_partial_dependence(features):
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
     atom.run(["Tree", "LGB"], metric="f1")
 
+    # Invalid kind parameter
+    with pytest.raises(ValueError, match=r".*for the kind parameter.*"):
+        atom.plot_partial_dependence(kind="invalid", display=False)
+
     # More than 3 features
     with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
         atom.plot_partial_dependence(features=[0, 1, 2, 3], display=False)
@@ -402,7 +406,7 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(features=(0, 1), display=False)
 
     atom.branch.delete()
-    atom.plot_partial_dependence(display=False)
+    atom.plot_partial_dependence(kind="both", display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)
 

@@ -4,15 +4,17 @@
 <a name="v470"></a>
 ### Version 4.7.0
 
-* Launched our new [slack](https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3) channel!
+* Launched our new [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g) channel!
 * The new [FeatureExtractor](../API/feature_engineering/feature_extractor) class
-  helps to extract useful features from datetime columns.
+  extracts useful features from datetime columns.
+* The [partial_dependence plot](../API/plots/plot_partial_dependece) now is
+  also able to draw Individual Conditional Expectation (ICE) lines.
 * The full traceback of exceptions encountered during training are now
   saved to the logger.
 * The dtypes of the provided dataframe are converted to the minimal allowed
   type for memory efficiency.
 * The scoring method is renamed to [evaluate](../API/ATOM/atomclassifier/#evaluate)
-  to clarify the purpose.
+  to clarify its purpose.
 * The `column` parameter in the [apply](../API/ATOM/atomclassifier/#apply) method
   is renamed to `columns` for continuity of the API.
 * Minor documentation improvements.

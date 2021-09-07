@@ -85,7 +85,7 @@ samples. If None, skip this step.
 <p>
 <strong>max_correlation: float or None, optional (default=1.)</strong><br>
 Minimum value of the Pearson correlation coefficient to identify
-correlated features. A value of 1 will remove one of 2 equal columns.
+correlated features. A value of 1 removes one of 2 equal columns.
 A dataframe of the removed features and their correlation values can
 be accessed through the collinear attribute. If None, skip this step.
 </p>

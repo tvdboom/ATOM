@@ -49,11 +49,11 @@ from .utils import (
 class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     """Extract features from datetime columns.
 
-    Extract datetime related features (hour, day, month, year, etc..)
-    from datetime columns in the provided dataset, and drop them after.
-    Columns of dtype `datetime64` are used as is. Categorical columns
-    that can be successfully converted to a datetime format (less than
-    30% NaT values after conversion) are also used.
+    Create new features extracting datetime elements (day, month,
+    year, etc...) from the provided columns. Columns of dtype
+    `datetime64` are used as is. Categorical columns that can be
+    successfully converted to a datetime format (less than 30% NaT
+    values after conversion) are also used.
 
     Parameters
     ----------
@@ -74,11 +74,10 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
     encoding_type: str, optional (default="ordinal")
         Type of encoding to use. Choose from:
             - "ordinal": Encode features in increasing order.
-            - "cyclic": Encode features using sine and cosine to
-                        capture the cyclic nature of the features.
-                        Note that this creates two columns for every
-                        feature. Non-cyclic features are encoded in
-                        increasing order.
+            - "cyclic": Encode features using sine and cosine to capture
+                        their cyclic nature. Note that this creates two
+                        columns for every feature. Non-cyclic features
+                        still use ordinal encoding.
 
     drop_columns: bool, optional (default=True)
         Whether to drop the original columns after extracting the
@@ -114,7 +113,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
     @composed(crash, method_to_log, typechecked)
     def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
-        """Extract the datetime features.
+        """Extract the new features.
 
         Parameters
         ----------
@@ -673,7 +672,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     max_correlation: float or None, optional (default=1.)
         Minimum Pearson correlation coefficient to identify correlated
-        features. A value of 1 will remove one of 2 equal columns. A
+        features. A value of 1 removes one of 2 equal columns. A
         dataframe of the removed features and their correlation values
         can be accessed through the collinear attribute. If None, skip
         this step.
@@ -875,14 +874,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             # Extract the upper triangle of the correlation matrix
             upper = mtx.where(np.triu(np.ones(mtx.shape).astype(bool), k=1))
 
-            # Select the features with correlations above the threshold
-            to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
+            # Select the features with correlations above or equal to the threshold
+            to_drop = [i for i in upper.columns if any(abs(upper[i] >= max_))]
 
             # Iterate to record pairs of correlated features
             for col in to_drop:
                 # Find the correlated features and corresponding values
-                corr_features = list(upper.index[abs(upper[col]) > max_])
-                corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
+                corr_features = list(upper.index[abs(upper[col]) >= max_])
+                corr_values = list(round(upper[col][abs(upper[col]) >= max_], 5))
 
                 # Update dataframe
                 self.collinear = self.collinear.append(
