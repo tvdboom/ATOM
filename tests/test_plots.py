@@ -326,7 +326,7 @@ def test_plot_roc(dataset):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_roc)
-    atom.run(["XGB", "LGB"], metric="f1")
+    atom.run(["LGB", "kSVM"], metric="f1")
     pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")
     atom.plot_roc(dataset=dataset, display=False)
     atom.lgb.plot_roc(dataset=dataset, display=False)
@@ -340,9 +340,22 @@ def test_plot_prc():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_prc)
-    atom.run(["XGB", "LGB"], metric="f1")
+    atom.run(["LGB", "kSVM"], metric="f1")
     atom.plot_prc(display=False)
     atom.lgb.plot_prc(display=False)
+
+
+def test_plot_det():
+    """Assert that the plot_det method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("LGB")
+    pytest.raises(PermissionError, atom.plot_det)  # Task is not binary
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_det)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_det(display=False)
+    atom.lgb.plot_det(display=False)
 
 
 def test_plot_permutation_importance():
@@ -526,9 +539,8 @@ def test_plot_gains():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(["RNN", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_gains)  # No predict_proba
-    atom.plot_gains(["RNN", "LGB"], display=False)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_gains(display=False)
     atom.lgb.plot_gains(display=False)
 
 
@@ -540,9 +552,8 @@ def test_plot_lift():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_lift)
-    atom.run(["Tree", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_lift)  # No predict_proba
-    atom.plot_lift(["Tree", "LGB"], display=False)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_lift(display=False)
     atom.lgb.plot_lift(display=False)
 
 

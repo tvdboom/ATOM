@@ -7,7 +7,9 @@
 * Launched our new [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g) channel!
 * The new [FeatureExtractor](../API/feature_engineering/feature_extractor) class
   extracts useful features from datetime columns.
-* The [partial_dependence plot](../API/plots/plot_partial_dependece) now is
+* The new [plot_det](../API/plots/plot_det) method plots a binary classifier's
+  detection error tradeoff curve. 
+* The [partial dependence plot](../API/plots/plot_partial_dependence) now is
   also able to draw Individual Conditional Expectation (ICE) lines.
 * The full traceback of exceptions encountered during training are now
   saved to the logger.
@@ -46,7 +48,7 @@
 * The new [Gauss](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
 * New [cross_validate](../API/ATOM/atomclassifier/#cross-validate) method to
-  evaluate the robustness of a model using cross_validation.
+  evaluate the robustness of a pipeline using cross_validation.
 * New [reset](../API/ATOM/atomclassifier/#reset) method to go back to atom's
   initial state.
 * Added the [Dummy](../API/models/dummy) model to compare other models with a

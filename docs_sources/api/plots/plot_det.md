@@ -1,18 +1,16 @@
-# plot_roc
-----------
+# plot_det
+-----------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None,
+<em>method</em> <strong style="color:#008AB8">plot_det</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1039">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1205">[source]</a>
 </span>
 </div>
 
-Plot the Receiver Operating Characteristics Curve (ROC). The legend
-shows the Area Under the ROC Curve (AUC) score. Only for binary
-classification tasks. Read more about ROC in sklearn's [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#receiver-operating-characteristic-roc).
-
+Plot the Detection Error Tradeoff (DET) curve. Only for binary
+classification tasks. Read more about DET in sklearn's [documentation](https://scikit-learn.org/stable/auto_examples/model_selection/plot_det.html).
 
 <table style="font-size:16px">
 <tr>
@@ -61,10 +59,11 @@ Plot object. Only returned if <code>display=None</code>.
 
 ```python
 from atom import ATOMClassifier
+
 atom = ATOMClassifier(X, y)
-atom.run(["LR", "RF", "LGB"], metric="roc_auc")
-atom.plot_roc(filename="roc_curve")
+atom.run(["LR", "RF", "LGB"], metric="fpr")
+atom.plot_det()
 ```
 <div align="center">
-    <img src="../../../img/plots/plot_roc.png" alt="plot_roc" width="700" height="420"/>
+    <img src="../../../img/plots/plot_det.png" alt="plot_det" width="700" height="420"/>
 </div>

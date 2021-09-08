@@ -313,6 +313,14 @@ def check_predict_proba(models, method):
             )
 
 
+def get_proba_attr(model):
+    """Get predict_proba or decision_function method."""
+    if hasattr(model.estimator, "predict_proba"):
+        return "predict_proba"
+    elif hasattr(model.estimator, "decision_function"):
+        return "decision_function"
+
+
 def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
     return True if X.mean().mean() < 0.05 and 0.93 < X.std().mean() < 1.07 else False

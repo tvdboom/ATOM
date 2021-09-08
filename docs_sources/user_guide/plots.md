@@ -198,6 +198,11 @@ depend on the task at hand.
 </tr>
 
 <tr>
+<td><a href="../../API/plots/plot_det">plot_det</a></td>
+<td>Plot the detection error tradeoff curve.</td>
+</tr>
+
+<tr>
 <td><a href="../../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
 <td>Plot the feature permutation importance of models.</td>
 </tr>

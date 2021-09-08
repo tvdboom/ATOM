@@ -16,7 +16,7 @@ the model for each possible value of the feature. Two-way partial
 dependence plots are plotted as contour plots (only allowed for single
 model plots). The deciles of the feature values will be shown with tick
 marks on the x-axes for one-way plots, and on both axes for two-way
-plots. Read more about partial dependence plots on sklearn's [documentation](https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots).
+plots. Read more about partial dependence on sklearn's [documentation](https://scikit-learn.org/stable/modules/partial_dependence.html#partial-dependence-and-individual-conditional-expectation-plots).
 
 <table style="font-size:16px">
 <tr>

@@ -181,6 +181,7 @@ nav:
             - plot_evals: API/plots/plot_evals.md
             - plot_roc: API/plots/plot_roc.md
             - plot_prc: API/plots/plot_prc.md
+            - plot_det: API/plots/plot_det.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md

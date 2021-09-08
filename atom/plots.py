@@ -42,15 +42,20 @@ from wordcloud import WordCloud
 from sklearn.utils import _safe_indexing
 from sklearn.inspection import permutation_importance
 from sklearn.calibration import calibration_curve
-from sklearn.metrics import roc_curve, precision_recall_curve, confusion_matrix
+from sklearn.metrics import (
+    roc_curve,
+    precision_recall_curve,
+    det_curve,
+    confusion_matrix,
+)
 
 # Own modules
 from atom.basetransformer import BaseTransformer
 from .utils import (
     SEQUENCE_TYPES, SCALAR, lst, check_is_fitted, check_method,
-    check_goal, check_binary_task, check_predict_proba, get_corpus,
-    get_scorer, get_best_score, partial_dependence, get_columns,
-    composed, crash, plot_from_model,
+    check_goal, check_binary_task, check_predict_proba, get_proba_attr,
+    get_corpus, get_scorer, get_best_score, partial_dependence,
+    get_columns, composed, crash, plot_from_model,
 )
 
 # Catch annoying tensorflow warnings when importing shap
@@ -1084,16 +1089,19 @@ class BaseModelPlotter(BasePlotter):
         check_binary_task(self, "plot_roc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-        check_predict_proba(models, "plot_roc")
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
+            attr = get_proba_attr(m)
             for set_ in dataset:
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
                 # Get False (True) Positive Rate as arrays
-                fpr, tpr, _ = roc_curve(
-                    getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
-                )
+                fpr, tpr, _ = roc_curve(getattr(m, f"y_{set_}"), y_pred)
 
                 roc = f" (AUC={round(m.evaluate('auc', set_)['roc_auc'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + roc
@@ -1164,20 +1172,23 @@ class BaseModelPlotter(BasePlotter):
         check_binary_task(self, "plot_prc")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-        check_predict_proba(models, "plot_prc")
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         for m in models:
+            attr = get_proba_attr(m)
             for set_ in dataset:
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
                 # Get precision-recall pairs for different thresholds
-                precision, recall, _ = precision_recall_curve(
-                    getattr(m, f"y_{set_}"), getattr(m, f"predict_proba_{set_}")[:, 1]
-                )
+                prec, rec, _ = precision_recall_curve(getattr(m, f"y_{set_}"), y_pred)
 
                 ap = f" (AP={round(m.evaluate('ap', set_)['average_precision'], 3)})"
                 label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + ap
-                plt.plot(recall, precision, lw=2, label=label)
+                plt.plot(rec, prec, lw=2, label=label)
 
         dum = len(m.y_test[m.y_test == m.mapping[list(m.mapping)[1]]]) / len(m.y_test)
         ax.plot([0, 1], [dum, dum], "k--", lw=2, alpha=0.7, zorder=-2)
@@ -1192,6 +1203,84 @@ class BaseModelPlotter(BasePlotter):
             ylabel="Precision",
             figsize=figsize,
             plotname="plot_prc",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_det(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the detection error tradeoff curve.
+
+        Only for binary classification tasks.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        dataset: str, optional (default="test")
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self, "plot_det")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        for m in models:
+            attr = get_proba_attr(m)
+            for set_ in dataset:
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                # Get fpr-fnr pairs for different thresholds
+                fpr, fnr, _ = det_curve(getattr(m, f"y_{set_}"), y_pred)
+
+                plt.plot(fpr, fnr, lw=2, label=m.name)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="FPR",
+            ylabel="FNR",
+            figsize=figsize,
+            plotname="plot_det",
             filename=filename,
             display=display,
         )
@@ -2410,17 +2499,23 @@ class BaseModelPlotter(BasePlotter):
         check_binary_task(self, "plot_gains")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-        check_predict_proba(models, "plot_gains")
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
+            attr = get_proba_attr(m)
             for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                # Make y_true a bool vector
+                y_true = getattr(m, f"y_{set_}") == 1
 
                 # Get sorted indices
-                sort_idx = np.argsort(getattr(m, f"predict_proba_{set_}")[:, 1])[::-1]
+                sort_idx = np.argsort(y_pred)[::-1]
 
                 # Correct indices for the test set (add train set length)
                 if set_ == "test":
@@ -2498,17 +2593,23 @@ class BaseModelPlotter(BasePlotter):
         check_binary_task(self, "plot_lift")
         models = self._get_subclass(models)
         dataset = self._get_set(dataset)
-        check_predict_proba(models, "plot_lift")
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
         ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
+            attr = get_proba_attr(m)
             for set_ in dataset:
-                y_true = getattr(m, f"y_{set_}") == 1  # Make y_true a bool vector
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
 
-                # Get sorted indices and correct for the test set
-                sort_idx = np.argsort(getattr(m, f"predict_proba_{set_}")[:, 1])[::-1]
+                # Make y_true a bool vector
+                y_true = getattr(m, f"y_{set_}") == 1
+
+                # Get sorted indices
+                sort_idx = np.argsort(y_pred)[::-1]
 
                 # Correct indices for the test set (add train set length)
                 if set_ == "test":  # Add the training set length to the indices

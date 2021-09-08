@@ -1341,7 +1341,9 @@ Convert documents into sequences of words. Additionally, create
 n-grams (represented by words united with underscores, e.g.
 "New_York") based on their frequency in the corpus. The
 transformations are applied on the column named `Corpus`. If
-there is no column with that name, an exception is raised.
+there is no column with that name, an exception is raised. See
+the [Tokenizer](../nlp/tokenizer.md) class for a description
+of the parameters.
 <br /><br /><br />
 
 
@@ -1414,7 +1416,8 @@ fmt=None, encoding_type="ordinal", drop_columns=True)
 Extract features (hour, day, month, year, etc..) from datetime columns.
 Columns of dtype `datetime64` are used as is. Categorical columns that
 can be successfully converted to a datetime format (less than 30% NaT
-values after conversion) are also used.
+values after conversion) are also used. See the [FeatureExtractor](../feature_engineering/feature_extractor.md) class for a
+description of the parameters.
 <br /><br /><br />
 
 
