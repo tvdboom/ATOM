@@ -8,6 +8,7 @@ Description: Unit tests for feature_engineering.py
 """
 
 # Standard packages
+import pandas as pd
 import pytest
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.feature_selection import f_regression
@@ -18,6 +19,7 @@ from atom.feature_engineering import (
     FeatureGenerator,
     FeatureSelector,
 )
+from atom.utils import to_df
 from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, X10_str, X10_dt
 
 
@@ -42,12 +44,22 @@ def test_wrongly_converted_columns_are_ignored():
     assert "Feature 3" in X.columns
 
 
+def test_datetime_features_are_used():
+    """Assert that datetime64 features are used as is."""
+    X = to_df(X10_dt.copy())
+    X["Feature 3"] = pd.to_datetime(X["Feature 3"])
+
+    extractor = FeatureExtractor(features="day")
+    X = extractor.transform(X)
+    assert "Feature 3_day" in X.columns
+    assert "Feature 3" not in X.columns
+
+
 def test_wrongly_converted_features_are_ignored():
     """Assert that wrongly converted features are ignored."""
     extractor = FeatureExtractor(features=["tz", "is_leap_year", "day"])
     X = extractor.transform(X10_dt)
     assert "Feature 2_tz" not in X.columns  # Not pd.Series.dt
-    assert "Feature 2_day" not in X.columns  # Same value
 
 
 def test_ordinal_features():
@@ -56,6 +68,15 @@ def test_ordinal_features():
     X = extractor.transform(X10_dt)
     assert "Feature 3_day" in X.columns
     assert "Feature 3" not in X.columns
+
+
+def test_order_features():
+    """Assert that the new features are in the order provided."""
+    extractor = FeatureExtractor()
+    X = extractor.transform(X10_dt)
+    assert X.columns.get_loc("Feature 3_day") == 2
+    assert X.columns.get_loc("Feature 3_month") == 3
+    assert X.columns.get_loc("Feature 3_year") == 4
 
 
 @pytest.mark.parametrize("fxs", [

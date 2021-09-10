@@ -28,7 +28,8 @@ from atom.data_cleaning import Scaler, Pruner
 from atom.utils import check_scaling
 from .utils import (
     FILE_DIR, X_bin, y_bin, X_class, y_class, X_reg, y_reg, X_text,
-    y_text, X10, X10_nan, X10_str, X10_str2, y10, y10_str, y10_sn, X20_out,
+    y_text, X10, X10_nan, X10_str, X10_str2, X10_dt, y10, y10_str,
+    y10_sn, X20_out,
 )
 
 
@@ -38,6 +39,13 @@ def test_dtypes_shrinkage():
     """Assert that the dtypes are optimized to save memory."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     assert not atom.dtypes.equals(X_bin.dtypes)
+
+
+def test_minimal_dtypes_unchanged():
+    """Assert that the minimal dtypes are left unchanged."""
+    X = X_bin.astype("float32")
+    atom = ATOMClassifier(X, y_bin, random_state=1)
+    assert atom.X.dtypes.equals(X.dtypes)
 
 
 def test_dtypes_cat_or_object():
@@ -718,6 +726,13 @@ def test_vectorize():
 
 
 # Test feature engineering transformers ============================ >>
+
+def test_feature_extraction():
+    """Assert that the feature_extraction method creates datetime features."""
+    atom = ATOMClassifier(X10_dt, y10, random_state=1)
+    atom.feature_extraction()
+    assert atom.X.shape[1] == 6
+
 
 def test_feature_generation():
     """Assert that the feature_generation method creates extra features."""

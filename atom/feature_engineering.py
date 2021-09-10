@@ -154,7 +154,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
         i = 0
         for col in X:
-            if X[col].dtype == "datetime64":
+            if X[col].dtype.name == "datetime64[ns]":
                 col_dt = X[col]
                 self.log(f" --> Extracting features from datetime column {col}.", 1)
             elif col in X.select_dtypes(exclude="number").columns:
@@ -195,13 +195,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     )
                     continue
 
-                if values.nunique() == 1:
-                    self.log(
-                        f"   >>> Extracting feature {fx} failed. "
-                        f"Result contains only one value: {values[0]}.", 2
-                    )
-                    continue
-
                 min_val, max_val = 0, None  # max_val=None -> feature is not cyclic
                 if self.encoding_type.lower() == "cyclic":
                     if fx == "microsecond":
@@ -224,7 +217,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
 
                 # Add every new feature after the previous one
                 encode_variable(
-                    idx=X.columns.get_loc(col) + 1,
+                    idx=X.columns.get_loc(col),
                     name=f"{col}_{fx}",
                     values=values,
                     min_val=min_val,
