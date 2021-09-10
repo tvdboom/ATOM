@@ -216,50 +216,6 @@ class BasePredictor:
 
     # Utility methods ============================================== >>
 
-    def _get_columns(self, columns, only_numerical=False):
-        """Get a subset of the columns.
-
-        Select columns in the dataset by name or index. Duplicate
-        columns are ignored. Exclude columns if their name start
-        with `!`.
-
-        """
-        if columns is None:
-            if only_numerical:
-                return list(self.dataset.select_dtypes(include=["number"]).columns)
-            else:
-                return self.columns
-        elif isinstance(columns, slice):
-            return self.columns[columns]
-
-        cols, exclude = [], []
-        for col in lst(columns):
-            if isinstance(col, int):
-                try:
-                    cols.append(self.columns[col])
-                except IndexError:
-                    raise ValueError(
-                        f"Invalid value for the columns parameter, got {col} "
-                        f"but length of columns is {self.n_columns}."
-                    )
-            else:
-                if col.startswith("!") and col not in self.columns:
-                    col = col[1:]
-                    exclude.append(col)
-
-                cols.append(col)
-                if col not in self.columns:
-                    raise ValueError(
-                        "Invalid value for the columns parameter. "
-                        f"Column {col} not found in the dataset."
-                    )
-
-        # If columns were excluded with `!`, select all but those
-        if exclude:
-            return list(dict.fromkeys([col for col in self.columns if col not in cols]))
-        else:
-            return list(dict.fromkeys(cols))  # Avoid duplicates
-
     def _get_model_name(self, model):
         """Return a model's name.
 
@@ -437,12 +393,12 @@ class BasePredictor:
         return self.winner.cross_validate(**kwargs)
 
     @composed(crash, typechecked)
-    def scoring(
+    def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
     ):
-        """Get all the models scoring for provided metrics.
+        """Get all models' scores for the provided metrics.
 
         Parameters
         ----------
@@ -456,15 +412,15 @@ class BasePredictor:
 
         Returns
         -------
-        score: pd.DataFrame
-            Scoring of the models.
+        scores: pd.DataFrame
+            Scores of the models.
 
         """
         check_is_fitted(self, attributes="_models")
 
         scores = pd.DataFrame()
         for m in self._models:
-            scores = scores.append(m.scoring(metric, dataset=dataset))
+            scores = scores.append(m.evaluate(metric, dataset=dataset))
 
         return scores
 

@@ -21,7 +21,7 @@ the [branches](../data_pipelines/#branches) section.
 Bayesian optimization algorithm used for hyperparameter tuning.
 
 **categorical columns**<br>
-Refers to all non-numerical columns.
+Refers to all non-numerical and non-datetime columns.
 
 **class**<br>
 Unique value in a column, e.g. a binary classifier has 2 classes in the

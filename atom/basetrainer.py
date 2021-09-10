@@ -10,6 +10,7 @@ Description: Module containing the parent class for the trainers.
 # Standard packages
 import mlflow
 import importlib
+import traceback
 from datetime import datetime
 import matplotlib.pyplot as plt
 from skopt.callbacks import DeadlineStopper, DeltaXStopper, DeltaYStopper
@@ -270,7 +271,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Define scorer ============================================ >>
 
-        # Assign default scoring
+        # Assign default scorer
         if None in self._metric:
             if self.task.startswith("bin"):
                 self._metric = CustomDict(f1=get_scorer("f1"))
@@ -279,7 +280,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
             else:
                 self._metric = CustomDict(r2=get_scorer("r2"))
 
-        # Ignore if it's the same scoring as previous call
+        # Ignore if it's the same scorer as previous call
         elif not all([hasattr(m, "name") for m in self._metric]):
             self._metric = self._prepare_metric(
                 metric=self._metric,
@@ -469,9 +470,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
             except Exception as ex:
                 self.log(
-                    f"\nException encountered while running the {m.name} model."
-                    f" Removing model from pipeline. \n{type(ex).__name__}: {ex}", 1
+                    "\nException encountered while running the "
+                    f"{m.name} model. Removing model from pipeline. ", 1
                 )
+                self.log("".join(traceback.format_tb(ex.__traceback__))[:-1], 5)
+                self.log(f"{type(ex).__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
                 self.errors[m.name] = ex

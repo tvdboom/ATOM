@@ -379,12 +379,12 @@ class BaseModel(BaseModelPlotter):
         self.T.delete(self.name)
 
     @composed(crash, typechecked)
-    def scoring(
+    def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
     ):
-        """Get the model's scoring for provided metrics.
+        """Get the model's scores for the provided metrics.
 
         Parameters
         ----------
@@ -399,7 +399,7 @@ class BaseModel(BaseModelPlotter):
         Returns
         -------
         score: pd.Series
-            Model's scoring.
+            Scores of the model.
 
         """
         dataset = dataset.lower()

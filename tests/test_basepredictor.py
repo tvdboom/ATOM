@@ -17,9 +17,7 @@ from atom import ATOMClassifier, ATOMRegressor
 from atom.branch import Branch
 from atom.training import DirectClassifier
 from atom.utils import NotFittedError
-from .utils import (
-    X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train, X10_str, y10
-)
+from .utils import X_bin, y_bin, X_class, y_class, X_reg, y_reg, bin_train
 
 
 # Test magic methods =============================================== >>
@@ -47,7 +45,7 @@ def test_getattr_model():
 def test_getattr_column():
     """Assert that the columns can be accessed as attributes."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.apply(lambda x: np.log(x["mean radius"]), column="log_column")
+    atom.apply(lambda x: np.log(x["mean radius"]), columns="log_column")
     assert isinstance(atom.log_column, pd.Series)
 
 
@@ -234,47 +232,6 @@ def test_score_method_sample_weights():
 
 # Test utility methods ============================================= >>
 
-def test_get_columns_is_None():
-    """Assert that all or only numerical columns are returned."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    atom._get_columns(columns=None, only_numerical=True)
-    assert len(atom._get_columns(columns=None, only_numerical=True)) == 3
-    assert len(atom._get_columns(columns=None, only_numerical=False)) == 4
-
-
-def test_get_columns_slice():
-    """Assert that a slice of columns is returned."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert len(atom._get_columns(slice(2, 6))) == 4
-
-
-def test_get_columns_by_index():
-    """Assert that columns can be retrieved by index."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom._get_columns, 40)
-    assert atom._get_columns(0) == ["mean radius"]
-
-
-def test_get_columns_by_name():
-    """Assert that columns can be retrieved by name."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom._get_columns, "invalid")
-    assert atom._get_columns("mean radius") == ["mean radius"]
-
-
-def test_get_columns_exclude():
-    """Assert that columns can be excluded using `!`."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom._get_columns("!Feature 2") == ["Feature 1", "Feature 3", "Target"]
-    assert atom._get_columns(["!Feature 1", "!Feature 2"]) == ["Feature 3", "Target"]
-
-
-def test_get_columns_remove_duplicates():
-    """Assert that duplicate columns are ignored."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom._get_columns([0, 1, 0]) == ["mean radius", "mean texture"]
-
-
 def test_get_model_name_winner():
     """Assert that the winner is returned when used as name."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -431,12 +388,12 @@ def test_cross_validate():
 
 
 @pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
-def test_scoring(metric):
-    """Assert that the scoring method works when metric is None."""
+def test_evaluate(metric):
+    """Assert that the evaluate method works when metric is None."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.scoring)
+    pytest.raises(NotFittedError, atom.evaluate)
     atom.run(["Tree", "PA"])
-    assert isinstance(atom.scoring(metric=metric), pd.DataFrame)
+    assert isinstance(atom.evaluate(metric=metric), pd.DataFrame)
 
 
 def test_delete_default():

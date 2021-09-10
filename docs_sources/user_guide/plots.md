@@ -179,7 +179,7 @@ depend on the task at hand.
 
 <tr>
 <td><a href="../../API/plots/plot_bo">plot_bo</a></td>
-<td>Plot the bayesian optimization scoring.</td>
+<td>Plot the bayesian optimization scores.</td>
 </tr>
 
 <tr>
@@ -195,6 +195,11 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_prc">plot_prc</a></td>
 <td>Plot the precision-recall curve.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_det">plot_det</a></td>
+<td>Plot the detection error tradeoff curve.</td>
 </tr>
 
 <tr>

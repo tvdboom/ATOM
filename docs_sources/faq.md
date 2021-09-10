@@ -14,6 +14,7 @@
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
 * [Can I train the models using cross-validation?](#q12)
 * [Why are there missing values in the dataset after encoding?](#q13)
+* [Is there a way to process datetime features?](#q14)
 
 <br>
 
@@ -67,7 +68,7 @@ Yes, all [data cleaning](../user_guide/data_cleaning) and
 a `columns` parameter to only transform the selected features. For example,
 to only impute the numerical columns in the dataset we could type
 `atom.impute(strat_num="mean", columns=atom.numerical)`. The parameter
-accepts column names, column indices or a slice object.
+accepts column names, column indices, dtypes or a slice object.
 
 <br>
 
@@ -96,7 +97,7 @@ train on the GPU like it would do without using ATOM.
 <a name="q7"></a>
 ### How are numerical and categorical columns differentiated?
 
-The columns are separated using a dataframe's [`select_dtypes`](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
+The columns are separated using a dataframe's [select_dtypes](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.select_dtypes.html)
 method. Numerical columns are selected using `include="number"`
 whereas categorical columns are selected using `exclude="number"`.
 
@@ -116,9 +117,10 @@ from the dataset.
 ### Is there a way to plot multiple models in the same shap plot?
 
 No. Unfortunately, there is no way to plot multiple models in the same
-[shap plot](../user_guide/plots/#shap) since the plots are made by the SHAP
+[shap plot](../user_guide/plots/#shap) since the plots are made by the [shap](https://github.com/slundberg/shap)
 package and passed as matplotlib.axes objects to atom. This means
-that it's not within the reach of this package to implement such a utility.
+that it's not within the reach of this package to implement such a
+utility.
 
 <br>
 
@@ -143,8 +145,9 @@ atom in two ways:
 * `atom = ATOMClassifier(train, test)`
 * `atom = ATOMClassifier((X_train, y_train), (X_test, y_test))`
 
-Make sure the train and test size have the same number of columns. If
-initialized in any of these two ways  the `test_size` parameter is ignored.
+Make sure the train and test size have the same number of columns! If
+atom is initialized in any of these two ways, the `test_size` parameter
+is ignored.
 
 <br>
 
@@ -152,24 +155,24 @@ initialized in any of these two ways  the `test_size` parameter is ignored.
 ### Can I train the models using cross-validation?
 It is not possible to train models using cross-validation, but for a
 good reason. Applying cross-validation would mean transforming every
-step of the pipeline multiple times, with different results. This would
-prevent ATOM from being able to show the transformation results after
-every pre-processing step, which means losing the ability to inspect
+step of the pipeline multiple times, each with different results. This
+would prevent ATOM from being able to show the transformation results
+after every pre-processing step, which means losing the ability to inspect
 how a transformer changed the dataset. This makes cross-validation an
 inappropriate technique for the purpose of exploration.
 
 So why not use cross-validation only to train and evaluate the models,
 instead of applying it to the whole pipeline? Cross-validating only the
 models would make no sense here. If we use the complete dataset for
-that, so both the train and test set, we would be evaluating the models
+that (both the train and test set), we would be evaluating the models
 on data that was used to fit the transformers. This implies data leakage
 and can severely bias the results towards specific transformers. On the
 other hand, using only the training set beats the point of applying
 cross-validation in the first place, since we can train the model on the
 complete training set and evaluate the results on the independent test
-set. The only point of doing cross-validation would be to get an idea
+set. The only reason of doing cross-validation would be to get an idea
 of the robustness of the model. This can also be achieves using
-[bootstrapping](../user_guide/training/#boostrapping). That said, ideally
+[bootstrapping](../user_guide/training/#bootstrapping). That said, ideally
 we would cross-validate the entire pipeline using the entire dataset.
 This can be done using a trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
 method, but for the reason just explained above, the method only outputs
@@ -189,3 +192,12 @@ many classes with few occurrences. To fix this, impute the dataset
 after encoding, increase the number of samples in the training set to
 make sure it contains all the classes in the column, or increase the
 `frac_to_other` parameter.
+
+<br>
+
+<a name="q13"></a>
+### Is there a way to process datetime features?
+Yes, the [FeatureExtractor](../API/feature_engineering/feature_extractor) class
+(released in [v4.7.0](../release_history/#v470)) can automatically extract useful
+features (day, month, year, etc...) from datetime columns. The extracted features
+are always encoded to numerical values, so they can be fed directly to a model.

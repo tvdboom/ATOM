@@ -117,7 +117,7 @@ def test_canvas_too_many_plots():
     with atom.canvas(1, 2, display=False):
         atom.plot_prc()
         atom.plot_roc()
-        pytest.raises(RuntimeError, atom.plot_prc)
+        pytest.raises(ValueError, atom.plot_prc)
 
 
 @patch("mlflow.tracking.MlflowClient.log_figure")
@@ -326,7 +326,7 @@ def test_plot_roc(dataset):
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_roc)
-    atom.run(["XGB", "LGB"], metric="f1")
+    atom.run(["LGB", "kSVM"], metric="f1")
     pytest.raises(ValueError, atom.lgb.plot_roc, dataset="invalid")
     atom.plot_roc(dataset=dataset, display=False)
     atom.lgb.plot_roc(dataset=dataset, display=False)
@@ -340,9 +340,22 @@ def test_plot_prc():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_prc)
-    atom.run(["XGB", "LGB"], metric="f1")
+    atom.run(["LGB", "kSVM"], metric="f1")
     atom.plot_prc(display=False)
     atom.lgb.plot_prc(display=False)
+
+
+def test_plot_det():
+    """Assert that the plot_det method work as intended."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run("LGB")
+    pytest.raises(PermissionError, atom.plot_det)  # Task is not binary
+
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.plot_det)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_det(display=False)
+    atom.lgb.plot_det(display=False)
 
 
 def test_plot_permutation_importance():
@@ -374,6 +387,10 @@ def test_plot_partial_dependence(features):
     pytest.raises(NotFittedError, atom.plot_partial_dependence)
     atom.run(["Tree", "LGB"], metric="f1")
 
+    # Invalid kind parameter
+    with pytest.raises(ValueError, match=r".*for the kind parameter.*"):
+        atom.plot_partial_dependence(kind="invalid", display=False)
+
     # More than 3 features
     with pytest.raises(ValueError, match=r".*Maximum 3 allowed.*"):
         atom.plot_partial_dependence(features=[0, 1, 2, 3], display=False)
@@ -402,7 +419,7 @@ def test_plot_partial_dependence(features):
         atom.plot_partial_dependence(features=(0, 1), display=False)
 
     atom.branch.delete()
-    atom.plot_partial_dependence(display=False)
+    atom.plot_partial_dependence(kind="both", display=False)
     atom.lgb.plot_feature_importance(show=5, display=False)
     atom.lgb.plot_partial_dependence(display=False)
 
@@ -522,9 +539,8 @@ def test_plot_gains():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_gains)
-    atom.run(["RNN", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_gains)  # No predict_proba
-    atom.plot_gains(["RNN", "LGB"], display=False)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_gains(display=False)
     atom.lgb.plot_gains(display=False)
 
 
@@ -536,9 +552,8 @@ def test_plot_lift():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_lift)
-    atom.run(["Tree", "LGB", "PA"], metric="f1")
-    pytest.raises(AttributeError, atom.pa.plot_lift)  # No predict_proba
-    atom.plot_lift(["Tree", "LGB"], display=False)
+    atom.run(["LGB", "kSVM"], metric="f1")
+    atom.plot_lift(display=False)
     atom.lgb.plot_lift(display=False)
 
 
@@ -547,7 +562,7 @@ def test_bar_plot(index):
     """Assert that the bar_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.bar_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     atom.bar_plot(index=index, display=False)
 
 
@@ -555,7 +570,7 @@ def test_beeswarm_plot():
     """Assert that the beeswarm_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.beeswarm_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     pytest.raises(ValueError, atom.beeswarm_plot, index=(996, 998))  # Invalid index
     atom.beeswarm_plot(display=False)
 
@@ -572,7 +587,7 @@ def test_force_plot():
     """Assert that the force_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
-    atom.run("Tree", metric="MSE")
+    atom.run("LR", metric="MSE")
     with atom.canvas(display=False):
         pytest.raises(PermissionError, atom.force_plot, matplotlib=True)
     atom.force_plot(index=100, matplotlib=True, display=False)
@@ -584,7 +599,7 @@ def test_heatmap_plot():
     """Assert that the heatmap_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.heatmap_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     atom.heatmap_plot(display=False)
 
 
@@ -593,8 +608,8 @@ def test_scatter_plot(feature):
     """Assert that the scatter_plot method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.scatter_plot)
-    atom.run("Tree", metric="f1")
-    atom.tree.scatter_plot(display=False)
+    atom.run("LR", metric="f1")
+    atom.scatter_plot(display=False)
 
 
 def test_waterfall_plot():
@@ -602,4 +617,4 @@ def test_waterfall_plot():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.waterfall_plot)
     atom.run("LR", metric="f1_macro")
-    atom.lr.waterfall_plot(display=False)
+    atom.waterfall_plot(display=False)

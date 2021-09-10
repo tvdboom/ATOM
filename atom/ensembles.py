@@ -119,12 +119,12 @@ class Voting(BaseModel, BaseEnsemble):
         return out_1 + f"\n --> Evaluation: {'   '.join(out_2)}"
 
     @composed(crash, typechecked)
-    def scoring(
+    def evaluate(
         self,
         metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
         dataset: str = "test",
     ):
-        """Get the model's scoring for provided metrics.
+        """Get the model's evaluation for provided metrics.
 
         Parameters
         ----------
@@ -139,13 +139,13 @@ class Voting(BaseModel, BaseEnsemble):
         Returns
         -------
         score: pd.Series
-            Model's scoring.
+            Model's evaluation.
 
         """
-        scores = pd.Series(name=self.name)
+        scores = pd.Series(name=self.name, dtype=float)
 
-        # Get the scoring from all models in the ensemble
-        results = [m.scoring(metric, dataset) for m in self._models]
+        # Get the scores from all models in the ensemble
+        results = [m.evaluate(metric, dataset) for m in self._models]
 
         # Calculate averages per metric
         for idx in results[0].index:

@@ -9,6 +9,7 @@ Description: Unit tests for api.py
 
 # Standard packages
 import pytest
+from pandas.testing import assert_frame_equal
 from sklearn.linear_model import HuberRegressor
 
 # Own modules
@@ -69,7 +70,7 @@ def test_data():
     atom.save(FILE_DIR + "atom", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom", data=(X_bin, y_bin))
-    assert atom2.dataset.equals(atom.dataset)
+    assert_frame_equal(atom2.dataset, atom.dataset, check_dtype=False)
 
 
 def test_load_ignores_n_rows_parameter():
@@ -85,7 +86,7 @@ def test_transform_data():
     """Assert that the data is transformed correctly."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune(columns=slice(3, 10))
-    atom.apply(lambda x: x + 2, column="mean radius")
+    atom.apply(lambda df: df["mean radius"] + 2, columns="mean radius")
     atom.feature_generation(strategy="dfs", n_features=5)
     atom.feature_selection(strategy="sfm", solver="lgb", n_features=10)
     atom.save(FILE_DIR + "atom", save_data=False)
@@ -110,7 +111,11 @@ def test_transform_data_multiple_branches():
 
     atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)
     for branch in atom._branches:
-        assert atom2._branches[branch].data.equals(atom._branches[branch].data)
+        assert_frame_equal(
+            left=atom2._branches[branch].data,
+            right=atom._branches[branch].data,
+            check_dtype=False,
+        )
 
 
 # Test ATOMClassifier ============================================== >>

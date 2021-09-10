@@ -13,6 +13,7 @@ import pytest
 import pandas as pd
 import multiprocessing
 from unittest.mock import patch
+from pandas.testing import assert_frame_equal
 
 # Own modules
 from atom import ATOMClassifier
@@ -249,7 +250,7 @@ def test_n_rows_too_large():
 def test_no_shuffle_X_y():
     """Assert that the order is kept when shuffle=False."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, n_rows=30)
-    assert atom.X.equals(X_bin.iloc[:30, :])
+    assert_frame_equal(atom.X, X_bin.iloc[:30, :], check_dtype=False)
 
 
 def test_length_dataset():
@@ -334,7 +335,7 @@ def test_n_rows_train_test_frac():
 def test_no_shuffle_train_test():
     """Assert that the order is kept when shuffle=False."""
     atom = ATOMClassifier(bin_train, bin_test, shuffle=False)
-    assert atom.train.equals(bin_train.reset_index(drop=True))
+    assert_frame_equal(atom.train, bin_train.reset_index(drop=True), check_dtype=False)
 
 
 def test_n_rows_train_test_int():
@@ -363,7 +364,11 @@ def test_merger_to_dataset():
 
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     df2 = atom.dataset.sort_values(by=atom.dataset.columns.tolist())
-    assert df1.reset_index(drop=True).equals(df2.reset_index(drop=True))
+    assert_frame_equal(
+        left=df1.reset_index(drop=True),
+        right=df2.reset_index(drop=True),
+        check_dtype=False,
+    )
 
 
 # Test log ========================================================= >>

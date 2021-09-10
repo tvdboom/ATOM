@@ -404,8 +404,8 @@ methods as other models. The `predict_proba`, `predict_log_proba`,
 (soft voting) over the models in the instance. Note that these methods
 will raise an exception if not all estimators in the Voting instance
 have the specified method. The `predict` method returns the majority
-vote (hard voting). The `scoring` method also returns the average
-scoring for the selected metric over the models.
+vote (hard voting). The `evaluate` method also returns the average
+score for the selected metric over the models.
 
 Click [here](../../examples/ensembles) for a voting example.
 
@@ -430,7 +430,7 @@ method. The Stacking model is added automatically to the list of
 models in the pipeline, under the `Stack` acronym. Remember that the
 model is added to the plots if the `models` parameter is not
 specified. Plots that require a data set will use the one in the
-current branch. The prediction methods, the scoring method and the
+current branch. The prediction methods, the evaluate method and the
 plot methods that require an estimator object will use the Voting's
 final estimator, under the `estimator` attribute.
 

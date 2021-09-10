@@ -133,7 +133,7 @@ DISTRIBUTIONS = (
     "weibull_max",
 )
 
-# List of custom metrics for the scoring method
+# List of custom metrics for the evaluate method
 CUSTOM_METRICS = (
     "cm",
     "tn",
@@ -273,14 +273,14 @@ def variable_return(X, y):
         return X, y
 
 
-def check_multidimensional(df):
+def check_multidim(df):
     """Check if the dataframe contains a multidimensional column."""
     return df.columns[0] == "Multidimensional feature" and len(df.columns) <= 2
 
 
 def check_method(cls, method):
     """Raise an error if the dataset has more than two dimensions."""
-    if check_multidimensional(cls.X):
+    if check_multidim(cls.X):
         raise PermissionError(
             f"The {method} method is not available for "
             f"datasets with more than two dimensions!"
@@ -311,6 +311,14 @@ def check_predict_proba(models, method):
                 f"The {method} method is only available for "
                 f"models with a predict_proba method, got {m.name}."
             )
+
+
+def get_proba_attr(model):
+    """Get predict_proba or decision_function method."""
+    if hasattr(model.estimator, "predict_proba"):
+        return "predict_proba"
+    elif hasattr(model.estimator, "decision_function"):
+        return "decision_function"
 
 
 def check_scaling(X):
@@ -463,7 +471,7 @@ def arr(df):
         Stacked dataframe.
 
     """
-    if check_multidimensional(df):
+    if check_multidim(df):
         return np.stack(df["Multidimensional feature"].values)
     else:
         return df
@@ -688,7 +696,7 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
 
     Returns
     -------
-    scoring: scorer
+    scorer: scorer
         Scorer object with name attribute.
 
     """
@@ -789,8 +797,11 @@ def partial_dependence(estimator, X, features):
 
     Returns
     -------
-    averaged_predictions: np.ndarray
+    avg_pred: np.ndarray
         Average of the predictions.
+
+    pred: np.ndarray
+        All predictions.
 
     values: list
         Values used for the predictions.
@@ -798,16 +809,135 @@ def partial_dependence(estimator, X, features):
     """
     grid, values = _grid_from_X(_safe_indexing(X, features, axis=1), (0.05, 0.95), 100)
 
-    averaged_predictions, _ = _partial_dependence_brute(
-        estimator, grid, features, X, "auto"
-    )
+    avg_pred, pred = _partial_dependence_brute(estimator, grid, features, X, "auto")
 
-    # Reshape averaged_predictions to (n_outputs, n_values_feature_0, ...)
-    averaged_predictions = averaged_predictions.reshape(
-        -1, *[val.shape[0] for val in values]
-    )
+    # Reshape to (n_targets, n_values_feature,)
+    avg_pred = avg_pred.reshape(-1, *[val.shape[0] for val in values])
 
-    return averaged_predictions, values
+    # Reshape to (n_targets, n_rows, n_values_feature)
+    pred = pred.reshape(-1, X.shape[0], *[val.shape[0] for val in values])
+
+    return avg_pred, pred, values
+
+
+def df_shrink_dtypes(df):
+    """Reduce a dataframe's memory by optimizing dtypes.
+
+    Return any possible smaller data types for dataframe's columns.
+    From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataset from which to reduce the dtypes.
+
+    Returns
+    -------
+    df: pd.dataFrame
+        Dataset with reduced dtypes.
+
+    """
+    # Build column filter and typemap
+    types_1 = (np.int8, np.int16, np.int32, np.int64)
+    types_2 = (np.float32, np.float64, np.longdouble)
+    excl_types = {"category", "datetime64[ns]", "bool"}
+
+    type_map = {
+        "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
+        "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_2],
+        "object": "category",
+    }
+
+    new_dtypes = {}
+    for c, old_t in filter(lambda dt: dt[1].name not in excl_types, df.dtypes.items()):
+        t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
+
+        if isinstance(t, list):  # Find the smallest type that fits
+            nt = next((r[0] for r in t if r[1] <= df[c].min() and r[2] >= df[c].max()))
+            if nt and nt == old_t:
+                nt = None
+        else:
+            # Convert to category if number of categories less than 30% of column
+            nt = t if df[c].nunique() <= int(len(df[c]) * 0.3) else "object"
+
+        if nt:
+            new_dtypes[c] = nt
+
+    return df.astype(new_dtypes)
+
+
+def get_columns(df, columns, only_numerical=False):
+    """Get a subset of the columns.
+
+    Select columns in the dataset by name, index or dtype. Duplicate
+    columns are ignored. Exclude columns if their name start with `!`.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        Dataset from which to get the columns.
+
+    columns: int, str, slice, sequence or None
+        Names, indices or dtypes of the columns to get. If None,
+        it returns all columns in the dataframe.
+
+    only_numerical: bool, optional (default=False)
+        Whether to return only numerical columns.
+
+    Returns
+    -------
+    columns: list
+        Names of the selected columns in the dataframe.
+
+    """
+    if columns is None:
+        if only_numerical:
+            return list(df.select_dtypes(include=["number"]).columns)
+        else:
+            return df.columns
+    elif isinstance(columns, slice):
+        return df.columns[columns]
+
+    cols, exclude = [], []
+    for col in lst(columns):
+        if isinstance(col, int):
+            try:
+                cols.append(df.columns[col])
+            except IndexError:
+                raise ValueError(
+                    f"Invalid value for the columns parameter, got {col} "
+                    f"but length of columns is {len(df.columns)}."
+                )
+        else:
+            if col not in df.columns:
+                if col.startswith("!"):
+                    col = col[1:]
+                    if col in df.columns:
+                        exclude.append(col)
+                    else:
+                        try:
+                            exclude.extend(list(df.select_dtypes(include=col).columns))
+                        except TypeError:
+                            raise ValueError(
+                                "Invalid value for the columns parameter. "
+                                f"Column {col} not found in the dataset."
+                            )
+                else:
+                    try:
+                        cols.extend(list(df.select_dtypes(include=col).columns))
+                    except TypeError:
+                        raise ValueError(
+                            "Invalid value for the columns parameter. "
+                            f"Column {col} not found in the dataset."
+                        )
+            else:
+                cols.append(col)
+
+    # If columns were excluded with `!`, select all but those
+    if exclude:
+        return list(dict.fromkeys([col for col in df.columns if col not in exclude]))
+    else:
+        return list(dict.fromkeys(cols))  # Avoid duplicates
 
 
 # Functions shared by classes ======================================= >>
@@ -1016,7 +1146,9 @@ def add_transformer(self, transformer, columns=None, train_only=False, **fit_par
 
     # Transformers remember the train_only and columns parameters
     transformer.train_only = train_only
-    transformer.cols = [col for col in self._get_columns(columns) if col != self.target]
+    transformer.cols = [
+        col for col in get_columns(self.dataset, columns) if col != self.target
+    ]
 
     if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
         if not transformer.__module__.startswith("atom"):
@@ -1102,7 +1234,7 @@ def crash(f, cache={"last_exception": None}):
                 # If exception is not same as last, write to log
                 if exception is not cache["last_exception"]:
                     cache["last_exception"] = exception
-                    logger.exception("Exception encountered:")
+                    logger.exception("\nException encountered:")
 
                 raise exception  # Always raise it
         else:

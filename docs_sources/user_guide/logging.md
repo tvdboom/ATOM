@@ -43,7 +43,7 @@ the trainer's `log_bo` attribute, e.g. `atom.log_bo = False`.
 
 **Metrics**<br>
 All metric results are tracked, not only during training, but also if the
-[scoring](../../API/ATOM/atomclassifier/#scoring) method is called at a
+[evaluate](../../API/ATOM/atomclassifier/#evaluate) method is called at a
 later point. Metrics calculated during in-training evaluation are also
 logged (only for [XGB](../../API/models/xgb), [LGB](../../API/models/lgb)
 and [CatB](../../API/models/catb)).

@@ -41,13 +41,13 @@ def test_vote_repr():
     assert str(atom.vote).startswith("Voting")
 
 
-def test_vote_scoring():
-    """Assert that the scoring works with weights."""
+def test_vote_evaluate():
+    """Assert that the evaluate works with weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["Tree", "LGB"])
     atom.voting(weights=[1, 2])
-    avg = (atom.tree.scoring("r2")["r2"] + 2 * atom.lgb.scoring("r2")["r2"]) / 3
-    assert atom.vote.scoring("r2")["r2"] == avg
+    avg = (atom.tree.evaluate("r2")["r2"] + 2 * atom.lgb.evaluate("r2")["r2"]) / 3
+    assert atom.vote.evaluate("r2")["r2"] == avg
 
 
 def test_vote_invalid_method():

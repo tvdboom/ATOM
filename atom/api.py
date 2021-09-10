@@ -120,7 +120,8 @@ def ATOMLoader(
         Un-pickled instance.
 
     """
-    cls = dill.load(open(filename, "rb"))
+    with open(filename, "rb") as f:
+        cls = dill.load(f)
 
     if data is not None:
         if not hasattr(cls, "_branches"):

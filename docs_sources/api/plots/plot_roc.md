@@ -5,13 +5,14 @@
 <em>method</em> <strong style="color:#008AB8">plot_roc</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1039">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1044">[source]</a>
 </span>
 </div>
 
-Plot the Receiver Operating Characteristics curve. The legend shows
-the Area Under the ROC Curve (AUC) score. Only for binary
-classification tasks.
+Plot the Receiver Operating Characteristics Curve (ROC). The legend
+shows the Area Under the ROC Curve (AUC) score. Only for binary
+classification tasks. Read more about ROC in sklearn's [documentation](https://scikit-learn.org/stable/modules/model_evaluation.html#receiver-operating-characteristic-roc).
+
 
 <table style="font-size:16px">
 <tr>

@@ -5,12 +5,13 @@
 <em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1119">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1127">[source]</a>
 </span>
 </div>
 
-Plot the precision-recall curve. The legend shows the average
-precision (AP) score. Only for binary classification tasks.
+Plot the Precision-Recall Curve (PRC). The legend shows the average
+precision (AP) score. Only for binary classification tasks. Read more
+about PRC in sklearn's [documentation](https://scikit-learn.org/stable/auto_examples/model_selection/plot_precision_recall.html).
 
 <table style="font-size:16px">
 <tr>

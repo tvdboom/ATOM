@@ -1,6 +1,29 @@
 # Release history
 -----------------
 
+<a name="v470"></a>
+### Version 4.7.0
+
+* Launched our new [slack](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g) channel!
+* The new [FeatureExtractor](../API/feature_engineering/feature_extractor) class
+  extracts useful features from datetime columns.
+* The new [plot_det](../API/plots/plot_det) method plots a binary classifier's
+  detection error tradeoff curve. 
+* The [partial dependence plot](../API/plots/plot_partial_dependence) is
+  able to draw Individual Conditional Expectation (ICE) lines.
+* The full traceback of exceptions encountered during training are now
+  saved to the logger.
+* [ATOMClassifier](../API/ATOM/atomclassifier) and [ATOMRegressor](../API/ATOM/atomregressor)
+  now convert the dtypes of the input data to the minimal allowed type
+  for memory efficiency.
+* The scoring method is renamed to [evaluate](../API/ATOM/atomclassifier/#evaluate)
+  to clarify its purpose.
+* The `column` parameter in the [apply](../API/ATOM/atomclassifier/#apply) method
+  is renamed to `columns` for continuity of the API.
+* Minor documentation improvements.
+
+
+<a name="v460"></a>
 ### Version 4.6.0
 
 * Added the [full_train](../API/models/gnb/#full-train) method to retrieve
@@ -12,11 +35,12 @@
   for unknown classes and allow the input of missing values.
 * The [clean](../API/ATOM/atomclassifier/#clean) method no longer automatically
   encodes the target column for regression tasks.
-* Creating a branch using a models' acronym now raises an exception.
+* Creating a branch using a models' acronym as name now raises an exception.
 * Fixed a bug where [CatBoost](../API/models/catb) failed when `early_stopping` < 1.
 * Fixed a bug where created pipelines had duplicated names.
 
 
+<a name="v450"></a>
 ### Version 4.5.0
 
 * Support of NLP pipelines. Read more in the [user guide](../user_guide/nlp).
@@ -25,7 +49,7 @@
 * The new [Gauss](../API/data_cleaning/gauss) class transforms features to
   a more Gaussian-like distribution.
 * New [cross_validate](../API/ATOM/atomclassifier/#cross-validate) method to
-  evaluate the robustness of a model using cross_validation.
+  evaluate the robustness of a pipeline using cross_validation.
 * New [reset](../API/ATOM/atomclassifier/#reset) method to go back to atom's
   initial state.
 * Added the [Dummy](../API/models/dummy) model to compare other models with a
@@ -42,7 +66,7 @@
   for that task are used.
 * The [apply](../API/ATOM/atomclassifier/#apply) method now accepts args and
   kwargs for the function.
-* Refactor of the [scoring](../API/ATOM/atomclassifier/#scoring) method.
+* Refactor of the [evaluate](../API/ATOM/atomclassifier/#evaluate) method.
 * Refactor of the [export_pipeline](../API/ATOM/atomclassifier/#export-pipeline) method.
 * The parameters in the [Cleaner](../API/data_cleaning/pruner) class have
   been refactored to better describe their function.
@@ -58,6 +82,7 @@
 * Completely reworked documentation website.
 
 
+<a name="v440"></a>
 ### Version 4.4.0
 
 * The [drop](../API/ATOM/atomclassifier/#drop) method now allows the user
@@ -79,6 +104,7 @@
 * Improved documentation.
 
 
+<a name="v430"></a>
 ### Version 4.3.0
 
 * Possibility to [add](../API/ATOM/atomclassifier/#add) custom transformers to the pipeline.
@@ -102,6 +128,7 @@
 * Minor bug fixes.
 
 
+<a name="v421"></a>
 ### Version 4.2.1
 
 * Bug fix where there was memory leakage in [successive halving](../user_guide/training/#successive-halving)
@@ -113,6 +140,7 @@
 * Improved documentation.
 
 
+<a name="v420"></a>
 ### Version 4.2.0
 
 * Possibility to add custom models to the pipeline using [ATOMModel](../API/ATOM/atommodel).
@@ -141,6 +169,7 @@
 * Compatibility with [python 3.9](https://www.python.org/downloads/release/python-390/).
 
 
+<a name="v410"></a>
 ### Version 4.1.0
 
 * New `est_params` parameter to customize the parameters in every model's estimator.
@@ -156,6 +185,7 @@
 * Bug fixes and performance improvements.
 
 
+<a name="v401"></a>
 ### Version 4.0.1
 
 * Bug fix where the [FeatureGenerator](../API/feature_engineering/feature_generator)
@@ -165,6 +195,7 @@
 * Typo fixes in documentation.
 
 
+<a name="v400"></a>
 ### Version 4.0.0
 
 * Bayesian optimization package changed from [GpyOpt](http://sheffieldml.github.io/GPyOpt/)

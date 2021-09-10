@@ -69,7 +69,7 @@ Metric score of X with respect to y.
 !!! info
     This method is intended to calculate metric scores on new data.
     To get the metric results on the train or test set, use the
-    [scoring](../../ATOM/atomclassifier/#scoring) method.
+    [evaluate](../../ATOM/atomclassifier/#evaluate) method.
 
 <br />
 

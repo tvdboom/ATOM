@@ -320,7 +320,7 @@ or `atom.et.predict(X)`. The remaining utility methods can be found hereunder.
 </tr>
 
 <tr>
-<td><a href="#scoring">scoring</a></td>
+<td><a href="#evaluate">evaluate</a></td>
 <td>Get the score for a specific metric.</td>
 </tr>
 
@@ -515,14 +515,14 @@ Use this method to free some memory before saving the trainer.
 <br /><br /><br />
 
 
-<a name="scoring"></a>
+<a name="evaluate"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">scoring</strong>(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basemodel.py#L382">[source]</a>
 </span>
 </div>
-Get the model's scoring for provided metrics.
+Get the model's score for the provided metrics.
 <table style="font-size:16px">
 <tr>
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
@@ -542,7 +542,7 @@ Data set on which to calculate the metric. Options are "train" or "test".
 <td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
 <td width="80%" style="background:white;">
 <strong>score: pd.Series</strong><br>
-Model's scoring.
+Scores of the model.
 </td>
 </tr>
 </table>

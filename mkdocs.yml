@@ -38,6 +38,9 @@ theme:
 
 extra:
   social:
+    - icon: fontawesome/brands/slack
+      link: https://app.slack.com/client/T02BXTWUB5Y/C02BUTT7PV3
+      name: Slack
     - icon: fontawesome/brands/github
       link: https://github.com/tvdboom/ATOM
       name: GitHub
@@ -62,9 +65,16 @@ markdown_extensions:
     - pymdownx.keys
     - pymdownx.superfences
     - pymdownx.snippets
+    - pymdownx.arithmatex:
+        generic: true
 
 extra_css:
     - stylesheets/extra.css
+
+extra_javascript:
+  - stylesheets/extra.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 
 nav:
     - About: about.md
@@ -103,6 +113,7 @@ nav:
             - Normalizer: API/nlp/normalizer.md
             - Vectorizer: API/nlp/vectorizer.md
         - Feature engineering:
+            - FeatureExtractor: API/feature_engineering/feature_extractor.md
             - FeatureGenerator: API/feature_engineering/feature_generator.md
             - FeatureSelector: API/feature_engineering/feature_selector.md
         - Training:
@@ -170,6 +181,7 @@ nav:
             - plot_evals: API/plots/plot_evals.md
             - plot_roc: API/plots/plot_roc.md
             - plot_prc: API/plots/plot_prc.md
+            - plot_det: API/plots/plot_det.md
             - plot_permutation_importance: API/plots/plot_permutation_importance.md
             - plot_feature_importance: API/plots/plot_feature_importance.md
             - plot_partial_dependence: API/plots/plot_partial_dependence.md

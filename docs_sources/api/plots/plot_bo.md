@@ -5,11 +5,11 @@
 <em>method</em> <strong style="color:#008AB8">plot_bo</strong>(models=None,
 metric=0, title=None, figsize=(10, 8), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L859">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L864">[source]</a>
 </span>
 </div>
 
-Plot the bayesian optimization scoring. Only for models that ran
+Plot the bayesian optimization scores. Only for models that ran
 hyperparameter tuning. This is the same plot as the one produced
 by `bo_params={"plot": True}` while running the BO. Creates a
 canvas with two plots: the first plot shows the score of every trial

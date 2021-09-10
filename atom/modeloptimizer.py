@@ -814,5 +814,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.estimator.__class__.__name__)
 
-        pickle.dump(self.estimator, open(filename, "wb"))
+        with open(filename, "wb") as f:
+            pickle.dump(self.estimator, f)
+
         self.T.log(f"{self.fullname} estimator saved successfully!", 1)

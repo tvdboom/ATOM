@@ -40,10 +40,202 @@ from .basetransformer import BaseTransformer
 from .data_cleaning import TransformerMixin, Scaler
 from .plots import FSPlotter
 from .utils import (
-    SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df, get_scorer,
-    check_scaling, check_is_fitted, get_acronym, composed, crash,
-    method_to_log,
+    SCALAR, SEQUENCE, SEQUENCE_TYPES, X_TYPES, Y_TYPES, lst, to_df,
+    get_scorer, check_scaling, check_is_fitted, get_acronym, composed,
+    crash, method_to_log,
 )
+
+
+class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
+    """Extract features from datetime columns.
+
+    Create new features extracting datetime elements (day, month,
+    year, etc...) from the provided columns. Columns of dtype
+    `datetime64` are used as is. Categorical columns that can be
+    successfully converted to a datetime format (less than 30% NaT
+    values after conversion) are also used.
+
+    Parameters
+    ----------
+    features: str or sequence, optional (default=["day", "month", "year"])
+        Features to create from the datetime columns. Note that
+        created features with zero variance (e.g. the feature hour
+        in a column that only contains dates) are ignored. Allowed
+        values are datetime attributes from `pandas.Series.dt`.
+
+    fmt: str, sequence or None, optional (default=None)
+        Format (`strptime`) of the categorical columns that need
+        to be converted to datetime. If sequence, the n-th format
+        corresponds to the n-th categorical column that can be
+        successfully converted. If None, the format is inferred
+        automatically from the first non NaN value. Values that can
+        not be converted are returned as NaT.
+
+    encoding_type: str, optional (default="ordinal")
+        Type of encoding to use. Choose from:
+            - "ordinal": Encode features in increasing order.
+            - "cyclic": Encode features using sine and cosine to capture
+                        their cyclic nature. Note that this creates two
+                        columns for every feature. Non-cyclic features
+                        still use ordinal encoding.
+
+    drop_columns: bool, optional (default=True)
+        Whether to drop the original columns after extracting the
+        features from it.
+
+    verbose: int, optional (default=0)
+        Verbosity level of the class. Possible values are:
+            - 0 to not print anything.
+            - 1 to print basic information.
+            - 2 to print detailed information.
+
+    logger: str, Logger or None, optional (default=None)
+        - If None: Doesn't save a logging file.
+        - If str: Name of the log file. Use "auto" for automatic naming.
+        - Else: Python `logging.Logger` instance.
+
+    """
+
+    def __init__(
+        self,
+        features: Union[str, SEQUENCE_TYPES] = ["day", "month", "year"],
+        fmt: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        encoding_type: str = "ordinal",
+        drop_columns: bool = True,
+        verbose: int = 0,
+        logger: Optional[Union[str, callable]] = None,
+    ):
+        super().__init__(verbose=verbose, logger=logger)
+        self.fmt = fmt
+        self.features = features
+        self.encoding_type = encoding_type
+        self.drop_columns = drop_columns
+
+    @composed(crash, method_to_log, typechecked)
+    def transform(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
+        """Extract the new features.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.ndarray or pd.DataFrame
+            Feature set with shape=(n_samples, n_features).
+
+        y: int, str, sequence or None, optional (default=None)
+            Does nothing. Implemented for continuity of the API.
+
+        Returns
+        -------
+        X: pd.DataFrame
+            Dataframe containing the new features.
+
+        """
+
+        def encode_variable(idx, name, values, min_val=0, max_val=None):
+            """Encode a feature in an ordinal or cyclic fashion."""
+            if self.encoding_type.lower() == "ordinal" or max_val is None:
+                self.log(f"   >>> Creating feature {name}.", 2)
+                X.insert(idx, name, values)
+            elif self.encoding_type.lower() == "cyclic":
+                self.log(f"   >>> Creating cyclic feature {name}.", 2)
+                pos = 2 * np.pi * (values - min_val) / np.array(max_val)
+                X.insert(idx, f"{name}_sin", np.sin(pos))
+                X.insert(idx, f"{name}_cos", np.cos(pos))
+
+        X, y = self._prepare_input(X, y)
+
+        # Check parameters
+        if self.encoding_type.lower() not in ("ordinal", "cyclic"):
+            raise ValueError(
+                "Invalid value for the encoding_type parameter, got "
+                f"{self.encoding_type}. Choose from: ordinal, cyclic."
+            )
+
+        self.log("Extracting datetime features...", 1)
+
+        i = 0
+        for col in X:
+            if X[col].dtype == "datetime64":
+                col_dt = X[col]
+                self.log(f" --> Extracting features from datetime column {col}.", 1)
+            elif col in X.select_dtypes(exclude="number").columns:
+                col_dt = pd.to_datetime(
+                    arg=X[col],
+                    errors="coerce",  # Converts to NaT if he can't format
+                    format=self.fmt[i] if isinstance(self.fmt, SEQUENCE) else self.fmt,
+                    infer_datetime_format=True,
+                )
+
+                # If >30% values are NaT, the conversion was unsuccessful
+                nans = 100. * col_dt.isna().sum() / len(X)
+                if nans >= 30:
+                    continue  # Skip this column
+                else:
+                    i += 1
+                    self.log(
+                        f" --> Extracting features from categorical column {col}.", 1
+                    )
+            else:
+                continue  # If column is numerical, skip it
+
+            # Extract features from the datetime column
+            for fx in map(str.lower, lst(self.features)):
+                if hasattr(col_dt.dt, fx.lower()):
+                    values = getattr(col_dt.dt, fx)
+                else:
+                    raise ValueError(
+                        "Invalid value for the feature parameter. Value "
+                        f"{fx.lower()} is not an attribute of pd.Series.dt."
+                    )
+
+                # Skip if the information is not present in the format
+                if not isinstance(values, pd.Series):
+                    self.log(
+                        f"   >>> Extracting feature {fx} failed. "
+                        "Result is not a pd.Series.dt.", 2
+                    )
+                    continue
+
+                if values.nunique() == 1:
+                    self.log(
+                        f"   >>> Extracting feature {fx} failed. "
+                        f"Result contains only one value: {values[0]}.", 2
+                    )
+                    continue
+
+                min_val, max_val = 0, None  # max_val=None -> feature is not cyclic
+                if self.encoding_type.lower() == "cyclic":
+                    if fx == "microsecond":
+                        min_val, max_val = 0, 1e6 - 1
+                    elif fx in ("second", "minute"):
+                        min_val, max_val = 0, 59
+                    elif fx == "hour":
+                        min_val, max_val = 0, 23
+                    elif fx in ("weekday", "dayofweek", "day_of_week"):
+                        min_val, max_val = 0, 6
+                    elif fx in ("day", "dayofmonth", "day_of_month"):
+                        min_val, max_val = 1, col_dt.dt.daysinmonth
+                    elif fx in ("dayofyear", "day_of_year"):
+                        min_val = 1
+                        max_val = [365 if i else 366 for i in col_dt.dt.is_leap_year]
+                    elif fx == "month":
+                        min_val, max_val = 1, 12
+                    elif fx == "quarter":
+                        min_val, max_val = 1, 4
+
+                # Add every new feature after the previous one
+                encode_variable(
+                    idx=X.columns.get_loc(col) + 1,
+                    name=f"{col}_{fx}",
+                    values=values,
+                    min_val=min_val,
+                    max_val=max_val,
+                )
+
+            # Drop the original datetime column
+            if self.drop_columns:
+                X = X.drop(col, axis=1)
+
+        return X
 
 
 class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -478,7 +670,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
     max_correlation: float or None, optional (default=1.)
         Minimum Pearson correlation coefficient to identify correlated
-        features. A value of 1 will remove one of 2 equal columns. A
+        features. A value of 1 removes one of 2 equal columns. A
         dataframe of the removed features and their correlation values
         can be accessed through the collinear attribute. If None, skip
         this step.
@@ -680,14 +872,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
             # Extract the upper triangle of the correlation matrix
             upper = mtx.where(np.triu(np.ones(mtx.shape).astype(bool), k=1))
 
-            # Select the features with correlations above the threshold
-            to_drop = [i for i in upper.columns if any(abs(upper[i] > max_))]
+            # Select the features with correlations above or equal to the threshold
+            to_drop = [i for i in upper.columns if any(abs(upper[i] >= max_))]
 
             # Iterate to record pairs of correlated features
             for col in to_drop:
                 # Find the correlated features and corresponding values
-                corr_features = list(upper.index[abs(upper[col]) > max_])
-                corr_values = list(round(upper[col][abs(upper[col]) > max_], 5))
+                corr_features = list(upper.index[abs(upper[col]) >= max_])
+                corr_values = list(round(upper[col][abs(upper[col]) >= max_], 5))
 
                 # Update dataframe
                 self.collinear = self.collinear.append(

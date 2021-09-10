@@ -59,7 +59,7 @@ if st.sidebar.button("Run"):
     atom.run(models=to_run, metric="f1")
 
     # Display metric results
-    placeholder.write(atom.scoring())
+    placeholder.write(atom.evaluate())
 
     # Draw plots
     col1, col2 = st.beta_columns(2)
