@@ -9,12 +9,13 @@
   extracts useful features from datetime columns.
 * The new [plot_det](../API/plots/plot_det) method plots a binary classifier's
   detection error tradeoff curve. 
-* The [partial dependence plot](../API/plots/plot_partial_dependence) now is
-  also able to draw Individual Conditional Expectation (ICE) lines.
+* The [partial dependence plot](../API/plots/plot_partial_dependence) is
+  able to draw Individual Conditional Expectation (ICE) lines.
 * The full traceback of exceptions encountered during training are now
   saved to the logger.
-* The dtypes of the provided dataframe are converted to the minimal allowed
-  type for memory efficiency.
+* [ATOMClassifier](../API/ATOM/atomclassifier) and [ATOMRegressor](../API/ATOM/atomregressor)
+  now convert the dtypes of the input data to the minimal allowed type
+  for memory efficiency.
 * The scoring method is renamed to [evaluate](../API/ATOM/atomclassifier/#evaluate)
   to clarify its purpose.
 * The `column` parameter in the [apply](../API/ATOM/atomclassifier/#apply) method

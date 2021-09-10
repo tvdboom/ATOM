@@ -65,7 +65,6 @@ def test_ordinal_features():
     ("weekday", "%d/%m/%Y"),
     ("day", "%d/%m/%Y"),
     ("dayofyear", "%d/%m/%Y"),
-    ("week", "%d/%m/%Y"),
     ("month", "%d/%m/%Y"),
     ("quarter", "%d/%m/%Y"),
 ])

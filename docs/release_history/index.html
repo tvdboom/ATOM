@@ -1882,6 +1882,18 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/plots/plot_det/" class="md-nav__link">
+        plot_det
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/plots/plot_permutation_importance/" class="md-nav__link">
         plot_permutation_importance
       </a>
@@ -2491,12 +2503,15 @@
 <li>Launched our new <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">slack</a> channel!</li>
 <li>The new <a href="../API/feature_engineering/feature_extractor">FeatureExtractor</a> class
   extracts useful features from datetime columns.</li>
-<li>The <a href="../API/plots/plot_partial_dependece">partial_dependence plot</a> now is
-  also able to draw Individual Conditional Expectation (ICE) lines.</li>
+<li>The new <a href="../API/plots/plot_det">plot_det</a> method plots a binary classifier's
+  detection error tradeoff curve. </li>
+<li>The <a href="../API/plots/plot_partial_dependence">partial dependence plot</a> is
+  able to draw Individual Conditional Expectation (ICE) lines.</li>
 <li>The full traceback of exceptions encountered during training are now
   saved to the logger.</li>
-<li>The dtypes of the provided dataframe are converted to the minimal allowed
-  type for memory efficiency.</li>
+<li><a href="../API/ATOM/atomclassifier">ATOMClassifier</a> and <a href="../API/ATOM/atomregressor">ATOMRegressor</a>
+  now convert the dtypes of the input data to the minimal allowed type
+  for memory efficiency.</li>
 <li>The scoring method is renamed to <a href="../API/ATOM/atomclassifier/#evaluate">evaluate</a>
   to clarify its purpose.</li>
 <li>The <code>column</code> parameter in the <a href="../API/ATOM/atomclassifier/#apply">apply</a> method
@@ -2528,7 +2543,7 @@
 <li>The new <a href="../API/data_cleaning/gauss">Gauss</a> class transforms features to
   a more Gaussian-like distribution.</li>
 <li>New <a href="../API/ATOM/atomclassifier/#cross-validate">cross_validate</a> method to
-  evaluate the robustness of a model using cross_validation.</li>
+  evaluate the robustness of a pipeline using cross_validation.</li>
 <li>New <a href="../API/ATOM/atomclassifier/#reset">reset</a> method to go back to atom's
   initial state.</li>
 <li>Added the <a href="../API/models/dummy">Dummy</a> model to compare other models with a

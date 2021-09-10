@@ -570,7 +570,7 @@ def test_beeswarm_plot():
     """Assert that the beeswarm_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.beeswarm_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     pytest.raises(ValueError, atom.beeswarm_plot, index=(996, 998))  # Invalid index
     atom.beeswarm_plot(display=False)
 
@@ -587,7 +587,7 @@ def test_force_plot():
     """Assert that the force_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.force_plot)
-    atom.run("Tree", metric="MSE")
+    atom.run("LR", metric="MSE")
     with atom.canvas(display=False):
         pytest.raises(PermissionError, atom.force_plot, matplotlib=True)
     atom.force_plot(index=100, matplotlib=True, display=False)
@@ -599,7 +599,7 @@ def test_heatmap_plot():
     """Assert that the heatmap_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.heatmap_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     atom.heatmap_plot(display=False)
 
 

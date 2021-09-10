@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None,
 n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2218">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2348">[source]</a>
 </span>
 </div>
 

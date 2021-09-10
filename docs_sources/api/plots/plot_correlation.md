@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_correlation</strong>(columns=None,
 method="pearson", title=None, figsize=(8, 7), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3375">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3517">[source]</a>
 </span>
 </div>
 
