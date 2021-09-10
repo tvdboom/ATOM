@@ -608,8 +608,8 @@ def test_scatter_plot(feature):
     """Assert that the scatter_plot method work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.scatter_plot)
-    atom.run("Tree", metric="f1")
-    atom.tree.scatter_plot(display=False)
+    atom.run("LR", metric="f1")
+    atom.scatter_plot(display=False)
 
 
 def test_waterfall_plot():
@@ -617,4 +617,4 @@ def test_waterfall_plot():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.waterfall_plot)
     atom.run("LR", metric="f1_macro")
-    atom.lr.waterfall_plot(display=False)
+    atom.waterfall_plot(display=False)
