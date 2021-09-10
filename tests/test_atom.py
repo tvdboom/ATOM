@@ -43,10 +43,10 @@ def test_dtypes_shrinkage():
 def test_dtypes_cat_or_object():
     """Assert that categorical columns change dtype if necessary."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.dtypes[2] != "category"
+    assert atom.dtypes[2].name != "category"
 
     atom = ATOMClassifier(X10_str2, y10, random_state=1)
-    assert atom.dtypes[2] == "category"
+    assert atom.dtypes[2].name == "category"
 
 
 def test_test_size_attribute():

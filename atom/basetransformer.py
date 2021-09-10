@@ -390,7 +390,8 @@ class BaseTransformer:
         if filename.endswith("auto"):
             filename = filename.replace("auto", self.__class__.__name__)
 
-        dill.dump(self, open(filename, "wb"))  # Dill replaces pickle to dump lambdas
+        with open(filename, "wb") as f:
+            dill.dump(self, f)  # Dill replaces pickle to dump lambdas
 
         # Restore the data to the attributes
         if not save_data and hasattr(self, "dataset"):

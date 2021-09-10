@@ -60,9 +60,9 @@ $$
 The resulting features have their names followed by sin or cos, e.g.
 `Feature 1_day_sin` and `Feature 1_day_cos`. The datetime elements
 that can be encoded in a cyclic fashion are: microsecond, second,
-minute, hour, weekday, day, day_of_year, week, month and quarter. Note
-that decision trees based algorithms build their split rules according
-to one feature at a time. This means that they will fail to correctly
+minute, hour, weekday, day, day_of_year, month and quarter. Note that
+decision trees based algorithms build their split rules according to
+one feature at a time. This means that they will fail to correctly
 process cyclic features since the sin/cos values are expected to be
 considered as one single coordinate system.
 

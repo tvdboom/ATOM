@@ -562,7 +562,7 @@ def test_bar_plot(index):
     """Assert that the bar_plot method work as intended."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     pytest.raises(NotFittedError, atom.bar_plot)
-    atom.run("Tree", metric="f1_macro")
+    atom.run("LR", metric="f1_macro")
     atom.bar_plot(index=index, display=False)
 
 

@@ -211,14 +211,12 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     elif fx == "hour":
                         min_val, max_val = 0, 23
                     elif fx in ("weekday", "dayofweek", "day_of_week"):
-                        min_val, max_val = 1, 7
+                        min_val, max_val = 0, 6
                     elif fx in ("day", "dayofmonth", "day_of_month"):
                         min_val, max_val = 1, col_dt.dt.daysinmonth
                     elif fx in ("dayofyear", "day_of_year"):
                         min_val = 1
                         max_val = [365 if i else 366 for i in col_dt.dt.is_leap_year]
-                    elif fx in ("week", "weekofyear"):
-                        min_val, max_val = 1, 52
                     elif fx == "month":
                         min_val, max_val = 1, 12
                     elif fx == "quarter":

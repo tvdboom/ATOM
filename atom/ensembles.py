@@ -142,7 +142,7 @@ class Voting(BaseModel, BaseEnsemble):
             Model's evaluation.
 
         """
-        scores = pd.Series(name=self.name)
+        scores = pd.Series(name=self.name, dtype=float)
 
         # Get the scores from all models in the ensemble
         results = [m.evaluate(metric, dataset) for m in self._models]
