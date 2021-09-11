@@ -1,6 +1,12 @@
 # Release history
 -----------------
 
+<a name="v473"></a>
+### Version 4.7.3
+
+* Fixed a bug where the conda-forge recipe couldn't install properly.
+
+
 <a name="v472"></a>
 ### Version 4.7.2
 
