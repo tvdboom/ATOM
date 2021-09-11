@@ -17,6 +17,7 @@ from functools import wraps
 from collections import deque
 from datetime import datetime
 from inspect import signature
+from scipy.sparse import issparse
 from collections.abc import MutableMapping
 from sklearn.preprocessing import (
     StandardScaler,
@@ -1074,9 +1075,14 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
             else:
                 X, y = X_og, output  # Only y
 
-        # Convert to pandas and assign proper column names
         if not isinstance(X, pd.DataFrame):
+            # If sparse matrix, convert back to array
+            if issparse(X):
+                X = X.toarray()
+
+            # Convert to pandas and assign proper column names
             X = to_df(X, columns=name_cols(X, X_og[transformer.cols]))
+
         X = reorder_cols(X, X_og)
         y = to_series(y, name=branch.target)
 

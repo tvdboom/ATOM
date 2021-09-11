@@ -4,7 +4,9 @@
 <a name="v472"></a>
 ### Version 4.7.2
 
-* Fixed a bug where the package requirements files were not added to the installer.
+* Fixed a bug where the pipeline failed for custom transformers that
+  returned sparse matrices.
+* Package requirements files are added to the installer.
 
 
 <a name="v471"></a>
