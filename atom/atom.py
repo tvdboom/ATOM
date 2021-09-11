@@ -235,7 +235,7 @@ class ATOM(BasePredictor, ATOMPlotter):
     def categorical(self):
         """Names of the categorical features in the dataset."""
         if not check_multidim(self.X):
-            return list(self.X.select_dtypes(exclude=["number"]).columns)
+            return list(self.X.select_dtypes(include=["object", "category"]).columns)
 
     @property
     def n_categorical(self):

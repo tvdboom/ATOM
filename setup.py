@@ -7,29 +7,27 @@ Description: Package's setup code.
 
 """
 
-import os
 import setuptools
 
 
-this_directory = os.path.abspath(os.path.dirname(__file__))
-with open(os.path.join(this_directory, "README.md")) as f:
+with open("README.md") as f:
     long_description = f.read()
 
-with open(os.path.join(this_directory, "requirements.txt")) as f:
+with open("requirements.txt") as f:
     requirements = f.read().splitlines()
 
-with open(os.path.join(this_directory, "requirements-optional.txt")) as f:
+with open("requirements-optional.txt") as f:
     optional_requirements = f.read().splitlines()
 
-with open(os.path.join(this_directory, "requirements-test.txt")) as f:
+with open("requirements-test.txt") as f:
     test_requirements = f.read().splitlines()
 
 setuptools.setup(
     name="atom-ml",
-    version="4.7.0",
+    version="4.7.1",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url="https://github.com/tvdboom/ATOM/archive/v4.7.0.tar.gz",
+    download_url="https://github.com/tvdboom/ATOM/archive/v4.7.1.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
