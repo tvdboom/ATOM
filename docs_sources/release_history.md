@@ -1,6 +1,13 @@
 # Release history
 -----------------
 
+<a name="v471"></a>
+### Version 4.7.1
+
+* Fixed a bug where the installer failed searching for `requirements.txt`.
+* Fixed a bug where categorical columns also selected datetime columns.
+
+
 <a name="v470"></a>
 ### Version 4.7.0
 
