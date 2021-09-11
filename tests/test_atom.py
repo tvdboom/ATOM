@@ -20,7 +20,12 @@ from sklearn.linear_model import LassoLarsCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.neural_network import MLPClassifier
-from sklearn.preprocessing import LabelEncoder, StandardScaler, RobustScaler
+from sklearn.preprocessing import (
+    LabelEncoder,
+    OneHotEncoder,
+    StandardScaler,
+    RobustScaler,
+)
 
 # Own modules
 from atom import ATOMClassifier, ATOMRegressor
@@ -567,6 +572,13 @@ def test_transformer_only_y():
     atom = ATOMClassifier(X10, y10_str, random_state=1)
     atom.add(LabelEncoder())
     assert np.all((atom["Target"] == 0) | (atom["Target"] == 1))
+
+
+def test_sparse_matrices():
+    """Assert that transformers that return sparse mtx are accepted."""
+    atom = ATOMClassifier(X10_str, y10, random_state=1)
+    atom.add(OneHotEncoder(handle_unknown="ignore"), columns=2)
+    assert atom.shape == (10, 7)  # Creates 4 extra columns
 
 
 def test_keep_column_names():
