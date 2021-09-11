@@ -1,10 +1,16 @@
 # Release history
 -----------------
 
+<a name="v472"></a>
+### Version 4.7.2
+
+* Fixed a bug where the package requirements files were not added to the installer.
+
+
 <a name="v471"></a>
 ### Version 4.7.1
 
-* Fixed a bug where the installer failed searching for `requirements.txt`.
+* Fixed a bug where the pip installer failed.
 * Fixed a bug where categorical columns also selected datetime columns.
 
 
