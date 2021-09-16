@@ -250,7 +250,7 @@ def test_n_rows_too_large():
 def test_no_shuffle_X_y():
     """Assert that the order is kept when shuffle=False."""
     atom = ATOMClassifier(X_bin, y_bin, shuffle=False, n_rows=30)
-    assert_frame_equal(atom.X, X_bin.iloc[:30, :], check_dtype=False)
+    assert_frame_equal(atom.X, X_bin.iloc[:30, :])
 
 
 def test_length_dataset():

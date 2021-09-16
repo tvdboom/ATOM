@@ -42,33 +42,6 @@ def test_repr():
     assert str(atom.branch).startswith("Branch: master\n --> Pipeline")
 
 
-# Test status ====================================================== >>
-
-def test_status_method():
-    """Assert that the status method prints the estimators without errors."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.impute()
-    atom.branch.status()
-    assert str(atom.branch).endswith("max_nan_cols: None\n --> Models: None")
-
-
-# Test rename ====================================================== >>
-
-def test_rename_invalid_name():
-    """Assert that an error is raised when name is empty."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    with pytest.raises(ValueError, match=r".*A branch can't have an empty name!.*"):
-        atom.branch.rename("")
-
-
-def test_rename_method():
-    """Assert that we can rename a branch."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.branch.rename("branch_1")
-    assert atom.branch.name == "branch_1"
-    assert atom.branch.pipeline.name == "branch_1"
-
-
 # Test delete ====================================================== >>
 
 def test_branch_delete_current():
@@ -107,6 +80,55 @@ def test_branch_delete_last_branch():
     """Assert that an error is raised when the last branch is deleted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(PermissionError, atom.branch.delete)
+
+
+# Test rename ====================================================== >>
+
+def test_rename_empty_name():
+    """Assert that an error is raised when name is empty."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*can't have an empty name!.*"):
+        atom.branch.rename("")
+
+
+def test_rename_model_name():
+    """Assert that an error is raised when name is a model's acronym."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*acronym of model.*"):
+        atom.branch = "Lda"
+
+
+def test_rename_restricted_name():
+    """Assert that an error is raised when name is restricted."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    with pytest.raises(ValueError, match=r".*This name is reserved.*"):
+        atom.branch = "og"
+
+
+def test_rename_existing_name():
+    """Assert that an error is raised when name already exists."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch = "branch_2"
+    with pytest.raises(ValueError, match=r".*already exists!.*"):
+        atom.branch.rename("master")
+
+
+def test_rename_method():
+    """Assert that the branch name changes correctly."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.branch.rename("branch_1")
+    assert atom.branch.name == "branch_1"
+    assert atom.branch.pipeline.name == "branch_1"
+
+
+# Test status ====================================================== >>
+
+def test_status_method():
+    """Assert that the status method prints the estimators without errors."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.impute()
+    atom.branch.status()
+    assert str(atom.branch).endswith("max_nan_cols: None\n --> Models: None")
 
 
 # Test data properties ============================================= >>

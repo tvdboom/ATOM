@@ -1,6 +1,24 @@
 # Release history
 -----------------
 
+<a name="v480"></a>
+### Version 4.8.0
+
+* The [Encoder](../API/data_cleaning/encoder) class now directly handles
+  unknown categories encountered during fitting.
+* The new [merge](../API/ATOM/atomclassifier/#merge) method enables the
+  user to merge multiple atom instances into one.
+* The dtype shrinking is moved from atom's initializers to the
+  [shrink](../API/ATOM/atomclassifier/#shrink) method.
+* The `column` parameter in the [distribution](../API/ATOM/atomclassifier/#distribution)
+  method is renamed to `columns` for continuity of the API.
+* Branches are now case-insensitive.
+* Renaming a branch using an existing name now raises an exception.
+* Fixed a bug where columns of type `category` broke the [Imputer](../API/data_cleaning/imputer)
+  class.
+* The tables in the documentation now adapt to dark mode.
+
+
 <a name="v473"></a>
 ### Version 4.7.3
 

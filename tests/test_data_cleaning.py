@@ -433,11 +433,11 @@ def test_missing_values_are_propagated():
     assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
 
 
-def test_unknown_classes():
-    """Assert that unknown classes are converted to NaN."""
+def test_unknown_classes_are_imputed():
+    """Assert that unknown classes are imputed."""
     encoder = Encoder()
     encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).isna().sum().sum() == 1
+    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():

@@ -821,52 +821,6 @@ def partial_dependence(estimator, X, features):
     return avg_pred, pred, values
 
 
-def df_shrink_dtypes(df):
-    """Reduce a dataframe's memory by optimizing dtypes.
-
-    Return any possible smaller data types for dataframe's columns.
-    From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Dataset from which to reduce the dtypes.
-
-    Returns
-    -------
-    df: pd.dataFrame
-        Dataset with reduced dtypes.
-
-    """
-    # Build column filter and typemap
-    types_1 = (np.int8, np.int16, np.int32, np.int64)
-    types_2 = (np.float32, np.float64, np.longdouble)
-    excl_types = {"category", "datetime64[ns]", "bool"}
-
-    type_map = {
-        "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
-        "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_2],
-        "object": "category",
-    }
-
-    new_dtypes = {}
-    for c, old_t in filter(lambda dt: dt[1].name not in excl_types, df.dtypes.items()):
-        t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
-
-        if isinstance(t, list):  # Find the smallest type that fits
-            nt = next((r[0] for r in t if r[1] <= df[c].min() and r[2] >= df[c].max()))
-            if nt and nt == old_t:
-                nt = None
-        else:
-            # Convert to category if number of categories less than 30% of column
-            nt = t if df[c].nunique() <= int(len(df[c]) * 0.3) else "object"
-
-        if nt:
-            new_dtypes[c] = nt
-
-    return df.astype(new_dtypes)
-
-
 def get_columns(df, columns, only_numerical=False):
     """Get a subset of the columns.
 

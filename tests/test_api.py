@@ -110,7 +110,7 @@ def test_transform_data_multiple_branches():
     atom.save(FILE_DIR + "atom_2", save_data=False)
 
     atom2 = ATOMLoader(FILE_DIR + "atom_2", data=(X_bin, y_bin), transform_data=True)
-    for branch in atom._branches:
+    for branch in atom._branches.keys():
         assert_frame_equal(
             left=atom2._branches[branch].data,
             right=atom._branches[branch].data,

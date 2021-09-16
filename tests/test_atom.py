@@ -40,28 +40,6 @@ from .utils import (
 
 # Test __init__ ==================================================== >>
 
-def test_dtypes_shrinkage():
-    """Assert that the dtypes are optimized to save memory."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert not atom.dtypes.equals(X_bin.dtypes)
-
-
-def test_minimal_dtypes_unchanged():
-    """Assert that the minimal dtypes are left unchanged."""
-    X = X_bin.astype("float32")
-    atom = ATOMClassifier(X, y_bin, random_state=1)
-    assert atom.X.dtypes.equals(X.dtypes)
-
-
-def test_dtypes_cat_or_object():
-    """Assert that categorical columns change dtype if necessary."""
-    atom = ATOMClassifier(X10_str, y10, random_state=1)
-    assert atom.dtypes[2].name != "category"
-
-    atom = ATOMClassifier(X10_str2, y10, random_state=1)
-    assert atom.dtypes[2].name == "category"
-
-
 def test_test_size_attribute():
     """Assert that the _test_size attribute is created."""
     atom = ATOMClassifier(X_bin, y_bin, test_size=0.3, n_jobs=2, random_state=1)
@@ -136,17 +114,29 @@ def test_getitem():
     atom.clean()
     atom.impute()
     assert atom[1].__class__.__name__ == "Imputer"
-    assert atom["mean radius"].equals(atom.dataset["mean radius"])
+    assert atom["og"] is atom.og
+    assert atom["mean radius"] is atom.dataset["mean radius"]
+    with pytest.raises(ValueError, match=r".*has no branch nor column.*"):
+        print(atom["invalid"])
     with pytest.raises(TypeError, match=r".*subscriptable with types.*"):
         print(atom[2.3])
 
 
 # Test utility properties =========================================== >>
 
+def test_branch_setter_change():
+    """Assert that we can change to an old branch."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    atom.branch = "branch_2"
+    atom.clean()
+    atom.branch = "master"
+    assert atom.pipeline.empty  # Has no clean estimator
+
+
 def test_branch_setter_empty():
     """Assert that an error is raised when the name is empty."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*Can't create a branch.*"):
+    with pytest.raises(ValueError, match=r".*have an empty name.*"):
         atom.branch = ""
 
 
@@ -164,13 +154,11 @@ def test_branch_restricted_name():
         atom.branch = "og"
 
 
-def test_branch_setter_change():
-    """Assert that we can change to an old branch."""
+def test_branch_existing_name():
+    """Assert that an error is raised when the name already exists."""
     atom = ATOMClassifier(X10, y10, random_state=1)
-    atom.branch = "branch_2"
-    atom.clean()
-    atom.branch = "master"
-    assert atom.pipeline.empty  # Has no clean estimator
+    with pytest.raises(ValueError, match=r".*already exists.*"):
+        atom.branch = "master_from_og"
 
 
 def test_branch_setter_new():
@@ -189,13 +177,6 @@ def test_branch_setter_from_valid():
     atom.branch = "branch_3_from_master"
     assert atom.branch.name == "branch_3"
     assert atom.n_nans > 0
-
-
-def test_branch_setter_from_invalid():
-    """Assert that an error is raised when the from branch doesn't exist."""
-    atom = ATOMClassifier(X10, y10, random_state=1)
-    with pytest.raises(ValueError, match=r".*branch to split from does not exist.*"):
-        atom.branch = "new_branch_from_invalid"
 
 
 def test_scaled():
@@ -280,6 +261,65 @@ def test_status():
     atom.status()
 
 
+def test_merge_invalid_class():
+    """Assert that an error is raised when the class is of the wrong goal."""
+    atom_class = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_reg = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(TypeError, atom_class.merge, atom_reg)
+    pytest.raises(TypeError, atom_reg.merge, atom_class)
+
+
+def test_merge_different_dataset():
+    """Assert that an error is raised when the og dataset is different."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2 = ATOMClassifier(X10, y10, random_state=1)
+    pytest.raises(ValueError, atom_1.merge, atom_2)
+
+
+def test_merge_adopts_metrics():
+    """Assert that the metric of the merged instance is adopted."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run("Tree", metric="f1")
+    atom_1.merge(atom_2)
+    assert atom_1.metric == "f1"
+
+
+def test_merge_different_metrics():
+    """Assert that an error is raised when the metrics are different."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run("Tree", metric="f1")
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run("Tree", metric="auc")
+    pytest.raises(ValueError, atom_1.merge, atom_2)
+
+
+def test_merge():
+    """Assert that the merger handles branches, models and attributes."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run("Tree")
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.branch.rename("branch_2")
+    atom_2.missing = ["missing"]
+    atom_2.run("LR")
+    atom_1.merge(atom_2)
+    assert list(atom_1._branches.keys()) == ["og", "master", "branch_2"]
+    assert atom_1.models == ["Tree", "LR"]
+    assert atom_1.missing[-1] == "missing"
+
+
+def test_merge_with_suffix():
+    """Assert that the merger handles branches, models and attributes."""
+    atom_1 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_1.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_2 = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom_2.run(["Tree", "LGB"], n_calls=3, n_initial_points=(1, 5))
+    atom_1.merge(atom_2)
+    assert list(atom_1._branches.keys()) == ["og", "master", "master2"]
+    assert atom_1.models == ["Tree", "Tree2"]
+    assert list(atom_1._errors.keys()) == ["LGB", "LGB2"]
+
+
 def test_reset():
     """Assert that the reset method deletes models and branches."""
     atom = ATOMClassifier(X_class, y_class, random_state=1)
@@ -290,12 +330,60 @@ def test_reset():
     assert atom.dataset.equals(atom.og.dataset)
 
 
+def test_shrink_dtypes():
+    """Assert that the dtypes are optimized to save memory."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    assert not atom.dtypes.equals(X_bin.dtypes)
+
+
+def test_shrink_exclude_columns():
+    """Assert that columns can be excluded."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.shrink(columns=-1)
+    assert atom.dtypes[0].name != "float32"
+    assert atom.dtypes[-1].name == "int8"
+
+
+def test_shrink_dtypes_excluded():
+    """Assert that some dtypes are excluded from changing."""
+    atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    atom.shrink()
+    assert atom.dtypes[3].name == "bool"
+
+
+def test_shrink_obj2cat():
+    """Assert that the obj2cat parameter works as intended."""
+    atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    atom.shrink(obj2cat=False)
+    assert atom.dtypes[2].name == "object"
+
+    atom.shrink()
+    assert atom.dtypes[2].name == "category"
+
+
+def test_shrink_int2uint():
+    """Assert that the int2uint parameter works as intended."""
+    atom = ATOMClassifier(X10_str2, y10, random_state=1)
+    atom.shrink()
+    assert atom.dtypes[0].name == "int8"
+
+    atom.shrink(int2uint=True)
+    assert atom.dtypes[0].name == "uint8"
+
+
+def test_shrink_dtypes_unchanged():
+    """Assert that optimal dtypes are left unchanged."""
+    atom = ATOMClassifier(X_bin.astype("float32"), y_bin, random_state=1)
+    atom.shrink()
+    assert atom.dtypes[3].name == "float32"
+
+
 @pytest.mark.parametrize("column", ["Feature 1", 1])
 def test_distribution(column):
     """Assert that the distribution method and file are created."""
     atom = ATOMClassifier(X10_str, y10, random_state=1)
-    pytest.raises(ValueError, atom.distribution, column="Feature 3")
-    df = atom.distribution(column=column)
+    pytest.raises(ValueError, atom.distribution, columns="Feature 3")
+    df = atom.distribution(columns=column)
     assert len(df) == 11
 
 
@@ -843,7 +931,7 @@ def test_errors_are_updated():
 
     # Produce an error on one model (when n_initial_points > n_calls)
     atom.run(["Tree", "LGB"], n_calls=(3, 2), n_initial_points=(2, 5))
-    assert list(atom.errors) == ["LGB"]
+    assert list(atom.errors.keys()) == ["LGB"]
 
     # Subsequent runs should remove the original model
     atom.run(["Tree", "LGB"], n_calls=(5, 3), n_initial_points=(7, 1))

@@ -53,9 +53,9 @@ from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
     divide, infer_task, check_method, check_scaling, check_multidim,
-    get_pl_name, names_from_estimator, df_shrink_dtypes, get_columns,
-    variable_return, delete, custom_transform, add_transformer,
-    method_to_log, composed, crash, CustomDict,
+    get_pl_name, names_from_estimator, get_columns, variable_return,
+    delete, custom_transform, add_transformer, method_to_log, composed,
+    crash, CustomDict,
 )
 
 
@@ -80,21 +80,21 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.missing = ["", "?", "NA", "nan", "NaN", "None", "inf"]
 
         # Branching attributes
-        self._branches = {"og": Branch(self, "og"), "master": Branch(self, "master")}
-        self._current = "master"  # Main branch
+        self._branches = CustomDict(
+            og=Branch(self, "og"),  # Original branch saves provided dataset
+            master=Branch(self, "master"),  # Main branch
+        )
+        self._current = "master"  # Keeps track of the current branch
 
         # Training attributes
         self._models = CustomDict()
         self._metric = CustomDict()
-        self.errors = {}
+        self._errors = CustomDict()
 
         self.log("<< ================== ATOM ================== >>", 1)
 
         # Prepare the provided data
         self.branch.data, self.branch.idx = self._get_data_and_idx(arrays, y=y)
-
-        if not check_multidim(self.branch.data):
-            self.branch.data = df_shrink_dtypes(self.branch.data)
 
         # Attach the data to the original branch
         self.og.data = self.branch.data.copy(deep=True)
@@ -125,7 +125,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         if len(self._branches) - 1 == 1:
             out += f" {self._current}"
         else:
-            for branch in [b for b in self._branches if b != "og"]:
+            for branch in [b for b in self._branches.keys() if b != "og"]:
                 out += f"\n   >>> {branch}{' !' if branch == self._current else ''}"
         out += f"\n --> Models: {', '.join(lst(self.models)) if self.models else None}"
         out += f"\n --> Metric: {', '.join(lst(self.metric)) if self.metric else None}"
@@ -144,13 +144,21 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            return self.pipeline.iloc[item]  # Transformer from pipeline
+            return self.pipeline.iloc[item]  # Get transformer from pipeline
         elif isinstance(item, str):
-            return self.dataset[item]  # Column from dataset
+            if item in self._branches:
+                return self._branches[item]  # Get branch
+            elif item in self.dataset:
+                return self.dataset[item]  # Get column from dataset
+            else:
+                raise ValueError(
+                    f"{self.__class__.__name__}'s dataset "
+                    f"has no branch nor column called {item}."
+                )
         else:
             raise TypeError(
-                f"'{self.__class__.__name__}' object is only"
-                " subscriptable with types int or str."
+                f"{self.__class__.__name__} is only "
+                "subscriptable with types int or str."
             )
 
     # Utility properties =========================================== >>
@@ -158,32 +166,39 @@ class ATOM(BasePredictor, ATOMPlotter):
     @BasePredictor.branch.setter
     @typechecked
     def branch(self, name: str):
-        if not name:
-            raise ValueError("Can't create a branch with an empty name!")
-        elif name.lower() in map(str.lower, MODEL_LIST.keys()):
-            raise ValueError(
-                f"{name} is the acronym of model {MODEL_LIST[name].fullname}. "
-                "Please, choose a different name for the branch."
-            )
-        elif name.lower() in ("og", "vote", "stack"):
-            raise ValueError(
-                "This name is reserved for internal purposes. "
-                "Please, choose a different name for the branch."
-            )
-        elif name.lower() in self._branches:
-            self._current = name.lower()
-            self.log(f"Switched to branch {name}.", 1)
+        if name in [b for b in self._branches.keys() if b != "og"]:
+            self._current = self._branches[name].name
+            self.log(f"Switched to branch {self._current}.", 1)
         else:
             # Branch can be created from current or another
             if "_from_" in name:
-                new_branch, from_branch = name.lower().split("_from_")
+                new_branch, from_branch = name.split("_from_")
             else:
-                new_branch, from_branch = name.lower(), self._current
+                new_branch, from_branch = name, self._current
 
+            # Check if the new name is valid
+            if not new_branch:
+                raise ValueError("A branch can't have an empty name!")
+            elif new_branch.lower() in map(str.lower, MODEL_LIST.keys()):
+                raise ValueError(
+                    f"Invalid name for the branch. {new_branch} is the "
+                    f"acronym of model {MODEL_LIST[new_branch].fullname}. "
+                )
+            elif new_branch.lower() in ("og", "vote", "stack"):
+                raise ValueError(
+                    "This name is reserved for internal purposes. "
+                    "Choose a different name for the branch."
+                )
+            elif new_branch in self._branches:
+                raise ValueError(
+                    f"Branch {self._branches[new_branch].name} already exists!"
+                )
+
+            # Check if the parent branch exists
             if from_branch not in self._branches:
                 raise ValueError(
-                    "The selected branch to split from does not exist! Print "
-                    "atom.branch for an overview of the available branches."
+                    "The selected branch to split from does not exist! Use "
+                    "atom.status() for an overview of the available branches."
                 )
 
             self._branches[new_branch] = Branch(self, new_branch, parent=from_branch)
@@ -289,6 +304,158 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(str(self))
 
     @composed(crash, method_to_log)
+    def merge(self, atom: Any, suffix: str = "2"):
+        """Merge another atom instance into this one.
+
+        Branches, models, metrics and attributes of the other atom
+        instance are merged into this one. If there are branches
+        and/or models with the same name, they are merged adding
+        the `suffix` parameter to their name. The errors and missing
+        attributes are extended with those of the other instance. It's
+        only possible to merge two instances if they are initialized
+        using the same dataset and trained using the same metric.
+
+        Parameters
+        ----------
+        atom: ATOMClassifier or ATOMRegressor
+            Other atom instance with which to merge.
+
+        suffix: str, optional (default="2")
+            Conflicting branches and models are merged adding `suffix`
+            to the end of their names.
+
+        """
+        if self.goal.startswith("class"):
+            if not getattr(atom, "goal", "").startswith("class"):
+                raise TypeError(
+                    "Invalid type for the atom parameter. The provided object should "
+                    f"be an ATOMClassifier instance, got {atom.__class__.__name__}."
+                )
+        elif self.goal.startswith("reg"):
+            if not getattr(atom, "goal", "").startswith("reg"):
+                raise TypeError(
+                    "Invalid type for the atom parameter. The provided object should "
+                    f"be an ATOMRegressor instance, got {atom.__class__.__name__}."
+                )
+
+        # Check that both instances have the same original dataset
+        if self["og"].data.shape != atom["og"].data.shape:
+            raise ValueError(
+                "Invalid value for the atom parameter. The provided atom instance "
+                f"was initialized with a different dataset (shape={atom['og'].shape}) "
+                f"than this one (shape={self['og'].shape})."
+            )
+
+        # Check that both instances have the same metric
+        if not self._metric:
+            self._metric = atom._metric
+        elif atom.metric and self.metric != atom.metric:
+            raise ValueError(
+                "Invalid value for the atom parameter. The provided atom "
+                f"instance uses a different metric ({atom.metric}) than "
+                f"this one ({self.metric})."
+            )
+
+        self.log("Merging atom...", 1)
+        for name, branch in atom._branches.items():
+            if name != "og":  # Original dataset is the same
+                self.log(f" --> Merging branch {name}.", 1)
+                if name in self._branches:
+                    name = f"{name}{suffix}"
+                branch.name = name
+                self._branches[name] = branch
+
+        for name, model in atom._models.items():
+            self.log(f" --> Merging model {name}.", 1)
+            if name in self._models:
+                name = f"{name}{suffix}"
+            model.name = name
+            self._models[name] = model
+
+        self.log(" --> Merging attributes.", 1)
+        self.missing.extend([x for x in atom.missing if x not in self.missing])
+        for name, error in atom._errors.items():
+            if name in self._errors:
+                name = f"{name}{suffix}"
+            self._errors[name] = error
+
+    @composed(crash, method_to_log)
+    def shrink(
+        self,
+        columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
+        obj2cat: bool = True,
+        int2uint: bool = False
+    ):
+        """Converts the dataset's columns to the smallest possible dtype.
+
+        Use this method for memory optimization. Note that applying
+        transformers to the data may alter the dtypes again.
+        From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
+
+        Parameters
+        ----------
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names, indices or dtypes of the columns in the dataset to
+            shrink. If None, transform all columns.
+
+        obj2cat: bool, optional (default=True)
+            Whether to convert `object` to `category`. Only if the
+            number of categories would be less than 30% of the length
+            of the column.
+
+        int2uint: bool, optional (default=False)
+            Whether to convert `int` to `uint`. Only if the values are
+            strictly positive.
+
+        """
+        check_method(self, "shrink")
+        columns = get_columns(self.dataset, columns)
+        exclude_types = ["category", "datetime64[ns]", "bool"]
+
+        # Build column filter and type_map
+        types_1 = (np.int8, np.int16, np.int32, np.int64)
+        types_2 = (np.uint8, np.uint16, np.uint32, np.uint64)
+        types_3 = (np.float32, np.float64, np.longdouble)
+
+        type_map = {
+            "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
+            "uint": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_2],
+            "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_3],
+        }
+
+        if obj2cat:
+            type_map["object"] = "category"
+        else:
+            exclude_types += ["object"]
+
+        new_dtypes = {}
+        for c, old_t in {k: v for k, v in self.dtypes.items() if k in columns}.items():
+            if old_t in exclude_types:
+                continue
+
+            t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
+            if isinstance(t, list):
+                # Use uint if values are strictly positive
+                if int2uint and t == type_map["int"] and self[c].min() >= 0:
+                    t = type_map["uint"]
+
+                # Find the smallest type that fits
+                new_t = next(
+                    (r[0] for r in t if r[1] <= self[c].min() and r[2] >= self[c].max())
+                )
+                if new_t and new_t == old_t:
+                    new_t = None  # Keep as is
+            else:
+                # Convert to category if number of categories less than 30% of column
+                new_t = t if self[c].nunique() <= int(len(self[c]) * 0.3) else "object"
+
+            if new_t:
+                new_dtypes[c] = new_t
+
+        self.branch.data = self.branch.data.astype(new_dtypes)
+        self.log("The column dtypes are converted successfully!", 1)
+
+    @composed(crash, method_to_log)
     def reset(self):
         """Reset the instance to it's initial state.
 
@@ -297,8 +464,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         # Delete all models and branches
-        delete(self, self._get_models(None))
-        for name in [b for b in self._branches if b != "og"]:
+        delete(self, self._get_models())
+        for name in [b for b in self._branches.keys() if b != "og"]:
             self._branches.pop(name)
 
         # Re-create the master branch from original
@@ -356,7 +523,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             self.log(df.to_markdown(), _vb + 1)
 
     @composed(crash, typechecked)
-    def distribution(self, column: Union[int, str] = 0):
+    def distribution(self, columns: Union[int, str] = 0):
         """Get statistics on a column's distribution.
 
         Compute the KS-statistic for various distributions against
@@ -364,7 +531,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Parameters
         ----------
-        column: int or str, optional (default=0)
+        columns: int or str, optional (default=0)
             Index or name of the column to get the statistics from.
             Only numerical columns are accepted.
 
@@ -374,17 +541,17 @@ class ATOM(BasePredictor, ATOMPlotter):
             Dataframe with the statistic results.
 
         """
-        if isinstance(column, int):
-            column = self.columns[column]
+        if isinstance(columns, int):
+            columns = self.columns[columns]
 
-        if column in self.categorical:
+        if columns in self.categorical:
             raise ValueError(
-                "Invalid value for the column parameter. Column should "
-                f"be numerical, got categorical column {column}."
+                "Invalid value for the columns parameter. Column should "
+                f"be numerical, got categorical column {columns}."
             )
 
         # Drop missing values from the column before fitting
-        X = self[column].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
+        X = self[columns].replace(self.missing + [np.inf, -np.inf], np.NaN).dropna()
 
         df = pd.DataFrame(columns=["ks", "p_value"])
         for dist in DISTRIBUTIONS:
@@ -506,7 +673,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         return variable_return(X, y)
 
     def automl(self, **kwargs):
-        """Use AutoML to search for an optimized pipeline.
+        """Search for an optimized pipeline in an automated fashion.
 
         Uses the TPOT package to perform an automated search of
         transformers and a final estimator that maximizes a metric
@@ -523,6 +690,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         from tpot import TPOTClassifier, TPOTRegressor
 
         check_method(self, "automl")
+
         # Define the scoring parameter
         if self._metric and not kwargs.get("scoring"):
             kwargs["scoring"] = self._metric[0]
@@ -1394,7 +1562,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         finally:
             # Catch errors and pass them to atom's attribute
             for model, error in trainer.errors.items():
-                self.errors[model] = error
+                self._errors[model] = error
                 self._models.pop(model, None)
 
         # Update attributes
@@ -1402,7 +1570,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         self._metric = trainer._metric
 
         for model in self._models:
-            self.errors.pop(model.name, None)  # Remove model from errors (if there)
+            self._errors.pop(model.name, None)  # Remove model from errors (if there)
             model.T = self  # Change the model's parent class from trainer to atom
 
     @composed(crash, method_to_log, typechecked)

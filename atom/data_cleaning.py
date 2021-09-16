@@ -738,8 +738,6 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             X = X.dropna(axis=0, thresh=self.max_nan_rows)
 
         for col in X:
-            values = X[col].values.reshape(-1, 1)
-
             # Remember columns with too many missing values
             if self.max_nan_cols and X[col].isna().sum() > self.max_nan_cols:
                 self._drop_cols.append(col)
@@ -749,26 +747,26 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             if col in self._num_cols:
                 if isinstance(self.strat_num, str):
                     if self.strat_num.lower() == "knn":
-                        self._imputers[col] = KNNImputer().fit(values)
+                        self._imputers[col] = KNNImputer().fit(X[[col]])
 
                     elif self.strat_num.lower() == "most_frequent":
                         self._imputers[col] = SimpleImputer(
                             strategy="constant",
                             fill_value=X[col].mode()[0],
-                        ).fit(values)
+                        ).fit(X[[col]])
 
                     # Strategies mean or median
                     elif self.strat_num.lower() != "drop":
                         self._imputers[col] = SimpleImputer(
                             strategy=self.strat_num.lower()
-                        ).fit(values)
+                        ).fit(X[[col]])
 
             # Column is categorical
             elif self.strat_cat.lower() == "most_frequent":
                 self._imputers[col] = SimpleImputer(
                     strategy="constant",
                     fill_value=X[col].mode()[0],
-                ).fit(values)
+                ).fit(X[[col]])
 
         self._is_fitted = True
         return self
@@ -823,7 +821,6 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                 )
 
         for col in X:
-            values = X[col].values.reshape(-1, 1)
             nans = X[col].isna().sum()
 
             # Drop columns with too many missing values
@@ -858,7 +855,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values using "
                         f"the KNN imputer in feature {col}.", 2
                     )
-                    X[col] = self._imputers[col].transform(values)
+                    X[col] = self._imputers[col].transform(X[[col]])
 
                 else:  # Strategies mean, median or most_frequent
                     mode = round(self._imputers[col].statistics_[0], 2)
@@ -866,7 +863,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values with "
                         f"{self.strat_num.lower()} ({mode}) in feature {col}.", 2
                     )
-                    X[col] = self._imputers[col].transform(values)
+                    X[col] = self._imputers[col].transform(X[[col]])
 
             # Column is categorical and contains missing values
             elif nans > 0:
@@ -892,7 +889,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                         f" --> Imputing {nans} missing values with "
                         f"most_frequent ({mode}) in feature {col}.", 2
                     )
-                    X[col] = self._imputers[col].transform(values)
+                    X[col] = self._imputers[col].transform(X[[col]])
 
         return variable_return(X, y)
 
@@ -1045,26 +1042,31 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             # Perform encoding type dependent on number of unique values
             if col in self.ordinal or len(self._categories[col]) == 2:
                 unique = X[col].unique()
+
+                # Create a custom mapping: 0 to N - 1
                 mapping = {v: i for i, v in enumerate(self.ordinal.get(col, unique))}
+                if np.NaN not in mapping:  # Encoder always needs mapping of NaN value
+                    mapping[np.NaN] = -1
+
                 self._encoders[col] = OrdinalEncoder(
                     mapping=[{"col": col, "mapping": mapping}],
                     handle_missing="return_nan",
-                    handle_unknown="return_nan",
-                ).fit(pd.DataFrame(X[col]))
+                    handle_unknown="value",
+                ).fit(X[[col]])
 
             elif 2 < len(self._categories[col]) <= self.max_onehot:
                 self._encoders[col] = OneHotEncoder(
                     use_cat_names=True,
                     handle_missing="return_nan",
-                    handle_unknown="return_nan",
-                ).fit(pd.DataFrame(X[col]))
+                    handle_unknown="value",
+                ).fit(X[[col]])
 
             else:
                 self._encoders[col] = strategy(
                     handle_missing="return_nan",
-                    handle_unknown="return_nan",
+                    handle_unknown="value",
                     **self.kwargs,
-                ).fit(pd.DataFrame(X[col]), y)
+                ).fit(X[[col]], y)
 
         self._is_fitted = True
         return self
@@ -1102,24 +1104,21 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 f"feature {col}. Contains {n_classes} classes.", 2
             )
 
-            # Missing values are propagated
+            # Count the propagated missing values
             n_nans = X[col].isna().sum()
             if n_nans:
                 self.log(f"   >>> Propagating {n_nans} missing values.", 2)
 
             # Get the new encoded columns
-            new_cols = self._encoders[col].transform(pd.DataFrame(X[col]))
+            new_cols = self._encoders[col].transform(X[[col]])
 
             # Drop _nan columns (missing values are propagated)
             new_cols = new_cols[[col for col in new_cols if not col.endswith("_nan")]]
 
             # Check for unknown classes
-            uk = len([i for i in X[col].unique() if i not in self._categories[col]])
-            if uk:
-                self.log(
-                    f"   >>> Creating {new_cols.isna().sum().sum() - n_nans} "
-                    f"missing values from {uk} unknown classes.", 2
-                )
+            uc = len([i for i in X[col].unique() if i not in self._categories[col]])
+            if uc:
+                self.log(f"   >>> Handling {uc} unknown classes.", 2)
 
             # Insert the new columns at old location
             for i, new_col in enumerate(new_cols):

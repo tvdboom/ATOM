@@ -22,8 +22,8 @@ and call any [model](../../../user_guide/models) from atom. Read more in the
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>*arrays: sequence of indexables</strong><br>
 Dataset containing features and target. Allowed formats are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -129,7 +129,7 @@ different results per branch.
 * **\__iter__:** Iterate over the pipeline's transformers.
 * **\__contains__:** Checks if the provided item is a column in the dataset.
 * **\__getitem__:** If int, return the i-th transformer in the pipeline.
-  If str, access a column in the dataset.
+  If str, access a branch or a column in the dataset.
 
 <br>
 
@@ -146,8 +146,8 @@ accordingly.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>pipeline: pd.Series</strong><br>
 Series containing all transformers fitted on the data in the current branch.
@@ -274,8 +274,8 @@ Number of samples in the training set containing outliers.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>missing: list</strong><br>
 List of values that are considered "missing" (used by the <a href="#clean">clean</a>
@@ -316,8 +316,8 @@ Dataframe of the training results. Columns can include:
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Additional:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Additional:</strong></td>
+<td width="80%" class="td_params">
 <strong>Attributes and methods for dataset</strong><br>
 Some attributes and methods can be called from atom but will return
 the call from the dataset in the current branch, e.g. <code>atom.dtypes</code>
@@ -334,8 +334,8 @@ methods are: "size", "head", "tail", "loc", "iloc", "describe", "iterrows",
  
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>style: str</strong><br>
 Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
@@ -381,7 +381,7 @@ manage the pipeline.
 
 <tr>
 <td><a href="#automl">automl</a></td>
-<td>Use AutoML to search for an optimized pipeline.</td>
+<td>Search for an optimized pipeline in an automated fashion.</td>
 </tr>
 
 <tr>
@@ -410,6 +410,11 @@ manage the pipeline.
 </tr>
 
 <tr>
+<td><a href="#evaluate">evaluate</a></td>
+<td>Get all the models evaluation for provided metrics.</td>
+</tr>
+
+<tr>
 <td><a href="#export-pipeline">export_pipeline</a></td>
 <td>Export the pipeline to a sklearn-like Pipeline object.</td>
 </tr>
@@ -417,6 +422,11 @@ manage the pipeline.
 <tr>
 <td><a href="#log">log</a></td>
 <td>Save information to the logger and print to stdout.</td>
+</tr>
+
+<tr>
+<td><a href="#merge">merge</a></td>
+<td>Merge another atom instance into this one.</td>
 </tr>
 
 <tr>
@@ -450,8 +460,8 @@ manage the pipeline.
 </tr>
 
 <tr>
-<td><a href="#evaluate">evaluate</a></td>
-<td>Get all the models evaluation for provided metrics.</td>
+<td><a href="#shrink">shrink</a></td>
+<td>Converts the dataset's columns to the smallest possible dtype.</td>
 </tr>
 
 <tr>
@@ -505,8 +515,8 @@ is merged independently with atom.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>transformer: estimator</strong><br>
 Transformer to add to the pipeline. Should implement a <code>transform</code> method.
@@ -554,8 +564,8 @@ parameter of the function is the complete dataset.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>func: callable</strong><br>
 Function to apply to the dataset.
@@ -592,10 +602,10 @@ merged with atom's pipeline. The tpot instance can be accessed through the
 `tpot` attribute. Read more in the [user guide](../../../user_guide/data_pipelines/#automl).
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
-Keyword arguments for tpot's regressor.
+Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#regression">TPOTRegressor</a>.
 </td>
 </tr>
 </table>
@@ -615,8 +625,8 @@ The default option is to add two plots side by side. See the
 [user guide](../../../user_guide/plots/#canvas) for an example.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>nrows: int, optional (default=1)</strong><br>
 Number of plots in length.
@@ -661,8 +671,8 @@ the whole pipeline on the complete dataset. Use it to assess the robustness of
 the model's performance.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function. If the scoring method is not specified, it uses
@@ -670,8 +680,8 @@ the trainer's metric.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>scores: dict</strong><br>
 Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function.
@@ -697,8 +707,8 @@ or to free some memory before saving. Deleted models are
 not removed from any active mlflow experiment.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>models: str or sequence, optional (default=None)</strong><br>
 Models to delete. If None, delete them all.
 </td>
@@ -709,7 +719,7 @@ Models to delete. If None, delete them all.
 
 <a name="distribution"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">distribution</strong>(column=0)
+<em>method</em> <strong style="color:#008AB8">distribution</strong>(columns=0)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L359">[source]</a>
 </span>
@@ -723,15 +733,15 @@ for various distributions against a column in the dataset. Missing values are ig
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
-<strong>column: int or str, optional (default=0)</strong><br>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<strong>columns: int or str, optional (default=0)</strong><br>
 Index or name of the column to get the statistics from. Only
 numerical columns are accepted.
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>stats: pd.DataFrame</strong><br>
 Dataframe with the statistic results.
 </td>
@@ -756,10 +766,44 @@ Drop columns from the dataset.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>columns: int, str, slice or sequence</strong><br>
 Names or indices of the columns to drop.
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="evaluate"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L396">[source]</a>
+</span>
+</div>
+Get all the models evaluation for provided metrics.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
+Metrics to calculate. If None, a selection of the most common
+metrics per task are used.
+</p>
+<p>
+<strong>dataset: str, optional (default="test")</strong><br>
+Data set on which to calculate the metric. Options are "train" or "test".
+</p>
+</td>
+</tr>
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>scores: pd.DataFrame</strong><br>
+Scores of the models.
 </td>
 </tr>
 </table>
@@ -790,8 +834,8 @@ on the training set.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>model: str or None, optional (default=None)</strong><br>
 Name of the model to add as a final estimator to the pipeline. If the
@@ -814,8 +858,8 @@ If None, it leaves them to their original verbosity.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>pipeline: Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
@@ -834,8 +878,8 @@ Current branch as a sklearn-like Pipeline object.
 Write a message to the logger and print it to stdout.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
@@ -843,6 +887,39 @@ Message to write to the logger and print to stdout.
 <p>
 <strong>level: int, optional (default=0)</strong><br>
 Minimum verbosity level to print the message.
+</p>
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="merge"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">merge</strong>(atom, suffix="2")
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L307">[source]</a>
+</span>
+</div>
+Merge another atom instance into this one. Branches, models, metrics
+and attributes of the other atom instance are merged into this one.
+If there are branches and/or models with the same name, they are
+merged adding the `suffix` parameter to their name. The errors and
+missing attributes are extended with those of the other instance.
+It's only possible to merge two instances if they are initialized
+using the same dataset and trained using the same metric.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>atom: <a href="./">ATOMRegressor</a></strong><br>
+Other atom instance with which to merge.
+</p>
+<p>
+<strong>suffix: str, optional (default="2")</strong><br>
+Conflicting branches and models are merged adding <code>suffix</code>
+to the end of their names.
 </p>
 </td>
 </tr>
@@ -863,8 +940,8 @@ is rendered in HTML5 and CSS3. Note that this method can be slow for
 `n_rows` > 10k.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>dataset: str, optional (default="dataset")</strong><br>
 Data set to get the report from.
@@ -880,8 +957,8 @@ Name to save the file with (as .html). None to not save anything.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>report: <a href="https://pandas-profiling.github.io/pandas-profiling/docs/master/rtd/pages/api/_autosummary/pandas_profiling.profile_report.ProfileReport.html#pandas_profiling.profile_report.ProfileReport">ProfileReport</a></strong><br>
 Created profile object.
 </td>
@@ -936,8 +1013,8 @@ the complete dataset as attribute, so the file can become large for
 big datasets! To avoid this, use `save_data=False`.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
@@ -964,8 +1041,8 @@ when loading the file.
 Save the data in the current branch to a csv file.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
@@ -980,34 +1057,36 @@ Data set to save.
 <br>
 
 
-<a name="evaluate"></a>
+<a name="shrink"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
+<em>method</em> <strong style="color:#008AB8">shrink</strong>(columns=None, obj2cat=True, int2uint=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L396">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L999">[source]</a>
 </span>
 </div>
-Get all the models evaluation for provided metrics.
+Converts the dataset's columns to the smallest possible dtype.
+Use this method for memory optimization. Note that applying
+transformers to the data may alter the dtypes again.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
-<strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
-Metrics to calculate. If None, a selection of the most common
-metrics per task are used.
+<strong>columns: int, str, slice, sequence or None, optional (default=None)</strong><br>
+Names, indices or dtypes of the columns in the dataset to shrink.
+If None, transform all columns.
 </p>
 <p>
-<strong>dataset: str, optional (default="test")</strong><br>
-Data set on which to calculate the metric. Options are "train" or "test".
+<strong>obj2cat: bool, optional (default=True)</strong><br>
+Whether to convert <code>object</code> to <code>category</code>. Only if the
+number of categories would be less than 30% of the length
+of the column.
 </p>
-</td>
-</tr>
-<tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
-<strong>scores: pd.DataFrame</strong><br>
-Scores of the models.
+<p>
+<strong>int2uint: bool, optional (default=False)</strong><br>
+Whether to convert <code>int</code> to <code>uint</code>. Only if the values are
+strictly positive.
+</p>
 </td>
 </tr>
 </table>
@@ -1025,8 +1104,8 @@ estimator=None, stack_method="auto", passthrough=False)
 Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the stacking. If None, it selects all models
@@ -1077,9 +1156,9 @@ Print basic information about the dataset.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L287">[source]</a>
 </span>
 </div>
-Get an overview of the branches, models and errors in the current instance.
-This method prints the same information as atom's \__repr__ but will also
-save it to the logger.
+Get an overview of the branches, models and errors in the instance.
+This method prints the same information as atom's \__repr__ and also
+saves it to the logger.
 <br /><br /><br />
 
 
@@ -1093,8 +1172,8 @@ save it to the logger.
 Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the voting. If None, it selects all models

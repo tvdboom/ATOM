@@ -135,6 +135,17 @@ class BasePredictor:
         return flt([getattr(model, "name", model) for model in self._models])
 
     @property
+    def errors(self):
+        """Return the errors encountered during model training."""
+        return self._errors
+
+    @property
+    def winner(self):
+        """Return the best performing model."""
+        if self._models:  # Returns None if not fitted
+            return self._models[np.argmax([get_best_score(m) for m in self._models])]
+
+    @property
     def results(self):
         """Return the results as a pd.DataFrame."""
 
@@ -162,12 +173,6 @@ class BasePredictor:
             ).sort_index(level=0, ascending=True)
 
         return df
-
-    @property
-    def winner(self):
-        """Return the best performing model."""
-        if self._models:  # Returns None if not fitted
-            return self._models[np.argmax([get_best_score(m) for m in self._models])]
 
     # Prediction methods =========================================== >>
 
@@ -247,7 +252,7 @@ class BasePredictor:
                 f"available models are: {', '.join(self.models)}."
             )
 
-    def _get_models(self, models):
+    def _get_models(self, models=None):
         """Return models in the pipeline. Duplicate inputs are ignored."""
         if not models:
             return lst(self.models).copy()

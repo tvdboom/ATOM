@@ -2349,13 +2349,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-are-there-missing-values-in-the-dataset-after-encoding" class="md-nav__link">
-    Why are there missing values in the dataset after encoding?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#is-there-a-way-to-process-datetime-features" class="md-nav__link">
     Is there a way to process datetime features?
   </a>
@@ -2525,13 +2518,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#why-are-there-missing-values-in-the-dataset-after-encoding" class="md-nav__link">
-    Why are there missing values in the dataset after encoding?
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#is-there-a-way-to-process-datetime-features" class="md-nav__link">
     Is there a way to process datetime features?
   </a>
@@ -2553,6 +2539,9 @@
                 
                 <h1 id="frequently-asked-questions">Frequently asked questions</h1>
 <hr />
+<p>Here we try to give some answers to questions that have popped up
+regularly. If you have any other questions, don't hesitate to post
+them on the <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g">slack channel</a>! </p>
 <ul>
 <li><a href="#q1">Is this package related to the text editor?</a></li>
 <li><a href="#q2">How does ATOM relate to AutoML?</a></li>
@@ -2566,12 +2555,10 @@
 <li><a href="#q10">Can I merge a sklearn pipeline with atom?</a></li>
 <li><a href="#q11">Is it possible to initialize atom with an existing train and test set?</a></li>
 <li><a href="#q12">Can I train the models using cross-validation?</a></li>
-<li><a href="#q13">Why are there missing values in the dataset after encoding?</a></li>
-<li><a href="#q14">Is there a way to process datetime features?</a></li>
+<li><a href="#q13">Is there a way to process datetime features?</a></li>
 </ul>
 <p><br></p>
 <hr />
-<p><br></p>
 <p><a name="q1"></a></p>
 <h3 id="is-this-package-related-to-the-text-editor">Is this package related to the text editor?</h3>
 <p>There is, indeed, a text editor with the same name and a similar logo as this
@@ -2693,19 +2680,6 @@ we would cross-validate the entire pipeline using the entire dataset.
 This can be done using a trainer's <a href="../API/ATOM/atomclassifier/#cross-validate">cross_validate</a>
 method, but for the reason just explained above, the method only outputs
 the final metric results.</p>
-<p><br></p>
-<p><a name="q13"></a></p>
-<h3 id="why-are-there-missing-values-in-the-dataset-after-encoding">Why are there missing values in the dataset after encoding?</h3>
-<p>The <a href="../API/data_cleaning/encoder">Encoder</a> class can create new <code>np.NaN</code>
-values during transformation if it encounters classes that were not there
-during fitting. This is intended behavior, since the transformer wouldn't
-know what to do with the new classes. In atom's case, it means the test
-set contains classes that were not present in the training set. This
-usually happens if the training set is very small or if the column has
-many classes with few occurrences. To fix this, impute the dataset
-after encoding, increase the number of samples in the training set to
-make sure it contains all the classes in the column, or increase the
-<code>frac_to_other</code> parameter.</p>
 <p><br></p>
 <p><a name="q13"></a></p>
 <h3 id="is-there-a-way-to-process-datetime-features">Is there a way to process datetime features?</h3>

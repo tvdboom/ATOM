@@ -23,3 +23,19 @@
   clear: both;
   display: table;
 }
+
+.td_title {
+    background: #F5F5F5;
+}
+.td_params {
+    background: white;
+}
+
+[data-md-color-scheme="slate"] .td_title {
+    background: #343d55;
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .td_params {
+    background: #333543;
+    color: #dfe1f2;
+}

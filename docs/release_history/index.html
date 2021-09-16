@@ -618,6 +618,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-480" class="md-nav__link">
+    Version 4.8.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-473" class="md-nav__link">
     Version 4.7.3
   </a>
@@ -2434,6 +2441,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-480" class="md-nav__link">
+    Version 4.8.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-473" class="md-nav__link">
     Version 4.7.3
   </a>
@@ -2539,6 +2553,21 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
+<p><a name="v480"></a></p>
+<h3 id="version-480">Version 4.8.0</h3>
+<ul>
+<li>The <a href="../API/data_cleaning/encoder">Encoder</a> class now directly handles
+  unknown categories encountered during fitting.</li>
+<li>The dtype shrinking is moved from atom's initializers to the
+  <a href="../API/ATOM/atomclassifier/#shrink">shrink</a> method.</li>
+<li>The <code>column</code> parameter in the <a href="../API/ATOM/atomclassifier/#distribution">distribution</a>
+  method is renamed to <code>columns</code> for continuity of the API.</li>
+<li>Branches are now case-insensitive.</li>
+<li>Renaming a branch using an existing name now raises an exception.</li>
+<li>Fixed a bug where columns of type <code>category</code> broke the <a href="../API/data_cleaning/imputer">Imputer</a>
+  class.</li>
+<li>The tables in the documentation now adapt to dark mode.</li>
+</ul>
 <p><a name="v473"></a></p>
 <h3 id="version-473">Version 4.7.3</h3>
 <ul>
