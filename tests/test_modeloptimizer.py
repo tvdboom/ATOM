@@ -246,6 +246,13 @@ def test_calibrate_to_mlflow(mlflow):
     mlflow.assert_called_with(atom.gnb.estimator, "CalibratedClassifierCV")
 
 
+def test_cross_validate():
+    """Assert that the cross_validate method works as intended."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("LR")
+    assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
+
+
 def test_export_pipeline_atom():
     """Assert that the pipeline can be retrieved from the model."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -260,11 +267,12 @@ def test_export_pipeline_trainer():
     assert len(trainer.lr.export_pipeline()) == 2
 
 
-def test_cross_validate():
-    """Assert that the cross_validate method works as intended."""
+def test_full_train():
+    """Assert that the full_train method returns a fitted estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run("LR")
-    assert isinstance(atom.lr.cross_validate(scoring="AP"), dict)
+    atom.run(["Tree", "LGB"])
+    assert isinstance(atom.tree.full_train(), DecisionTreeClassifier)
+    assert atom.lgb.full_train() is not atom.lgb.estimator
 
 
 def test_rename():
@@ -285,14 +293,6 @@ def test_rename_to_mlflow(mlflow):
     atom.run("GNB")
     atom.gnb.rename("GNB2")
     mlflow.assert_called_with(atom.gnb2._run.info.run_id, "mlflow.runName", "GNB2")
-
-
-def test_full_train():
-    """Assert that the full_train method returns a fitted estimator."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["Tree", "LGB"])
-    assert isinstance(atom.tree.full_train(), DecisionTreeClassifier)
-    assert atom.lgb.full_train() is not atom.lgb.estimator
 
 
 def test_save_estimator():

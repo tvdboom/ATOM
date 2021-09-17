@@ -9,9 +9,9 @@ n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 </span>
 </div>
 
-Balance the number of samples per class in the target column. Use only for classification tasks.
-This class can be accessed from atom through the
-[balance](../../ATOM/atomclassifier/#balance) method. Read more in
+Balance the number of samples per class in the target column. Use only
+for classification tasks. This class can be accessed from atom through
+the [balance](../../ATOM/atomclassifier/#balance) method. Read more in
 the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
 
 <table style="font-size:16px">
@@ -19,10 +19,11 @@ the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>strategy: str, optional (default="ADASYN")</strong><br>
-Type of algorithm to use for oversampling or undersampling. Choose from one
-of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
-package.
+<strong>strategy: str or estimator, optional (default="ADASYN")</strong><br>
+Type of algorithm with which to balance the dataset. Choose
+from any of the estimators in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
+package or provide a custom one (has to have a <code>fit_resample</code>
+method).
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.

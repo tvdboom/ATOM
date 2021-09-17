@@ -67,8 +67,10 @@ from imblearn.over_sampling import (
     RandomOverSampler,
     SMOTE,
     SMOTENC,
+    SMOTEN,
     SVMSMOTE,
 )
+from imblearn.combine import SMOTEENN, SMOTETomek
 
 # Sklearn
 from sklearn.metrics import (
@@ -217,13 +219,16 @@ BALANCING_STRATS = dict(
     onesidedselection=OneSidedSelection,
     randomundersampler=RandomUnderSampler,
     tomeklinks=TomekLinks,
-    adasyn=ADASYN,
-    borderlinesmote=BorderlineSMOTE,
-    kmanssmote=KMeansSMOTE,
     randomoversampler=RandomOverSampler,
     smote=SMOTE,
     smotenc=SMOTENC,
+    smoten=SMOTEN,
+    adasyn=ADASYN,
+    borderlinesmote=BorderlineSMOTE,
+    kmanssmote=KMeansSMOTE,
     svmsmote=SVMSMOTE,
+    smoteenn=SMOTEENN,
+    smotetomek=SMOTETomek,
 )
 
 

@@ -15,8 +15,8 @@ are compatible. Read more about using custom estimators in the [user guide](../.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>estimator: estimator class or instance</strong><br>
 Model's estimator. Can be a class or an instance.
@@ -40,8 +40,8 @@ in the <a href="../../../user_guide/models/#deep-learning">user guide</a>.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>estimator: estimator</strong><br>
 Provided estimator with custom attributes for ATOM's pipeline.
 </td>

@@ -6,6 +6,8 @@
 
 * The [Encoder](../API/data_cleaning/encoder) class now directly handles
   unknown categories encountered during fitting.
+* The [Balancer](../API/data_cleaning/balancer) class now accepts custom
+  estimators as balancing strategy.
 * The new [merge](../API/ATOM/atomclassifier/#merge) method enables the
   user to merge multiple atom instances into one.
 * The dtype shrinking is moved from atom's initializers to the

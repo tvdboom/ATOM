@@ -11,7 +11,7 @@ Description: Module containing the data cleaning estimators.
 import numpy as np
 import pandas as pd
 from typeguard import typechecked
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, Any
 from collections import defaultdict
 from scipy.stats import zscore
 from sklearn.base import BaseEstimator
@@ -527,12 +527,6 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        # Prepare the type of prohibited_types
-        if not self.drop_types:
-            self.drop_types = []
-        elif isinstance(self.drop_types, str):
-            self.drop_types = [self.drop_types]
-
         self.log("Applying data cleaning...", 1)
 
         # Replace all missing values with NaN
@@ -543,16 +537,15 @@ class Cleaner(BaseEstimator, TransformerMixin, BaseTransformer):
             n_unique = X[col].nunique(dropna=True)
 
             # Drop features with invalid data type
-            dtype = str(X[col].dtype)
-            if dtype in self.drop_types:
+            if X[col].dtype.name in lst(self.drop_types):
                 self.log(
                     f" --> Dropping feature {col} for having a "
-                    f"prohibited type: {dtype}.", 2
+                    f"prohibited type: {X[col].dtype.name}.", 2
                 )
                 X = X.drop(col, axis=1)
                 continue
 
-            elif dtype in ("object", "category"):  # If non-numerical feature...
+            elif X[col].dtype.name in ("object", "category"):
                 if self.strip_categorical:
                     # Strip strings from blank spaces
                     X[col] = X[col].apply(
@@ -679,6 +672,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         self.max_nan_cols = max_nan_cols
 
         self.missing = ["", "?", "None", "NA", "nan", "NaN", "inf"]
+        self._max_nan_rows = None
+        self._max_nan_cols = None
         self._imputers = {}
         self._num_cols = []
         self._drop_cols = []
@@ -718,7 +713,10 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"Value should be >0, got {self.max_nan_rows}."
                 )
             elif self.max_nan_rows <= 1:
-                self.max_nan_rows = int(len(X.columns) * self.max_nan_rows)
+                self._max_nan_rows = int(len(X.columns) * self.max_nan_rows)
+            else:
+                self._max_nan_rows = self.max_nan_rows
+
         if self.max_nan_cols:
             if self.max_nan_cols < 0:
                 raise ValueError(
@@ -726,7 +724,9 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"Value should be >0, got {self.max_nan_cols}."
                 )
             elif self.max_nan_cols <= 1:
-                self.max_nan_cols = int(len(X) * self.max_nan_cols)
+                self._max_nan_cols = int(len(X) * self.max_nan_cols)
+            else:
+                self._max_nan_cols = self.max_nan_cols
 
         self.log("Fitting Imputer...", 1)
 
@@ -734,12 +734,12 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many NaN values
-        if self.max_nan_rows:
-            X = X.dropna(axis=0, thresh=self.max_nan_rows)
+        if self._max_nan_rows:
+            X = X.dropna(axis=0, thresh=self._max_nan_rows)
 
         for col in X:
             # Remember columns with too many missing values
-            if self.max_nan_cols and X[col].isna().sum() > self.max_nan_cols:
+            if self._max_nan_cols and X[col].isna().sum() > self._max_nan_cols:
                 self._drop_cols.append(col)
                 continue  # Skip to side column
 
@@ -808,16 +808,16 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         X = X.replace(self.missing + [np.inf, -np.inf], np.NaN)
 
         # Drop rows with too many missing values
-        if self.max_nan_rows:
+        if self._max_nan_rows:
             length = len(X)
-            X = X.dropna(axis=0, thresh=self.max_nan_rows)
+            X = X.dropna(axis=0, thresh=self._max_nan_rows)
             if y is not None:
                 y = y[y.index.isin(X.index)]  # Select only indices that remain
             diff = length - len(X)
             if diff > 0:
                 self.log(
                     f" --> Dropping {diff} samples for containing more than "
-                    f"{100 * self.max_nan_rows // length}% missing values.", 2
+                    f"{100 * self._max_nan_rows // length}% missing values.", 2
                 )
 
         for col in X:
@@ -966,6 +966,9 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         self.frac_to_other = frac_to_other
         self.kwargs = kwargs
 
+        self._max_onehot = None
+        self._ordinal = None
+        self._frac_to_other = None
         self._to_other = defaultdict(list)
         self._encoders = {}
         self._categories = {}
@@ -1009,14 +1012,20 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         strategy = ENCODING_STRATS[self.strategy.lower()]
 
         if self.max_onehot is None:
-            self.max_onehot = 0
+            self._max_onehot = 0
         elif self.max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
             raise ValueError(
                 "Invalid value for the max_onehot parameter."
                 f"Value should be >= 0, got {self.max_onehot}."
             )
+        else:
+            self._max_onehot = self.max_onehot
+
         if self.ordinal is None:
-            self.ordinal = {}
+            self._ordinal = {}
+        else:
+            self._ordinal = self.ordinal
+
         if self.frac_to_other:
             if self.frac_to_other < 0:
                 raise ValueError(
@@ -1024,15 +1033,17 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                     f"should be between >0, got {self.frac_to_other}."
                 )
             elif self.frac_to_other < 1:
-                self.frac_to_other = int(self.frac_to_other * len(X))
+                self._frac_to_other = int(self.frac_to_other * len(X))
+            else:
+                self._frac_to_other = self.frac_to_other
 
         self.log("Fitting Encoder...", 1)
 
         for col in (c for c in X if c in self._cat_cols):
             # Group uncommon classes into "other"
-            if self.frac_to_other:
+            if self._frac_to_other:
                 for category, count in X[col].value_counts().items():
-                    if count <= self.frac_to_other:
+                    if count <= self._frac_to_other:
                         self._to_other[col].append(category)
                         X[col] = X[col].replace(category, "other")
 
@@ -1040,11 +1051,11 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
             self._categories[col] = X[col].unique().tolist()
 
             # Perform encoding type dependent on number of unique values
-            if col in self.ordinal or len(self._categories[col]) == 2:
+            if col in self._ordinal or len(self._categories[col]) == 2:
                 unique = X[col].unique()
 
                 # Create a custom mapping: 0 to N - 1
-                mapping = {v: i for i, v in enumerate(self.ordinal.get(col, unique))}
+                mapping = {v: i for i, v in enumerate(self._ordinal.get(col, unique))}
                 if np.NaN not in mapping:  # Encoder always needs mapping of NaN value
                     mapping[np.NaN] = -1
 
@@ -1054,7 +1065,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                     handle_unknown="value",
                 ).fit(X[[col]])
 
-            elif 2 < len(self._categories[col]) <= self.max_onehot:
+            elif 2 < len(self._categories[col]) <= self._max_onehot:
                 self._encoders[col] = OneHotEncoder(
                     use_cat_names=True,
                     handle_missing="return_nan",
@@ -1373,10 +1384,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
     Parameters
     ----------
-    strategy: str, optional (default="ADASYN")
-        Type of algorithm to use for oversampling or undersampling.
-        Choose from one of the estimators in the imbalanced-learn
-        package.
+    strategy: str or estimator, optional (default="ADASYN")
+        Type of algorithm with which to balance the dataset. Choose
+        from any of the estimators in the imbalanced-learn package or
+        provide a custom one (has to have a `fit_resample` method).
 
     n_jobs: int, optional (default=1)
         Number of cores to use for parallel processing.
@@ -1405,9 +1416,8 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     Attributes
     ----------
     <strategy>: imblearn estimator
-        Estimator instance (lowercase strategy) used to oversample or
-        undersample the data, e.g. `balancer.adasyn` for the default
-        strategy.
+        Estimator instance (lowercase strategy) used to balance the data,
+        e.g. `balancer.adasyn` for the default strategy.
 
     mapping: dict
         Dictionary of the target values mapped to their respective
@@ -1418,7 +1428,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "ADASYN",
+        strategy: Union[str, Any] = "ADASYN",
         n_jobs: int = 1,
         verbose: int = 0,
         logger: Optional[Union[str, callable]] = None,
@@ -1426,7 +1436,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         **kwargs,
     ):
         super().__init__(
-            n_jobs=n_jobs, verbose=verbose, logger=logger, random_state=random_state
+            n_jobs=n_jobs,
+            verbose=verbose,
+            logger=logger,
+            random_state=random_state,
         )
         self.strategy = strategy
         self.kwargs = kwargs
@@ -1459,12 +1472,22 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         """
         X, y = self._prepare_input(X, y)
 
-        if self.strategy.lower() not in BALANCING_STRATS:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(BALANCING_STRATS)}."
+        if isinstance(self.strategy, str):
+            if self.strategy.lower() not in BALANCING_STRATS:
+                raise ValueError(
+                    f"Invalid value for the strategy parameter, got {self.strategy}. "
+                    f"Choose from: {', '.join(BALANCING_STRATS)}."
+                )
+            estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
+        elif not hasattr(self.strategy, "fit_resample"):
+            raise TypeError(
+                "Invalid value for the strategy parameter. A "
+                "custom estimator must have a fit_resample method."
             )
-        estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
+        elif callable(self.strategy):
+            estimator = self.strategy(**self.kwargs)
+        else:
+            estimator = self.strategy
 
         # Save index and columns to re-convert to pandas
         index = X.index
@@ -1480,8 +1503,10 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         if "over_sampling" in estimator.__module__:
             self.log(f"Oversampling with {estimator.__class__.__name__}...", 1)
-        else:
+        elif "under_sampling" in estimator.__module__:
             self.log(f"Undersampling with {estimator.__class__.__name__}...", 1)
+        else:
+            self.log(f"Balancing with {estimator.__class__.__name__}...", 1)
 
         # Add n_jobs or random_state if its one of the estimator's parameters
         for param in ("n_jobs", "random_state"):
@@ -1491,7 +1516,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
         X, y = estimator.fit_resample(X, y)
 
         # Add the estimator as attribute to the instance
-        setattr(self, self.strategy.lower(), estimator)
+        setattr(self, estimator.__class__.__name__.lower(), estimator)
 
         # Print changes
         for key, value in self.mapping.items():

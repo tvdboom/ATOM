@@ -11,6 +11,7 @@ Description: Unit tests for data_cleaning.py
 import pytest
 import numpy as np
 import pandas as pd
+from imblearn.combine import SMOTETomek
 
 # Own modules
 from atom.data_cleaning import (
@@ -153,13 +154,6 @@ def test_gauss_attach_attribute():
 
 
 # Test Cleaner ==================================================== >>
-
-def test_invalid_type_ignored():
-    """Assert that prohibited types is ignored when None."""
-    cleaner = Cleaner(drop_types=None)
-    cleaner.transform(X_bin)
-    assert cleaner.drop_types == []
-
 
 def test_drop_invalid_column_type():
     """Assert that invalid columns types are dropped for string input."""
@@ -592,10 +586,21 @@ def test_pruner_attach_attribute():
 
 # Test Balancer ==================================================== >>
 
-def test_strategy_parameter_balancer():
+def test_balancer_strategy_invalid():
     """Assert that an error is raised when strategy is invalid."""
     balancer = Balancer(strategy="invalid")
     pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
+
+
+def test_balancer_custom_estimator():
+    """Assert that the strategy can be a custom estimator."""
+    balancer = Balancer(strategy=SMOTETomek)
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
+
+    balancer = Balancer(strategy=SMOTETomek())
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
 @pytest.mark.parametrize("strategy", [i for i in BALANCING_STRATS if i != "smotenc"])

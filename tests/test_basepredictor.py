@@ -107,6 +107,19 @@ def test_branch_property():
     assert isinstance(atom.branch, Branch)
 
 
+def test_models_property():
+    """Assert that the models property returns the model names."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree"])
+    assert atom.models == ["LR", "Tree"]
+
+
+def test_models_property_no_run():
+    """Assert that the models property doesn't crash for unfitted trainers."""
+    trainer = DirectClassifier(["LR", "Tree"], metric="r2", random_state=1)
+    assert trainer.models == ["LR", "Tree"]
+
+
 def test_metric_property():
     """Assert that the metric property returns the metric names."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -120,17 +133,18 @@ def test_metric_property_no_run():
     assert trainer.metric == "r2"
 
 
-def test_models_property():
-    """Assert that the models property returns the model names."""
+def test_errors_property():
+    """Assert that the errors property returns the model's errors."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree"])
-    assert atom.models == ["LR", "Tree"]
+    atom.run(["Tree", "LGB"], n_calls=5, n_initial_points=(2, 6))
+    assert "LGB" in atom.errors
 
 
-def test_models_property_no_run():
-    """Assert that the models property doesn't crash for unfitted trainers."""
-    trainer = DirectClassifier(["LR", "Tree"], metric="r2", random_state=1)
-    assert trainer.models == ["LR", "Tree"]
+def test_winner_property():
+    """Assert that the winner property returns the best model in the pipeline."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "Tree", "LGB"], n_calls=0)
+    assert atom.winner is atom.lgb
 
 
 def test_results_property():
@@ -163,13 +177,6 @@ def test_results_property_train_sizing():
     assert list(atom.results.index.get_level_values(0)) == [0.2, 0.4, 0.6, 0.8, 1.0]
 
 
-def test_winner_property():
-    """Assert that the winner property returns the best model in the pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "Tree", "LGB"], n_calls=0)
-    assert atom.winner is atom.lgb
-
-
 # Test prediction methods ========================================== >>
 
 def test_reset_predictions():
@@ -182,7 +189,7 @@ def test_reset_predictions():
     assert atom.lr._pred_attrs == [None] * 10
 
 
-def test_predict_method():
+def test_predict():
     """Assert that the predict method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.predict, X_bin)  # When not yet fitted
@@ -190,7 +197,7 @@ def test_predict_method():
     assert isinstance(atom.predict(X_bin), np.ndarray)
 
 
-def test_predict_proba_method():
+def test_predict_proba():
     """Assert that the predict_proba method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.predict_proba, X_bin)
@@ -198,7 +205,7 @@ def test_predict_proba_method():
     assert isinstance(atom.predict_proba(X_bin), np.ndarray)
 
 
-def test_predict_log_proba_method():
+def test_predict_log_proba():
     """Assert that the predict_log_proba method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.predict_log_proba, X_bin)
@@ -206,7 +213,7 @@ def test_predict_log_proba_method():
     assert isinstance(atom.predict_log_proba(X_bin), np.ndarray)
 
 
-def test_decision_function_method():
+def test_decision_function():
     """Assert that the decision_function method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.decision_function, X_bin)
@@ -214,7 +221,7 @@ def test_decision_function_method():
     assert isinstance(atom.decision_function(X_bin), np.ndarray)
 
 
-def test_score_method():
+def test_score():
     """Assert that the score method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.score, X_bin, y_bin)
@@ -222,7 +229,7 @@ def test_score_method():
     assert isinstance(atom.score(X_bin, y_bin), float)
 
 
-def test_score_method_sample_weights():
+def test_score_sample_weights():
     """Assert that the score method works with sample weights."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LR")
@@ -293,81 +300,6 @@ def test_get_models_remove_duplicates():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(["LR1", "LR2"])
     assert atom._get_models(["LR1", "LR1"]) == ["LR1"]
-
-
-def test_voting():
-    """Assert that the voting method creates a Vote model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.voting)
-    atom.run(["LR", "LGB"])
-    atom.voting()
-    assert hasattr(atom, "Vote") and hasattr(atom, "vote")
-    assert "Vote" in atom.models
-
-
-def test_voting_models_from_branch():
-    """Assert that only the models from the current branch are passed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.branch = "branch_2"
-    atom.balance()
-    atom.run(["RF", "ET"])
-    atom.voting()
-    assert atom.vote.models == ["RF", "ET"]
-
-
-def test_stacking():
-    """Assert that the stacking method creates a Stack model."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.stacking)
-    atom.run(["LR", "LGB"])
-    atom.stacking()
-    assert hasattr(atom, "Stack") and hasattr(atom, "stack")
-    assert "Stack" in atom.models
-
-
-def test_stacking_models_from_branch():
-    """Assert that only the models from the current branch are passed."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.branch = "branch_2"
-    atom.balance()
-    atom.run(["RF", "ET"])
-    atom.stacking()
-    assert atom.stack.models == ["RF", "ET"]
-
-
-def test_stacking_default_estimator():
-    """Assert that a default estimator is provided per goal."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(["LR", "LGB"])
-    atom.stacking()
-    assert atom.stack.estimator.__class__.__name__ == "LogisticRegression"
-
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    atom.run(["Tree", "LGB"])
-    atom.stacking()
-    assert atom.stack.estimator.__class__.__name__ == "Ridge"
-
-
-def test_class_weights_invalid_dataset():
-    """Assert that an error is raised if invalid value for dataset."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.get_class_weight, "invalid")
-
-
-def test_get_class_weights_regression():
-    """Assert that an error is raised when called from regression tasks."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    pytest.raises(PermissionError, atom.get_class_weight)
-
-
-@pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
-def test_get_class_weights(dataset):
-    """Assert that the get_class_weight method returns a dict of the classes."""
-    atom = ATOMClassifier(X_class, y_class, random_state=1)
-    class_weight = atom.get_class_weight(dataset)
-    assert list(class_weight.keys()) == [0, 1, 2]
 
 
 def test_calibrate():
@@ -455,3 +387,78 @@ def test_delete_models_is_sequence():
     assert atom.models == "LR"
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
+
+
+def test_class_weights_invalid_dataset():
+    """Assert that an error is raised if invalid value for dataset."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(ValueError, atom.get_class_weight, "invalid")
+
+
+def test_get_class_weights_regression():
+    """Assert that an error is raised when called from regression tasks."""
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    pytest.raises(PermissionError, atom.get_class_weight)
+
+
+@pytest.mark.parametrize("dataset", ["train", "test", "dataset"])
+def test_get_class_weights(dataset):
+    """Assert that the get_class_weight method returns a dict of the classes."""
+    atom = ATOMClassifier(X_class, y_class, random_state=1)
+    class_weight = atom.get_class_weight(dataset)
+    assert list(class_weight.keys()) == [0, 1, 2]
+
+
+def test_stacking():
+    """Assert that the stacking method creates a Stack model."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.stacking)
+    atom.run(["LR", "LGB"])
+    atom.stacking()
+    assert hasattr(atom, "Stack") and hasattr(atom, "stack")
+    assert "Stack" in atom.models
+
+
+def test_stacking_models_from_branch():
+    """Assert that only the models from the current branch are passed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.branch = "branch_2"
+    atom.balance()
+    atom.run(["RF", "ET"])
+    atom.stacking()
+    assert atom.stack.models == ["RF", "ET"]
+
+
+def test_stacking_default_estimator():
+    """Assert that a default estimator is provided per goal."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.stacking()
+    assert atom.stack.estimator.__class__.__name__ == "LogisticRegression"
+
+    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom.run(["Tree", "LGB"])
+    atom.stacking()
+    assert atom.stack.estimator.__class__.__name__ == "Ridge"
+
+
+def test_voting():
+    """Assert that the voting method creates a Vote model."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.voting)
+    atom.run(["LR", "LGB"])
+    atom.voting()
+    assert hasattr(atom, "Vote") and hasattr(atom, "vote")
+    assert "Vote" in atom.models
+
+
+def test_voting_models_from_branch():
+    """Assert that only the models from the current branch are passed."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(["LR", "LGB"])
+    atom.branch = "branch_2"
+    atom.balance()
+    atom.run(["RF", "ET"])
+    atom.voting()
+    assert atom.vote.models == ["RF", "ET"]

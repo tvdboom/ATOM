@@ -44,7 +44,7 @@ branching use cases.
 <br>
 
 <div align="center">
-    <img src="../../img/diagram_branch.png" alt="diagram_branch"/>
+    <img src="../../img/diagram_branch.png" alt="diagram_branch" />
     <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
 </div>
 

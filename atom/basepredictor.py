@@ -125,14 +125,14 @@ class BasePredictor:
         return self._branches[self._current]
 
     @property
-    def metric(self):
-        """Return the names of the metrics in the pipeline."""
-        return flt([getattr(metric, "name", metric) for metric in self._metric])
-
-    @property
     def models(self):
         """Return the names of the models in the pipeline."""
         return flt([getattr(model, "name", model) for model in self._models])
+
+    @property
+    def metric(self):
+        """Return the names of the metrics in the pipeline."""
+        return flt([getattr(metric, "name", metric) for metric in self._metric])
 
     @property
     def errors(self):
@@ -266,125 +266,6 @@ class BasePredictor:
 
             return list(dict.fromkeys(to_return))  # Avoid duplicates
 
-    @composed(crash, method_to_log, typechecked)
-    def voting(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        weights: Optional[SEQUENCE_TYPES] = None,
-    ):
-        """Add a Voting instance to the models in the pipeline.
-
-        Parameters
-        ----------
-        models: sequence or None, optional (default=None)
-            Models that feed the voting. If None, it selects all models
-            depending on the current branch.
-
-        weights: sequence or None, optional (default=None)
-            Sequence of weights (int or float) to weight the
-            occurrences of predicted class labels (hard voting)
-            or class probabilities before averaging (soft voting).
-            If None, it uses uniform weights.
-
-        """
-        check_is_fitted(self, attributes="_models")
-
-        if not models:
-            models = self.branch._get_depending_models()
-
-        self._models["vote"] = Voting(
-            self,
-            models=self._get_models(models),
-            weights=weights,
-        )
-        self.log(f"{self.vote.fullname} added to the models!", 1)
-
-    @composed(crash, method_to_log, typechecked)
-    def stacking(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        estimator: Optional[Union[str, callable]] = None,
-        stack_method: str = "auto",
-        passthrough: bool = False,
-    ):
-        """Add a Stacking instance to the models in the pipeline.
-
-        Parameters
-        ----------
-        models: sequence or None, optional (default=None)
-            Models that feed the stacking. If None, it selects all
-            models depending on the current branch.
-
-        estimator: str, callable or None, optional (default=None)
-            The final estimator, which is used to combine the base
-            estimators. If str, choose from ATOM's predefined models.
-            If None, a default estimator is selected:
-                - LogisticRegression for classification tasks.
-                - Ridge for regression tasks.
-
-        stack_method: str, optional (default="auto")
-            Methods called for each base estimator. If "auto", it
-            will try to invoke `predict_proba`, `decision_function`
-            or `predict` in that order.
-
-        passthrough: bool, optional (default=False)
-            When False, only the predictions of estimators are used
-            as training data for the final estimator. When True, the
-            estimator is trained on the predictions as well as the
-            original training data.
-
-        """
-        check_is_fitted(self, attributes="_models")
-
-        if not models:
-            models = self.branch._get_depending_models()
-        if not estimator:
-            estimator = "LR" if self.goal.startswith("class") else "Ridge"
-
-        self._models["stack"] = Stacking(
-            self,
-            models=self._get_models(models),
-            estimator=estimator,
-            stack_method=stack_method,
-            passthrough=passthrough,
-        )
-        self.log(f"{self.stack.fullname} added to the models!", 1)
-
-    @composed(crash, typechecked)
-    def get_class_weight(self, dataset: str = "train"):
-        """Return class weights for a balanced dataset.
-
-        Statistically, the class weights re-balance the data set so
-        that the sampled data set represents the target population
-        as closely as possible. The returned weights are inversely
-        proportional to the class frequencies in the selected data set.
-
-        Parameters
-        ----------
-        dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between
-            "train", "test" or "dataset".
-
-        Returns
-        -------
-        class_weights: dict
-            Classes with the corresponding weights.
-
-        """
-        if not self.goal.startswith("class"):
-            raise PermissionError(
-                "The balance method is only available for classification tasks!"
-            )
-
-        if dataset not in ("train", "test", "dataset"):
-            raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'dataset'."
-            )
-
-        y = self.classes[dataset]
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
-
     @composed(crash, method_to_log)
     def calibrate(self, **kwargs):
         """Calibrate the winning model."""
@@ -450,3 +331,122 @@ class BasePredictor:
         models = self._get_models(models)
         delete(self, models)
         self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+
+    @composed(crash, typechecked)
+    def get_class_weight(self, dataset: str = "train"):
+        """Return class weights for a balanced dataset.
+
+        Statistically, the class weights re-balance the data set so
+        that the sampled data set represents the target population
+        as closely as possible. The returned weights are inversely
+        proportional to the class frequencies in the selected data set.
+
+        Parameters
+        ----------
+        dataset: str, optional (default="train")
+            Data set from which to get the weights. Choose between
+            "train", "test" or "dataset".
+
+        Returns
+        -------
+        class_weights: dict
+            Classes with the corresponding weights.
+
+        """
+        if not self.goal.startswith("class"):
+            raise PermissionError(
+                "The balance method is only available for classification tasks!"
+            )
+
+        if dataset not in ("train", "test", "dataset"):
+            raise ValueError(
+                "Invalid value for the dataset parameter. "
+                "Choose between 'train', 'test' or 'dataset'."
+            )
+
+        y = self.classes[dataset]
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
+
+    @composed(crash, method_to_log, typechecked)
+    def stacking(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        estimator: Optional[Union[str, callable]] = None,
+        stack_method: str = "auto",
+        passthrough: bool = False,
+    ):
+        """Add a Stacking instance to the models in the pipeline.
+
+        Parameters
+        ----------
+        models: sequence or None, optional (default=None)
+            Models that feed the stacking. If None, it selects all
+            models depending on the current branch.
+
+        estimator: str, callable or None, optional (default=None)
+            The final estimator, which is used to combine the base
+            estimators. If str, choose from ATOM's predefined models.
+            If None, a default estimator is selected:
+                - LogisticRegression for classification tasks.
+                - Ridge for regression tasks.
+
+        stack_method: str, optional (default="auto")
+            Methods called for each base estimator. If "auto", it
+            will try to invoke `predict_proba`, `decision_function`
+            or `predict` in that order.
+
+        passthrough: bool, optional (default=False)
+            When False, only the predictions of estimators are used
+            as training data for the final estimator. When True, the
+            estimator is trained on the predictions as well as the
+            original training data.
+
+        """
+        check_is_fitted(self, attributes="_models")
+
+        if not models:
+            models = self.branch._get_depending_models()
+        if not estimator:
+            estimator = "LR" if self.goal.startswith("class") else "Ridge"
+
+        self._models["stack"] = Stacking(
+            self,
+            models=self._get_models(models),
+            estimator=estimator,
+            stack_method=stack_method,
+            passthrough=passthrough,
+        )
+        self.log(f"{self.stack.fullname} added to the models!", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def voting(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        weights: Optional[SEQUENCE_TYPES] = None,
+    ):
+        """Add a Voting instance to the models in the pipeline.
+
+        Parameters
+        ----------
+        models: sequence or None, optional (default=None)
+            Models that feed the voting. If None, it selects all models
+            depending on the current branch.
+
+        weights: sequence or None, optional (default=None)
+            Sequence of weights (int or float) to weight the
+            occurrences of predicted class labels (hard voting)
+            or class probabilities before averaging (soft voting).
+            If None, it uses uniform weights.
+
+        """
+        check_is_fitted(self, attributes="_models")
+
+        if not models:
+            models = self.branch._get_depending_models()
+
+        self._models["vote"] = Voting(
+            self,
+            models=self._get_models(models),
+            weights=weights,
+        )
+        self.log(f"{self.vote.fullname} added to the models!", 1)

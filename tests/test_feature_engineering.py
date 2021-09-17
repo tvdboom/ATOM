@@ -228,7 +228,7 @@ def test_solver_auto_PCA():
     """Assert that the solver is set to "auto" when None."""
     selector = FeatureSelector(strategy="PCA", solver=None)
     selector.fit(X_bin, y_bin)
-    assert selector.solver == "auto"
+    assert selector._solver == "auto"
 
 
 def test_solver_parameter_empty_SFM():

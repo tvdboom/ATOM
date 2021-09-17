@@ -32,8 +32,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/s
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Dimensions:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>C: float, default=1.0</strong><br>
 Real(1e-3, 100, "log-uniform", name="C")
@@ -71,8 +71,8 @@ Categorical([True, False], name="shrinking")
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>dataset: pd.DataFrame</strong><br>
 Complete dataset in the pipeline.
@@ -144,8 +144,8 @@ Name of the target column.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <strong>bo: pd.DataFrame</strong><br>
 Information of every step taken by the BO. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -225,8 +225,8 @@ attributes that are never used, saving time and memory.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Prediction attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>predict_train: np.ndarray</strong><br>
 Predictions of the model on the training set.
@@ -329,8 +329,8 @@ changed, all the model's prediction attributes are reset.
 Only if classifier.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
@@ -354,8 +354,8 @@ whole pipeline on the complete dataset. Use it to assess the robustness of
 the solution's performance.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function. If the scoring method is not specified, it uses
@@ -363,8 +363,8 @@ the trainer's metric.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>scores: dict</strong><br>
 Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function.
@@ -413,8 +413,8 @@ returned pipeline is already fitted on the training set.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
 Transformers to use on the data before predicting.
 <ul style="line-height:1.2em;margin-top:5px">
@@ -431,8 +431,8 @@ If None, it leaves them to their original verbosity.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>pipeline: Pipeline</strong><br>
 Current branch as a sklearn-like Pipeline object.
 </td>
@@ -454,8 +454,8 @@ model after the right hyperparameters are found. Note that this
 means that the model can not be evaluated.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>est: estimator</strong><br>
 Model estimator trained on the full dataset.
 </td>
@@ -476,8 +476,8 @@ of the model's name. If the model is being tracked by mlflow, the
 name of the corresponding run is also changed.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>name: str or None, optional (default=None)</strong><br>
 New tag for the model. If None, the tag is removed.
 </table>
@@ -506,8 +506,8 @@ Use this method to free some memory before saving the trainer.
 Get the model's score for the provided metrics.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
 Metrics to calculate. If None, a selection of the most common
@@ -520,8 +520,8 @@ Data set on which to calculate the metric. Options are "train" or "test".
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>score: pd.Series</strong><br>
 Scores of the model.
 </td>
@@ -540,8 +540,8 @@ Scores of the model.
 Save the estimator to a pickle file.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
