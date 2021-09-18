@@ -12,6 +12,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from imblearn.combine import SMOTETomek
+from sklearn.preprocessing import StandardScaler
 
 # Own modules
 from atom.data_cleaning import (
@@ -287,24 +288,30 @@ def test_imputing_all_missing_values_categorical(missing):
     assert X.isna().sum().sum() == 0
 
 
-def test_rows_too_many_nans():
+@pytest.mark.parametrize("max_nan_rows", [1, 0.1])
+def test_rows_too_many_nans(max_nan_rows):
     """Assert that rows with too many missing values are dropped."""
-    X = X_bin.copy()
-    for i in range(5):  # Add 5 rows with all NaN values
-        X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
-    y = [np.random.randint(2) for _ in range(len(X))]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.5)
-    X, y = impute.fit_transform(X, y)
-    assert len(X) == 569  # Original size
+    impute = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_rows=max_nan_rows,
+    )
+    X, y = impute.fit_transform(X10_nan, y10)
+    assert len(X) == 8
     assert X.isna().sum().sum() == 0
 
 
-def test_cols_too_many_nans():
+@pytest.mark.parametrize("max_nan_cols", [20, 0.5])
+def test_cols_too_many_nans(max_nan_cols):
     """Assert that columns with too many missing values are dropped."""
     X = X_bin.copy()
     for i in range(5):  # Add 5 cols with all NaN values
         X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_cols=0.5)
+    impute = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_cols=max_nan_cols,
+    )
     X, y = impute.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
@@ -409,9 +416,10 @@ def test_frac_to_other_parameter():
     pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
 
 
-def test_frac_to_other():
+@pytest.mark.parametrize("frac_to_other", [3, 0.3])
+def test_frac_to_other(frac_to_other):
     """Assert that the other values are created when encoding."""
-    encoder = Encoder(max_onehot=5, frac_to_other=0.3)
+    encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
     X = encoder.fit_transform(X10_str, y10)
     assert "Feature 3_other" in X.columns
 
@@ -586,10 +594,16 @@ def test_pruner_attach_attribute():
 
 # Test Balancer ==================================================== >>
 
-def test_balancer_strategy_invalid():
-    """Assert that an error is raised when strategy is invalid."""
+def test_balancer_strategy_unknown_str():
+    """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
     pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
+
+
+def test_balancer_strategy_invalid_estimator():
+    """Assert that an error is raised when strategy is invalid."""
+    balancer = Balancer(strategy=StandardScaler())
+    pytest.raises(TypeError, balancer.transform, X_bin, y_bin)
 
 
 def test_balancer_custom_estimator():

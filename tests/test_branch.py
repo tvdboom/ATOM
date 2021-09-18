@@ -95,14 +95,14 @@ def test_rename_model_name():
     """Assert that an error is raised when name is a model's acronym."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=r".*acronym of model.*"):
-        atom.branch = "Lda"
+        atom.branch.rename("Lda")
 
 
 def test_rename_restricted_name():
     """Assert that an error is raised when name is restricted."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     with pytest.raises(ValueError, match=r".*This name is reserved.*"):
-        atom.branch = "og"
+        atom.branch.rename("og")
 
 
 def test_rename_existing_name():

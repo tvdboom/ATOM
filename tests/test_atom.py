@@ -161,6 +161,13 @@ def test_branch_existing_name():
         atom.branch = "master_from_og"
 
 
+def test_branch_unknown_parent():
+    """Assert that an error is raised when the parent doesn't exist."""
+    atom = ATOMClassifier(X10, y10, random_state=1)
+    with pytest.raises(ValueError, match=r".*does not exist.*"):
+        atom.branch = "branch_2_from_invalid"
+
+
 def test_branch_new():
     """Assert that we can create a new branch."""
     atom = ATOMClassifier(X10, y10, random_state=1)

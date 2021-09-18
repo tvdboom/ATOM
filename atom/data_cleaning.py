@@ -930,7 +930,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     frac_to_other: int, float or None, optional (default=None)
         Classes with less occurrences than `fraction_to_other` (as
         total number or fraction of rows) are replaced with the string
-        `other`. If None, this skip this step.
+        `other`. If None, skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
