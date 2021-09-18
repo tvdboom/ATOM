@@ -866,14 +866,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         if self.max_frac_repeated is not None and not 0 <= self.max_frac_repeated <= 1:
             raise ValueError(
-                "Invalid value for the max_frac_repeated parameter. Value should "
-                f"be between 0 and 1, got {self.max_frac_repeated}."
+                "Invalid value for the max_frac_repeated parameter. Value "
+                f"should be between 0 and 1, got {self.max_frac_repeated}."
             )
 
         if self.max_correlation is not None and not 0 <= self.max_correlation <= 1:
             raise ValueError(
-                "Invalid value for the max_correlation parameter. Value should "
-                f"be between 0 and 1, got {self.max_correlation}."
+                "Invalid value for the max_correlation parameter. Value "
+                f"shouldbe between 0 and 1, got {self.max_correlation}."
             )
 
         self.log("Fitting FeatureSelector...", 1)

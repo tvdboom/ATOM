@@ -862,12 +862,12 @@ def test_default_solver_univariate():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].solver.__name__ == "f_classif"
+    assert atom.pipeline[0]._solver.__name__ == "f_classif"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="univariate", solver=None, n_features=8)
-    assert atom.pipeline[0].solver.__name__ == "f_regression"
+    assert atom.pipeline[0]._solver.__name__ == "f_regression"
 
 
 def test_winner_solver_after_run():
@@ -875,7 +875,7 @@ def test_winner_solver_after_run():
     atom = ATOMClassifier(X_class, y_class, random_state=1)
     atom.run("LR")
     atom.feature_selection(strategy="SFM", solver=None, n_features=8)
-    assert atom.pipeline[0].solver is atom.winner.estimator
+    assert atom.pipeline[0]._solver is atom.winner.estimator
 
 
 def test_default_solver_from_task():
@@ -883,12 +883,12 @@ def test_default_solver_from_task():
     # For classification tasks
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=8)
-    assert type(atom.pipeline[0].solver).__name__ == "LGBMClassifier"
+    assert atom.pipeline[0]._solver.__class__.__name__ == "LGBMClassifier"
 
     # For regression tasks
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.feature_selection(strategy="rfe", solver="lgb", n_features=25)
-    assert type(atom.pipeline[0].solver).__name__ == "LGBMRegressor"
+    assert atom.pipeline[0]._solver.__class__.__name__ == "LGBMRegressor"
 
 
 @patch("atom.feature_engineering.SequentialFeatureSelector")
