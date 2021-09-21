@@ -329,7 +329,9 @@ def get_proba_attr(model):
 
 def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
-    return True if X.mean().mean() < 0.05 and 0.93 < X.std().mean() < 1.07 else False
+    mean = X.mean(numeric_only=True).mean()
+    std = X.std(numeric_only=True).mean()
+    return True if mean < 0.05 and 0.93 < std < 1.07 else False
 
 
 def get_corpus(X):

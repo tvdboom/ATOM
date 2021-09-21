@@ -14,13 +14,13 @@
 Overview 
 --------
 
-<img src="./docs_sources/img/icons/avatar.png" alt="Author" height=14 width=14 draggable="false" /> <a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false">Mavs</a>
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/avatar.png" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./docs_sources/img/icons/email.png" alt="Email" height=14 width=16 draggable="false" /> <a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false">m.524687@gmail.com</a>
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/email.png" alt="Email" height=13 width=15 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./docs_sources/img/icons/documentation.png" alt="Documentation" height=14 width=14 draggable="false" /> <a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false">Documentation</a>
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/documentation.png" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<img src="./docs_sources/img/icons/slack.png" alt="Slack" height=14 width=14 draggable="false"/> <a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false">Slack</a>
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/slack.png" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
 
 
 #### Repository:

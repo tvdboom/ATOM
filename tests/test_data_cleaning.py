@@ -288,16 +288,20 @@ def test_imputing_all_missing_values_categorical(missing):
     assert X.isna().sum().sum() == 0
 
 
-@pytest.mark.parametrize("max_nan_rows", [1, 0.1])
+@pytest.mark.parametrize("max_nan_rows", [5, 0.5])
 def test_rows_too_many_nans(max_nan_rows):
     """Assert that rows with too many missing values are dropped."""
-    impute = Imputer(
+    X = X_bin.copy()
+    for i in range(5):  # Add 5 rows with all NaN values
+        X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
+    y = [np.random.randint(2) for _ in range(len(X))]
+    imputer = Imputer(
         strat_num="mean",
         strat_cat="most_frequent",
         max_nan_rows=max_nan_rows,
     )
-    X, y = impute.fit_transform(X10_nan, y10)
-    assert len(X) == 8
+    X, y = imputer.fit_transform(X, y)
+    assert len(X) == 569  # Original size
     assert X.isna().sum().sum() == 0
 
 
@@ -307,12 +311,12 @@ def test_cols_too_many_nans(max_nan_cols):
     X = X_bin.copy()
     for i in range(5):  # Add 5 cols with all NaN values
         X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    impute = Imputer(
+    imputer = Imputer(
         strat_num="mean",
         strat_cat="most_frequent",
         max_nan_cols=max_nan_cols,
     )
-    X, y = impute.fit_transform(X, y_bin)
+    X, y = imputer.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
 
