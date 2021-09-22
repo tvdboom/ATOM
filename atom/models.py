@@ -1160,7 +1160,7 @@ class GradientBoostingMachine(ModelOptimizer):
             Real(0.01, 1.0, "log-uniform", name="learning_rate"),
             Integer(10, 500, name="n_estimators"),
             Categorical(np.linspace(0.5, 1.0, 6), name="subsample"),
-            Categorical(["friedman_mse", "mae", "mse"], name="criterion"),
+            Categorical(["friedman_mse", "mse"], name="criterion"),
             Integer(2, 20, name="min_samples_split"),
             Integer(1, 20, name="min_samples_leaf"),
             Integer(1, 10, name="max_depth"),

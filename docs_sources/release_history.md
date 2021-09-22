@@ -14,6 +14,8 @@
   [shrink](../API/ATOM/atomclassifier/#shrink) method.
 * The `column` parameter in the [distribution](../API/ATOM/atomclassifier/#distribution)
   method is renamed to `columns` for continuity of the API.
+* The `mae` criterion for the [GBM](../API/models/gbm) model hyperparameter
+  tuning is deprecated to be consistent with sklearn's API.
 * Branches are now case-insensitive.
 * Renaming a branch using an existing name now raises an exception.
 * Fixed a bug where columns of type `category` broke the [Imputer](../API/data_cleaning/imputer)

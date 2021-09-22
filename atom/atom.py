@@ -488,7 +488,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return Pipeline(steps)  # ATOM's pipeline, not sklearn
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def merge(self, atom: Any, suffix: str = "2"):
         """Merge another atom instance into this one.
 
@@ -650,7 +650,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         getattr(self, dataset).to_csv(filename, index=False)
         self.log("Data set saved successfully!", 1)
 
-    @composed(crash, method_to_log)
+    @composed(crash, method_to_log, typechecked)
     def shrink(
         self,
         columns: Optional[Union[int, str, slice, SEQUENCE_TYPES]] = None,
