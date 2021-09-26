@@ -2558,12 +2558,14 @@
 <ul>
 <li>The <a href="../API/data_cleaning/encoder">Encoder</a> class now directly handles
   unknown categories encountered during fitting.</li>
-<li>The <a href="../API/data_cleaning/balancer">Balancer</a> class now accepts custom
-  estimators as balancing strategy.</li>
+<li>The <a href="../API/data_cleaning/balancer">Balancer</a> and <a href="../API/data_cleaning/encoder">Encoder</a>
+  classes now accept custom estimators for the <code>strategy</code> parameter.</li>
 <li>The new <a href="../API/ATOM/atomclassifier/#merge">merge</a> method enables the
   user to merge multiple atom instances into one.</li>
 <li>The dtype shrinking is moved from atom's initializers to the
   <a href="../API/ATOM/atomclassifier/#shrink">shrink</a> method.</li>
+<li>ATOM's <a href="../API/ATOM/ATOMClassifier/#export-pipeline">custom pipeline</a> now
+  handles transformers fitted on a subset of the dataset.</li>
 <li>The <code>column</code> parameter in the <a href="../API/ATOM/atomclassifier/#distribution">distribution</a>
   method is renamed to <code>columns</code> for continuity of the API.</li>
 <li>The <code>mae</code> criterion for the <a href="../API/models/gbm">GBM</a> model hyperparameter
@@ -2572,6 +2574,8 @@
 <li>Renaming a branch using an existing name now raises an exception.</li>
 <li>Fixed a bug where columns of type <code>category</code> broke the <a href="../API/data_cleaning/imputer">Imputer</a>
   class.</li>
+<li>Fixed a bug where predictions of the <a href="../user_guide/training/#stacking">Stacking</a>
+  ensemble crashed for branches with multiple transformers.</li>
 <li>The tables in the documentation now adapt to dark mode.</li>
 </ul>
 <p><a name="v473"></a></p>

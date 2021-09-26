@@ -10,11 +10,12 @@ Description: Module containing the data cleaning estimators.
 # Standard packages
 import numpy as np
 import pandas as pd
+from inspect import signature
 from typeguard import typechecked
-from typing import Union, Optional, Dict, Any
 from collections import defaultdict
+from typing import Union, Optional, Dict, Any
 from scipy.stats import zscore
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, clone
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import (
     PowerTransformer,
@@ -29,8 +30,8 @@ from .basetransformer import BaseTransformer
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, SCALING_STRATS,
     ENCODING_STRATS, PRUNING_STRATS, BALANCING_STRATS, lst, it,
-    variable_return, to_df, to_series, merge, check_is_fitted,
-    composed, crash, method_to_log,
+    variable_return, to_df, to_series, merge, get_columns,
+    check_is_fitted, composed, crash, method_to_log,
 )
 
 
@@ -64,7 +65,7 @@ class TransformerMixin:
 
         Returns
         -------
-        self: transformer
+        self: estimator
             Fitted instance of self.
 
         """
@@ -100,29 +101,8 @@ class TransformerMixin:
         return self.fit(X, y, **fit_params).transform(X, y)
 
 
-class DropTransformer(BaseTransformer):
-    """Custom transformer to drop columns."""
-
-    def __init__(self, columns, verbose, logger):
-        super().__init__(verbose=verbose, logger=logger)
-        self.columns = columns
-        self.train_only = False
-
-    def __repr__(self):
-        return f"DropTransformer(columns={self.columns})"
-
-    def transform(self, X, y):
-        """Drop columns from the dataset."""
-        self.log(f"Applying DropTransformer...", 1)
-        for col in self.columns:
-            self.log(f" --> Dropping column {col} from the dataset.", 2)
-            X = X.drop(col, axis=1)
-
-        return X, y
-
-
 class FuncTransformer(BaseTransformer):
-    """Custom transformer for functions."""
+    """Custom estimator for functions."""
 
     def __init__(self, func, columns, args, verbose, logger, **kwargs):
         super().__init__(verbose=verbose, logger=logger)
@@ -130,12 +110,11 @@ class FuncTransformer(BaseTransformer):
         self.columns = columns
         self.args = args
         self.kwargs = kwargs
-        self.train_only = False
 
     def __repr__(self):
         return f"FuncTransformer(func={self.func.__name__}, columns={self.columns})"
 
-    def transform(self, X, y):
+    def transform(self, X, y=None):
         """Apply function to the dataset.
 
         If the provided column is not in the dataset, a new
@@ -144,10 +123,36 @@ class FuncTransformer(BaseTransformer):
 
         """
         self.log(f"Applying function {self.func.__name__} to the dataset...", 1)
-        dataset = X if y is None else merge(X, y)
-        X[self.columns] = self.func(dataset, *self.args, **self.kwargs)
 
-        return X, y
+        dataset = X if y is None else merge(X, y)
+        if isinstance(self.columns, int):
+            col = get_columns(dataset, self.columns)[0]
+        else:
+            col = self.columns
+
+        X[col] = self.func(dataset, *self.args, **self.kwargs)
+
+        return variable_return(X, y)
+
+
+class DropTransformer(BaseTransformer):
+    """Custom estimator to drop columns."""
+
+    def __init__(self, columns, verbose, logger):
+        super().__init__(verbose=verbose, logger=logger)
+        self.columns = columns
+
+    def __repr__(self):
+        return f"DropTransformer(columns={self.columns})"
+
+    def transform(self, X, y=None):
+        """Drop columns from the dataset."""
+        self.log(f"Applying DropTransformer...", 1)
+        for col in get_columns(X, self.columns):
+            self.log(f" --> Dropping column {col} from the dataset.", 2)
+            X = X.drop(col, axis=1)
+
+        return variable_return(X, y)
 
 
 class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
@@ -214,6 +219,7 @@ class Scaler(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         self: Scaler
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)
@@ -344,6 +350,7 @@ class Gauss(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         self: Scaler
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)
@@ -694,6 +701,7 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         self: Imputer
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)
@@ -816,8 +824,8 @@ class Imputer(BaseEstimator, TransformerMixin, BaseTransformer):
             diff = length - len(X)
             if diff > 0:
                 self.log(
-                    f" --> Dropping {diff} samples for containing more than "
-                    f"{100 * self._max_nan_rows // length}% missing values.", 2
+                    f" --> Dropping {diff} samples for containing more "
+                    f"than {self._max_nan_rows} missing values.", 2
                 )
 
         for col in X:
@@ -903,24 +911,26 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         - If n_classes > `max_onehot`, use `strategy`-encoding.
 
     Missing values are propagated to the output column. Unknown
-    classes encountered during transforming are converted to
-    `np.NaN`. The class is also capable of replacing classes with
-    low occurrences with the value `other` in order to prevent
-    too high cardinality.
+    classes encountered during transforming are imputed according
+    to the selected strategy. Classes with low occurrences can be
+    replaced with the value `other` in order to prevent too high
+    cardinality.
+
+    Two category-encoders estimators are unavailable:
+        - OneHotEncoder: Use the `max_onehot` parameter.
+        - HashingEncoder: Incompatibility of APIs.
 
     Parameters
     ----------
-    strategy: str, optional (default="LeaveOneOut")
+    strategy: str or estimator, optional (default="LeaveOneOut")
         Type of encoding to use for high cardinality features. Choose
-        from one of the estimators available in the category-encoders
-        package except for:
-            - OneHotEncoder: Use the `max_onehot` parameter.
-            - HashingEncoder: Incompatibility of APIs.
+        from any of the estimators in the category-encoders package
+        or provide a custom one.
 
     max_onehot: int or None, optional (default=10)
         Maximum number of unique values in a feature to perform
-        one-hot-encoding. If None, it will always use `strategy`
-        when n_unique > 2.
+        one-hot encoding. If None, `strategy`-encoding is always
+        used for columns with more than two classes.
 
     ordinal: dict or None, optional (default=None)
         Order of ordinal features, where the dict key is the feature's
@@ -930,7 +940,8 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     frac_to_other: int, float or None, optional (default=None)
         Classes with less occurrences than `fraction_to_other` (as
         total number or fraction of rows) are replaced with the string
-        `other`. If None, skip this step.
+        `other`. This transformation is done before the encoding of the
+        column. If None, skip this step.
 
     verbose: int, optional (default=0)
         Verbosity level of the class. Possible values are:
@@ -951,7 +962,7 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
     @typechecked
     def __init__(
         self,
-        strategy: str = "LeaveOneOut",
+        strategy: Union[str, Any] = "LeaveOneOut",
         max_onehot: Optional[int] = 10,
         ordinal: Optional[Dict[str, SEQUENCE_TYPES]] = None,
         frac_to_other: Optional[SCALAR] = None,
@@ -996,27 +1007,41 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
         Returns
         -------
         self: Encoder
+            Fitted instance of self.
 
         """
         X, y = self._prepare_input(X, y)
         self._cat_cols = X.select_dtypes(exclude="number")
 
-        # Check Parameters
-        if self.strategy.lower().endswith("encoder"):
-            self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
-        if self.strategy.lower() not in ENCODING_STRATS:
-            raise ValueError(
-                f"Invalid value for the strategy parameter, got {self.strategy}. "
-                f"Choose from: {', '.join(ENCODING_STRATS)}."
+        if isinstance(self.strategy, str):
+            if self.strategy.lower().endswith("encoder"):
+                self.strategy = self.strategy[:-7]  # Remove the Encoder at the end
+            if self.strategy.lower() not in ENCODING_STRATS:
+                raise ValueError(
+                    f"Invalid value for the strategy parameter, got {self.strategy}. "
+                    f"Choose from: {', '.join(ENCODING_STRATS)}."
+                )
+            estimator = ENCODING_STRATS[self.strategy.lower()](
+                handle_missing="return_nan",
+                handle_unknown="value",
+                **self.kwargs,
             )
-        strategy = ENCODING_STRATS[self.strategy.lower()]
+        elif not all([hasattr(self.strategy, attr) for attr in ("fit", "transform")]):
+            raise TypeError(
+                "Invalid type for the strategy parameter. A custom"
+                "estimator must have a fit and transform method."
+            )
+        elif callable(self.strategy):
+            estimator = self.strategy(**self.kwargs)
+        else:
+            estimator = self.strategy
 
         if self.max_onehot is None:
             self._max_onehot = 0
-        elif self.max_onehot < 0:  # if 0, 1 or 2: it never uses one-hot encoding
+        elif self.max_onehot <= 2:  # If <=2, it would never use one-hot
             raise ValueError(
                 "Invalid value for the max_onehot parameter."
-                f"Value should be >= 0, got {self.max_onehot}."
+                f"Value should be > 2, got {self.max_onehot}."
             )
         else:
             self._max_onehot = self.max_onehot
@@ -1073,11 +1098,10 @@ class Encoder(BaseEstimator, TransformerMixin, BaseTransformer):
                 ).fit(X[[col]])
 
             else:
-                self._encoders[col] = strategy(
-                    handle_missing="return_nan",
-                    handle_unknown="value",
-                    **self.kwargs,
-                ).fit(X[[col]], y)
+                args = [X[[col]]]
+                if "y" in signature(estimator.fit).parameters:
+                    args.append(y)
+                self._encoders[col] = clone(estimator).fit(*args)
 
         self._is_fitted = True
         return self
@@ -1481,7 +1505,7 @@ class Balancer(BaseEstimator, TransformerMixin, BaseTransformer):
             estimator = BALANCING_STRATS[self.strategy.lower()](**self.kwargs)
         elif not hasattr(self.strategy, "fit_resample"):
             raise TypeError(
-                "Invalid value for the strategy parameter. A "
+                "Invalid type for the strategy parameter. A "
                 "custom estimator must have a fit_resample method."
             )
         elif callable(self.strategy):

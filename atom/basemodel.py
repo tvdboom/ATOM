@@ -134,7 +134,7 @@ class BaseModel(BaseModelPlotter):
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
+            estimator's own verbosity.
 
         method: str, optional (default="predict")
             Prediction method to be applied to the estimator.
@@ -151,7 +151,7 @@ class BaseModel(BaseModelPlotter):
             )
 
         if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
         elif pipeline is False:
             pipeline = []
         elif pipeline is True:

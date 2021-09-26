@@ -3,15 +3,12 @@
 """Automated Tool for Optimized Modelling (ATOM).
 
 Author: Mavs
-Description: Custom Pipeline class. Largely adapted from scikit-learn.
-             The main differences with the original object are:
-                - Compatibility with transformers that change the
-                  target column.
-                - Compatible with transformers that drop samples.
+Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 """
 
 # Standard packages
+import pandas as pd
 from inspect import signature
 from sklearn import pipeline
 from sklearn.base import clone
@@ -20,57 +17,24 @@ from sklearn.utils.validation import check_memory
 from sklearn.utils.metaestimators import if_delegate_has_method
 
 # Own modules
-from .utils import variable_return
+from .utils import (
+    to_df, to_series, variable_return, fit_one, transform_one,
+    fit_transform_one,
+)
 
-
-# Functions ======================================================== >>
-
-def _fit_one(transformer, X=None, y=None, message=None, **fit_params):
-    """Fit the data using one transformer."""
-    with _print_elapsed_time("Pipeline", message):
-        if hasattr(transformer, "fit"):
-            args = []
-            if "X" in signature(transformer.fit).parameters:
-                args.append(X)
-            if "y" in signature(transformer.fit).parameters:
-                args.append(y)
-            transformer.fit(*args, **fit_params)
-
-
-def _transform_one(transformer, X=None, y=None):
-    """Transform the data using one transformer."""
-    args = []
-    if "X" in signature(transformer.transform).parameters:
-        args.append(X)
-    if "y" in signature(transformer.transform).parameters:
-        args.append(y)
-    output = transformer.transform(*args)
-
-    if isinstance(output, tuple):
-        X, y = output[0], output[1]
-    else:
-        if len(output.shape) > 1:
-            X, y = output, y  # Only X
-        else:
-            X, y = X, output  # Only y
-
-    return X, y
-
-
-def _fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
-    """Fit and transform the data using one transformer."""
-    _fit_one(transformer, X, y, message, **fit_params)
-    X, y = _transform_one(transformer, X, y)
-
-    return X, y, transformer
-
-
-# Classes ========================================================== >>
 
 class Pipeline(pipeline.Pipeline):
     """Custom Pipeline class.
 
-    Partially copied from imblearn's pipeline.
+    This class behaves as a sklearn pipeline, and additionally:
+        - Accepts transformers that change the target column.
+        - Accepts transformers that drop rows.
+        - Accepts transformers that only are fitted on a subset
+          of the provided dataset.
+        - Always outputs pandas objects.
+
+    Partially from https://github.com/scikit-learn-contrib/imbalanced
+    -learn/blob/master/imblearn/pipeline.py.
 
     """
 
@@ -79,7 +43,7 @@ class Pipeline(pipeline.Pipeline):
         self._validate_steps()
 
         # Setup the memory
-        memory = check_memory(self.memory).cache(_fit_transform_one)
+        memory = check_memory(self.memory).cache(fit_transform_one)
 
         for (step_idx, name, transformer) in self._iter(False, False):
             if transformer is None or transformer == "passthrough":
@@ -94,7 +58,7 @@ class Pipeline(pipeline.Pipeline):
                 else:
                     cloned = clone(transformer)
 
-                # Fit or load the current transformer from cache
+                # Fit or load the current estimator from cache
                 X, y, fitted_transformer = memory(
                     transformer=cloned,
                     X=X,
@@ -103,8 +67,8 @@ class Pipeline(pipeline.Pipeline):
                     **fit_params_steps[name],
                 )
 
-            # Replace the transformer of the step with the fitted
-            # transformer (necessary when loading from the cache)
+            # Replace the estimator of the step with the fitted
+            # estimator (necessary when loading from the cache)
             self.steps[step_idx] = (name, fitted_transformer)
 
         return X, y
@@ -138,7 +102,7 @@ class Pipeline(pipeline.Pipeline):
         with _print_elapsed_time("Pipeline", self._log_message(len(self.steps) - 1)):
             if self._final_estimator != "passthrough":
                 fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-                _fit_one(self._final_estimator, X, y, **fit_params_last_step)
+                fit_one(self._final_estimator, X, y, **fit_params_last_step)
 
         return self
 
@@ -175,7 +139,7 @@ class Pipeline(pipeline.Pipeline):
                 return variable_return(X, y)
 
             fit_params_last_step = fit_params_steps[self.steps[-1][0]]
-            X, y, _ = _fit_transform_one(last_step, X, y, **fit_params_last_step)
+            X, y, _ = fit_transform_one(last_step, X, y, **fit_params_last_step)
 
         return variable_return(X, y)
 
@@ -202,7 +166,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, name, transformer in self._iter(with_final=False):
-            X, _ = _transform_one(transformer, X)
+            X, _ = transform_one(transformer, X)
 
         return self.steps[-1][-1].predict(X, **predict_params)
 
@@ -222,7 +186,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = _transform_one(transformer, X)
+            X, _ = transform_one(transformer, X)
 
         return self.steps[-1][-1].predict_proba(X)
 
@@ -242,7 +206,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = _transform_one(transformer, X)
+            X, _ = transform_one(transformer, X)
 
         return self.steps[-1][-1].predict_log_proba(X)
 
@@ -262,7 +226,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, _ = _transform_one(transformer, X)
+            X, _ = transform_one(transformer, X)
 
         return self.steps[-1][-1].decision_function(X)
 
@@ -290,7 +254,7 @@ class Pipeline(pipeline.Pipeline):
 
         """
         for _, _, transformer in self._iter(with_final=False):
-            X, y = _transform_one(transformer, X, y)
+            X, y = transform_one(transformer, X, y)
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)
 
@@ -309,6 +273,6 @@ class Pipeline(pipeline.Pipeline):
 
     def _custom_transform(self, X=None, y=None):
         for _, _, transformer in self._iter():
-            X, y = _transform_one(transformer, X, y)
+            X, y = transform_one(transformer, X, y)
 
         return variable_return(X, y)

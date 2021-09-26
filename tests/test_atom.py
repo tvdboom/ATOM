@@ -573,7 +573,7 @@ def test_add_pipeline():
 
 
 def test_add_no_transformer():
-    """Assert that an error is raised if the estimator has no transformer."""
+    """Assert that an error is raised if the estimator has no estimator."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(ValueError, atom.add, RandomForestClassifier())
 
@@ -717,12 +717,6 @@ def test_apply_args_and_kwargs():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.apply(test_func, columns="new column", args=(10,), arg_2="mean texture")
     assert atom["new column"][0] == atom["mean texture"][0] + 10
-
-
-def test_drop_target_column():
-    """Assert that an error is raised when the target column is dropped."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(ValueError, atom.drop, columns=-1)
 
 
 def test_drop():

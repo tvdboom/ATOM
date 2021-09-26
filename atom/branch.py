@@ -31,8 +31,9 @@ class Branch:
     *args
         Parent class (from which the branch is called) and name.
 
-    parent: str or None, optional (default=None)
-        Name of the branch from which to split.
+    parent: str, Branch or None, optional (default=None)
+        Name or branch from which to split. If None, create an
+        empty branch.
 
     Attributes
     ----------
@@ -62,12 +63,15 @@ class Branch:
             for attr in ("data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, None)
         else:
+            if isinstance(parent, str):
+                parent = self.T._branches[parent]
+
             # Copy the branch attrs and point to the rest
             for attr in ("pipeline", "data", "idx", "mapping", "feature_importance"):
-                setattr(self, attr, copy(getattr(self.T._branches[parent], attr)))
-            for attr in vars(self.T._branches[parent]):
+                setattr(self, attr, copy(getattr(parent, attr)))
+            for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
-                    setattr(self, attr, getattr(self.T._branches[parent], attr))
+                    setattr(self, attr, getattr(parent, attr))
 
     def __repr__(self):
         out = f"Branch: {self.name}"

@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 from copy import deepcopy
+from inspect import signature
 from typeguard import typechecked
 from typing import Union, Optional, Any, Dict
 
@@ -53,9 +54,9 @@ from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
     divide, infer_task, check_method, check_scaling, check_multidim,
-    get_pl_name, names_from_estimator, get_columns, variable_return,
-    delete, custom_transform, add_transformer, method_to_log, composed,
-    crash, CustomDict,
+    get_pl_name, names_from_estimator, get_columns, check_is_fitted,
+    variable_return, fit_one, delete, custom_transform, method_to_log,
+    composed, crash, CustomDict,
 )
 
 
@@ -144,7 +145,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            return self.pipeline.iloc[item]  # Get transformer from pipeline
+            return self.pipeline.iloc[item]  # Get estimator from pipeline
         elif isinstance(item, str):
             if item in self._branches:
                 return self._branches[item]  # Get branch
@@ -351,7 +352,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # A pipeline could consist of just a single estimator
         if len(self.tpot.fitted_pipeline_) > 1:
             for name, est in self.tpot.fitted_pipeline_[:-1].named_steps.items():
-                add_transformer(self, est)
+                self._add_transformer(est)
 
         # Add the final estimator as a model to atom
         est = self.tpot.fitted_pipeline_[-1]
@@ -416,7 +417,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             # Add as row to the dataframe
             df.loc[dist] = {"ks": round(stat[0], 4), "p_value": round(stat[1], 4)}
 
-        return df.sort_values(["ks"])
+        return df.sort_values("ks")
 
     @composed(crash, typechecked)
     def export_pipeline(
@@ -429,6 +430,10 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Optionally, you can add a model as final estimator. The
         returned pipeline is already fitted on the training set.
+        Note that custom transformers and transformers that were
+        not fitted on all columns are added inside a meta-estimator
+        called TransformerWrapper that always returns pd.DataFrame
+        and only utilises the columns used for fitting.
 
         Parameters
         ----------
@@ -458,7 +463,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
         elif pipeline is False:
             pipeline = []
         elif pipeline is True:
@@ -471,6 +476,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         for idx, transformer in enumerate(self.pipeline):
             if idx in pipeline:
                 est = deepcopy(transformer)  # Not clone to keep fitted
+
                 # Set the new verbosity (if possible)
                 if verbose is not None and hasattr(est, "verbose"):
                     est.verbose = verbose
@@ -817,7 +823,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
+            estimator's own verbosity.
 
         Returns
         -------
@@ -829,7 +835,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est.train_only]
+            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
         elif pipeline is False:
             pipeline = []
         elif pipeline is True:
@@ -851,6 +857,65 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         return kwargs
 
+    def _add_transformer(self, estimator, columns=None, train_only=False, **fit_params):
+        """Add a transformer to the pipeline.
+
+        If the transformer is not fitted, it is fitted on the
+        complete training set. Afterwards, the data set is
+        transformed and the transformer is added to atom's
+        pipeline.
+
+        If the transformer has the n_jobs and/or random_state
+        parameters and they are left to their default value,
+        they adopt atom's values.
+
+        Parameters
+        ----------
+        estimator: transformer
+            Estimator to add. Should implement a `transform` method.
+
+        columns: int, str, slice, sequence or None, optional (default=None)
+            Names or indices of the columns in the dataset to transform.
+            If None, transform all columns.
+
+        train_only: bool, optional (default=False)
+            Whether to apply the transformer only on the train set or
+            on the complete dataset.
+
+        **fit_params
+            Additional keyword arguments passed to the transformer's fit
+            method.
+
+        """
+        if not hasattr(estimator, "transform"):
+            raise ValueError("Added transformers should have a transform method!")
+
+        # Add BaseTransformer params to the estimator if left to default
+        if all(hasattr(estimator, attr) for attr in ("get_params", "set_params")):
+            sign = signature(estimator.__init__).parameters
+            for p in ("n_jobs", "random_state"):
+                if p in sign and estimator.get_params()[p] == sign[p]._default:
+                    estimator.set_params(**{p: getattr(self, p)})
+
+        # Transformers remember the train_only and columns parameters
+        estimator._train_only = train_only
+        estimator._cols = [
+            col for col in get_columns(self.dataset, columns) if col != self.target
+        ]
+
+        if hasattr(estimator, "fit") and not check_is_fitted(estimator, False):
+            if not estimator.__module__.startswith("atom"):
+                self.log(f"Fitting {estimator.__class__.__name__}...", 1)
+
+            fit_one(estimator, self.X_train, self.y_train, **fit_params)
+
+        custom_transform(self, estimator, self.branch, verbose=self.verbose)
+
+        # Add the estimator to the pipeline
+        self.branch.pipeline = self.pipeline.append(
+            pd.Series([estimator], name=self._current), ignore_index=True
+        )
+
     @composed(crash, method_to_log, typechecked)
     def add(
         self,
@@ -859,15 +924,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         train_only: bool = False,
         **fit_params,
     ):
-        """Add a transformer to the current branch.
+        """Add a estimator to the current branch.
 
-        If the transformer is not fitted, it is fitted on the complete
+        If the estimator is not fitted, it is fitted on the complete
         training set. Afterwards, the data set is transformed and the
-        transformer is added to atom's pipeline. If the transformer is
-        a sklearn Pipeline, every transformer is merged independently
+        estimator is added to atom's pipeline. If the estimator is
+        a sklearn Pipeline, every estimator is merged independently
         with atom.
 
-        If the transformer has a `n_jobs` and/or `random_state` parameter
+        If the estimator has a `n_jobs` and/or `random_state` parameter
         that is left to its default value, it adopts atom's value.
 
         Parameters
@@ -881,11 +946,11 @@ class ATOM(BasePredictor, ATOMPlotter):
             If None, transform all columns.
 
         train_only: bool, optional (default=False)
-            Whether to apply the transformer only on the training set or
+            Whether to apply the estimator only on the training set or
             on the complete dataset.
 
         **fit_params
-            Additional keyword arguments passed to the transformer's fit
+            Additional keyword arguments passed to the estimator's fit
             method.
 
         """
@@ -893,10 +958,10 @@ class ATOM(BasePredictor, ATOMPlotter):
         if transformer.__class__.__name__ == "Pipeline":
             # Recursively add all transformers to the pipeline
             for name, est in transformer.named_steps.items():
-                add_transformer(self, est, columns, train_only, **fit_params)
+                self._add_transformer(est, columns, train_only, **fit_params)
 
         else:
-            add_transformer(self, transformer, columns, train_only, **fit_params)
+            self._add_transformer(transformer, columns, train_only, **fit_params)
 
     @composed(crash, method_to_log, typechecked)
     def apply(self, func: callable, columns: Union[int, str], args=(), **kwargs):
@@ -934,16 +999,8 @@ class ATOM(BasePredictor, ATOMPlotter):
                 "Invalid value for the func parameter. Argument is not callable!"
             )
 
-        if isinstance(columns, int):
-            columns = get_columns(self.dataset, columns)[0]
-
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        transformer = FuncTransformer(func, columns=columns, args=args, **kwargs)
-        custom_transform(self, transformer, self.branch)
-
-        self.branch.pipeline = self.pipeline.append(
-            pd.Series([transformer], name=self._current), ignore_index=True
-        )
+        self._add_transformer(FuncTransformer(func, columns, args, **kwargs))
 
     @composed(crash, method_to_log, typechecked)
     def drop(self, columns: Union[int, str, slice, SEQUENCE_TYPES], **kwargs):
@@ -960,20 +1017,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_method(self, "drop")
-        columns = get_columns(self.dataset, columns)
-        if self.target in columns:
-            raise ValueError(
-                "Invalid value for the columns parameter. "
-                "The target column can not be dropped."
-            )
-
         kwargs = self._prepare_kwargs(kwargs, ["verbose", "logger"])
-        transformer = DropTransformer(columns=columns, **kwargs)
-        custom_transform(self, transformer, self.branch)
-
-        self.branch.pipeline = self.pipeline.append(
-            pd.Series([transformer], name=self._current), ignore_index=True
-        )
+        self._add_transformer(DropTransformer(columns=columns, **kwargs))
 
     # Data cleaning transformers =================================== >>
 
@@ -992,7 +1037,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Scaler().get_params())
         scaler = Scaler(strategy=strategy, **kwargs)
 
-        add_transformer(self, scaler, columns=columns)
+        self._add_transformer(scaler, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(scaler, strategy.lower()))
@@ -1016,7 +1061,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Gauss().get_params())
         gauss = Gauss(strategy=strategy, **kwargs)
 
-        add_transformer(self, gauss, columns=columns)
+        self._add_transformer(gauss, columns=columns)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("yeojohnson", "boxcox", "quantile"):
@@ -1066,7 +1111,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Pass atom's missing values to the cleaner before transforming
         cleaner.missing = self.missing
 
-        add_transformer(self, cleaner, columns=columns)
+        self._add_transformer(cleaner, columns=columns)
 
         # Assign mapping (if it changed)
         if cleaner.mapping:
@@ -1104,7 +1149,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Pass atom's missing values to the imputer before transforming
         imputer.missing = self.missing
 
-        add_transformer(self, imputer, columns=columns)
+        self._add_transformer(imputer, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def encode(
@@ -1143,7 +1188,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, encoder, columns=columns)
+        self._add_transformer(encoder, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def prune(
@@ -1177,7 +1222,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, pruner, columns=columns, train_only=True)
+        self._add_transformer(pruner, columns=columns, train_only=True)
 
         # Attach the estimator attribute to atom's branch
         for strat in lst(strategy):
@@ -1209,7 +1254,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         # Add mapping from atom to balancer for cleaner printing
         balancer.mapping = self.mapping
 
-        add_transformer(self, balancer, columns=columns, train_only=True)
+        self._add_transformer(balancer, columns=columns, train_only=True)
 
         # Attach the estimator attribute to atom's branch
         setattr(self.branch, strategy.lower(), getattr(balancer, strategy.lower()))
@@ -1264,7 +1309,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, textcleaner)
+        self._add_transformer(textcleaner)
 
         setattr(self.branch, "drops", getattr(textcleaner, "drops"))
 
@@ -1296,7 +1341,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, tokenizer)
+        self._add_transformer(tokenizer)
 
         self.branch.bigrams = tokenizer.bigrams
         self.branch.trigrams = tokenizer.trigrams
@@ -1331,7 +1376,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, normalizer)
+        self._add_transformer(normalizer)
 
     @composed(crash, method_to_log, typechecked)
     def vectorize(self, strategy: str = "BOW", **kwargs):
@@ -1348,7 +1393,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         kwargs = self._prepare_kwargs(kwargs, Vectorizer().get_params())
         vectorizer = Vectorizer(strategy=strategy, **kwargs)
 
-        add_transformer(self, vectorizer)
+        self._add_transformer(vectorizer)
 
         # Attach the estimator attribute to atom's branch
         for attr in ("bow", "tfidf", "hashing"):
@@ -1388,7 +1433,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, feature_extractor, columns=columns)
+        self._add_transformer(feature_extractor, columns=columns)
 
     @composed(crash, method_to_log, typechecked)
     def feature_generation(
@@ -1422,7 +1467,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, feature_generator, columns=columns)
+        self._add_transformer(feature_generator, columns=columns)
 
         # Attach the genetic attributes to atom's branch
         if strategy.lower() in ("gfg", "genetic"):
@@ -1484,7 +1529,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             **kwargs,
         )
 
-        add_transformer(self, feature_selector, columns=columns)
+        self._add_transformer(feature_selector, columns=columns)
 
         # Attach used attributes to atom's branch
         for attr in ("collinear", "feature_importance", str(strategy).lower()):

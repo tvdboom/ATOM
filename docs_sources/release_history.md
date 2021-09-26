@@ -6,12 +6,14 @@
 
 * The [Encoder](../API/data_cleaning/encoder) class now directly handles
   unknown categories encountered during fitting.
-* The [Balancer](../API/data_cleaning/balancer) class now accepts custom
-  estimators as balancing strategy.
+* The [Balancer](../API/data_cleaning/balancer) and [Encoder](../API/data_cleaning/encoder)
+  classes now accept custom estimators for the `strategy` parameter.
 * The new [merge](../API/ATOM/atomclassifier/#merge) method enables the
   user to merge multiple atom instances into one.
 * The dtype shrinking is moved from atom's initializers to the
   [shrink](../API/ATOM/atomclassifier/#shrink) method.
+* ATOM's [custom pipeline](../API/ATOM/ATOMClassifier/#export-pipeline) now
+  handles transformers fitted on a subset of the dataset.
 * The `column` parameter in the [distribution](../API/ATOM/atomclassifier/#distribution)
   method is renamed to `columns` for continuity of the API.
 * The `mae` criterion for the [GBM](../API/models/gbm) model hyperparameter
@@ -20,6 +22,8 @@
 * Renaming a branch using an existing name now raises an exception.
 * Fixed a bug where columns of type `category` broke the [Imputer](../API/data_cleaning/imputer)
   class.
+* Fixed a bug where predictions of the [Stacking](../user_guide/training/#stacking)
+  ensemble crashed for branches with multiple transformers.
 * The tables in the documentation now adapt to dark mode.
 
 

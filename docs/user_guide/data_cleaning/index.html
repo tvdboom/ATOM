@@ -2539,16 +2539,29 @@ to check the amount of missing values per column.</p>
 </div>
 <p><br></p>
 <h2 id="encoding-categorical-features">Encoding categorical features</h2>
-<p>Many datasets will contain categorical features. Their variables are
-typically stored as text values which represent various traits. Some 
-examples include color (“Red”, “Yellow”, “Blue”), size (“Small”,
+<p>Many datasets contain categorical features. Their variables are
+typically stored as text values which represent various classes.
+Some examples include color (“Red”, “Yellow”, “Blue”), size (“Small”,
 “Medium”, “Large”) or geographic designations (city or country).
 Regardless of what the value is used for, the challenge is determining
-how to use this data in the analysis. ATOM's models don't support
-direct manipulation of this kind of data. Use the <a href="../../API/data_cleaning/encoder">Encoder</a>
-class to encode categorical features to numerical values. It can be
-accessed from atom through the <a href="../../API/ATOM/atomclassifier/#encode">encode</a> 
-method.</p>
+how to use this data in the analysis. The majority of sklearn's models
+don't support direct manipulation of this kind of data. Use the
+<a href="../../API/data_cleaning/encoder">Encoder</a> class to encode categorical
+features to numerical values. It can be  accessed from atom through the
+<a href="../../API/ATOM/atomclassifier/#encode">encode</a> method.</p>
+<p>There are many strategies to encode categorical columns. The Encoder
+class applies one strategy or another depending on the number of
+classes in the column to be encoded. When there are only two, the values
+are encoded with 0 or 1. When there are more than two, the columns can
+be encoded using one-hot encoding or any other strategy of the
+<a href="https://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+package, depending on the value of the <code>max_onehot</code> parameter.
+<a href="https://contrib.scikit-learn.org/category_encoders/onehot.html">One-hot</a>
+encodes the column making a dummy feature for every class. This
+approach preserves all the information but increases the size of
+the dataset considerably, making it often an undesirable strategy for
+high cardinality features. Other strategies like <a href="https://contrib.scikit-learn.org/category_encoders/leaveoneout.html">LeaveOneOut</a>
+transform the column in place.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use atom's <a href="../../API/ATOM/atomclassifier/#data-attributes">categorical</a>
@@ -2630,9 +2643,9 @@ a credit card fraud detection dataset, most of the transactions are
 non-fraud, and a very few cases are fraud. This leaves us with a very
 unbalanced ratio of fraud vs non-fraud cases. The <a href="../../API/data_cleaning/balancer">Balancer</a>
 class can oversample the minority class or undersample the majority
-class using any of the transformers implemented in
-<a href="https://imbalanced-learn.org/stable/index.html">imblearn</a>. It can be
-accessed from atom through the <a href="../../API/ATOM/atomclassifier/#balance">balance</a>
+class using any of the transformers implemented in the
+<a href="https://imbalanced-learn.org/stable/index.html">imblearn</a> package. It
+can be  accessed from atom through the <a href="../../API/ATOM/atomclassifier/#balance">balance</a>
 method.</p>
                 
               

@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 from imblearn.combine import SMOTETomek
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from category_encoders.leave_one_out import LeaveOneOutEncoder
 
 # Own modules
 from atom.data_cleaning import (
@@ -426,6 +428,23 @@ def test_frac_to_other(frac_to_other):
     encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
     X = encoder.fit_transform(X10_str, y10)
     assert "Feature 3_other" in X.columns
+
+
+def test_encoder_strategy_invalid_estimator():
+    """Assert that an error is raised when strategy is invalid."""
+    encoder = Encoder(strategy=RandomForestClassifier())
+    pytest.raises(TypeError, encoder.fit_transform, X10_str, y10)
+
+
+def test_encoder_custom_estimator():
+    """Assert that the strategy can be a custom estimator."""
+    encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
+    X = encoder.fit_transform(X10_str, y10)
+    assert X.loc[0, "Feature 3"] != "a"
+
+    encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
+    X = encoder.fit_transform(X10_str, y10)
+    assert X.loc[0, "Feature 3"] != "a"
 
 
 def test_encoder_check_is_fitted():

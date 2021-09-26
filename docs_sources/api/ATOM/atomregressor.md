@@ -822,15 +822,15 @@ Export atom's pipeline to a sklearn-like Pipeline object. Optionally, you
 can add a model as final estimator. The returned pipeline is already fitted
 on the training set.
 
-!!! note
-    ATOM's Pipeline class behaves exactly the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
-    and additionally, it's compatible with transformers that drop samples
-    and transformers that change the target column.
+!!! info
+    ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+    and additionally:
 
-!!! warning
-    Due to incompatibilities with sklearn's API, the exported pipeline always
-    fits/transforms on the entire dataset provided. Beware that this can
-    cause errors if the transformers were fitted on a subset of the data.
+    * Accepts transformers that change the target column.
+    * Accepts transformers that drop rows.
+    * Accepts transformers that only are fitted on a subset
+      of the provided dataset.
+    * Always outputs pandas objects.
 
 <table style="font-size:16px">
 <tr>
