@@ -1791,8 +1791,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -1803,20 +1803,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
-        plot_feature_importance
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
       </a>
     </li>
   
@@ -1841,6 +1829,42 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -1889,30 +1913,6 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -3156,106 +3156,106 @@ Running BO for Logistic Regression...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 46.003, &#39;solver&#39;: &#39;lbfgs&#39;, &#39;max_iter&#39;: 745}
 Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 6.863s   Total time: 6.868s
+Time iteration: 6.715s   Total time: 6.720s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;penalty&#39;: &#39;none&#39;, &#39;solver&#39;: &#39;newton-cg&#39;, &#39;max_iter&#39;: 490}
 Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 6.336s   Total time: 13.391s
+Time iteration: 6.565s   Total time: 13.517s
 Initial point 3 ---------------------------------
 Parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 0.037, &#39;solver&#39;: &#39;liblinear&#39;, &#39;max_iter&#39;: 352}
 Evaluation --&gt; roc_auc_ovr: 0.9993  Best roc_auc_ovr: 1.0000
-Time iteration: 6.379s   Total time: 19.803s
+Time iteration: 6.620s   Total time: 20.163s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;penalty&#39;: &#39;none&#39;, &#39;solver&#39;: &#39;newton-cg&#39;, &#39;max_iter&#39;: 378}
 Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 5.243s   Total time: 25.296s
+Time iteration: 5.306s   Total time: 25.703s
 
 Results for Logistic Regression:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;penalty&#39;: &#39;l2&#39;, &#39;C&#39;: 46.003, &#39;solver&#39;: &#39;lbfgs&#39;, &#39;max_iter&#39;: 745}
 Best evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 25.535s
+Time elapsed: 25.962s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 1.0
 Test evaluation --&gt; roc_auc_ovr: 0.9965
-Time elapsed: 0.029s
+Time elapsed: 0.037s
 Bootstrap ---------------------------------------
 Evaluation --&gt; roc_auc_ovr: 0.9942 ± 0.0026
-Time elapsed: 0.103s
+Time elapsed: 0.100s
 -------------------------------------------------
-Total time: 25.668s
+Total time: 26.099s
 
 
 Running BO for Linear Discriminant Analysis...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;solver&#39;: &#39;eigen&#39;, &#39;shrinkage&#39;: 1.0}
 Evaluation --&gt; roc_auc_ovr: 0.8975  Best roc_auc_ovr: 0.8975
-Time iteration: 0.023s   Total time: 0.025s
+Time iteration: 0.016s   Total time: 0.031s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
 Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 0.024s   Total time: 0.072s
+Time iteration: 0.030s   Total time: 0.092s
 Initial point 3 ---------------------------------
 Parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
 Evaluation --&gt; roc_auc_ovr: 1.0000  Best roc_auc_ovr: 1.0000
-Time iteration: 0.024s   Total time: 0.119s
+Time iteration: 0.031s   Total time: 0.140s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;solver&#39;: &#39;lsqr&#39;, &#39;shrinkage&#39;: 0.7}
 Evaluation --&gt; roc_auc_ovr: 0.8996  Best roc_auc_ovr: 1.0000
-Time iteration: 0.024s   Total time: 0.349s
+Time iteration: 0.034s   Total time: 0.383s
 
 Results for Linear Discriminant Analysis:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;solver&#39;: &#39;svd&#39;}
 Best evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 0.551s
+Time elapsed: 0.604s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 1.0
 Test evaluation --&gt; roc_auc_ovr: 1.0
-Time elapsed: 0.010s
+Time elapsed: 0.001s
 Bootstrap ---------------------------------------
 Evaluation --&gt; roc_auc_ovr: 0.9998 ± 0.0005
-Time elapsed: 0.029s
+Time elapsed: 0.031s
 -------------------------------------------------
-Total time: 0.591s
+Total time: 0.636s
 
 
 Running BO for Random Forest...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 245, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: None, &#39;min_samples_split&#39;: 13, &#39;min_samples_leaf&#39;: 6, &#39;max_features&#39;: None, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.007, &#39;max_samples&#39;: 0.6}
 Evaluation --&gt; roc_auc_ovr: 0.9921  Best roc_auc_ovr: 0.9921
-Time iteration: 0.381s   Total time: 0.387s
+Time iteration: 0.398s   Total time: 0.398s
 Initial point 2 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 400, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 8, &#39;min_samples_split&#39;: 7, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: 0.7, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.008, &#39;max_samples&#39;: 0.7}
 Evaluation --&gt; roc_auc_ovr: 0.9927  Best roc_auc_ovr: 0.9927
-Time iteration: 0.622s   Total time: 1.044s
+Time iteration: 0.569s   Total time: 1.004s
 Initial point 3 ---------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 78, &#39;criterion&#39;: &#39;gini&#39;, &#39;max_depth&#39;: 5, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 14, &#39;max_features&#39;: 0.8, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.003}
 Evaluation --&gt; roc_auc_ovr: 0.9851  Best roc_auc_ovr: 0.9927
-Time iteration: 0.133s   Total time: 1.207s
+Time iteration: 0.125s   Total time: 1.160s
 Iteration 4 -------------------------------------
 Parameters --&gt; {&#39;n_estimators&#39;: 394, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 3, &#39;min_samples_split&#39;: 19, &#39;min_samples_leaf&#39;: 14, &#39;max_features&#39;: 0.8, &#39;bootstrap&#39;: False, &#39;ccp_alpha&#39;: 0.015}
 Evaluation --&gt; roc_auc_ovr: 0.9897  Best roc_auc_ovr: 0.9927
-Time iteration: 0.502s   Total time: 2.014s
+Time iteration: 0.476s   Total time: 1.965s
 
 Results for Random Forest:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;n_estimators&#39;: 400, &#39;criterion&#39;: &#39;entropy&#39;, &#39;max_depth&#39;: 8, &#39;min_samples_split&#39;: 7, &#39;min_samples_leaf&#39;: 19, &#39;max_features&#39;: 0.7, &#39;bootstrap&#39;: True, &#39;ccp_alpha&#39;: 0.008, &#39;max_samples&#39;: 0.7}
 Best evaluation --&gt; roc_auc_ovr: 0.9927
-Time elapsed: 2.318s
+Time elapsed: 2.290s
 Fit ---------------------------------------------
 Train evaluation --&gt; roc_auc_ovr: 0.9997
 Test evaluation --&gt; roc_auc_ovr: 0.9802
-Time elapsed: 0.594s
+Time elapsed: 0.575s
 Bootstrap ---------------------------------------
 Evaluation --&gt; roc_auc_ovr: 0.974 ± 0.0074
-Time elapsed: 2.648s
+Time elapsed: 2.658s
 -------------------------------------------------
-Total time: 5.561s
+Total time: 5.524s
 
 
 Final results ========================= &gt;&gt;
-Duration: 31.821s
+Duration: 32.259s
 ------------------------------------------
 Logistic Regression          --&gt; roc_auc_ovr: 0.9942 ± 0.0026
 Linear Discriminant Analysis --&gt; roc_auc_ovr: 0.9998 ± 0.0005 !
@@ -3336,38 +3336,38 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
     <tr>
       <th>LR</th>
       <td>1.000000</td>
-      <td>25.535s</td>
+      <td>25.962s</td>
       <td>1.000000</td>
       <td>0.996503</td>
-      <td>0.029s</td>
+      <td>0.037s</td>
       <td>0.994172</td>
       <td>0.002553</td>
-      <td>0.103s</td>
-      <td>25.668s</td>
+      <td>0.100s</td>
+      <td>26.099s</td>
     </tr>
     <tr>
       <th>LDA</th>
       <td>1.000000</td>
-      <td>0.551s</td>
+      <td>0.604s</td>
       <td>1.000000</td>
       <td>1.000000</td>
-      <td>0.010s</td>
+      <td>0.001s</td>
       <td>0.999767</td>
       <td>0.000466</td>
-      <td>0.029s</td>
-      <td>0.591s</td>
+      <td>0.031s</td>
+      <td>0.636s</td>
     </tr>
     <tr>
       <th>RF</th>
       <td>0.992716</td>
-      <td>2.318s</td>
+      <td>2.290s</td>
       <td>0.999654</td>
       <td>0.980186</td>
-      <td>0.594s</td>
+      <td>0.575s</td>
       <td>0.974022</td>
       <td>0.007351</td>
-      <td>2.648s</td>
-      <td>5.561s</td>
+      <td>2.658s</td>
+      <td>5.524s</td>
     </tr>
   </tbody>
 </table>
@@ -3383,13 +3383,13 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[5]:</div>
     <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
         <div class="CodeMirror cm-s-jupyter">
     <div class="highlight-ipynb hl-python"><pre><span></span><span class="c1"># Show the score for some different metrics</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">scoring</span><span class="p">([</span><span class="s2">&quot;precision_macro&quot;</span><span class="p">,</span> <span class="s2">&quot;recall_macro&quot;</span><span class="p">,</span> <span class="s2">&quot;jaccard_weighted&quot;</span><span class="p">])</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">evaluate</span><span class="p">([</span><span class="s2">&quot;precision_macro&quot;</span><span class="p">,</span> <span class="s2">&quot;recall_macro&quot;</span><span class="p">,</span> <span class="s2">&quot;jaccard_weighted&quot;</span><span class="p">])</span>
 </pre></div>
 
         </div>
@@ -3406,7 +3406,7 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
 <div class="jp-OutputArea-child">
 
     
-    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[10]:</div>
+    <div class="jp-OutputPrompt jp-OutputArea-prompt">Out[5]:</div>
 
 
 
@@ -3467,7 +3467,7 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[24]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[6]:</div>
     <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         
@@ -3510,7 +3510,7 @@ Random Forest                --&gt; roc_auc_ovr: 0.974 ± 0.0074
 </div><div class="jp-Cell jp-CodeCell jp-Notebook-cell   ">
 <div class="jp-Cell-inputWrapper">
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[17]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In&nbsp;[7]:</div>
     <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
         
         

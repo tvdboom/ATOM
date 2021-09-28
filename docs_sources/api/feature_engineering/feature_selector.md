@@ -6,7 +6,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L593">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L600">[source]</a>
 </span>
 </div>
 
@@ -21,8 +21,8 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>strategy: string or None, optional (default=None)</strong><br>
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -145,8 +145,8 @@ See the corresponding sklearn documentation for the available options.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <strong>collinear: pd.DataFrame</strong><br>
 Dataframe of the removed collinear features. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -175,8 +175,8 @@ e.g. <code>feature_selector.pca</code> for the PCA strategy.
  
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>style: str</strong><br>
 Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
@@ -269,15 +269,15 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L750">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L759">[source]</a>
 </span>
 </div>
 Fit to data. Note that the univariate, SFM (when model is not fitted), RFE and
 RFECV strategies all need a target column. Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -291,8 +291,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: FeatureSelector</strong><br>
 Fitted instance of self.
 </tr>
@@ -304,7 +304,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a>
 </span>
 </div>
 Fit to data, then transform it. Note that the univariate, SFM (when
@@ -312,8 +312,8 @@ model is not fitted), RFE and RFECV strategies need a target column.
 Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -327,8 +327,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
@@ -346,8 +346,8 @@ Transformed feature set.
 Get parameters for this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
@@ -355,8 +355,8 @@ If True, will return the parameters for this estimator and contained subobjects 
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
 </td>
@@ -375,8 +375,8 @@ Dictionary of the parameter names mapped to their values.
 Write a message to the logger and print it to stdout.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
@@ -451,8 +451,8 @@ Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their defa
 Save the instance to a pickle file.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
@@ -471,14 +471,14 @@ Name of the file. Use "auto" for automatic naming.
 Set the parameters of this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**params: dict</strong><br>
 Estimator parameters.
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: FeatureGenerator</strong><br>
 Estimator instance.
 </td>
@@ -491,14 +491,14 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L987">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1011">[source]</a>
 </span>
 </div>
 Transform the data.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -510,8 +510,8 @@ Does nothing. Implemented for continuity of the API.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>

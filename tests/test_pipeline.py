@@ -8,6 +8,7 @@ Description: Unit tests for pipeline.py
 """
 
 # Standard packages
+import pandas as pd
 import pytest
 import numpy as np
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -45,14 +46,14 @@ def test_fit(pipeline):
 def test_transform_only_y(pipeline):
     """Assert that the pipeline can transform the target column only."""
     pl = Pipeline(steps=[("label_encoder", LabelEncoder())])
-    assert isinstance(pl.fit_transform(y=y_bin), np.ndarray)
+    assert isinstance(pl.fit_transform(y=y_bin), pd.Series)
 
 
 def test_fit_transform(pipeline):
     """Assert that the pipeline can be fit-transformed normally."""
     pl = pipeline(model=False)
     pl.steps[0] = ("test", "passthrough")
-    assert isinstance(pl.fit_transform(X_bin), np.ndarray)  # Returns X
+    assert isinstance(pl.fit_transform(X_bin), pd.DataFrame)  # Returns X
     pl.steps[-1] = ("test_final", "passthrough")
     assert isinstance(pl.fit_transform(X_bin, y_bin), tuple)  # Returns X, y
 
@@ -90,5 +91,5 @@ def test_score(pipeline):
 def test_transform(pipeline):
     """Assert that the pipeline uses transform normally."""
     pl = pipeline(model=False)
-    assert isinstance(pl.transform(X_bin), np.ndarray)
+    assert isinstance(pl.transform(X_bin), pd.DataFrame)
     assert isinstance(pl.transform(X_bin, y_bin), tuple)

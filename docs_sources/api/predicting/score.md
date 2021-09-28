@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weights=None, pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L205">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L210">[source]</a>
 </span>
 </div>
 
@@ -16,8 +16,8 @@ model, that model is used.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -54,8 +54,8 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>score: np.float64</strong><br>
 Metric score of X with respect to y.
 </td>

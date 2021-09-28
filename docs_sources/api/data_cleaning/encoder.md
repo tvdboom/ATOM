@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Encoder</strong>(strategy="LeaveOneOut",
 max_onehot=10, ordinal=None, frac_to_other=None, verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L900">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L905">[source]</a>
 </span>
 </div>
 
@@ -16,29 +16,27 @@ the number of classes in the column:
 * If 2 < n_classes <= `max_onehot`, use OneHot-encoding.
 * If n_classes > `max_onehot`, use `strategy`-encoding.
 
-Missing values are propagated to the output column. Unknown classes
-encountered during transforming are converted to `np.NaN`. The class
-is also capable of replacing classes with low occurrences with the
-value `other` in order to prevent too high cardinality. It can be
-accessed from atom through the [encode](../../ATOM/atomclassifier/#encode)
-method. Read more in the [user guide](../../../user_guide/data_cleaning/#encoding-categorical-features).
+Missing values are propagated to the output column. Unknown
+classes encountered during transforming are imputed according
+to the selected strategy. Classes with low occurrences can be
+replaced with the value `other` in order to prevent too high
+cardinality. It can be accessed from atom through the
+[encode](../../ATOM/atomclassifier/#encode) method. Read more
+in the [user guide](../../../user_guide/data_cleaning/#encoding-categorical-features).
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
-<strong>strategy: str, optional (default="LeaveOneOut")</strong><br>
-Type of encoding to use for high cardinality features. Choose from one of the
-estimators available in the <a href="https://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
-package except for:
-<ul style="line-height:1.2em;margin-top:5px">
-<li>OneHotEncoder: Use the <code>max_onehot</code> parameter.</li>
-<li>HashingEncoder: Incompatibility of APIs.</li>
-</ul>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<strong>strategy: str or estimator, optional (default="LeaveOneOut")</strong><br>
+Type of encoding to use for high cardinality features. Choose
+from any of the estimators in the <a href="https://contrib.scikit-learn.org/category_encoders/">category-encoders</a>
+package or provide a custom one.
 <p>
 <strong>max_onehot: int or None, optional (default=10)</strong><br>
-Maximum number of unique values in a feature to perform one-hot-encoding.
-If None, it will always use <code>strategy</code> when n_unique > 2.
+Maximum number of unique values in a feature to perform one-hot
+encoding. If None, <code>strategy</code>-encoding is always used
+for columns with more than two classes.
 </p>
 <p>
 <strong>ordinal: dict or None, optional (default=None)</strong><br>
@@ -48,8 +46,9 @@ name and the value is the class order, e.g. {"salary": ["low",
 </p>
 <p>
 <strong>frac_to_other: int, float or None, optional (default=None)</strong><br>
-Classes with less occurrences than n_rows * <code>frac_to_other</code> are replaced
-with the string <code>other</code>. If None, skip this step.
+Classes with less occurrences than n_rows * <code>frac_to_other</code>
+are replaced with the string <code>other</code>. This transformation
+is done before the encoding of the column. If None, skip this step.
 </p>
 <strong>verbose: int, optional (default=0)</strong><br>
 Verbosity level of the class. Possible values are:
@@ -75,8 +74,10 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
     for a list of the categorical columns in the dataset.
 
 !!!warning
-    Unknown classes during transform are converted to `np.NaN`. Make sure to
-    impute them after!
+    Two category-encoders estimators are unavailable:
+
+    * OneHotEncoder: Use the `max_onehot` parameter.
+    * HashingEncoder: Incompatibility of APIs.
 
 <br>
 
@@ -125,13 +126,13 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L979">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L990">[source]</a></span></div>
 Fit to data. Note that leaving y=None can lead to errors if the
 `strategy` encoder requires target values.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -145,8 +146,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: Encoder</strong><br>
 Fitted instance of self.
 </tr>
@@ -156,13 +157,13 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a></span></div>
 Fit to data, then transform it. Note that leaving y=None can lead
 to errors if the `strategy` encoder requires target values.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -176,8 +177,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>
@@ -195,8 +196,8 @@ Transformed feature set.
 Get parameters for this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
@@ -204,8 +205,8 @@ If True, will return the parameters for this estimator and contained subobjects 
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
 </td>
@@ -224,8 +225,8 @@ Dictionary of the parameter names mapped to their values.
 Write a message to the logger and print it to stdout.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
@@ -250,8 +251,8 @@ Minimum verbosity level to print the message.
 Save the instance to a pickle file.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
@@ -270,14 +271,14 @@ Name of the file. Use "auto" for automatic naming.
 Set the parameters of this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**params: dict</strong><br>
 Estimator parameters.
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: Encoder</strong><br>
 Estimator instance.
 </td>
@@ -288,12 +289,12 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1073">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1110">[source]</a></span></div>
 Encode the data.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -305,8 +306,8 @@ Does nothing. Implemented for continuity of the API.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>X: pd.DataFrame</strong><br>
 Transformed feature set.
 </tr>

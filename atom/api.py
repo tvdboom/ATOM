@@ -156,14 +156,11 @@ def ATOMLoader(
                         custom_transform(cls, est1, branch, verbose=verbose)
 
                         for b2, v2 in cls._branches.items():
-                            try:  # Can fail if pipeline is shorter than i
-                                if b1 != b2 and est1 is v2.pipeline.iloc[i]:
-                                    # Update the data and step for the other branch
-                                    cls._branches[b2].data = copy(branch.data)
-                                    cls._branches[b2].idx = copy(branch.idx)
-                                    step[b2] = i
-                            except IndexError:
-                                continue
+                            if b1 != b2 and v2.pipeline.get(i) is est1:
+                                # Update the data and step for the other branch
+                                cls._branches[b2].data = copy(branch.data)
+                                cls._branches[b2].idx = copy(branch.idx)
+                                step[b2] = i
 
     cls.log(f"{cls.__class__.__name__} loaded successfully!", 1)
 

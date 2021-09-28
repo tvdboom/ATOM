@@ -626,52 +626,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         # Reset all prediction attrs since the model's estimator changed
         self._pred_attrs = [None] * 10
 
-    @composed(crash, typechecked)
-    def export_pipeline(
-        self,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-        verbose: Optional[int] = None,
-    ):
-        """Export the model's pipeline to a sklearn-like object.
-
-        If the model used feature scaling, the Scaler is added
-        before the model. The returned pipeline is already fitted
-        on the training set.
-
-        Parameters
-        ----------
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to export.
-                - If None: Only transformers that are applied on the
-                           whole dataset are exported.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
-        verbose: int or None, optional (default=None)
-            Verbosity level of the transformers in the pipeline. If
-            None, it leaves them to their original verbosity.
-
-        Returns
-        -------
-        pipeline: Pipeline
-            Current branch as a sklearn-like Pipeline object.
-
-        """
-        if hasattr(self.T, "export_pipeline"):
-            return self.T.export_pipeline(self.name, pipeline, verbose)
-        else:
-            steps = []
-            if self.scaler:
-                steps.append(("scaler", deepcopy(self.scaler)))
-
-            # Redirect stdout to avoid annoying prints
-            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
-                steps.append((self.name, deepcopy(self.estimator)))
-
-            return Pipeline(steps)
-
     @composed(crash, method_to_log)
     def cross_validate(self, **kwargs):
         """Evaluate the model using cross-validation.
@@ -736,6 +690,80 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         return cv
 
+    @composed(crash, typechecked)
+    def export_pipeline(
+        self,
+        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
+        verbose: Optional[int] = None,
+    ):
+        """Export the model's pipeline to a sklearn-like object.
+
+        If the model used feature scaling, the Scaler is added
+        before the model. The returned pipeline is already fitted
+        on the training set.
+
+        Parameters
+        ----------
+        pipeline: bool, sequence or None, optional (default=None)
+            Transformers to export.
+                - If None: Only transformers that are applied on the
+                           whole dataset are exported.
+                - If False: Don't use any transformers.
+                - If True: Use all transformers in the pipeline.
+                - If sequence: Transformers to use, selected by their
+                               index in the pipeline.
+
+        verbose: int or None, optional (default=None)
+            Verbosity level of the transformers in the pipeline. If
+            None, it leaves them to their original verbosity.
+
+        Returns
+        -------
+        pipeline: Pipeline
+            Current branch as a sklearn-like Pipeline object.
+
+        """
+        if hasattr(self.T, "export_pipeline"):
+            return self.T.export_pipeline(self.name, pipeline, verbose)
+        else:
+            steps = []
+            if self.scaler:
+                steps.append(("scaler", deepcopy(self.scaler)))
+
+            # Redirect stdout to avoid annoying prints
+            with open(os.devnull, "w") as f, contextlib.redirect_stdout(f):
+                steps.append((self.name, deepcopy(self.estimator)))
+
+            return Pipeline(steps)
+
+    @crash
+    def full_train(self):
+        """Get the estimator trained on the complete dataset.
+
+        In some cases it might be desirable to use all the available
+        data to train a final model after the right hyperparameters
+        are found. Note that this means that the model can not be
+        evaluated.
+
+        Returns
+        -------
+        est: estimator
+            Model estimator trained on the full dataset.
+
+        """
+        estimator = clone(self.estimator)  # Clone to not overwrite when fitting
+
+        if hasattr(self, "custom_fit"):
+            self.custom_fit(
+                est=estimator,
+                train=(self.X, self.y),
+                params=self._est_params_fit,
+            )
+        else:
+            estimator.fit(arr(self.X), self.y, **self._est_params_fit)
+
+        return estimator
+
     @composed(crash, method_to_log, typechecked)
     def rename(self, name: Optional[str] = None):
         """Change the model's tag.
@@ -772,34 +800,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         if self._run:  # Change name in mlflow's run
             MlflowClient().set_tag(self._run.info.run_id, "mlflow.runName", self.name)
-
-    @crash
-    def full_train(self):
-        """Get the estimator trained on the complete dataset.
-
-        In some cases it might be desirable to use all the available
-        data to train a final model after the right hyperparameters
-        are found. Note that this means that the model can not be
-        evaluated.
-
-        Returns
-        -------
-        est: estimator
-            Model estimator trained on the full dataset.
-
-        """
-        estimator = clone(self.estimator)  # Clone to not overwrite when fitting
-
-        if hasattr(self, "custom_fit"):
-            self.custom_fit(
-                est=estimator,
-                train=(self.X, self.y),
-                params=self._est_params_fit,
-            )
-        else:
-            estimator.fit(arr(self.X), self.y, **self._est_params_fit)
-
-        return estimator
 
     @composed(crash, method_to_log, typechecked)
     def save_estimator(self, filename: str = "auto"):

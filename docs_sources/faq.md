@@ -1,6 +1,11 @@
 # Frequently asked questions
 ----------------------------
 
+Here we try to give some answers to questions that have popped up
+regularly. If you have any other questions, don't hesitate to post
+them on the [slack channel](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)! 
+
+
 * [Is this package related to the text editor?](#q1)
 * [How does ATOM relate to AutoML?](#q2)
 * [Is it possible to run deep learning models?](#q3)
@@ -13,14 +18,12 @@
 * [Can I merge a sklearn pipeline with atom?](#q10)
 * [Is it possible to initialize atom with an existing train and test set?](#q11)
 * [Can I train the models using cross-validation?](#q12)
-* [Why are there missing values in the dataset after encoding?](#q13)
-* [Is there a way to process datetime features?](#q14)
+* [Is there a way to process datetime features?](#q13)
+
 
 <br>
 
 ------
-
-<br>
 
 <a name="q1"></a>
 ### Is this package related to the text editor?
@@ -177,21 +180,6 @@ we would cross-validate the entire pipeline using the entire dataset.
 This can be done using a trainer's [cross_validate](../API/ATOM/atomclassifier/#cross-validate)
 method, but for the reason just explained above, the method only outputs
 the final metric results.
-
-<br>
-
-<a name="q13"></a>
-### Why are there missing values in the dataset after encoding?
-The [Encoder](../API/data_cleaning/encoder) class can create new `np.NaN`
-values during transformation if it encounters classes that were not there
-during fitting. This is intended behavior, since the transformer wouldn't
-know what to do with the new classes. In atom's case, it means the test
-set contains classes that were not present in the training set. This
-usually happens if the training set is very small or if the column has
-many classes with few occurrences. To fix this, impute the dataset
-after encoding, increase the number of samples in the training set to
-make sure it contains all the classes in the column, or increase the
-`frac_to_other` parameter.
 
 <br>
 

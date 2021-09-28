@@ -29,8 +29,8 @@ Read more in the [user guide](../../../user_guide/training).
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>models: str, estimator or sequence, optional (default=None)</strong><br>
 Models to fit to the data. Allowed inputs are: an acronym from any of
 ATOM's predefined models, an <a href="../../ATOM/atommodel">ATOMModel</a>
@@ -223,8 +223,8 @@ accordingly.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>dataset: pd.DataFrame</strong><br>
 Complete dataset in the pipeline.
@@ -296,8 +296,8 @@ Name of the target column.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: list</strong><br>
 List of models in the pipeline.
@@ -337,8 +337,8 @@ Dataframe of the training results. Columns can include:
  
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>style: str</strong><br>
 Plotting style. See seaborn's <a href="https://seaborn.pydata.org/tutorial/aesthetics.html#seaborn-figure-styles">documentation</a>.
@@ -452,7 +452,7 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L384">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L270">[source]</a>
 </span>
 </div>
 Applies probability calibration on the winning model. The
@@ -468,8 +468,8 @@ changed, all the model's prediction attributes are reset.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
 Using cv="prefit" will use the trained model and fit the calibrator
@@ -494,8 +494,8 @@ The default option is to add two plots side by side. See the
 [user guide](../../../user_guide/plots/#canvas) for an example.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>nrows: int, optional (default=1)</strong><br>
 Number of plots in length.
@@ -532,7 +532,7 @@ Whether to render the plot.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L390">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L276">[source]</a>
 </span>
 </div>
 Evaluate the winning model using cross-validation. This method cross-validates
@@ -540,8 +540,8 @@ the whole pipeline on the complete dataset. Use it to assess the robustness of
 the model's performance.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**kwargs</strong><br>
 Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function. If the scoring method is not specified, it uses
@@ -549,8 +549,8 @@ the trainer's metric.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>scores: dict</strong><br>
 Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
 function.
@@ -564,7 +564,7 @@ function.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L428">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L282">[source]</a>
 </span>
 </div>
 Delete a model from the trainer. If the winning model is
@@ -576,8 +576,8 @@ or to free some memory before saving. Deleted models are
 not removed from any active mlflow experiment.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>models: str or sequence, optional (default=None)</strong><br>
 Models to delete. If None, delete them all.
 </td>
@@ -590,7 +590,7 @@ Models to delete. If None, delete them all.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">get_class_weights</strong>(dataset="train")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L349">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L336">[source]</a>
 </span>
 </div>
 Return class weights for a balanced data set. Statistically, the class
@@ -599,14 +599,14 @@ the target population as closely as possible. The returned weights are
 inversely proportional to the class frequencies in the selected data set. 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>dataset: str, optional (default="train")</strong><br>
 Data set from which to get the weights. Choose between "train", "test" or "dataset".
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>class_weights: dict</strong><br>
 Classes with the corresponding weights.
 </td>
@@ -625,8 +625,8 @@ Classes with the corresponding weights.
 Get parameters for this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
@@ -634,8 +634,8 @@ If True, will return the parameters for this estimator and contained subobjects 
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
 </td>
@@ -654,8 +654,8 @@ Dictionary of the parameter names mapped to their values.
 Write a message to the logger and print it to stdout.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
@@ -684,7 +684,7 @@ Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their defa
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_predictions</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L175">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L180">[source]</a>
 </span>
 </div>
 Clear the [prediction attributes](../../../user_guide/predicting) from all models.
@@ -702,8 +702,8 @@ Use this method to free some memory before saving the trainer.
 Fit and evaluate the models.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>*arrays: sequence of indexables</strong><br>
 Training set and test set. Allowed input formats are:
 <ul style="line-height:1.2em;margin-top:5px">
@@ -729,8 +729,8 @@ the complete dataset as attribute, so the file can become large for
 big datasets! To avoid this, use `save_data=False`.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
@@ -751,14 +751,14 @@ when loading the file.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">evaluate</strong>(metric=None, dataset="test")
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L396">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L304">[source]</a>
 </span>
 </div>
 Get all the models' scores for the provided metrics.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>metric: str, func, scorer, sequence or None, optional (default=None)</strong><br>
 Metrics to calculate. If None, a selection of the most common
@@ -771,8 +771,8 @@ Data set on which to calculate the metric. Options are "train" or "test".
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>scores: pd.DataFrame</strong><br>
 Scores of the models.
 </td>
@@ -791,14 +791,14 @@ Scores of the models.
 Set the parameters of this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**params: dict</strong><br>
 Estimator parameters.
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: TrainSizingClassifier</strong><br>
 Estimator instance.
 </td>
@@ -812,14 +812,14 @@ Estimator instance.
 <em>method</em> <strong style="color:#008AB8">stacking</strong>(models=None,
 estimator=None, stack_method="auto", passthrough=False)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L298">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L371">[source]</a>
 </span>
 </div>
 Add a [Stacking](../../../user_guide/training/#stacking) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the stacking. If None, it selects all models
@@ -856,14 +856,14 @@ not already.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">voting</strong>(models=None, weights=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L265">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L422">[source]</a>
 </span>
 </div>
 Add a [Voting](../../../user_guide/training/#voting) instance to the models in the pipeline.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: sequence or None, optional (default=None)</strong><br>
 Models that feed the voting. If None, it selects all models

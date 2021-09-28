@@ -1791,8 +1791,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -1803,20 +1803,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
-        plot_feature_importance
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
       </a>
     </li>
   
@@ -1841,6 +1829,42 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -1889,30 +1913,6 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -3193,7 +3193,7 @@ Test set size: 28438
 Applying data cleaning...
 Fitting Imputer...
 Imputing missing values...
- --&gt; Dropping 15182 samples for containing less than 80% non-missing values.
+ --&gt; Dropping 15182 samples for containing more than 16 missing values.
  --&gt; Imputing 100 missing values with median (12.2) in feature MinTemp.
  --&gt; Imputing 57 missing values with median (22.8) in feature MaxTemp.
  --&gt; Imputing 640 missing values with median (0.0) in feature Rainfall.
@@ -3274,16 +3274,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.8093
 Test evaluation --&gt; f1: 0.61
-Time elapsed: 0.749s
+Time elapsed: 0.649s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6092 ± 0.0055
-Time elapsed: 1.927s
+Time elapsed: 1.757s
 -------------------------------------------------
-Total time: 2.675s
+Total time: 2.406s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.675s
+Duration: 2.406s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6092 ± 0.0055 ~
 
@@ -3297,16 +3297,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.7328
 Test evaluation --&gt; f1: 0.6218
-Time elapsed: 0.901s
+Time elapsed: 0.823s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.615 ± 0.0027
-Time elapsed: 2.385s
+Time elapsed: 2.348s
 -------------------------------------------------
-Total time: 3.287s
+Total time: 3.172s
 
 
 Final results ========================= &gt;&gt;
-Duration: 3.288s
+Duration: 3.173s
 ------------------------------------------
 LightGBM --&gt; f1: 0.615 ± 0.0027
 
@@ -3320,16 +3320,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.7075
 Test evaluation --&gt; f1: 0.6252
-Time elapsed: 1.076s
+Time elapsed: 1.024s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6199 ± 0.0019
-Time elapsed: 2.927s
+Time elapsed: 2.799s
 -------------------------------------------------
-Total time: 4.004s
+Total time: 3.824s
 
 
 Final results ========================= &gt;&gt;
-Duration: 4.004s
+Duration: 3.824s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6199 ± 0.0019
 
@@ -3343,16 +3343,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6939
 Test evaluation --&gt; f1: 0.6275
-Time elapsed: 1.369s
+Time elapsed: 1.234s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6215 ± 0.002
-Time elapsed: 3.555s
+Time elapsed: 3.324s
 -------------------------------------------------
-Total time: 4.924s
+Total time: 4.559s
 
 
 Final results ========================= &gt;&gt;
-Duration: 4.925s
+Duration: 4.559s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6215 ± 0.002
 
@@ -3366,16 +3366,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6814
 Test evaluation --&gt; f1: 0.6291
-Time elapsed: 1.590s
+Time elapsed: 1.437s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.623 ± 0.0014
-Time elapsed: 4.344s
+Time elapsed: 3.942s
 -------------------------------------------------
-Total time: 5.935s
+Total time: 5.379s
 
 
 Final results ========================= &gt;&gt;
-Duration: 5.935s
+Duration: 5.379s
 ------------------------------------------
 LightGBM --&gt; f1: 0.623 ± 0.0014
 
@@ -3389,16 +3389,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6766
 Test evaluation --&gt; f1: 0.6356
-Time elapsed: 1.813s
+Time elapsed: 1.640s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6283 ± 0.0022
-Time elapsed: 4.853s
+Time elapsed: 4.421s
 -------------------------------------------------
-Total time: 6.667s
+Total time: 6.060s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.667s
+Duration: 6.060s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6283 ± 0.0022
 
@@ -3412,16 +3412,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6742
 Test evaluation --&gt; f1: 0.6289
-Time elapsed: 2.045s
+Time elapsed: 1.837s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6297 ± 0.0024
-Time elapsed: 5.420s
+Time elapsed: 5.047s
 -------------------------------------------------
-Total time: 7.466s
+Total time: 6.886s
 
 
 Final results ========================= &gt;&gt;
-Duration: 7.466s
+Duration: 6.886s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6297 ± 0.0024
 
@@ -3435,16 +3435,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.672
 Test evaluation --&gt; f1: 0.6322
-Time elapsed: 2.165s
+Time elapsed: 2.096s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6311 ± 0.0023
-Time elapsed: 5.971s
+Time elapsed: 5.766s
 -------------------------------------------------
-Total time: 8.138s
+Total time: 7.862s
 
 
 Final results ========================= &gt;&gt;
-Duration: 8.138s
+Duration: 7.862s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6311 ± 0.0023
 
@@ -3458,16 +3458,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.6674
 Test evaluation --&gt; f1: 0.6354
-Time elapsed: 2.503s
+Time elapsed: 2.330s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6321 ± 0.0039
-Time elapsed: 6.606s
+Time elapsed: 6.234s
 -------------------------------------------------
-Total time: 9.111s
+Total time: 8.563s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.111s
+Duration: 8.563s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6321 ± 0.0039
 
@@ -3481,16 +3481,16 @@ Results for LightGBM:
 Fit ---------------------------------------------
 Train evaluation --&gt; f1: 0.665
 Test evaluation --&gt; f1: 0.6356
-Time elapsed: 2.612s
+Time elapsed: 2.547s
 Bootstrap ---------------------------------------
 Evaluation --&gt; f1: 0.6337 ± 0.0038
-Time elapsed: 7.193s
+Time elapsed: 6.957s
 -------------------------------------------------
-Total time: 9.806s
+Total time: 9.504s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.806s
+Duration: 9.504s
 ------------------------------------------
 LightGBM --&gt; f1: 0.6337 ± 0.0038
 </pre>
@@ -3584,110 +3584,110 @@ LightGBM --&gt; f1: 0.6337 ± 0.0038
       <th>LGB01</th>
       <td>0.809309</td>
       <td>0.610019</td>
-      <td>0.749s</td>
+      <td>0.649s</td>
       <td>0.609161</td>
       <td>0.005489</td>
-      <td>1.927s</td>
-      <td>2.675s</td>
+      <td>1.757s</td>
+      <td>2.406s</td>
     </tr>
     <tr>
       <th>0.2</th>
       <th>LGB02</th>
       <td>0.732799</td>
       <td>0.621756</td>
-      <td>0.901s</td>
+      <td>0.823s</td>
       <td>0.614965</td>
       <td>0.002726</td>
-      <td>2.385s</td>
-      <td>3.287s</td>
+      <td>2.348s</td>
+      <td>3.172s</td>
     </tr>
     <tr>
       <th>0.3</th>
       <th>LGB03</th>
       <td>0.707509</td>
       <td>0.625230</td>
-      <td>1.076s</td>
+      <td>1.024s</td>
       <td>0.619943</td>
       <td>0.001864</td>
-      <td>2.927s</td>
-      <td>4.004s</td>
+      <td>2.799s</td>
+      <td>3.824s</td>
     </tr>
     <tr>
       <th>0.4</th>
       <th>LGB04</th>
       <td>0.693875</td>
       <td>0.627527</td>
-      <td>1.369s</td>
+      <td>1.234s</td>
       <td>0.621488</td>
       <td>0.001970</td>
-      <td>3.555s</td>
-      <td>4.924s</td>
+      <td>3.324s</td>
+      <td>4.559s</td>
     </tr>
     <tr>
       <th>0.5</th>
       <th>LGB05</th>
       <td>0.681449</td>
       <td>0.629054</td>
-      <td>1.590s</td>
+      <td>1.437s</td>
       <td>0.623023</td>
       <td>0.001408</td>
-      <td>4.344s</td>
-      <td>5.935s</td>
+      <td>3.942s</td>
+      <td>5.379s</td>
     </tr>
     <tr>
       <th>0.6</th>
       <th>LGB06</th>
       <td>0.676566</td>
       <td>0.635607</td>
-      <td>1.813s</td>
+      <td>1.640s</td>
       <td>0.628340</td>
       <td>0.002204</td>
-      <td>4.853s</td>
-      <td>6.667s</td>
+      <td>4.421s</td>
+      <td>6.060s</td>
     </tr>
     <tr>
       <th>0.7</th>
       <th>LGB07</th>
       <td>0.674170</td>
       <td>0.628914</td>
-      <td>2.045s</td>
+      <td>1.837s</td>
       <td>0.629710</td>
       <td>0.002405</td>
-      <td>5.420s</td>
-      <td>7.466s</td>
+      <td>5.047s</td>
+      <td>6.886s</td>
     </tr>
     <tr>
       <th>0.8</th>
       <th>LGB08</th>
       <td>0.672033</td>
       <td>0.632210</td>
-      <td>2.165s</td>
+      <td>2.096s</td>
       <td>0.631072</td>
       <td>0.002290</td>
-      <td>5.971s</td>
-      <td>8.138s</td>
+      <td>5.766s</td>
+      <td>7.862s</td>
     </tr>
     <tr>
       <th>0.9</th>
       <th>LGB09</th>
       <td>0.667443</td>
       <td>0.635430</td>
-      <td>2.503s</td>
+      <td>2.330s</td>
       <td>0.632102</td>
       <td>0.003885</td>
-      <td>6.606s</td>
-      <td>9.111s</td>
+      <td>6.234s</td>
+      <td>8.563s</td>
     </tr>
     <tr>
       <th>1.0</th>
       <th>LGB10</th>
       <td>0.665031</td>
       <td>0.635616</td>
-      <td>2.612s</td>
+      <td>2.547s</td>
       <td>0.633657</td>
       <td>0.003810</td>
-      <td>7.193s</td>
-      <td>9.806s</td>
+      <td>6.957s</td>
+      <td>9.504s</td>
     </tr>
   </tbody>
 </table>

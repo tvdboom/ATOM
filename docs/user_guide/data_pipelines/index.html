@@ -510,6 +510,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#memory-considerations" class="md-nav__link">
+    Memory considerations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#data-transformations" class="md-nav__link">
     Data transformations
   </a>
@@ -1847,8 +1854,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -1859,20 +1866,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
-        plot_feature_importance
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
       </a>
     </li>
   
@@ -1897,6 +1892,42 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -1945,30 +1976,6 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -2373,6 +2380,13 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#memory-considerations" class="md-nav__link">
+    Memory considerations
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#data-transformations" class="md-nav__link">
     Data transformations
   </a>
@@ -2428,16 +2442,6 @@ is "undersample". To switch between existing branches, just type the name
 of the desired branch, e.g. <code>atom.branch = "master"</code> brings you back to the
 master branch. Note that every branch contains a unique copy of the whole
 dataset! Creating many branches can cause memory issues for large datasets.</p>
-<p><br></p>
-<div align="center">
-    <img src="../../img/diagram_branch.png" alt="diagram_branch"/>
-    <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
-</div>
-
-<p>You can delete a branch either deleting the attribute, e.g. <code>del atom.branch</code>,
-or using the delete method, e.g. <code>atom.branch.delete()</code>. Be aware that deleting
-a branch also deletes all models that were trained on it! Use <code>atom.branch.status()</code>
-for an overview of the transformers and models in the branch.</p>
 <p>See the <a href="../../examples/imbalanced_datasets">Imbalanced datasets</a> or
 <a href="../../examples/feature_engineering">Feature engineering</a> examples for
 branching use cases.</p>
@@ -2446,6 +2450,84 @@ branching use cases.</p>
 <p>Always create a new branch if you want to change the dataset after fitting
 a model! Not doing so can cause unexpected model behaviour.</p>
 </div>
+<p><br></p>
+<div align="center">
+    <img src="../../img/diagram_branch.png" alt="diagram_branch" />
+    <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
+</div>
+
+<p>The branch class has the following methods.</p>
+<table style="font-size:16px;margin-top:5px">
+<tr>
+<td><a href="#delete">delete</a></td>
+<td>Delete the branch from the atom instance.</td>
+</tr>
+
+<tr>
+<td><a href="#rename">rename</a></td>
+<td>Change the name of the branch.</td>
+</tr>
+
+<tr>
+<td><a href="#status">status</a></td>
+<td>Get an overview of the pipeline and models in the branch.</td>
+</tr>
+</table>
+<p><br></p>
+<p><a name="delete"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">delete</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L106">[source]</a>
+</span>
+</div>
+<p>Delete the branch and all the models in it. Same as executing <code>del atom.branch</code>.
+<br /><br /><br /></p>
+<p><a name="rename"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">rename</strong>(name)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L128">[source]</a>
+</span>
+</div>
+<p>Change the name of the branch.</p>
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>name: str</strong><br>
+New name for the branch. Can not be empty nor equal to an existing branch.
+</p>
+</td>
+</tr>
+</table>
+<p><br /></p>
+<p><a name="status"></a></p>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">status</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
+</span>
+</div>
+<p>Get an overview of the pipeline and models in the branch. This method
+prints the same information as the __repr__ and also saves it to the
+logger.
+<br /><br /><br /></p>
+<h2 id="memory-considerations">Memory considerations</h2>
+<p>An atom instance stores one copy of the dataframe in each branch. Note
+that there are always at least two branches in the instance: master
+(or another user defined branch) and one additional branch that stores
+the dataframe with which the class was initialized. This internal branch
+is called <code>og</code> (original) and is used for the <a href="../../API/ATOM/atomclassifier/#reset">reset</a>
+method and to be able to create new branches from the original dataframe,
+even after having applied transformations.</p>
+<p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
+are also stored as attributes of the model (e.g. <code>predict_proba_train</code>)
+and can occupy considerable memory for large datasets. You can delete
+these attributes using the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
+method to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
+the class.</p>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many datasets

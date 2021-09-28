@@ -44,13 +44,6 @@ class BaseEnsemble:
                     f"{m.estimator.__class__.__name__} doesn't have a {method} method!"
                 )
 
-        if pl is None:
-            pl = [i for i, est in enumerate(self.branch.pipeline) if not est.train_only]
-        elif pl is False:
-            pl = []
-        elif pl is True:
-            pl = list(range(len(self.branch.pipeline)))
-
         # Branches used by the models in the instance
         branch_names = set(m.branch.name for m in self._models)
         branches = {k: v for k, v in self.T._branches.items() if k in branch_names}
@@ -59,6 +52,13 @@ class BaseEnsemble:
         step = {}  # Current step in the pipeline per branch
         for b1, v1 in branches.items():
             _print = True
+            if pl is None:
+                pl = [i for i, est in enumerate(v1.pipeline) if not est._train_only]
+            elif pl is False:
+                pl = []
+            elif pl is True:
+                pl = list(range(len(v1.pipeline)))
+
             for idx, est1 in enumerate(v1.pipeline):
                 # Skip if the transformation was already applied
                 if step.get(b1, -1) < idx and idx in pl:
@@ -68,13 +68,10 @@ class BaseEnsemble:
                     data[b1] = custom_transform(self.T, est1, v1, data[b1], vb)
 
                     for b2, v2 in branches.items():
-                        try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline.iloc[idx]:
-                                # Update the data and step for the other branch
-                                data[b2] = copy(data[b1])
-                                step[b2] = idx
-                        except IndexError:
-                            continue
+                        if b1 != b2 and v2.pipeline.get(idx) is est1:
+                            # Update the data and step for the other branch
+                            data[b2] = copy(data[b1])
+                            step[b2] = idx
 
         return data
 
@@ -200,7 +197,7 @@ class Voting(BaseModel, BaseEnsemble):
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
+            estimator's own verbosity.
 
         method: str, optional (default="predict")
             Prediction method to be applied to the estimator.
@@ -391,7 +388,7 @@ class Stacking(BaseModel, BaseEnsemble):
 
             dataset = pd.concat([dataset, fxs], axis=1, join="inner")
 
-        # The Stacking instance has his own internal branch
+        # The instance has its own internal branch
         self.branch = Branch(self, "StackBranch")
         self.branch.data = merge(dataset, self.T.y)
         self.branch.idx = self.T.branch.idx
@@ -495,7 +492,7 @@ class Stacking(BaseModel, BaseEnsemble):
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
-            transformer's own verbosity.
+            estimator's own verbosity.
 
         method: str, optional (default="predict")
             Prediction method to be applied to the estimator.

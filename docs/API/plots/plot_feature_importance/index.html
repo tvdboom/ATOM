@@ -1795,8 +1795,44 @@
   
   
     <li class="md-nav__item">
-      <a href="../plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../plot_gains/" class="md-nav__link">
+        plot_gains
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_lift/" class="md-nav__link">
+        plot_lift
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_errors/" class="md-nav__link">
+        plot_errors
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_residuals/" class="md-nav__link">
+        plot_residuals
       </a>
     </li>
   
@@ -1859,32 +1895,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../plot_partial_dependence/" class="md-nav__link">
         plot_partial_dependence
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_errors/" class="md-nav__link">
-        plot_errors
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_residuals/" class="md-nav__link">
-        plot_residuals
       </a>
     </li>
   
@@ -1933,30 +1957,6 @@
     <li class="md-nav__item">
       <a href="../plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -2379,7 +2379,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_feature_importance</strong>(models=None,
 show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1424">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1678">[source]</a>
 </span>
 </div>
 
@@ -2389,8 +2389,8 @@ attribute is updated with the extracted importance ranking. Only for
 models whose estimator has a <code>feature_importances_</code> attribute.</p>
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all the models in the pipeline are selected.
@@ -2420,8 +2420,8 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>fig: matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
@@ -2462,7 +2462,7 @@ Plot object. Only returned if <code>display=None</code>.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../plot_permutation_importance/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_permutation_importance" rel="prev">
+        <a href="../plot_residuals/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_residuals" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2471,20 +2471,20 @@ Plot object. Only returned if <code>display=None</code>.
               <span class="md-footer__direction">
                 Previous
               </span>
-              plot_permutation_importance
+              plot_residuals
             </div>
           </div>
         </a>
       
       
         
-        <a href="../plot_partial_dependence/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_partial_dependence" rel="next">
+        <a href="../plot_permutation_importance/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_permutation_importance" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              plot_partial_dependence
+              plot_permutation_importance
             </div>
           </div>
           <div class="md-footer__button md-icon">

@@ -5,24 +5,25 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Balancer</strong>(strategy="ADASYN",
 n_jobs=1, verbose=0, logger=None, random_state=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1370">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1404">[source]</a>
 </span>
 </div>
 
-Balance the number of samples per class in the target column. Use only for classification tasks.
-This class can be accessed from atom through the
-[balance](../../ATOM/atomclassifier/#balance) method. Read more in
+Balance the number of samples per class in the target column. Use only
+for classification tasks. This class can be accessed from atom through
+the [balance](../../ATOM/atomclassifier/#balance) method. Read more in
 the [user guide](../../../user_guide/data_cleaning/#balancing-the-data).
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
-<strong>strategy: str, optional (default="ADASYN")</strong><br>
-Type of algorithm to use for oversampling or undersampling. Choose from one
-of the estimators available in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
-package.
+<strong>strategy: str or estimator, optional (default="ADASYN")</strong><br>
+Type of algorithm with which to balance the dataset. Choose
+from any of the estimators in the <a href="https://imbalanced-learn.readthedocs.io/en/stable/index.html">imbalanced-learn</a>
+package or provide a custom one (has to have a <code>fit_resample</code>
+method).
 </p>
 <strong>n_jobs: int, optional (default=1)</strong><br>
 Number of cores to use for parallel processing.
@@ -66,8 +67,8 @@ Additional keyword arguments passed to the <code>strategy</code> estimator.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Attributes:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>&lt;strategy&gt;: imblearn estimator</strong><br>
 Estimator instance (lowercase strategy) used to oversample or undersample
@@ -123,14 +124,14 @@ Dictionary of the target values mapped to their respective encoded integer.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a>
 </span>
 </div>
 Oversample or undersample the data.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -143,8 +144,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: pd.DataFrame</strong><br>
 Balanced feature set.
@@ -169,8 +170,8 @@ Balanced target column.
 Get parameters for this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>deep: bool, optional (default=True)</strong><br>
 If True, will return the parameters for this estimator and contained subobjects that are estimators.
@@ -178,8 +179,8 @@ If True, will return the parameters for this estimator and contained subobjects 
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>params: dict</strong><br>
 Dictionary of the parameter names mapped to their values.
 </td>
@@ -198,8 +199,8 @@ Dictionary of the parameter names mapped to their values.
 Write a message to the logger and print it to stdout.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>msg: str</strong><br>
 Message to write to the logger and print to stdout.
@@ -224,8 +225,8 @@ Minimum verbosity level to print the message.
 Save the instance to a pickle file.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>filename: str, optional (default="auto")</strong><br>
 Name of the file. Use "auto" for automatic naming.
 </td>
@@ -244,14 +245,14 @@ Name of the file. Use "auto" for automatic naming.
 Set the parameters of this estimator.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <strong>**params: dict</strong><br>
 Estimator parameters.
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>self: Balancer</strong><br>
 Estimator instance.
 </td>
@@ -264,14 +265,14 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1439">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L1475">[source]</a>
 </span>
 </div>
 Oversample or undersample the data.
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
@@ -284,8 +285,8 @@ Feature set with shape=(n_samples, n_features).
 </ul>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: pd.DataFrame</strong><br>
 Balanced feature set.

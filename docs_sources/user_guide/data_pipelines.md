@@ -33,18 +33,6 @@ of the desired branch, e.g. `atom.branch = "master"` brings you back to the
 master branch. Note that every branch contains a unique copy of the whole
 dataset! Creating many branches can cause memory issues for large datasets.
 
-<br>
-
-<div align="center">
-    <img src="../../img/diagram_branch.png" alt="diagram_branch"/>
-    <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
-</div>
-
-You can delete a branch either deleting the attribute, e.g. `del atom.branch`,
-or using the delete method, e.g. `atom.branch.delete()`. Be aware that deleting
-a branch also deletes all models that were trained on it! Use `atom.branch.status()`
-for an overview of the transformers and models in the branch.
-
 See the [Imbalanced datasets](../../examples/imbalanced_datasets) or
 [Feature engineering](../../examples/feature_engineering) examples for
 branching use cases.
@@ -52,6 +40,98 @@ branching use cases.
 !!! warning
     Always create a new branch if you want to change the dataset after fitting
     a model! Not doing so can cause unexpected model behaviour.
+
+<br>
+
+<div align="center">
+    <img src="../../img/diagram_branch.png" alt="diagram_branch" />
+    <figcaption>Figure 1. Diagram of a possible branch system to compare an oversampling with an undersampling pipeline.</figcaption>
+</div>
+
+The branch class has the following methods.
+
+<table style="font-size:16px;margin-top:5px">
+<tr>
+<td><a href="#delete">delete</a></td>
+<td>Delete the branch from the atom instance.</td>
+</tr>
+
+<tr>
+<td><a href="#rename">rename</a></td>
+<td>Change the name of the branch.</td>
+</tr>
+
+<tr>
+<td><a href="#status">status</a></td>
+<td>Get an overview of the pipeline and models in the branch.</td>
+</tr>
+</table>
+<br>
+
+
+<a name="delete"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">delete</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L106">[source]</a>
+</span>
+</div>
+Delete the branch and all the models in it. Same as executing `del atom.branch`.
+<br /><br /><br />
+
+
+<a name="rename"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">rename</strong>(name)
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L128">[source]</a>
+</span>
+</div>
+Change the name of the branch.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
+<p>
+<strong>name: str</strong><br>
+New name for the branch. Can not be empty nor equal to an existing branch.
+</p>
+</td>
+</tr>
+</table>
+<br />
+
+
+<a name="status"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">status</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
+</span>
+</div>
+Get an overview of the pipeline and models in the branch. This method
+prints the same information as the \__repr__ and also saves it to the
+logger.
+<br /><br /><br />
+
+
+
+## Memory considerations
+
+An atom instance stores one copy of the dataframe in each branch. Note
+that there are always at least two branches in the instance: master
+(or another user defined branch) and one additional branch that stores
+the dataframe with which the class was initialized. This internal branch
+is called `og` (original) and is used for the [reset](../../API/ATOM/atomclassifier/#reset)
+method and to be able to create new branches from the original dataframe,
+even after having applied transformations.
+
+Apart from the dataset itself, the model's [predictions](./predicting)
+are also stored as attributes of the model (e.g. `predict_proba_train`)
+and can occupy considerable memory for large datasets. You can delete
+these attributes using the [reset_predictions](../../API/ATOM/atomclassifier/#reset-predictions)
+method to free some memory before [saving](../../API/ATOM/atomclassifier/#save)
+the class.
 
 
 <br>

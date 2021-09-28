@@ -125,14 +125,25 @@ class BasePredictor:
         return self._branches[self._current]
 
     @property
+    def models(self):
+        """Return the names of the models in the pipeline."""
+        return flt([getattr(model, "name", model) for model in self._models])
+
+    @property
     def metric(self):
         """Return the names of the metrics in the pipeline."""
         return flt([getattr(metric, "name", metric) for metric in self._metric])
 
     @property
-    def models(self):
-        """Return the names of the models in the pipeline."""
-        return flt([getattr(model, "name", model) for model in self._models])
+    def errors(self):
+        """Return the errors encountered during model training."""
+        return self._errors
+
+    @property
+    def winner(self):
+        """Return the best performing model."""
+        if self._models:  # Returns None if not fitted
+            return self._models[np.argmax([get_best_score(m) for m in self._models])]
 
     @property
     def results(self):
@@ -162,12 +173,6 @@ class BasePredictor:
             ).sort_index(level=0, ascending=True)
 
         return df
-
-    @property
-    def winner(self):
-        """Return the best performing model."""
-        if self._models:  # Returns None if not fitted
-            return self._models[np.argmax([get_best_score(m) for m in self._models])]
 
     # Prediction methods =========================================== >>
 
@@ -247,7 +252,7 @@ class BasePredictor:
                 f"available models are: {', '.join(self.models)}."
             )
 
-    def _get_models(self, models):
+    def _get_models(self, models=None):
         """Return models in the pipeline. Duplicate inputs are ignored."""
         if not models:
             return lst(self.models).copy()
@@ -261,38 +266,106 @@ class BasePredictor:
 
             return list(dict.fromkeys(to_return))  # Avoid duplicates
 
+    @composed(crash, method_to_log)
+    def calibrate(self, **kwargs):
+        """Calibrate the winning model."""
+        check_is_fitted(self, attributes="_models")
+        self.winner.calibrate(**kwargs)
+
+    @composed(crash, method_to_log)
+    def cross_validate(self, **kwargs):
+        """Evaluate the winning model using cross-validation."""
+        check_is_fitted(self, attributes="_models")
+        return self.winner.cross_validate(**kwargs)
+
     @composed(crash, method_to_log, typechecked)
-    def voting(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        weights: Optional[SEQUENCE_TYPES] = None,
-    ):
-        """Add a Voting instance to the models in the pipeline.
+    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
+        """Delete models from the trainer's pipeline.
+
+        Removes a model from the trainer. If the winning model is
+        removed, the next best model (through `metric_test` or
+        `mean_bootstrap`) is selected as winner. If all models are
+        removed, the metric and training approach are reset. Use this
+        method to drop unwanted models from the pipeline or to free
+        some memory before saving. The model is not removed from any
+        active mlflow experiment.
 
         Parameters
         ----------
-        models: sequence or None, optional (default=None)
-            Models that feed the voting. If None, it selects all models
-            depending on the current branch.
+        models: str, sequence or None, optional (default=None)
+            Models to delete. If None, delete them all.
 
-        weights: sequence or None, optional (default=None)
-            Sequence of weights (int or float) to weight the
-            occurrences of predicted class labels (hard voting)
-            or class probabilities before averaging (soft voting).
-            If None, it uses uniform weights.
+        """
+        models = self._get_models(models)
+        delete(self, models)
+        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+
+    @composed(crash, typechecked)
+    def evaluate(
+        self,
+        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+    ):
+        """Get all models' scores for the provided metrics.
+
+        Parameters
+        ----------
+        metric: str, func, scorer, sequence or None, optional (default=None)
+            Metric to calculate. If None, it returns an overview of
+            the most common metrics per task.
+
+        dataset: str, optional (default="test")
+            Data set on which to calculate the metric. Options are
+            "train" or "test".
+
+        Returns
+        -------
+        scores: pd.DataFrame
+            Scores of the models.
 
         """
         check_is_fitted(self, attributes="_models")
 
-        if not models:
-            models = self.branch._get_depending_models()
+        scores = pd.DataFrame()
+        for m in self._models:
+            scores = scores.append(m.evaluate(metric, dataset=dataset))
 
-        self._models["vote"] = Voting(
-            self,
-            models=self._get_models(models),
-            weights=weights,
-        )
-        self.log(f"{self.vote.fullname} added to the models!", 1)
+        return scores
+
+    @composed(crash, typechecked)
+    def get_class_weight(self, dataset: str = "train"):
+        """Return class weights for a balanced dataset.
+
+        Statistically, the class weights re-balance the data set so
+        that the sampled data set represents the target population
+        as closely as possible. The returned weights are inversely
+        proportional to the class frequencies in the selected data set.
+
+        Parameters
+        ----------
+        dataset: str, optional (default="train")
+            Data set from which to get the weights. Choose between
+            "train", "test" or "dataset".
+
+        Returns
+        -------
+        class_weights: dict
+            Classes with the corresponding weights.
+
+        """
+        if not self.goal.startswith("class"):
+            raise PermissionError(
+                "The balance method is only available for classification tasks!"
+            )
+
+        if dataset not in ("train", "test", "dataset"):
+            raise ValueError(
+                "Invalid value for the dataset parameter. "
+                "Choose between 'train', 'test' or 'dataset'."
+            )
+
+        y = self.classes[dataset]
+        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
 
     @composed(crash, method_to_log, typechecked)
     def stacking(
@@ -345,103 +418,35 @@ class BasePredictor:
         )
         self.log(f"{self.stack.fullname} added to the models!", 1)
 
-    @composed(crash, typechecked)
-    def get_class_weight(self, dataset: str = "train"):
-        """Return class weights for a balanced dataset.
-
-        Statistically, the class weights re-balance the data set so
-        that the sampled data set represents the target population
-        as closely as possible. The returned weights are inversely
-        proportional to the class frequencies in the selected data set.
-
-        Parameters
-        ----------
-        dataset: str, optional (default="train")
-            Data set from which to get the weights. Choose between
-            "train", "test" or "dataset".
-
-        Returns
-        -------
-        class_weights: dict
-            Classes with the corresponding weights.
-
-        """
-        if not self.goal.startswith("class"):
-            raise PermissionError(
-                "The balance method is only available for classification tasks!"
-            )
-
-        if dataset not in ("train", "test", "dataset"):
-            raise ValueError(
-                "Invalid value for the dataset parameter. "
-                "Choose between 'train', 'test' or 'dataset'."
-            )
-
-        y = self.classes[dataset]
-        return {idx: round(divide(sum(y), value), 3) for idx, value in y.iteritems()}
-
-    @composed(crash, method_to_log)
-    def calibrate(self, **kwargs):
-        """Calibrate the winning model."""
-        check_is_fitted(self, attributes="_models")
-        self.winner.calibrate(**kwargs)
-
-    @composed(crash, method_to_log)
-    def cross_validate(self, **kwargs):
-        """Evaluate the winning model using cross-validation."""
-        check_is_fitted(self, attributes="_models")
-        return self.winner.cross_validate(**kwargs)
-
-    @composed(crash, typechecked)
-    def evaluate(
-        self,
-        metric: Optional[Union[str, callable, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-    ):
-        """Get all models' scores for the provided metrics.
-
-        Parameters
-        ----------
-        metric: str, func, scorer, sequence or None, optional (default=None)
-            Metric to calculate. If None, it returns an overview of
-            the most common metrics per task.
-
-        dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
-            "train" or "test".
-
-        Returns
-        -------
-        scores: pd.DataFrame
-            Scores of the models.
-
-        """
-        check_is_fitted(self, attributes="_models")
-
-        scores = pd.DataFrame()
-        for m in self._models:
-            scores = scores.append(m.evaluate(metric, dataset=dataset))
-
-        return scores
-
     @composed(crash, method_to_log, typechecked)
-    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
-        """Delete models from the trainer's pipeline.
-
-        Removes a model from the trainer. If the winning model is
-        removed, the next best model (through `metric_test` or
-        `mean_bootstrap`) is selected as winner. If all models are
-        removed, the metric and training approach are reset. Use this
-        method to drop unwanted models from the pipeline or to free
-        some memory before saving. The model is not removed from any
-        active mlflow experiment.
+    def voting(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        weights: Optional[SEQUENCE_TYPES] = None,
+    ):
+        """Add a Voting instance to the models in the pipeline.
 
         Parameters
         ----------
-        models: str, sequence or None, optional (default=None)
-            Models to delete. If None, delete them all.
+        models: sequence or None, optional (default=None)
+            Models that feed the voting. If None, it selects all models
+            depending on the current branch.
+
+        weights: sequence or None, optional (default=None)
+            Sequence of weights (int or float) to weight the
+            occurrences of predicted class labels (hard voting)
+            or class probabilities before averaging (soft voting).
+            If None, it uses uniform weights.
 
         """
-        models = self._get_models(models)
-        delete(self, models)
-        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+        check_is_fitted(self, attributes="_models")
+
+        if not models:
+            models = self.branch._get_depending_models()
+
+        self._models["vote"] = Voting(
+            self,
+            models=self._get_models(models),
+            weights=weights,
+        )
+        self.log(f"{self.vote.fullname} added to the models!", 1)

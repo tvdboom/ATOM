@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_calibration</strong>(models=None,
 n_bins=10, title=None, figsize=(10, 10), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2348">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L2534">[source]</a>
 </span>
 </div>
 
@@ -25,8 +25,8 @@ predicted probabilities of the classifier.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all models in the pipeline are selected.
@@ -55,8 +55,8 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>fig: matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>

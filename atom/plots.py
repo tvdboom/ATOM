@@ -1286,272 +1286,19 @@ class BaseModelPlotter(BasePlotter):
         )
 
     @composed(crash, plot_from_model, typechecked)
-    def plot_permutation_importance(
+    def plot_gains(
         self,
         models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        n_repeats: int = 10,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the feature permutation importance of models.
-
-        Calculating permutations can be time-consuming, especially
-        if `n_repeats` is high. For this reason, the permutations
-        are stored under the `permutations` attribute. If the plot
-        is called again for the same model with the same `n_repeats`,
-        it will use the stored values, making the method considerably
-        faster. The `feature_importance` attribute is updated with
-        the extracted importance ranking.
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
-
-        show: int or None, optional (default=None)
-            Number of features (ordered by importance) to show.
-            None to show all.
-
-        n_repeats: int, optional (default=10)
-            Number of times to permute each feature.
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        fig: matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_method(self, "plot_permutation_importance")
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
-        show = self._get_show(show, models)
-
-        if n_repeats <= 0:
-            raise ValueError(
-                "Invalid value for the n_repeats parameter."
-                f"Value should be >0, got {n_repeats}."
-            )
-
-        df = pd.DataFrame(columns=["features", "score", "model"])
-        for m in models:
-            # If permutations are already calculated and n_repeats is
-            # same, use known permutations (for efficient re-plotting)
-            if (
-                not hasattr(m, "permutations")
-                or m.permutations.importances.shape[1] == n_repeats
-            ):
-                # Permutation importances returns Bunch object
-                m.permutations = permutation_importance(
-                    estimator=m.estimator,
-                    X=m.X_test,
-                    y=m.y_test,
-                    scoring=self._metric[0],
-                    n_repeats=n_repeats,
-                    n_jobs=self.n_jobs,
-                    random_state=self.random_state,
-                )
-
-            # Append permutation scores to the dataframe
-            for i, feature in enumerate(m.features):
-                for score in m.permutations.importances[i, :]:
-                    df = df.append(
-                        {"features": feature, "score": score, "model": m.name},
-                        ignore_index=True,
-                    )
-
-        # Get the column names sorted by sum of scores
-        get_idx = df.groupby("features", as_index=False)["score"].sum()
-        get_idx = get_idx.sort_values("score", ascending=False)
-        column_order = get_idx["features"].values[:show]
-
-        # Save the best feature order
-        self.branch.feature_importance = list(get_idx.columns.values)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        sns.boxplot(
-            x="score",
-            y="features",
-            hue="model",
-            data=df,
-            ax=ax,
-            order=column_order,
-            width=0.75 if len(models) > 1 else 0.6,
-        )
-
-        ax.yaxis.label.set_visible(False)
-        if len(models) > 1:
-            # Remove seaborn's legend title
-            handles, labels = ax.get_legend_handles_labels()
-            ax.legend(handles=handles[1:], labels=labels[1:])
-        else:
-            # Hide the legend created by seaborn
-            ax.legend().set_visible(False)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right" if len(models) > 1 else False, len(models)),
-            xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
-            plotname="plot_permutation_importance",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_feature_importance(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        show: Optional[int] = None,
-        title: Optional[str] = None,
-        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot a tree-based model's feature importance.
-
-        Plot a model's feature importance. The importances are
-        normalized in order to be able to compare them between
-        models. The `feature_importance` attribute is updated
-        with the extracted importance ranking. Only for models
-        whose estimator has a `feature_importances_` attribute.
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
-
-        show: int or None, optional (default=None)
-            Number of features (ordered by importance) to show.
-            None to show all.
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple or None, optional (default=None)
-            Figure's size, format as (x, y). If None, it adapts the
-            size to the number of features shown.
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        fig: matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_method(self, "plot_feature_importance")
-        check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
-        show = self._get_show(show, models)
-
-        # Create dataframe with columns as indices to plot with barh
-        df = pd.DataFrame()
-
-        for m in models:
-            # Bagging is a special case where we use the feature_importance per est
-            if not hasattr(m.estimator, "feature_importances_") and m.acronym != "Bag":
-                raise PermissionError(
-                    "The plot_feature_importance method is only available for "
-                    f"models with a feature_importances_ attribute, got {m.name}."
-                )
-
-            # Bagging has no direct feature importance implementation
-            if m.acronym == "Bag":
-                feature_importances = np.mean(
-                    [fi.feature_importances_ for fi in m.estimator.estimators_], axis=0
-                )
-            else:
-                feature_importances = m.estimator.feature_importances_
-
-            # Normalize for plotting values adjacent to bar
-            max_feature_importance = max(feature_importances)
-            for col, fx in zip(m.features, feature_importances):
-                df.at[col, m.name] = fx / max_feature_importance
-
-        # Save the best feature order
-        best_fxs = df.fillna(0).sort_values(by=df.columns[-1], ascending=False)
-        self.branch.feature_importance = list(best_fxs.index.values)
-
-        # Select best and sort ascending (by sum of total importances)
-        df = df.nlargest(show, columns=df.columns[-1])
-        df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        df.plot.barh(
-            ax=ax,
-            width=0.75 if len(models) > 1 else 0.6,
-            legend=True if len(models) > 1 else False,
-        )
-        if len(models) == 1:
-            for i, v in enumerate(df[df.columns[0]]):
-                ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("lower right", len(models)) if len(models) > 1 else None,
-            xlim=(0, 1.03 if len(models) > 1 else 1.09),
-            xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
-            plotname="plot_feature_importance",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_partial_dependence(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
-        kind: str = "average",
-        target: Union[int, str] = 1,
+        dataset: str = "test",
         title: Optional[str] = None,
         figsize: Tuple[SCALAR, SCALAR] = (10, 6),
         filename: Optional[str] = None,
         display: Optional[bool] = True,
     ):
-        """Plot the partial dependence of features.
+        """Plot the cumulative gains curve.
 
-        The partial dependence of a feature (or a set of features)
-        corresponds to the response of the model for each possible
-        value of the feature. Two-way partial dependence plots are
-        plotted as contour plots (only allowed for single model plots).
-        The deciles of the feature values are shown with tick marks
-        on the x-axes for one-way plots, and on both axes for two-way
-        plots.
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
 
         Parameters
         ----------
@@ -1559,25 +1306,9 @@ class BaseModelPlotter(BasePlotter):
             Name of the models to plot. If None, all models in the
             pipeline are selected.
 
-        features: int, str, sequence or None, optional (default=None)
-            Features or feature pairs (name or index) to get the partial
-            dependence from. Maximum of 3 allowed. If None, it uses the
-            best 3 features if the `feature_importance` attribute is
-            defined, else it uses the first 3 features in the dataset.
-
-        kind: str, optional (default="average")
-            - "average": Plot the partial dependence averaged across
-                         all the samples in the dataset.
-            - "individual": Plot the partial dependence per sample
-                            (Individual Conditional Expectation).
-            - "both": Plot both the average (as a thick line) and the
-                      individual (thin lines) partial dependence.
-
-            This parameter is ignored when plotting feature pairs.
-
-        target: int or str, optional (default=1)
-            Index or name of the class in the target column to look at.
-            Only for multi-class classification tasks.
+        dataset: str, optional (default="test")
+            Data set on which to calculate the gains. Options are
+            "train", "test" or "both".
 
         title: str or None, optional (default=None)
             Plot's title. If None, the title is left empty.
@@ -1599,199 +1330,145 @@ class BaseModelPlotter(BasePlotter):
             Plot object. Only returned if `display=None`.
 
         """
-
-        def convert_feature(feature):
-            if isinstance(feature, str):
-                try:
-                    feature = list(m.features).index(feature)
-                except ValueError:
-                    raise ValueError(
-                        "Invalid value for the features parameter. "
-                        f"Feature {feature} not found in the dataset."
-                    )
-            elif feature > m.X.shape[1] - 1:  # -1 because of index 0
-                raise ValueError(
-                    "Invalid value for the features parameter. Dataset "
-                    f"has {m.X.shape[1]} features, got index {feature}."
-                )
-            return int(feature)
-
-        def get_features(features, m):
-            # Default is to select the best or the first 3 features
-            if not features:
-                if not m.branch.feature_importance:
-                    features = [0, 1, 2]
-                else:
-                    features = m.branch.feature_importance[:3]
-
-            features = lst(features)
-            if len(features) > 3:
-                raise ValueError(
-                    "Invalid value for the features parameter. "
-                    f"Maximum 3 allowed, got {len(features)}."
-                )
-
-            # Convert features into a sequence of int tuples
-            cols = []
-            for fxs in features:
-                if isinstance(fxs, (int, str)):
-                    cols.append((convert_feature(fxs),))
-                elif len(models) == 1:
-                    if len(fxs) == 2:
-                        cols.append(tuple(convert_feature(fx) for fx in fxs))
-                    else:
-                        raise ValueError(
-                            "Invalid value for the features parameter. Values "
-                            f"should be single or in pairs, got {fxs}."
-                        )
-                else:
-                    raise ValueError(
-                        "Invalid value for the features parameter. Feature pairs "
-                        f"are invalid when plotting multiple models, got {fxs}."
-                    )
-            return cols
-
-        check_method(self, "plot_partial_dependence")
         check_is_fitted(self, attributes="_models")
+        check_binary_task(self, "plot_gains")
         models = self._get_subclass(models)
-        target = self._get_target(target) if self.task.startswith("multi") else 0
-        palette = cycle(sns.color_palette())
+        dataset = self._get_set(dataset)
 
-        if kind.lower() not in ("average", "individual", "both"):
-            raise ValueError(
-                f"Invalid value for the kind parameter, got {kind}. "
-                "Choose from: average, individual, both."
-            )
-
-        axes = []
         fig = self._get_figure()
-        n_cols = 3 if not features else len(lst(features))
-        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
-        for i in range(n_cols):
-            axes.append(fig.add_subplot(gs[0, i]))
-
-        names = []  # Names of the features (to compare between models)
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
         for m in models:
-            # Since every model can have different fxs, select them again
-            cols = get_features(features, m)
-
-            # Make sure the models use the same features
-            if len(models) > 1:
-                fxs_names = [m.features[col[0]] for col in cols]
-                if not names:
-                    names = fxs_names
-                elif names != fxs_names:
-                    raise ValueError(
-                        "Invalid value for the features parameter. Not all models "
-                        f"use the same features, got {names} and {fxs_names}."
-                    )
-
-            # Compute averaged predictions
-            pd_results = Parallel(n_jobs=self.n_jobs)(
-                delayed(partial_dependence)(m.estimator, m.X_test, col) for col in cols
-            )
-
-            # Get global min and max average predictions of PD grouped by plot type
-            pdp_lim = {}
-            for avg_pred, pred, values in pd_results:
-                if kind.lower() == "average":
-                    min_pd, max_pd = avg_pred[target].min(), avg_pred[target].max()
+            attr = get_proba_attr(m)
+            for set_ in dataset:
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
                 else:
-                    min_pd, max_pd = pred[target].min(), pred[target].max()
-                old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
-                pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
+                    y_pred = getattr(m, f"decision_function_{set_}")
 
-            deciles = {}
-            for fx in chain.from_iterable(cols):
-                if fx not in deciles:  # Skip if the feature is repeated
-                    X_col = _safe_indexing(m.X_test, fx, axis=1)
-                    deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
+                # Make y_true a bool vector
+                y_true = getattr(m, f"y_{set_}") == 1
 
-            for axi, fx, (avg_pred, pred, values) in zip(axes, cols, pd_results):
-                # For both types: draw ticks on the horizontal axis
-                trans = blended_transform_factory(axi.transData, axi.transAxes)
-                axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
-                axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
-                self._plot(ax=axi, xlabel=m.columns[fx[0]])
+                # Get sorted indices
+                sort_idx = np.argsort(y_pred)[::-1]
 
-                # Draw line or contour plot
-                color = next(palette)
-                if len(values) == 1:
-                    # Draw the mean of the individual lines
-                    if kind.lower() in ("average", "both"):
-                        axi.plot(
-                            values[0],
-                            avg_pred[target].ravel(),
-                            lw=2,
-                            color=color,
-                            label=m.name,
-                        )
+                # Correct indices for the test set (add train set length)
+                if set_ == "test":
+                    sort_idx = [i + len(m.y_train) for i in sort_idx]
 
-                    # Draw all individual (per sample) lines (ICE)
-                    if kind.lower() in ("individual", "both"):
-                        # Select up to 100 random samples to plot
-                        idx = np.random.choice(
-                            list(range(len(pred[target]))),
-                            size=min(len(pred[target]), 100),
-                            replace=False,
-                        )
-                        for sample in pred[target, idx, :]:
-                            axi.plot(values[0], sample, lw=0.5, alpha=0.5, color=color)
+                # Compute cumulative gains
+                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
 
-                else:
-                    # Create contour levels for two-way plots
-                    levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
-
-                    # Draw contour plot
-                    XX, YY = np.meshgrid(values[0], values[1])
-                    Z = avg_pred[target].T
-                    CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
-                    axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
-                    axi.contourf(
-                        XX,
-                        YY,
-                        Z,
-                        levels=levels,
-                        vmax=levels[-1],
-                        vmin=levels[0],
-                        alpha=0.75,
-                    )
-
-                    # Draw the ticks on the vertical axis
-                    trans = blended_transform_factory(axi.transAxes, axi.transData)
-                    axi.hlines(deciles[fx[1]], 0, 0.05, transform=trans, color="k")
-
-                    self._plot(
-                        ax=axi,
-                        ylabel=m.columns[fx[1]],
-                        xlim=(min(XX.flatten()), max(XX.flatten())),
-                        ylim=(min(YY.flatten()), max(YY.flatten())),
-                    )
-
-        # Place y-label and legend on first non-contour plot
-        for axi in axes:
-            if not axi.get_ylabel():
-                self._plot(
-                    ax=axi,
-                    ylabel="Score",
-                    legend=("best", len(models)) if len(models) > 1 else None,
-                )
-                break
-
-        if title:
-            # Place title if not in canvas, else above first or middle image
-            if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
-                axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif len(cols) == 3:
-                axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
-            elif not BasePlotter._fig.is_canvas:
-                plt.suptitle(title, fontsize=self.title_fontsize)
+                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
+                ax.plot(x, gains, lw=2, label=label)
 
         BasePlotter._fig._used_models.extend(models)
         return self._plot(
             fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Fraction of sample",
+            ylabel="Gain",
+            xlim=(0, 1),
+            ylim=(0, 1.02),
             figsize=figsize,
-            plotname="plot_partial_dependence",
+            plotname="plot_gains",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_lift(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        dataset: str = "test",
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the lift curve.
+
+        Only for binary classification tasks. Code snippet from
+        https://github.com/reiinakano/scikit-plot/
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        dataset: str, optional (default="test")
+            Data set on which to calculate the metric. Options are
+            "train", "test" or "both".
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_is_fitted(self, attributes="_models")
+        check_binary_task(self, "plot_lift")
+        models = self._get_subclass(models)
+        dataset = self._get_set(dataset)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7, zorder=-2)
+        for m in models:
+            attr = get_proba_attr(m)
+            for set_ in dataset:
+                if attr == "predict_proba":
+                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
+                else:
+                    y_pred = getattr(m, f"decision_function_{set_}")
+
+                # Make y_true a bool vector
+                y_true = getattr(m, f"y_{set_}") == 1
+
+                # Get sorted indices
+                sort_idx = np.argsort(y_pred)[::-1]
+
+                # Correct indices for the test set (add train set length)
+                if set_ == "test":  # Add the training set length to the indices
+                    sort_idx = [i + len(m.y_train) for i in sort_idx]
+
+                # Compute cumulative gains
+                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
+
+                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
+                lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
+                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
+                ax.plot(x, gains / x, lw=2, label=label)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("best", len(models)),
+            xlabel="Fraction of sample",
+            ylabel="Lift",
+            xlim=(0, 1),
+            figsize=figsize,
+            plotname="plot_lift",
             filename=filename,
             display=display,
         )
@@ -1993,6 +1670,515 @@ class BaseModelPlotter(BasePlotter):
             ylim=ylim,
             figsize=figsize,
             plotname="plot_residuals",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_feature_importance(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        show: Optional[int] = None,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot a tree-based model's feature importance.
+
+        Plot a model's feature importance. The importances are
+        normalized in order to be able to compare them between
+        models. The `feature_importance` attribute is updated
+        with the extracted importance ranking. Only for models
+        whose estimator has a `feature_importances_` attribute.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show.
+            None to show all.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_method(self, "plot_feature_importance")
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        show = self._get_show(show, models)
+
+        # Create dataframe with columns as indices to plot with barh
+        df = pd.DataFrame()
+
+        for m in models:
+            # Bagging is a special case where we use the feature_importance per est
+            if not hasattr(m.estimator, "feature_importances_") and m.acronym != "Bag":
+                raise PermissionError(
+                    "The plot_feature_importance method is only available for "
+                    f"models with a feature_importances_ attribute, got {m.name}."
+                )
+
+            # Bagging has no direct feature importance implementation
+            if m.acronym == "Bag":
+                feature_importances = np.mean(
+                    [fi.feature_importances_ for fi in m.estimator.estimators_], axis=0
+                )
+            else:
+                feature_importances = m.estimator.feature_importances_
+
+            # Normalize for plotting values adjacent to bar
+            max_feature_importance = max(feature_importances)
+            for col, fx in zip(m.features, feature_importances):
+                df.at[col, m.name] = fx / max_feature_importance
+
+        # Save the best feature order
+        best_fxs = df.fillna(0).sort_values(by=df.columns[-1], ascending=False)
+        self.branch.feature_importance = list(best_fxs.index.values)
+
+        # Select best and sort ascending (by sum of total importances)
+        df = df.nlargest(show, columns=df.columns[-1])
+        df = df.reindex(sorted(df.index, key=lambda i: df.loc[i].sum()))
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        df.plot.barh(
+            ax=ax,
+            width=0.75 if len(models) > 1 else 0.6,
+            legend=True if len(models) > 1 else False,
+        )
+        if len(models) == 1:
+            for i, v in enumerate(df[df.columns[0]]):
+                ax.text(v + 0.01, i - 0.08, f"{v:.2f}", fontsize=self.tick_fontsize)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right", len(models)) if len(models) > 1 else None,
+            xlim=(0, 1.03 if len(models) > 1 else 1.09),
+            xlabel="Score",
+            figsize=figsize if figsize else (10, 4 + show // 2),
+            plotname="plot_feature_importance",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_permutation_importance(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        show: Optional[int] = None,
+        n_repeats: int = 10,
+        title: Optional[str] = None,
+        figsize: Optional[Tuple[SCALAR, SCALAR]] = None,
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the feature permutation importance of models.
+
+        Calculating permutations can be time-consuming, especially
+        if `n_repeats` is high. For this reason, the permutations
+        are stored under the `permutations` attribute. If the plot
+        is called again for the same model with the same `n_repeats`,
+        it will use the stored values, making the method considerably
+        faster. The `feature_importance` attribute is updated with
+        the extracted importance ranking.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        show: int or None, optional (default=None)
+            Number of features (ordered by importance) to show.
+            None to show all.
+
+        n_repeats: int, optional (default=10)
+            Number of times to permute each feature.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple or None, optional (default=None)
+            Figure's size, format as (x, y). If None, it adapts the
+            size to the number of features shown.
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+        check_method(self, "plot_permutation_importance")
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        show = self._get_show(show, models)
+
+        if n_repeats <= 0:
+            raise ValueError(
+                "Invalid value for the n_repeats parameter."
+                f"Value should be >0, got {n_repeats}."
+            )
+
+        df = pd.DataFrame(columns=["features", "score", "model"])
+        for m in models:
+            # If permutations are already calculated and n_repeats is
+            # same, use known permutations (for efficient re-plotting)
+            if (
+                not hasattr(m, "permutations")
+                or m.permutations.importances.shape[1] == n_repeats
+            ):
+                # Permutation importances returns Bunch object
+                m.permutations = permutation_importance(
+                    estimator=m.estimator,
+                    X=m.X_test,
+                    y=m.y_test,
+                    scoring=self._metric[0],
+                    n_repeats=n_repeats,
+                    n_jobs=self.n_jobs,
+                    random_state=self.random_state,
+                )
+
+            # Append permutation scores to the dataframe
+            for i, feature in enumerate(m.features):
+                for score in m.permutations.importances[i, :]:
+                    df = df.append(
+                        {"features": feature, "score": score, "model": m.name},
+                        ignore_index=True,
+                    )
+
+        # Get the column names sorted by sum of scores
+        get_idx = df.groupby("features", as_index=False)["score"].sum()
+        get_idx = get_idx.sort_values("score", ascending=False)
+        column_order = get_idx["features"].values[:show]
+
+        # Save the best feature order
+        self.branch.feature_importance = list(get_idx.columns.values)
+
+        fig = self._get_figure()
+        ax = fig.add_subplot(BasePlotter._fig.grid)
+        sns.boxplot(
+            x="score",
+            y="features",
+            hue="model",
+            data=df,
+            ax=ax,
+            order=column_order,
+            width=0.75 if len(models) > 1 else 0.6,
+        )
+
+        ax.yaxis.label.set_visible(False)
+        if len(models) > 1:
+            # Remove seaborn's legend title
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:])
+        else:
+            # Hide the legend created by seaborn
+            ax.legend().set_visible(False)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            ax=ax,
+            title=title,
+            legend=("lower right" if len(models) > 1 else False, len(models)),
+            xlabel="Score",
+            figsize=figsize if figsize else (10, 4 + show // 2),
+            plotname="plot_permutation_importance",
+            filename=filename,
+            display=display,
+        )
+
+    @composed(crash, plot_from_model, typechecked)
+    def plot_partial_dependence(
+        self,
+        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
+        features: Optional[Union[int, str, SEQUENCE_TYPES]] = None,
+        kind: str = "average",
+        target: Union[int, str] = 1,
+        title: Optional[str] = None,
+        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
+        filename: Optional[str] = None,
+        display: Optional[bool] = True,
+    ):
+        """Plot the partial dependence of features.
+
+        The partial dependence of a feature (or a set of features)
+        corresponds to the response of the model for each possible
+        value of the feature. Two-way partial dependence plots are
+        plotted as contour plots (only allowed for single model plots).
+        The deciles of the feature values are shown with tick marks
+        on the x-axes for one-way plots, and on both axes for two-way
+        plots.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Name of the models to plot. If None, all models in the
+            pipeline are selected.
+
+        features: int, str, sequence or None, optional (default=None)
+            Features or feature pairs (name or index) to get the partial
+            dependence from. Maximum of 3 allowed. If None, it uses the
+            best 3 features if the `feature_importance` attribute is
+            defined, else it uses the first 3 features in the dataset.
+
+        kind: str, optional (default="average")
+            - "average": Plot the partial dependence averaged across
+                         all the samples in the dataset.
+            - "individual": Plot the partial dependence per sample
+                            (Individual Conditional Expectation).
+            - "both": Plot both the average (as a thick line) and the
+                      individual (thin lines) partial dependence.
+
+            This parameter is ignored when plotting feature pairs.
+
+        target: int or str, optional (default=1)
+            Index or name of the class in the target column to look at.
+            Only for multi-class classification tasks.
+
+        title: str or None, optional (default=None)
+            Plot's title. If None, the title is left empty.
+
+        figsize: tuple, optional (default=(10, 6))
+            Figure's size, format as (x, y).
+
+        filename: str or None, optional (default=None)
+            Name of the file. Use "auto" for automatic naming. If
+            None, the figure is not saved.
+
+        display: bool or None, optional (default=True)
+            Whether to render the plot. If None, it returns the
+            matplotlib figure.
+
+        Returns
+        -------
+        fig: matplotlib.figure.Figure
+            Plot object. Only returned if `display=None`.
+
+        """
+
+        def convert_feature(feature):
+            if isinstance(feature, str):
+                try:
+                    feature = list(m.features).index(feature)
+                except ValueError:
+                    raise ValueError(
+                        "Invalid value for the features parameter. "
+                        f"Feature {feature} not found in the dataset."
+                    )
+            elif feature > m.X.shape[1] - 1:  # -1 because of index 0
+                raise ValueError(
+                    "Invalid value for the features parameter. Dataset "
+                    f"has {m.X.shape[1]} features, got index {feature}."
+                )
+            return int(feature)
+
+        def get_features(features, m):
+            # Default is to select the best or the first 3 features
+            if not features:
+                if not m.branch.feature_importance:
+                    features = [0, 1, 2]
+                else:
+                    features = m.branch.feature_importance[:3]
+
+            features = lst(features)
+            if len(features) > 3:
+                raise ValueError(
+                    "Invalid value for the features parameter. "
+                    f"Maximum 3 allowed, got {len(features)}."
+                )
+
+            # Convert features into a sequence of int tuples
+            cols = []
+            for fxs in features:
+                if isinstance(fxs, (int, str)):
+                    cols.append((convert_feature(fxs),))
+                elif len(models) == 1:
+                    if len(fxs) == 2:
+                        cols.append(tuple(convert_feature(fx) for fx in fxs))
+                    else:
+                        raise ValueError(
+                            "Invalid value for the features parameter. Values "
+                            f"should be single or in pairs, got {fxs}."
+                        )
+                else:
+                    raise ValueError(
+                        "Invalid value for the features parameter. Feature pairs "
+                        f"are invalid when plotting multiple models, got {fxs}."
+                    )
+            return cols
+
+        check_method(self, "plot_partial_dependence")
+        check_is_fitted(self, attributes="_models")
+        models = self._get_subclass(models)
+        target = self._get_target(target) if self.task.startswith("multi") else 0
+        palette = cycle(sns.color_palette())
+
+        if kind.lower() not in ("average", "individual", "both"):
+            raise ValueError(
+                f"Invalid value for the kind parameter, got {kind}. "
+                "Choose from: average, individual, both."
+            )
+
+        axes = []
+        fig = self._get_figure()
+        n_cols = 3 if not features else len(lst(features))
+        gs = GridSpecFromSubplotSpec(1, n_cols, BasePlotter._fig.grid)
+        for i in range(n_cols):
+            axes.append(fig.add_subplot(gs[0, i]))
+
+        names = []  # Names of the features (to compare between models)
+        for m in models:
+            color = next(palette)
+
+            # Since every model can have different fxs, select them again
+            cols = get_features(features, m)
+
+            # Make sure the models use the same features
+            if len(models) > 1:
+                fxs_names = [m.features[col[0]] for col in cols]
+                if not names:
+                    names = fxs_names
+                elif names != fxs_names:
+                    raise ValueError(
+                        "Invalid value for the features parameter. Not all models "
+                        f"use the same features, got {names} and {fxs_names}."
+                    )
+
+            # Compute averaged predictions
+            pd_results = Parallel(n_jobs=self.n_jobs)(
+                delayed(partial_dependence)(m.estimator, m.X_test, col) for col in cols
+            )
+
+            # Get global min and max average predictions of PD grouped by plot type
+            pdp_lim = {}
+            for avg_pred, pred, values in pd_results:
+                min_pd, max_pd = avg_pred[target].min(), avg_pred[target].max()
+                old_min, old_max = pdp_lim.get(len(values), (min_pd, max_pd))
+                pdp_lim[len(values)] = (min(min_pd, old_min), max(max_pd, old_max))
+
+            deciles = {}
+            for fx in chain.from_iterable(cols):
+                if fx not in deciles:  # Skip if the feature is repeated
+                    X_col = _safe_indexing(m.X_test, fx, axis=1)
+                    deciles[fx] = mquantiles(X_col, prob=np.arange(0.1, 1.0, 0.1))
+
+            for axi, fx, (avg_pred, pred, values) in zip(axes, cols, pd_results):
+                # For both types: draw ticks on the horizontal axis
+                trans = blended_transform_factory(axi.transData, axi.transAxes)
+                axi.vlines(deciles[fx[0]], 0, 0.05, transform=trans, color="k")
+                axi.ticklabel_format(axis="y", style="sci", scilimits=(-2, 2))
+                self._plot(ax=axi, xlabel=m.columns[fx[0]])
+
+                # Draw line or contour plot
+                if len(values) == 1:
+                    # Draw the mean of the individual lines
+                    if kind.lower() in ("average", "both"):
+                        axi.plot(
+                            values[0],
+                            avg_pred[target].ravel(),
+                            lw=2,
+                            color=color,
+                            label=m.name,
+                        )
+
+                    # Draw all individual (per sample) lines (ICE)
+                    if kind.lower() in ("individual", "both"):
+                        # Select up to 100 random samples to plot
+                        idx = np.random.choice(
+                            list(range(len(pred[target]))),
+                            size=min(len(pred[target]), 100),
+                            replace=False,
+                        )
+                        for sample in pred[target, idx, :]:
+                            axi.plot(values[0], sample, lw=0.5, alpha=0.5, color=color)
+
+                else:
+                    # Create contour levels for two-way plots
+                    levels = np.linspace(pdp_lim[2][0], pdp_lim[2][1] + 1e-9, num=8)
+
+                    # Draw contour plot
+                    XX, YY = np.meshgrid(values[0], values[1])
+                    Z = avg_pred[target].T
+                    CS = axi.contour(XX, YY, Z, levels=levels, linewidths=0.5)
+                    axi.clabel(CS, fmt="%2.2f", colors="k", fontsize=10, inline=True)
+                    axi.contourf(
+                        XX,
+                        YY,
+                        Z,
+                        levels=levels,
+                        vmax=levels[-1],
+                        vmin=levels[0],
+                        alpha=0.75,
+                    )
+
+                    # Draw the ticks on the vertical axis
+                    trans = blended_transform_factory(axi.transAxes, axi.transData)
+                    axi.hlines(deciles[fx[1]], 0, 0.05, transform=trans, color="k")
+
+                    self._plot(
+                        ax=axi,
+                        ylabel=m.columns[fx[1]],
+                        xlim=(min(XX.flatten()), max(XX.flatten())),
+                        ylim=(min(YY.flatten()), max(YY.flatten())),
+                    )
+
+        # Place y-label and legend on first non-contour plot
+        for axi in axes:
+            if not axi.get_ylabel():
+                self._plot(
+                    ax=axi,
+                    ylabel="Score",
+                    legend=("best", len(models)) if len(models) > 1 else None,
+                )
+                break
+
+        if title:
+            # Place title if not in canvas, else above first or middle image
+            if len(cols) == 1 or (len(cols) == 2 and BasePlotter._fig.is_canvas):
+                axes[0].set_title(title, fontsize=self.title_fontsize, pad=20)
+            elif len(cols) == 3:
+                axes[1].set_title(title, fontsize=self.title_fontsize, pad=20)
+            elif not BasePlotter._fig.is_canvas:
+                plt.suptitle(title, fontsize=self.title_fontsize)
+
+        BasePlotter._fig._used_models.extend(models)
+        return self._plot(
+            fig=fig,
+            figsize=figsize,
+            plotname="plot_partial_dependence",
             filename=filename,
             display=display,
         )
@@ -2446,194 +2632,6 @@ class BaseModelPlotter(BasePlotter):
             ylabel="Count",
             figsize=figsize,
             plotname="plot_calibration",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_gains(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the cumulative gains curve.
-
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
-
-        dataset: str, optional (default="test")
-            Data set on which to calculate the gains. Options are
-            "train", "test" or "both".
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y).
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        fig: matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_gains")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [0, 1], "k--", lw=2, alpha=0.7, zorder=-2)
-        for m in models:
-            attr = get_proba_attr(m)
-            for set_ in dataset:
-                if attr == "predict_proba":
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
-
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "")
-                ax.plot(x, gains, lw=2, label=label)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Fraction of sample",
-            ylabel="Gain",
-            xlim=(0, 1),
-            ylim=(0, 1.02),
-            figsize=figsize,
-            plotname="plot_gains",
-            filename=filename,
-            display=display,
-        )
-
-    @composed(crash, plot_from_model, typechecked)
-    def plot_lift(
-        self,
-        models: Optional[Union[str, SEQUENCE_TYPES]] = None,
-        dataset: str = "test",
-        title: Optional[str] = None,
-        figsize: Tuple[SCALAR, SCALAR] = (10, 6),
-        filename: Optional[str] = None,
-        display: Optional[bool] = True,
-    ):
-        """Plot the lift curve.
-
-        Only for binary classification tasks. Code snippet from
-        https://github.com/reiinakano/scikit-plot/
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Name of the models to plot. If None, all models in the
-            pipeline are selected.
-
-        dataset: str, optional (default="test")
-            Data set on which to calculate the metric. Options are
-            "train", "test" or "both".
-
-        title: str or None, optional (default=None)
-            Plot's title. If None, the title is left empty.
-
-        figsize: tuple, optional (default=(10, 6))
-            Figure's size, format as (x, y).
-
-        filename: str or None, optional (default=None)
-            Name of the file. Use "auto" for automatic naming. If
-            None, the figure is not saved.
-
-        display: bool or None, optional (default=True)
-            Whether to render the plot. If None, it returns the
-            matplotlib figure.
-
-        Returns
-        -------
-        fig: matplotlib.figure.Figure
-            Plot object. Only returned if `display=None`.
-
-        """
-        check_is_fitted(self, attributes="_models")
-        check_binary_task(self, "plot_lift")
-        models = self._get_subclass(models)
-        dataset = self._get_set(dataset)
-
-        fig = self._get_figure()
-        ax = fig.add_subplot(BasePlotter._fig.grid)
-        ax.plot([0, 1], [1, 1], "k--", lw=2, alpha=0.7, zorder=-2)
-        for m in models:
-            attr = get_proba_attr(m)
-            for set_ in dataset:
-                if attr == "predict_proba":
-                    y_pred = getattr(m, f"predict_proba_{set_}")[:, 1]
-                else:
-                    y_pred = getattr(m, f"decision_function_{set_}")
-
-                # Make y_true a bool vector
-                y_true = getattr(m, f"y_{set_}") == 1
-
-                # Get sorted indices
-                sort_idx = np.argsort(y_pred)[::-1]
-
-                # Correct indices for the test set (add train set length)
-                if set_ == "test":  # Add the training set length to the indices
-                    sort_idx = [i + len(m.y_train) for i in sort_idx]
-
-                # Compute cumulative gains
-                gains = np.cumsum(y_true.loc[sort_idx]) / float(np.sum(y_true))
-
-                x = np.arange(start=1, stop=len(y_true) + 1) / float(len(y_true))
-                lift = f" (Lift={round(m.evaluate('lift', set_)['lift'], 3)})"
-                label = m.name + (f" - {set_}" if len(dataset) > 1 else "") + lift
-                ax.plot(x, gains / x, lw=2, label=label)
-
-        BasePlotter._fig._used_models.extend(models)
-        return self._plot(
-            fig=fig,
-            ax=ax,
-            title=title,
-            legend=("best", len(models)),
-            xlabel="Fraction of sample",
-            ylabel="Lift",
-            xlim=(0, 1),
-            figsize=figsize,
-            plotname="plot_lift",
             filename=filename,
             display=display,
         )

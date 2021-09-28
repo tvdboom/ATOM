@@ -6,7 +6,7 @@
 index=None, feature=0, target=1, title=None, figsize=(10, 6),
 filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3152">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3150">[source]</a>
 </span>
 </div>
 
@@ -19,8 +19,8 @@ in the [user guide](../../../user_guide/plots/#shap).
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the model to plot. If None, all models in the pipeline are
@@ -67,8 +67,8 @@ Additional keyword arguments for SHAP's <a href="https://shap.readthedocs.io/en/
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>fig: matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>

@@ -19,6 +19,7 @@ from datetime import datetime
 from inspect import signature
 from scipy.sparse import issparse
 from collections.abc import MutableMapping
+from sklearn.base import BaseEstimator
 from sklearn.preprocessing import (
     StandardScaler,
     MinMaxScaler,
@@ -30,6 +31,7 @@ from sklearn.covariance import EllipticEnvelope
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 from sklearn.cluster import DBSCAN, OPTICS
+from sklearn.utils import _print_elapsed_time
 
 # Encoders
 from category_encoders.backward_difference import BackwardDifferenceEncoder
@@ -67,8 +69,10 @@ from imblearn.over_sampling import (
     RandomOverSampler,
     SMOTE,
     SMOTENC,
+    SMOTEN,
     SVMSMOTE,
 )
+from imblearn.combine import SMOTEENN, SMOTETomek
 
 # Sklearn
 from sklearn.metrics import (
@@ -217,13 +221,16 @@ BALANCING_STRATS = dict(
     onesidedselection=OneSidedSelection,
     randomundersampler=RandomUnderSampler,
     tomeklinks=TomekLinks,
-    adasyn=ADASYN,
-    borderlinesmote=BorderlineSMOTE,
-    kmanssmote=KMeansSMOTE,
     randomoversampler=RandomOverSampler,
     smote=SMOTE,
     smotenc=SMOTENC,
+    smoten=SMOTEN,
+    adasyn=ADASYN,
+    borderlinesmote=BorderlineSMOTE,
+    kmanssmote=KMeansSMOTE,
     svmsmote=SVMSMOTE,
+    smoteenn=SMOTEENN,
+    smotetomek=SMOTETomek,
 )
 
 
@@ -324,7 +331,9 @@ def get_proba_attr(model):
 
 def check_scaling(X):
     """Check if the data is scaled to mean=0 and std=1."""
-    return True if X.mean().mean() < 0.05 and 0.93 < X.std().mean() < 1.07 else False
+    mean = X.mean(numeric_only=True).mean()
+    std = X.std(numeric_only=True).mean()
+    return True if mean < 0.05 and 0.93 < std < 1.07 else False
 
 
 def get_corpus(X):
@@ -821,52 +830,6 @@ def partial_dependence(estimator, X, features):
     return avg_pred, pred, values
 
 
-def df_shrink_dtypes(df):
-    """Reduce a dataframe's memory by optimizing dtypes.
-
-    Return any possible smaller data types for dataframe's columns.
-    From: https://github.com/fastai/fastai/blob/master/fastai/tabular/core.py
-
-    Parameters
-    ----------
-    df: pd.DataFrame
-        Dataset from which to reduce the dtypes.
-
-    Returns
-    -------
-    df: pd.dataFrame
-        Dataset with reduced dtypes.
-
-    """
-    # Build column filter and typemap
-    types_1 = (np.int8, np.int16, np.int32, np.int64)
-    types_2 = (np.float32, np.float64, np.longdouble)
-    excl_types = {"category", "datetime64[ns]", "bool"}
-
-    type_map = {
-        "int": [(np.dtype(x), np.iinfo(x).min, np.iinfo(x).max) for x in types_1],
-        "float": [(np.dtype(x), np.finfo(x).min, np.finfo(x).max) for x in types_2],
-        "object": "category",
-    }
-
-    new_dtypes = {}
-    for c, old_t in filter(lambda dt: dt[1].name not in excl_types, df.dtypes.items()):
-        t = next((v for k, v in type_map.items() if old_t.name.startswith(k)))
-
-        if isinstance(t, list):  # Find the smallest type that fits
-            nt = next((r[0] for r in t if r[1] <= df[c].min() and r[2] >= df[c].max()))
-            if nt and nt == old_t:
-                nt = None
-        else:
-            # Convert to category if number of categories less than 30% of column
-            nt = t if df[c].nunique() <= int(len(df[c]) * 0.3) else "object"
-
-        if nt:
-            new_dtypes[c] = nt
-
-    return df.astype(new_dtypes)
-
-
 def get_columns(df, columns, only_numerical=False):
     """Get a subset of the columns.
 
@@ -941,10 +904,139 @@ def get_columns(df, columns, only_numerical=False):
         return list(dict.fromkeys(cols))  # Avoid duplicates
 
 
+# Pipeline functions =============================================== >>
+
+def name_cols(array, original_df, col_names):
+    """Get the column names after a transformation.
+
+    If the number of columns is unchanged, the original
+    column names are returned. Else, give the column a
+    default name if the column values changed.
+
+    Parameters
+    ----------
+    array: np.ndarray
+        Transformed dataset.
+
+    original_df: pd.DataFrame
+        Original dataset.
+
+    col_names: sequence
+        Names of the columns used in the transformer.
+
+    """
+    # If columns were only transformed, return og names
+    if array.shape[1] == len(col_names):
+        return col_names
+
+    # If columns were added or removed
+    temp_cols = []
+    for i, col in enumerate(array.T, start=1):
+        mask = original_df.apply(lambda c: all(c == col))
+        if any(mask):
+            temp_cols.append(mask[mask].index.values[0])
+        else:
+            temp_cols.append(f"Feature {i + original_df.shape[1] - len(col_names)}")
+
+    return temp_cols
+
+
+def reorder_cols(df, original_df, col_names):
+    """Reorder the columns to their original order.
+
+    This function is necessary in case only a subset of the
+    columns in the dataset was used. In that case, we need
+    to reorder them to their original order.
+
+    Parameters
+    ----------
+    df: pd.DataFrame
+        DataFrame to reorder.
+
+    original_df: pd.DataFrame
+        Original dataset (states the order).
+
+    col_names: sequence
+        Names of the columns used in the transformer.
+
+    """
+    temp_df = pd.DataFrame()
+    for col in dict.fromkeys(list(original_df.columns) + list(df.columns)):
+        if col in df.columns:
+            temp_df[col] = df[col]
+        elif col not in col_names:
+            temp_df[col] = original_df[col]
+
+        # Derivative cols are added after original
+        for col_derivative in df.columns:
+            if col_derivative.startswith(col):
+                temp_df[col_derivative] = df[col_derivative]
+
+    return temp_df
+
+
+def fit_one(transformer, X=None, y=None, message=None, **fit_params):
+    """Fit the data using one estimator."""
+    with _print_elapsed_time("Pipeline", message):
+        if hasattr(transformer, "fit"):
+            args = []
+            if "X" in signature(transformer.fit).parameters:
+                args.append(pd.DataFrame(X)[getattr(transformer, "_cols", X.columns)])
+            if "y" in signature(transformer.fit).parameters:
+                args.append(y)
+            transformer.fit(*args, **fit_params)
+
+
+def transform_one(transformer, X=None, y=None):
+    """Transform the data using one estimator."""
+    args = []
+    if "X" in signature(transformer.transform).parameters:
+        args.append(pd.DataFrame(X)[getattr(transformer, "_cols", X.columns)])
+    if "y" in signature(transformer.transform).parameters:
+        args.append(y)
+    output = transformer.transform(*args)
+
+    # Transform can return X, y or both
+    if isinstance(output, tuple):
+        new_X, new_y = output[0], output[1]
+    else:
+        if len(output.shape) > 1:
+            new_X, new_y = output, y
+        else:
+            new_X, new_y = X, output
+
+    if new_X is not None:
+        use_cols = getattr(transformer, "_cols", X.columns)
+
+        if not isinstance(new_X, pd.DataFrame):
+            # If sparse matrix, convert back to array
+            if issparse(new_X):
+                new_X = new_X.toarray()
+
+            # Convert to pandas and assign proper column names
+            new_X = to_df(new_X, columns=name_cols(new_X, X, use_cols))
+
+        # Reorder columns in case only a subset was used
+        new_X = reorder_cols(new_X, X, use_cols)
+
+    if new_y is not None:
+        new_y = to_series(new_y, name=getattr(y, "name", None))
+
+    return new_X, new_y
+
+
+def fit_transform_one(transformer, X=None, y=None, message=None, **fit_params):
+    """Fit and transform the data using one estimator."""
+    fit_one(transformer, X, y, message, **fit_params)
+    X, y = transform_one(transformer, X, y)
+
+    return X, y, transformer
+
+
 # Functions shared by classes ======================================= >>
 
 def custom_transform(self, transformer, branch, data=None, verbose=None):
-    """Applies a transformer on a branch.
+    """Applies a estimator on a branch.
 
     This function is generic and should work for all
     methods with parameters X and/or y.
@@ -967,82 +1059,19 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
 
     verbose: int or None, optional (default=None)
         Verbosity level for the transformation. If None, the
-        transformer's verbosity is used.
+        estimator's verbosity is used.
 
     """
-
-    def name_cols(array, df):
-        """Get the column names after a transformation.
-
-        If the number of columns is unchanged, the original
-        column names are returned. Else, give the column a
-        default name if the column values changed.
-
-        Parameters
-        ----------
-        array: np.ndarray
-            Transformed dataset.
-
-        df: pd.DataFrame
-            Original dataset.
-
-        """
-        # If columns were only transformed, return og names
-        if array.shape[1] == df.shape[1]:
-            return df.columns
-
-        # If columns were added or removed
-        temp_cols = []
-        for i, col in enumerate(array.T, start=1):
-            mask = df.apply(lambda c: all(c == col))
-            if any(mask):
-                temp_cols.append(mask[mask].index.values[0])
-            else:
-                diff = branch.n_features - len(transformer.cols)
-                temp_cols.append(f"Feature {str(i + diff)}")
-
-        return temp_cols
-
-    def reorder_cols(df, original_df):
-        """Reorder the columns to their original order.
-
-        This function is necessary in case only a subset of the
-        columns in the dataset was used. In that case, we need
-        to reorder them to their original order.
-
-        Parameters
-        ----------
-        df: pd.DataFrame
-            DataFrame to reorder.
-
-        original_df: pd.DataFrame
-            Original dataframe (states the order).
-
-        """
-        temp_df = pd.DataFrame()
-        for col in list(dict.fromkeys(list(original_df.columns) + list(df.columns))):
-            if col in df.columns:
-                temp_df[col] = df[col]
-            elif col not in transformer.cols:
-                temp_df[col] = original_df[col]
-
-            # Derivative cols are added after original
-            for col_derivative in df.columns:
-                if col_derivative.startswith(col):
-                    temp_df[col_derivative] = df[col_derivative]
-
-        return temp_df
-
     # Select provided data or from the branch
     if data:
         X_og, y_og = to_df(data[0]), to_series(data[1])
     else:
-        if transformer.train_only:
+        if transformer._train_only:
             X_og, y_og = branch.X_train, branch.y_train
         else:
             X_og, y_og = branch.X, branch.y
 
-    # Adapt the transformer's verbosity
+    # Adapt the estimator's verbosity
     if verbose is not None:
         if verbose < 0 or verbose > 2:
             raise ValueError(
@@ -1053,42 +1082,14 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
             vb = transformer.verbose  # Save original verbosity
             transformer.verbose = verbose
 
-    if transformer.__class__.__name__ in ("DropTransformer", "FuncTransformer"):
-        X, y = transformer.transform(X_og, y_og)
-    else:
-        if not transformer.__module__.startswith("atom"):
-            self.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
+    if not transformer.__module__.startswith("atom"):
+        self.log(f"Applying {transformer.__class__.__name__} to the dataset...", 1)
 
-        args = []
-        if "X" in signature(transformer.transform).parameters:
-            args.append(X_og[transformer.cols])
-        if "y" in signature(transformer.transform).parameters:
-            args.append(y_og)
-        output = transformer.transform(*args)
-
-        # Transform can return X, y or both
-        if isinstance(output, tuple):
-            X, y = output[0], output[1]
-        else:
-            if len(output.shape) > 1:
-                X, y = output, y_og  # Only X
-            else:
-                X, y = X_og, output  # Only y
-
-        if not isinstance(X, pd.DataFrame):
-            # If sparse matrix, convert back to array
-            if issparse(X):
-                X = X.toarray()
-
-            # Convert to pandas and assign proper column names
-            X = to_df(X, columns=name_cols(X, X_og[transformer.cols]))
-
-        X = reorder_cols(X, X_og)
-        y = to_series(y, name=branch.target)
+    X, y = transform_one(transformer, X_og, y_og)
 
     # Apply changes to the branch
     if not data:
-        if transformer.train_only:
+        if transformer._train_only:
             branch.train = merge(X, branch.y_train if y is None else y)
         else:
             branch.dataset = merge(X, branch.y if y is None else y)
@@ -1104,75 +1105,6 @@ def custom_transform(self, transformer, branch, data=None, verbose=None):
         transformer.verbose = vb
 
     return X, y
-
-
-def add_transformer(self, transformer, columns=None, train_only=False, **fit_params):
-    """Add a transformer to the current branch.
-
-    If the transformer is not fitted, it is fitted on the
-    complete training set. Afterwards, the data set is
-    transformed and the transformer is added to atom's
-    pipeline.
-
-    If the transformer has the n_jobs and/or random_state
-    parameters and they are left to their default value,
-    they adopt atom's values.
-
-    Parameters
-    ----------
-    self: class
-        Instance of atom from which the function is called.
-
-    transformer: class instance
-        Transformer to add to the pipeline. Should implement a
-        `transform` method.
-
-    columns: int, str, slice, sequence or None, optional (default=None)
-        Names or indices of the columns in the dataset to transform.
-        If None, transform all columns.
-
-    train_only: bool, optional (default=False)
-        Whether to apply the transformer only on the train set or
-        on the complete dataset.
-
-    **fit_params
-        Additional keyword arguments passed to the transformer's fit
-        method.
-
-    """
-    if not hasattr(transformer, "transform"):
-        raise ValueError("Added transformers should have a transform method!")
-
-    # Add BaseTransformer params to the estimator if left to default
-    if all(hasattr(transformer, attr) for attr in ("get_params", "set_params")):
-        sign = signature(transformer.__init__).parameters
-        for p in ("n_jobs", "random_state"):
-            if p in sign and transformer.get_params()[p] == sign[p]._default:
-                transformer.set_params(**{p: getattr(self, p)})
-
-    # Transformers remember the train_only and columns parameters
-    transformer.train_only = train_only
-    transformer.cols = [
-        col for col in get_columns(self.dataset, columns) if col != self.target
-    ]
-
-    if hasattr(transformer, "fit") and not check_is_fitted(transformer, False):
-        if not transformer.__module__.startswith("atom"):
-            self.log(f"Fitting {transformer.__class__.__name__}...", 1)
-
-        args = []
-        if "X" in signature(transformer.fit).parameters:
-            args.append(self.X_train[transformer.cols])
-        if "y" in signature(transformer.fit).parameters:
-            args.append(self.y_train)
-        transformer.fit(*args, **fit_params)
-
-    custom_transform(self, transformer, self.branch, verbose=self.verbose)
-
-    # Add the transformer to the pipeline
-    self.branch.pipeline = self.pipeline.append(
-        pd.Series([transformer], name=self._current), ignore_index=True
-    )
 
 
 def delete(self, models):

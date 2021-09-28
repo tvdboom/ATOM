@@ -4,7 +4,7 @@
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, pipeline=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L447">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L789">[source]</a>
 </span>
 </div>
 
@@ -16,8 +16,8 @@ not from the models.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
 Features to transform, with shape=(n_samples, n_features).
@@ -44,8 +44,8 @@ Verbosity level of the output. If None, it uses the transformer's own verbosity.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>X: pd.DataFrame</strong><br>
 Transformed feature set.

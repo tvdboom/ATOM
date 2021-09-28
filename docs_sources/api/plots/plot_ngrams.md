@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_ngrams</strong>(ngram="words",
 index=None, show=10, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3999">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3997">[source]</a>
 </span>
 </div>
 
@@ -16,8 +16,8 @@ words are separated by spaces.
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>ngram: str or int, optional (default="bigram")</strong><br>
 Number of contiguous words to search for (size of n-gram).
@@ -54,8 +54,8 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>fig: matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>

@@ -14,12 +14,13 @@
 Overview 
 --------
 
-Author: [Mavs](https://github.com/tvdboom)
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/avatar.png" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-Email: m.524687@gmail.com
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/email.png" alt="Email" height=12 width=15 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-Documentation: [https://tvdboom.github.io/ATOM/](https://tvdboom.github.io/ATOM/)<br>
-Slack: [https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g](https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g)
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/documentation.png" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
+&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/slack.png" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
 
 
 #### Repository:

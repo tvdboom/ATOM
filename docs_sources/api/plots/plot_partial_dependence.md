@@ -6,7 +6,7 @@
 features=None, kind="average", target=None, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1535">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1924">[source]</a>
 </span>
 </div>
 
@@ -20,8 +20,8 @@ plots. Read more about partial dependence on sklearn's [documentation](https://s
 
 <table style="font-size:16px">
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Parameters:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
+<td width="80%" class="td_params">
 <p>
 <strong>models: str, sequence or None, optional (default=None)</strong><br>
 Name of the models to plot. If None, all the models in the pipeline are selected.
@@ -70,8 +70,8 @@ Whether to render the plot. If None, it returns the matplotlib figure.
 </td>
 </tr>
 <tr>
-<td width="20%" style="vertical-align:top; background:#F5F5F5;"><strong>Returns:</strong></td>
-<td width="80%" style="background:white;">
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
 <strong>fig: matplotlib.figure.Figure</strong><br>
 Plot object. Only returned if <code>display=None</code>.
 </td>
@@ -96,7 +96,7 @@ atom.plot_partial_dependence()
 </div>
 <br>
 ```python
-atom.tree.plot_partial_dependence(features=[0, 1, (1, 3)])
+atom.tree.plot_partial_dependence(features=(4, (3, 4)), kind="both")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>

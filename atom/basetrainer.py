@@ -204,12 +204,12 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # Branching attributes
         self._current = "master"  # Current (and only) branch
-        self._branches = {self._current: Branch(self, self._current)}
+        self._branches = CustomDict({self._current: Branch(self, self._current)})
 
         # Training attributes
         self.task = None
         self.scaled = None
-        self.errors = {}
+        self._errors = CustomDict()
 
         # BO attributes
         self._base_estimator = None
@@ -477,7 +477,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                 self.log(f"{type(ex).__name__}: {ex}", 1)
 
                 # Append exception to errors dictionary
-                self.errors[m.name] = ex
+                self._errors[m.name] = ex
 
                 # Add model to "garbage collector"
                 # Cannot remove immediately to maintain the iteration order

@@ -203,18 +203,13 @@ depend on the task at hand.
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
-<td>Plot the feature permutation importance of models.</td>
+<td><a href="../../API/plots/plot_gains">plot_gains</a></td>
+<td>Plot the cumulative gains curve.</td>
 </tr>
 
 <tr>
-<td><a href="../../API/plots/plot_feature_importance">plot_feature_importance</a></td>
-<td>Plot a tree-based model's feature importance.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
-<td>Plot the partial dependence of features.</td>
+<td><a href="../../API/plots/plot_lift">plot_lift</a></td>
+<td>Plot the lift curve.</td>
 </tr>
 
 <tr>
@@ -225,6 +220,21 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_residuals">plot_residuals</a></td>
 <td>Plot a model's residuals.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_feature_importance">plot_feature_importance</a></td>
+<td>Plot a tree-based model's feature importance.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_permutation_importance">plot_permutation_importance</a></td>
+<td>Plot the feature permutation importance of models.</td>
+</tr>
+
+<tr>
+<td><a href="../../API/plots/plot_partial_dependence">plot_partial_dependence</a></td>
+<td>Plot the partial dependence of features.</td>
 </tr>
 
 <tr>
@@ -245,16 +255,6 @@ depend on the task at hand.
 <tr>
 <td><a href="../../API/plots/plot_calibration">plot_calibration</a></td>
 <td>Plot the calibration curve for a binary classifier.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_gains">plot_gains</a></td>
-<td>Plot the cumulative gains curve.</td>
-</tr>
-
-<tr>
-<td><a href="../../API/plots/plot_lift">plot_lift</a></td>
-<td>Plot the lift curve.</td>
 </tr>
 
 <tr>

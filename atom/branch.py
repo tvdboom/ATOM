@@ -16,6 +16,7 @@ from typing import Optional
 
 # Own modules
 from .basetransformer import BaseTransformer
+from .models import MODEL_LIST
 from .utils import (
     X_TYPES, SEQUENCE_TYPES, flt, merge, to_df, to_series,
     check_multidim, composed, crash, method_to_log,
@@ -30,8 +31,9 @@ class Branch:
     *args
         Parent class (from which the branch is called) and name.
 
-    parent: str or None, optional (default=None)
-        Name of the branch from which to split.
+    parent: str, Branch or None, optional (default=None)
+        Name or branch from which to split. If None, create an
+        empty branch.
 
     Attributes
     ----------
@@ -61,12 +63,15 @@ class Branch:
             for attr in ("data", "idx", "mapping", "feature_importance"):
                 setattr(self, attr, None)
         else:
+            if isinstance(parent, str):
+                parent = self.T._branches[parent]
+
             # Copy the branch attrs and point to the rest
             for attr in ("pipeline", "data", "idx", "mapping", "feature_importance"):
-                setattr(self, attr, copy(getattr(self.T._branches[parent], attr)))
-            for attr in vars(self.T._branches[parent]):
+                setattr(self, attr, copy(getattr(parent, attr)))
+            for attr in vars(parent):
                 if not hasattr(self, attr):  # If not already assigned...
-                    setattr(self, attr, getattr(self.T._branches[parent], attr))
+                    setattr(self, attr, getattr(parent, attr))
 
     def __repr__(self):
         out = f"Branch: {self.name}"
@@ -97,33 +102,18 @@ class Branch:
         """Return the models that are dependent on this branch."""
         return [m.name for m in self.T._models if m.branch is self]
 
-    @composed(crash, method_to_log)
-    def status(self):
-        """Get the status of the branch."""
-        self.T.log(str(self))
-
-    @composed(crash, method_to_log, typechecked)
-    def rename(self, name: str):
-        """Change the name of the current branch."""
-        if not name:
-            raise ValueError("A branch can't have an empty name!")
-        else:
-            self.name = name
-            self.pipeline.name = name
-            self.T._branches[name] = self.T._branches.pop(self.T._current)
-            self.T.log(f"Branch {self.T._current} was renamed to {name}.", 1)
-            self.T._current = name
-
     @composed(crash, method_to_log, typechecked)
     def delete(self, name: Optional[str] = None):
-        """Remove a branch from the pipeline."""
+        """Delete the branch and all the models in it."""
         if name is None:
             name = self.T._current
         elif name not in self.T._branches:
-            raise ValueError(f"Branch {name} not found in the pipeline!")
+            raise ValueError(f"Branch {name} not found in {self.T.__class__.__name__}!")
 
         if len(self.T._branches) <= 2:
-            raise PermissionError("Can't delete the last branch in the pipeline!")
+            raise PermissionError(
+                f"Can't delete the last branch in {self.T.__class__.__name__}!"
+            )
         else:
             # Delete all depending models
             for model in self.T._branches[name]._get_depending_models():
@@ -133,6 +123,35 @@ class Branch:
             if name == self.T._current:  # Reset the current branch
                 self.T._current = list(self.T._branches.keys())[1]  # 0 is og
             self.T.log(f"Branch {name} successfully deleted!", 1)
+
+    @composed(crash, method_to_log, typechecked)
+    def rename(self, name: str):
+        """Change the name of the branch."""
+        if not name:
+            raise ValueError("A branch can't have an empty name!")
+        elif name.lower() in map(str.lower, MODEL_LIST.keys()):
+            raise ValueError(
+                f"Invalid name for the branch. {name} is the "
+                f"acronym of model {MODEL_LIST[name].fullname}. "
+            )
+        elif name.lower() in ("og", "vote", "stack"):
+            raise ValueError(
+                "This name is reserved for internal purposes. "
+                "Choose a different name for the branch."
+            )
+        elif name in self.T._branches:
+            raise ValueError(f"Branch {self.T._branches[name].name} already exists!")
+
+        self.name = name
+        self.pipeline.name = name
+        self.T._branches[name] = self.T._branches.pop(self.T._current)
+        self.T.log(f"Branch {self.T._current} was renamed to {name}.", 1)
+        self.T._current = name
+
+    @composed(crash, method_to_log)
+    def status(self):
+        """Get an overview of the pipeline and models in the branch."""
+        self.T.log(str(self))
 
     # Data properties ============================================== >>
 

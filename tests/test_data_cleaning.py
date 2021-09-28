@@ -11,6 +11,10 @@ Description: Unit tests for data_cleaning.py
 import pytest
 import numpy as np
 import pandas as pd
+from imblearn.combine import SMOTETomek
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+from category_encoders.leave_one_out import LeaveOneOutEncoder
 
 # Own modules
 from atom.data_cleaning import (
@@ -154,13 +158,6 @@ def test_gauss_attach_attribute():
 
 # Test Cleaner ==================================================== >>
 
-def test_invalid_type_ignored():
-    """Assert that prohibited types is ignored when None."""
-    cleaner = Cleaner(drop_types=None)
-    cleaner.transform(X_bin)
-    assert cleaner.drop_types == []
-
-
 def test_drop_invalid_column_type():
     """Assert that invalid columns types are dropped for string input."""
     X = X_bin.copy()
@@ -293,25 +290,35 @@ def test_imputing_all_missing_values_categorical(missing):
     assert X.isna().sum().sum() == 0
 
 
-def test_rows_too_many_nans():
+@pytest.mark.parametrize("max_nan_rows", [5, 0.5])
+def test_rows_too_many_nans(max_nan_rows):
     """Assert that rows with too many missing values are dropped."""
     X = X_bin.copy()
     for i in range(5):  # Add 5 rows with all NaN values
         X.loc[len(X)] = [np.nan for _ in range(X.shape[1])]
     y = [np.random.randint(2) for _ in range(len(X))]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_rows=0.5)
-    X, y = impute.fit_transform(X, y)
+    imputer = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_rows=max_nan_rows,
+    )
+    X, y = imputer.fit_transform(X, y)
     assert len(X) == 569  # Original size
     assert X.isna().sum().sum() == 0
 
 
-def test_cols_too_many_nans():
+@pytest.mark.parametrize("max_nan_cols", [20, 0.5])
+def test_cols_too_many_nans(max_nan_cols):
     """Assert that columns with too many missing values are dropped."""
     X = X_bin.copy()
     for i in range(5):  # Add 5 cols with all NaN values
         X["col " + str(i)] = [np.nan for _ in range(X.shape[0])]
-    impute = Imputer(strat_num="mean", strat_cat="most_frequent", max_nan_cols=0.5)
-    X, y = impute.fit_transform(X, y_bin)
+    imputer = Imputer(
+        strat_num="mean",
+        strat_cat="most_frequent",
+        max_nan_cols=max_nan_cols,
+    )
+    X, y = imputer.fit_transform(X, y_bin)
     assert len(X.columns) == 30  # Original number of columns
     assert X.isna().sum().sum() == 0
 
@@ -415,11 +422,29 @@ def test_frac_to_other_parameter():
     pytest.raises(ValueError, encoder.fit, X_bin, y_bin)
 
 
-def test_frac_to_other():
+@pytest.mark.parametrize("frac_to_other", [3, 0.3])
+def test_frac_to_other(frac_to_other):
     """Assert that the other values are created when encoding."""
-    encoder = Encoder(max_onehot=5, frac_to_other=0.3)
+    encoder = Encoder(max_onehot=5, frac_to_other=frac_to_other)
     X = encoder.fit_transform(X10_str, y10)
     assert "Feature 3_other" in X.columns
+
+
+def test_encoder_strategy_invalid_estimator():
+    """Assert that an error is raised when strategy is invalid."""
+    encoder = Encoder(strategy=RandomForestClassifier())
+    pytest.raises(TypeError, encoder.fit_transform, X10_str, y10)
+
+
+def test_encoder_custom_estimator():
+    """Assert that the strategy can be a custom estimator."""
+    encoder = Encoder(strategy=LeaveOneOutEncoder, max_onehot=None)
+    X = encoder.fit_transform(X10_str, y10)
+    assert X.loc[0, "Feature 3"] != "a"
+
+    encoder = Encoder(strategy=LeaveOneOutEncoder(), max_onehot=None)
+    X = encoder.fit_transform(X10_str, y10)
+    assert X.loc[0, "Feature 3"] != "a"
 
 
 def test_encoder_check_is_fitted():
@@ -433,11 +458,11 @@ def test_missing_values_are_propagated():
     assert np.isnan(encoder.fit_transform(X10_sn, y10).iloc[0, 2])
 
 
-def test_unknown_classes():
-    """Assert that unknown classes are converted to NaN."""
+def test_unknown_classes_are_imputed():
+    """Assert that unknown classes are imputed."""
     encoder = Encoder()
     encoder.fit(["a", "b", "b", "a"])
-    assert encoder.transform(["c"]).isna().sum().sum() == 1
+    assert encoder.transform(["c"]).iloc[0, 0] == -1.0
 
 
 def test_ordinal_encoder():
@@ -592,10 +617,27 @@ def test_pruner_attach_attribute():
 
 # Test Balancer ==================================================== >>
 
-def test_strategy_parameter_balancer():
-    """Assert that an error is raised when strategy is invalid."""
+def test_balancer_strategy_unknown_str():
+    """Assert that an error is raised when strategy is unknown."""
     balancer = Balancer(strategy="invalid")
     pytest.raises(ValueError, balancer.transform, X_bin, y_bin)
+
+
+def test_balancer_strategy_invalid_estimator():
+    """Assert that an error is raised when strategy is invalid."""
+    balancer = Balancer(strategy=StandardScaler())
+    pytest.raises(TypeError, balancer.transform, X_bin, y_bin)
+
+
+def test_balancer_custom_estimator():
+    """Assert that the strategy can be a custom estimator."""
+    balancer = Balancer(strategy=SMOTETomek)
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
+
+    balancer = Balancer(strategy=SMOTETomek())
+    X, y = balancer.transform(X_bin, y_bin)
+    assert len(X) != len(X_bin)
 
 
 @pytest.mark.parametrize("strategy", [i for i in BALANCING_STRATS if i != "smotenc"])

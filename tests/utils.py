@@ -97,16 +97,16 @@ X10_str = [
 
 # Dataset with categorical column (only two classes)
 X10_str2 = [
-    [2, 0, "a"],
-    [2, 3, "a"],
-    [5, 2, "b"],
-    [1, 2, "a"],
-    [1, 2, "a"],
-    [2, 0, "a"],
-    [2, 3, "b"],
-    [5, 2, "b"],
-    [1, 2, "a"],
-    [1, 2, "a"],
+    [2, 0, "a", True],
+    [2, 3, "a", False],
+    [5, 2, "b", True],
+    [1, 2, "a", True],
+    [1, 2, "a", False],
+    [2, 0, "a", False],
+    [2, 3, "b", False],
+    [5, 2, "b", True],
+    [1, 2, "a", True],
+    [1, 2, "a", False],
 ]
 
 # Dataset with missing value in categorical column

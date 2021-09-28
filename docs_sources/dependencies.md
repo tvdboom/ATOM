@@ -36,7 +36,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
-* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.5.0)
+* **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.8.0)
 * **[featuretools](https://www.featuretools.com/)** (>=0.17.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
