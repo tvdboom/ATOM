@@ -68,13 +68,10 @@ class BaseEnsemble:
                     data[b1] = custom_transform(self.T, est1, v1, data[b1], vb)
 
                     for b2, v2 in branches.items():
-                        try:  # Can fail if pipeline is shorter than i
-                            if b1 != b2 and est1 is v2.pipeline.iloc[idx]:
-                                # Update the data and step for the other branch
-                                data[b2] = copy(data[b1])
-                                step[b2] = idx
-                        except IndexError:
-                            continue
+                        if b1 != b2 and v2.pipeline.get(idx) is est1:
+                            # Update the data and step for the other branch
+                            data[b2] = copy(data[b1])
+                            step[b2] = idx
 
         return data
 

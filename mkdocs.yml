@@ -182,17 +182,17 @@ nav:
             - plot_roc: API/plots/plot_roc.md
             - plot_prc: API/plots/plot_prc.md
             - plot_det: API/plots/plot_det.md
-            - plot_permutation_importance: API/plots/plot_permutation_importance.md
-            - plot_feature_importance: API/plots/plot_feature_importance.md
-            - plot_partial_dependence: API/plots/plot_partial_dependence.md
+            - plot_gains: API/plots/plot_gains.md
+            - plot_lift: API/plots/plot_lift.md
             - plot_errors: API/plots/plot_errors.md
             - plot_residuals: API/plots/plot_residuals.md
+            - plot_feature_importance: API/plots/plot_feature_importance.md
+            - plot_permutation_importance: API/plots/plot_permutation_importance.md
+            - plot_partial_dependence: API/plots/plot_partial_dependence.md
             - plot_confusion_matrix: API/plots/plot_confusion_matrix.md
             - plot_threshold: API/plots/plot_threshold.md
             - plot_probabilities: API/plots/plot_probabilities.md
             - plot_calibration: API/plots/plot_calibration.md
-            - plot_gains: API/plots/plot_gains.md
-            - plot_lift: API/plots/plot_lift.md
             - bar_plot: API/plots/bar_plot.md
             - beeswarm_plot: API/plots/beeswarm_plot.md
             - decision_plot: API/plots/decision_plot.md

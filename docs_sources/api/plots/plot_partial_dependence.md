@@ -6,7 +6,7 @@
 features=None, kind="average", target=None, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1535">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1924">[source]</a>
 </span>
 </div>
 
@@ -96,7 +96,7 @@ atom.plot_partial_dependence()
 </div>
 <br>
 ```python
-atom.tree.plot_partial_dependence(features=[0, 1, (1, 3)])
+atom.tree.plot_partial_dependence(features=(4, (3, 4)), kind="both")
 ```
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>

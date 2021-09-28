@@ -1791,8 +1791,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -1803,20 +1803,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
-        plot_feature_importance
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
       </a>
     </li>
   
@@ -1841,6 +1829,42 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -1889,30 +1913,6 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -3045,24 +3045,24 @@ Results for Decision Tree:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -3.3257
-Time elapsed: 0.006s
+Time elapsed: 0.005s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.3307 ± 0.525
-Time elapsed: 0.020s
+Time elapsed: 0.023s
 -------------------------------------------------
-Total time: 0.026s
+Total time: 0.028s
 
 
 Results for Bagging Regressor:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -1.3054
 Test evaluation --&gt; neg_mean_absolute_error: -2.695
-Time elapsed: 0.021s
+Time elapsed: 0.020s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677
-Time elapsed: 0.091s
+Time elapsed: 0.081s
 -------------------------------------------------
-Total time: 0.112s
+Total time: 0.101s
 
 
 Results for Extra-Trees:         
@@ -3072,21 +3072,21 @@ Test evaluation --&gt; neg_mean_absolute_error: -2.1541
 Time elapsed: 0.084s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5554 ± 0.1708
-Time elapsed: 0.359s
+Time elapsed: 0.353s
 -------------------------------------------------
-Total time: 0.444s
+Total time: 0.436s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -1.1509
 Test evaluation --&gt; neg_mean_absolute_error: -2.4143
-Time elapsed: 0.110s
+Time elapsed: 0.109s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9574 ± 0.2253
-Time elapsed: 0.494s
+Time elapsed: 0.508s
 -------------------------------------------------
-Total time: 0.605s
+Total time: 0.617s
 
 
 Results for LightGBM:         
@@ -3096,25 +3096,25 @@ Test evaluation --&gt; neg_mean_absolute_error: -4.4873
 Time elapsed: 0.026s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -4.8485 ± 0.2679
-Time elapsed: 0.070s
+Time elapsed: 0.057s
 -------------------------------------------------
-Total time: 0.097s
+Total time: 0.083s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0806
 Test evaluation --&gt; neg_mean_absolute_error: -2.3991
-Time elapsed: 1.256s
+Time elapsed: 1.252s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.9193 ± 0.2604
-Time elapsed: 4.204s
+Time elapsed: 3.901s
 -------------------------------------------------
-Total time: 5.460s
+Total time: 5.153s
 
 
 Final results ========================= &gt;&gt;
-Duration: 6.745s
+Duration: 6.419s
 ------------------------------------------
 Decision Tree     --&gt; neg_mean_absolute_error: -4.3307 ± 0.525 ~
 Bagging Regressor --&gt; neg_mean_absolute_error: -3.0957 ± 0.2677 ~
@@ -3134,40 +3134,40 @@ Results for Extra-Trees:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.0
 Test evaluation --&gt; neg_mean_absolute_error: -2.2361
-Time elapsed: 0.097s
+Time elapsed: 0.094s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.6016 ± 0.289
-Time elapsed: 0.397s
+Time elapsed: 0.404s
 -------------------------------------------------
-Total time: 0.494s
+Total time: 0.499s
 
 
 Results for Random Forest:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.982
 Test evaluation --&gt; neg_mean_absolute_error: -2.5055
-Time elapsed: 0.127s
+Time elapsed: 0.126s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.7619 ± 0.1947
-Time elapsed: 0.563s
+Time elapsed: 0.566s
 -------------------------------------------------
-Total time: 0.690s
+Total time: 0.692s
 
 
 Results for CatBoost:         
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.2835
 Test evaluation --&gt; neg_mean_absolute_error: -2.42
-Time elapsed: 1.797s
+Time elapsed: 1.740s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.5595 ± 0.2768
-Time elapsed: 6.725s
+Time elapsed: 6.480s
 -------------------------------------------------
-Total time: 8.523s
+Total time: 8.220s
 
 
 Final results ========================= &gt;&gt;
-Duration: 9.708s
+Duration: 9.411s
 ------------------------------------------
 Extra-Trees   --&gt; neg_mean_absolute_error: -2.6016 ± 0.289 ~
 Random Forest --&gt; neg_mean_absolute_error: -2.7619 ± 0.1947 ~
@@ -3184,16 +3184,16 @@ Results for CatBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; neg_mean_absolute_error: -0.3978
 Test evaluation --&gt; neg_mean_absolute_error: -1.8776
-Time elapsed: 3.155s
+Time elapsed: 3.180s
 Bootstrap ---------------------------------------
 Evaluation --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902
-Time elapsed: 15.202s
+Time elapsed: 14.450s
 -------------------------------------------------
-Total time: 18.358s
+Total time: 17.630s
 
 
 Final results ========================= &gt;&gt;
-Duration: 18.359s
+Duration: 17.631s
 ------------------------------------------
 CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
 </pre>
@@ -3287,21 +3287,21 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <th>Bag6</th>
       <td>-1.305373e+00</td>
       <td>-2.695050</td>
-      <td>0.021s</td>
+      <td>0.020s</td>
       <td>-3.095663</td>
       <td>0.267668</td>
-      <td>0.091s</td>
-      <td>0.112s</td>
+      <td>0.081s</td>
+      <td>0.101s</td>
     </tr>
     <tr>
       <th>CatB6</th>
       <td>-8.055503e-02</td>
       <td>-2.399073</td>
-      <td>1.256s</td>
+      <td>1.252s</td>
       <td>-2.919304</td>
       <td>0.260378</td>
-      <td>4.204s</td>
-      <td>5.460s</td>
+      <td>3.901s</td>
+      <td>5.153s</td>
     </tr>
     <tr>
       <th>ET6</th>
@@ -3310,8 +3310,8 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <td>0.084s</td>
       <td>-2.555434</td>
       <td>0.170823</td>
-      <td>0.359s</td>
-      <td>0.444s</td>
+      <td>0.353s</td>
+      <td>0.436s</td>
     </tr>
     <tr>
       <th>LGB6</th>
@@ -3320,70 +3320,70 @@ CatBoost --&gt; neg_mean_absolute_error: -2.0515 ± 0.0902 ~
       <td>0.026s</td>
       <td>-4.848536</td>
       <td>0.267874</td>
-      <td>0.070s</td>
-      <td>0.097s</td>
+      <td>0.057s</td>
+      <td>0.083s</td>
     </tr>
     <tr>
       <th>RF6</th>
       <td>-1.150866e+00</td>
       <td>-2.414297</td>
-      <td>0.110s</td>
+      <td>0.109s</td>
       <td>-2.957400</td>
       <td>0.225311</td>
-      <td>0.494s</td>
-      <td>0.605s</td>
+      <td>0.508s</td>
+      <td>0.617s</td>
     </tr>
     <tr>
       <th>Tree6</th>
       <td>-0.000000e+00</td>
       <td>-3.325743</td>
-      <td>0.006s</td>
+      <td>0.005s</td>
       <td>-4.330693</td>
       <td>0.525026</td>
-      <td>0.020s</td>
-      <td>0.026s</td>
+      <td>0.023s</td>
+      <td>0.028s</td>
     </tr>
     <tr>
       <th rowspan="3" valign="top">0.33</th>
       <th>CatB3</th>
       <td>-2.835499e-01</td>
       <td>-2.420032</td>
-      <td>1.797s</td>
+      <td>1.740s</td>
       <td>-2.559497</td>
       <td>0.276791</td>
-      <td>6.725s</td>
-      <td>8.523s</td>
+      <td>6.480s</td>
+      <td>8.220s</td>
     </tr>
     <tr>
       <th>ET3</th>
       <td>-2.315185e-14</td>
       <td>-2.236079</td>
-      <td>0.097s</td>
+      <td>0.094s</td>
       <td>-2.601648</td>
       <td>0.289034</td>
-      <td>0.397s</td>
-      <td>0.494s</td>
+      <td>0.404s</td>
+      <td>0.499s</td>
     </tr>
     <tr>
       <th>RF3</th>
       <td>-9.819778e-01</td>
       <td>-2.505465</td>
-      <td>0.127s</td>
+      <td>0.126s</td>
       <td>-2.761887</td>
       <td>0.194678</td>
-      <td>0.563s</td>
-      <td>0.690s</td>
+      <td>0.566s</td>
+      <td>0.692s</td>
     </tr>
     <tr>
       <th>1.00</th>
       <th>CatB1</th>
       <td>-3.977985e-01</td>
       <td>-1.877590</td>
-      <td>3.155s</td>
+      <td>3.180s</td>
       <td>-2.051462</td>
       <td>0.090227</td>
-      <td>15.202s</td>
-      <td>18.358s</td>
+      <td>14.450s</td>
+      <td>17.630s</td>
     </tr>
   </tbody>
 </table>

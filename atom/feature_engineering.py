@@ -153,7 +153,7 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Extracting datetime features...", 1)
 
         i = 0
-        for col in X:
+        for col in X.select_dtypes(exclude="number"):
             if X[col].dtype.name == "datetime64[ns]":
                 col_dt = X[col]
                 self.log(f" --> Extracting features from datetime column {col}.", 1)
@@ -174,8 +174,6 @@ class FeatureExtractor(BaseEstimator, TransformerMixin, BaseTransformer):
                     self.log(
                         f" --> Extracting features from categorical column {col}.", 1
                     )
-            else:
-                continue  # If column is numerical, skip it
 
             # Extract features from the datetime column
             for fx in map(str.lower, lst(self.features)):

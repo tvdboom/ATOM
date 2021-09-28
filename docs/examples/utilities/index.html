@@ -1791,8 +1791,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../../API/plots/plot_gains/" class="md-nav__link">
+        plot_gains
       </a>
     </li>
   
@@ -1803,20 +1803,8 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
-        plot_feature_importance
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
-        plot_partial_dependence
+      <a href="../../API/plots/plot_lift/" class="md-nav__link">
+        plot_lift
       </a>
     </li>
   
@@ -1841,6 +1829,42 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_residuals/" class="md-nav__link">
         plot_residuals
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_feature_importance/" class="md-nav__link">
+        plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../API/plots/plot_partial_dependence/" class="md-nav__link">
+        plot_partial_dependence
       </a>
     </li>
   
@@ -1889,30 +1913,6 @@
     <li class="md-nav__item">
       <a href="../../API/plots/plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../API/plots/plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -3846,13 +3846,13 @@ Results for Logistic Regression:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5691
 Test evaluation --&gt; f2_score: 0.5651
-Time elapsed: 0.189s
+Time elapsed: 0.191s
 -------------------------------------------------
-Total time: 0.189s
+Total time: 0.191s
 
 
 Final results ========================= &gt;&gt;
-Duration: 0.189s
+Duration: 0.191s
 ------------------------------------------
 Logistic Regression --&gt; f2_score: 0.5651
 </pre>
@@ -3909,13 +3909,13 @@ Results for AdaBoost:
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.5564
 Test evaluation --&gt; f2_score: 0.5467
-Time elapsed: 2.160s
+Time elapsed: 2.282s
 -------------------------------------------------
-Total time: 2.160s
+Total time: 2.282s
 
 
 Final results ========================= &gt;&gt;
-Duration: 2.160s
+Duration: 2.282s
 ------------------------------------------
 AdaBoost --&gt; f2_score: 0.5467
 </pre>
@@ -4013,31 +4013,31 @@ Running BO for Decision Tree...
 Initial point 1 ---------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Evaluation --&gt; f2_score: 0.4606  Best f2_score: 0.4606
-Time iteration: 0.379s   Total time: 0.393s
+Time iteration: 0.422s   Total time: 0.429s
 Iteration 2 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 4, &#39;min_samples_leaf&#39;: 20, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.014}
 Evaluation --&gt; f2_score: 0.4455  Best f2_score: 0.4606
-Time iteration: 0.125s   Total time: 0.643s
+Time iteration: 0.172s   Total time: 0.877s
 Iteration 3 -------------------------------------
 Parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;random&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 10, &#39;max_features&#39;: 0.5, &#39;ccp_alpha&#39;: 0.001}
 Evaluation --&gt; f2_score: 0.4460  Best f2_score: 0.4606
-Time iteration: 0.130s   Total time: 1.196s
+Time iteration: 0.148s   Total time: 1.343s
 
 Results for Decision Tree:         
 Bayesian Optimization ---------------------------
 Best parameters --&gt; {&#39;criterion&#39;: &#39;gini&#39;, &#39;splitter&#39;: &#39;best&#39;, &#39;min_samples_split&#39;: 2, &#39;min_samples_leaf&#39;: 1, &#39;max_features&#39;: None, &#39;ccp_alpha&#39;: 0}
 Best evaluation --&gt; f2_score: 0.4606
-Time elapsed: 1.440s
+Time elapsed: 1.648s
 Fit ---------------------------------------------
 Train evaluation --&gt; f2_score: 0.4922
 Test evaluation --&gt; f2_score: 0.4934
-Time elapsed: 0.109s
+Time elapsed: 0.116s
 -------------------------------------------------
-Total time: 1.550s
+Total time: 1.766s
 
 
 Final results ========================= &gt;&gt;
-Duration: 1.550s
+Duration: 1.766s
 ------------------------------------------
 Decision Tree --&gt; f2_score: 0.4934
 </pre>
@@ -4443,8 +4443,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.56908</td>
       <td>0.565051</td>
-      <td>0.189s</td>
-      <td>0.189s</td>
+      <td>0.191s</td>
+      <td>0.191s</td>
     </tr>
     <tr>
       <th>AdaB</th>
@@ -4452,17 +4452,17 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.55639</td>
       <td>0.546745</td>
-      <td>2.160s</td>
-      <td>2.160s</td>
+      <td>2.282s</td>
+      <td>2.282s</td>
     </tr>
     <tr>
       <th>Tree</th>
       <td>0.460608</td>
-      <td>1.440s</td>
+      <td>1.648s</td>
       <td>0.49224</td>
       <td>0.493427</td>
-      <td>0.109s</td>
-      <td>1.550s</td>
+      <td>0.116s</td>
+      <td>1.766s</td>
     </tr>
     <tr>
       <th>LGB</th>
@@ -4470,8 +4470,8 @@ ATOMClassifier loaded successfully!
       <td>None</td>
       <td>0.65179</td>
       <td>0.592639</td>
-      <td>1.144s</td>
-      <td>1.144s</td>
+      <td>1.127s</td>
+      <td>1.127s</td>
     </tr>
   </tbody>
 </table>

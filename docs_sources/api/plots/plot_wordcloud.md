@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_wordcloud</strong>(index=None,
 title=None, figsize=(10, 6), filename=None, display=True, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3915">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L3913">[source]</a>
 </span>
 </div>
 

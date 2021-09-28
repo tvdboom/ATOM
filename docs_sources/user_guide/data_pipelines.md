@@ -73,7 +73,7 @@ The branch class has the following methods.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L137">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L106">[source]</a>
 </span>
 </div>
 Delete the branch and all the models in it. Same as executing `del atom.branch`.
@@ -84,7 +84,7 @@ Delete the branch and all the models in it. Same as executing `del atom.branch`.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">rename</strong>(name)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L137">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L128">[source]</a>
 </span>
 </div>
 Change the name of the branch.
@@ -106,7 +106,7 @@ New name for the branch. Can not be empty nor equal to an existing branch.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">status</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L137">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/branch.py#L152">[source]</a>
 </span>
 </div>
 Get an overview of the pipeline and models in the branch. This method

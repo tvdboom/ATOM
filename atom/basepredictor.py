@@ -278,6 +278,28 @@ class BasePredictor:
         check_is_fitted(self, attributes="_models")
         return self.winner.cross_validate(**kwargs)
 
+    @composed(crash, method_to_log, typechecked)
+    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
+        """Delete models from the trainer's pipeline.
+
+        Removes a model from the trainer. If the winning model is
+        removed, the next best model (through `metric_test` or
+        `mean_bootstrap`) is selected as winner. If all models are
+        removed, the metric and training approach are reset. Use this
+        method to drop unwanted models from the pipeline or to free
+        some memory before saving. The model is not removed from any
+        active mlflow experiment.
+
+        Parameters
+        ----------
+        models: str, sequence or None, optional (default=None)
+            Models to delete. If None, delete them all.
+
+        """
+        models = self._get_models(models)
+        delete(self, models)
+        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
+
     @composed(crash, typechecked)
     def evaluate(
         self,
@@ -309,28 +331,6 @@ class BasePredictor:
             scores = scores.append(m.evaluate(metric, dataset=dataset))
 
         return scores
-
-    @composed(crash, method_to_log, typechecked)
-    def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
-        """Delete models from the trainer's pipeline.
-
-        Removes a model from the trainer. If the winning model is
-        removed, the next best model (through `metric_test` or
-        `mean_bootstrap`) is selected as winner. If all models are
-        removed, the metric and training approach are reset. Use this
-        method to drop unwanted models from the pipeline or to free
-        some memory before saving. The model is not removed from any
-        active mlflow experiment.
-
-        Parameters
-        ----------
-        models: str, sequence or None, optional (default=None)
-            Models to delete. If None, delete them all.
-
-        """
-        models = self._get_models(models)
-        delete(self, models)
-        self.log(f"Model{'' if len(models) == 1 else 's'} deleted successfully!", 1)
 
     @composed(crash, typechecked)
     def get_class_weight(self, dataset: str = "train"):

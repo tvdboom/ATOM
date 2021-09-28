@@ -1795,8 +1795,44 @@
   
   
     <li class="md-nav__item">
-      <a href="../plot_permutation_importance/" class="md-nav__link">
-        plot_permutation_importance
+      <a href="../plot_gains/" class="md-nav__link">
+        plot_gains
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_lift/" class="md-nav__link">
+        plot_lift
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_errors/" class="md-nav__link">
+        plot_errors
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_residuals/" class="md-nav__link">
+        plot_residuals
       </a>
     </li>
   
@@ -1809,6 +1845,18 @@
     <li class="md-nav__item">
       <a href="../plot_feature_importance/" class="md-nav__link">
         plot_feature_importance
+      </a>
+    </li>
+  
+
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../plot_permutation_importance/" class="md-nav__link">
+        plot_permutation_importance
       </a>
     </li>
   
@@ -1871,30 +1919,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../plot_errors/" class="md-nav__link">
-        plot_errors
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_residuals/" class="md-nav__link">
-        plot_residuals
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../plot_confusion_matrix/" class="md-nav__link">
         plot_confusion_matrix
       </a>
@@ -1933,30 +1957,6 @@
     <li class="md-nav__item">
       <a href="../plot_calibration/" class="md-nav__link">
         plot_calibration
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_gains/" class="md-nav__link">
-        plot_gains
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../plot_lift/" class="md-nav__link">
-        plot_lift
       </a>
     </li>
   
@@ -2380,7 +2380,7 @@
 features=None, kind="average", target=None, title=None, figsize=(10, 6),
 filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1535">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1924">[source]</a>
 </span>
 </div>
 
@@ -2463,7 +2463,7 @@ Plot object. Only returned if <code>display=None</code>.
     <img src="../../../img/plots/plot_partial_dependence_1.png" alt="plot_partial_dependence_1" width="700" height="420"/>
 </div>
 <p><br>
-<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_partial_dependence</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)])</span>
+<div class="highlight"><pre><span></span><code><span class="n">atom</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">plot_partial_dependence</span><span class="p">(</span><span class="n">features</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">)),</span> <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
 </code></pre></div></p>
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>
@@ -2492,7 +2492,7 @@ Plot object. Only returned if <code>display=None</code>.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../plot_feature_importance/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_feature_importance" rel="prev">
+        <a href="../plot_permutation_importance/" class="md-footer__link md-footer__link--prev" aria-label="Previous: plot_permutation_importance" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -2501,20 +2501,20 @@ Plot object. Only returned if <code>display=None</code>.
               <span class="md-footer__direction">
                 Previous
               </span>
-              plot_feature_importance
+              plot_permutation_importance
             </div>
           </div>
         </a>
       
       
         
-        <a href="../plot_errors/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_errors" rel="next">
+        <a href="../plot_confusion_matrix/" class="md-footer__link md-footer__link--next" aria-label="Next: plot_confusion_matrix" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              plot_errors
+              plot_confusion_matrix
             </div>
           </div>
           <div class="md-footer__button md-icon">
