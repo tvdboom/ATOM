@@ -524,6 +524,11 @@ the data set is transformed and the transformer is added to atom's
 pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.
 
+!!! warning
+    The transformer's fit/transform methods should have arguments `X` (accepting
+    a 2d array-like object of shape=(n_samples, n_features)) and/or `y` (accepting
+    a sequence of shape=(n_samples,)).
+
 !!! note
     If the transformer doesn't return a dataframe,  the column naming happens as
     follows. If the transformer returns the same number of columns, the names are

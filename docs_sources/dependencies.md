@@ -31,7 +31,7 @@ packages to use machine learning estimators not provided by sklearn.
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
 * **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.24)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (=~0.24.0)
 * **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.8.1)
 * **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)

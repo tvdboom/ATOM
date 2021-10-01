@@ -96,7 +96,7 @@ atom.plot_partial_dependence()
 </div>
 <br>
 ```python
-atom.tree.plot_partial_dependence(features=(4, (3, 4)), kind="both")
+atom.tree.plot_partial_dependence(features=(4, (3, 4)))
 ```
 <div align="center">
     <img src="../../../img/plots/plot_partial_dependence_2.png" alt="plot_partial_dependence_2" width="700" height="420"/>
