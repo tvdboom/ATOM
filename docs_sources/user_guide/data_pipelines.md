@@ -115,16 +115,16 @@ logger.
 <br /><br /><br />
 
 
-
 ## Memory considerations
 
-An atom instance stores one copy of the dataframe in each branch. Note
-that there are always at least two branches in the instance: master
-(or another user defined branch) and one additional branch that stores
-the dataframe with which the class was initialized. This internal branch
+Atom stores one copy of the dataframe in each branch. Note that there
+are always at least two branches in the instance: master (or another
+user defined branch) and one additional branch that stores the
+dataframe with which the class was initialized. This internal branch
 is called `og` (original) and is used for the [reset](../../API/ATOM/atomclassifier/#reset)
-method and to be able to create new branches from the original dataframe,
-even after having applied transformations.
+and [cross_validate](../../API/ATOM/atomclassifier/#cross-validate)
+methods, as well as to be able to create new branches from the original
+dataframe, even after having applied transformations.
 
 Apart from the dataset itself, the model's [predictions](./predicting)
 are also stored as attributes of the model (e.g. `predict_proba_train`)
@@ -133,6 +133,10 @@ these attributes using the [reset_predictions](../../API/ATOM/atomclassifier/#re
 method to free some memory before [saving](../../API/ATOM/atomclassifier/#save)
 the class.
 
+!!! note
+    Sparse matrices fed to atom or an [exported pipeline](../../API/ATOM/atomclassifier/#export-pipeline)
+    are converted internally to the full array, filling large spaces
+    in memory.
 
 <br>
 

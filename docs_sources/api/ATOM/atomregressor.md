@@ -32,7 +32,7 @@ Dataset containing features and target. Allowed formats are:
 <li>X_train, X_test, y_train, y_test</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
 </ul>
-X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame<br>
+X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
 <p style="margin-top:0;margin-left:15px">
 Feature set with shape=(n_samples, n_features).</p>
 y: int, str or sequence<br>
@@ -500,6 +500,11 @@ not fitted, it is fitted on the complete training set. Afterwards,
 the data set is transformed and the transformer is added to atom's
 pipeline. If the transformer is a sklearn Pipeline, every transformer
 is merged independently with atom.
+
+!!! warning
+    The transformer's fit/transform methods should have arguments `X` (accepting
+    a 2d array-like object of shape=(n_samples, n_features)) and/or `y` (accepting
+    a sequence of shape=(n_samples,)).
 
 !!! note
     If the transformer doesn't return a dataframe,  the column naming happens as

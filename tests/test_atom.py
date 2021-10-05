@@ -642,6 +642,9 @@ def test_add_subset_columns():
     """Assert that you can use a subset of the columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
 
+    # Invalid length
+    pytest.raises(ValueError, atom.scale, columns="datetime")
+
     # Column indices
     cols = atom.columns.copy()
     atom.scale(columns=[3, 4])

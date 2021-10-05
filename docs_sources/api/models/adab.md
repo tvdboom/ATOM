@@ -216,35 +216,35 @@ attributes that are never used, saving time and memory.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>predict_train: np.ndarray</strong><br>
+<strong>predict_train: np.array</strong><br>
 Predictions of the model on the training set.
 </p>
 <p>
-<strong> predict_test: np.ndarray</strong><br>
+<strong> predict_test: np.array</strong><br>
 Predictions of the model on the test set.
 </p>
 <p>
-<strong>predict_proba_train: np.ndarray</strong><br>
+<strong>predict_proba_train: np.array</strong><br>
 Predicted probabilities of the model on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_proba_test: np.ndarray</strong><br>
+<strong>predict_proba_test: np.array</strong><br>
 Predicted probabilities of the model on the test set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_train: np.ndarray</strong><br>
+<strong>predict_log_proba_train: np.array</strong><br>
 Predicted log probabilities of the model on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_log_proba_test: np.ndarray</strong><br>
+<strong>predict_log_proba_test: np.array</strong><br>
 Predicted log probabilities of the model on the test set (only if classifier).
 </p>
 <p>
-<strong>decision_function_train: np.ndarray</strong><br>
+<strong>decision_function_train: np.array</strong><br>
 Decision function scores on the training set (only if classifier).
 </p>
 <p>
-<strong>decision_function_test: np.ndarray</strong><br>
+<strong>decision_function_test: np.array</strong><br>
 Decision function scores on the test set (only if classifier).
 </p>
 <p>

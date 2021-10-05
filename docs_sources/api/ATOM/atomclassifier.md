@@ -33,7 +33,7 @@ Dataset containing features and target. Allowed formats are:
 <li>X_train, X_test, y_train, y_test</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
 </ul>
-X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame<br>
+X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
 <p style="margin-top:0;margin-left:15px">
 Feature set with shape=(n_samples, n_features).</p>
 y: int, str or sequence<br>

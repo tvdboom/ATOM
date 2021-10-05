@@ -17,7 +17,7 @@ from functools import wraps
 from collections import deque
 from datetime import datetime
 from inspect import signature
-from scipy.sparse import issparse
+from scipy import sparse
 from collections.abc import MutableMapping
 from sklearn.base import BaseEstimator
 from sklearn.preprocessing import (
@@ -99,7 +99,7 @@ SEQUENCE = (list, tuple, np.ndarray, pd.Series)
 # Variable types
 SCALAR = Union[int, float]
 SEQUENCE_TYPES = Union[SEQUENCE]
-X_TYPES = Union[dict, list, tuple, np.ndarray, pd.DataFrame]
+X_TYPES = Union[dict, list, tuple, np.ndarray, sparse.spmatrix, pd.DataFrame]
 Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 
 # Non-sklearn models
@@ -427,6 +427,8 @@ def to_df(data, index=None, columns=None, pca=False):
     """
     if data is not None and not isinstance(data, pd.DataFrame):
         if not isinstance(data, dict):  # Dict already has column names
+            if sparse.issparse(data):
+                data = data.toarray()
             if columns is None and not pca:
                 columns = [f"Feature {str(i)}" for i in range(1, len(data[0]) + 1)]
             elif columns is None:
@@ -856,52 +858,60 @@ def get_columns(df, columns, only_numerical=False):
     """
     if columns is None:
         if only_numerical:
-            return list(df.select_dtypes(include=["number"]).columns)
+            select = list(df.select_dtypes(include=["number"]).columns)
         else:
-            return df.columns
+            select = df.columns
     elif isinstance(columns, slice):
-        return df.columns[columns]
-
-    cols, exclude = [], []
-    for col in lst(columns):
-        if isinstance(col, int):
-            try:
-                cols.append(df.columns[col])
-            except IndexError:
-                raise ValueError(
-                    f"Invalid value for the columns parameter, got {col} "
-                    f"but length of columns is {len(df.columns)}."
-                )
-        else:
-            if col not in df.columns:
-                if col.startswith("!"):
-                    col = col[1:]
-                    if col in df.columns:
-                        exclude.append(col)
+        select = df.columns[columns]
+    else:
+        cols, exc = [], []
+        for col in lst(columns):
+            if isinstance(col, int):
+                try:
+                    cols.append(df.columns[col])
+                except IndexError:
+                    raise ValueError(
+                        f"Invalid value for the columns parameter, got {col} "
+                        f"but length of columns is {len(df.columns)}."
+                    )
+            else:
+                if col not in df.columns:
+                    if col.startswith("!"):
+                        col = col[1:]
+                        if col in df.columns:
+                            exc.append(col)
+                        else:
+                            try:
+                                exc.extend(list(df.select_dtypes(include=col).columns))
+                            except TypeError:
+                                raise ValueError(
+                                    "Invalid value for the columns parameter. "
+                                    f"Column {col} not found in the dataset."
+                                )
                     else:
                         try:
-                            exclude.extend(list(df.select_dtypes(include=col).columns))
+                            cols.extend(list(df.select_dtypes(include=col).columns))
                         except TypeError:
                             raise ValueError(
                                 "Invalid value for the columns parameter. "
                                 f"Column {col} not found in the dataset."
                             )
                 else:
-                    try:
-                        cols.extend(list(df.select_dtypes(include=col).columns))
-                    except TypeError:
-                        raise ValueError(
-                            "Invalid value for the columns parameter. "
-                            f"Column {col} not found in the dataset."
-                        )
-            else:
-                cols.append(col)
+                    cols.append(col)
 
-    # If columns were excluded with `!`, select all but those
-    if exclude:
-        return list(dict.fromkeys([col for col in df.columns if col not in exclude]))
-    else:
-        return list(dict.fromkeys(cols))  # Avoid duplicates
+        # If columns were excluded with `!`, select all but those
+        if exc:
+            select = list(dict.fromkeys([col for col in df.columns if col not in exc]))
+        else:
+            select = list(dict.fromkeys(cols))  # Avoid duplicates
+
+    if len(select) == 0:
+        raise ValueError(
+            "Invalid value for the columns parameter, got "
+            f"{select}. At least one column has to be selected."
+        )
+
+    return select
 
 
 # Pipeline functions =============================================== >>
@@ -977,11 +987,13 @@ def reorder_cols(df, original_df, col_names):
 
 def fit_one(transformer, X=None, y=None, message=None, **fit_params):
     """Fit the data using one estimator."""
+    X, y = to_df(X), to_series(y)
+
     with _print_elapsed_time("Pipeline", message):
         if hasattr(transformer, "fit"):
             args = []
             if "X" in signature(transformer.fit).parameters:
-                args.append(pd.DataFrame(X)[getattr(transformer, "_cols", X.columns)])
+                args.append(X[getattr(transformer, "_cols", X.columns)])
             if "y" in signature(transformer.fit).parameters:
                 args.append(y)
             transformer.fit(*args, **fit_params)
@@ -989,9 +1001,11 @@ def fit_one(transformer, X=None, y=None, message=None, **fit_params):
 
 def transform_one(transformer, X=None, y=None):
     """Transform the data using one estimator."""
+    X, y = to_df(X), to_series(y)
+
     args = []
     if "X" in signature(transformer.transform).parameters:
-        args.append(pd.DataFrame(X)[getattr(transformer, "_cols", X.columns)])
+        args.append(X[getattr(transformer, "_cols", X.columns)])
     if "y" in signature(transformer.transform).parameters:
         args.append(y)
     output = transformer.transform(*args)
@@ -1008,19 +1022,18 @@ def transform_one(transformer, X=None, y=None):
     if new_X is not None:
         use_cols = getattr(transformer, "_cols", X.columns)
 
+        # Convert to pandas and assign proper column names
         if not isinstance(new_X, pd.DataFrame):
-            # If sparse matrix, convert back to array
-            if issparse(new_X):
+            if sparse.issparse(new_X):
                 new_X = new_X.toarray()
 
-            # Convert to pandas and assign proper column names
             new_X = to_df(new_X, columns=name_cols(new_X, X, use_cols))
 
         # Reorder columns in case only a subset was used
         new_X = reorder_cols(new_X, X, use_cols)
 
     if new_y is not None:
-        new_y = to_series(new_y, name=getattr(y, "name", None))
+        new_y = to_series(new_y, name=y.name)
 
     return new_X, new_y
 

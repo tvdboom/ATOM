@@ -31,7 +31,7 @@ the <a href="../atomclassifier/#save">save</a> method). Allowed formats are:
 <li>X_train, X_test, y_train, y_test</li>
 <li>(X_train, y_train), (X_test, y_test)</li>
 </ul>
-X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame<br>
+X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame<br>
 <p style="margin-top:0;margin-left:15px">
 Feature set with shape=(n_samples, n_features). If no y is provided, the
 last column is used as target.</p>

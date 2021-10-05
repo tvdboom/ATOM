@@ -4,6 +4,7 @@
 <a name="v500"></a>
 ### Version 5.0.0
 
+* Sparse matrices are now accepted as input.
 
 
 <a name="v480"></a>

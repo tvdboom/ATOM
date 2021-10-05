@@ -729,7 +729,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../API/ATOM/atomloader/" class="md-nav__link">
+      <a href="../../API/ATOM/atomloader.md" class="md-nav__link">
         ATOMLoader
       </a>
     </li>
@@ -2515,19 +2515,26 @@ prints the same information as the __repr__ and also saves it to the
 logger.
 <br /><br /><br /></p>
 <h2 id="memory-considerations">Memory considerations</h2>
-<p>An atom instance stores one copy of the dataframe in each branch. Note
-that there are always at least two branches in the instance: master
-(or another user defined branch) and one additional branch that stores
-the dataframe with which the class was initialized. This internal branch
+<p>Atom stores one copy of the dataframe in each branch. Note that there
+are always at least two branches in the instance: master (or another
+user defined branch) and one additional branch that stores the
+dataframe with which the class was initialized. This internal branch
 is called <code>og</code> (original) and is used for the <a href="../../API/ATOM/atomclassifier/#reset">reset</a>
-method and to be able to create new branches from the original dataframe,
-even after having applied transformations.</p>
+and <a href="../../API/ATOM/atomclassifier/#cross-validate">cross_validate</a>
+methods, as well as to be able to create new branches from the original
+dataframe, even after having applied transformations.</p>
 <p>Apart from the dataset itself, the model's <a href="./predicting">predictions</a>
 are also stored as attributes of the model (e.g. <code>predict_proba_train</code>)
 and can occupy considerable memory for large datasets. You can delete
 these attributes using the <a href="../../API/ATOM/atomclassifier/#reset-predictions">reset_predictions</a>
 method to free some memory before <a href="../../API/ATOM/atomclassifier/#save">saving</a>
 the class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Sparse matrices fed to atom or an <a href="../../API/ATOM/atomclassifier/#export-pipeline">exported pipeline</a>
+are converted internally to the full array, filling large spaces
+in memory.</p>
+</div>
 <p><br></p>
 <h2 id="data-transformations">Data transformations</h2>
 <p>Performing data transformations is a common requirement of many datasets

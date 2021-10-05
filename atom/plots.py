@@ -355,7 +355,7 @@ class BasePlotter:
 
         Returns
         -------
-        shap_values: np.ndarray
+        shap_values: np.array
             SHAP values for the target class.
 
         expected_value: float or list
