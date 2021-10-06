@@ -361,18 +361,8 @@ Fontsize for the ticks along the plot's axes.
 
 <table style="font-size:16px">
 <tr>
-<td><a href="#calibrate">calibrate</a></td>
-<td>Calibrate the winning model.</td>
-</tr>
-
-<tr>
 <td><a href="#canvas">canvas</a></td>
 <td>Create a figure with multiple plots.</td>
-</tr>
-
-<tr>
-<td><a href="#cross-validate">cross_validate</a></td>
-<td>Evaluate the winning model using cross-validation.</td>
 </tr>
 
 <tr>
@@ -438,39 +428,6 @@ Fontsize for the ticks along the plot's axes.
 <br>
 
 
-<a name="calibrate"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L270">[source]</a>
-</span>
-</div>
-Applies probability calibration on the winning model. The
-estimator is trained via cross-validation on a subset of the
-training data, using the rest to fit the calibrator. The new
-classifier will replace the `estimator` attribute and is
-logged to any active mlflow experiment. Since the estimator
-changed, all the model's prediction attributes are reset.
-
-!!! tip
-    Use the [plot_calibration](../../plots/plot_calibration) method to
-    visualize a model's calibration.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
-Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Use this only if you have another, independent set
-for testing.
-</td>
-</tr>
-</table>
-<br />
-
-
 <a name="canvas"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
@@ -512,38 +469,6 @@ If None, the figure is not saved.
 <strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
 </p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="cross-validate"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L276">[source]</a>
-</span>
-</div>
-Evaluate the winning model using cross-validation. This method cross-validates
-the whole pipeline on the complete dataset. Use it to assess the robustness of
-the model's performance.
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function. If the scoring method is not specified, it uses
-the trainer's metric.
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>scores: dict</strong><br>
-Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function.
 </td>
 </tr>
 </table>

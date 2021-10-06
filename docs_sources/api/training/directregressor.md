@@ -363,11 +363,6 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 
 <tr>
-<td><a href="#cross-validate">cross_validate</a></td>
-<td>Evaluate the winning model using cross-validation.</td>
-</tr>
-
-<tr>
 <td><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
@@ -466,38 +461,6 @@ If None, the figure is not saved.
 <strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
 </p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="cross-validate"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L276">[source]</a>
-</span>
-</div>
-Evaluate the winning model using cross-validation. This method cross-validates
-the whole pipeline on the complete dataset. Use it to assess the robustness of
-the model's performance.
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function. If the scoring method is not specified, it uses
-the trainer's metric.
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>scores: dict</strong><br>
-Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function.
 </td>
 </tr>
 </table>

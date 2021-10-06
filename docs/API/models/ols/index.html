@@ -2737,7 +2737,7 @@ removed from any active mlflow experiment.
 <br /><br /><br /></p>
 <p><a name="export-pipeline"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L630">[source]</a>
 </span>
@@ -2745,30 +2745,26 @@ removed from any active mlflow experiment.
 <p>Export the model's pipeline to a sklearn-like object. If the model
 used feature scaling, the Scaler is added before the model. The
 returned pipeline is already fitted on the training set.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>ATOM's Pipeline class behaves exactly the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
-and additionally, it's compatible with transformers that drop samples
-and transformers that change the target column.</p>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Due to incompatibilities with sklearn's API, the exported pipeline always
-fits/transforms on the entire dataset provided. Beware that this can
-cause errors if the transformers were fitted on a subset of the data.</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+and additionally:
+<ul>
+<li>Accepts transformers that change the target column.</li>
+<li>Accepts transformers that drop rows.</li>
+<li>Accepts transformers that only are fitted on a subset of the
+    provided dataset.</li>
+<li>Always outputs pandas objects.</li>
+<li>Uses transformers that are only applied on the training set (see the
+    <a href="../../ATOM/atomclassifier/#balance">balance</a> or
+    <a href="../../ATOM/atomclassifier/#prune">prune</a> methods)
+    to fit the pipeline, not to make predictions on unseen data.</li>
+</ul></p>
 </div>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
-</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline.

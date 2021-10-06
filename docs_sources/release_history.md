@@ -4,7 +4,13 @@
 <a name="v500"></a>
 ### Version 5.0.0
 
+* The [calibrate](../API/models/gnb/#calibrate) and [cross_validate](../API/models/gnb/#cross-validate)
+  methods can no longer be accessed from the trainers.
+* The `pipeline` parameter for the [prediction methods](../user_guide/predicting)
+  is deprecated.
 * Sparse matrices are now accepted as input.
+* Fixed a bug where custom scalers were ignored by the models.
+* Documentation improvements.
 
 
 <a name="v480"></a>

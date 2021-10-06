@@ -209,14 +209,14 @@ def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    pytest.raises(PermissionError, atom.calibrate)
+    pytest.raises(PermissionError, atom.ols.calibrate)
 
 
 def test_calibrate():
     """Assert that calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.calibrate(cv=3)
+    atom.mnb.calibrate(cv=3)
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
@@ -224,7 +224,7 @@ def test_calibrate_prefit():
     """Assert that calibrate method works as intended when cv="prefit"."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.calibrate(cv="prefit")
+    atom.mnb.calibrate(cv="prefit")
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
@@ -232,8 +232,7 @@ def test_calibrate_reset_predictions():
     """Assert that the prediction attributes are reset after calibrating."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    print(atom.mnb.score_test)
-    atom.calibrate()
+    atom.mnb.calibrate()
     assert atom.mnb._pred_attrs[9] is None
 
 

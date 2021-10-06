@@ -32,11 +32,26 @@ class Pipeline(pipeline.Pipeline):
         - Accepts transformers that only are fitted on a subset
           of the provided dataset.
         - Always outputs pandas objects.
+        - Uses transformers that are only applied on the training set
+          to fit the pipeline, not to make predictions on unseen data.
 
     Partially from https://github.com/scikit-learn-contrib/imbalanced
     -learn/blob/master/imblearn/pipeline.py.
 
     """
+
+    def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
+        """Generate (idx, (name, trans)) tuples from self.steps.
+
+        By default, estimators that are only applied on the training
+        set are filtered out for predictions.
+
+        """
+        it = super()._iter(with_final, filter_passthrough)
+        if filter_train_only:
+            return filter(lambda x: not getattr(x[-1], "_train_only", False), it)
+        else:
+            return it
 
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
@@ -45,7 +60,7 @@ class Pipeline(pipeline.Pipeline):
         # Setup the memory
         memory = check_memory(self.memory).cache(fit_transform_one)
 
-        for (step_idx, name, transformer) in self._iter(False, False):
+        for (step_idx, name, transformer) in self._iter(False, False, False):
             if transformer is None or transformer == "passthrough":
                 with _print_elapsed_time("Pipeline", self._log_message(step_idx)):
                     continue

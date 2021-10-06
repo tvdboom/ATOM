@@ -69,17 +69,12 @@ def test_invalid_method():
 
 
 def test_transformations_first():
-    """Assert that all transformations are applied before predicting."""
+    """Assert that the transformations are applied before predicting."""
     atom = ATOMClassifier(X10_str, y10, verbose=2, random_state=1)
     atom.encode(max_onehot=None)
     atom.prune(max_sigma=1.7)
     atom.run("Tree")
-    pred_1 = atom.tree.predict(X10_str, pipeline=None)
-    pred_2 = atom.tree.predict(X10_str, pipeline=True)
-    assert not np.array_equal(pred_1, pred_2)
-
-    # Fails because the data is not encoded
-    pytest.raises(ValueError, atom.tree.predict, X10_str, pipeline=False)
+    assert not atom.errors
 
 
 def test_data_is_scaled():

@@ -3,16 +3,16 @@
 
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
-y, metric=None, sample_weights=None, pipeline=None, verbose=None)
+y, metric=None, sample_weights=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L210">[source]</a>
 </span>
 </div>
 
-Transform new data through all transformers in the current branch and
-return a metric score. If called from a trainer, the best model in
-the pipeline (under the `winner` attribute) is used. If called from a
-model, that model is used.
+Transform new data through the current branch and return a metric score.
+Transformers that are only applied on the training set are skipped.
+If called from a trainer, the best model in the pipeline (under the
+`winner` attribute) is used. If called from a model, that model is used.
 
 <table style="font-size:16px">
 <tr>
@@ -39,14 +39,6 @@ tasks and r2 for regression tasks.
 <strong>sample_weights: sequence or None, optional (default=None)</strong><br>
 Sample weights corresponding to y.
 </p>
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
-</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the output. If None, it uses the transformer's own verbosity.
@@ -62,11 +54,11 @@ Metric score of X with respect to y.
 </tr>
 </table>
 
-!!! note
+!!! info
     If the `metric` parameter is left to its default value, the method
     outputs the same value as sklearn's score method for an estimator. 
 
-!!! info
+!!! note
     This method is intended to calculate metric scores on new data.
     To get the metric results on the train or test set, use the
     [evaluate](../../ATOM/atomclassifier/#evaluate) method.

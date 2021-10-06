@@ -2,17 +2,15 @@
 -----------
 
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L789">[source]</a>
 </span>
 </div>
 
-Transform new data through all transformers in the current branch. By
-default, transformers that are applied on the training set only are
-not used during the transformations. Use the `pipeline` parameter to
-customize this behaviour. This method can only be called from atom,
-not from the models.
+Transform new data through the current branch. Transformers that are
+only applied on the training set are skipped. This method can only be
+called from atom, not from the models.
 
 <table style="font-size:16px">
 <tr>
@@ -28,14 +26,6 @@ Features to transform, with shape=(n_samples, n_features).
 <li>If int: Position of the target column in X.</li>
 <li>If str: Name of the target column in X.</li>
 <li>Else: Target column with shape=(n_samples,).</li>
-</ul>
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
 </ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>

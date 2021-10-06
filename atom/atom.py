@@ -211,7 +211,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Whether the feature set is scaled."""
         if not check_multidim(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
-            return check_scaling(self.X) or "scaler" in est_names
+            return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
     @property
     def duplicates(self):
@@ -423,17 +423,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     def export_pipeline(
         self,
         model: Optional[str] = None,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
         verbose: Optional[int] = None,
     ):
         """Export atom's pipeline to a sklearn-like Pipeline object.
 
         Optionally, you can add a model as final estimator. The
         returned pipeline is already fitted on the training set.
-        Note that custom transformers and transformers that were
-        not fitted on all columns are added inside a meta-estimator
-        called TransformerWrapper that always returns pd.DataFrame
-        and only utilises the columns used for fitting.
 
         Parameters
         ----------
@@ -442,15 +437,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             pipeline. If the model used feature scaling, the Scaler
             is added before the model. If None, only the
             transformers are added.
-
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to export.
-                - If None: Only transformers that are applied on the
-                           whole dataset are exported.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
 
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
@@ -462,26 +448,18 @@ class ATOM(BasePredictor, ATOMPlotter):
             Current branch as a sklearn-like Pipeline object.
 
         """
-        if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
-        elif pipeline is False:
-            pipeline = []
-        elif pipeline is True:
-            pipeline = list(range(len(self.pipeline)))
-
-        if len(pipeline) == 0 and not model:
-            raise ValueError("The selected pipeline seems to be empty!")
+        if len(self.pipeline) == 0 and not model:
+            raise ValueError("There is no pipeline to export!")
 
         steps = []
-        for idx, transformer in enumerate(self.pipeline):
-            if idx in pipeline:
-                est = deepcopy(transformer)  # Not clone to keep fitted
+        for transformer in self.pipeline:
+            est = deepcopy(transformer)  # Not clone to keep fitted
 
-                # Set the new verbosity (if possible)
-                if verbose is not None and hasattr(est, "verbose"):
-                    est.verbose = verbose
+            # Set the new verbosity (if possible)
+            if verbose is not None and hasattr(est, "verbose"):
+                est.verbose = verbose
 
-                steps.append((get_pl_name(est.__class__.__name__, steps), est))
+            steps.append((get_pl_name(est.__class__.__name__, steps), est))
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
@@ -786,18 +764,11 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
-    def transform(
-        self,
-        X: X_TYPES,
-        y: Y_TYPES = None,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-        verbose: Optional[int] = None,
-    ):
-        """Transform new data through all transformers in the branch.
+    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+        """Transform new data through the branch.
 
-        By default, transformers that are applied on the training
-        set only are not used during the transformations. Use the
-        `pipeline` parameter to customize this behaviour.
+        Transformers that are only applied on the training set are
+        skipped.
 
         Parameters
         ----------
@@ -812,15 +783,6 @@ class ATOM(BasePredictor, ATOMPlotter):
 
             Feature set with shape=(n_samples, n_features).
 
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to use on the data before predicting.
-                - If None: Only transformers that are applied on the
-                           whole dataset are used.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
@@ -834,16 +796,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
-        elif pipeline is False:
-            pipeline = []
-        elif pipeline is True:
-            pipeline = list(range(len(self.pipeline)))
-
-        for idx, est in enumerate(self.pipeline):
-            if idx in pipeline:
-                X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+        for est in [est for est in self.pipeline if not est._train_only]:
+            X, y = custom_transform(self, est, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
 
@@ -947,7 +901,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         train_only: bool, optional (default=False)
             Whether to apply the estimator only on the training set or
-            on the complete dataset.
+            on the complete dataset. Note that if True, the transformation
+            is skipped when making predictions on unseen data.
 
         **fit_params
             Additional keyword arguments passed to the estimator's fit
@@ -1203,10 +1158,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Replace or remove outliers. The definition of outlier depends
         on the selected strategy and can greatly differ from one
-        another. Only outliers from the training set are pruned in
-        order to maintain the original distribution of samples in
-        the test set. Ignores categorical columns. The estimators
+        another. Ignores categorical columns. The estimators
         created by the class are attached to atom.
+
+        This transformation is only applied to the training set in
+        order to maintain the original distribution of samples in
+        the test set.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -1233,10 +1190,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     def balance(self, strategy: str = "ADASYN", **kwargs):
         """Balance the number of rows per class in the target column.
 
-        Only the training set is balanced in order to maintain the
-        original distribution of target classes in the test set.
         Use only for classification tasks. The estimator created by
         the class is attached to atom.
+
+        This transformation is only applied to the training set in
+        order to maintain the original distribution of target classes
+        in the test set.
 
         See data_cleaning.py for a description of the parameters.
 

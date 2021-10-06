@@ -2895,11 +2895,6 @@ manage the pipeline.</p>
 </tr>
 
 <tr>
-<td><a href="#cross-validate">cross_validate</a></td>
-<td>Evaluate the winning model using cross-validation.</td>
-</tr>
-
-<tr>
 <td><a href="#delete">delete</a></td>
 <td>Remove a model from the pipeline.</td>
 </tr>
@@ -3040,8 +3035,9 @@ transforms all columns except <code>Location</code>.
 </p>
 <p>
 <strong>train_only: bool, optional (default=False)</strong><br>
-Whether to apply the transformer only on the training set or
-on the complete dataset.
+Whether to apply the estimator only on the training set or
+on the complete dataset. Note that if True, the transformation
+is skipped when making predictions on unseen data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
@@ -3161,36 +3157,6 @@ Whether to render the plot.
 </tr>
 </table>
 <p><br /></p>
-<p><a name="cross-validate"></a></p>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L276">[source]</a>
-</span>
-</div>
-<p>Evaluate the winning model using cross-validation. This method cross-validates
-the whole pipeline on the complete dataset. Use it to assess the robustness of
-the model's performance.</p>
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function. If the scoring method is not specified, it uses
-the trainer's metric.
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>scores: dict</strong><br>
-Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function.
-</td>
-</tr>
-</table>
-<p><br /></p>
 <p><a name="delete"></a></p>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">delete</strong>(models=None)
@@ -3304,8 +3270,7 @@ Scores of the models.
 <p><br /></p>
 <p><a name="export-pipeline"></a></p>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None,
-pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L423">[source]</a>
 </span>
@@ -3316,14 +3281,17 @@ on the training set.</p>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
 <p>ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
-and additionally:</p>
+and additionally:
 <ul>
 <li>Accepts transformers that change the target column.</li>
 <li>Accepts transformers that drop rows.</li>
-<li>Accepts transformers that only are fitted on a subset
-  of the provided dataset.</li>
+<li>Accepts transformers that only are fitted on a subset of the
+    provided dataset.</li>
 <li>Always outputs pandas objects.</li>
-</ul>
+<li>Uses transformers that are only applied on the training set (see
+    the <a href="#prune">prune</a> method) to fit the pipeline,
+    not to make predictions on unseen data.</li>
+</ul></p>
 </div>
 <table style="font-size:16px">
 <tr>
@@ -3335,14 +3303,6 @@ Name of the model to add as a final estimator to the pipeline. If the
 model used feature scaling, the <a href="../../data_cleaning/scaler">Scaler</a>
 is added before the model. If None, only the transformers are added.
 </p>
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
-</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline.
@@ -3800,12 +3760,15 @@ method="drop", max_sigma=3, include_target=False, **kwargs)
 </div>
 <p>Prune outliers from the training set. The definition of outlier depends
 on the selected strategy and can greatly differ from one each other. 
-Ignores categorical columns. Only outliers from the training set are
-pruned in order to maintain the original distribution of samples in the
-test set. Ignores categorical columns. The estimators created by the class
+Ignores categorical columns. The estimators created by the class
 are attached to atom. See <a href="../../data_cleaning/pruner/">Pruner</a> for a
-description of the parameters.
-<br /><br /><br /></p>
+description of the parameters.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This transformation is only applied to the training set in order
+to maintain the original distribution of samples in the test set.</p>
+</div>
+<p><br /><br /><br /></p>
 <h2 id="nlp">NLP</h2>
 <p>The Natural Language Processing (NLP) transformers help to convert raw
 text to meaningful numeric values, ready to be ingested by a model.</p>

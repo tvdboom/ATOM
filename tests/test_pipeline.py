@@ -58,6 +58,12 @@ def test_fit_transform(pipeline):
     assert isinstance(pl.fit_transform(X_bin, y_bin), tuple)  # Returns X, y
 
 
+def test_transform_train_only(pipeline):
+    """Assert that the pipeline ignores train_only during predicting."""
+    pl = pipeline(model=False)
+    assert len(pl.transform(X_bin)) == len(X_bin)  # Pruner is not applied
+
+
 def test_predict(pipeline):
     """Assert that the pipeline uses predict normally."""
     pl = pipeline(model=True)

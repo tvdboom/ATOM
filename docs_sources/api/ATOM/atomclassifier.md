@@ -398,18 +398,8 @@ manage the pipeline.
 </tr>
 
 <tr>
-<td><a href="#calibrate">calibrate</a></td>
-<td>Calibrate the winning model.</td>
-</tr>
-
-<tr>
 <td><a href="#canvas">canvas</a></td>
 <td>Create a figure with multiple plots.</td>
-</tr>
-
-<tr>
-<td><a href="#cross-validate">cross_validate</a></td>
-<td>Evaluate the winning model using cross-validation.</td>
 </tr>
 
 <tr>
@@ -558,8 +548,9 @@ transforms all columns except <code>Location</code>.
 </p>
 <p>
 <strong>train_only: bool, optional (default=False)</strong><br>
-Whether to apply the transformer only on the training set or
-on the complete dataset.
+Whether to apply the estimator only on the training set or
+on the complete dataset. Note that if True, the transformation
+is skipped when making predictions on unseen data.
 </p>
 <p>
 <strong>**fit_params</strong><br>
@@ -640,39 +631,6 @@ Keyword arguments for <a href="https://epistasislab.github.io/tpot/api/#classifi
 <br />
 
 
-<a name="calibrate"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">calibrate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L270">[source]</a>
-</span>
-</div>
-Applies probability calibration on the winning model. The
-estimator is trained via cross-validation on a subset of the
-training data, using the rest to fit the calibrator. The new
-classifier will replace the `estimator` attribute and is
-logged to any active mlflow experiment. Since the estimator
-changed, all the model's prediction attributes are reset.
-
-!!! tip
-    Use the [plot_calibration](../../plots/plot_calibration) method to
-    visualize a model's calibration.
-
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.calibration.CalibratedClassifierCV.html">CalibratedClassifierCV</a>.
-Using cv="prefit" will use the trained model and fit the calibrator
-on the test set. Use this only if you have another, independent set
-for testing.
-</td>
-</tr>
-</table>
-<br />
-
-
 <a name="canvas"></a>
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">canvas</strong>(nrows=1,
@@ -714,38 +672,6 @@ If None, the figure is not saved.
 <strong>display: bool, optional (default=True)</strong><br>
 Whether to render the plot.
 </p>
-</td>
-</tr>
-</table>
-<br />
-
-
-<a name="cross-validate"></a>
-<div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">cross_validate</strong>(**kwargs)
-<span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L276">[source]</a>
-</span>
-</div>
-Evaluate the winning model using cross-validation. This method cross-validates
-the whole pipeline on the complete dataset. Use it to assess the robustness of
-the model's performance.
-<table style="font-size:16px">
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
-<td width="80%" class="td_params">
-<strong>**kwargs</strong><br>
-Additional keyword arguments for sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function. If the scoring method is not specified, it uses
-the trainer's metric.
-</td>
-</tr>
-<tr>
-<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
-<td width="80%" class="td_params">
-<strong>scores: dict</strong><br>
-Return of sklearn's <a href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.cross_validate.html">cross_validate</a>
-function.
 </td>
 </tr>
 </table>
@@ -873,8 +799,7 @@ Scores of the models.
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None,
-pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(model=None, verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/atom.py#L423">[source]</a>
 </span>
@@ -886,12 +811,16 @@ on the training set.
 !!! info
     ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
     and additionally:
-
-    * Accepts transformers that change the target column.
-    * Accepts transformers that drop rows.
-    * Accepts transformers that only are fitted on a subset
-      of the provided dataset.
-    * Always outputs pandas objects.
+    <ul>
+    <li>Accepts transformers that change the target column.</li>
+    <li>Accepts transformers that drop rows.</li>
+    <li>Accepts transformers that only are fitted on a subset of the
+        provided dataset.</li>
+    <li>Always outputs pandas objects.</li>
+    <li>Uses transformers that are only applied on the training set (see the
+        <a href="#balance">balance</a> or <a href="#prune">prune</a> methods)
+        to fit the pipeline, not to make predictions on unseen data.</li>
+    </ul>
 
 <table style="font-size:16px">
 <tr>
@@ -903,14 +832,6 @@ Name of the model to add as a final estimator to the pipeline. If the
 model used feature scaling, the <a href="../../data_cleaning/scaler">Scaler</a>
 is added before the model. If None, only the transformers are added.
 </p>
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
-</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline.
@@ -1449,11 +1370,14 @@ method="drop", max_sigma=3, include_target=False, **kwargs)
 </div>
 Prune outliers from the training set. The definition of outlier depends
 on the selected strategy and can greatly differ from one each other. 
-Ignores categorical columns. Only outliers from the training set are
-pruned in order to maintain the original distribution of samples in the
-test set. Ignores categorical columns. The estimators created by the class
+Ignores categorical columns. The estimators created by the class
 are attached to atom. See [Pruner](../data_cleaning/pruner.md) for a
 description of the parameters.
+
+!!! note
+    This transformation is only applied to the training set in order
+    to maintain the original distribution of samples in the test set.
+
 <br /><br /><br />
 
 
@@ -1465,10 +1389,14 @@ description of the parameters.
 </span>
 </div>
 Balance the number of samples per target class in the target column.
-Only the training set is balanced in order to maintain the original
-distribution of target classes in the test set. The estimator created
-by the class is attached to atom. See [Balancer](../data_cleaning/balancer.md)
-for a description of the parameters.
+The estimator created by the class is attached to atom. See
+[Balancer](../data_cleaning/balancer.md) for a description of the
+parameters.
+
+!!! note
+    This transformation is only applied to the training set in order to
+    maintain the original distribution of target classes in the test set.
+
 <br /><br /><br />
 
 

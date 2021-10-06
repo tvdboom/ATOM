@@ -691,11 +691,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         return cv
 
     @composed(crash, typechecked)
-    def export_pipeline(
-        self,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-        verbose: Optional[int] = None,
-    ):
+    def export_pipeline(self, verbose: Optional[int] = None):
         """Export the model's pipeline to a sklearn-like object.
 
         If the model used feature scaling, the Scaler is added
@@ -704,15 +700,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Parameters
         ----------
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to export.
-                - If None: Only transformers that are applied on the
-                           whole dataset are exported.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
             None, it leaves them to their original verbosity.
@@ -724,7 +711,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         if hasattr(self.T, "export_pipeline"):
-            return self.T.export_pipeline(self.name, pipeline, verbose)
+            return self.T.export_pipeline(self.name, verbose)
         else:
             steps = []
             if self.scaler:

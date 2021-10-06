@@ -302,23 +302,6 @@ def test_get_models_remove_duplicates():
     assert atom._get_models(["LR1", "LR1"]) == ["LR1"]
 
 
-def test_calibrate():
-    """Assert that the calibrate method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.calibrate)
-    atom.run("LR")
-    atom.calibrate()
-    assert atom.winner.estimator.__class__.__name__ == "CalibratedClassifierCV"
-
-
-def test_cross_validate():
-    """Assert that the cross_validate method works as intended."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.cross_validate)
-    atom.run("LR")
-    assert isinstance(atom.cross_validate(), dict)
-
-
 @pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
 def test_evaluate(metric):
     """Assert that the evaluate method works when metric is None."""

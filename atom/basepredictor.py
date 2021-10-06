@@ -266,18 +266,6 @@ class BasePredictor:
 
             return list(dict.fromkeys(to_return))  # Avoid duplicates
 
-    @composed(crash, method_to_log)
-    def calibrate(self, **kwargs):
-        """Calibrate the winning model."""
-        check_is_fitted(self, attributes="_models")
-        self.winner.calibrate(**kwargs)
-
-    @composed(crash, method_to_log)
-    def cross_validate(self, **kwargs):
-        """Evaluate the winning model using cross-validation."""
-        check_is_fitted(self, attributes="_models")
-        return self.winner.cross_validate(**kwargs)
-
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
         """Delete models from the trainer's pipeline.
