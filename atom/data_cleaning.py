@@ -9,12 +9,11 @@ Description: Module containing the data cleaning estimators.
 
 # Standard packages
 import numpy as np
-import pandas as pd
 from inspect import signature
+from scipy.stats import zscore
 from typeguard import typechecked
 from collections import defaultdict
 from typing import Union, Optional, Dict, Any
-from scipy.stats import zscore
 from sklearn.base import BaseEstimator, clone
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import (

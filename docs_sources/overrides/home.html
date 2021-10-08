@@ -155,6 +155,11 @@
         transition: all 0.25s ease;
     }
 
+   [data-md-color-scheme="slate"] .story {
+        background: #355876;
+        color: #dfe1f2;
+    }
+
    .story:hover {
         -webkit-transform: scale(1.06);
         -ms-transform: scale(1.06);
@@ -174,6 +179,10 @@
         text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
     }
 
+    [data-md-color-scheme="slate"] .story-title {
+        background: #355876;
+    }
+
    .story-text {
         padding: 0 30px 0 30px;
         color: #4c4c54;
@@ -181,11 +190,19 @@
         font-size: 1.5em;
     }
 
+   [data-md-color-scheme="slate"] .story-text {
+        color: #dfe1f2;
+    }
+
     .story-read {
         background: #FFF;
         padding: 15px;
         text-align: left;
         overflow: hidden;
+    }
+
+    [data-md-color-scheme="slate"] .story-read {
+        background: #355876;
     }
 
     .story-read .read-more {
@@ -205,6 +222,17 @@
     }
 
     .story-read .read-more:hover {
+        background: white;
+        color: #355876;
+    }
+
+    [data-md-color-scheme="slate"] .story-read .read-more {
+        border-color: white;
+        background: #355876;
+        color: white;
+    }
+
+    [data-md-color-scheme="slate"] .story-read .read-more:hover {
         background: white;
         color: #355876;
     }
@@ -298,7 +326,7 @@
 
             <div class="story-read">
                 <a href="https://towardsdatascience.com/atom-a-python-package-for-fast-exploration-of-machine-learning-pipelines-653956a16e7b"
-                   class="read-more">Read more</a>
+                   draggable="false" class="read-more">Read more</a>
             </div>
         </div>
 
@@ -316,7 +344,7 @@
 
             <div class="story-read">
                 <a href="https://towardsdatascience.com/how-to-test-multiple-machine-learning-pipelines-with-just-a-few-lines-of-python-1a16cb4686d"
-                   class="read-more">Read more</a>
+                   draggable="false" class="read-more">Read more</a>
             </div>
         </div>
         <div class="story">
@@ -334,7 +362,7 @@
 
             <div class="story-read">
                 <a href="https://towardsdatascience.com/from-raw-data-to-web-app-deployment-with-atom-and-streamlit-d8df381aa19f"
-                   class="read-more">Read more</a>
+                   draggable="false" class="read-more">Read more</a>
             </div>
         </div>
     </div>

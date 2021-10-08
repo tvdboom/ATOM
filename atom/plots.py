@@ -88,7 +88,7 @@ class BaseFigure:
         self._used_models = []  # Models plotted in this figure
 
         # Create new figure and corresponding grid
-        figure = plt.figure(constrained_layout=True if is_canvas else False)
+        figure = plt.figure(constrained_layout=is_canvas)
         self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
@@ -506,7 +506,7 @@ class BasePlotter:
             BasePlotter._fig.is_canvas = False  # Close the canvas
             self._plot(
                 fig=plt.gcf(),
-                figsize=figsize if figsize else (6 + 4 * ncols, 2 + 4 * nrows),
+                figsize=figsize or (6 + 4 * ncols, 2 + 4 * nrows),
                 tight_layout=False,
                 plotname="canvas",
                 filename=filename,
@@ -658,7 +658,7 @@ class FSPlotter(BasePlotter):
             title=title,
             legend=("lower right", 1),
             xlabel="Explained variance ratio",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_components",
             filename=filename,
             display=display,
@@ -854,7 +854,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             xlabel=self._metric[metric].name,
             xlim=(min_lim, max_lim) if not all_bootstrap else None,
-            figsize=figsize if figsize else (10, 4 + len(models) // 2),
+            figsize=figsize or (10, 4 + len(models) // 2),
             plotname="plot_results",
             filename=filename,
             display=display,
@@ -1779,7 +1779,7 @@ class BaseModelPlotter(BasePlotter):
             legend=("lower right", len(models)) if len(models) > 1 else None,
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_feature_importance",
             filename=filename,
             display=display,
@@ -1914,7 +1914,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
             xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_permutation_importance",
             filename=filename,
             display=display,
@@ -2316,7 +2316,7 @@ class BaseModelPlotter(BasePlotter):
         BasePlotter._fig._used_models.extend(models)
         if len(models) > 1:
             df.plot.barh(ax=ax, width=0.6)
-            figsize = figsize if figsize else (10, 6)
+            figsize = figsize or (10, 6)
             self._plot(
                 ax=ax,
                 title=title,
@@ -2324,7 +2324,7 @@ class BaseModelPlotter(BasePlotter):
                 xlabel="Count",
             )
         else:
-            figsize = figsize if figsize else (8, 6)
+            figsize = figsize or (8, 6)
             self._plot(
                 ax=ax,
                 title=title,
@@ -2723,7 +2723,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="bar_plot",
             filename=filename,
             display=display,
@@ -2812,7 +2812,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="beeswarm_plot",
             filename=filename,
             display=display,
@@ -2928,7 +2928,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="decision_plot",
             filename=filename,
             display=display,
@@ -3327,7 +3327,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="waterfall_plot",
             filename=filename,
             display=display,
@@ -3668,7 +3668,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         return self._plot(
             fig=plt.gcf(),
             title=title,
-            figsize=figsize if figsize else (10, 10),
+            figsize=figsize or (10, 10),
             plotname="plot_scatter_matrix",
             filename=filename,
             display=display,
@@ -3772,7 +3772,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 title=title,
                 xlabel="Counts",
                 legend=("lower right", 1),
-                figsize=figsize if figsize else (10, 4 + show // 2),
+                figsize=figsize or (10, 4 + show // 2),
                 plotname="plot_distribution",
                 filename=filename,
                 display=display,
@@ -3820,7 +3820,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 xlabel="Values",
                 ylabel="Counts",
                 legend=("best", len(columns) + len(lst(distribution))),
-                figsize=figsize if figsize else (10, 6),
+                figsize=figsize or (10, 6),
                 plotname="plot_distribution",
                 filename=filename,
                 display=display,
@@ -3903,7 +3903,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
             legend=("best", len(columns) + len(lst(distribution))),
-            figsize=figsize if figsize else (10, 6),
+            figsize=figsize or (10, 6),
             plotname="plot_qq",
             filename=filename,
             display=display,
@@ -3987,7 +3987,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 6),
+            figsize=figsize or (10, 6),
             plotname="plot_wordcloud",
             filename=filename,
             display=display,
@@ -4101,7 +4101,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             title=title,
             xlabel="Counts",
             legend=("lower right", 1),
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_ngrams",
             filename=filename,
             display=display,
@@ -4228,7 +4228,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             title=title,
             xlim=(0, 100),
             ylim=(0, ylim),
-            figsize=figsize if figsize else (8, ylim // 30),
+            figsize=figsize or (8, ylim // 30),
             plotname="plot_pipeline",
             filename=filename,
             display=display,

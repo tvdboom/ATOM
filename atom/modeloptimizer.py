@@ -357,14 +357,15 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             **self.T._bo_kwargs,
         )
 
-        if str(self.T._base_estimator).lower() == "gp":
-            optimizer = gp_minimize(**kwargs)
-        elif str(self.T._base_estimator).lower() == "et":
-            optimizer = forest_minimize(base_estimator="ET", **kwargs)
-        elif str(self.T._base_estimator).lower() == "rf":
-            optimizer = forest_minimize(base_estimator="RF", **kwargs)
-        elif str(self.T._base_estimator).lower() == "gbrt":
-            optimizer = gbrt_minimize(**kwargs)
+        if isinstance(self.T._base_estimator, str):
+            if self.T._base_estimator.lower() == "gp":
+                optimizer = gp_minimize(**kwargs)
+            elif self.T._base_estimator.lower() == "et":
+                optimizer = forest_minimize(base_estimator="ET", **kwargs)
+            elif self.T._base_estimator.lower() == "rf":
+                optimizer = forest_minimize(base_estimator="RF", **kwargs)
+            elif self.T._base_estimator.lower() == "gbrt":
+                optimizer = gbrt_minimize(**kwargs)
         else:
             optimizer = base_minimize(base_estimator=self.T._base_estimator, **kwargs)
 

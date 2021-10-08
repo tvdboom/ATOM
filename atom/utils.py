@@ -19,7 +19,6 @@ from datetime import datetime
 from inspect import signature
 from scipy import sparse
 from collections.abc import MutableMapping
-from sklearn.base import BaseEstimator
 from sklearn.preprocessing import (
     StandardScaler,
     MinMaxScaler,

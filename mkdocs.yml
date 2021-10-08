@@ -16,6 +16,7 @@ theme:
   features:
     - navigation.instant
     - navigation.tabs
+    - navigation.tabs.sticky
     - navigation.top
   palette:
     # Light mode
@@ -24,7 +25,7 @@ theme:
       primary: teal
       accent: teal
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: material/weather-sunny
         name: Switch to dark mode
 
     # Dark mode
@@ -33,7 +34,7 @@ theme:
       primary: teal
       accent: teal
       toggle:
-        icon: material/toggle-switch
+        icon: material/weather-night
         name: Switch to light mode
 
 extra:

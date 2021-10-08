@@ -8,8 +8,6 @@ Description: Module containing the ATOM's custom sklearn-like pipeline.
 """
 
 # Standard packages
-import pandas as pd
-from inspect import signature
 from sklearn import pipeline
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
@@ -17,10 +15,7 @@ from sklearn.utils.validation import check_memory
 from sklearn.utils.metaestimators import if_delegate_has_method
 
 # Own modules
-from .utils import (
-    to_df, to_series, variable_return, fit_one, transform_one,
-    fit_transform_one,
-)
+from .utils import variable_return, fit_one, transform_one, fit_transform_one
 
 
 class Pipeline(pipeline.Pipeline):

@@ -24,6 +24,7 @@
   display: table;
 }
 
+/* Parameter tables layout */
 .td_title {
     background: #F5F5F5;
 }
@@ -38,4 +39,39 @@
 [data-md-color-scheme="slate"] .td_params {
     background: #333543;
     color: #dfe1f2;
+}
+
+/* Examples notebooks layout for dark mode */
+[data-md-color-scheme="slate"] .highlight-ipynb {
+    background: #343d55;
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .p {
+    color: #dfe1f2;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .c1 {
+    color: #009485;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .kn {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .kc {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .mi {
+    color: #90ee90;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .s2 {
+    color: #FF7F7F;
+}
+[data-md-color-scheme="slate"] .highlight-ipynb .o {
+    color: #b19cd9;
+}
+[data-md-color-scheme="slate"] .dataframe th {
+    color: #dfe1f2;
+    background: #355876;
+}
+[data-md-color-scheme="slate"] .dataframe td {
+    color: #dfe1f2;
+    background: #355876;
 }
