@@ -4,6 +4,7 @@
 <a name="v500"></a>
 ### Version 5.0.0
 
+* Drop support of [Python 3.6](https://www.python.org/downloads/release/python-360/).
 * Added the [HistGBM](../API/models/hgbm) model.
 * Improved print layout for [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
 * The new [available_models](../API/ATOM/atomclassifier/#available-models)

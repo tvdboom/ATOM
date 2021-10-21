@@ -36,7 +36,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=["atom"],
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -47,5 +46,5 @@ setuptools.setup(
     install_requires=requirements,
     extras_require={"models": optional_requirements},
     tests_require=test_requirements,
-    python_requires=">=3.6"
+    python_requires=">=3.7"
 )
