@@ -149,14 +149,18 @@ def test_operators_parameter():
 def test_n_features_above_maximum():
     """Assert that n_features becomes maximum if more than maximum for "DFS"."""
     generator = FeatureGenerator(n_features=1000, operators="log", random_state=1)
-    _ = generator.fit_transform(X_bin, y_bin)
-    assert generator.n_features == 30
+    X = generator.fit_transform(X_bin, y_bin)
+    assert X.shape[1] == 60  # 30 og + 30 log
 
 
 def test_genetic_non_improving_features():
     """Assert that the code doesn't fail if there are no new improving features."""
     generator = FeatureGenerator(
-        strategy="gfg", generations=5, population=300, operators="sqrt", random_state=1
+        strategy="gfg",
+        generations=5,
+        population=300,
+        operators="sqrt",
+        random_state=1,
     )
     _ = generator.fit_transform(X_reg, y_reg)
     assert generator.genetic_features is None

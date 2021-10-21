@@ -27,12 +27,12 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection algorithm.</li>
-<li>"univariate": Select best features according to a univariate F-test.</li>
-<li>"PCA": Perform principal component analysis.</li>
+<li>"univariate": Univariate F-test.</li>
+<li>"PCA": Principal Component Analysis.</li>
 <li>"SFM": Select best features according to a model.</li>
-<li>"RFE": Perform recursive feature elimination.</li>
-<li>"RFECV": Perform RFE with cross-validated selection.</li>
-<li>"SFS": Perform Sequential Feature Selection.</li>
+<li>"SFS": Sequential Feature Selection.</li>
+<li>"RFE": Recursive Feature Elimination.</li>
+<li>"RFECV": RFE with cross-validated selection.</li>
 </ul>
 <strong>solver: string, estimator or None, optional (default=None)</strong><br>
 Solver or model to use for the feature selection strategy. See
@@ -57,7 +57,7 @@ and PCA).
     <li>"arpack"</li>
     <li>"randomized"</li>
     </ul></li>
-<li>for "SFM", "RFE", "RFECV" and "SFS":<br>
+<li>for "SFM", "SFS", "RFE" and "RFECV":<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
@@ -272,8 +272,9 @@ Fontsize for the ticks along the plot's axes.
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L759">[source]</a>
 </span>
 </div>
-Fit to data. Note that the univariate, SFM (when model is not fitted), RFE and
-RFECV strategies all need a target column. Leaving it None will raise an exception.
+Fit to data. Note that the univariate, SFM (when model is not fitted),
+SFS, RFE and RFECV strategies all need a target column. Leaving it
+None will raise an exception.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
@@ -308,7 +309,7 @@ Fitted instance of self.
 </span>
 </div>
 Fit to data, then transform it. Note that the univariate, SFM (when
-model is not fitted), RFE and RFECV strategies need a target column.
+model is not fitted), SFS, RFE and RFECV strategies need a target column.
 Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>

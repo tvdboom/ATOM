@@ -22,9 +22,9 @@ from .basepredictor import BasePredictor
 from .data_cleaning import BaseTransformer
 from .basemodel import BaseModel
 from .utils import (
-    SEQUENCE, OPTIONAL_PACKAGES, ONLY_CLASS, ONLY_REG, lst,
-    dct, time_to_str, get_acronym, get_scorer, get_best_score,
-    check_scaling, delete, PlotCallback, CustomDict,
+    SEQUENCE, OPTIONAL_PACKAGES, lst, dct, time_to_str, get_acronym,
+    get_scorer, get_best_score, check_scaling, delete, PlotCallback,
+    CustomDict,
 )
 
 
@@ -230,9 +230,9 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         # If left to default, select all predefined models per task
         if None in self._models:
             if self.goal.startswith("class"):
-                models = [m(self) for m in MODEL_LIST if m.acronym not in ONLY_REG]
+                models = [m(self) for m in MODEL_LIST if m.task in ("class", "both")]
             else:
-                models = [m(self) for m in MODEL_LIST if m.acronym not in ONLY_CLASS]
+                models = [m(self) for m in MODEL_LIST if m.task in ("reg", "both")]
         else:
             models = []
             for m in self._models:
@@ -249,17 +249,17 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                                 "package. Make sure it is installed."
                             )
 
+                    models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
+
                     # Check for regression/classification-only models
-                    if self.goal.startswith("class") and acronym in ONLY_REG:
+                    if self.goal.startswith("class") and models[-1].task == "reg":
                         raise ValueError(
                             f"The {acronym} model can't perform classification tasks!"
                         )
-                    elif self.goal.startswith("reg") and acronym in ONLY_CLASS:
+                    elif self.goal.startswith("reg") and models[-1].task == "class":
                         raise ValueError(
                             f"The {acronym} model can't perform regression tasks!"
                         )
-
-                    models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
 
                 elif not isinstance(m, BaseModel):  # Model is custom estimator
                     models.append(CustomModel(self, estimator=m))
@@ -370,7 +370,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     "Invalid value for the early_stopping parameter. "
                     f"Value should be >=0, got {self.bo_params['early_stopping']}."
                 )
-            for model in self._models:
+            for model in [m for m in self._models if hasattr(m, "custom_fit")]:
                 model._early_stopping = self.bo_params["early_stopping"]
 
         # Add custom dimensions to every model subclass
@@ -495,8 +495,8 @@ class BaseTrainer(BaseTransformer, BasePredictor):
         if not self._models:
             raise RuntimeError("It appears all models failed to run...")
 
-        self.log("\n\nFinal results ========================= >>", 1)
-        self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 42, 1)
+        self.log("\n\nFinal results " + "=" * 20 + " >>", 1)
+        self.log(f"Duration: {time_to_str(t_init)}\n" + "-" * 37, 1)
 
         # Get max length of the model names
         maxlen = max([len(m.fullname) for m in self._models])

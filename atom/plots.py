@@ -712,18 +712,29 @@ class FSPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
+
         n_features = self.rfecv.get_params()["min_features_to_select"]
-        xline = range(n_features, n_features + len(self.rfecv.grid_scores_))
-        ax.plot(xline, self.rfecv.grid_scores_)
+        mean = self.rfecv.cv_results_["mean_test_score"]
+
+        # Prepare dataframe for seaborn lineplot
+        df = pd.DataFrame()
+        for key, value in self.rfecv.cv_results_.items():
+            if key not in ("mean_test_score", "std_test_score"):
+                df = pd.concat([df, pd.DataFrame(value, columns=["y"])])
+
+        df["x"] = np.add(df.index, n_features)
+        df = df.reset_index(drop=True)
+
+        xline = range(n_features, n_features + len(mean))
+        sns.lineplot(data=df, x="x", y="y", marker="o", ax=ax)
 
         # Set limits before drawing the intersected lines
-        xlim = (n_features - 0.5, n_features + len(self.rfecv.grid_scores_) - 0.5)
+        xlim = (n_features - 0.5, n_features + len(mean) - 0.5)
         ylim = ax.get_ylim()
 
         # Draw intersected lines
-        x = xline[np.argmax(self.rfecv.grid_scores_)]
-        y = max(self.rfecv.grid_scores_)
-        ax.vlines(x, -1e4, y, ls="--", color="k", alpha=0.7)
+        x, y = xline[np.argmax(mean)], max(mean)
+        ax.vlines(x, ax.get_ylim()[0], y, ls="--", color="k", alpha=0.7)
         label = f"Features: {x}   {ylabel}: {round(y, 3)}"
         ax.hlines(y, xmin=-1, xmax=x, color="k", ls="--", alpha=0.7, label=label)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks

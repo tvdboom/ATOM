@@ -1616,6 +1616,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2837,15 +2851,15 @@ Integer(1, 2, name="p")
 </tr>
 </table>
 
-<div class="admonition note">
-<p class="admonition-title">Note</p>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
 <p>Since the optimal radius depends hugely on the data, ATOM's RNN
 implementation doesn't use sklearn's default radius of 1, but instead
-calculates the <a href="https://en.wikipedia.org/wiki/Minkowski_distance">minkowsky distance</a>
-between 10% of random samples in the training set and uses the mean of
-those distances as default radius. The lower and upper bounds of the
-radius' dimensions for the BO are given by the minimum and maximum
-value of the calculated distances.</p>
+calculates the <a href="https://en.wikipedia.org/wiki/Euclidean_distance">euclidean distance</a>
+between the maximum of 100 or 1% of random samples in the training
+set and uses the mean of those distances as default radius. The lower
+and upper bounds of the radius' dimensions for the BO are given by
+the minimum and maximum value of the calculated distances.</p>
 </div>
 <p><br><br></p>
 <h2 id="attributes">Attributes</h2>

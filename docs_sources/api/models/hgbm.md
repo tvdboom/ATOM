@@ -1,29 +1,23 @@
-# CatBoost (CatB)
------------------
+# HistGBM (hGBM)
+----------------
 
-CatBoost is a machine learning method based on gradient boosting over
-decision trees. Main advantages of CatBoost:
+This Histogram-based Gradient Boosting Machine is much faster than
+the standard [GBM](../gbm) for big datasets (n_samples >= 10 000).
+This variation first bins the input samples into integer-valued
+bins which tremendously reduces the number of splitting points to
+consider, and allows the algorithm to leverage integer-based data
+structures (histograms) instead of relying on sorted continuous
+values when building the trees.
 
-* Superior quality when compared with other GBDT models on many datasets.
-* Best in class prediction speed.
 
 Corresponding estimators are:
 
-* [CatBoostClassifier](https://catboost.ai/docs/concepts/python-reference_catboostclassifier.html)
+* [HistGradientBoostingClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html)
   for classification tasks.
-* [CatBoostRegressor](https://catboost.ai/docs/concepts/python-reference_catboostregressor.html)
+* [HistGradientBoostingRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html)
   for regression tasks.
 
-Read more in CatBoost's [documentation](https://catboost.ai/).
-
-!!! info
-    CatBoost allows [early stopping](../../../user_guide/training/#early-stopping)
-    to stop the training of unpromising models prematurely!
-
-!!! note
-    ATOM uses CatBoost's `n_estimators` parameter instead of `iterations`
-    to indicate the number of trees to fit. This is done to have consistent
-    naming with the [XGB](../xgb) and [LGB](../lgb) models.
+Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#histogram-based-gradient-boosting).
 
 
 <br><br>
@@ -32,40 +26,41 @@ Read more in CatBoost's [documentation](https://catboost.ai/).
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The `bootstrap_type` parameter is set to "Bernoulli" to allow for the `subsample` parameter.
-* The `num_leaves` and `min_child_samples` parameters are not available for the
-  CPU implementation.
-* The `n_jobs` and `random_state` parameters are set equal to those of the
- trainer.
+* For binary classification tasks, the `loss` parameter is always set to "binary_crossentropy".
+* For multiclass classification tasks, the `loss` parameter is always set to "categorical_crossentropy".
+* The `random_state` parameter is set equal to that of the trainer.
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>n_estimators: int, default=100</strong><br>
-Integer(20, 500, name="n_estimators")
-</p>
-<p>
 <strong>learning_rate: float, default=0.1</strong><br>
 Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
+<strong>max_iter: int, default=100</strong><br>
+Integer(10, 500, name="n_estimators")
+</p>
+<p>
+<strong>max_leaf_nodes: int, default=31</strong><br>
+Integer(10, 50, name="max_leaf_nodes")
+</p>
+<p>
 <strong>max_depth: int or None, default=None</strong><br>
-Categorical([None, *list(range(1, 10))], name="max_depth")
+Categorical([None, *np.linspace(1, 10, 10)], name="max_depth")
 </p>
 <p>
-<strong>subsample: float, default=1.0</strong><br>
-Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
+<strong>min_samples_leaf: int, default=20</strong><br>
+Integer(10, 30, name="min_samples_leaf")
 </p>
 <p>
-<strong>colsample_by_level: float, default=1.0</strong><br>
-Categorical(np.linspace(0.3, 1.0, 8), name="colsample_by_level")
+<strong>l2_regularization: float, default=0.0</strong><br>
+Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization")
 </p>
-<p>
-<strong>reg_lambda: int, default=0</strong><br>
-Categorical([0, 0.01, 0.1, 1, 10, 100], name="reg_lambda")
-</p>
+<strong>loss: str, default="squared_error"</strong><br>
+Categorical(["squared_error", "least_squares", "absolute_error",
+"least_absolute_deviation", "poisson"], name="loss")
 </td>
 </tr>
 </table>
@@ -260,6 +255,14 @@ Predicted log probabilities of the model on the training set (only if classifier
 Predicted log probabilities of the model on the test set (only if classifier).
 </p>
 <p>
+<strong>decision_function_train: np.ndarray</strong><br>
+Decision function scores on the training set (only if classifier).
+</p>
+<p>
+<strong>decision_function_test: np.ndarray</strong><br>
+Decision function scores on the test set (only if classifier).
+</p>
+<p>
 <strong>score_train: np.float64</strong><br>
 Model's score on the training set.
 </p>
@@ -277,9 +280,8 @@ Model's score on the test set.
 ## Methods
 
 The majority of the [plots](../../../user_guide/plots) and [prediction methods](../../../user_guide/predicting)
-can be called directly from the models, e.g. `atom.catb.plot_permutation_importance()` or `atom.catb.predict(X)`.
-The remaining utility methods can be found hereunder.
-<br><br>
+can be called directly from the models, e.g. `atom.hgbm.plot_permutation_importance()`
+or `atom.hgbm.predict(X)`. The remaining utility methods can be found hereunder.
 
 <table style="font-size:16px">
 <tr>
@@ -571,5 +573,5 @@ Name of the file. Use "auto" for automatic naming.
 from atom import ATOMRegressor
 
 atom = ATOMRegressor(X, y)
-atom.run(models="CatB", n_calls=50, bo_params={"early_stopping": 0.1})
+atom.run(models="hGBM")
 ```

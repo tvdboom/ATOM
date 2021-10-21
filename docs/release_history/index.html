@@ -1662,6 +1662,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../API/models/hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../API/models/xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2887,12 +2901,18 @@
 <p><a name="v500"></a></p>
 <h3 id="version-500">Version 5.0.0</h3>
 <ul>
+<li>Added the <a href="../API/models/hgbm">HistGBM</a> model.</li>
+<li>Improved print layout for <a href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</li>
+<li>The new <a href="../API/ATOM/atomclassifier/#available-models">available_models</a>
+  method returns an overview of the available predefined models.</li>
 <li>The <a href="../API/models/gnb/#calibrate">calibrate</a> and <a href="../API/models/gnb/#cross-validate">cross_validate</a>
   methods can no longer be accessed from the trainers.</li>
 <li>The <code>pipeline</code> parameter for the <a href="../user_guide/predicting">prediction methods</a>
   is deprecated.</li>
 <li>Sparse matrices are now accepted as input.</li>
+<li>Improvement in performance of the <a href="../API/models/rnn">RNN</a> model.</li>
 <li>Fixed a bug where custom scalers were ignored by the models.</li>
+<li>Fixed a bug where the BO of certain models would crash with custom hyperparameters.</li>
 <li>Documentation improvements.</li>
 </ul>
 <p><a name="v480"></a></p>

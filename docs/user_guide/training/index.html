@@ -1622,6 +1622,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2858,8 +2872,10 @@ parameters or on different data sets. See the
 <a href="../../examples/imbalanced_datasets">Imbalanced datasets</a> example.</p>
 <p>Additional things to take into account:</p>
 <ul>
-<li>Models that benefit from feature scaling will automatically
-  scale the features before training (if they are not already scaled).</li>
+<li>Models that require feature scaling will automatically do so
+  before training (if the data is not already scaled). Use the
+  <a href="../../API/ATOM/atomclassifier/#available-models">available_models</a>
+  method to see for which models this is the case.</li>
 <li>If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the <code>errors</code> attribute. Note that when a model is skipped,
@@ -3020,6 +3036,15 @@ will run 20 iterations of which the first 10 are random.</p>
 <p class="admonition-title">Note</p>
 <p>If <code>n_initial_points=1</code>, the first trial is equal to the
 estimator's default parameters.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The hyperparameter tuning output can become quite wide for models
+with many hyperparameters. If you are working in a Jupyter Notebook,
+you can change the output's width running the following code in a cell:
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">IPython.core.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">HTML</span>
+<span class="n">display</span><span class="p">(</span><span class="n">HTML</span><span class="p">(</span><span class="s2">&quot;&lt;style&gt;.container { width:100% !important; }&lt;/style&gt;&quot;</span><span class="p">))</span>
+</code></pre></div></p>
 </div>
 <p>Other settings can be changed through the <code>bo_params</code> parameter, a
 dictionary where every key-value combination can be used to further

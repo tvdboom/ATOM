@@ -3,9 +3,9 @@
 
 ## Predefined models
 
-ATOM provides 32 estimators for classification and regression tasks
-that can be used to fit the data in the pipeline. After fitting, a
-class containing the estimator is attached to the trainer as an
+ATOM provides 33 models for classification and regression tasks that
+can be used to fit the data in the pipeline. After fitting, a class
+containing the underlying estimator is attached to the trainer as an
 attribute. We refer to these "subclasses" as models. Apart from the
 estimator, the models contain a variety of attributes and methods to
 help you understand how the underlying estimator performed. They can
@@ -37,6 +37,7 @@ acronyms are:
 * "RF" for [Random Forest](../../API/models/rf)
 * "AdaB" for [AdaBoost](../../API/models/adab)
 * "GBM" for [Gradient Boosting Machine](../../API/models/gbm)
+* "hGBM" for [HistGBM](../../API/models/hgbm)
 * "XGB" for [XGBoost](../../API/models/xgb)
 * "LGB" for [LightGBM](../../API/models/lgb)
 * "CatB" for [CatBoost](../../API/models/catb)
@@ -51,8 +52,8 @@ acronyms are:
     the LightGBM's model.
 
 !!! warning
-    The models can not be initialized directly by the user! Only use
-    them through the trainers.
+    The models can not be initialized directly by the user! Use them
+    only through the trainers.
 
 
 <br>

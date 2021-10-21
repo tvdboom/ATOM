@@ -11,13 +11,13 @@
         <meta name="author" content="Mavs">
       
       
-        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/lsvm/">
+        <link rel="canonical" href="https://tvdboom.github.io/ATOM/API/models/hgbm/">
       
       <link rel="icon" href="../../../img/favicon.ico">
       <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.2">
     
     
-  <title>Linear-SVM - ATOM</title>
+  <title>HistGBM - ATOM</title>
 
     
       <link rel="stylesheet" href="../../../assets/stylesheets/main.24c991ad.min.css">
@@ -69,7 +69,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#linear-svm-lsvm" class="md-skip">
+        <a href="#histgbm-hgbm" class="md-skip">
           Skip to content
         </a>
       
@@ -102,7 +102,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Linear-SVM
+              HistGBM
             
           </span>
         </div>
@@ -1526,62 +1526,6 @@
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../hgbm/" class="md-nav__link">
-        HistGBM
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../xgb/" class="md-nav__link">
-        XGBoost
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../lgb/" class="md-nav__link">
-        LightGBM
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../catb/" class="md-nav__link">
-        CatBoost
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -1594,12 +1538,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Linear-SVM
+          HistGBM
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Linear-SVM
+        HistGBM
       </a>
       
         
@@ -1675,6 +1619,62 @@
   
 </nav>
       
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../xgb/" class="md-nav__link">
+        XGBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lgb/" class="md-nav__link">
+        LightGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../catb/" class="md-nav__link">
+        CatBoost
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../lsvm/" class="md-nav__link">
+        Linear-SVM
+      </a>
     </li>
   
 
@@ -2800,51 +2800,64 @@
               
                 
                 
-                <h1 id="linear-svm-lsvm">Linear-SVM (lSVM)</h1>
+                <h1 id="histgbm-hgbm">HistGBM (hGBM)</h1>
 <hr />
-<p>Similar to <a href="../ksvm">Kernel-SVM</a> but with a linear kernel. Implemented
-in terms of liblinear rather than libsvm, so it has more flexibility
-in the choice of penalties and loss functions and should scale better
-to large numbers of samples.</p>
-<p>The multiclass support is handled according to a one-vs-rest scheme.</p>
+<p>This Histogram-based Gradient Boosting Machine is much faster than
+the standard <a href="../gbm">GBM</a> for big datasets (n_samples &gt;= 10 000).
+This variation first bins the input samples into integer-valued
+bins which tremendously reduces the number of splitting points to
+consider, and allows the algorithm to leverage integer-based data
+structures (histograms) instead of relying on sorted continuous
+values when building the trees.</p>
 <p>Corresponding estimators are:</p>
 <ul>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVC.html">LinearSVC</a>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingClassifier.html">HistGradientBoostingClassifier</a>
   for classification tasks.</li>
-<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.svm.LinearSVR.html">LinearSVR</a>
+<li><a href="https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.HistGradientBoostingRegressor.html">HistGradientBoostingRegressor</a>
   for regression tasks.</li>
 </ul>
-<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/svm.html">documentation</a>.</p>
+<p>Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#histogram-based-gradient-boosting">documentation</a>.</p>
 <p><br><br></p>
 <h2 id="hyperparameters">Hyperparameters</h2>
 <ul>
 <li>By default, the estimator adopts the default parameters provided by
   its package. See the <a href="../../../user_guide/training/#parameter-customization">user guide</a>
   on how to customize them.</li>
-<li>The <code>penalty</code> parameter is only used with LinearSVC.</li>
-<li>The <code>penalty</code> parameter is always set to "l2" when loss = "hinge".</li>
-<li>The <code>dual</code> parameter is always set to False when penalty = "l1" and loss = "squared_hinge".</li>
-<li>The <code>random_state</code> parameter is set equal to that of the <code>training</code> instance.</li>
+<li>For binary classification tasks, the <code>loss</code> parameter is always set to "binary_crossentropy".</li>
+<li>For multiclass classification tasks, the <code>loss</code> parameter is always set to "categorical_crossentropy".</li>
+<li>The <code>random_state</code> parameter is set equal to that of the trainer.</li>
 </ul>
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
 <td width="80%" class="td_params">
-<strong>loss: str</strong><br>
-<ul style="line-height:1.5em;margin-top:5px">
-<li>classifier: default="squared_hinge"<br>
-Categorical(["hinge", "squared_hinge"], name="loss")</li>
-<li>regressor: default="epsilon_insensitive"<br>
-Categorical(["epsilon_insensitive", "squared_epsilon_insensitive"], name="loss")</li>
-</ul>
 <p>
-<strong>C: float, default=1.0</strong><br>
-Real(1e-3, 100, "log-uniform", name="C")
+<strong>learning_rate: float, default=0.1</strong><br>
+Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
 <p>
-<strong>penalty: str, default="l2"</strong><br>
-Categorical(["l1", "l2"], name="penalty").
+<strong>max_iter: int, default=100</strong><br>
+Integer(10, 500, name="n_estimators")
 </p>
+<p>
+<strong>max_leaf_nodes: int, default=31</strong><br>
+Integer(10, 50, name="max_leaf_nodes")
+</p>
+<p>
+<strong>max_depth: int or None, default=None</strong><br>
+Categorical([None, *np.linspace(1, 10, 10)], name="max_depth")
+</p>
+<p>
+<strong>min_samples_leaf: int, default=20</strong><br>
+Integer(10, 30, name="min_samples_leaf")
+</p>
+<p>
+<strong>l2_regularization: float, default=0.0</strong><br>
+Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization")
+</p>
+<strong>loss: str, default="squared_error"</strong><br>
+Categorical(["squared_error", "least_squares", "absolute_error",
+"least_absolute_deviation", "poisson"], name="loss")
 </td>
 </tr>
 </table>
@@ -2926,64 +2939,61 @@ Name of the target column.
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Attributes:</strong></td>
 <td width="80%" class="td_params">
-<strong>bo: pd.DataFrame</strong>
-<blockquote>
-Dataframe containing the information of every step taken by the BO. Columns include:
-<ul>
-<li>"params": Parameters used in the model.</li>
-<li>"estimator": Estimator used for this iteration (fitted on last cross-validation).</li>
-<li>"score": Score of the chosen metric. List of scores for multi-metric.</li>
-<li>"time_iteration": Time spent on this iteration.</li>
-<li>"time": Total time spent since the start of the BO.</li>
+<strong>bo: pd.DataFrame</strong><br>
+Information of every step taken by the BO. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
+<li><b>params</b>: Parameters used in the model.</li>
+<li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
+<li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
+<li><b>time_iteration</b>: Time spent on this iteration.</li>
+<li><b>time</b>: Total time spent since the start of the BO.</li>
 </ul>
-</blockquote>
-<strong>best_params: dict</strong>
-<blockquote>
+<p>
+<strong>best_params: dict</strong><br>
 Dictionary of the best combination of hyperparameters found by the BO.
-</blockquote>
-<strong>estimator: class</strong>
-<blockquote>
+</p>
+<p>
+<strong>estimator: class</strong><br>
 Estimator instance with the best combination of hyperparameters fitted
 on the complete training set.
-</blockquote>
-<strong>time_bo: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_bo: str</strong><br>
 Time it took to run the bayesian optimization algorithm.
-</blockquote>
-<strong>metric_bo: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bo: float or list</strong><br>
 Best metric score(s) on the BO.
-</blockquote>
-<strong>time_fit: str</strong>
-<blockquote>
+</p>
+<p>
+<strong>time_fit: str</strong><br>
 Time it took to train the model on the complete training set and
 calculate the metric(s) on the test set.
-</blockquote>
-<strong>metric_train: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_train: float or list</strong><br>
 Metric score(s) on the training set.
-</blockquote>
-<strong>metric_test: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_test: float or list</strong><br>
 Metric score(s) on the test set.
-</blockquote>
-<strong>metric_bootstrap: list</strong>
-<blockquote>
+</p>
+<p>
+<strong>metric_bootstrap: list</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
-</blockquote>
-<strong>mean_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>mean_bootstrap: float or list</strong><br>
 Mean of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>std_bootstrap: float or list</strong>
-<blockquote>
+</p>
+<p>
+<strong>std_bootstrap: float or list</strong><br>
 Standard deviation of the bootstrap results. List of values for multi-metric runs.
-</blockquote>
-<strong>results: pd.Series</strong>
-<blockquote>
-Series of the training results. Columns include:
-<ul>
+</p>
+<strong>results: pd.Series</strong><br>
+Training results. Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
 <li><b>metric_bo:</b> Best score achieved during the BO.</li>
 <li><b>time_bo:</b> Time spent on the BO.</li>
 <li><b>metric_train:</b> Metric score on the training set.</li>
@@ -2994,7 +3004,6 @@ Series of the training results. Columns include:
 <li><b>time_bootstrap:</b> Time spent on the bootstrap algorithm.</li>
 <li><b>time:</b> Total time spent on the whole run.</li>
 </ul>
-</blockquote>
 </td>
 </tr>
 </table>
@@ -3014,6 +3023,22 @@ Predictions of the model on the training set.
 <p>
 <strong> predict_test: np.ndarray</strong><br>
 Predictions of the model on the test set.
+</p>
+<p>
+<strong>predict_proba_train: np.ndarray</strong><br>
+Predicted probabilities of the model on the training set (only if classifier).
+</p>
+<p>
+<strong>predict_proba_test: np.ndarray</strong><br>
+Predicted probabilities of the model on the test set (only if classifier).
+</p>
+<p>
+<strong>predict_log_proba_train: np.ndarray</strong><br>
+Predicted log probabilities of the model on the training set (only if classifier).
+</p>
+<p>
+<strong>predict_log_proba_test: np.ndarray</strong><br>
+Predicted log probabilities of the model on the test set (only if classifier).
 </p>
 <p>
 <strong>decision_function_train: np.ndarray</strong><br>
@@ -3038,8 +3063,8 @@ Model's score on the test set.
 <p><br><br></p>
 <h2 id="methods">Methods</h2>
 <p>The majority of the <a href="../../../user_guide/plots">plots</a> and <a href="../../../user_guide/predicting">prediction methods</a>
-can be called directly from the models, e.g. <code>atom.lsvm.plot_permutation_importance()</code> or <code>atom.lsvm.predict(X)</code>.
-The remaining utility methods can be found hereunder.</p>
+can be called directly from the models, e.g. <code>atom.hgbm.plot_permutation_importance()</code>
+or <code>atom.hgbm.predict(X)</code>. The remaining utility methods can be found hereunder.</p>
 <table style="font-size:16px">
 <tr>
 <td><a href="#calibrate">calibrate</a></td>
@@ -3304,10 +3329,10 @@ Name of the file. Use "auto" for automatic naming.
 </table>
 <p><br /></p>
 <h2 id="example">Example</h2>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMClassifier</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">atom</span> <span class="kn">import</span> <span class="n">ATOMRegressor</span>
 
-<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMClassifier</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
-<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;lSVM&quot;</span><span class="p">,</span> <span class="n">metric</span><span class="o">=</span><span class="s2">&quot;accuracy&quot;</span><span class="p">,</span> <span class="n">n_calls</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">atom</span> <span class="o">=</span> <span class="n">ATOMRegressor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+<span class="n">atom</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">models</span><span class="o">=</span><span class="s2">&quot;hGBM&quot;</span><span class="p">)</span>
 </code></pre></div>
                 
               
@@ -3333,7 +3358,7 @@ Name of the file. Use "auto" for automatic naming.
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../catb/" class="md-footer__link md-footer__link--prev" aria-label="Previous: CatBoost" rel="prev">
+        <a href="../gbm/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Gradient Boosting Machine" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -3342,20 +3367,20 @@ Name of the file. Use "auto" for automatic naming.
               <span class="md-footer__direction">
                 Previous
               </span>
-              CatBoost
+              Gradient Boosting Machine
             </div>
           </div>
         </a>
       
       
         
-        <a href="../ksvm/" class="md-footer__link md-footer__link--next" aria-label="Next: Kernel-SVM" rel="next">
+        <a href="../xgb/" class="md-footer__link md-footer__link--next" aria-label="Next: XGBoost" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Kernel-SVM
+              XGBoost
             </div>
           </div>
           <div class="md-footer__button md-icon">

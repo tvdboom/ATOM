@@ -11,15 +11,18 @@ Description: Module containing the BasePredictor class.
 import numpy as np
 import pandas as pd
 from typing import Union, Optional
+
+import win32print
 from typeguard import typechecked
 
 # Own modules
 from .branch import Branch
+from .models import MODEL_LIST
 from .ensembles import Voting, Stacking
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
-    check_is_fitted, divide, get_best_score, delete, method_to_log,
-    composed, crash,
+    check_is_fitted, divide, get_best_score, tablify, delete,
+    method_to_log, composed, crash,
 )
 
 
@@ -265,6 +268,40 @@ class BasePredictor:
                     to_return.append(m2)
 
             return list(dict.fromkeys(to_return))  # Avoid duplicates
+
+    @crash
+    def available_models(self):
+        """Give an overview of the available predefined models.
+
+        Returns
+        -------
+        overview: pd.DataFrame
+            Information about the predefined models available for the
+            current task. Columns include:
+                - acronym: Model's acronym (used to call the model).
+                - name: Full name of the model.
+                - estimator: The model's underlying estimator.
+                - module: The estimator's module.
+                - needs_scaling: Whether the model requires feature scaling.
+
+        """
+        overview = pd.DataFrame()
+        for model in MODEL_LIST:
+            m = model(self)
+            est = m.get_estimator()
+            if m.task[:3] == self.goal[:3] or m.task == "both":
+                overview = overview.append(
+                    {
+                        "acronym": m.acronym,
+                        "name": m.fullname,
+                        "estimator": est.__class__.__name__,
+                        "module": est.__module__,
+                        "needs_scaling": str(m.needs_scaling),
+                    },
+                    ignore_index=True,
+                )
+
+        return overview
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):

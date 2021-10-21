@@ -1580,6 +1580,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2719,9 +2733,9 @@
                 <h1 id="models">Models</h1>
 <hr />
 <h2 id="predefined-models">Predefined models</h2>
-<p>ATOM provides 32 estimators for classification and regression tasks
-that can be used to fit the data in the pipeline. After fitting, a
-class containing the estimator is attached to the trainer as an
+<p>ATOM provides 33 models for classification and regression tasks that
+can be used to fit the data in the pipeline. After fitting, a class
+containing the underlying estimator is attached to the trainer as an
 attribute. We refer to these "subclasses" as models. Apart from the
 estimator, the models contain a variety of attributes and methods to
 help you understand how the underlying estimator performed. They can
@@ -2753,6 +2767,7 @@ acronyms are: </p>
 <li>"RF" for <a href="../../API/models/rf">Random Forest</a></li>
 <li>"AdaB" for <a href="../../API/models/adab">AdaBoost</a></li>
 <li>"GBM" for <a href="../../API/models/gbm">Gradient Boosting Machine</a></li>
+<li>"hGBM" for <a href="../../API/models/hgbm">HistGBM</a></li>
 <li>"XGB" for <a href="../../API/models/xgb">XGBoost</a></li>
 <li>"LGB" for <a href="../../API/models/lgb">LightGBM</a></li>
 <li>"CatB" for <a href="../../API/models/catb">CatBoost</a></li>
@@ -2769,8 +2784,8 @@ the LightGBM's model.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>The models can not be initialized directly by the user! Only use
-them through the trainers.</p>
+<p>The models can not be initialized directly by the user! Use them
+only through the trainers.</p>
 </div>
 <p><br></p>
 <h2 id="custom-models">Custom models</h2>

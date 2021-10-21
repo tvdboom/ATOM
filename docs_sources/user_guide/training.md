@@ -57,8 +57,10 @@ parameters or on different data sets. See the
 
 Additional things to take into account:
 
-* Models that benefit from feature scaling will automatically
-  scale the features before training (if they are not already scaled).
+* Models that require feature scaling will automatically do so
+  before training (if the data is not already scaled). Use the
+  [available_models](../../API/ATOM/atomclassifier/#available-models)
+  method to see for which models this is the case.
 * If an exception is encountered while fitting an estimator, the
   pipeline will automatically jump to the next model. The exceptions are
   stored in the `errors` attribute. Note that when a model is skipped,
@@ -241,6 +243,15 @@ performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/be
 !!! note
     If `n_initial_points=1`, the first trial is equal to the
     estimator's default parameters.
+
+!!! tip
+    The hyperparameter tuning output can become quite wide for models
+    with many hyperparameters. If you are working in a Jupyter Notebook,
+    you can change the output's width running the following code in a cell:
+    ```python
+    from IPython.core.display import display, HTML
+    display(HTML("<style>.container { width:100% !important; }</style>"))
+    ```
 
 Other settings can be changed through the `bo_params` parameter, a
 dictionary where every key-value combination can be used to further

@@ -16,8 +16,8 @@ from typing import Optional, Union
 
 # Other packages
 import featuretools as ft
-from featuretools.primitives import make_trans_primitive
-from featuretools.variable_types import Numeric
+from woodwork.logical_types import Double
+from woodwork.column_schema import ColumnSchema
 from gplearn.genetic import SymbolicTransformer
 from sklearn.base import BaseEstimator
 from sklearn.decomposition import PCA
@@ -345,22 +345,6 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self: FeatureGenerator
 
         """
-
-        def sqrt(column):
-            return np.sqrt(column)
-
-        def log(column):
-            return np.log(column)
-
-        def sin(column):
-            return np.sin(column)
-
-        def cos(column):
-            return np.cos(column)
-
-        def tan(column):
-            return np.tan(column)
-
         X, y = self._prepare_input(X, y)
 
         if self.n_features is not None and self.n_features <= 0:
@@ -406,21 +390,7 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Fitting FeatureGenerator...", 1)
 
         if self.strategy.lower() == "dfs":
-            # Make an entity set and add the entity
-            entity_set = ft.EntitySet(id="atom")
-            entity_set.entity_from_dataframe(
-                entity_id="data", dataframe=X, make_index=True, index="index"
-            )
-
-            # Get list of transformation primitives
             trans_primitives = []
-            custom_operators = dict(
-                sqrt=make_trans_primitive(sqrt, [Numeric], Numeric),
-                log=make_trans_primitive(log, [Numeric], Numeric),
-                sin=make_trans_primitive(sin, [Numeric], Numeric),
-                cos=make_trans_primitive(cos, [Numeric], Numeric),
-                tan=make_trans_primitive(tan, [Numeric], Numeric),
-            )
             for operator in self._operators:
                 if operator.lower() == "add":
                     trans_primitives.append("add_numeric")
@@ -431,15 +401,24 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
                 elif operator.lower() == "div":
                     trans_primitives.append("divide_numeric")
                 elif operator.lower() in ("sqrt", "log", "sin", "cos", "tan"):
-                    trans_primitives.append(custom_operators[operator.lower()])
+                    trans_primitives.append(
+                        ft.primitives.make_trans_primitive(
+                            function=lambda x: getattr(np, operator.lower())(x),
+                            input_types=[ColumnSchema()],
+                            return_type=ColumnSchema(semantic_tags=["numeric"]),
+                            name=operator.lower(),
+                        )
+                    )
 
             # Run deep feature synthesis with transformation primitives
+            es = ft.EntitySet(dataframes={"X": (X, "_index", None, None, None, True)})
             self._dfs_features = ft.dfs(
-                entityset=entity_set,
-                target_entity="data",
+                target_dataframe_name="X",
+                entityset=es,
+                trans_primitives=trans_primitives,
                 max_depth=1,
                 features_only=True,
-                trans_primitives=trans_primitives,
+                ignore_columns={"X": ["_index"]},
             )
 
             # Since dfs doesn't return a specific feature order, we
@@ -455,12 +434,14 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
             # Make sure there are enough features (-1 because of index)
             max_features = len(self._dfs_features) - (X.shape[1] - 1)
             if not self.n_features or self.n_features > max_features:
-                self.n_features = max_features
+                n_final_features = max_features
+            else:
+                n_final_features = self.n_features
 
             # Get random indices from the feature list
             idx_old = range(X.shape[1] - 1)
             idx_new = random.sample(
-                range(X.shape[1] - 1, len(self._dfs_features)), self.n_features
+                range(X.shape[1] - 1, len(self._dfs_features)), n_final_features
             )
             idx = list(idx_old) + list(idx_new)
 
@@ -510,24 +491,16 @@ class FeatureGenerator(BaseEstimator, TransformerMixin, BaseTransformer):
         self.log("Creating new features...", 1)
 
         if self.strategy.lower() == "dfs":
-            # Make an entity set and add the entity
-            entity_set = ft.EntitySet(id="atom")
-            entity_set.entity_from_dataframe(
-                entity_id="data",
-                dataframe=X,
-                make_index=True,
-                index="index",
-            )
-
+            es = ft.EntitySet(dataframes={"X": (X, "index", None, None, None, True)})
             X = ft.calculate_feature_matrix(
                 features=self._dfs_features,
-                entityset=entity_set,
+                entityset=es,
                 n_jobs=self.n_jobs,
             )
 
-            X.index.name = ""  # DFS gives index a name automatically
             self.log(
-                f" --> {self.n_features} new features were added to the dataset.", 2
+                f" --> {len(self._dfs_features)} new "
+                "features were added to the dataset.", 2
             )
 
         else:
@@ -612,14 +585,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     strategy: string or None, optional (default=None)
         Feature selection strategy to use. Choose from:
             - None: Do not perform any feature selection algorithm.
-            - "univariate": Perform a univariate F-test.
-            - "PCA": Perform principal component analysis.
-            - "SFM": Select best features from model.
-            - "RFE": Recursive feature eliminator.
-            - "RFECV": Perform RFE with cross-validated selection.
-            - "SFS"" Perform Sequential Feature Selector.
+            - "univariate": Univariate F-test.
+            - "PCA": Principal Component Analysis.
+            - "SFM": Select best features according to a model.
+            - "SFS"" Sequential Feature Selection.
+            - "RFE": Recursive Feature Elimination.
+            - "RFECV": RFE with cross-validated selection.
 
-        Note that the RFE, RFECV and SFS strategies don't work when the
+        Note that the SFS, RFE and RFECV strategies don't work when the
         solver is a CatBoost model due to incompatibility of the APIs.
 
     solver: str, estimator or None, optional (default=None)
@@ -640,7 +613,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 + "full"
                 + "arpack"
                 + "randomized"
-            - for "SFM", "RFE", "RFECV" and "SFS":
+            - for "SFM", "SFS", "RFE" and "RFECV":
                 The base estimator. For SFM, RFE and RFECV, it should
                 have either a `feature_importances_` or `coef_`
                 attribute after fitting. You can use one of ATOM's
@@ -697,9 +670,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
         number generator is the `RandomState` used by `numpy.random`.
 
     **kwargs
-        Any extra keyword argument for the PCA, SFM, RFE, RFECV
-        and SFS estimators. See the corresponding documentation
-        for the available options.
+        Any extra keyword argument for the PCA, SFM, SFS, RFE and
+        RFECV estimators. See the corresponding documentation for
+        the available options.
 
     Attributes
     ----------
@@ -759,9 +732,9 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
     def fit(self, X: X_TYPES, y: Optional[Y_TYPES] = None):
         """Fit the feature selector to the data.
 
-        Note that the univariate, sfm (when model is not fitted), rfe
-        and rfecv strategies need a target column. Leaving it None will
-        raise an exception.
+        Note that the univariate, sfm (when model is not fitted), sfs,
+        rfe and rfecv strategies need a target column. Leaving it None
+        will raise an exception.
 
         Parameters
         ----------
@@ -792,7 +765,7 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
         # Check parameters
         if isinstance(self.strategy, str):
-            strats = ["univariate", "pca", "sfm", "rfe", "rfecv", "sfs"]
+            strats = ["univariate", "pca", "sfm", "sfs", "rfe", "rfecv"]
 
             if self.strategy.lower() not in strats:
                 raise ValueError(
@@ -969,6 +942,14 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 check_y()
                 self.sfm.fit(X, y)
 
+        elif self.strategy.lower() == "sfs":
+            self.sfs = SequentialFeatureSelector(
+                estimator=self._solver,
+                n_features_to_select=self._n_features,
+                n_jobs=self.n_jobs,
+                **self.kwargs,
+            ).fit(X, y)
+
         elif self.strategy.lower() == "rfe":
             check_y()
             self.rfe = RFE(
@@ -992,14 +973,6 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 self.rfecv = RFECV(
                     estimator=self._solver,
                     min_features_to_select=self._n_features,
-                    n_jobs=self.n_jobs,
-                    **self.kwargs,
-                ).fit(X, y)
-
-            elif self.strategy.lower() == "sfs":
-                self.sfs = SequentialFeatureSelector(
-                    estimator=self._solver,
-                    n_features_to_select=self._n_features,
                     n_jobs=self.n_jobs,
                     **self.kwargs,
                 ).fit(X, y)
@@ -1126,6 +1099,16 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             self.feature_importance = [fx for fx in best_fxs if fx in X.columns]
 
+        elif self.strategy.lower() == "sfs":
+            self.log(
+                f" --> The SFS selected {self.sfs.n_features_to_select_}"
+                " features from the dataset.", 2
+            )
+            for n, column in enumerate(X):
+                if not self.sfs.support_[n]:
+                    self.log(f"   >>> Dropping feature {column}.", 2)
+                    X = X.drop(column, axis=1)
+
         elif self.strategy.lower() == "rfe":
             self.log(
                 f" --> The RFE selected {self.rfe.n_features_}"
@@ -1157,15 +1140,5 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
 
             idx = np.argsort(get_scores(self.rfecv.estimator_))
             self.feature_importance = list(X.columns[idx][::-1])
-
-        elif self.strategy.lower() == "sfs":
-            self.log(
-                f" --> The SFS selected {self.sfs.n_features_to_select_}"
-                " features from the dataset.", 2
-            )
-            for n, column in enumerate(X):
-                if not self.sfs.support_[n]:
-                    self.log(f"   >>> Dropping feature {column}.", 2)
-                    X = X.drop(column, axis=1)
 
         return X

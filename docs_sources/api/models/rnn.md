@@ -53,14 +53,14 @@ Integer(1, 2, name="p")
 </tr>
 </table>
 
-!!! note
+!!! info
     Since the optimal radius depends hugely on the data, ATOM's RNN
     implementation doesn't use sklearn's default radius of 1, but instead
-    calculates the [minkowsky distance](https://en.wikipedia.org/wiki/Minkowski_distance)
-    between 10% of random samples in the training set and uses the mean of
-    those distances as default radius. The lower and upper bounds of the
-    radius' dimensions for the BO are given by the minimum and maximum
-    value of the calculated distances.
+    calculates the [euclidean distance](https://en.wikipedia.org/wiki/Euclidean_distance)
+    between the maximum of 100 or 1% of random samples in the training
+    set and uses the mean of those distances as default radius. The lower
+    and upper bounds of the radius' dimensions for the BO are given by
+    the minimum and maximum value of the calculated distances.
 
 
 <br><br>

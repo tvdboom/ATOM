@@ -366,6 +366,11 @@ Fontsize for the ticks along the plot's axes.
 
 <table style="font-size:16px">
 <tr>
+<td><a href="#available-models">available_models</a></td>
+<td>Give an overview of the available predefined models.</td>
+</tr>
+
+<tr>
 <td><a href="#canvas">canvas</a></td>
 <td>Create a figure with multiple plots.</td>
 </tr>
@@ -431,6 +436,34 @@ Fontsize for the ticks along the plot's axes.
 </tr>
 </table>
 <br>
+
+
+<a name="available-models"></a>
+<div style="font-size:20px">
+<em>method</em> <strong style="color:#008AB8">available_models</strong>()
+<span style="float:right">
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L273">[source]</a>
+</span>
+</div>
+Give an overview of the available predefined models.
+<table style="font-size:16px">
+<tr>
+<td width="20%" class="td_title" style="vertical-align:top"><strong>Returns:</strong></td>
+<td width="80%" class="td_params">
+<strong>overview: pd.DataFrame</strong><br>
+Information about the predefined models available for the current task.
+Columns include:
+<ul style="line-height:1.2em;margin-top:5px">
+<li><b>acronym:</b> Model's acronym (used to call the model).</li>
+<li><b>name:</b> Full name of the model.</li>
+<li><b>estimator:</b> The model's underlying estimator.</li>
+<li><b>module:</b> The estimator's module.</li>
+<li><b>needs_scaling:</b> Whether the model requires feature scaling.</li>
+</ul>
+</td>
+</tr>
+</table>
+<br />
 
 
 <a name="canvas"></a>

@@ -53,6 +53,13 @@ def test_est_params_removed_from_bo():
     assert "n_estimators" not in atom.lgb.bo.params[0]
 
 
+def test_no_hyperparameters_left():
+    """Assert that the BO is skipped when there are no hyperparameters."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models="BNB", n_calls=10, est_params={"alpha": 1.0, "fit_prior": True})
+    assert atom.bnb.bo.empty
+
+
 def test_est_params_unknown_param():
     """Assert that unknown parameters in est_params are caught."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
@@ -103,7 +110,7 @@ def test_early_stopping(model):
 def test_est_params_for_fit(model):
     """Assert that est_params is used for fit if ends in _fit."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(model, est_params={"early_stopping_rounds_fit": 20})
+    atom.run(model, est_params={"early_stopping_rounds_fit": 2})
     assert getattr(atom, model)._stopped
 
 

@@ -1528,6 +1528,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2806,6 +2820,12 @@ decision trees. Main advantages of CatBoost:</p>
 <p class="admonition-title">Info</p>
 <p>CatBoost allows <a href="../../../user_guide/training/#early-stopping">early stopping</a>
 to stop the training of unpromising models prematurely!</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>ATOM uses CatBoost's <code>n_estimators</code> parameter instead of <code>iterations</code>
+to indicate the number of trees to fit. This is done to have consistent
+naming with the <a href="../xgb">XGB</a> and <a href="../lgb">LGB</a> models.</p>
 </div>
 <p><br><br></p>
 <h2 id="hyperparameters">Hyperparameters</h2>

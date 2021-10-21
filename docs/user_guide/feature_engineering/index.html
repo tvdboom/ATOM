@@ -1580,6 +1580,20 @@
   
   
     <li class="md-nav__item">
+      <a href="../../API/models/hgbm/" class="md-nav__link">
+        HistGBM
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../API/models/xgb/" class="md-nav__link">
         XGBoost
       </a>
@@ -2893,6 +2907,12 @@ e.g. <code>solver="RF"</code>. If you didn't call the FeatureSelector through at
 don't forget to indicate the estimator's task adding <code>_class</code> or <code>_reg</code>
 after the name, e.g. <code>RF_class</code> to use a random forest classifier. Read
 more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel">documentation</a>.</p>
+<p><a name="sfs"></a>
+<strong>Sequential Feature Selection</strong><br>
+Sequential feature selection adds (forward selection) or removes (backward
+selection) features to form a feature subset in a greedy fashion. At each
+stage, this estimator chooses the best feature to add or remove based on
+the cross-validation score of an estimator. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection">documentation</a>.</p>
 <p><a name="rfe"></a>
 <strong>Recursive feature elimination</strong><br>
 Select features by recursively considering smaller and smaller sets of
@@ -2910,12 +2930,6 @@ of features selected by <code>n_features</code>, RFECV returns the number of
 features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by <code>n_features</code>.
 Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination">documentation</a>.</p>
-<p><a name="sfs"></a>
-<strong>Sequential Feature Selection</strong><br>
-Sequential feature selection adds (forward selection) or removes (backward
-selection) features to form a feature subset in a greedy fashion. At each
-stage, this estimator chooses the best feature to add or remove based on
-the cross-validation score of an estimator. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection">documentation</a>.</p>
 <p><strong>Removing features with low variance</strong><br>
 Variance is the expectation of the squared deviation of a random
 variable from its mean. Features with low variance have many values

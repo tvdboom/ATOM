@@ -54,9 +54,9 @@ from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
     divide, infer_task, check_method, check_scaling, check_multidim,
-    get_pl_name, names_from_estimator, get_columns, check_is_fitted,
-    variable_return, fit_one, delete, custom_transform, method_to_log,
-    composed, crash, CustomDict,
+    tablify, get_pl_name, names_from_estimator, get_columns,
+    check_is_fitted, variable_return, fit_one, delete, custom_transform,
+    method_to_log, composed, crash, CustomDict,
 )
 
 
@@ -720,7 +720,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             Internal parameter to always print if called by user.
 
         """
-        self.log("Dataset stats ====================== >>", _vb)
+        self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
         if not check_multidim(self.X):
@@ -743,20 +743,22 @@ class ATOM(BasePredictor, ATOMPlotter):
                 p_dup = round(100 * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
-        self.log("---------------------------------------", _vb)
+        self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
+        self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
-            self.log("---------------------------------------", _vb + 1)
-            cls = self.classes  # Calculate class distribution only once
+            cls = self.classes
+            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * 3)
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
-            df = pd.DataFrame(
-                data={col: [func(v, col) for v in cls[col]] for col in cls},
-                index=self.mapping.values(),
-            )
-            self.log(df.to_markdown(), _vb + 1)
+
+            self.log(tablify(["", *cls.columns], spaces), _vb + 1)
+            self.log(tablify(["--", *["-" * max(spaces)] * 3], spaces), _vb + 1)
+            for i, row in cls.iterrows():
+                sequence = [[i, "left"], *[func(row[col], col) for col in cls.columns]]
+                self.log(tablify(sequence, spaces), _vb + 1)
 
     @composed(crash, method_to_log)
     def status(self):

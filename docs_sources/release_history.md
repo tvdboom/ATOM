@@ -4,12 +4,18 @@
 <a name="v500"></a>
 ### Version 5.0.0
 
+* Added the [HistGBM](../API/models/hgbm) model.
+* Improved print layout for [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
+* The new [available_models](../API/ATOM/atomclassifier/#available-models)
+  method returns an overview of the available predefined models.
 * The [calibrate](../API/models/gnb/#calibrate) and [cross_validate](../API/models/gnb/#cross-validate)
   methods can no longer be accessed from the trainers.
 * The `pipeline` parameter for the [prediction methods](../user_guide/predicting)
   is deprecated.
 * Sparse matrices are now accepted as input.
+* Improvement in performance of the [RNN](../API/models/rnn) model.
 * Fixed a bug where custom scalers were ignored by the models.
+* Fixed a bug where the BO of certain models would crash with custom hyperparameters.
 * Documentation improvements.
 
 

@@ -302,13 +302,13 @@ def test_get_models_remove_duplicates():
     assert atom._get_models(["LR1", "LR1"]) == ["LR1"]
 
 
-@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
-def test_evaluate(metric):
-    """Assert that the evaluate method works when metric is None."""
+def test_available_models():
+    """Assert that the available_models method shows the models per task."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    pytest.raises(NotFittedError, atom.evaluate)
-    atom.run(["Tree", "PA"])
-    assert isinstance(atom.evaluate(metric=metric), pd.DataFrame)
+    models = atom.available_models()
+    assert isinstance(models, pd.DataFrame)
+    assert "LR" in models["acronym"].unique()
+    assert "BR" not in models["acronym"].unique()
 
 
 def test_delete_default():
@@ -370,6 +370,15 @@ def test_delete_models_is_sequence():
     assert atom.models == "LR"
     assert atom.winner is atom.LR
     assert len(atom.results) == 1
+
+
+@pytest.mark.parametrize("metric", ["ap", "roc_auc_ovo", "f1"])
+def test_evaluate(metric):
+    """Assert that the evaluate method works when metric is None."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    pytest.raises(NotFittedError, atom.evaluate)
+    atom.run(["Tree", "PA"])
+    assert isinstance(atom.evaluate(metric=metric), pd.DataFrame)
 
 
 def test_class_weights_invalid_dataset():

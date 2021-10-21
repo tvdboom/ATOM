@@ -39,8 +39,8 @@ from .basemodel import BaseModel
 from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, flt, lst, arr, time_to_str, composed, get_best_score,
-    get_scorer, crash, method_to_log, score_decorator,
+    SEQUENCE_TYPES, flt, lst, arr, time_to_str, tablify, get_best_score,
+    get_scorer, composed, crash, method_to_log, score_decorator,
 )
 
 
@@ -58,9 +58,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # BO attributes
         self._iter = 0
+        self._spaces = []
         self._init_bo = None
         self._pbar = None
         self._stopped = None
+        self.params = {}
         self.bo = pd.DataFrame(
             columns=["params", "model", "score", "time_iteration", "time"],
             index=pd.Index([], name="call"),
@@ -117,6 +119,15 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     f"unknown parameter {param} for the fit method of "
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
+
+    def _get_early_stopping_rounds(self, params, max_iter):
+        """Get the number of rounds for early stopping."""
+        if "early_stopping_rounds" in params:
+            return params.pop("early_stopping_rounds")
+        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
+            return self._early_stopping
+        elif self._early_stopping < 1:
+            return int(max_iter * self._early_stopping)
 
     def get_params(self, x):
         """Get a dictionary of the model's hyperparameters.
@@ -206,13 +217,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                         validation=(X_val, y_val),
                         params=est_copy,
                     )
-
-                    # Alert if early stopping was applied (only for cv=1)
-                    if self.T._cv == 1 and self._stopped:
-                        self.T.log(
-                            f"Early stop at iteration {self._stopped[0]} "
-                            f"of {self._stopped[1]}.", 2
-                        )
                 else:
                     est.fit(arr(X_subtrain), y_subtrain, **est_copy)
 
@@ -221,8 +225,20 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             t_iter = datetime.now()  # Get current time for start of the iteration
 
-            # Print iteration and time
+            # Start printing the information table
             self._iter += 1
+            if self._iter == 1:
+                table = [["Call", "left"]]
+                table.extend([p for p in params])
+                for m in self.T._metric:
+                    table.extend([m.name, "best_" + m.name])
+                if self._early_stopping and self.T._cv == 1:
+                    table.append("early stopping")
+                table.extend(["time iteration", "total time"])
+                self._spaces = [max(7, len(str(text))) for text in table]
+                self.T.log(tablify(table, spaces=self._spaces), 2)
+                self.T.log(tablify(["-" * s for s in self._spaces], self._spaces), 2)
+
             if self._iter > self._n_initial_points:
                 call = f"Iteration {self._iter}"
             else:
@@ -230,9 +246,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             if self._pbar:
                 self._pbar.set_description(call)
-            len_ = "-" * (48 - len(call))
-            self.T.log(f"{call} {len_}", 2)
-            self.T.log(f"Parameters --> {params}", 2)
 
             est = self.get_estimator({**self._est_params, **params})
 
@@ -290,13 +303,14 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 self._pbar.update(1)
 
             # Print output of the BO
-            out = [
-                f"{m.name}: {scores[i]:.4f}  Best {m.name}: "
-                f"{max([lst(s)[i] for s in self.bo.score]):.4f}"
-                for i, m in enumerate(self.T._metric)
-            ]
-            self.T.log(f"Evaluation --> {'   '.join(out)}", 2)
-            self.T.log(f"Time iteration: {t}   Total time: {t_tot}", 2)
+            table = [[call, "left"]]
+            table.extend([p for p in params.values()])
+            for i, m in enumerate(self.T._metric):
+                table.extend([scores[i], max([lst(s)[i] for s in self.bo.score])])
+            if self._early_stopping and self.T._cv == 1:
+                table.append(f"{self._stopped[0]}/{self._stopped[1]}")
+            table.extend([t, t_tot])
+            self.T.log(tablify(table, spaces=self._spaces), 2)
 
             return -scores[0]  # Negative since skopt tries to minimize
 
@@ -327,7 +341,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Get custom dimensions (if provided)
         if self._dimensions:
-
             @use_named_args(self._dimensions)
             def custom_hyperparameters(**x):
                 return optimize(**x)
@@ -338,6 +351,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:  # If there were no custom dimensions, use the default
             dimensions = self.get_dimensions()
             func = pre_defined_hyperparameters  # Default optimization func
+
+        # If no hyperparameters left to optimize, skip BO
+        if not dimensions:
+            self.T.log(" --> Skipping BO. No hyperparameters found to optimize.", 2)
+            return
 
         # If only 1 initial point, use the model's default parameters
         x0 = None

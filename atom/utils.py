@@ -104,10 +104,6 @@ Y_TYPES = Union[int, str, SEQUENCE_TYPES]
 # Non-sklearn models
 OPTIONAL_PACKAGES = dict(XGB="xgboost", LGB="lightgbm", CatB="catboost")
 
-# List of models that only work for regression/classification tasks
-ONLY_CLASS = ["GNB", "MNB", "BNB", "CatNB", "CNB", "LR", "LDA", "QDA"]
-ONLY_REG = ["OLS", "Lasso", "EN", "BR", "ARD"]
-
 # Attributes shared betwen atom and a pd.DataFrame
 DF_ATTRS = (
     "size",
@@ -333,6 +329,26 @@ def check_scaling(X):
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
     return True if mean < 0.05 and 0.93 < std < 1.07 else False
+
+
+def tablify(sequence, spaces):
+    """Convert a sequence to a nice formatted table row."""
+
+    def to_cell(text, space, adjust="right"):
+        if isinstance(text, list):
+            text, adjust = text[0], text[1]
+        if isinstance(text, float):
+            text = round(text, 4)
+        text = str(text)
+        if len(text) > space:
+            text = text[:space-3] + "..."
+
+        if adjust == "right":
+            return text.rjust(space)
+        else:
+            return text.ljust(space)
+
+    return "| " + " | ".join([to_cell(t, s) for t, s in zip(sequence, spaces)]) + " |"
 
 
 def get_corpus(X):

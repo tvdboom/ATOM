@@ -63,7 +63,7 @@ class Direct(BaseEstimator, BaseTrainer, BaseModelPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nTraining ===================================== >>", 1)
+        self.log("\nTraining " + "=" * 25 + " >>", 1)
         self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
@@ -132,7 +132,7 @@ class SuccessiveHalving(BaseEstimator, BaseTrainer, SuccessiveHalvingPlotter):
                 f"and skip_runs={self.skip_runs}."
             )
 
-        self.log("\nTraining ===================================== >>", 1)
+        self.log("\nTraining " + "=" * 25 + " >>", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
         run = 0
@@ -222,7 +222,7 @@ class TrainSizing(BaseEstimator, BaseTrainer, TrainSizingPlotter):
         self.task = infer_task(self.y_train, goal=self.goal)
         self._check_parameters()
 
-        self.log("\nTraining ===================================== >>", 1)
+        self.log("\nTraining " + "=" * 25 + " >>", 1)
         self.log(f"Models: {', '.join(lst(self.models))}", 1)
         self.log(f"Metric: {', '.join(lst(self.metric))}", 1)
 
