@@ -10,10 +10,8 @@ Description: Module containing the BasePredictor class.
 # Standard packages
 import numpy as np
 import pandas as pd
-from typing import Union, Optional
-
-import win32print
 from typeguard import typechecked
+from typing import Union, Optional
 
 # Own modules
 from .branch import Branch

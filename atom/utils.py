@@ -958,7 +958,7 @@ def name_cols(array, original_df, col_names):
     temp_cols = []
     for i, col in enumerate(array.T, start=1):
         mask = original_df.apply(lambda c: all(c == col))
-        if any(mask):
+        if any(mask) and mask[mask].index.values[0] not in temp_cols:
             temp_cols.append(mask[mask].index.values[0])
         else:
             temp_cols.append(f"Feature {i + original_df.shape[1] - len(col_names)}")

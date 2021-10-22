@@ -17,6 +17,7 @@
 * Improvement in performance of the [RNN](../API/models/rnn) model.
 * Fixed a bug where custom scalers were ignored by the models.
 * Fixed a bug where the BO of certain models would crash with custom hyperparameters.
+* Fixed a bug where duplicate column names could be generated from a custom transformer.
 * Documentation improvements.
 
 
