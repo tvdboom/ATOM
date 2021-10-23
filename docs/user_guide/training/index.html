@@ -14,7 +14,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/training/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.2">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.2">
     
     
   <title>Training - ATOM</title>
@@ -3008,7 +3008,7 @@ ignored by the bayesian optimization! </p>
 estimator's hyperparameters before training it. ATOM provides
 <a href="https://en.wikipedia.org/wiki/Hyperparameter_optimization">hyperparameter tuning</a>
 using a <a href="https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.">bayesian optimization</a>
-(BO) approach implemented by <a href="https://scikit-optimize.github.io/stable/">skopt</a>.
+(BO) approach implemented with <a href="https://scikit-optimize.github.io/stable/">skopt</a>.
 The BO is optimized on the first metric provided with the <code>metric</code>
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
@@ -3034,8 +3034,15 @@ will run 20 iterations of which the first 10 are random.</p>
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>If <code>n_initial_points=1</code>, the first trial is equal to the
+<p>If <code>n_initial_points=1</code>, the first call is equal to the
 estimator's default parameters.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The train/validation splits are equal for all models. However, every
+call uses a different split. This means that re-evaluating the objective
+at the same point can yield different results even when the <code>random_state</code>
+of the trainer is fixed.</p>
 </div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

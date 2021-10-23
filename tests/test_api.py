@@ -123,7 +123,7 @@ def test_transform_data_multiple_branches():
 def test_goal_ATOMClassifier():
     """Assert that the goal is set correctly for ATOMClassifier."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    assert atom.goal == "classification"
+    assert atom.goal == "class"
 
 
 # Test ATOMRegressor =============================================== >>
@@ -131,4 +131,4 @@ def test_goal_ATOMClassifier():
 def test_goal_ATOMRegressor():
     """Assert that the goal is set correctly for ATOMRegressor."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
-    assert atom.goal == "regression"
+    assert atom.goal == "reg"

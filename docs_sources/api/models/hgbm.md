@@ -35,6 +35,10 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/e
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
 <td width="80%" class="td_params">
 <p>
+<strong>loss: str, default="squared_error"</strong><br>
+Categorical(["squared_error", "absolute_error", "poisson"], name="loss")
+</p>
+<p>
 <strong>learning_rate: float, default=0.1</strong><br>
 Real(0.01, 1.0, "log-uniform", name="learning_rate")
 </p>
@@ -58,9 +62,6 @@ Integer(10, 30, name="min_samples_leaf")
 <strong>l2_regularization: float, default=0.0</strong><br>
 Categorical([*np.linspace(0.0, 1.0, 11)], name="l2_regularization")
 </p>
-<strong>loss: str, default="squared_error"</strong><br>
-Categorical(["squared_error", "least_squares", "absolute_error",
-"least_absolute_deviation", "poisson"], name="loss")
 </td>
 </tr>
 </table>

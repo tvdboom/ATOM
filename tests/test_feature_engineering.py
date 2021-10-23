@@ -246,12 +246,12 @@ def test_goal_attribute():
     # For classification tasks
     selector = FeatureSelector(strategy="SFM", solver="LGB_class")
     selector.fit(X_bin, y_bin)
-    assert selector.goal == "classification"
+    assert selector.goal == "class"
 
     # For regression tasks
     selector = FeatureSelector(strategy="SFM", solver="LGB_reg")
     selector.fit(X_reg, y_reg)
-    assert selector.goal == "regression"
+    assert selector.goal == "reg"
 
 
 def test_solver_parameter_invalid_value():

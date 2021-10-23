@@ -215,7 +215,7 @@ In order to achieve maximum performance, it's important to tune an
 estimator's hyperparameters before training it. ATOM provides
 [hyperparameter tuning](https://en.wikipedia.org/wiki/Hyperparameter_optimization)
 using a [bayesian optimization](https://en.wikipedia.org/wiki/Bayesian_optimization#:~:text=Bayesian%20optimization%20is%20a%20sequential,expensive%2Dto%2Devaluate%20functions.)
-(BO) approach implemented by [skopt](https://scikit-optimize.github.io/stable/).
+(BO) approach implemented with [skopt](https://scikit-optimize.github.io/stable/).
 The BO is optimized on the first metric provided with the `metric`
 parameter. Each step is either computed by cross-validation on the
 complete training set or by randomly splitting the training set every
@@ -241,8 +241,14 @@ performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/be
     will run 20 iterations of which the first 10 are random.
 
 !!! note
-    If `n_initial_points=1`, the first trial is equal to the
+    If `n_initial_points=1`, the first call is equal to the
     estimator's default parameters.
+
+!!! note
+    The train/validation splits are equal for all models. However, every
+    call uses a different split. This means that re-evaluating the objective
+    at the same point can yield different results even when the `random_state`
+    of the trainer is fixed.
 
 !!! tip
     The hyperparameter tuning output can become quite wide for models

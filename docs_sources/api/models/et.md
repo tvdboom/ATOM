@@ -38,8 +38,8 @@ Integer(10, 500, name="n_estimators")
 <ul style="line-height:1.5em;margin-top:5px;margin-bottom:0">
 <li>classifier: default="gini"<br>
 Categorical(["gini", "entropy"], name="criterion")</li>
-<li>regressor: default="mse"<br>
-Categorical(["mse", "mae", "friedman_mse"], name="criterion")</li>
+<li>regressor: default="squared_error"<br>
+Categorical(["squared_error", "absolute_error"], name="criterion")</li>
 </ul>
 <p>
 <strong>max_depth: int or None, default=None</strong><br>

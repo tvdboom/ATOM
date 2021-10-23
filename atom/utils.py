@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing utility constants, functions and classes.
 
@@ -292,7 +292,7 @@ def check_method(cls, method):
 
 def check_goal(cls, method, goal):
     """Raise an error if the goal is invalid."""
-    if not cls.goal == goal:
+    if not goal.startswith(cls.goal):
         raise PermissionError(
             f"The {method} method is only available for {goal} tasks!"
         )
@@ -329,26 +329,6 @@ def check_scaling(X):
     mean = X.mean(numeric_only=True).mean()
     std = X.std(numeric_only=True).mean()
     return True if mean < 0.05 and 0.93 < std < 1.07 else False
-
-
-def tablify(sequence, spaces):
-    """Convert a sequence to a nice formatted table row."""
-
-    def to_cell(text, space, adjust="right"):
-        if isinstance(text, list):
-            text, adjust = text[0], text[1]
-        if isinstance(text, float):
-            text = round(text, 4)
-        text = str(text)
-        if len(text) > space:
-            text = text[:space-3] + "..."
-
-        if adjust == "right":
-            return text.rjust(space)
-        else:
-            return text.ljust(space)
-
-    return "| " + " | ".join([to_cell(t, s) for t, s in zip(sequence, spaces)]) + " |"
 
 
 def get_corpus(X):
@@ -767,7 +747,7 @@ def get_scorer(metric, gib=True, needs_proba=False, needs_threshold=False):
     return scorer
 
 
-def infer_task(y, goal="classification"):
+def infer_task(y, goal="class"):
     """Infer the task corresponding to a target column.
 
     If goal is provided, only look at number of unique values to
@@ -778,7 +758,7 @@ def infer_task(y, goal="classification"):
     y: pd.Series
         Target column from which to infer the task.
 
-    goal: str, optional (default="classification")
+    goal: str, optional (default="class")
         Classification or regression goal.
 
     Returns
@@ -787,8 +767,8 @@ def infer_task(y, goal="classification"):
         Inferred task.
 
     """
-    if goal == "regression":
-        return goal
+    if goal == "reg":
+        return "regression"
 
     unique = y.unique()
     if len(unique) == 1:
@@ -1322,6 +1302,68 @@ CUSTOM_SCORERS = dict(
 class NotFittedError(ValueError, AttributeError):
     """Exception called when the instance is not yet fitted."""
     pass
+
+
+class Table:
+    """Class to print nice tables per row.
+
+    Parameters
+    ----------
+    headers: sequence
+        Name of each column in the table. If an element is a tuple,
+        the second element, should be the position of the text in the
+        cell (left or right).
+
+    spaces: sequence
+        Width of each column. Should have the same length as `headers`.
+
+    default_pos: str, optional (default="right")
+        Default position of the text in the cell.
+
+    """
+
+    def __init__(self, headers, spaces, default_pos="right"):
+        self.headers = []
+        self.positions = []
+        for header in headers:
+            if isinstance(header, tuple):
+                self.headers.append(header[0])
+                self.positions.append(header[1])
+            else:
+                self.headers.append(header)
+                self.positions.append(default_pos)
+
+        self.spaces = spaces
+
+    @staticmethod
+    def to_cell(text, position, space):
+        """Get the string format for one cell."""
+        if isinstance(text, float):
+            text = round(text, 4)
+        text = str(text)
+        if len(text) > space:
+            text = text[:space - 2] + ".."
+
+        if position == "right":
+            return text.rjust(space)
+        else:
+            return text.ljust(space)
+
+    def print_header(self):
+        """Print the header line."""
+        return self.print({k: k for k in self.headers})
+
+    def print_line(self):
+        """Print a line with dashes (usually used after header)."""
+        return self.print({k: "-" * s for k, s in zip(self.headers, self.spaces)})
+
+    def print(self, sequence):
+        """Convert a sequence to a nice formatted table row."""
+        out = []
+        for header, pos, space in zip(self.headers, self.positions, self.spaces):
+            out.append(self.to_cell(sequence.get(header, "---"), pos, space))
+
+        return "| " + " | ".join(out) + " |"
 
 
 class PlotCallback:

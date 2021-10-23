@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the BasePredictor class.
 
@@ -19,7 +19,7 @@ from .models import MODEL_LIST
 from .ensembles import Voting, Stacking
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
-    check_is_fitted, divide, get_best_score, tablify, delete,
+    check_is_fitted, divide, get_best_score, delete,
     method_to_log, composed, crash,
 )
 
@@ -376,7 +376,7 @@ class BasePredictor:
             Classes with the corresponding weights.
 
         """
-        if not self.goal.startswith("class"):
+        if self.goal != "class":
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
             )
@@ -430,7 +430,7 @@ class BasePredictor:
         if not models:
             models = self.branch._get_depending_models()
         if not estimator:
-            estimator = "LR" if self.goal.startswith("class") else "Ridge"
+            estimator = "LR" if self.goal == "class" else "Ridge"
 
         self._models["stack"] = Stacking(
             self,

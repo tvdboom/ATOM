@@ -14,7 +14,7 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/release_history/">
       
       <link rel="icon" href="../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.3.2">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.2">
     
     
   <title>Release history - ATOM</title>
@@ -653,8 +653,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#version-500" class="md-nav__link">
-    Version 5.0.0
+  <a href="#version-490" class="md-nav__link">
+    Version 4.9.0
   </a>
   
 </li>
@@ -2779,8 +2779,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#version-500" class="md-nav__link">
-    Version 5.0.0
+  <a href="#version-490" class="md-nav__link">
+    Version 4.9.0
   </a>
   
 </li>
@@ -2898,9 +2898,10 @@
                 
                 <h1 id="release-history">Release history</h1>
 <hr />
-<p><a name="v500"></a></p>
-<h3 id="version-500">Version 5.0.0</h3>
+<p><a name="v490"></a></p>
+<h3 id="version-490">Version 4.9.0</h3>
 <ul>
+<li>Drop support of <a href="https://www.python.org/downloads/release/python-360/">Python 3.6</a>.</li>
 <li>Added the <a href="../API/models/hgbm">HistGBM</a> model.</li>
 <li>Improved print layout for <a href="../user_guide/training/#hyperparameter-tuning">hyperparameter tuning</a>.</li>
 <li>The new <a href="../API/ATOM/atomclassifier/#available-models">available_models</a>
@@ -2911,8 +2912,12 @@
   is deprecated.</li>
 <li>Sparse matrices are now accepted as input.</li>
 <li>Improvement in performance of the <a href="../API/models/rnn">RNN</a> model.</li>
+<li>The <code>ls</code> and <code>lad</code> loss for the <a href="../API/models/gbm">GBM</a> model
+  hyperparameter are replaced with <code>squared_error</code> and <code>absolute_error</code>
+  respectively to be consistent with sklearn's API.</li>
 <li>Fixed a bug where custom scalers were ignored by the models.</li>
 <li>Fixed a bug where the BO of certain models would crash with custom hyperparameters.</li>
+<li>Fixed a bug where duplicate column names could be generated from a custom transformer.</li>
 <li>Documentation improvements.</li>
 </ul>
 <p><a name="v480"></a></p>

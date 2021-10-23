@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the BaseModel class.
 
@@ -152,7 +152,7 @@ class BaseModel(BaseModelPlotter):
             return getattr(self.estimator, method)(X)
         else:
             if metric is None:
-                if self.T.goal.startswith("class"):
+                if self.T.goal == "class":
                     metric = get_scorer("accuracy")
                 else:
                     metric = get_scorer("r2")

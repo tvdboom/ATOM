@@ -8,9 +8,9 @@ Description: Unit tests for pipeline.py
 """
 
 # Standard packages
-import pandas as pd
 import pytest
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 # Own modules

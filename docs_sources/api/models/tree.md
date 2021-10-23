@@ -29,8 +29,9 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/t
 <ul style="line-height:1.5em;margin-top:5px;margin-bottom:0">
 <li>classifier: default="gini"<br>
 Categorical(["gini", "entropy"], name="criterion")</li>
-<li>regressor: default="mse"<br>
-Categorical(["mse", "mae", "friedman_mse"], name="criterion")</li>
+<li>regressor: default="squared_error"<br>
+Categorical(["squared_error", "absolute_error", "friedman_mse",
+"poisson"], name="criterion")</li>
 </ul>
 <p>
 <strong>splitter: str, default="best"</strong><br>

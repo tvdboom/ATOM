@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the Voting and Stacking classes.
 
@@ -496,7 +496,7 @@ class Stacking(BaseModel, BaseEnsemble):
             return getattr(self.estimator, method)(fxs_set)
         else:
             if metric is None:
-                if self.T.goal.startswith("class"):
+                if self.T.goal == "class":
                     metric = get_scorer("accuracy")
                 else:
                     metric = get_scorer("r2")

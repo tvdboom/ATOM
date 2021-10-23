@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the parent class for the trainers.
 
@@ -229,7 +229,7 @@ class BaseTrainer(BaseTransformer, BasePredictor):
 
         # If left to default, select all predefined models per task
         if None in self._models:
-            if self.goal.startswith("class"):
+            if self.goal == "class":
                 models = [m(self) for m in MODEL_LIST if m.task in ("class", "both")]
             else:
                 models = [m(self) for m in MODEL_LIST if m.task in ("reg", "both")]
@@ -252,11 +252,11 @@ class BaseTrainer(BaseTransformer, BasePredictor):
                     models.append(MODEL_LIST[acronym](self, acronym + m[len(acronym):]))
 
                     # Check for regression/classification-only models
-                    if self.goal.startswith("class") and models[-1].task == "reg":
+                    if self.goal == "class" and models[-1].task == "reg":
                         raise ValueError(
                             f"The {acronym} model can't perform classification tasks!"
                         )
-                    elif self.goal.startswith("reg") and models[-1].task == "class":
+                    elif self.goal == "reg" and models[-1].task == "class":
                         raise ValueError(
                             f"The {acronym} model can't perform regression tasks!"
                         )

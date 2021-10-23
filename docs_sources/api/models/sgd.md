@@ -36,8 +36,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/s
 <ul style="line-height:1.5em;margin-top:5px">
 <li>classifier: default="hinge"<br>
 Categorical(["hinge", "log", "modified_huber", "squared_hinge", "perceptron"], name="loss")</li>
-<li>regressor: default="squared_loss"<br>
-Categorical(["squared_loss", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"], name="loss")</li>
+<li>regressor: default="squared_error"<br>
+Categorical(["squared_error", "huber", "epsilon_insensitive", "squared_epsilon_insensitive"], name="loss")</li>
 </ul>
 <p>
 <strong>penalty: str, default="l2"</strong><br>

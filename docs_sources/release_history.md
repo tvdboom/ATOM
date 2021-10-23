@@ -1,8 +1,8 @@
 # Release history
 -----------------
 
-<a name="v500"></a>
-### Version 5.0.0
+<a name="v490"></a>
+### Version 4.9.0
 
 * Drop support of [Python 3.6](https://www.python.org/downloads/release/python-360/).
 * Added the [HistGBM](../API/models/hgbm) model.
@@ -15,6 +15,9 @@
   is deprecated.
 * Sparse matrices are now accepted as input.
 * Improvement in performance of the [RNN](../API/models/rnn) model.
+* The `ls` and `lad` loss for the [GBM](../API/models/gbm) model
+  hyperparameter are replaced with `squared_error` and `absolute_error`
+  respectively to be consistent with sklearn's API.
 * Fixed a bug where custom scalers were ignored by the models.
 * Fixed a bug where the BO of certain models would crash with custom hyperparameters.
 * Fixed a bug where duplicate column names could be generated from a custom transformer.

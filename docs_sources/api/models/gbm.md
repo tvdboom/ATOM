@@ -32,6 +32,13 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/e
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Dimensions:</strong></td>
 <td width="80%" class="td_params">
+<strong>loss: str</strong><br>
+<ul style="line-height:1.5em;margin-top:5px;margin-bottom:0">
+<li>binary classifier: default="deviance"<br>
+Categorical(["deviance", "exponential"], name="loss")</li>
+<li>regressor: default="squared_error"<br>
+Categorical(["squared_error", "absolute_error", "huber", "quantile"], name="loss")</li>
+</ul>
 <p>
 <strong>learning_rate: float, default=0.1</strong><br>
 Real(0.01, 1.0, "log-uniform", name="learning_rate")
@@ -46,7 +53,7 @@ Categorical(np.linspace(0.5, 1.0, 6), name="subsample")
 </p>
 <p>
 <strong>criterion: str, default="friedman_mse"</strong><br>
-Categorical(["friedman_mse", "mae", "mse"], name="criterion")
+Categorical(["friedman_mse", "mse"], name="criterion")
 </p>
 <p>
 <strong>min_samples_split: int, default=2</strong><br>
@@ -68,13 +75,6 @@ Categorical([None, *np.linspace(0.5, 0.9, 5)], name="max_features")
 <strong>ccp_alpha: float, default=0</strong><br>
 Real(0, 0.035, name="ccp_alpha")
 </p>
-<strong>loss: str</strong><br>
-<ul style="line-height:1.5em;margin-top:5px;margin-bottom:0">
-<li>binary classifier: default="deviance"<br>
-Categorical(["deviance", "exponential"], name="loss")</li>
-<li>regressor: default="ls"<br>
-Categorical(["ls", "lad", "huber", "quantile"], name="loss")</li>
-</ul>
 <p>
 <strong>alpha: float, default=0.9</strong><br>
 Categorical(np.linspace(0.5, 0.9, 5), name="alpha")

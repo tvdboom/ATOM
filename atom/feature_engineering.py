@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the feature engineering estimators.
 
@@ -809,10 +809,10 @@ class FeatureSelector(BaseEstimator, TransformerMixin, BaseTransformer, FSPlotte
                 elif isinstance(self.solver, str):
                     # Assign goal depending on solver's ending
                     if self.solver[-6:] == "_class":
-                        self.goal = "classification"
+                        self.goal = "class"
                         self._solver = self.solver[:-6]
                     elif self.solver[-4:] == "_reg":
-                        self.goal = "regression"
+                        self.goal = "reg"
                         self._solver = self.solver[:-4]
                     else:
                         self._solver = self.solver

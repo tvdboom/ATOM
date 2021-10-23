@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the training classes.
 
@@ -284,7 +284,7 @@ class DirectClassifier(Direct):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "classification"
+        self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
@@ -315,7 +315,7 @@ class DirectRegressor(Direct):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "regression"
+        self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             n_calls, n_initial_points, est_params, bo_params, n_bootstrap,
@@ -347,7 +347,7 @@ class SuccessiveHalvingClassifier(SuccessiveHalving):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "classification"
+        self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
@@ -380,7 +380,7 @@ class SuccessiveHalvingRegressor(SuccessiveHalving):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "regression"
+        self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             skip_runs, n_calls, n_initial_points, est_params, bo_params,
@@ -413,7 +413,7 @@ class TrainSizingClassifier(TrainSizing):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "classification"
+        self.goal = "class"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,
@@ -446,7 +446,7 @@ class TrainSizingRegressor(TrainSizing):
         experiment: Optional[str] = None,
         random_state: Optional[int] = None,
     ):
-        self.goal = "regression"
+        self.goal = "reg"
         super().__init__(
             models, metric, greater_is_better, needs_proba, needs_threshold,
             train_sizes, n_calls, n_initial_points, est_params, bo_params,

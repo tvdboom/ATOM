@@ -80,25 +80,25 @@ def test_ts_different_train_sizes_types():
 def test_goals_trainers():
     """Assert that the goal of every Trainer class is set correctly."""
     trainer = DirectClassifier("LR")
-    assert trainer.goal == "classification"
+    assert trainer.goal == "class"
 
     trainer = DirectRegressor("OLS")
-    assert trainer.goal == "regression"
+    assert trainer.goal == "reg"
 
 
 def test_goals_successive_halving():
     """Assert that the goal of every SuccessiveHalving class is set correctly."""
     sh = SuccessiveHalvingClassifier("LR")
-    assert sh.goal == "classification"
+    assert sh.goal == "class"
 
     sh = SuccessiveHalvingRegressor("OLS")
-    assert sh.goal == "regression"
+    assert sh.goal == "reg"
 
 
 def test_goals_train_sizing():
     """Assert that the goal of every TrainSizing class is set correctly."""
     ts = TrainSizingClassifier("LR")
-    assert ts.goal == "classification"
+    assert ts.goal == "class"
 
     ts = TrainSizingRegressor("OLS")
-    assert ts.goal == "regression"
+    assert ts.goal == "reg"

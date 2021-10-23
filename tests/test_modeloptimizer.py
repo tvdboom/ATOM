@@ -127,7 +127,7 @@ def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.run("LR", n_calls=5)
-    assert atom.lr._pbar is not None
+    assert not atom.errors
 
 
 @patch("mlflow.set_tags")

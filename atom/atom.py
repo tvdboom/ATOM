@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the ATOM class.
 
@@ -54,9 +54,9 @@ from .plots import ATOMPlotter
 from .utils import (
     SCALAR, SEQUENCE_TYPES, X_TYPES, Y_TYPES, DISTRIBUTIONS, flt, lst,
     divide, infer_task, check_method, check_scaling, check_multidim,
-    tablify, get_pl_name, names_from_estimator, get_columns,
-    check_is_fitted, variable_return, fit_one, delete, custom_transform,
-    method_to_log, composed, crash, CustomDict,
+    get_pl_name, names_from_estimator, get_columns, check_is_fitted,
+    variable_return, fit_one, delete, custom_transform, method_to_log,
+    composed, crash, Table, CustomDict,
 )
 
 
@@ -338,7 +338,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             random_state=kwargs.pop("random_state", self.random_state),
             **kwargs,
         )
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             self.branch.tpot = TPOTClassifier(**kwargs)
         else:
             self.branch.tpot = TPOTRegressor(**kwargs)
@@ -494,14 +494,14 @@ class ATOM(BasePredictor, ATOMPlotter):
             to the end of their names.
 
         """
-        if self.goal.startswith("class"):
-            if not getattr(atom, "goal", "").startswith("class"):
+        if self.goal == "class":
+            if not getattr(atom, "goal", "") == "class":
                 raise TypeError(
                     "Invalid type for the atom parameter. The provided object should "
                     f"be an ATOMClassifier instance, got {atom.__class__.__name__}."
                 )
-        elif self.goal.startswith("reg"):
-            if not getattr(atom, "goal", "").startswith("reg"):
+        elif self.goal == "reg":
+            if not getattr(atom, "goal", "") == "reg":
                 raise TypeError(
                     "Invalid type for the atom parameter. The provided object should "
                     f"be an ATOMRegressor instance, got {atom.__class__.__name__}."
@@ -754,11 +754,12 @@ class ATOM(BasePredictor, ATOMPlotter):
             spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * 3)
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
 
-            self.log(tablify(["", *cls.columns], spaces), _vb + 1)
-            self.log(tablify(["--", *["-" * max(spaces)] * 3], spaces), _vb + 1)
+            table = Table([("", "left"), *cls.columns], spaces)
+            self.log(table.print_header(), _vb + 1)
+            self.log(table.print_line(), _vb + 1)
             for i, row in cls.iterrows():
-                sequence = [[i, "left"], *[func(row[col], col) for col in cls.columns]]
-                self.log(tablify(sequence, spaces), _vb + 1)
+                sequence = {"": i, **{c: func(row[c], c) for c in cls.columns}}
+                self.log(table.print(sequence), _vb + 1)
 
     @composed(crash, method_to_log)
     def status(self):
@@ -1062,7 +1063,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             drop_min_cardinality=drop_min_cardinality,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
-            encode_target=encode_target if self.goal.startswith("class") else False,
+            encode_target=encode_target if self.goal == "class" else False,
             **kwargs,
         )
         # Pass atom's missing values to the cleaner before transforming
@@ -1203,7 +1204,7 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         """
         check_method(self, "balance")
-        if not self.goal.startswith("class"):
+        if self.goal != "class":
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
             )
@@ -1462,17 +1463,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_method(self, "feature_selection")
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
-                if self.goal.startswith("reg"):
-                    solver = "f_regression"
-                else:
-                    solver = "f_classif"
+                solver = "f_classif" if self.goal == "class" else "f_regression"
             elif strategy.lower() in ("sfm", "rfe", "rfecv", "sfs"):
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
                     # In case the user already filled the task...
                     if not solver.endswith("_class") and not solver.endswith("_reg"):
-                        solver += "_reg" if self.task.startswith("reg") else "_class"
+                        solver += f"_{self.goal}"
 
             # If the run method was called before, use the main metric
             if strategy.lower() in ("rfecv", "sfs"):
@@ -1611,7 +1609,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = DirectClassifier(*params, **kwargs)
         else:
             trainer = DirectRegressor(*params, **kwargs)
@@ -1657,7 +1655,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = SuccessiveHalvingClassifier(*params, **kwargs)
         else:
             trainer = SuccessiveHalvingRegressor(*params, **kwargs)
@@ -1701,7 +1699,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = TrainSizingClassifier(*params, **kwargs)
         else:
             trainer = TrainSizingRegressor(*params, **kwargs)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing estimators for NLP.
 
@@ -701,7 +701,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         matrix = self._estimator.transform(X[corpus]).toarray()
         if self.strategy.lower() != "hashing":
-            for i, word in enumerate(self._estimator.get_feature_names()):
+            for i, word in enumerate(self._estimator.get_feature_names_out()):
                 X[word] = matrix[:, i]
         else:
             # Hashing has no words to put as column names

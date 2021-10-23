@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the plotting classes.
 
@@ -29,6 +29,7 @@ from nltk.collocations import (
 )
 
 # Plotting packages
+import shap
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.transforms import blended_transform_factory
@@ -57,11 +58,6 @@ from .utils import (
     get_corpus, get_scorer, get_best_score, partial_dependence,
     get_columns, composed, crash, plot_from_model,
 )
-
-# Catch annoying tensorflow warnings when importing shap
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import shap
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
 
 
 class BaseFigure:
@@ -3329,7 +3325,8 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.waterfall(shap_values, max_display=show, show=False)
+        # TODO: Fix when shap updates -> show=False
+        shap.plots.waterfall(shap_values, max_display=show, show=True)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
