@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/training/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.2">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
     
     
   <title>Training - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.24c991ad.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -649,20 +649,6 @@
         <li class="md-nav__item">
   <a href="#train-sizing" class="md-nav__link">
     Train sizing
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#voting" class="md-nav__link">
-    Voting
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#stacking" class="md-nav__link">
-    Stacking
   </a>
   
 </li>
@@ -2787,20 +2773,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#voting" class="md-nav__link">
-    Voting
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#stacking" class="md-nav__link">
-    Stacking
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -3026,24 +2998,17 @@ of iterations spent optimizing (exploitation). If <code>n_calls</code> is equal 
 <code>n_initial_points</code>, every iteration of the BO will select its
 hyperparameters randomly. This means the algorithm is technically
 performing a <a href="https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf">random search</a>.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The <code>n_calls</code> parameter includes the iterations in <code>n_initial_points</code>,
-i.e. calling <code>atom.run(models="LR", n_calls=20, n_intial_points=10)</code>
-will run 20 iterations of which the first 10 are random.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>If <code>n_initial_points=1</code>, the first call is equal to the
-estimator's default parameters.</p>
-</div>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>The train/validation splits are equal for all models. However, every
-call uses a different split. This means that re-evaluating the objective
-at the same point can yield different results even when the <code>random_state</code>
-of the trainer is fixed.</p>
-</div>
+<p>Extra things to take into account:</p>
+<ul>
+<li>The <code>n_calls</code> parameter includes the iterations in <code>n_initial_points</code>,
+  i.e. calling <code>atom.run(models="LR", n_calls=20, n_intial_points=10)</code>
+  will run 20 iterations of which the first 10 are random.</li>
+<li>If <code>n_initial_points=1</code>, the first call is equal to the
+  estimator's default parameters.</li>
+<li>The train/validation splits are different per call but equal for all models.</li>
+<li>Re-evaluating the objective function at the same point automatically
+  skips the calculation and returns the same score as the equivalent call.</li>
+</ul>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>The hyperparameter tuning output can become quite wide for models
@@ -3088,7 +3053,8 @@ using the <a href="https://en.wikipedia.org/wiki/Bootstrapping_(statistics)">boo
 technique. This technique creates several new data sets selecting random 
 samples from the training set (with replacement) and evaluates them on 
 the test set. This way we get a distribution of the performance of the
-model. The number of sets can be chosen through the <code>n_bootstrap</code> parameter.</p>
+model. The sets are the same for every model. The number of sets can be
+chosen through the <code>n_bootstrap</code> parameter.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../../API/plots/plot_results">plot_results</a> method to plot
@@ -3164,58 +3130,6 @@ would become model <code>RF08</code>.</p>
 <p class="admonition-title">Tip</p>
 <p>Use the <a href="../../API/plots/plot_learning_curve">plot_learning_curve</a>
 method to see the model's performance per size of the training set.</p>
-</div>
-<p><br></p>
-<h2 id="voting">Voting</h2>
-<p>The idea behind Voting is to combine the predictions of conceptually
-different models to make new predictions. Such a technique can be
-useful for a set of equally well performing models in order to balance
-out their individual weaknesses. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier">documentation</a>.</p>
-<p>A Voting model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#voting">voting</a>
-method. The Voting model is added automatically to the list of
-models in the pipeline, under the <code>Vote</code> acronym. Although similar,
-this model is different from the VotingClassifier and VotingRegressor
-estimators from sklearn. Remember that the model is added to the
-plots if the <code>models</code> parameter is not specified. Plots that require
-a data set will use the one in the current branch. Plots that require
-an estimator object will raise an exception.</p>
-<p>The Voting class has the same prediction attributes and prediction
-methods as other models. The <code>predict_proba</code>, <code>predict_log_proba</code>,
-<code>decision_function</code> and <code>score</code> methods return the average predictions
-(soft voting) over the models in the instance. Note that these methods
-will raise an exception if not all estimators in the Voting instance
-have the specified method. The <code>predict</code> method returns the majority
-vote (hard voting). The <code>evaluate</code> method also returns the average
-score for the selected metric over the models.</p>
-<p>Click <a href="../../examples/ensembles">here</a> for a voting example.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Although it is possible to include models from different branches
-in the same Voting instance, this is highly discouraged. Data sets
-from different branches with unequal shape can result in unexpected
-errors for plots and prediction methods.</p>
-</div>
-<p><br></p>
-<h2 id="stacking">Stacking</h2>
-<p>Stacking is a method for combining estimators to reduce their biases.
-More precisely, the predictions of each individual estimator are
-stacked together and used as input to a final estimator to compute the
-prediction. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization">documentation</a>.</p>
-<p>A Stacking model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#stacking">stacking</a>
-method. The Stacking model is added automatically to the list of
-models in the pipeline, under the <code>Stack</code> acronym. Remember that the
-model is added to the plots if the <code>models</code> parameter is not
-specified. Plots that require a data set will use the one in the
-current branch. The prediction methods, the evaluate method and the
-plot methods that require an estimator object will use the Voting's
-final estimator, under the <code>estimator</code> attribute.</p>
-<p>Click <a href="../../examples/ensembles">here</a> for a stacking example.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Although it is possible to include models from different branches
-in the same Stacking instance, this is highly discouraged. Data
-sets from different branches with unequal shape can result in
-unexpected errors for plots and prediction methods.</p>
 </div>
                 
               
@@ -3326,10 +3240,10 @@ unexpected errors for plots and prediction methods.</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.e99e714c.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.bc35569b.min.js"></script>
+      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
       
         <script src="../../stylesheets/extra.js"></script>
       

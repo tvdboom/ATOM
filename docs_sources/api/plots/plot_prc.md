@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">plot_prc</strong>(models=None,
 dataset="test", title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1127">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L1143">[source]</a>
 </span>
 </div>
 

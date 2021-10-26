@@ -346,7 +346,7 @@ def test_sequence_parameters():
     )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
-    assert sum(trainer.tree.bo.index.str.startswith("Initial")) == 2
+    assert sum(trainer.tree.bo["call"].str.startswith("Initial")) == 2
     assert len(trainer.lgb.metric_bootstrap) == 7
 
 

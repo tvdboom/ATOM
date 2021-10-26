@@ -230,7 +230,7 @@ class BasePlotter:
             BasePlotter._fig = BaseFigure()
             return BasePlotter._fig.figure
 
-    def _get_subclass(self, models, max_one=False):
+    def _get_subclass(self, models, max_one=False, ensembles=True):
         """Check and return the provided parameter models.
 
         Parameters
@@ -242,9 +242,17 @@ class BasePlotter:
             Whether one or multiple models are allowed. If True, return
             the model instead of a list.
 
+        ensembles: bool, optional (default=True)
+            If False, drop ensemble models automatically.
+
         """
         models = self._get_models(models)
-        model_subclasses = [m for m in self._models if m.name in models]
+
+        model_subclasses = []
+        ensembles = () if ensembles else ("Vote", "Stack")
+        for m in self._models:
+            if m.name in models and m.acronym not in ensembles:
+                model_subclasses.append(m)
 
         if max_one and len(model_subclasses) > 1:
             raise ValueError("This plot method allows only one model at a time!")
@@ -805,7 +813,8 @@ class BaseModelPlotter(BasePlotter):
 
         def get_bootstrap(m):
             """Get the bootstrap results for a specific metric."""
-            if getattr(m, "metric_bootstrap", None):
+            # Use getattr since ensembles don't have the attribute
+            if isinstance(getattr(m, "metric_bootstrap", None), np.ndarray):
                 if len(self._metric) == 1:
                     return m.metric_bootstrap
                 else:
@@ -829,7 +838,7 @@ class BaseModelPlotter(BasePlotter):
         models = sorted(models, key=lambda m: get_best_score(m, metric))
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
 
-        all_bootstrap = all(get_bootstrap(m) for m in models)
+        all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
         for i, m in enumerate(models):
             names.append(m.name)
             if all_bootstrap:
@@ -3389,27 +3398,33 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
+        models = self._get_subclass(models, ensembles=False)
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
-        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
         for m in models:
-            y[m._group].append(get_best_score(m, metric))
-            x[m._group].append(m.branch.idx[0] // m._train_idx)
-            if m.std_bootstrap:
-                std[m._group].append(lst(m.std_bootstrap)[metric])
-
-        for k in x:
-            if not std:
-                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
+            n_models = m.branch.idx[0] // m._train_idx  # Number of models in iteration
+            if m.metric_bootstrap is None:
+                values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
-                ax.plot(x[k], y[k], lw=2, marker="o")
-                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
-                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
-                ax.fill_between(x[k], plus, minus, alpha=0.3)
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            kwargs = dict(err_style="band" if df["x"].nunique() > 1 else "bars", ax=ax)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, **kwargs)
 
         n_models = [len(self.train) // m._train_idx for m in models]
         ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
@@ -3420,7 +3435,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right", len(x)),
+            legend=("lower right", len(lines)),
             xlabel="n_models",
             ylabel=self._metric[metric].name,
             figsize=figsize,
@@ -3477,27 +3492,31 @@ class TrainSizingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
+        models = self._get_subclass(models, ensembles=False)
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
-        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
         for m in models:
-            y[m._group].append(get_best_score(m, metric))
-            x[m._group].append(m._train_idx)
-            if m.std_bootstrap:
-                std[m._group].append(lst(m.std_bootstrap)[metric])
-
-        for k in x:
-            if not std:
-                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
+            if m.metric_bootstrap is None:
+                values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
             else:
-                ax.plot(x[k], y[k], lw=2, marker="o")
-                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
-                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
-                ax.fill_between(x[k], plus, minus, alpha=0.3)
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, ax=ax)
 
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
 
@@ -3506,7 +3525,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right", len(x)),
+            legend=("lower right", len(lines)),
             xlabel="Number of training samples",
             ylabel=self._metric[metric].name,
             figsize=figsize,

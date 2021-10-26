@@ -23,8 +23,8 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/s
 * By default, the estimator adopts the default parameters provided by
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
-* The `l1_ratio` parameter is only used when penalty = "elasticnet".
-* The `eta0` parameter is only used when learning_rate != "optimal".
+* The `l1_ratio` parameter is only used when penalty="elasticnet".
+* The `eta0` parameter is only used when learning_rate!="optimal".
 * The `n_jobs` and `random_state` parameters are set equal to those of the
  trainer.
 
@@ -57,7 +57,7 @@ Real(1e-4, 1.0, "log-uniform", name="epsilon")
 </p>
 <p>
 <strong>learning_rate: str, default="optimal"</strong><br>
-Categorical(["constant", "invscaling", "optimal", "adaptive"], name = "learning_rate")
+Categorical(["constant", "invscaling", "optimal", "adaptive"], name="learning_rate")
 </p>
 <p>
 <strong>eta0: float, default=1e-4</strong><br>
@@ -162,11 +162,12 @@ Name of the target column.
 <strong>bo: pd.DataFrame</strong><br>
 Information of every step taken by the BO. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
+<li><b>call</b>: Name of the call.</li>
 <li><b>params</b>: Parameters used in the model.</li>
 <li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
 <li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
-<li><b>time_iteration</b>: Time spent on this iteration.</li>
-<li><b>time</b>: Total time spent since the start of the BO.</li>
+<li><b>time</b>: Time spent on this iteration.</li>
+<li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
 <p>
 <strong>best_params: dict</strong><br>
@@ -199,7 +200,7 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: list</strong><br>
+<strong>metric_bootstrap: np.ndarray</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>

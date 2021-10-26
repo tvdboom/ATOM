@@ -140,7 +140,7 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: list</strong><br>
+<strong>metric_bootstrap: np.ndarray</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>

@@ -1132,7 +1132,7 @@ def delete(self, models):
 
     """
     for model in models:
-        self._models.pop(model.lower())
+        self._models.pop(model)
 
     # If no models, reset the metric
     if not self._models:

@@ -5,7 +5,7 @@
 <em>method</em> <strong style="color:#008AB8">score</strong>(X,
 y, metric=None, sample_weights=None, verbose=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L210">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/basepredictor.py#L211">[source]</a>
 </span>
 </div>
 

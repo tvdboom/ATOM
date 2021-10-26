@@ -161,11 +161,12 @@ Name of the target column.
 <strong>bo: pd.DataFrame</strong><br>
 Information of every step taken by the BO. Columns include:
 <ul style="line-height:1.2em;margin-top:5px">
+<li><b>call</b>: Name of the call.</li>
 <li><b>params</b>: Parameters used in the model.</li>
 <li><b>estimator</b>: Estimator used for this iteration (fitted on last cross-validation).</li>
 <li><b>score</b>: Score of the chosen metric. List of scores for multi-metric.</li>
-<li><b>time_iteration</b>: Time spent on this iteration.</li>
-<li><b>time</b>: Total time spent since the start of the BO.</li>
+<li><b>time</b>: Time spent on this iteration.</li>
+<li><b>total_time</b>: Total time spent since the start of the BO.</li>
 </ul>
 <p>
 <strong>best_params: dict</strong><br>
@@ -198,7 +199,7 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: list</strong><br>
+<strong>metric_bootstrap: np.ndarray</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>

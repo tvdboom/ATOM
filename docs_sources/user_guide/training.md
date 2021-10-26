@@ -235,20 +235,16 @@ of iterations spent optimizing (exploitation). If `n_calls` is equal to
 hyperparameters randomly. This means the algorithm is technically
 performing a [random search](https://www.jmlr.org/papers/volume13/bergstra12a/bergstra12a.pdf).
 
-!!! note
-    The `n_calls` parameter includes the iterations in `n_initial_points`,
-    i.e. calling `atom.run(models="LR", n_calls=20, n_intial_points=10)`
-    will run 20 iterations of which the first 10 are random.
+Extra things to take into account:
 
-!!! note
-    If `n_initial_points=1`, the first call is equal to the
-    estimator's default parameters.
-
-!!! note
-    The train/validation splits are equal for all models. However, every
-    call uses a different split. This means that re-evaluating the objective
-    at the same point can yield different results even when the `random_state`
-    of the trainer is fixed.
+* The `n_calls` parameter includes the iterations in `n_initial_points`,
+  i.e. calling `atom.run(models="LR", n_calls=20, n_intial_points=10)`
+  will run 20 iterations of which the first 10 are random.
+* If `n_initial_points=1`, the first call is equal to the
+  estimator's default parameters.
+* The train/validation splits are different per call but equal for all models.
+* Re-evaluating the objective function at the same point automatically
+  skips the calculation and returns the same score as the equivalent call.
 
 !!! tip
     The hyperparameter tuning output can become quite wide for models
@@ -307,7 +303,8 @@ using the [bootstrap](https://en.wikipedia.org/wiki/Bootstrapping_(statistics))
 technique. This technique creates several new data sets selecting random 
 samples from the training set (with replacement) and evaluates them on 
 the test set. This way we get a distribution of the performance of the
-model. The number of sets can be chosen through the `n_bootstrap` parameter.
+model. The sets are the same for every model. The number of sets can be
+chosen through the `n_bootstrap` parameter.
 
 !!! tip
     Use the [plot_results](../../API/plots/plot_results) method to plot
@@ -396,66 +393,3 @@ Click [here](../../examples/train_sizing) for a train sizing example.
 !!! tip
     Use the [plot_learning_curve](../../API/plots/plot_learning_curve)
     method to see the model's performance per size of the training set.
-
-<br>
-
-## Voting
-
-The idea behind Voting is to combine the predictions of conceptually
-different models to make new predictions. Such a technique can be
-useful for a set of equally well performing models in order to balance
-out their individual weaknesses. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier).
-
-A Voting model is created from a trainer through the [voting](../../API/ATOM/atomclassifier/#voting)
-method. The Voting model is added automatically to the list of
-models in the pipeline, under the `Vote` acronym. Although similar,
-this model is different from the VotingClassifier and VotingRegressor
-estimators from sklearn. Remember that the model is added to the
-plots if the `models` parameter is not specified. Plots that require
-a data set will use the one in the current branch. Plots that require
-an estimator object will raise an exception.
-
-The Voting class has the same prediction attributes and prediction
-methods as other models. The `predict_proba`, `predict_log_proba`,
-`decision_function` and `score` methods return the average predictions
-(soft voting) over the models in the instance. Note that these methods
-will raise an exception if not all estimators in the Voting instance
-have the specified method. The `predict` method returns the majority
-vote (hard voting). The `evaluate` method also returns the average
-score for the selected metric over the models.
-
-Click [here](../../examples/ensembles) for a voting example.
-
-!!! warning
-    Although it is possible to include models from different branches
-    in the same Voting instance, this is highly discouraged. Data sets
-    from different branches with unequal shape can result in unexpected
-    errors for plots and prediction methods.
-
-
-<br>
-
-## Stacking
-
-Stacking is a method for combining estimators to reduce their biases.
-More precisely, the predictions of each individual estimator are
-stacked together and used as input to a final estimator to compute the
-prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization).
-
-A Stacking model is created from a trainer through the [stacking](../../API/ATOM/atomclassifier/#stacking)
-method. The Stacking model is added automatically to the list of
-models in the pipeline, under the `Stack` acronym. Remember that the
-model is added to the plots if the `models` parameter is not
-specified. Plots that require a data set will use the one in the
-current branch. The prediction methods, the evaluate method and the
-plot methods that require an estimator object will use the Voting's
-final estimator, under the `estimator` attribute.
-
-Click [here](../../examples/ensembles) for a stacking example.
-
-!!! warning
-    Although it is possible to include models from different branches
-    in the same Stacking instance, this is highly discouraged. Data
-    sets from different branches with unequal shape can result in
-    unexpected errors for plots and prediction methods.
-

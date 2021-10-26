@@ -58,12 +58,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         super().__init__(*args)
 
         # BO attributes
-        self._iter = 0
         self.params = {}
-        self._stopped = (0, 0)
+        self._iter = 0
+        self._stopped = ("---", "---")
         self.bo = pd.DataFrame(
-            columns=["params", "model", "score", "time_iteration", "time"],
-            index=pd.Index([], name="call"),
+            columns=["call", "params", "model", "score", "time", "total_time"],
         )
 
         # Parameter attributes
@@ -237,46 +236,59 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             est = self.get_estimator({**self._est_params, **params})
 
-            # Same splits per model, but different for every iteration of the BO
-            rs = self.T.random_state + self._iter if self.T.random_state else None
+            # Skip if the evaluation function has already been evaluated at this point
+            if params not in self.bo["params"].values:
+                # Same splits per model, but different for every call
+                rs = self._iter
+                if self.T.random_state is not None:
+                    rs += self.T.random_state
 
-            if self.T._cv == 1:
-                # Select test_size from ATOM or use default of 0.2
-                t_size = self.T._test_size if hasattr(self.T, "_test_size") else 0.2
-                kwargs = dict(test_size=t_size, random_state=rs)
-                if self.T.goal == "class":
-                    # Folds are made preserving the % of samples for each class
-                    split = StratifiedShuffleSplit(1, **kwargs)
-                else:
-                    split = ShuffleSplit(1, **kwargs)
+                if self.T._cv == 1:
+                    # Select test_size from ATOM or use default of 0.2
+                    t_size = self.T._test_size if hasattr(self.T, "_test_size") else 0.2
+                    kwargs = dict(test_size=t_size, random_state=rs)
+                    if self.T.goal == "class":
+                        # Folds are made preserving the % of samples for each class
+                        split = StratifiedShuffleSplit(1, **kwargs)
+                    else:
+                        split = ShuffleSplit(1, **kwargs)
 
-                scores = fit_model(*next(split.split(self.X_train, self.y_train)))
+                    score = fit_model(*next(split.split(self.X_train, self.y_train)))
 
-            else:  # Use cross validation to get the score
-                kwargs = dict(n_splits=self.T._cv, shuffle=True, random_state=rs)
-                if self.T.goal == "class":
-                    # Folds are made preserving the % of samples for each class
-                    k_fold = StratifiedKFold(**kwargs)
-                else:
-                    k_fold = KFold(**kwargs)
+                else:  # Use cross validation to get the score
+                    kwargs = dict(n_splits=self.T._cv, shuffle=True, random_state=rs)
+                    if self.T.goal == "class":
+                        # Folds are made preserving the % of samples for each class
+                        k_fold = StratifiedKFold(**kwargs)
+                    else:
+                        k_fold = KFold(**kwargs)
 
-                # Parallel loop over fit_model
-                jobs = Parallel(self.T.n_jobs)(
-                    delayed(fit_model)(i, j)
-                    for i, j in k_fold.split(self.X_train, self.y_train)
-                )
-                scores = list(np.mean(jobs, axis=0))
+                    # Parallel loop over fit_model
+                    jobs = Parallel(self.T.n_jobs)(
+                        delayed(fit_model)(i, j)
+                        for i, j in k_fold.split(self.X_train, self.y_train)
+                    )
+                    score = list(np.mean(jobs, axis=0))
+
+            else:
+                # Get same score as previous evaluation
+                score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
+                self._stopped = ("---", "---")
 
             # Append row to the bo attribute
             t = time_to_str(t_iter)
             t_tot = time_to_str(init_bo)
-            self.bo.loc[call] = {
-                "params": params,
-                "estimator": est,
-                "score": flt(scores),
-                "time_iteration": t,
-                "time": t_tot,
-            }
+            self.bo = self.bo.append(
+                {
+                    "call": call,
+                    "params": params,
+                    "estimator": est,
+                    "score": flt(score),
+                    "time": t,
+                    "total_time": t_tot,
+                },
+                ignore_index=True,
+            )
 
             # Save BO calls to experiment as nested runs
             if self.T.log_bo:
@@ -284,29 +296,29 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     mlflow.set_tag("time", t)
                     mlflow.log_params(params)
                     for i, m in enumerate(self.T._metric.keys()):
-                        mlflow.log_metric(m, scores[i])
+                        mlflow.log_metric(m, score[i])
 
             # Update the progress bar with one step
             if pbar:
                 pbar.update(1)
 
             # Print output of the BO
-            sequence = {"Call": call, **{k: v for k, v in params.items()}}
+            sequence = {"call": call, **{k: v for k, v in params.items()}}
             for i, m in enumerate(self.T._metric):
                 sequence.update(
                     {
-                        m.name: scores[i],
-                        f"best {m.name}": max([lst(s)[i] for s in self.bo.score]),
+                        m.name: score[i],
+                        f"best_{m.name}": max([lst(s)[i] for s in self.bo.score]),
                     }
                 )
             if self._early_stopping and self.T._cv == 1:
                 sequence.update(
-                    {"early stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
+                    {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
                 )
-            sequence.update({"time iteration": t, "total time": t_tot})
+            sequence.update({"time": t, "total_time": t_tot})
             self.T.log(table.print(sequence), 2)
 
-            return -scores[0]  # Negative since skopt tries to minimize
+            return -score[0]  # Negative since skopt tries to minimize
 
         # Running optimization ===================================== >>
 
@@ -324,7 +336,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         pbar = None
         if self.T.verbose == 1:
-            pbar = tqdm(total=self._n_calls, desc="Random start 1")
+            pbar = tqdm(total=self._n_calls, desc="Initial point 1")
 
         # Drop dimensions from BO if already in est_params
         for param in self._est_params:
@@ -354,12 +366,12 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             return
 
         # Start with the table output
-        sequence = [("Call", "left")] + [p for p in self.params]
+        sequence = [("call", "left")] + [p for p in self.params]
         for m in self.T._metric:
-            sequence.extend([m.name, "best " + m.name])
+            sequence.extend([m.name, "best_" + m.name])
         if self._early_stopping and self.T._cv == 1:
-            sequence.append("early stopping")
-        sequence.extend(["time iteration", "total time"])
+            sequence.append("early_stopping")
+        sequence.extend(["time", "total_time"])
         table = Table(sequence, [max(7, len(str(text))) for text in sequence])
         self.T.log(table.print_header(), 2)
         self.T.log(table.print_line(), 2)
@@ -410,8 +422,10 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             self.best_params = get_custom_params(optimizer.x)
 
         # Optimal call and score found by the BO
-        best_call = self.bo['score'].apply(lambda x: lst(x)[0]).idxmax()
-        self.metric_bo = self.bo['score'].max(axis=0)
+        # Drop duplicates in case the best value is repeated through calls
+        best = self.bo["score"].apply(lambda x: lst(x)[0]).drop_duplicates().idxmax()
+        best_call = self.bo.loc[best, "call"]
+        self.metric_bo = self.bo.loc[best, "score"]
 
         # Save best model (not yet fitted)
         self.estimator = self.get_estimator({**self._est_params, **self.best_params})
@@ -434,6 +448,10 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def fit(self):
         """Fit and validate the model."""
         t_init = datetime.now()
+
+        if self.bo.empty:
+            self.T.log(f"\n\nResults for {self.fullname}:{' ':9s}", 1)
+        self.T.log("Fit ---------------------------------------------", 1)
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
@@ -467,9 +485,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Print and log results ==================================== >>
 
-        if self.bo.empty:
-            self.T.log(f"\n\nResults for {self.fullname}:{' ':9s}", 1)
-        self.T.log("Fit ---------------------------------------------", 1)
         if self.T._cv == 1 and self._stopped[0] < self._stopped[1]:
             self.T.log(
                 f"Early stop at iteration {self._stopped[0]} of {self._stopped[1]}.", 1
@@ -533,9 +548,20 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         t_init = datetime.now()
 
         self.metric_bootstrap = []
-        for _ in range(self._n_bootstrap):
-            # Create samples with replacement
-            sample_x, sample_y = resample(self.X_train, self.y_train)
+        for i in range(self._n_bootstrap):
+            # Same splits per model, but different for every iteration
+            rs = i
+            if self.T.random_state is not None:
+                rs += self.T.random_state
+
+            # Create stratified samples with replacement
+            sample_x, sample_y = resample(
+                self.X_train,
+                self.y_train,
+                replace=True,
+                random_state=rs,
+                stratify=self.y_train,
+            )
 
             # Clone to not overwrite when fitting
             estimator = clone(self.estimator)
@@ -562,10 +588,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Separate for multi-metric, transform numpy types to python types
         if len(self.T._metric) == 1:
+            self.metric_bootstrap = np.array(self.metric_bootstrap)
             self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=0).item()
             self.std_bootstrap = np.std(self.metric_bootstrap, axis=0).item()
         else:
-            self.metric_bootstrap = list(zip(*self.metric_bootstrap))
+            self.metric_bootstrap = np.array(self.metric_bootstrap).T
             self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=1).tolist()
             self.std_bootstrap = np.std(self.metric_bootstrap, axis=1).tolist()
 
@@ -667,7 +694,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Returns
         -------
-        scores: dict
+        score: dict
             Return of sklearn's cross_validate function.
 
         """

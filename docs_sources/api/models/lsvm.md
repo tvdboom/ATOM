@@ -25,8 +25,10 @@ Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/s
   its package. See the [user guide](../../../user_guide/training/#parameter-customization)
   on how to customize them.
 * The `penalty` parameter is only used with LinearSVC.
-* The `penalty` parameter is always set to "l2" when loss = "hinge".
-* The `dual` parameter is always set to False when penalty = "l1" and loss = "squared_hinge".
+* The `penalty` parameter is always set to "l2" when loss="hinge".
+* The `dual` parameter is always set to False when penalty="l1" and loss="squared_hinge".
+* The `dual` parameter is always set to False when penalty="l2" and loss="hinge".
+* The `dual` parameter is always set to True when loss="epsilon_insensitive".
 * The `random_state` parameter is set equal to that of the `training` instance.
 
 <table style="font-size:16px">

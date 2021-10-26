@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/user_guide/models/">
       
       <link rel="icon" href="../../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.2">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
     
     
   <title>Models - ATOM</title>
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.24c991ad.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.db9e7362.min.css">
       
         
         <link rel="stylesheet" href="../../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -608,6 +608,33 @@
   <a href="#deep-learning" class="md-nav__link">
     Deep learning
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ensembles" class="md-nav__link">
+    Ensembles
+  </a>
+  
+    <nav class="md-nav" aria-label="Ensembles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#voting" class="md-nav__link">
+    Voting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stacking" class="md-nav__link">
+    Stacking
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -2717,6 +2744,33 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#ensembles" class="md-nav__link">
+    Ensembles
+  </a>
+  
+    <nav class="md-nav" aria-label="Ensembles">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#voting" class="md-nav__link">
+    Voting
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#stacking" class="md-nav__link">
+    Stacking
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2851,6 +2905,55 @@ contains one (multidimensional) sample. Note that the <a href="../data_cleaning"
 methods are unavailable when this is the case.</p>
 <p>See in this <a href="../../examples/deep_learning">example</a> how to use ATOM to train
 and validate a Convolutional Neural Network implemented with Keras.</p>
+<p><br></p>
+<h2 id="ensembles">Ensembles</h2>
+<p>Ensemble models use multiple estimators to obtain better predictive
+performance than could be obtained from any of the constituent learning
+algorithms alone. ATOM implements two ensemble techniques: voting and stacking.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Although it is possible to include models from different branches
+in the same ensemble, this is highly discouraged. Data sets from
+different branches with unequal shape can result in unexpected
+errors for plots and prediction methods.</p>
+</div>
+<h3 id="voting">Voting</h3>
+<p>The idea behind voting is to combine the predictions of conceptually
+different models to make new predictions. Such a technique can be
+useful for a set of equally well performing models in order to balance
+out their individual weaknesses. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier">documentation</a>.</p>
+<p>A voting model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#voting">voting</a>
+method. The voting model is added automatically to the list of
+models in the pipeline, under the <code>Vote</code> acronym. Although similar,
+this model is different from the VotingClassifier and VotingRegressor
+estimators from sklearn. Remember that the model is added to the
+plots if the <code>models</code> parameter is not specified. Plots that require
+a data set will use the one in the current branch. Plots that require
+an estimator object will raise an exception.</p>
+<p>The <code>Vote</code> model has the same prediction attributes and prediction
+methods as other models. The <code>predict_proba</code>, <code>predict_log_proba</code>,
+<code>decision_function</code> and <code>score</code> methods return the average predictions
+(soft voting) over the models in the instance. Note that these methods
+will raise an exception if not all estimators in the voting instance
+have the specified method. The <code>predict</code> method returns the majority
+vote (hard voting). The <code>evaluate</code> method also returns the average
+score for the selected metric over the models.</p>
+<p>Click <a href="../../examples/ensembles">here</a> for a voting example.</p>
+<p><br></p>
+<h3 id="stacking">Stacking</h3>
+<p>Stacking is a method for combining estimators to reduce their biases.
+More precisely, the predictions of each individual estimator are
+stacked together and used as input to a final estimator to compute the
+prediction. Read more in sklearn's <a href="https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization">documentation</a>.</p>
+<p>A stacking model is created from a trainer through the <a href="../../API/ATOM/atomclassifier/#stacking">stacking</a>
+method. The stacking model is added automatically to the list of
+models in the pipeline, under the <code>Stack</code> acronym. Remember that the
+model is added to the plots if the <code>models</code> parameter is not
+specified. Plots that require a data set will use the one in the
+current branch. The prediction methods, the evaluate method and the
+plot methods that require an estimator object will use the stacking's
+final estimator, under the <code>estimator</code> attribute.</p>
+<p>Click <a href="../../examples/ensembles">here</a> for a stacking example.</p>
                 
               
               
@@ -2960,10 +3063,10 @@ and validate a Convolutional Neural Network implemented with Keras.</p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.e99e714c.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
     
     
-      <script src="../../assets/javascripts/bundle.bc35569b.min.js"></script>
+      <script src="../../assets/javascripts/bundle.1e84347e.min.js"></script>
       
         <script src="../../stylesheets/extra.js"></script>
       

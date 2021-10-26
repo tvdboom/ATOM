@@ -248,33 +248,25 @@ def test_plot_rfecv(scoring):
     atom.plot_rfecv(display=False)
 
 
-def test_plot_successive_halving():
+@pytest.mark.parametrize("metric", ["f1", ["f1", "recall"]])
+def test_plot_successive_halving(metric):
     """Assert that the plot_successive_halving method work as intended."""
-    atom = ATOMRegressor(X_reg, y_reg, random_state=1)
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     pytest.raises(NotFittedError, atom.plot_successive_halving)
-    atom.run("LGB")
-    atom.delete()  # Clear the pipeline to allow sh
-    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"], n_bootstrap=4)
-    pytest.raises(ValueError, atom.plot_successive_halving, models="unknown")
-    pytest.raises(ValueError, atom.plot_successive_halving, models="BR")
-    pytest.raises(ValueError, atom.plot_successive_halving, metric="unknown")
-    pytest.raises(ValueError, atom.plot_successive_halving, metric=-1)
-    pytest.raises(ValueError, atom.plot_successive_halving, metric=1)
-    pytest.raises(ValueError, atom.plot_successive_halving, metric="roc_auc")
+    atom.successive_halving(["Tree", "Bag", "RF", "LGB"], metric=metric, n_bootstrap=4)
     atom.plot_successive_halving(display=False)
-    atom.successive_halving(models=["Tree", "Bag", "RF", "LGB"])
+    atom.successive_halving(["Tree", "Bag", "RF", "LGB"], metric=metric)
     atom.plot_successive_halving(display=False)
 
 
-def test_plot_learning_curve():
+@pytest.mark.parametrize("metric", ["r2", ["r2", "max_error"]])
+def test_plot_learning_curve(metric):
     """Assert that the plot_learning_curve method work as intended."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_learning_curve)
-    atom.run("LGB")
-    atom.delete()  # Clear the pipeline to allow ts
-    atom.train_sizing(["Tree", "LGB"], metric="max_error", n_bootstrap=4)
+    atom.train_sizing(["Tree", "LGB"], metric=metric, n_bootstrap=4)
     atom.plot_learning_curve(display=False)
-    atom.train_sizing(["Tree", "LGB"], metric="max_error")
+    atom.train_sizing(["Tree", "LGB"], metric=metric)
     atom.plot_learning_curve(display=False)
 
 
@@ -301,6 +293,12 @@ def test_plot_bo():
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     pytest.raises(NotFittedError, atom.plot_bo)
     atom.run("lasso", metric="max_error", n_calls=0)
+    pytest.raises(ValueError, atom.plot_bo, models="unknown")
+    pytest.raises(ValueError, atom.plot_bo, models="BR")
+    pytest.raises(ValueError, atom.plot_bo, metric="unknown")
+    pytest.raises(ValueError, atom.plot_bo, metric=-1)
+    pytest.raises(ValueError, atom.plot_bo, metric=1)
+    pytest.raises(ValueError, atom.plot_bo, metric="roc_auc")
     pytest.raises(PermissionError, atom.plot_bo)  # No BO in pipeline
     atom.run(["lasso", "ridge"], metric="max_error", n_calls=10)
     atom.plot_bo(display=False)

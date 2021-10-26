@@ -1548,6 +1548,8 @@ class LinearSVM(ModelOptimizer):
             # l2 regularization can't be combined with hinge when dual=False
             if params.get("penalty") == "l2" and params.get("loss") == "hinge":
                 params["dual"] = True
+        elif params.get("loss") == "epsilon_insensitive":
+            params["dual"] = True
 
         return params
 
@@ -1629,7 +1631,7 @@ class KernelSVM(ModelOptimizer):
         """Return a list of the bounds for the hyperparameters."""
         dimensions = [
             Real(1e-3, 100, "log-uniform", name="C"),
-            Categorical(["poly", "rbf", "sigmoid"], name="kernel"),
+            Categorical(["linear", "poly", "rbf", "sigmoid"], name="kernel"),
             Integer(2, 5, name="degree"),
             Categorical(["scale", "auto"], name="gamma"),
             Real(-1.0, 1.0, name="coef0"),

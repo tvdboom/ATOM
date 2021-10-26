@@ -14,13 +14,13 @@
         <link rel="canonical" href="https://tvdboom.github.io/ATOM/release_history/">
       
       <link rel="icon" href="../img/favicon.ico">
-      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.2">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-7.3.4">
     
     
   <title>Release history - ATOM</title>
 
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.24c991ad.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.db9e7362.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.3f5d1f46.min.css">
@@ -2910,11 +2910,14 @@
   methods can no longer be accessed from the trainers.</li>
 <li>The <code>pipeline</code> parameter for the <a href="../user_guide/predicting">prediction methods</a>
   is deprecated.</li>
+<li>Improved visualization of the <a href="../API/plots/plot_rfecv">plot_rfecv</a>,
+  <a href="../API/plots/plot_successive_halving">plot_successive_halving</a> and
+  <a href="../API/plots/plot_learning_curve">plot_learning_curve</a> methods.</li>
 <li>Sparse matrices are now accepted as input.</li>
+<li>Duplicate BO calls are no longer calculated.</li>
 <li>Improvement in performance of the <a href="../API/models/rnn">RNN</a> model.</li>
-<li>The <code>ls</code> and <code>lad</code> loss for the <a href="../API/models/gbm">GBM</a> model
-  hyperparameter are replaced with <code>squared_error</code> and <code>absolute_error</code>
-  respectively to be consistent with sklearn's API.</li>
+<li>Refactor of the model's <code>bo</code> attribute.</li>
+<li>Predefined hyperparameters have been updated to be consistent with sklearn's API.</li>
 <li>Fixed a bug where custom scalers were ignored by the models.</li>
 <li>Fixed a bug where the BO of certain models would crash with custom hyperparameters.</li>
 <li>Fixed a bug where duplicate column names could be generated from a custom transformer.</li>
@@ -2941,7 +2944,7 @@
 <li>Renaming a branch using an existing name now raises an exception.</li>
 <li>Fixed a bug where columns of type <code>category</code> broke the <a href="../API/data_cleaning/imputer">Imputer</a>
   class.</li>
-<li>Fixed a bug where predictions of the <a href="../user_guide/training/#stacking">Stacking</a>
+<li>Fixed a bug where predictions of the <a href="../user_guide/models/#stacking">Stacking</a>
   ensemble crashed for branches with multiple transformers.</li>
 <li>The tables in the documentation now adapt to dark mode.</li>
 </ul>
@@ -3103,7 +3106,7 @@
 <li>Compatibility with <a href="../user_guide/models/#deep-learning">deep learning</a> models.</li>
 <li>New branch system for different data pipelines. Read more in the <a href="../user_guide/data_pipelines/#branches">user guide</a>.</li>
 <li>Use the <a href="../API/ATOM/atomclassifier/#canvas">canvas</a> contextmanager to draw multiple plots in one figure.</li>
-<li>New <a href="../user_guide/training/#voting">voting</a> and <a href="../user_guide/training/#stacking">stacking</a> ensemble techniques.</li>
+<li>New <a href="../user_guide/models/#voting">voting</a> and <a href="../user_guide/models/#stacking">stacking</a> ensemble techniques.</li>
 <li>New <a href="../API/ATOM/atomclassifier/#get-class-weight">get_class_weight</a> utility method.</li>
 <li>New Sequential Feature Selection strategy for the <a href="../API/feature_engineering/feature_selector">FeatureSelector</a>.</li>
 <li>Added the <code>sample_weight</code> parameter to the <a href="../API/predicting/score">score</a> method.</li>
@@ -3281,10 +3284,10 @@
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.e99e714c.min.js", "version": null}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tabs", "navigation.tabs.sticky", "navigation.top"], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.8397ff9e.min.js", "version": null}</script>
     
     
-      <script src="../assets/javascripts/bundle.bc35569b.min.js"></script>
+      <script src="../assets/javascripts/bundle.1e84347e.min.js"></script>
       
         <script src="../stylesheets/extra.js"></script>
       

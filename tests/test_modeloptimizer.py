@@ -9,6 +9,8 @@ Description: Unit tests for modeloptimizer.py
 
 # Standard packages
 import glob
+
+import numpy as np
 import pytest
 from unittest.mock import patch
 from sklearn.tree import DecisionTreeClassifier
@@ -103,7 +105,7 @@ def test_early_stopping(model):
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1, "cv": 1})
-    assert isinstance(getattr(atom, model).evals, dict)
+    assert getattr(atom, model).evals
 
 
 @pytest.mark.parametrize("model", ["XGB", "LGB", "CatB"])
@@ -111,7 +113,14 @@ def test_est_params_for_fit(model):
     """Assert that est_params is used for fit if ends in _fit."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(model, est_params={"early_stopping_rounds_fit": 2})
-    assert getattr(atom, model)._stopped
+    assert getattr(atom, model)._stopped != ("---", "---")
+
+
+def test_skip_duplicate_calls():
+    """Assert that calls with the same parameters skip the calculation."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("dummy", n_calls=5)
+    assert atom.dummy.bo["score"].nunique() < len(atom.dummy.bo["score"])
 
 
 @patch("mlflow.set_tag")
@@ -200,13 +209,13 @@ def test_bootstrap_attribute_types():
     # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", n_calls=5, n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap, list)
+    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, float)
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", metric=("f1", "auc", "recall"), n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap[0], tuple)
+    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, list)
 
 

@@ -131,3 +131,64 @@ methods are unavailable when this is the case.
 See in this [example](../../examples/deep_learning) how to use ATOM to train
 and validate a Convolutional Neural Network implemented with Keras.
 
+<br>
+
+
+## Ensembles
+
+Ensemble models use multiple estimators to obtain better predictive
+performance than could be obtained from any of the constituent learning
+algorithms alone. ATOM implements two ensemble techniques: voting and stacking.
+
+!!! warning
+    Although it is possible to include models from different branches
+    in the same ensemble, this is highly discouraged. Data sets from
+    different branches with unequal shape can result in unexpected
+    errors for plots and prediction methods.
+
+### Voting
+
+The idea behind voting is to combine the predictions of conceptually
+different models to make new predictions. Such a technique can be
+useful for a set of equally well performing models in order to balance
+out their individual weaknesses. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#voting-classifier).
+
+A voting model is created from a trainer through the [voting](../../API/ATOM/atomclassifier/#voting)
+method. The voting model is added automatically to the list of
+models in the pipeline, under the `Vote` acronym. Although similar,
+this model is different from the VotingClassifier and VotingRegressor
+estimators from sklearn. Remember that the model is added to the
+plots if the `models` parameter is not specified. Plots that require
+a data set will use the one in the current branch. Plots that require
+an estimator object will raise an exception.
+
+The `Vote` model has the same prediction attributes and prediction
+methods as other models. The `predict_proba`, `predict_log_proba`,
+`decision_function` and `score` methods return the average predictions
+(soft voting) over the models in the instance. Note that these methods
+will raise an exception if not all estimators in the voting instance
+have the specified method. The `predict` method returns the majority
+vote (hard voting). The `evaluate` method also returns the average
+score for the selected metric over the models.
+
+Click [here](../../examples/ensembles) for a voting example.
+
+<br>
+
+### Stacking
+
+Stacking is a method for combining estimators to reduce their biases.
+More precisely, the predictions of each individual estimator are
+stacked together and used as input to a final estimator to compute the
+prediction. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/ensemble.html#stacked-generalization).
+
+A stacking model is created from a trainer through the [stacking](../../API/ATOM/atomclassifier/#stacking)
+method. The stacking model is added automatically to the list of
+models in the pipeline, under the `Stack` acronym. Remember that the
+model is added to the plots if the `models` parameter is not
+specified. Plots that require a data set will use the one in the
+current branch. The prediction methods, the evaluate method and the
+plot methods that require an estimator object will use the stacking's
+final estimator, under the `estimator` attribute.
+
+Click [here](../../examples/ensembles) for a stacking example.
