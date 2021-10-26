@@ -195,6 +195,15 @@ after the name, e.g. `RF_class` to use a random forest classifier. Read
 more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#feature-selection-using-selectfrommodel).
 
 
+
+<a name="sfs"></a>
+**Sequential Feature Selection**<br>
+Sequential feature selection adds (forward selection) or removes (backward
+selection) features to form a feature subset in a greedy fashion. At each
+stage, this estimator chooses the best feature to add or remove based on
+the cross-validation score of an estimator. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection).
+
+
 <a name="rfe"></a>
 **Recursive feature elimination**<br>
 Select features by recursively considering smaller and smaller sets of
@@ -213,14 +222,6 @@ of features selected by `n_features`, RFECV returns the number of
 features that achieved the optimal score on the specified metric. Note
 that this is not always equal to the amount specified by `n_features`.
 Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#recursive-feature-elimination).
-
-
-<a name="sfs"></a>
-**Sequential Feature Selection**<br>
-Sequential feature selection adds (forward selection) or removes (backward
-selection) features to form a feature subset in a greedy fashion. At each
-stage, this estimator chooses the best feature to add or remove based on
-the cross-validation score of an estimator. Read more in sklearn's [documentation](https://scikit-learn.org/stable/modules/feature_selection.html#sequential-feature-selection).
 
 
 **Removing features with low variance**<br>

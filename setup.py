@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Package's setup code.
 
@@ -24,10 +24,10 @@ with open("requirements-test.txt") as f:
 
 setuptools.setup(
     name="atom-ml",
-    version="4.8.0",
+    version="4.9.0",
     license="MIT",
     description="A Python package for fast exploration of machine learning pipelines",
-    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.8.0.tar.gz",
+    download_url=f"https://github.com/tvdboom/ATOM/archive/v4.9.0.tar.gz",
     url="https://github.com/tvdboom/ATOM",
     author="tvdboom",
     author_email="m.524687@gmail.com",
@@ -36,7 +36,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     packages=["atom"],
     classifiers=[
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -47,5 +46,5 @@ setuptools.setup(
     install_requires=requirements,
     extras_require={"models": optional_requirements},
     tests_require=test_requirements,
-    python_requires=">=3.6"
+    python_requires=">=3.7"
 )

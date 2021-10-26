@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the ModelOptimizer class.
 
@@ -39,8 +39,9 @@ from .basemodel import BaseModel
 from .pipeline import Pipeline
 from .plots import SuccessiveHalvingPlotter, TrainSizingPlotter
 from .utils import (
-    SEQUENCE_TYPES, flt, lst, arr, time_to_str, composed, get_best_score,
-    get_scorer, crash, method_to_log, score_decorator,
+    SEQUENCE_TYPES, flt, lst, arr, time_to_str, get_best_score,
+    get_scorer, composed, crash, method_to_log, score_decorator,
+    Table,
 )
 
 
@@ -57,13 +58,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         super().__init__(*args)
 
         # BO attributes
+        self.params = {}
         self._iter = 0
-        self._init_bo = None
-        self._pbar = None
-        self._stopped = None
+        self._stopped = ("---", "---")
         self.bo = pd.DataFrame(
-            columns=["params", "model", "score", "time_iteration", "time"],
-            index=pd.Index([], name="call"),
+            columns=["call", "params", "model", "score", "time", "total_time"],
         )
 
         # Parameter attributes
@@ -117,6 +116,15 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     f"unknown parameter {param} for the fit method of "
                     f"estimator {self.get_estimator().__class__.__name__}."
                 )
+
+    def _get_early_stopping_rounds(self, params, max_iter):
+        """Get the number of rounds for early stopping."""
+        if "early_stopping_rounds" in params:
+            return params.pop("early_stopping_rounds")
+        elif not self._early_stopping or self._early_stopping >= 1:  # None or int
+            return self._early_stopping
+        elif self._early_stopping < 1:
+            return int(max_iter * self._early_stopping)
 
     def get_params(self, x):
         """Get a dictionary of the model's hyperparameters.
@@ -206,76 +214,81 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                         validation=(X_val, y_val),
                         params=est_copy,
                     )
-
-                    # Alert if early stopping was applied (only for cv=1)
-                    if self.T._cv == 1 and self._stopped:
-                        self.T.log(
-                            f"Early stop at iteration {self._stopped[0]} "
-                            f"of {self._stopped[1]}.", 2
-                        )
                 else:
                     est.fit(arr(X_subtrain), y_subtrain, **est_copy)
 
                 # Calculate metrics on the validation set
                 return [metric(est, arr(X_val), y_val) for metric in self.T._metric]
 
+            # Start iteration ====================================== >>
+
             t_iter = datetime.now()  # Get current time for start of the iteration
 
-            # Print iteration and time
+            # Start printing the information table
             self._iter += 1
             if self._iter > self._n_initial_points:
                 call = f"Iteration {self._iter}"
             else:
                 call = f"Initial point {self._iter}"
 
-            if self._pbar:
-                self._pbar.set_description(call)
-            len_ = "-" * (48 - len(call))
-            self.T.log(f"{call} {len_}", 2)
-            self.T.log(f"Parameters --> {params}", 2)
+            if pbar:
+                pbar.set_description(call)
 
             est = self.get_estimator({**self._est_params, **params})
 
-            # Same splits per model, but different for every iteration of the BO
-            rs = self.T.random_state + self._iter if self.T.random_state else None
+            # Skip if the evaluation function has already been evaluated at this point
+            if params not in self.bo["params"].values:
+                # Same splits per model, but different for every call
+                rs = self._iter
+                if self.T.random_state is not None:
+                    rs += self.T.random_state
 
-            if self.T._cv == 1:
-                # Select test_size from ATOM or use default of 0.2
-                t_size = self.T._test_size if hasattr(self.T, "_test_size") else 0.2
-                kwargs = dict(test_size=t_size, random_state=rs)
-                if self.T.goal.startswith("class"):
-                    # Folds are made preserving the % of samples for each class
-                    split = StratifiedShuffleSplit(1, **kwargs)
-                else:
-                    split = ShuffleSplit(1, **kwargs)
+                if self.T._cv == 1:
+                    # Select test_size from ATOM or use default of 0.2
+                    t_size = self.T._test_size if hasattr(self.T, "_test_size") else 0.2
+                    kwargs = dict(test_size=t_size, random_state=rs)
+                    if self.T.goal == "class":
+                        # Folds are made preserving the % of samples for each class
+                        split = StratifiedShuffleSplit(1, **kwargs)
+                    else:
+                        split = ShuffleSplit(1, **kwargs)
 
-                scores = fit_model(*next(split.split(self.X_train, self.y_train)))
+                    score = fit_model(*next(split.split(self.X_train, self.y_train)))
 
-            else:  # Use cross validation to get the score
-                kwargs = dict(n_splits=self.T._cv, shuffle=True, random_state=rs)
-                if self.T.goal.startswith("class"):
-                    # Folds are made preserving the % of samples for each class
-                    k_fold = StratifiedKFold(**kwargs)
-                else:
-                    k_fold = KFold(**kwargs)
+                else:  # Use cross validation to get the score
+                    kwargs = dict(n_splits=self.T._cv, shuffle=True, random_state=rs)
+                    if self.T.goal == "class":
+                        # Folds are made preserving the % of samples for each class
+                        k_fold = StratifiedKFold(**kwargs)
+                    else:
+                        k_fold = KFold(**kwargs)
 
-                # Parallel loop over fit_model
-                jobs = Parallel(self.T.n_jobs)(
-                    delayed(fit_model)(i, j)
-                    for i, j in k_fold.split(self.X_train, self.y_train)
-                )
-                scores = list(np.mean(jobs, axis=0))
+                    # Parallel loop over fit_model
+                    jobs = Parallel(self.T.n_jobs)(
+                        delayed(fit_model)(i, j)
+                        for i, j in k_fold.split(self.X_train, self.y_train)
+                    )
+                    score = list(np.mean(jobs, axis=0))
+
+            else:
+                # Get same score as previous evaluation
+                score = lst(self.bo.loc[self.bo["params"] == params, "score"].values[0])
+                self._stopped = ("---", "---")
 
             # Append row to the bo attribute
             t = time_to_str(t_iter)
-            t_tot = time_to_str(self._init_bo)
-            self.bo.loc[call] = {
-                "params": params,
-                "estimator": est,
-                "score": flt(scores),
-                "time_iteration": t,
-                "time": t_tot,
-            }
+            t_tot = time_to_str(init_bo)
+            self.bo = self.bo.append(
+                {
+                    "call": call,
+                    "params": params,
+                    "estimator": est,
+                    "score": flt(score),
+                    "time": t,
+                    "total_time": t_tot,
+                },
+                ignore_index=True,
+            )
 
             # Save BO calls to experiment as nested runs
             if self.T.log_bo:
@@ -283,22 +296,29 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                     mlflow.set_tag("time", t)
                     mlflow.log_params(params)
                     for i, m in enumerate(self.T._metric.keys()):
-                        mlflow.log_metric(m, scores[i])
+                        mlflow.log_metric(m, score[i])
 
-            # Update the progress bar
-            if self._pbar:
-                self._pbar.update(1)
+            # Update the progress bar with one step
+            if pbar:
+                pbar.update(1)
 
             # Print output of the BO
-            out = [
-                f"{m.name}: {scores[i]:.4f}  Best {m.name}: "
-                f"{max([lst(s)[i] for s in self.bo.score]):.4f}"
-                for i, m in enumerate(self.T._metric)
-            ]
-            self.T.log(f"Evaluation --> {'   '.join(out)}", 2)
-            self.T.log(f"Time iteration: {t}   Total time: {t_tot}", 2)
+            sequence = {"call": call, **{k: v for k, v in params.items()}}
+            for i, m in enumerate(self.T._metric):
+                sequence.update(
+                    {
+                        m.name: score[i],
+                        f"best_{m.name}": max([lst(s)[i] for s in self.bo.score]),
+                    }
+                )
+            if self._early_stopping and self.T._cv == 1:
+                sequence.update(
+                    {"early_stopping": f"{self._stopped[0]}/{self._stopped[1]}"}
+                )
+            sequence.update({"time": t, "total_time": t_tot})
+            self.T.log(table.print(sequence), 2)
 
-            return -scores[0]  # Negative since skopt tries to minimize
+            return -score[0]  # Negative since skopt tries to minimize
 
         # Running optimization ===================================== >>
 
@@ -308,13 +328,15 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 f"should be >n_initial_points, got {self._n_calls}."
             )
 
+        self._check_est_params()  # Check validity of parameters
+
+        init_bo = datetime.now()  # Track the BO's duration
+
         self.T.log(f"\n\nRunning BO for {self.fullname}...", 1)
 
-        self._init_bo = datetime.now()
+        pbar = None
         if self.T.verbose == 1:
-            self._pbar = tqdm(total=self._n_calls, desc="Random start 1")
-
-        self._check_est_params()  # Check validity of parameters
+            pbar = tqdm(total=self._n_calls, desc="Initial point 1")
 
         # Drop dimensions from BO if already in est_params
         for param in self._est_params:
@@ -327,7 +349,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Get custom dimensions (if provided)
         if self._dimensions:
-
             @use_named_args(self._dimensions)
             def custom_hyperparameters(**x):
                 return optimize(**x)
@@ -338,6 +359,22 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         else:  # If there were no custom dimensions, use the default
             dimensions = self.get_dimensions()
             func = pre_defined_hyperparameters  # Default optimization func
+
+        # If no hyperparameters left to optimize, skip BO
+        if not dimensions:
+            self.T.log(" --> Skipping BO. No hyperparameters found to optimize.", 2)
+            return
+
+        # Start with the table output
+        sequence = [("call", "left")] + [p for p in self.params]
+        for m in self.T._metric:
+            sequence.extend([m.name, "best_" + m.name])
+        if self._early_stopping and self.T._cv == 1:
+            sequence.append("early_stopping")
+        sequence.extend(["time", "total_time"])
+        table = Table(sequence, [max(7, len(str(text))) for text in sequence])
+        self.T.log(table.print_header(), 2)
+        self.T.log(table.print_line(), 2)
 
         # If only 1 initial point, use the model's default parameters
         x0 = None
@@ -357,19 +394,20 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             **self.T._bo_kwargs,
         )
 
-        if str(self.T._base_estimator).lower() == "gp":
-            optimizer = gp_minimize(**kwargs)
-        elif str(self.T._base_estimator).lower() == "et":
-            optimizer = forest_minimize(base_estimator="ET", **kwargs)
-        elif str(self.T._base_estimator).lower() == "rf":
-            optimizer = forest_minimize(base_estimator="RF", **kwargs)
-        elif str(self.T._base_estimator).lower() == "gbrt":
-            optimizer = gbrt_minimize(**kwargs)
+        if isinstance(self.T._base_estimator, str):
+            if self.T._base_estimator.lower() == "gp":
+                optimizer = gp_minimize(**kwargs)
+            elif self.T._base_estimator.lower() == "et":
+                optimizer = forest_minimize(base_estimator="ET", **kwargs)
+            elif self.T._base_estimator.lower() == "rf":
+                optimizer = forest_minimize(base_estimator="RF", **kwargs)
+            elif self.T._base_estimator.lower() == "gbrt":
+                optimizer = gbrt_minimize(**kwargs)
         else:
             optimizer = base_minimize(base_estimator=self.T._base_estimator, **kwargs)
 
-        if self._pbar:
-            self._pbar.close()
+        if pbar:
+            pbar.close()
 
         # Optimal parameters found by the BO
         # Return from skopt wrapper to get dict of custom hyperparameter space
@@ -383,18 +421,22 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
             self.best_params = get_custom_params(optimizer.x)
 
-        # Optimal score found by the BO
-        self.metric_bo = self.bo.score.max(axis=0)
+        # Optimal call and score found by the BO
+        # Drop duplicates in case the best value is repeated through calls
+        best = self.bo["score"].apply(lambda x: lst(x)[0]).drop_duplicates().idxmax()
+        best_call = self.bo.loc[best, "call"]
+        self.metric_bo = self.bo.loc[best, "score"]
 
         # Save best model (not yet fitted)
         self.estimator = self.get_estimator({**self._est_params, **self.best_params})
 
         # Get the BO duration
-        self.time_bo = time_to_str(self._init_bo)
+        self.time_bo = time_to_str(init_bo)
 
         # Print results
         self.T.log(f"\nResults for {self.fullname}:{' ':9s}", 1)
         self.T.log("Bayesian Optimization ---------------------------", 1)
+        self.T.log(f"Best call --> {best_call}", 1)
         self.T.log(f"Best parameters --> {self.best_params}", 1)
         out = [
             f"{m.name}: {round(lst(self.metric_bo)[i], 4)}"
@@ -406,6 +448,10 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
     def fit(self):
         """Fit and validate the model."""
         t_init = datetime.now()
+
+        if self.bo.empty:
+            self.T.log(f"\n\nResults for {self.fullname}:{' ':9s}", 1)
+        self.T.log("Fit ---------------------------------------------", 1)
 
         # In case the bayesian_optimization method wasn't called
         if self.estimator is None:
@@ -439,23 +485,16 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Print and log results ==================================== >>
 
-        if self.bo.empty:
-            self.T.log(f"\n\nResults for {self.fullname}:{' ':9s}", 1)
-        self.T.log("Fit ---------------------------------------------", 1)
-        if self._stopped:
+        if self.T._cv == 1 and self._stopped[0] < self._stopped[1]:
             self.T.log(
                 f"Early stop at iteration {self._stopped[0]} of {self._stopped[1]}.", 1
             )
-        out_train = [
-            f"{m.name}: {round(lst(self.metric_train)[i], 4)}"
-            for i, m in enumerate(self.T._metric)
-        ]
-        self.T.log(f"Train evaluation --> {'   '.join(out_train)}", 1)
-        out_test = [
-            f"{m.name}: {round(lst(self.metric_test)[i], 4)}"
-            for i, m in enumerate(self.T._metric)
-        ]
-        self.T.log(f"Test evaluation --> {'   '.join(out_test)}", 1)
+        for set_ in ("train", "test"):
+            out = [
+                f"{m.name}: {round(lst(getattr(self, f'metric_{set_}'))[i], 4)}"
+                for i, m in enumerate(self.T._metric)
+            ]
+            self.T.log(f"T{set_[1:]} evaluation --> {'   '.join(out)}", 1)
 
         # Get duration and print to log
         self.time_fit = time_to_str(t_init)
@@ -509,9 +548,20 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         t_init = datetime.now()
 
         self.metric_bootstrap = []
-        for _ in range(self._n_bootstrap):
-            # Create samples with replacement
-            sample_x, sample_y = resample(self.X_train, self.y_train)
+        for i in range(self._n_bootstrap):
+            # Same splits per model, but different for every iteration
+            rs = i
+            if self.T.random_state is not None:
+                rs += self.T.random_state
+
+            # Create stratified samples with replacement
+            sample_x, sample_y = resample(
+                self.X_train,
+                self.y_train,
+                replace=True,
+                random_state=rs,
+                stratify=self.y_train,
+            )
 
             # Clone to not overwrite when fitting
             estimator = clone(self.estimator)
@@ -538,10 +588,11 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         # Separate for multi-metric, transform numpy types to python types
         if len(self.T._metric) == 1:
+            self.metric_bootstrap = np.array(self.metric_bootstrap)
             self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=0).item()
             self.std_bootstrap = np.std(self.metric_bootstrap, axis=0).item()
         else:
-            self.metric_bootstrap = list(zip(*self.metric_bootstrap))
+            self.metric_bootstrap = np.array(self.metric_bootstrap).T
             self.mean_bootstrap = np.mean(self.metric_bootstrap, axis=1).tolist()
             self.std_bootstrap = np.std(self.metric_bootstrap, axis=1).tolist()
 
@@ -605,7 +656,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
             another, independent set for testing.
 
         """
-        if self.T.goal.startswith("reg"):
+        if self.T.goal != "class":
             raise PermissionError(
                 "The calibrate method is only available for classification tasks!"
             )
@@ -643,7 +694,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Returns
         -------
-        scores: dict
+        score: dict
             Return of sklearn's cross_validate function.
 
         """
@@ -691,11 +742,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
         return cv
 
     @composed(crash, typechecked)
-    def export_pipeline(
-        self,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-        verbose: Optional[int] = None,
-    ):
+    def export_pipeline(self, verbose: Optional[int] = None):
         """Export the model's pipeline to a sklearn-like object.
 
         If the model used feature scaling, the Scaler is added
@@ -704,15 +751,6 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         Parameters
         ----------
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to export.
-                - If None: Only transformers that are applied on the
-                           whole dataset are exported.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
             None, it leaves them to their original verbosity.
@@ -724,7 +762,7 @@ class ModelOptimizer(BaseModel, SuccessiveHalvingPlotter, TrainSizingPlotter):
 
         """
         if hasattr(self.T, "export_pipeline"):
-            return self.T.export_pipeline(self.name, pipeline, verbose)
+            return self.T.export_pipeline(self.name, verbose)
         else:
             steps = []
             if self.scaler:

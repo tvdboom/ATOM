@@ -5,7 +5,6 @@
 
 As of the moment, ATOM supports the following Python versions:
 
-* [Python 3.6](https://www.python.org/downloads/release/python-360/)
 * [Python 3.7](https://www.python.org/downloads/release/python-370/)
 * [Python 3.8](https://www.python.org/downloads/release/python-380/)
 * [Python 3.9](https://www.python.org/downloads/release/python-390/)
@@ -30,14 +29,14 @@ packages to use machine learning estimators not provided by sklearn.
 * **[tqdm](https://tqdm.github.io/)** (>=4.35.0)
 * **[joblib](https://joblib.readthedocs.io/en/latest/)** (>=0.16.0)
 * **[typeguard](https://typeguard.readthedocs.io/en/latest/)** (>=2.7.1)
-* **[tabulate](https://github.com/astanin/python-tabulate)** (>=0.8.6)
-* **[scikit-learn](https://scikit-learn.org/stable/)** (>=0.24)
-* **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.8.1)
+* **[scikit-learn](https://scikit-learn.org/stable/)** (>=1.0)
+* **[scikit-optimize](https://scikit-optimize.github.io/stable/)** (>=0.9.0)
 * **[nltk](https://www.nltk.org/)** (>=3.6.2)
 * **[tpot](http://epistasislab.github.io/tpot/)** (>=0.11.7)
 * **[category-encoders](https://contrib.scikit-learn.org/categorical-encoding/index.html)** (>=2.1.0)
 * **[imbalanced-learn](https://imbalanced-learn.readthedocs.io/en/stable/api.html)** (>=0.8.0)
-* **[featuretools](https://www.featuretools.com/)** (>=0.17.0)
+* **[woodwork](https://github.com/alteryx/woodwork/)** (>=0.8.2)
+* **[featuretools](https://www.featuretools.com/)** (>=1.0.0)
 * **[gplearn](https://gplearn.readthedocs.io/en/stable/index.html)** (>=0.4.1)
 * **[matplotlib](https://matplotlib.org/)** (>=3.3.0)
 * **[seaborn](https://seaborn.pydata.org/)** (>=0.10.0)

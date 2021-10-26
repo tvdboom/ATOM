@@ -27,14 +27,14 @@ def test_all_classification_models():
     """Assert that the default value selects all models."""
     trainer = DirectClassifier(models=None, random_state=1)
     trainer.run(bin_train, bin_test)
-    assert len(trainer.models) + len(trainer.errors) == 27
+    assert len(trainer.models) + len(trainer.errors) == 28
 
 
 def test_all_regression_models():
     """Assert that the default value selects all models."""
     trainer = DirectRegressor(models=None, random_state=1)
     trainer.run(reg_train, reg_test)
-    assert len(trainer.models) + len(trainer.errors) == 24
+    assert len(trainer.models) + len(trainer.errors) == 25
 
 
 def test_model_is_predefined():
@@ -346,7 +346,7 @@ def test_sequence_parameters():
     )
     trainer.run(bin_train, bin_test)
     assert len(trainer.LR.bo) == 2
-    assert sum(trainer.tree.bo.index.str.startswith("Initial")) == 2
+    assert sum(trainer.tree.bo["call"].str.startswith("Initial")) == 2
     assert len(trainer.lgb.metric_bootstrap) == 7
 
 

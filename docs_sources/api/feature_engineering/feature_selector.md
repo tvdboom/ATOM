@@ -6,7 +6,7 @@
 solver=None, n_features=None, max_frac_repeated=1., max_correlation=1., n_jobs=1, verbose=0, logger=None, random_state=None,
 **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L600">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L573">[source]</a>
 </span>
 </div>
 
@@ -27,12 +27,12 @@ method. Read more in the [user guide](../../../user_guide/feature_engineering/#s
 Feature selection strategy to use. Choose from:
 <ul style="line-height:1.2em;margin-top:5px">
 <li>None: Do not perform any feature selection algorithm.</li>
-<li>"univariate": Select best features according to a univariate F-test.</li>
-<li>"PCA": Perform principal component analysis.</li>
+<li>"univariate": Univariate F-test.</li>
+<li>"PCA": Principal Component Analysis.</li>
 <li>"SFM": Select best features according to a model.</li>
-<li>"RFE": Perform recursive feature elimination.</li>
-<li>"RFECV": Perform RFE with cross-validated selection.</li>
-<li>"SFS": Perform Sequential Feature Selection.</li>
+<li>"SFS": Sequential Feature Selection.</li>
+<li>"RFE": Recursive Feature Elimination.</li>
+<li>"RFECV": RFE with cross-validated selection.</li>
 </ul>
 <strong>solver: string, estimator or None, optional (default=None)</strong><br>
 Solver or model to use for the feature selection strategy. See
@@ -57,7 +57,7 @@ and PCA).
     <li>"arpack"</li>
     <li>"randomized"</li>
     </ul></li>
-<li>for "SFM", "RFE", "RFECV" and "SFS":<br>
+<li>for "SFM", "SFS", "RFE" and "RFECV":<br>
 <p>The base estimator. For SFM, RFE and RFECV, it should
 have either a either a <code>feature_importances_</code> or <code>coef_</code>
 attribute after fitting. You can use one of ATOM's <a href="../../../user_guide/models/#predefined-models">predefined models</a>.
@@ -269,17 +269,18 @@ Fontsize for the ticks along the plot's axes.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L759">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L732">[source]</a>
 </span>
 </div>
-Fit to data. Note that the univariate, SFM (when model is not fitted), RFE and
-RFECV strategies all need a target column. Leaving it None will raise an exception.
+Fit to data. Note that the univariate, SFM (when model is not fitted),
+SFS, RFE and RFECV strategies all need a target column. Leaving it
+None will raise an exception.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -304,18 +305,18 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
 Fit to data, then transform it. Note that the univariate, SFM (when
-model is not fitted), RFE and RFECV strategies need a target column.
+model is not fitted), SFS, RFE and RFECV strategies need a target column.
 Leaving it None will raise an exception.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <strong>y: int, str, sequence or None, optional (default=None)</strong><br>
@@ -396,7 +397,7 @@ Minimum verbosity level to print the message.
 <em>method</em> <strong style="color:#008AB8">plot_pca</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L521">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L525">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio vs the number of components.
@@ -409,7 +410,7 @@ See [plot_pca](../../plots/plot_pca) for a description of the parameters.
 <em>method</em> <strong style="color:#008AB8">plot_components</strong>
 (show=None, title=None, figsize=None, filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L591">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L595">[source]</a>
 </span>
 </div>
 Plot the explained variance ratio per components. See
@@ -422,7 +423,7 @@ Plot the explained variance ratio per components. See
 <em>method</em> <strong style="color:#008AB8">plot_rfecv</strong>
 (title=None, figsize=(10, 6), filename=None, display=True)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L668">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L672">[source]</a>
 </span>
 </div>
 Plot the scores obtained by the estimator fitted on every subset of the
@@ -434,7 +435,7 @@ data. See [plot_rfecv](../../plots/plot_rfecv) for a description of the paramete
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">reset_aesthetics</strong>()
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L216">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/plots.py#L212">[source]</a>
 </span>
 </div>
 Reset the [plot aesthetics](../../../user_guide/plots/#aesthetics) to their default values.
@@ -491,7 +492,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L1011">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/feature_engineering.py#L984">[source]</a>
 </span>
 </div>
 Transform the data.
@@ -500,7 +501,7 @@ Transform the data.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

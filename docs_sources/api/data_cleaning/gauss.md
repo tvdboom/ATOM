@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Gauss</strong>(strategy="yeo-johnson",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L274">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L273">[source]</a>
 </span>
 </div>
 
@@ -127,14 +127,14 @@ Estimator's instance with which the data is transformed.
 
 <a name="fit"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L339">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L338">[source]</a></span></div>
 Fit to data.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -155,14 +155,14 @@ Fitted instance of self.
 
 <a name="fit-transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a></span></div>
 Fit to data, then transform it.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -284,14 +284,14 @@ Estimator instance.
 
 <a name="transform"></a>
 <div style="font-size:18px"><em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None) 
-<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L387">[source]</a></span></div>
+<span style="float:right"><a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L386">[source]</a></span></div>
 Apply the transformations to the data.
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width=80%" style="background:white;">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

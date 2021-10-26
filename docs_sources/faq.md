@@ -185,7 +185,7 @@ the final metric results.
 
 <a name="q13"></a>
 ### Is there a way to process datetime features?
-Yes, the [FeatureExtractor](../API/feature_engineering/feature_extractor) class
-(released in [v4.7.0](../release_history/#v470)) can automatically extract useful
-features (day, month, year, etc...) from datetime columns. The extracted features
-are always encoded to numerical values, so they can be fed directly to a model.
+Yes, the [FeatureExtractor](../API/feature_engineering/feature_extractor)
+class can automatically extract useful features (day, month, year, etc...)
+from datetime columns. The extracted features are always encoded to numerical
+values, so they can be fed directly to a model.

@@ -320,20 +320,10 @@ def test_distribution(column):
     assert len(df) == 11
 
 
-@pytest.mark.parametrize("pl", [(None, 1), (True, 2), ([0], 1)])
-def test_export_pipeline(pl):
-    """Assert that we can export the pipeline."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.prune()
-    assert len(atom.export_pipeline(pipeline=pl[0])) == pl[1]
-
-
 def test_export_pipeline_empty():
     """Assert that an error is raised when the pipeline is empty."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    pytest.raises(ValueError, atom.export_pipeline, pipeline=False)
+    pytest.raises(ValueError, atom.export_pipeline)
 
 
 def test_export_pipeline_verbose():
@@ -507,31 +497,11 @@ def test_transform_method():
     assert atom.transform(X10_str)["Feature 3"].dtype.kind in "ifu"
 
 
-def test_transform_pipeline_is_None():
-    """Assert that only some transformers are used."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.impute(strat_num="median")
+def test_transform_not_train_only():
+    """Assert that train_only transformers are not used."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.prune(max_sigma=2)
-    X = atom.transform(X10_nan, pipeline=None)  # Only use imputer
-    assert len(X) == 10
-
-
-def test_transform_pipeline_is_true():
-    """Assert that all transformers are used."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.impute(strat_num="median")
-    atom.prune(max_sigma=2)
-    X = atom.transform(X10_nan, pipeline=True)  # Use both transformers
-    assert len(X) < 10
-
-
-def test_transform_pipeline_false():
-    """Assert that no transformers used."""
-    atom = ATOMClassifier(X10_nan, y10, random_state=1)
-    atom.impute(strat_num="median")
-    atom.prune(max_sigma=2)
-    X = atom.transform(X10_nan, pipeline=False)  # Use None
-    assert isinstance(X, list)  # X is unchanged
+    assert len(atom.transform(X_bin)) == len(X_bin)
 
 
 def test_transform_verbose_invalid():
@@ -543,10 +513,10 @@ def test_transform_verbose_invalid():
 
 def test_transform_with_y():
     """Assert that the transform method works when y is provided."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.prune(strategy="iforest", include_target=True)
-    X, y = atom.transform(X_bin, y_bin, pipeline=[0])
-    assert len(y) < len(y_bin)
+    atom = ATOMClassifier(X10_nan, y10, random_state=1)
+    atom.impute(strat_num="drop")
+    X, y = atom.transform(X10_nan, y10)
+    assert len(y) < len(y10)
 
 
 # Test base transformers =========================================== >>
@@ -641,6 +611,9 @@ def test_add_keep_column_names():
 def test_add_subset_columns():
     """Assert that you can use a subset of the columns."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+
+    # Invalid length
+    pytest.raises(ValueError, atom.scale, columns="datetime")
 
     # Column indices
     cols = atom.columns.copy()

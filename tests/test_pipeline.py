@@ -8,9 +8,9 @@ Description: Unit tests for pipeline.py
 """
 
 # Standard packages
-import pandas as pd
 import pytest
 import numpy as np
+import pandas as pd
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 
 # Own modules
@@ -56,6 +56,12 @@ def test_fit_transform(pipeline):
     assert isinstance(pl.fit_transform(X_bin), pd.DataFrame)  # Returns X
     pl.steps[-1] = ("test_final", "passthrough")
     assert isinstance(pl.fit_transform(X_bin, y_bin), tuple)  # Returns X, y
+
+
+def test_transform_train_only(pipeline):
+    """Assert that the pipeline ignores train_only during predicting."""
+    pl = pipeline(model=False)
+    assert len(pl.transform(X_bin)) == len(X_bin)  # Pruner is not applied
 
 
 def test_predict(pipeline):

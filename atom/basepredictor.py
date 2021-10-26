@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the BasePredictor class.
 
@@ -10,16 +10,17 @@ Description: Module containing the BasePredictor class.
 # Standard packages
 import numpy as np
 import pandas as pd
-from typing import Union, Optional
 from typeguard import typechecked
+from typing import Union, Optional
 
 # Own modules
 from .branch import Branch
+from .models import MODEL_LIST
 from .ensembles import Voting, Stacking
 from .utils import (
     SEQUENCE_TYPES, X_TYPES, Y_TYPES, DF_ATTRS, flt, lst,
-    check_is_fitted, divide, get_best_score, delete, method_to_log,
-    composed, crash,
+    check_is_fitted, divide, get_best_score, delete,
+    method_to_log, composed, crash,
 )
 
 
@@ -266,17 +267,39 @@ class BasePredictor:
 
             return list(dict.fromkeys(to_return))  # Avoid duplicates
 
-    @composed(crash, method_to_log)
-    def calibrate(self, **kwargs):
-        """Calibrate the winning model."""
-        check_is_fitted(self, attributes="_models")
-        self.winner.calibrate(**kwargs)
+    @crash
+    def available_models(self):
+        """Give an overview of the available predefined models.
 
-    @composed(crash, method_to_log)
-    def cross_validate(self, **kwargs):
-        """Evaluate the winning model using cross-validation."""
-        check_is_fitted(self, attributes="_models")
-        return self.winner.cross_validate(**kwargs)
+        Returns
+        -------
+        overview: pd.DataFrame
+            Information about the predefined models available for the
+            current task. Columns include:
+                - acronym: Model's acronym (used to call the model).
+                - name: Full name of the model.
+                - estimator: The model's underlying estimator.
+                - module: The estimator's module.
+                - needs_scaling: Whether the model requires feature scaling.
+
+        """
+        overview = pd.DataFrame()
+        for model in MODEL_LIST:
+            m = model(self)
+            est = m.get_estimator()
+            if m.task[:3] == self.goal[:3] or m.task == "both":
+                overview = overview.append(
+                    {
+                        "acronym": m.acronym,
+                        "name": m.fullname,
+                        "estimator": est.__class__.__name__,
+                        "module": est.__module__,
+                        "needs_scaling": str(m.needs_scaling),
+                    },
+                    ignore_index=True,
+                )
+
+        return overview
 
     @composed(crash, method_to_log, typechecked)
     def delete(self, models: Optional[Union[str, SEQUENCE_TYPES]] = None):
@@ -353,7 +376,7 @@ class BasePredictor:
             Classes with the corresponding weights.
 
         """
-        if not self.goal.startswith("class"):
+        if self.goal != "class":
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
             )
@@ -407,7 +430,7 @@ class BasePredictor:
         if not models:
             models = self.branch._get_depending_models()
         if not estimator:
-            estimator = "LR" if self.goal.startswith("class") else "Ridge"
+            estimator = "LR" if self.goal == "class" else "Ridge"
 
         self._models["stack"] = Stacking(
             self,

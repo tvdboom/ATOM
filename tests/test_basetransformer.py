@@ -12,6 +12,7 @@ import glob
 import pytest
 import pandas as pd
 import multiprocessing
+from scipy import sparse
 from unittest.mock import patch
 from pandas.testing import assert_frame_equal
 
@@ -140,6 +141,12 @@ def test_text_to_corpus():
     """Assert that for text data the column is named Corpus."""
     atom = ATOMClassifier(X_text, y_text, random_state=1)
     assert atom.X.columns == ["Corpus"]
+
+
+def test_sparse_matrices():
+    """Assert that sparse matrices are accepted as input type."""
+    X, y = BaseTransformer._prepare_input(sparse.eye(10), y10)
+    assert isinstance(X, pd.DataFrame) and isinstance(y, pd.Series)
 
 
 def test_to_pandas():

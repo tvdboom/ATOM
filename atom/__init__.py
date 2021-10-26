@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Import API and declare version.
 
@@ -9,4 +9,4 @@ Description: Import API and declare version.
 
 from .api import ATOMClassifier, ATOMRegressor, ATOMLoader, ATOMModel
 
-__version__ = "4.8.0"
+__version__ = "4.9.0"

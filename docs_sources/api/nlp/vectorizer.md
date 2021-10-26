@@ -100,7 +100,7 @@ Fit to text.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
@@ -125,7 +125,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
 Fit to text, then vectorize it.
@@ -134,7 +134,7 @@ Fit to text, then vectorize it.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.
@@ -269,7 +269,7 @@ Normalize the text.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features). If X is
 not a pd.DataFrame, it should be composed of a single
 feature containing the text documents.

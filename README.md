@@ -14,19 +14,19 @@
 Overview 
 --------
 
-<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/avatar.png" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
+<a href="https://github.com/tvdboom" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/avatar.png" alt="Author" height=13 width=13 draggable="false" /> Mavs</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/email.png" alt="Email" height=12 width=15 draggable="false" /> m.524687@gmail.com</a>
+<a href="mailto:m.524687@gmail.com" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/email.png" alt="Email" height=12 width=15 draggable="false" /> m.524687@gmail.com</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/documentation.png" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
+<a href="https://tvdboom.github.io/ATOM/" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/documentation.png" alt="Documentation" height=14 width=14 draggable="false" /> Documentation</a>
 &nbsp;&nbsp;&nbsp;&nbsp;
-<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="./docs_sources/img/icons/slack.png" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
+<a href="https://join.slack.com/t/atom-alm7229/shared_invite/zt-upd8uc0z-LL63MzBWxFf5tVWOGCBY5g" style="text-decoration: none" draggable="false"><img src="https://github.com/tvdboom/ATOM/blob/master/docs_sources/img/icons/slack.png" alt="Slack" height=14 width=14 draggable="false"/> Slack</a>
 
 
 #### Repository:
 [![Project Status: Active](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![Conda Recipe](https://img.shields.io/badge/recipe-atom--ml-green.svg)](https://anaconda.org/conda-forge/atom-ml)
-[![Python 3.6|3.7|3.8|3.9](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue?logo=python)](https://www.python.org)
+[![Python 3.7|3.8|3.9](https://img.shields.io/badge/python-3.7%20%7C%203.8%20%7C%203.9-blue?logo=python)](https://www.python.org)
 [![License: MIT](https://img.shields.io/github/license/tvdboom/ATOM)](https://opensource.org/licenses/MIT)
 [![Conda Platforms](https://img.shields.io/conda/pn/conda-forge/atom-ml.svg)](https://anaconda.org/conda-forge/atom-ml)
 
@@ -102,10 +102,7 @@ Example steps taken by ATOM's pipeline:
 
 <br/><br/>
 
-<p align="center">
-	<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram_pipeline.png?raw=true" alt="diagram_pipeline" title="diagram_pipeline" width="900" height="300" />
-	<figcaption style="padding:0px 0px 0px 500px">Figure 1. Diagram of a possible pipeline created by ATOM.</figcaption>
-</p>
+<img src="https://github.com/tvdboom/ATOM/blob/master/images/diagram_pipeline.png?raw=true" alt="diagram_pipeline" title="diagram_pipeline" width="900" height="300" />
 
 <br><br>
 

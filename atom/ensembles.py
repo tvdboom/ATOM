@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the Voting and Stacking classes.
 
@@ -28,7 +28,7 @@ from .utils import (
 class BaseEnsemble:
     """Base class for all ensembles."""
 
-    def _process_branches(self, X, y, pl, vb, method):
+    def _process_branches(self, X, y, verbose, method):
         """Transform data through all branches.
 
         This method transforms provided data through all the branches
@@ -52,23 +52,16 @@ class BaseEnsemble:
         step = {}  # Current step in the pipeline per branch
         for b1, v1 in branches.items():
             _print = True
-            if pl is None:
-                pl = [i for i, est in enumerate(v1.pipeline) if not est._train_only]
-            elif pl is False:
-                pl = []
-            elif pl is True:
-                pl = list(range(len(v1.pipeline)))
-
-            for idx, est1 in enumerate(v1.pipeline):
+            for idx, est in enumerate([t for t in v1.pipeline if not t._train_only]):
                 # Skip if the transformation was already applied
-                if step.get(b1, -1) < idx and idx in pl:
+                if step.get(b1, -1) < idx:
                     if _print:  # Just print message once per branch
                         _print = False
                         self.T.log(f"Transforming data for branch {b1}:", 1)
-                    data[b1] = custom_transform(self.T, est1, v1, data[b1], vb)
+                    data[b1] = custom_transform(self.T, est, v1, data[b1], verbose)
 
                     for b2, v2 in branches.items():
-                        if b1 != b2 and v2.pipeline.get(idx) is est1:
+                        if b1 != b2 and v2.pipeline.get(idx) is est:
                             # Update the data and step for the other branch
                             data[b2] = copy(data[b1])
                             step[b2] = idx
@@ -157,18 +150,17 @@ class Voting(BaseModel, BaseEnsemble):
         y=None,
         metric=None,
         sample_weight=None,
-        pipeline=None,
         verbose=None,
         method="predict"
     ):
         """Get the mean of the prediction methods on new data.
 
-        First transform the new data and apply the attribute on all
-        the models. All models need to have the provided attribute.
+        Transform the new data and apply the attribute on all the
+        models. All models need to have the provided attribute.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -186,15 +178,6 @@ class Voting(BaseModel, BaseEnsemble):
         sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to use on the data before predicting.
-                - If None: Only transformers that are applied on the
-                           whole dataset are used.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
@@ -208,12 +191,12 @@ class Voting(BaseModel, BaseEnsemble):
             Return of the attribute.
 
         """
-        data = self._process_branches(X, y, pipeline, verbose, method)
+        data = self._process_branches(X, y, verbose, method)
 
         if method == "predict":
             pred = []
-            for model in self._models:
-                pred.append(model.predict(data[model.branch.name][0], pipeline=False))
+            for m in self._models:
+                pred.append(m.predict(data[m.branch.name][0]))
 
             return np.apply_along_axis(
                 func1d=lambda x: np.argmax(np.bincount(x, weights=self.weights)),
@@ -223,24 +206,15 @@ class Voting(BaseModel, BaseEnsemble):
 
         elif method in ("predict_proba", "predict_log_proba", "decision_function"):
             pred = []
-            for model in self._models:
-                pred.append(
-                    getattr(model, method)(data[model.branch.name][0], pipeline=False)
-                )
+            for m in self._models:
+                pred.append(getattr(m, method)(data[m.branch.name][0]))
 
             return np.average(pred, axis=0, weights=self.weights)
 
         elif method == "score":
             pred = []
-            for model in self._models:
-                pred.append(
-                    model.score(
-                        *data[model.branch.name],
-                        metric=metric,
-                        sample_weight=sample_weight,
-                        pipeline=False,
-                    )
-                )
+            for m in self._models:
+                pred.append(m.score(*data[m.branch.name], metric, sample_weight))
 
             return np.average(pred, axis=0, weights=self.weights)
 
@@ -452,7 +426,6 @@ class Stacking(BaseModel, BaseEnsemble):
         y=None,
         metric=None,
         sample_weight=None,
-        pipeline=None,
         verbose=None,
         method="predict"
     ):
@@ -463,7 +436,7 @@ class Stacking(BaseModel, BaseEnsemble):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -481,15 +454,6 @@ class Stacking(BaseModel, BaseEnsemble):
         sample_weight: sequence or None, optional (default=None)
             Sample weights for the score method.
 
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to use on the data before predicting.
-                - If None: Only transformers that are applied on the
-                           whole dataset are used.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
-
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
             estimator's own verbosity.
@@ -503,13 +467,13 @@ class Stacking(BaseModel, BaseEnsemble):
             Return of the attribute.
 
         """
-        data = self._process_branches(X, y, pipeline, verbose, method)
+        data = self._process_branches(X, y, verbose, method)
 
         # Create the feature set from which to make predictions
         fxs_set = pd.DataFrame()
         for m in self._models:
             attr = self._get_stack_attr(m)
-            pred = getattr(m, attr)(data[m.branch.name][0], pipeline=False)
+            pred = getattr(m, attr)(data[m.branch.name][0])
             if attr == "predict_proba" and self.T.task.startswith("bin"):
                 pred = pred[:, 1]
 
@@ -532,7 +496,7 @@ class Stacking(BaseModel, BaseEnsemble):
             return getattr(self.estimator, method)(fxs_set)
         else:
             if metric is None:
-                if self.T.goal.startswith("class"):
+                if self.T.goal == "class":
                     metric = get_scorer("accuracy")
                 else:
                     metric = get_scorer("r2")
@@ -543,9 +507,4 @@ class Stacking(BaseModel, BaseEnsemble):
             if sample_weight is not None:
                 kwargs["sample_weight"] = sample_weight
 
-            return metric(
-                self.estimator,
-                fxs_set,
-                self.T.y,
-                **kwargs,
-            )
+            return metric(self.estimator, fxs_set, self.T.y, **kwargs)

@@ -656,7 +656,7 @@ def test_balancer_kwargs():
 
 
 def test_return_pandas():
-    """Assert that pandas objects are returned, not np.ndarray."""
+    """Assert that pandas objects are returned, not numpy."""
     X, y = Balancer().transform(X_bin, y_bin)
     assert isinstance(X, pd.DataFrame)
     assert isinstance(y, pd.Series)

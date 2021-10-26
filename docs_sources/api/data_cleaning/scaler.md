@@ -5,7 +5,7 @@
 <em>class</em> atom.data_cleaning.<strong style="color:#008AB8">Scaler</strong>(strategy="standard",
 verbose=0, logger=None, **kwargs)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L158">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L157">[source]</a>
 </span>
 </div>
 
@@ -112,7 +112,7 @@ Estimator's instance with which the data is scaled.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L208">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L207">[source]</a>
 </span>
 </div>
 Compute the mean and std to be used for scaling.
@@ -121,7 +121,7 @@ Compute the mean and std to be used for scaling.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -144,7 +144,7 @@ Fitted instance of self.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">fit_transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L75">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L74">[source]</a>
 </span>
 </div>
 Fit to data, then transform it.
@@ -153,7 +153,7 @@ Fit to data, then transform it.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>
@@ -277,7 +277,7 @@ Estimator instance.
 <div style="font-size:20px">
 <em>method</em> <strong style="color:#008AB8">transform</strong>(X, y=None)
 <span style="float:right">
-<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L243">[source]</a>
+<a href="https://github.com/tvdboom/ATOM/blob/master/atom/data_cleaning.py#L242">[source]</a>
 </span>
 </div>
 Perform standardization by centering and scaling.
@@ -286,7 +286,7 @@ Perform standardization by centering and scaling.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>X: dict, list, tuple, np.ndarray or pd.DataFrame</strong><br>
+<strong>X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame</strong><br>
 Feature set with shape=(n_samples, n_features).
 </p>
 <p>

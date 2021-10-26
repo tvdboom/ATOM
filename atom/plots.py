@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the plotting classes.
 
@@ -29,6 +29,7 @@ from nltk.collocations import (
 )
 
 # Plotting packages
+import shap
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.transforms import blended_transform_factory
@@ -58,11 +59,6 @@ from .utils import (
     get_columns, composed, crash, plot_from_model,
 )
 
-# Catch annoying tensorflow warnings when importing shap
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
-import shap
-os.environ["TF_CPP_MIN_LOG_LEVEL"] = "0"
-
 
 class BaseFigure:
     """Class that stores the position of the current axes in grid.
@@ -88,7 +84,7 @@ class BaseFigure:
         self._used_models = []  # Models plotted in this figure
 
         # Create new figure and corresponding grid
-        figure = plt.figure(constrained_layout=True if is_canvas else False)
+        figure = plt.figure(constrained_layout=is_canvas)
         self.gridspec = GridSpec(nrows=self.nrows, ncols=self.ncols, figure=figure)
 
     @property
@@ -234,7 +230,7 @@ class BasePlotter:
             BasePlotter._fig = BaseFigure()
             return BasePlotter._fig.figure
 
-    def _get_subclass(self, models, max_one=False):
+    def _get_subclass(self, models, max_one=False, ensembles=True):
         """Check and return the provided parameter models.
 
         Parameters
@@ -246,9 +242,17 @@ class BasePlotter:
             Whether one or multiple models are allowed. If True, return
             the model instead of a list.
 
+        ensembles: bool, optional (default=True)
+            If False, drop ensemble models automatically.
+
         """
         models = self._get_models(models)
-        model_subclasses = [m for m in self._models if m.name in models]
+
+        model_subclasses = []
+        ensembles = () if ensembles else ("Vote", "Stack")
+        for m in self._models:
+            if m.name in models and m.acronym not in ensembles:
+                model_subclasses.append(m)
 
         if max_one and len(model_subclasses) > 1:
             raise ValueError("This plot method allows only one model at a time!")
@@ -355,7 +359,7 @@ class BasePlotter:
 
         Returns
         -------
-        shap_values: np.ndarray
+        shap_values: np.array
             SHAP values for the target class.
 
         expected_value: float or list
@@ -506,7 +510,7 @@ class BasePlotter:
             BasePlotter._fig.is_canvas = False  # Close the canvas
             self._plot(
                 fig=plt.gcf(),
-                figsize=figsize if figsize else (6 + 4 * ncols, 2 + 4 * nrows),
+                figsize=figsize or (6 + 4 * ncols, 2 + 4 * nrows),
                 tight_layout=False,
                 plotname="canvas",
                 filename=filename,
@@ -658,7 +662,7 @@ class FSPlotter(BasePlotter):
             title=title,
             legend=("lower right", 1),
             xlabel="Explained variance ratio",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_components",
             filename=filename,
             display=display,
@@ -712,18 +716,29 @@ class FSPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
+
         n_features = self.rfecv.get_params()["min_features_to_select"]
-        xline = range(n_features, n_features + len(self.rfecv.grid_scores_))
-        ax.plot(xline, self.rfecv.grid_scores_)
+        mean = self.rfecv.cv_results_["mean_test_score"]
+
+        # Prepare dataframe for seaborn lineplot
+        df = pd.DataFrame()
+        for key, value in self.rfecv.cv_results_.items():
+            if key not in ("mean_test_score", "std_test_score"):
+                df = pd.concat([df, pd.DataFrame(value, columns=["y"])])
+
+        df["x"] = np.add(df.index, n_features)
+        df = df.reset_index(drop=True)
+
+        xline = range(n_features, n_features + len(mean))
+        sns.lineplot(data=df, x="x", y="y", marker="o", ax=ax)
 
         # Set limits before drawing the intersected lines
-        xlim = (n_features - 0.5, n_features + len(self.rfecv.grid_scores_) - 0.5)
+        xlim = (n_features - 0.5, n_features + len(mean) - 0.5)
         ylim = ax.get_ylim()
 
         # Draw intersected lines
-        x = xline[np.argmax(self.rfecv.grid_scores_)]
-        y = max(self.rfecv.grid_scores_)
-        ax.vlines(x, -1e4, y, ls="--", color="k", alpha=0.7)
+        x, y = xline[np.argmax(mean)], max(mean)
+        ax.vlines(x, ax.get_ylim()[0], y, ls="--", color="k", alpha=0.7)
         label = f"Features: {x}   {ylabel}: {round(y, 3)}"
         ax.hlines(y, xmin=-1, xmax=x, color="k", ls="--", alpha=0.7, label=label)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))  # Only int ticks
@@ -798,7 +813,8 @@ class BaseModelPlotter(BasePlotter):
 
         def get_bootstrap(m):
             """Get the bootstrap results for a specific metric."""
-            if getattr(m, "metric_bootstrap", None):
+            # Use getattr since ensembles don't have the attribute
+            if isinstance(getattr(m, "metric_bootstrap", None), np.ndarray):
                 if len(self._metric) == 1:
                     return m.metric_bootstrap
                 else:
@@ -822,7 +838,7 @@ class BaseModelPlotter(BasePlotter):
         models = sorted(models, key=lambda m: get_best_score(m, metric))
         color = plt.rcParams["axes.prop_cycle"].by_key()["color"][0]  # First color
 
-        all_bootstrap = all(get_bootstrap(m) for m in models)
+        all_bootstrap = all(isinstance(get_bootstrap(m), np.ndarray) for m in models)
         for i, m in enumerate(models):
             names.append(m.name)
             if all_bootstrap:
@@ -854,7 +870,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             xlabel=self._metric[metric].name,
             xlim=(min_lim, max_lim) if not all_bootstrap else None,
-            figsize=figsize if figsize else (10, 4 + len(models) // 2),
+            figsize=figsize or (10, 4 + len(models) // 2),
             plotname="plot_results",
             filename=filename,
             display=display,
@@ -1779,7 +1795,7 @@ class BaseModelPlotter(BasePlotter):
             legend=("lower right", len(models)) if len(models) > 1 else None,
             xlim=(0, 1.03 if len(models) > 1 else 1.09),
             xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_feature_importance",
             filename=filename,
             display=display,
@@ -1914,7 +1930,7 @@ class BaseModelPlotter(BasePlotter):
             title=title,
             legend=("lower right" if len(models) > 1 else False, len(models)),
             xlabel="Score",
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_permutation_importance",
             filename=filename,
             display=display,
@@ -2316,7 +2332,7 @@ class BaseModelPlotter(BasePlotter):
         BasePlotter._fig._used_models.extend(models)
         if len(models) > 1:
             df.plot.barh(ax=ax, width=0.6)
-            figsize = figsize if figsize else (10, 6)
+            figsize = figsize or (10, 6)
             self._plot(
                 ax=ax,
                 title=title,
@@ -2324,7 +2340,7 @@ class BaseModelPlotter(BasePlotter):
                 xlabel="Count",
             )
         else:
-            figsize = figsize if figsize else (8, 6)
+            figsize = figsize or (8, 6)
             self._plot(
                 ax=ax,
                 title=title,
@@ -2723,7 +2739,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="bar_plot",
             filename=filename,
             display=display,
@@ -2812,7 +2828,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="beeswarm_plot",
             filename=filename,
             display=display,
@@ -2928,7 +2944,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="decision_plot",
             filename=filename,
             display=display,
@@ -3318,7 +3334,8 @@ class BaseModelPlotter(BasePlotter):
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
-        shap.plots.waterfall(shap_values, max_display=show, show=False)
+        # TODO: Fix when shap updates -> show=False
+        shap.plots.waterfall(shap_values, max_display=show, show=True)
 
         ax.set_xlabel(ax.get_xlabel(), fontsize=self.label_fontsize, labelpad=12)
 
@@ -3327,7 +3344,7 @@ class BaseModelPlotter(BasePlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="waterfall_plot",
             filename=filename,
             display=display,
@@ -3381,27 +3398,33 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
+        models = self._get_subclass(models, ensembles=False)
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
-        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
         for m in models:
-            y[m._group].append(get_best_score(m, metric))
-            x[m._group].append(m.branch.idx[0] // m._train_idx)
-            if m.std_bootstrap:
-                std[m._group].append(lst(m.std_bootstrap)[metric])
-
-        for k in x:
-            if not std:
-                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
+            n_models = m.branch.idx[0] // m._train_idx  # Number of models in iteration
+            if m.metric_bootstrap is None:
+                values = {"x": [n_models], "y": [get_best_score(m, metric)]}
             else:
-                ax.plot(x[k], y[k], lw=2, marker="o")
-                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
-                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
-                ax.fill_between(x[k], plus, minus, alpha=0.3)
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [n_models] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            kwargs = dict(err_style="band" if df["x"].nunique() > 1 else "bars", ax=ax)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, **kwargs)
 
         n_models = [len(self.train) // m._train_idx for m in models]
         ax.set_xlim(max(n_models) + 0.1, min(n_models) - 0.1)
@@ -3412,7 +3435,7 @@ class SuccessiveHalvingPlotter(BaseModelPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right", len(x)),
+            legend=("lower right", len(lines)),
             xlabel="n_models",
             ylabel=self._metric[metric].name,
             figsize=figsize,
@@ -3469,27 +3492,31 @@ class TrainSizingPlotter(BaseModelPlotter):
 
         """
         check_is_fitted(self, attributes="_models")
-        models = self._get_subclass(models)
+        models = self._get_subclass(models, ensembles=False)
         metric = self._get_metric(metric)
 
         fig = self._get_figure()
         ax = fig.add_subplot(BasePlotter._fig.grid)
 
-        x, y, std = defaultdict(list), defaultdict(list), defaultdict(list)
+        # Prepare dataframes for seaborn lineplot (one df per line)
+        # Not using sns hue parameter because of legend formatting
+        lines = defaultdict(pd.DataFrame)
         for m in models:
-            y[m._group].append(get_best_score(m, metric))
-            x[m._group].append(m._train_idx)
-            if m.std_bootstrap:
-                std[m._group].append(lst(m.std_bootstrap)[metric])
-
-        for k in x:
-            if not std:
-                ax.plot(x[k], y[k], lw=2, marker="o", label=k)
+            if m.metric_bootstrap is None:
+                values = {"x": [m._train_idx], "y": [get_best_score(m, metric)]}
             else:
-                ax.plot(x[k], y[k], lw=2, marker="o")
-                ax.errorbar(x[k], y[k], std[k], lw=1, marker="o", label=k)
-                plus, minus = np.add(y[k], std[k]), np.subtract(y[k], std[k])
-                ax.fill_between(x[k], plus, minus, alpha=0.3)
+                if len(self._metric) == 1:
+                    bootstrap = m.metric_bootstrap
+                else:
+                    bootstrap = m.metric_bootstrap[metric]
+                values = {"x": [m._train_idx] * len(bootstrap), "y": bootstrap}
+
+            # Add the scores to the group's dataframe
+            lines[m._group] = pd.concat([lines[m._group], pd.DataFrame(values)])
+
+        for m, df in zip(models, lines.values()):
+            df = df.reset_index(drop=True)
+            sns.lineplot(data=df, x="x", y="y", marker="o", label=m.acronym, ax=ax)
 
         ax.ticklabel_format(axis="x", style="sci", scilimits=(0, 4))
 
@@ -3498,7 +3525,7 @@ class TrainSizingPlotter(BaseModelPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            legend=("lower right", len(x)),
+            legend=("lower right", len(lines)),
             xlabel="Number of training samples",
             ylabel=self._metric[metric].name,
             figsize=figsize,
@@ -3668,7 +3695,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
         return self._plot(
             fig=plt.gcf(),
             title=title,
-            figsize=figsize if figsize else (10, 10),
+            figsize=figsize or (10, 10),
             plotname="plot_scatter_matrix",
             filename=filename,
             display=display,
@@ -3772,7 +3799,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 title=title,
                 xlabel="Counts",
                 legend=("lower right", 1),
-                figsize=figsize if figsize else (10, 4 + show // 2),
+                figsize=figsize or (10, 4 + show // 2),
                 plotname="plot_distribution",
                 filename=filename,
                 display=display,
@@ -3820,7 +3847,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
                 xlabel="Values",
                 ylabel="Counts",
                 legend=("best", len(columns) + len(lst(distribution))),
-                figsize=figsize if figsize else (10, 6),
+                figsize=figsize or (10, 6),
                 plotname="plot_distribution",
                 filename=filename,
                 display=display,
@@ -3903,7 +3930,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             xlabel="Theoretical quantiles",
             ylabel="Observed quantiles",
             legend=("best", len(columns) + len(lst(distribution))),
-            figsize=figsize if figsize else (10, 6),
+            figsize=figsize or (10, 6),
             plotname="plot_qq",
             filename=filename,
             display=display,
@@ -3987,7 +4014,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             fig=fig,
             ax=ax,
             title=title,
-            figsize=figsize if figsize else (10, 6),
+            figsize=figsize or (10, 6),
             plotname="plot_wordcloud",
             filename=filename,
             display=display,
@@ -4101,7 +4128,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             title=title,
             xlabel="Counts",
             legend=("lower right", 1),
-            figsize=figsize if figsize else (10, 4 + show // 2),
+            figsize=figsize or (10, 4 + show // 2),
             plotname="plot_ngrams",
             filename=filename,
             display=display,
@@ -4228,7 +4255,7 @@ class ATOMPlotter(FSPlotter, SuccessiveHalvingPlotter, TrainSizingPlotter):
             title=title,
             xlim=(0, 100),
             ylim=(0, ylim),
-            figsize=figsize if figsize else (8, ylim // 30),
+            figsize=figsize or (8, ylim // 30),
             plotname="plot_pipeline",
             filename=filename,
             display=display,

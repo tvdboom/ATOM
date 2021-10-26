@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the ATOM class.
 
@@ -56,7 +56,7 @@ from .utils import (
     divide, infer_task, check_method, check_scaling, check_multidim,
     get_pl_name, names_from_estimator, get_columns, check_is_fitted,
     variable_return, fit_one, delete, custom_transform, method_to_log,
-    composed, crash, CustomDict,
+    composed, crash, Table, CustomDict,
 )
 
 
@@ -211,7 +211,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         """Whether the feature set is scaled."""
         if not check_multidim(self.X):
             est_names = [est.__class__.__name__.lower() for est in self.pipeline]
-            return check_scaling(self.X) or "scaler" in est_names
+            return check_scaling(self.X) or any("scaler" in name for name in est_names)
 
     @property
     def duplicates(self):
@@ -338,7 +338,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             random_state=kwargs.pop("random_state", self.random_state),
             **kwargs,
         )
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             self.branch.tpot = TPOTClassifier(**kwargs)
         else:
             self.branch.tpot = TPOTRegressor(**kwargs)
@@ -423,17 +423,12 @@ class ATOM(BasePredictor, ATOMPlotter):
     def export_pipeline(
         self,
         model: Optional[str] = None,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
         verbose: Optional[int] = None,
     ):
         """Export atom's pipeline to a sklearn-like Pipeline object.
 
         Optionally, you can add a model as final estimator. The
         returned pipeline is already fitted on the training set.
-        Note that custom transformers and transformers that were
-        not fitted on all columns are added inside a meta-estimator
-        called TransformerWrapper that always returns pd.DataFrame
-        and only utilises the columns used for fitting.
 
         Parameters
         ----------
@@ -442,15 +437,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             pipeline. If the model used feature scaling, the Scaler
             is added before the model. If None, only the
             transformers are added.
-
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to export.
-                - If None: Only transformers that are applied on the
-                           whole dataset are exported.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
 
         verbose: int or None, optional (default=None)
             Verbosity level of the transformers in the pipeline. If
@@ -462,26 +448,18 @@ class ATOM(BasePredictor, ATOMPlotter):
             Current branch as a sklearn-like Pipeline object.
 
         """
-        if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
-        elif pipeline is False:
-            pipeline = []
-        elif pipeline is True:
-            pipeline = list(range(len(self.pipeline)))
-
-        if len(pipeline) == 0 and not model:
-            raise ValueError("The selected pipeline seems to be empty!")
+        if len(self.pipeline) == 0 and not model:
+            raise ValueError("There is no pipeline to export!")
 
         steps = []
-        for idx, transformer in enumerate(self.pipeline):
-            if idx in pipeline:
-                est = deepcopy(transformer)  # Not clone to keep fitted
+        for transformer in self.pipeline:
+            est = deepcopy(transformer)  # Not clone to keep fitted
 
-                # Set the new verbosity (if possible)
-                if verbose is not None and hasattr(est, "verbose"):
-                    est.verbose = verbose
+            # Set the new verbosity (if possible)
+            if verbose is not None and hasattr(est, "verbose"):
+                est.verbose = verbose
 
-                steps.append((get_pl_name(est.__class__.__name__, steps), est))
+            steps.append((get_pl_name(est.__class__.__name__, steps), est))
 
         if model:
             model = getattr(self, self._get_model_name(model)[0])
@@ -516,14 +494,14 @@ class ATOM(BasePredictor, ATOMPlotter):
             to the end of their names.
 
         """
-        if self.goal.startswith("class"):
-            if not getattr(atom, "goal", "").startswith("class"):
+        if self.goal == "class":
+            if not getattr(atom, "goal", "") == "class":
                 raise TypeError(
                     "Invalid type for the atom parameter. The provided object should "
                     f"be an ATOMClassifier instance, got {atom.__class__.__name__}."
                 )
-        elif self.goal.startswith("reg"):
-            if not getattr(atom, "goal", "").startswith("reg"):
+        elif self.goal == "reg":
+            if not getattr(atom, "goal", "") == "reg":
                 raise TypeError(
                     "Invalid type for the atom parameter. The provided object should "
                     f"be an ATOMRegressor instance, got {atom.__class__.__name__}."
@@ -742,7 +720,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             Internal parameter to always print if called by user.
 
         """
-        self.log("Dataset stats ====================== >>", _vb)
+        self.log("Dataset stats " + "=" * 20 + " >>", _vb)
         self.log(f"Shape: {self.shape}", _vb)
 
         if not check_multidim(self.X):
@@ -765,20 +743,23 @@ class ATOM(BasePredictor, ATOMPlotter):
                 p_dup = round(100 * duplicates / len(self.dataset), 1)
                 self.log(f"Duplicate samples: {duplicates} ({p_dup}%)", _vb)
 
-        self.log("---------------------------------------", _vb)
+        self.log("-" * 37, _vb)
         self.log(f"Train set size: {len(self.train)}", _vb)
         self.log(f"Test set size: {len(self.test)}", _vb)
+        self.log("-" * 37, _vb)
 
         # Print count and balance of classes
         if self.task != "regression":
-            self.log("---------------------------------------", _vb + 1)
-            cls = self.classes  # Calculate class distribution only once
+            cls = self.classes
+            spaces = (2, *[len(str(max(cls["dataset"]))) + 8] * 3)
             func = lambda i, col: f"{i} ({divide(i, min(cls[col])):.1f})"
-            df = pd.DataFrame(
-                data={col: [func(v, col) for v in cls[col]] for col in cls},
-                index=self.mapping.values(),
-            )
-            self.log(df.to_markdown(), _vb + 1)
+
+            table = Table([("", "left"), *cls.columns], spaces)
+            self.log(table.print_header(), _vb + 1)
+            self.log(table.print_line(), _vb + 1)
+            for i, row in cls.iterrows():
+                sequence = {"": i, **{c: func(row[c], c) for c in cls.columns}}
+                self.log(table.print(sequence), _vb + 1)
 
     @composed(crash, method_to_log)
     def status(self):
@@ -786,22 +767,15 @@ class ATOM(BasePredictor, ATOMPlotter):
         self.log(str(self))
 
     @composed(crash, method_to_log, typechecked)
-    def transform(
-        self,
-        X: X_TYPES,
-        y: Y_TYPES = None,
-        pipeline: Optional[Union[bool, SEQUENCE_TYPES]] = None,
-        verbose: Optional[int] = None,
-    ):
-        """Transform new data through all transformers in the branch.
+    def transform(self, X: X_TYPES, y: Y_TYPES = None, verbose: Optional[int] = None):
+        """Transform new data through the branch.
 
-        By default, transformers that are applied on the training
-        set only are not used during the transformations. Use the
-        `pipeline` parameter to customize this behaviour.
+        Transformers that are only applied on the training set are
+        skipped.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence or None, optional (default=None)
@@ -811,15 +785,6 @@ class ATOM(BasePredictor, ATOMPlotter):
             - Else: Target column with shape=(n_samples,).
 
             Feature set with shape=(n_samples, n_features).
-
-        pipeline: bool, sequence or None, optional (default=None)
-            Transformers to use on the data before predicting.
-                - If None: Only transformers that are applied on the
-                           whole dataset are used.
-                - If False: Don't use any transformers.
-                - If True: Use all transformers in the pipeline.
-                - If sequence: Transformers to use, selected by their
-                               index in the pipeline.
 
         verbose: int or None, optional (default=None)
             Verbosity level for the transformers. If None, it uses the
@@ -834,16 +799,8 @@ class ATOM(BasePredictor, ATOMPlotter):
             Transformed target column. Only returned if provided.
 
         """
-        if pipeline is None:
-            pipeline = [i for i, est in enumerate(self.pipeline) if not est._train_only]
-        elif pipeline is False:
-            pipeline = []
-        elif pipeline is True:
-            pipeline = list(range(len(self.pipeline)))
-
-        for idx, est in enumerate(self.pipeline):
-            if idx in pipeline:
-                X, y = custom_transform(self, est, self.branch, (X, y), verbose)
+        for est in [est for est in self.pipeline if not est._train_only]:
+            X, y = custom_transform(self, est, self.branch, (X, y), verbose)
 
         return variable_return(X, y)
 
@@ -947,7 +904,8 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         train_only: bool, optional (default=False)
             Whether to apply the estimator only on the training set or
-            on the complete dataset.
+            on the complete dataset. Note that if True, the transformation
+            is skipped when making predictions on unseen data.
 
         **fit_params
             Additional keyword arguments passed to the estimator's fit
@@ -1105,7 +1063,7 @@ class ATOM(BasePredictor, ATOMPlotter):
             drop_min_cardinality=drop_min_cardinality,
             drop_duplicates=drop_duplicates,
             drop_missing_target=drop_missing_target,
-            encode_target=encode_target if self.goal.startswith("class") else False,
+            encode_target=encode_target if self.goal == "class" else False,
             **kwargs,
         )
         # Pass atom's missing values to the cleaner before transforming
@@ -1203,10 +1161,12 @@ class ATOM(BasePredictor, ATOMPlotter):
 
         Replace or remove outliers. The definition of outlier depends
         on the selected strategy and can greatly differ from one
-        another. Only outliers from the training set are pruned in
-        order to maintain the original distribution of samples in
-        the test set. Ignores categorical columns. The estimators
+        another. Ignores categorical columns. The estimators
         created by the class are attached to atom.
+
+        This transformation is only applied to the training set in
+        order to maintain the original distribution of samples in
+        the test set.
 
         See data_cleaning.py for a description of the parameters.
 
@@ -1233,16 +1193,18 @@ class ATOM(BasePredictor, ATOMPlotter):
     def balance(self, strategy: str = "ADASYN", **kwargs):
         """Balance the number of rows per class in the target column.
 
-        Only the training set is balanced in order to maintain the
-        original distribution of target classes in the test set.
         Use only for classification tasks. The estimator created by
         the class is attached to atom.
+
+        This transformation is only applied to the training set in
+        order to maintain the original distribution of target classes
+        in the test set.
 
         See data_cleaning.py for a description of the parameters.
 
         """
         check_method(self, "balance")
-        if not self.goal.startswith("class"):
+        if self.goal != "class":
             raise PermissionError(
                 "The balance method is only available for classification tasks!"
             )
@@ -1501,17 +1463,14 @@ class ATOM(BasePredictor, ATOMPlotter):
         check_method(self, "feature_selection")
         if isinstance(strategy, str):
             if strategy.lower() == "univariate" and solver is None:
-                if self.goal.startswith("reg"):
-                    solver = "f_regression"
-                else:
-                    solver = "f_classif"
+                solver = "f_classif" if self.goal == "class" else "f_regression"
             elif strategy.lower() in ("sfm", "rfe", "rfecv", "sfs"):
                 if solver is None and self.winner:
                     solver = self.winner.estimator
                 elif isinstance(solver, str):
                     # In case the user already filled the task...
                     if not solver.endswith("_class") and not solver.endswith("_reg"):
-                        solver += "_reg" if self.task.startswith("reg") else "_class"
+                        solver += f"_{self.goal}"
 
             # If the run method was called before, use the main metric
             if strategy.lower() in ("rfecv", "sfs"):
@@ -1650,7 +1609,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = DirectClassifier(*params, **kwargs)
         else:
             trainer = DirectRegressor(*params, **kwargs)
@@ -1696,7 +1655,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = SuccessiveHalvingClassifier(*params, **kwargs)
         else:
             trainer = SuccessiveHalvingRegressor(*params, **kwargs)
@@ -1740,7 +1699,7 @@ class ATOM(BasePredictor, ATOMPlotter):
         )
 
         kwargs = self._prepare_kwargs(kwargs)
-        if self.goal.startswith("class"):
+        if self.goal == "class":
             trainer = TrainSizingClassifier(*params, **kwargs)
         else:
             trainer = TrainSizingRegressor(*params, **kwargs)

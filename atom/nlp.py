@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing estimators for NLP.
 
@@ -159,7 +159,7 @@ class TextCleaner(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -357,7 +357,7 @@ class Tokenizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -491,7 +491,7 @@ class Normalizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -632,7 +632,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -675,7 +675,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If X is
             not a pd.DataFrame, it should be composed of a single
             feature containing the text documents.
@@ -701,7 +701,7 @@ class Vectorizer(BaseEstimator, TransformerMixin, BaseTransformer):
 
         matrix = self._estimator.transform(X[corpus]).toarray()
         if self.strategy.lower() != "hashing":
-            for i, word in enumerate(self._estimator.get_feature_names()):
+            for i, word in enumerate(self._estimator.get_feature_names_out()):
                 X[word] = matrix[:, i]
         else:
             # Hashing has no words to put as column names

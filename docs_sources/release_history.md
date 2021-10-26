@@ -1,6 +1,32 @@
 # Release history
 -----------------
 
+<a name="v490"></a>
+### Version 4.9.0
+
+* Drop support of [Python 3.6](https://www.python.org/downloads/release/python-360/).
+* Added the [HistGBM](../API/models/hgbm) model.
+* Improved print layout for [hyperparameter tuning](../user_guide/training/#hyperparameter-tuning).
+* The new [available_models](../API/ATOM/atomclassifier/#available-models)
+  method returns an overview of the available predefined models.
+* The [calibrate](../API/models/gnb/#calibrate) and [cross_validate](../API/models/gnb/#cross-validate)
+  methods can no longer be accessed from the trainers.
+* The `pipeline` parameter for the [prediction methods](../user_guide/predicting)
+  is deprecated.
+* Improved visualization of the [plot_rfecv](../API/plots/plot_rfecv),
+  [plot_successive_halving](../API/plots/plot_successive_halving) and
+  [plot_learning_curve](../API/plots/plot_learning_curve) methods.
+* Sparse matrices are now accepted as input.
+* Duplicate BO calls are no longer calculated.
+* Improvement in performance of the [RNN](../API/models/rnn) model.
+* Refactor of the model's `bo` attribute.
+* Predefined hyperparameters have been updated to be consistent with sklearn's API.
+* Fixed a bug where custom scalers were ignored by the models.
+* Fixed a bug where the BO of certain models would crash with custom hyperparameters.
+* Fixed a bug where duplicate column names could be generated from a custom transformer.
+* Documentation improvements.
+
+
 <a name="v480"></a>
 ### Version 4.8.0
 
@@ -22,7 +48,7 @@
 * Renaming a branch using an existing name now raises an exception.
 * Fixed a bug where columns of type `category` broke the [Imputer](../API/data_cleaning/imputer)
   class.
-* Fixed a bug where predictions of the [Stacking](../user_guide/training/#stacking)
+* Fixed a bug where predictions of the [Stacking](../user_guide/models/#stacking)
   ensemble crashed for branches with multiple transformers.
 * The tables in the documentation now adapt to dark mode.
 
@@ -194,7 +220,7 @@
 * Compatibility with [deep learning](../user_guide/models/#deep-learning) models.
 * New branch system for different data pipelines. Read more in the [user guide](../user_guide/data_pipelines/#branches).
 * Use the [canvas](../API/ATOM/atomclassifier/#canvas) contextmanager to draw multiple plots in one figure.
-* New [voting](../user_guide/training/#voting) and [stacking](../user_guide/training/#stacking) ensemble techniques.
+* New [voting](../user_guide/models/#voting) and [stacking](../user_guide/models/#stacking) ensemble techniques.
 * New [get_class_weight](../API/ATOM/atomclassifier/#get-class-weight) utility method.
 * New Sequential Feature Selection strategy for the [FeatureSelector](../API/feature_engineering/feature_selector).
 * Added the `sample_weight` parameter to the [score](../API/predicting/score) method.

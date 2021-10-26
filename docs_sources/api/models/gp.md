@@ -140,7 +140,7 @@ Metric score(s) on the training set.
 Metric score(s) on the test set.
 </p>
 <p>
-<strong>metric_bootstrap: list</strong><br>
+<strong>metric_bootstrap: np.ndarray</strong><br>
 Bootstrap results with shape=(n_bootstrap,) for single-metric runs and
 shape=(metric, n_bootstrap) for multi-metric runs.
 </p>
@@ -182,19 +182,19 @@ attributes that are never used, saving time and memory.
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Prediction attributes:</strong></td>
 <td width="80%" class="td_params">
 <p>
-<strong>predict_train: np.ndarray</strong><br>
+<strong>predict_train: np.array</strong><br>
 Predictions of the model on the training set.
 </p>
 <p>
-<strong> predict_test: np.ndarray</strong><br>
+<strong> predict_test: np.array</strong><br>
 Predictions of the model on the test set.
 </p>
 <p>
-<strong>predict_proba_train: np.ndarray</strong><br>
+<strong>predict_proba_train: np.array</strong><br>
 Predicted probabilities of the model on the training set (only if classifier).
 </p>
 <p>
-<strong>predict_proba_test: np.ndarray</strong><br>
+<strong>predict_proba_test: np.array</strong><br>
 Predicted probabilities of the model on the test set (only if classifier).
 </p>
 <p>
@@ -354,7 +354,7 @@ removed from any active mlflow experiment.
 
 <a name="export-pipeline"></a>
 <div style="font-size:20px">
-<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(pipeline=None, verbose=None)
+<em>method</em> <strong style="color:#008AB8">export_pipeline</strong>(verbose=None)
 <span style="float:right">
 <a href="https://github.com/tvdboom/ATOM/blob/master/atom/modeloptimizer.py#L630">[source]</a>
 </span>
@@ -363,28 +363,25 @@ Export the model's pipeline to a sklearn-like object. If the model
 used feature scaling, the Scaler is added before the model. The
 returned pipeline is already fitted on the training set.
 
-!!! note
-    ATOM's Pipeline class behaves exactly the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
-    and additionally, it's compatible with transformers that drop samples
-    and transformers that change the target column.
-
-!!! warning
-    Due to incompatibilities with sklearn's API, the exported pipeline always
-    fits/transforms on the entire dataset provided. Beware that this can
-    cause errors if the transformers were fitted on a subset of the data.
+!!! info
+    ATOM's Pipeline class behaves the same as a sklearn <a href="https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html">Pipeline</a>,
+    and additionally:
+    <ul>
+    <li>Accepts transformers that change the target column.</li>
+    <li>Accepts transformers that drop rows.</li>
+    <li>Accepts transformers that only are fitted on a subset of the
+        provided dataset.</li>
+    <li>Always outputs pandas objects.</li>
+    <li>Uses transformers that are only applied on the training set (see the
+        <a href="../../ATOM/atomclassifier/#balance">balance</a> or
+        <a href="../../ATOM/atomclassifier/#prune">prune</a> methods)
+        to fit the pipeline, not to make predictions on unseen data.</li>
+    </ul>
 
 <table style="font-size:16px">
 <tr>
 <td width="20%" class="td_title" style="vertical-align:top"><strong>Parameters:</strong></td>
 <td width="80%" class="td_params">
-<strong>pipeline: bool, sequence or None, optional (default=None)</strong><br>
-Transformers to use on the data before predicting.
-<ul style="line-height:1.2em;margin-top:5px">
-<li>If None: Only transformers that are applied on the whole dataset are used.</li>
-<li>If False: Don't use any transformers.</li>
-<li>If True: Use all transformers in the pipeline.</li>
-<li>If sequence: Transformers to use, selected by their index in the pipeline.</li>
-</ul>
 <p>
 <strong>verbose: int or None, optional (default=None)</strong><br>
 Verbosity level of the transformers in the pipeline.

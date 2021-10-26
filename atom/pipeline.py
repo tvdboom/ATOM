@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the ATOM's custom sklearn-like pipeline.
 
 """
 
 # Standard packages
-import pandas as pd
-from inspect import signature
 from sklearn import pipeline
 from sklearn.base import clone
 from sklearn.utils import _print_elapsed_time
 from sklearn.utils.validation import check_memory
-from sklearn.utils.metaestimators import if_delegate_has_method
+from sklearn.utils.metaestimators import available_if
 
 # Own modules
-from .utils import (
-    to_df, to_series, variable_return, fit_one, transform_one,
-    fit_transform_one,
-)
+from .utils import variable_return, fit_one, transform_one, fit_transform_one
+
+
+def _final_estimator_has(attr):
+    """Check that final_estimator has `attr`.
+
+    Used together with `available_if` in `Pipeline`.
+
+    """
+    def check(self):
+        # Raise original `AttributeError` if `attr` does not exist
+        getattr(self._final_estimator, attr)
+        return True
+
+    return check
 
 
 class Pipeline(pipeline.Pipeline):
@@ -32,11 +41,26 @@ class Pipeline(pipeline.Pipeline):
         - Accepts transformers that only are fitted on a subset
           of the provided dataset.
         - Always outputs pandas objects.
+        - Uses transformers that are only applied on the training set
+          to fit the pipeline, not to make predictions on unseen data.
 
     Partially from https://github.com/scikit-learn-contrib/imbalanced
     -learn/blob/master/imblearn/pipeline.py.
 
     """
+
+    def _iter(self, with_final=True, filter_passthrough=True, filter_train_only=True):
+        """Generate (idx, (name, trans)) tuples from self.steps.
+
+        By default, estimators that are only applied on the training
+        set are filtered out for predictions.
+
+        """
+        it = super()._iter(with_final, filter_passthrough)
+        if filter_train_only:
+            return filter(lambda x: not getattr(x[-1], "_train_only", False), it)
+        else:
+            return it
 
     def _fit(self, X=None, y=None, **fit_params_steps):
         self.steps = list(self.steps)
@@ -45,7 +69,7 @@ class Pipeline(pipeline.Pipeline):
         # Setup the memory
         memory = check_memory(self.memory).cache(fit_transform_one)
 
-        for (step_idx, name, transformer) in self._iter(False, False):
+        for (step_idx, name, transformer) in self._iter(False, False, False):
             if transformer is None or transformer == "passthrough":
                 with _print_elapsed_time("Pipeline", self._log_message(step_idx)):
                     continue
@@ -78,9 +102,9 @@ class Pipeline(pipeline.Pipeline):
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray, pd.DataFrame, optional (default=None)
+        X: dict, list, tuple, np.ndarray, sps.matrix, pd.DataFrame or None
             Feature set with shape=(n_samples, n_features). None
-            if the estimator only uses y.
+            if the pipeline only uses y.
 
         y: int, str, sequence or None, optional (default=None)
             - If None: y is ignored.
@@ -143,13 +167,13 @@ class Pipeline(pipeline.Pipeline):
 
         return variable_return(X, y)
 
-    @if_delegate_has_method(delegate="_final_estimator")
+    @available_if(_final_estimator_has("predict"))
     def predict(self, X, **predict_params):
         """Transform, then predict of the final estimator.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         **predict_params
@@ -170,13 +194,13 @@ class Pipeline(pipeline.Pipeline):
 
         return self.steps[-1][-1].predict(X, **predict_params)
 
-    @if_delegate_has_method(delegate="_final_estimator")
+    @available_if(_final_estimator_has("predict_proba"))
     def predict_proba(self, X):
         """Transform, then predict_proba of the final estimator.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         Returns
@@ -190,13 +214,13 @@ class Pipeline(pipeline.Pipeline):
 
         return self.steps[-1][-1].predict_proba(X)
 
-    @if_delegate_has_method(delegate="_final_estimator")
+    @available_if(_final_estimator_has("predict_log_proba"))
     def predict_log_proba(self, X):
         """Transform, then predict_log_proba of the final estimator.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         Returns
@@ -210,13 +234,13 @@ class Pipeline(pipeline.Pipeline):
 
         return self.steps[-1][-1].predict_log_proba(X)
 
-    @if_delegate_has_method(delegate="_final_estimator")
+    @available_if(_final_estimator_has("decision_function"))
     def decision_function(self, X):
         """Transform, then decision_function of the final estimator.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         Returns
@@ -230,13 +254,13 @@ class Pipeline(pipeline.Pipeline):
 
         return self.steps[-1][-1].decision_function(X)
 
-    @if_delegate_has_method(delegate="_final_estimator")
+    @available_if(_final_estimator_has("score"))
     def score(self, X, y, sample_weight=None):
         """Transform, then score of the final estimator.
 
         Parameters
         ----------
-        X: dict, list, tuple, np.ndarray or pd.DataFrame
+        X: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str, sequence
@@ -258,20 +282,43 @@ class Pipeline(pipeline.Pipeline):
 
         return self.steps[-1][-1].score(X, y, sample_weight=sample_weight)
 
-    @property
-    def transform(self):
+    def _can_transform(self):
+        return self._final_estimator == "passthrough" or hasattr(
+            self._final_estimator, "transform"
+        )
+
+    @available_if(_can_transform)
+    def transform(self, X=None, y=None):
         """Transform the data.
 
-        This also works where final estimator is None: all prior
-        transformations are applied.
+        Call `transform` of each transformer in the pipeline. The
+        transformed data are finally passed to the final estimator
+        that calls the `transform` method. Only valid if the final
+        estimator implements `transform`. This also works where final
+        estimator is `None` in which case all prior transformations
+        are applied.
+
+        Parameters
+        ----------
+        X: dict, list, tuple, np.array, sps.matrix, pd.DataFrame or None
+            Feature set with shape=(n_samples, n_features). None
+            if the pipeline only uses y.
+
+        y: int, str, sequence or None, optional (default=None)
+            - If None: y is ignored.
+            - If int: Index of the target column in X.
+            - If str: Name of the target column in X.
+            - Else: Target column with shape=(n_samples,).
+
+        Returns
+        -------
+        X: pd.DataFrame
+            Transformed feature set. Only returned if provided.
+
+        y: pd.Series
+            Transformed target column. Only returned if provided.
 
         """
-        # _final_estimator is None or has transform, otherwise
-        # attribute error handling the None case means we can't
-        # use if_delegate_has_method
-        return self._custom_transform
-
-    def _custom_transform(self, X=None, y=None):
         for _, _, transformer in self._iter():
             X, y = transform_one(transformer, X, y)
 

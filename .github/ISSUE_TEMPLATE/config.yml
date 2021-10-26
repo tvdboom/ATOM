@@ -1,0 +1,9 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Stack Overflow
+    url: https://stackoverflow.com/questions/tagged/atom-ml
+    about: Please ask and answer usage questions on Stack Overflow.
+  - name: Discussions
+    url: https://github.com/tvdboom/ATOM/discussions/new
+    about: Ask questions and discuss with other pycaret community members

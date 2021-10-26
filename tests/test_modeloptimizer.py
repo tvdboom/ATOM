@@ -9,6 +9,8 @@ Description: Unit tests for modeloptimizer.py
 
 # Standard packages
 import glob
+
+import numpy as np
 import pytest
 from unittest.mock import patch
 from sklearn.tree import DecisionTreeClassifier
@@ -51,6 +53,13 @@ def test_est_params_removed_from_bo():
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", n_calls=5, est_params={"n_estimators": 220})
     assert "n_estimators" not in atom.lgb.bo.params[0]
+
+
+def test_no_hyperparameters_left():
+    """Assert that the BO is skipped when there are no hyperparameters."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run(models="BNB", n_calls=10, est_params={"alpha": 1.0, "fit_prior": True})
+    assert atom.bnb.bo.empty
 
 
 def test_est_params_unknown_param():
@@ -96,15 +105,22 @@ def test_early_stopping(model):
     """Assert than early stopping works."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run(model, n_calls=5, bo_params={"early_stopping": 0.1, "cv": 1})
-    assert isinstance(getattr(atom, model).evals, dict)
+    assert getattr(atom, model).evals
 
 
 @pytest.mark.parametrize("model", ["XGB", "LGB", "CatB"])
 def test_est_params_for_fit(model):
     """Assert that est_params is used for fit if ends in _fit."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.run(model, est_params={"early_stopping_rounds_fit": 20})
-    assert getattr(atom, model)._stopped
+    atom.run(model, est_params={"early_stopping_rounds_fit": 2})
+    assert getattr(atom, model)._stopped != ("---", "---")
+
+
+def test_skip_duplicate_calls():
+    """Assert that calls with the same parameters skip the calculation."""
+    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
+    atom.run("dummy", n_calls=5)
+    assert atom.dummy.bo["score"].nunique() < len(atom.dummy.bo["score"])
 
 
 @patch("mlflow.set_tag")
@@ -120,7 +136,7 @@ def test_verbose_is_1():
     """Assert that the pipeline works for verbose=1."""
     atom = ATOMClassifier(X_bin, y_bin, verbose=1, random_state=1)
     atom.run("LR", n_calls=5)
-    assert atom.lr._pbar is not None
+    assert not atom.errors
 
 
 @patch("mlflow.set_tags")
@@ -193,13 +209,13 @@ def test_bootstrap_attribute_types():
     # For single-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", n_calls=5, n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap, list)
+    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, float)
 
     # For multi-metric
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("LGB", metric=("f1", "auc", "recall"), n_bootstrap=5)
-    assert isinstance(atom.lgb.metric_bootstrap[0], tuple)
+    assert isinstance(atom.lgb.metric_bootstrap, np.ndarray)
     assert isinstance(atom.lgb.mean_bootstrap, list)
 
 
@@ -209,14 +225,14 @@ def test_calibrate_invalid_task():
     """Assert than an error is raised when task="regression"."""
     atom = ATOMRegressor(X_reg, y_reg, random_state=1)
     atom.run("OLS")
-    pytest.raises(PermissionError, atom.calibrate)
+    pytest.raises(PermissionError, atom.ols.calibrate)
 
 
 def test_calibrate():
     """Assert that calibrate method works as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.calibrate(cv=3)
+    atom.mnb.calibrate(cv=3)
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
@@ -224,7 +240,7 @@ def test_calibrate_prefit():
     """Assert that calibrate method works as intended when cv="prefit"."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    atom.calibrate(cv="prefit")
+    atom.mnb.calibrate(cv="prefit")
     assert isinstance(atom.mnb.estimator, CalibratedClassifierCV)
 
 
@@ -232,8 +248,7 @@ def test_calibrate_reset_predictions():
     """Assert that the prediction attributes are reset after calibrating."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)
     atom.run("MNB")
-    print(atom.mnb.score_test)
-    atom.calibrate()
+    atom.mnb.calibrate()
     assert atom.mnb._pred_attrs[9] is None
 
 

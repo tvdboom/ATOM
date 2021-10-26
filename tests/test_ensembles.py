@@ -58,19 +58,6 @@ def test_vote_invalid_method():
     pytest.raises(AttributeError, atom.vote.predict_log_proba, X_bin)
 
 
-@pytest.mark.parametrize("pipeline", [None, False, True])
-def test_vote_branch_transformation(pipeline):
-    """Assert that the branches transform every estimator only once."""
-    atom = ATOMClassifier(X_bin, y_bin, random_state=1)
-    atom.clean()
-    atom.impute()
-    atom.branch = "branch_2"
-    atom.encode()
-    atom.run(models=["Tree", "LGB"])
-    atom.voting()
-    assert isinstance(atom.vote.predict(X_bin, pipeline=pipeline), np.ndarray)
-
-
 def test_vote_prediction_methods():
     """Assert that the prediction methods work as intended."""
     atom = ATOMClassifier(X_bin, y_bin, random_state=1)

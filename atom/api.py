@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-"""Automated Tool for Optimized Modelling (ATOM).
-
+"""
+Automated Tool for Optimized Modelling (ATOM)
 Author: Mavs
 Description: Module containing the API classes.
 
@@ -94,7 +94,7 @@ def ATOMLoader(
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
+        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features). If no
             y is provided, the last column is used as target.
 
@@ -182,7 +182,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
+        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -275,7 +275,7 @@ class ATOMClassifier(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "classification"
+        self.goal = "class"
         ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
 
 
@@ -292,7 +292,7 @@ class ATOMRegressor(BaseTransformer, ATOM):
             - X_train, X_test, y_train, y_test
             - (X_train, y_train), (X_test, y_test)
 
-        X, train, test: dict, list, tuple, np.ndarray or pd.DataFrame
+        X, train, test: dict, list, tuple, np.array, sps.matrix or pd.DataFrame
             Feature set with shape=(n_samples, n_features).
 
         y: int, str or sequence
@@ -382,5 +382,5 @@ class ATOMRegressor(BaseTransformer, ATOM):
             random_state=random_state,
         )
 
-        self.goal = "regression"
+        self.goal = "reg"
         ATOM.__init__(self, arrays, y, shuffle, n_rows, test_size)
